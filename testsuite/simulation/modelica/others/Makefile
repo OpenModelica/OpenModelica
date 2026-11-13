@@ -84,6 +84,7 @@ TestSolve19.mos \
 Ticket5129.mos \
 ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \
+StateDerivativeAliases.mos \
 FilterSimulationResultsCsvTime.mos \
 FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \

@@ -351,10 +351,10 @@ package ThermoPower
       Modelica.Blocks.Interfaces.RealInput in_T_internal;
       Modelica.Blocks.Interfaces.RealInput[Medium.nX] in_X_internal;
     equation
-      if R == 0 then
-        flange.p = gas.p;
-      else
+      if R > 0 then
         flange.p = gas.p + flange.m_flow * R;
+      else
+        flange.p = gas.p;
       end if;
       gas.p = in_p0_internal;
       if not use_in_p0 then
@@ -397,10 +397,10 @@ package ThermoPower
       Modelica.Blocks.Interfaces.RealInput in_T_internal;
       Modelica.Blocks.Interfaces.RealInput[Medium.nX] in_X_internal;
     equation
-      if R == 0 then
-        flange.p = gas.p;
-      else
+      if R > 0 then
         flange.p = gas.p + flange.m_flow * R;
+      else
+        flange.p = gas.p;
       end if;
       gas.p = in_p0_internal;
       if not use_in_p0 then
@@ -445,10 +445,10 @@ package ThermoPower
       Modelica.Blocks.Interfaces.RealInput in_T_internal;
       Modelica.Blocks.Interfaces.RealInput[Medium.nX] in_X_internal;
     equation
-      if G == 0 then
-        flange.m_flow = -w;
-      else
+      if G > 0 then
         flange.m_flow = -w + (flange.p - p0) * G;
+      else
+        flange.m_flow = -w;
       end if;
       w = in_w0_internal;
       if not use_in_w0 then

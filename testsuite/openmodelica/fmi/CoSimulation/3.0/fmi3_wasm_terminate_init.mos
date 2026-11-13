@@ -29,7 +29,7 @@ simulate(TerminateAtInit, stopTime=1.0, numberOfIntervals=10, resimulateExecutab
 // "
 // record SimulationResult
 //     resultFile = "M_terminit.fmu_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TerminateAtInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TerminateAtInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | CoSimulation instantiated
 // LOG_STDOUT        | info    | CoSimulation run: 0 communication steps, 0 events, 0 early returns, 1 samples
@@ -39,7 +39,7 @@ simulate(TerminateAtInit, stopTime=1.0, numberOfIntervals=10, resimulateExecutab
 // ""
 // record SimulationResult
 //     resultFile = "M_terminit.fmu_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TerminateAtInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TerminateAtInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | ModelExchange instantiated
 // LOG_STDOUT        | info    | ModelExchange run: 0 steps, 0 evaluations, 0 Jacobians, 0 state events, 0 time events, 1 samples

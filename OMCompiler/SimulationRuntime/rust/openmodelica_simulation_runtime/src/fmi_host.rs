@@ -3,7 +3,9 @@
 //! runtime's globals.
 
 use openmodelica_fmi3_wasm::FmiHost;
+use openmodelica_sim_meta::delay::DelayState;
 use openmodelica_sim_meta::simflags;
+use openmodelica_sim_meta::spatial::SpatialState;
 
 use crate::engine::CEngine;
 
@@ -49,38 +51,45 @@ impl FmiHost for CEngine {
         out
     }
 
+    fn opaque_state_fits(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
+        read_opaque(self.rt.data, state).is_some()
+    }
+
     fn set_opaque_state(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
-        let mut strings = Vec::new();
-        let mut at = 0;
-        for _ in string_slots(self.rt.data) {
-            let Some(len) = state
-                .get(at..at + 8)
-                .map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize)
-            else {
-                return false;
-            };
-            let Some(s) = state.get(at + 8..at + 8 + len) else {
-                return false;
-            };
-            strings.push(s);
-            at += 8 + len;
-        }
-        let rest = &state[at..];
-        if rest.len() % 8 != 0 {
+        let Some((strings, delay, spatial)) = read_opaque(self.rt.data, state) else {
             return false;
-        }
-        let mut words = rest.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap()));
-        if !crate::operators::set_from_words(self.rt.data, &mut words)
-            || !crate::spatial::set_from_words(self.rt.data, &mut words)
-            || words.next().is_some()
-        {
-            return false;
-        }
+        };
+        crate::operators::restore(self.rt.data, delay);
+        crate::spatial::restore(self.rt.data, spatial);
         for (slot, s) in string_slots(self.rt.data).zip(strings) {
             unsafe { crate::model_data::string_set_new(slot, s) };
         }
         true
     }
+}
+
+/// The string variables and histories in `state`, not applied yet; `None` if
+/// [`FmiHost::opaque_state`] did not write it for this model.
+fn read_opaque(
+    data: *mut crate::abi::DATA,
+    state: &[u8],
+) -> Option<(Vec<&[u8]>, Option<DelayState>, Option<SpatialState>)> {
+    let mut strings = Vec::new();
+    let mut at = 0;
+    for _ in string_slots(data) {
+        let len = u64::from_le_bytes(state.get(at..at + 8)?.try_into().unwrap()) as usize;
+        let end = (at + 8).checked_add(len)?;
+        strings.push(state.get(at + 8..end)?);
+        at = end;
+    }
+    let rest = &state[at..];
+    if rest.len() % 8 != 0 {
+        return None;
+    }
+    let mut words = rest.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap()));
+    let delay = crate::operators::from_words(data, &mut words)?;
+    let spatial = crate::spatial::from_words(data, &mut words)?;
+    words.next().is_none().then_some((strings, delay, spatial))
 }
 
 fn string_slots(data: *mut crate::abi::DATA) -> impl Iterator<Item = *mut crate::abi::modelica_string> {

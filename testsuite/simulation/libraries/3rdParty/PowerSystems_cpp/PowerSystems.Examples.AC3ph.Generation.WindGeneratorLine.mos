@@ -35,7 +35,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.WindGeneratorLine', options = '', outputFormat = 'mat', variableFilter = 'time|sensor.p.1.|sensor.p.2.|sensor.p.3.|windGen.generator.slip', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.WindGeneratorLine', options = '', outputFormat = 'mat', variableFilter = 'time|sensor.p.1.|sensor.p.2.|sensor.p.3.|windGen.generator.slip', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Generation.WindGeneratorLine_res.mat
 // Messages: ... loading "torque" from "/home/rfranke/Modelica/PowerSystems/PowerSystems/Resources/Tables/WindTorque.tab"
 // ERROR  : init  : SimManager: Could not initialize system

@@ -19,6 +19,8 @@ use alloc::vec::Vec;
 /// `-s`
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Solver {
+    /// Chosen from the model: IDA in DAE mode, otherwise DASSL.
+    Auto,
     Dassl,
     Ida,
     Cvode,
@@ -1601,6 +1603,7 @@ impl Offer {
 
 /// `-s`.
 const SOLVERS: &[Value<Solver>] = &[
+    ("auto", Solver::Auto, Offer::Always),
     ("dassl", Solver::Dassl, Offer::Always),
     ("dasslrt", Solver::Dassl, Offer::Never),
     ("euler", Solver::Euler, Offer::Always),

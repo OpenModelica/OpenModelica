@@ -209,7 +209,7 @@ public:
   bool setComponentDimensions(QString className, QString componentName, QString dimensions);
   QString getComponentCondition(QString className, QString componentName);
   bool setComponentCondition(QString className, QString componentName, QString condition);
-  void addConnection(QString from, QString to, QString className, QString annotation);
+  bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
   bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority, QString annotation);
   bool deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority);
@@ -284,6 +284,7 @@ public:
   bool inferBindings(QString className);
   bool generateVerificationScenarios(QString className);
   QList<QList<QString > > getUses(QString className);
+  QList<QString> getUsedClassNames(QString className);
   bool buildEncryptedPackage(QString className, bool encrypt = true);
   QList<QString> parseEncryptedPackage(QString fileName, QString workingDirectory);
   bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses = true, bool notify = true, bool requireExactVersion = false);

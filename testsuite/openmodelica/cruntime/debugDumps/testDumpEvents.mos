@@ -37,7 +37,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // true
 // record SimulationResult
 //     resultFile = "bbTestDump_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'bbTestDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'bbTestDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -314,7 +314,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "bbTestDump_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'bbTestDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS_V'",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'bbTestDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS_V'",
 //     messages = "LOG_EVENTS_V      | info    | Set tolerance for zero-crossing hysteresis to: 1.000000e-10
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0
 // LOG_EVENTS        | info    | status of relations at time=0

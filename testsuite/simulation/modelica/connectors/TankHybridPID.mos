@@ -37,7 +37,7 @@ w/1000.0;
 // true
 // record SimulationResult
 //     resultFile = "TankHybridPID_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TankHybridPID', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-05, method = 'auto', fileNamePrefix = 'TankHybridPID', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

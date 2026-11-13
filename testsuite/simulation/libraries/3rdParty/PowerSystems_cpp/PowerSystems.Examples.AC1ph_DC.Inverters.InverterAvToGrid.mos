@@ -37,7 +37,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Inverters.InverterAvToGrid', options = '', outputFormat = 'mat', variableFilter = 'time|meterDC.p|meterDC.v|meterDC.i|meterAC.p|meterAC.v|meterAC.i', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 1000, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Inverters.InverterAvToGrid', options = '', outputFormat = 'mat', variableFilter = 'time|meterDC.p|meterDC.v|meterDC.i|meterAC.p|meterAC.v|meterAC.i', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC1ph_DC.Inverters.InverterAvToGrid_res.mat
 // Files Equal!
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: ind.i[1] = ind.i_start[1] (-ind.i_start[2] = ind.i_start[1])

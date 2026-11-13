@@ -31,7 +31,7 @@ w/1000.0;
 // true
 // record SimulationResult
 //     resultFile = "FlatTank_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 150.0, numberOfIntervals = 150, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'FlatTank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 150.0, numberOfIntervals = 150, tolerance = 0.0001, method = 'auto', fileNamePrefix = 'FlatTank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

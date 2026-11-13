@@ -194,8 +194,8 @@ removed after OpenModelica 1.28.0 is released.
 
 For the Co-Simulation FMU two integrator methods are available:
 
-* Forward Euler [default]
-* SUNDIALS CVODE (see [#f1]_)
+* SUNDIALS CVODE [default] (see [#f1]_)
+* Forward Euler
 
 Forward Euler does an Euler step of ``communicationStepSize`` in ``fmi2DoStep``.
 Both integrators find the time of a state event inside the step: CVODE with its
@@ -203,18 +203,19 @@ root finding, as in the simulation, and Forward Euler by bisection between the
 two ends of the step. The FMU handles the event at that time. An FMI 3.0 FMU
 that is used with Event Mode and early return stops there instead.
 
-If CVODE is chosen as integrator the FMU should also include runtime dependencies
-(:ref:`--fmuRuntimeDepends=modelica<omcflag-fmuRuntimeDepends>`) to copy all used dynamic
-libraries into the generated FMU to make it exchangeable.
+The FMU carries the SUNDIALS sources in ``sources/3rdParty``. Built for the platform
+OpenModelica runs on, it links the SUNDIALS libraries of the OpenModelica installation
+instead. The sources are listed with the other source files of the FMU, so an importer
+that builds the FMU from its sources compiles CVODE too.
 
-To export a Co-Simulation FMU with CVODE for the bouncing ball example use the
+To export a Co-Simulation FMU with forward Euler for the bouncing ball example use the
 following commands:
 
 .. omc-mos ::
   :erroratend:
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
-  setCommandLineOptions("--fmiFlags=s:cvode")
+  setCommandLineOptions("--fmiFlags=s:euler")
   buildModelFMU(BouncingBall, version = "2.0", fmuType="cs")
 
 
@@ -301,22 +302,11 @@ The CMake compilation accepts the following settings:
   external libraries it linked against directly, which covers the Modelica libraries
   a model depends on but not the system libraries of the target platform.
 
-* ``NEED_CVODE``:
-  Boolean value to integrate CVODE integrator into CoSimulation FMU.
+* ``SOLVER_LIBRARY_DIRECTORY``:
+  String value with the location of prebuilt SuiteSparse, SUNDIALS, Lis and zlib
+  libraries.
 
-  * ``ON``: Link to SUNDIALS CVODE. If CVODE is not in a default location
-    ``CVODE_DIRECTORY`` needs to be set.
-    Its also recommended to use ``RUNTIME_DEPENDENCIES_LEVEL=modelica`` or higher to add
-    SUNDIALS runtime dependencies into the FMU.
-
-  * ``OFF`` (default): Don't link to SUNDIALS CVODE.
-
-* ``CVODE_DIRECTORY``:
-  String value with location of libraries ``sundials_cvode`` and ``sundials_nvecserial``
-  with SUNDIALS version 5.4.0.
-
-  * Defaults to a location inside the OpenModelica installation directory, which was
-    used to create the FMU.
+  * Empty (default): Compile them from the sources in ``sources/3rdParty``.
 
 
 Then use CMake to configure, build and install the FMU.

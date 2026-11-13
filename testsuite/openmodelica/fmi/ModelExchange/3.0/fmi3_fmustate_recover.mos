@@ -1,0 +1,40 @@
+// name:     fmi3_fmustate_recover
+// keywords: FMI 3.0 export FMU state error
+// status:   correct
+// teardown_command: rm -rf fmi3_fmustate_recover.fmu fmi3_fmustate_recover.fmutmp/ fmi3_fmustate_recover.log fmi3_fmustate_recover_out.txt
+//
+// After an error, a stored FMU state restored with fmi3SetFMUState continues the
+// simulation in the mode the state was taken in (FMI 3.0.2, 2.2.4 and 2.3.1), also after
+// fmi3SerializeFMUState and fmi3DeserializeFMUState.
+
+loadString("
+model fmi3_fmustate_recover
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end fmi3_fmustate_recover;
+"); getErrorString();
+buildModelFMU(fmi3_fmustate_recover, version = "3.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_fmustate_recover.py fmi3_fmustate_recover.fmu fmi3_fmustate_recover_out.txt > fmi3_fmustate_recover.log 2>&1"); getErrorString();
+readFile("fmi3_fmustate_recover_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi3_fmustate_recover.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi3EnterInitializationMode in Continuous-Time Mode: fmi3Error
+// fmi3GetFMUState: fmi3OK
+// fmi3SerializedFMUStateSize: fmi3OK
+// fmi3SerializeFMUState: fmi3OK
+// fmi3DeserializeFMUState: fmi3OK
+// fmi3FreeFMUState: fmi3OK
+// fmi3SetFMUState: fmi3OK
+// fmi3EnterContinuousTimeMode: fmi3OK
+// x = 1
+// "
+// ""
+// endResult

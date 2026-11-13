@@ -158,6 +158,7 @@ typedef struct {
 } ModelInstance;
 
 typedef struct {
+  ModelState mode;
   RINGBUFFER* simulationData;
   modelica_real* realParameter;
   modelica_integer* integerParameter;

@@ -1830,7 +1830,6 @@ fn homotopy_steps() -> i32 {
 // computed start). Set per run by the host before `drive`.
 mod overrides_store {
     use super::WTy;
-    use alloc::vec::Vec;
 
     #[cfg(feature = "std")]
     mod imp {
@@ -1939,6 +1938,42 @@ pub struct StartImports {
     pub file: String,
     pub time: f64,
     pub values: Vec<(u32, f64)>,
+    /// The time range of the file when `time` lies outside of it: only the
+    /// parameters are imported then, as in C.
+    pub out_of_range: Option<(f64, f64)>,
+}
+
+/// Look up every quantity of the [`SimMeta::import_roster`] with `value(name)`,
+/// except those `-override` names. `range` is the time range of the file; outside
+/// of it only the parameters are looked up.
+pub fn collect_start_imports(
+    model: &SimMeta,
+    file: String,
+    time: f64,
+    range: (f64, f64),
+    overridden: impl Fn(&str) -> bool,
+    mut value: impl FnMut(&str) -> Option<f64>,
+) -> StartImports {
+    let out_of_range = (!(time >= range.0 && time <= range.1)).then_some(range);
+    let mut values = Vec::new();
+    let mut flat = 0u32;
+    for (group, entries) in crate::IMPORT_GROUP.iter().zip(model.import_roster()) {
+        let skip = out_of_range.is_some() && group.ends_with("variables");
+        for (name, _, _) in entries {
+            if !skip && !overridden(name) {
+                if let Some(v) = value(name) {
+                    values.push((flat, v));
+                }
+            }
+            flat += 1;
+        }
+    }
+    StartImports {
+        file,
+        time,
+        values,
+        out_of_range,
+    }
 }
 
 mod imports_store {
@@ -2010,6 +2045,17 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
         imports.file,
         format_g(imports.time, 6),
     );
+    if let Some((start, stop)) = imports.out_of_range {
+        omclog::warning!(
+            omclog::STDOUT,
+            false,
+            "Initialization time {} is outside of the time range [{}, {}] of input-file <{}>. Only parameters are imported.",
+            format_g(imports.time, 6),
+            format_g(start, 6),
+            format_g(stop, 6),
+            imports.file,
+        );
+    }
     // `values` is in roster order, so one cursor walks both.
     let mut next = 0usize;
     let mut flat = 0u32;
@@ -2018,6 +2064,10 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
         // C's headers are plural, its per-quantity lines singular.
         let one = group.trim_end_matches('s');
         let variables = group.ends_with("variables");
+        if variables && imports.out_of_range.is_some() {
+            flat += entries.len() as u32;
+            continue;
+        }
         for (i, (name, off, wty)) in entries.into_iter().enumerate() {
             let found = imports.values.get(next).filter(|(i, _)| *i == flat).map(|&(_, v)| v);
             if found.is_some() {
@@ -3238,7 +3288,7 @@ fn print_parameters(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
             .unwrap_or(v)
     };
     omclog::info(omclog::INIT_V, true, "parameter values");
-    let mut group = |header: &str, lines: alloc::vec::Vec<String>| {
+    let group = |header: &str, lines: alloc::vec::Vec<String>| {
         if lines.is_empty() {
             return;
         }
@@ -5076,9 +5126,12 @@ pub fn fmi_handle_timers(
 /// Output point `row` of the equidistant grid, as C's `perform_simulation`
 /// computes it: `row*(stop-start)/numSteps + start`, *not* `start + row*h` —
 /// the two round differently and the result files must agree bit for bit.
+/// The last point is `stop`, which the formula can round below.
 fn grid_time(row: u32, start: f64, stop: f64, n_steps: u32) -> f64 {
     if n_steps == 0 {
         start
+    } else if row >= n_steps {
+        stop
     } else {
         row as f64 * (stop - start) / n_steps as f64 + start
     }
@@ -5214,6 +5267,7 @@ pub fn set_zc_tolerance(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout
 /// startup rather than let them silently run as DASSL.
 pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     match crate::simflags::with_flags(|f| f.solver) {
+        Some(crate::simflags::Solver::Auto) => "auto",
         Some(crate::simflags::Solver::Euler) => "euler",
         Some(crate::simflags::Solver::Dassl) => "dassl",
         Some(crate::simflags::Solver::Cvode) => "cvode",
@@ -5259,21 +5313,20 @@ fn check_method(method: &str) -> bool {
         || method == "optimization"
 }
 
-/// Resolve the solver method: apply `-s=`, then default DAE-mode models to IDA
-/// (matching C's `simulation_runtime.cpp` solver override), then validate.
-fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str> {
-    let method = effective_method(method);
-    // C: if the model is compiled in daeMode, overwrite the solver to IDA
-    let method = if dae_mode && method != "ida" {
-        omclog::info(
-            omclog::SIMULATION,
-            false,
-            "overwrite solver method: ida [DAEmode works only with IDA solver]",
-        );
-        "ida"
-    } else {
-        method
-    };
+/// Apply `-s=` and choose a method for `auto` (C's `resolveAutoSolver`). An
+/// explicit method is never replaced.
+fn choose_solver_method(method: &str, dae_mode: bool) -> &str {
+    match effective_method(method) {
+        "" | "auto" => {
+            let chosen = if dae_mode { "ida" } else { "dassl" };
+            omclog::info!(omclog::SOLVER, false, "-s=auto chooses solver method {chosen}");
+            chosen
+        }
+        m => m,
+    }
+}
+
+fn validate_solver_method(method: &str) -> Result<&str> {
     if method == "gbode" {
         return Err(crate::simflags::GBODE_DISABLED);
     }
@@ -5286,11 +5339,21 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
     Ok(method)
 }
 
-/// [`resolve_solver_method`] plus C's "no states present" swap, which lives in
-/// `startNonInteractiveSimulation` — an FMU steps with the method it was exported
-/// with, so only a standalone run applies it.
+/// The Co-Simulation method. As C's `fmu_model_interface.c.inc`, a --daeMode FMU
+/// integrates with IDA whatever its `s` says.
+fn resolve_solver_method(method: &str, dae_mode: bool) -> Result<&str> {
+    validate_solver_method(if dae_mode {
+        "ida"
+    } else {
+        choose_solver_method(method, false)
+    })
+}
+
+/// The method of a standalone run: an explicit method is never replaced, and
+/// C's "no states present" swap from `startNonInteractiveSimulation` applies. As
+/// in C, a model with nothing to integrate accepts any method.
 fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
-    let method = resolve_solver_method(method, layout.compiled_dae_mode)?;
+    let method = choose_solver_method(method, layout.compiled_dae_mode);
     // C exempts `optimization` in ODE mode only.
     let nothing_to_solve = match layout.compiled_dae_mode {
         true => layout.n_dae_res + layout.n_dae_alg < 1,
@@ -5304,7 +5367,10 @@ fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<
         );
         return Ok("euler");
     }
-    Ok(method)
+    if layout.compiled_dae_mode && method != "ida" {
+        return Err(dae_mode_needs_ida());
+    }
+    validate_solver_method(method)
 }
 
 /// C allocates the solver before initializing the model, and gbode logs its setup
@@ -5452,6 +5518,14 @@ fn csv_input_given() -> bool {
     return crate::simflags::with_flags(|f| f.csv_input.is_some());
     #[cfg(not(feature = "std"))]
     false
+}
+
+/// Reported by the driver, as C's `throwStreamPrint`.
+pub const DAE_MODE_NEEDS_IDA: &str = "The model was compiled with --daeMode, which works only with -s=ida or -s=auto.";
+
+fn dae_mode_needs_ida() -> &'static str {
+    omclog::debug(omclog::ASSERT, false, DAE_MODE_NEEDS_IDA);
+    DAE_MODE_NEEDS_IDA
 }
 
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
@@ -8742,6 +8816,8 @@ struct EventsDriver {
     /// Where a retried step ends, short of this row's grid point.
     pending_tout: Option<f64>,
     retry: StepRetry,
+    /// Set when an event step reached the last grid point.
+    terminal_at: Option<f64>,
 }
 
 impl SolverCore {
@@ -9937,6 +10013,18 @@ pub fn set_schedule_words(samp: Option<&mut Samples>, sync: Option<&mut crate::s
     true
 }
 
+/// Whether [`set_schedule_words`] takes `w`; changes nothing. Without the clocks
+/// (before initialization) only the layout is checked.
+pub fn schedule_words_fit(sync: Option<&crate::sync::Sync>, w: &[f64]) -> bool {
+    let Some((&n, rest)) = w.split_first() else {
+        return false;
+    };
+    let Some((&m, timers)) = rest.get(n as usize..).and_then(|r| r.split_first()) else {
+        return false;
+    };
+    m as usize == timers.len() && sync.map_or(timers.len() % 3 == 0, |s| s.timer_words_fit(timers))
+}
+
 /// Co-Simulation: the FMU owns the integration, the importer picks the
 /// communication points. Unlike [`EventsDriver`] there is no output grid and no
 /// rows. [`step_to`](CsDriver::step_to) takes a [`CsDefer`] saying which events it
@@ -9996,8 +10084,7 @@ pub enum CsStep {
 }
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
-/// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way. IDA's
+/// `fmi2Instantiate`, where CVODE logs its configuration to `LOG_SOLVER`. IDA's
 /// `ida_solver_initial` warns there when it changes the Jacobian method.
 pub fn log_cs_solver_setup(model: &SimModel) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
@@ -10016,15 +10103,12 @@ pub fn log_cs_solver_setup(model: &SimModel) {
     #[cfg(sundials)]
     {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        let mask = omclog::mask();
-        omclog::set_mask(mask | (1 << omclog::SOLVER));
         log_cvode_configuration(
             tol,
             true,
             crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
             cvode_jacobian_method(cvode_jac_a(model)),
         );
-        omclog::set_mask(mask);
     }
 }
 
@@ -10100,6 +10184,10 @@ impl CsDriver {
 
     pub fn set_schedule_words(&mut self, w: &[f64]) -> bool {
         set_schedule_words(Some(&mut self.samp), Some(&mut self.sync), w)
+    }
+
+    pub fn schedule_words_fit(&self, w: &[f64]) -> bool {
+        schedule_words_fit(Some(&self.sync), w)
     }
 
     /// A sample or clock is due at `time`: the event the master stopped on is a time event.
@@ -10615,7 +10703,18 @@ impl EventsDriver {
             finished: false,
             pending_tout: None,
             retry,
+            terminal_at: None,
         })
+    }
+
+    /// C's skip of an output point an event step reached. At the last point the
+    /// event was at `stop` up to rounding, so the run ends at `stop`.
+    fn skip_row(&mut self, n_steps: u32, stop: f64) {
+        self.row += 1;
+        if self.row > n_steps {
+            self.reached = stop;
+            self.terminal_at = Some(stop);
+        }
     }
 }
 
@@ -10647,8 +10746,7 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| if no_grid { stop } else { grid(row) };
-        // C ends on `currentTime >= stopTime`, not on a row count, so a last grid
-        // point left short of `stop` gets one more step at `grid(n_steps + 1)`.
+        // C ends on `currentTime >= stopTime`, not on a row count.
         let more = |row: u32, t: f64| {
             if no_grid || n_steps == 0 {
                 row < n_rows
@@ -10676,7 +10774,7 @@ impl Driver for EventsDriver {
             }
             while more(self.row, self.reached) {
                 if skip_grid(self.row, self.reached, self.did_event_step) {
-                    self.row += 1;
+                    self.skip_row(n_steps, stop);
                     continue;
                 }
                 if did_step && past_deadline(deadline) {
@@ -10897,7 +10995,7 @@ impl Driver for EventsDriver {
                 break Advance::Done;
             }
             if !self.mid_row && skip_grid(self.row, self.reached, self.did_event_step) {
-                self.row += 1;
+                self.skip_row(n_steps, stop);
                 continue;
             }
             if did_step && past_deadline(deadline) {
@@ -11042,6 +11140,10 @@ impl Driver for EventsDriver {
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
+    }
+
+    fn terminal_time(&self) -> Option<f64> {
+        self.terminal_at
     }
 }
 
@@ -12841,7 +12943,7 @@ fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, da
     }
     let mut u: Vec<f64> = offs.iter().map(|&o| read_f64(e, sim_data + o)).collect::<Result<_>>()?;
     let res_base = sim_data + layout.dae_res_off;
-    let mut residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
+    let residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
         for (&o, &v) in offs.iter().zip(u) {
             write_f64(e, sim_data + o, v)?;
         }

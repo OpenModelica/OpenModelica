@@ -22,7 +22,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples
 // true
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Examples.Filter_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.9, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.Filter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.9, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Blocks.Examples.Filter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""

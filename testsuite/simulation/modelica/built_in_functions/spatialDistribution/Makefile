@@ -18,6 +18,7 @@ TESTFILES = \
 	largePositionReversal.mos \
 	rampInput.mos \
 	standingStill.mos \
+	duplicateSpatialDistribution.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

@@ -4,7 +4,7 @@
 //! `jacobian_util.c`, `simulation_omc_assert.c`, `options.c`); the behaviour is
 //! the C one, so a model compiled against either runtime behaves the same.
 
-use core::ffi::{c_char, c_int, c_long, c_uint, c_void};
+use core::ffi::{c_char, c_int, c_uint, c_void};
 use core::ptr;
 
 use openmodelica_solvers::omclog;
@@ -166,7 +166,7 @@ pub(crate) fn error_raised(thread_data: *mut threadData_t) -> bool {
     !thread_data.is_null() && unsafe { omc_error_take(thread_data) } != 0
 }
 
-/// src/shim.c, which owns the two things Rust cannot express.
+// src/shim.c, which owns the two things Rust cannot express.
 unsafe extern "C" {
     fn omr_protected(
         thunk: unsafe extern "C" fn(*mut c_void),
@@ -573,10 +573,10 @@ unsafe extern "C" {
     static mut omc_showAllWarnings: c_int;
 }
 
-/// C's `setGlobalVerboseLevel`, which was in the replaced `libSimulationRuntimeC`:
-/// mirror the `-lv` selection onto the C side, so a `debugString(OMC_LOG_DT_CONS,
-/// ...)` in generated code prints exactly when `-lv=LOG_DT_CONS` was given. The two
-/// tables are the same list in the same order.
+// C's `setGlobalVerboseLevel`, which was in the replaced `libSimulationRuntimeC`:
+// mirror the `-lv` selection onto the C side, so a `debugString(OMC_LOG_DT_CONS,
+// ...)` in generated code prints exactly when `-lv=LOG_DT_CONS` was given. The two
+// tables are the same list in the same order.
 unsafe extern "C" {
     static mut messageFunction: MessageFn;
     static mut messageClose: unsafe extern "C" fn(c_int);

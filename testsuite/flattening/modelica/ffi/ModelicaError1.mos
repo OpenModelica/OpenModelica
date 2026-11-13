@@ -1,0 +1,20 @@
+// name:     ModelicaError1
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+// Checks that a ModelicaError in an external function is reported.
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ExternalC.ModelicaError1); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "Error: Not possible to open file \"ModelicaError1.missing\" for reading:
+// No such file or directory
+// [flattening/modelica/ffi/FFITest/package.mo:306:7-306:68:writable] Error: Failed to evaluate function: FFITest.ExternalC.countLines.
+// "
+// endResult

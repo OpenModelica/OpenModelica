@@ -38,7 +38,7 @@ val(m.i, {0.0, 1.0});
 // ""
 // record SimulationResult
 //     resultFile = "Test.Q_xxx_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test.Q_xxx', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Test.Q_xxx', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -50,7 +50,7 @@ val(m.i, {0.0, 1.0});
 // {1.0, 2.0}
 // record SimulationResult
 //     resultFile = "Test.Q_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test.Q', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iim=none -iif=Test.Q_xxx_res.mat -iit=1.0 -lv=LOG_INIT_V'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Test.Q', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iim=none -iif=Test.Q_xxx_res.mat -iit=1.0 -lv=LOG_INIT_V'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values

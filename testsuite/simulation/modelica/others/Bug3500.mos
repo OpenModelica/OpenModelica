@@ -57,7 +57,7 @@ val(revolute1.angle, 100);
 // ""
 // record SimulationResult
 //     resultFile = "FourBarLinkage_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'auto', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -66,7 +66,7 @@ val(revolute1.angle, 100);
 // 674.0417059832985
 // record SimulationResult
 //     resultFile = "FourBarLinkage_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-stepSize=0.02'",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-stepSize=0.02'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

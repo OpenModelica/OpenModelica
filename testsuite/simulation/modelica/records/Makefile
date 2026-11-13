@@ -12,6 +12,7 @@ RecordConstantInComponentArray.mos \
 RecordConstructor1.mos \
 RecordNested1.mos \
 RecordStructs.mos \
+RecordWhen1.mos \
 TestComplexSum1.mos \
 TestComplexSum2.mos \
 Ticket5134.mos \

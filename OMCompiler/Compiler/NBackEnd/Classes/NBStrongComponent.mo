@@ -630,7 +630,7 @@ public
     if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size
        and not solvesInsideReduction(eqn_ptr, cref_to_solve) then
       comp := RESIZABLE_COMPONENT(
-        var_cref  = subscriptConstantDimensions(cref_to_solve, var_slice),
+        var_cref  = subscriptConstantDimensions(cref_to_solve, var_slice, eqn_slice),
         var       = var_slice,
         eqn       = eqn_slice,
         order     = order,
@@ -1523,7 +1523,7 @@ public
         status    = NBSolve.Status.UNPROCESSED);
     else
       comp := SLICED_COMPONENT(
-        var_cref  = subscriptConstantDimensions(cref, var_slice),
+        var_cref  = subscriptConstantDimensions(cref, var_slice, eqn_slice),
         var       = var_slice,
         eqn       = eqn_slice,
         status    = NBSolve.Status.UNPROCESSED);
@@ -1532,9 +1532,11 @@ public
 
   function subscriptConstantDimensions
     "subscripts the non-scalar dimensions of the cref in which all elements of the variable slice
-    have the same index, e.g. x[$i1].y for the slice {x[1].y[2], x[2].y[2]} -> x[$i1].y[2]"
+    have the same index, e.g. x[$i1].y for the slice {x[1].y[2], x[2].y[2]} -> x[$i1].y[2].
+    only for for-equations, an array equation is solved for the whole cref"
     input output ComponentRef cref;
     input Slice<VariablePointer> var_slice;
+    input Slice<EquationPointer> eqn_slice;
   protected
     list<Subscript> subs, new_subs = {};
     list<Dimension> dims;
@@ -1543,7 +1545,7 @@ public
     Integer value;
     Boolean changed = false;
   algorithm
-    if listEmpty(var_slice.indices) then return; end if;
+    if listEmpty(var_slice.indices) or not Equation.isForEquation(Slice.getT(eqn_slice)) then return; end if;
     subs := ComponentRef.subscriptsAllWithWholeFlat(cref);
     dims := Type.arrayDims(Variable.typeOf(Pointer.access(Slice.getT(var_slice))));
     sizes := list(Dimension.size(dim, true) for dim in dims);

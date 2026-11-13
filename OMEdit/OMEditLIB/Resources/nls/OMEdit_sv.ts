@@ -8,7 +8,23 @@
         <translation>Om %1</translation>
     </message>
     <message>
-        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3 %4 encryption support&lt;/b&gt;&lt;br /&gt;%5&lt;br /&gt;Compiled with &lt;b&gt;Qt %7&lt;/b&gt;, running with &lt;b&gt;Qt %8&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%6&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
+        <source>Connected to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1 with encryption support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1 without encryption support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Compiled without 3D animation support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;%3&lt;/b&gt;&lt;br /&gt;%4&lt;br /&gt;Compiled with &lt;b&gt;Qt %5&lt;/b&gt;, running with &lt;b&gt;Qt %6&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%7&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -102,8 +118,8 @@
         <translation>System</translation>
     </message>
     <message>
-        <source>A model already have a system. Only one system is allowed inside a model.</source>
-        <translation>Modellen har redan ett system. Endast ett system är tillåtet i en modell.</translation>
+        <source>The model already has a root system. An SSP model can have only one root system.</source>
+        <translation>Modellen har redan ett rotsystem. En SSP-modell kan bara ha ett rotsystem.</translation>
     </message>
 </context>
 <context>
@@ -255,8 +271,12 @@
 <context>
     <name>BreakpointDialog</name>
     <message>
-        <source>%1 Breakpoint</source>
-        <translation>%1 brytpunkt</translation>
+        <source>Edit Breakpoint</source>
+        <translation>Redigera brytpunkt</translation>
+    </message>
+    <message>
+        <source>Add Breakpoint</source>
+        <translation>Lägg till brytpunkt</translation>
     </message>
     <message>
         <source>File Name:</source>
@@ -283,8 +303,8 @@
         <translation>Ignorera antal:</translation>
     </message>
     <message>
-        <source>* Use &quot;%1&quot; to set condition on simulation time.</source>
-        <translation>* Använd &quot;%1&quot; för att ange villkor på simuleringstiden.</translation>
+        <source>* In a condition, &quot;%1&quot; is the simulation time.</source>
+        <translation>* I ett villkor är &quot;%1&quot; simuleringstiden.</translation>
     </message>
     <message>
         <source>Select Class</source>
@@ -333,12 +353,12 @@
         <translation>Kompilatorargument:</translation>
     </message>
     <message>
-        <source>Processor:</source>
-        <translation>Processor:</translation>
+        <source>Java Executable:</source>
+        <translation>Java-program:</translation>
     </message>
     <message>
-        <source>Resets to default Processor path</source>
-        <translation>Återställer till standardsökvägen för processorn</translation>
+        <source>Resets to the default Java executable</source>
+        <translation>Återställer till standardprogrammet för Java</translation>
     </message>
     <message>
         <source>Modelica Library Paths:</source>
@@ -918,6 +938,10 @@ Den lokala kopian och dess synkroniseringsstatus tas bort. Ingenting i molnet p�
         <source>Commit Message </source>
         <translation>Commit-meddelande </translation>
     </message>
+    <message>
+        <source>Commit description:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ComponentNameDialog</name>
@@ -976,8 +1000,8 @@ Den lokala kopian och dess synkroniseringsstatus tas bort. Ingenting i molnet p�
         <translation>Skicka rapport</translation>
     </message>
     <message>
-        <source>Your Email (in case you want us to contact you regarding this issue):</source>
-        <translation>Din e-post (om du vill att vi ska kontakta dig angående detta problem):</translation>
+        <source>Your email (if we may contact you with questions about this issue):</source>
+        <translation>Din e-post (om vi får kontakta dig med frågor om detta problem):</translation>
     </message>
     <message>
         <source>Describe the issue in few words:</source>
@@ -1044,6 +1068,10 @@ Den lokala kopian och dess synkroniseringsstatus tas bort. Ingenting i molnet p�
     <message>
         <source>System</source>
         <translation>System</translation>
+    </message>
+    <message>
+        <source>A top-level class named &lt;b&gt;%1&lt;/b&gt; already exists.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1406,6 +1434,10 @@ Välj de modeller för vilka du vill kasta de lokala översättningsflaggorna oc
         <translation>Bakgrundsfärg</translation>
     </message>
     <message>
+        <source>Change the background color of your text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Align Left</source>
         <translation>Vänsterjustera</translation>
     </message>
@@ -1516,6 +1548,10 @@ Välj de modeller för vilka du vill kasta de lokala översättningsflaggorna oc
     <message>
         <source>The model instance for %1 is not available; the documentation changes were not saved.</source>
         <translation>Modellinstansen för %1 är inte tillgänglig; ändringarna i dokumentationen sparades inte.</translation>
+    </message>
+    <message>
+        <source>URL:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1964,7 +2000,7 @@ Om ingen plattform är vald exporteras FMU:n som FMI 3.0 (fmi-ls-wasm).</transla
         <translation>Genererar cmake-målfiler för %1. Vänta en stund.</translation>
     </message>
     <message>
-        <source>Generated cmake target files failed. Exited with code %1.</source>
+        <source>Generating the cmake target files failed with exit code %1.</source>
         <translation>Genereringen av cmake-målfiler misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
@@ -2076,10 +2112,6 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
         <translation>&lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; existerar redan i &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>The file &lt;b&gt;%1&lt;/b&gt; not found.</source>
-        <translation>Filen &lt;b&gt;%1&lt;/b&gt; kunde inte hittas.</translation>
-    </message>
-    <message>
         <source>Cannot move FMU to &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Kan inte flytta FMU:n till &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -2128,6 +2160,10 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
         <translation>Kunde inte öppna filen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <source>The file &lt;b&gt;%1&lt;/b&gt; was not found.</source>
+        <translation>Filen &lt;b&gt;%1&lt;/b&gt; kunde inte hittas.</translation>
+    </message>
+    <message>
         <source>Error opening the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
         <translation>Fel vid öppning av filen &lt;b&gt;%1&lt;/b&gt;. %2</translation>
     </message>
@@ -2156,8 +2192,16 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
         <translation>En komponent med namn &lt;b&gt;%1&lt;/b&gt; existerar redan. Namnet är ändrat från &lt;b&gt;%1&lt;/b&gt; till &lt;b&gt;%2&lt;/b&gt;. &lt;br /&gt;&lt;br /&gt;Detta är förmodligen fel eftersom komponenten är deklarerad som &lt;b&gt;inner&lt;/b&gt;.</translation>
     </message>
     <message>
+        <source>The Figaro file is generated.</source>
+        <translation>Figaro-filen har genererats.</translation>
+    </message>
+    <message>
         <source>The encrypted package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Det krypterade paketet har genererats i &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>En debug-konfiguration med namnet &lt;b&gt;%1&lt;/b&gt; existerar redan. Ett fel inträffade när debug-konfigurationen &lt;b&gt;%2&lt;/b&gt; sparades.</translation>
     </message>
     <message>
         <source>Unable to find component %1 while parsing %2 in %3.</source>
@@ -2192,10 +2236,6 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
         <translation>Biblioteksindexfilen &lt;b&gt;%1&lt;/b&gt; finns inte.</translation>
     </message>
     <message>
-        <source>The FIGARO is generated.</source>
-        <translation>FIGARO har genererats.</translation>
-    </message>
-    <message>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be unloaded.</source>
         <translation>Är du säker på att du vill ladda ur &lt;b&gt;%1&lt;/b&gt;? Allt innehåll i klassen kommer också att laddas ur.</translation>
     </message>
@@ -2218,10 +2258,6 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
     <message>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
         <translation>Inget terminalkommando är angivet. Du kan ange ett terminalkommando i &lt;b&gt;%1-&gt;Allmänt-&gt;Terminalkommando&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;b&gt;.</source>
-        <translation>En debug-konfiguration med namnet &lt;b&gt;%1&lt;/b&gt; existerar redan. Ett fel inträffade när debug-konfigurationen &lt;b&gt;%2&lt;/b&gt; sparades.</translation>
     </message>
     <message>
         <source>The FMU is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2545,7 +2581,7 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
         <translation>Standardvy</translation>
     </message>
     <message>
-        <source>This settings will be used when no preferredView annotation is defined.</source>
+        <source>This setting is used when no preferredView annotation is defined.</source>
         <translation>Den här inställningen används när det inte finns någon preferredView-annotering.</translation>
     </message>
     <message>
@@ -3053,12 +3089,12 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Instansiera/platta ut Modelicaklassen</translation>
     </message>
     <message>
-        <source>Exports the model as Functional Mockup Unit (FMU)</source>
-        <translation>Exporterar modellen som en Functional Mockup Unit (FMU)</translation>
+        <source>Exports the package as a read-only package</source>
+        <translation>Exporterar paketet som ett skrivskyddat paket</translation>
     </message>
     <message>
-        <source>Imports the model from Functional Mockup Interface (FMU)</source>
-        <translation>Importerar modellen från en Functional Mockup Interface (FMU)</translation>
+        <source>Exports the package as an encrypted package</source>
+        <translation>Exporterar paketet som ett krypterat paket</translation>
     </message>
     <message>
         <source>Exports the model as XML</source>
@@ -3185,10 +3221,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Översätt som</translation>
     </message>
     <message>
-        <source>Translates As the CRML model to Modelica</source>
-        <translation>Översätter CRML-modellen till en ny Modelicaklass</translation>
-    </message>
-    <message>
         <source>Run</source>
         <translation>Kör</translation>
     </message>
@@ -3241,10 +3273,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Rotation:</translation>
     </message>
     <message>
-        <source>Bezier</source>
-        <translation>Bezier</translation>
-    </message>
-    <message>
         <source>Start Arrow:</source>
         <translation>Startpil:</translation>
     </message>
@@ -3273,6 +3301,10 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Filtrera element</translation>
     </message>
     <message>
+        <source>Committing modified files to the repository</source>
+        <translation>Committar ändrade filer till repositoryt</translation>
+    </message>
+    <message>
         <source>Report Issue</source>
         <translation>Rapportera problem</translation>
     </message>
@@ -3283,6 +3315,14 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
     <message>
         <source>Version:</source>
         <translation>Version:</translation>
+    </message>
+    <message>
+        <source>Adds the system, e.g. FMI or TLM</source>
+        <translation>Lägger till ett system, t.ex. FMI eller TLM</translation>
+    </message>
+    <message>
+        <source>Adds the submodel, e.g. FMU or table</source>
+        <translation>Lägger till en delmodell, t.ex. FMU eller tabell</translation>
     </message>
     <message>
         <source>Replace SubModel</source>
@@ -3385,16 +3425,8 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Skrivskyddat paket</translation>
     </message>
     <message>
-        <source>Exports the package as read-only package</source>
-        <translation>Exporterar paketet som ett skrivskyddat paket</translation>
-    </message>
-    <message>
         <source>Encrypted Package</source>
         <translation>Krypterat paket</translation>
-    </message>
-    <message>
-        <source>Exports the package as Encrytped package</source>
-        <translation>Exporterar paketet som ett krypterat paket</translation>
     </message>
     <message>
         <source>XML</source>
@@ -3533,6 +3565,22 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Ladda om</translation>
     </message>
     <message>
+        <source>Exports the model as Functional Mock-up Unit (FMU)</source>
+        <translation>Exporterar modellen som en Functional Mock-up Unit (FMU)</translation>
+    </message>
+    <message>
+        <source>Imports the model from a Functional Mock-up Unit (FMU)</source>
+        <translation>Importerar modellen från en Functional Mock-up Unit (FMU)</translation>
+    </message>
+    <message>
+        <source>Translates the CRML model to Modelica with options</source>
+        <translation>Översätter CRML-modellen till en ny Modelicaklass</translation>
+    </message>
+    <message>
+        <source>Bézier</source>
+        <translation>Bézier</translation>
+    </message>
+    <message>
         <source>Index</source>
         <translation>Index</translation>
     </message>
@@ -3611,10 +3659,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
     <message>
         <source>Commit</source>
         <translation>Committa</translation>
-    </message>
-    <message>
-        <source>Commiting modified files to the repository</source>
-        <translation>Committar ändrade filer till repositoryt</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -3729,16 +3773,8 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>SSP-modell</translation>
     </message>
     <message>
-        <source>Adds the System i.e., FMI or TLM</source>
-        <translation>Lägger till ett system, dvs. FMI eller TLM</translation>
-    </message>
-    <message>
         <source>Add SubModel</source>
         <translation>Lägg till delmodell</translation>
-    </message>
-    <message>
-        <source>Adds the SubModel i.e., FMU or Table</source>
-        <translation>Lägger till en delmodell, dvs. FMU eller tabell</translation>
     </message>
     <message>
         <source>Add Connector</source>
@@ -3775,14 +3811,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
     <message>
         <source>Condition:</source>
         <translation>Villkor:</translation>
-    </message>
-    <message>
-        <source>Immediate</source>
-        <translation>Immediate</translation>
-    </message>
-    <message>
-        <source>Synchronize</source>
-        <translation>Synchronize</translation>
     </message>
     <message>
         <source>Priority:</source>
@@ -4094,6 +4122,37 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
     <message>
         <source>The library &lt;b&gt;%1&lt;/b&gt; is not installed. See message browser for any possible messages.</source>
         <translation>Biblioteket &lt;b&gt;%1&lt;/b&gt; installerades inte. Se fönstret Meddelanden för eventuella meddelanden.</translation>
+    </message>
+</context>
+<context>
+    <name>InstallLibraryFromPathDialog</name>
+    <message>
+        <source>Install these packages of &lt;b&gt;%1&lt;/b&gt;:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An installed library is read-only. To change a library, open it with %1 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Installing the packages. Please wait.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not contain exactly one top-level class, so it is not a package to install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (replaces the installed %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not install %1. See message browser for any possible messages.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4455,8 +4514,28 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Uppdatera bindningar</translation>
     </message>
     <message>
-        <source>updates the bindings</source>
+        <source>Updates the bindings</source>
         <translation>Uppdaterar bindningarna</translation>
+    </message>
+    <message>
+        <source>Version: %1</source>
+        <translation>Version: %1</translation>
+    </message>
+    <message>
+        <source>Version Date: %1</source>
+        <translation>Versionsdatum: %1</translation>
+    </message>
+    <message>
+        <source>Version Build: %1</source>
+        <translation>Versionsbygge: %1</translation>
+    </message>
+    <message>
+        <source>Date Modified: %1</source>
+        <translation>Senast ändrad: %1</translation>
+    </message>
+    <message>
+        <source>Revision ID: %1</source>
+        <translation>RevisionId: %1</translation>
     </message>
     <message>
         <source>Generate Verification Scenarios</source>
@@ -4477,26 +4556,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     <message>
         <source>Deletes the Modelica class</source>
         <translation>Tar bort Modelicaklassen</translation>
-    </message>
-    <message>
-        <source>Version : %1</source>
-        <translation>Version: %1</translation>
-    </message>
-    <message>
-        <source>Version Date : %1</source>
-        <translation>Versionsdatum: %1</translation>
-    </message>
-    <message>
-        <source>Version Build : %1</source>
-        <translation>Versionsbygge: %1</translation>
-    </message>
-    <message>
-        <source>Date Modified : %1</source>
-        <translation>Senast ändrad: %1</translation>
-    </message>
-    <message>
-        <source>RevisionId : %1</source>
-        <translation>RevisionId: %1</translation>
     </message>
     <message>
         <source>Calibrate...</source>
@@ -4522,7 +4581,7 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Kunde inte spara filen, okänd bibliotekstyp.</translation>
     </message>
     <message>
-        <source>It is not possible to save as a Modelica package saved in a directory hierarchy Mapping.</source>
+        <source>Save As is not possible for a Modelica package that is saved as a directory hierarchy.</source>
         <translation>Det går inte att använda Spara som för ett Modelicapaket som är sparat i en kataloghierarki.</translation>
     </message>
     <message>
@@ -4598,12 +4657,12 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Välj commit</translation>
     </message>
     <message>
-        <source>Sha1</source>
-        <translation>Sha1</translation>
-    </message>
-    <message>
         <source>Subject</source>
         <translation>Ämne</translation>
+    </message>
+    <message>
+        <source>SHA-1</source>
+        <translation>SHA-1</translation>
     </message>
     <message>
         <source>Ok</source>
@@ -4880,10 +4939,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Dokumentation</translation>
     </message>
     <message>
-        <source>FMU_EXPORT Failed</source>
-        <translation>FMU-exporten misslyckades</translation>
-    </message>
-    <message>
         <source>Translating model %1 as FMU</source>
         <translation>Översätter modellen %1 som FMU</translation>
     </message>
@@ -4902,6 +4957,14 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     <message>
         <source>exporting to OMNotebook</source>
         <translation>export till OMNotebook</translation>
+    </message>
+    <message>
+        <source>There is no package to install in &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modelica Packages (*.mo *.zip)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Updating library index</source>
@@ -4926,10 +4989,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     <message>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
         <translation>Kunde inte köra terminalkommandot &lt;b&gt;%1&lt;/b&gt; med argumenten &lt;b&gt;%2&lt;/b&gt;. Processen misslyckades med felet &lt;b&gt;%3&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>OMSens is not supported on MacOS</source>
-        <translation>OMSens stöds inte i macOS</translation>
     </message>
     <message>
         <source>Failed to load OMSens plugin. %1</source>
@@ -5000,10 +5059,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>FMU-modellbeskrivning</translation>
     </message>
     <message>
-        <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
-        <translation>Importerar modellen från en FMU-modellbeskrivning</translation>
-    </message>
-    <message>
         <source>From OMNotebook</source>
         <translation>Från OMNotebook</translation>
     </message>
@@ -5030,6 +5085,22 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     <message>
         <source>Opens the install library window</source>
         <translation>Öppnar fönstret för att installera bibliotek</translation>
+    </message>
+    <message>
+        <source>Install Library From File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a .mo or .zip file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install Library From Directory...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a directory</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Upgrades the installed libraries</source>
@@ -5122,10 +5193,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     <message>
         <source>Instantiate Model</source>
         <translation>Instansiera modell</translation>
-    </message>
-    <message>
-        <source>Instantiates the modelica model</source>
-        <translation>Instansierar Modelicamodellen</translation>
     </message>
     <message>
         <source>Shows the list of archived simulations</source>
@@ -5372,12 +5439,12 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>SSP</translation>
     </message>
     <message>
-        <source>&amp;Git</source>
-        <translation>&amp;Git</translation>
+        <source>No active simulation output window. Please select a simulation output window for the re-simulation.</source>
+        <translation>Inget fönster för simuleringsutmatning är aktivt. Välj ett fönster för simuleringsutmatning för omsimulering.</translation>
     </message>
     <message>
-        <source>TraceabilityMenu</source>
-        <translation type="unfinished"></translation>
+        <source>&amp;Git</source>
+        <translation>&amp;Git</translation>
     </message>
     <message>
         <source>Traceability</source>
@@ -5524,6 +5591,10 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Är du säker på att du vill rensa listan över senaste modeller?</translation>
     </message>
     <message>
+        <source>OMSens is not supported on macOS</source>
+        <translation>OMSens stöds inte i macOS</translation>
+    </message>
+    <message>
         <source>Loads the compiled model</source>
         <translation>Laddar in den kompilerade modellen</translation>
     </message>
@@ -5544,16 +5615,20 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Sparar den aktiva klassen i Google Drive eller OneDrive</translation>
     </message>
     <message>
+        <source>Imports the model from the model description of a Functional Mock-up Unit (FMU)</source>
+        <translation>Importerar modellen från en FMU-modellbeskrivning</translation>
+    </message>
+    <message>
         <source>Clears the recent models list</source>
         <translation>Rensar listan över senaste modeller</translation>
     </message>
     <message>
-        <source>Recent &amp;Models</source>
-        <translation>Senaste &amp;modeller</translation>
+        <source>Instantiates the Modelica model</source>
+        <translation>Instansierar Modelicamodellen</translation>
     </message>
     <message>
-        <source>No active simulation output window. Please select a simulation output window for re-simulate.</source>
-        <translation>Inget fönster för simuleringsutmatning är aktivt. Välj ett fönster för simuleringsutmatning för omsimulering.</translation>
+        <source>Recent &amp;Models</source>
+        <translation>Senaste &amp;modeller</translation>
     </message>
     <message>
         <source>Open a Modelica class first; it is the active class that gets saved.</source>
@@ -5649,16 +5724,16 @@ Vill du fortsätta?</numerusform>
         <translation>Töm den här fliken</translation>
     </message>
     <message>
-        <source>clears the messages from this tab</source>
+        <source>Clears the messages from this tab</source>
         <translation>Tömmer meddelandena i den här fliken</translation>
+    </message>
+    <message>
+        <source>Clears the messages from all tabs</source>
+        <translation>Tömmer meddelandena i alla flikar</translation>
     </message>
     <message>
         <source>Clear All Tabs</source>
         <translation>Töm alla flikar</translation>
-    </message>
-    <message>
-        <source>clears the messages from all tabs</source>
-        <translation>Tömmer meddelandena i alla flikar</translation>
     </message>
 </context>
 <context>
@@ -6616,10 +6691,6 @@ Ange vilken Python-tolk som har omuq installerat i Verktyg &gt; Alternativ &gt; 
 <context>
     <name>PlotWindowContainer</name>
     <message>
-        <source>Interactive Plot : %1</source>
-        <translation>Interaktivt diagram: %1</translation>
-    </message>
-    <message>
         <source>Name Plot Tab</source>
         <translation>Namnge diagramflik</translation>
     </message>
@@ -6662,6 +6733,10 @@ Ange vilken Python-tolk som har omuq installerat i Verktyg &gt; Alternativ &gt; 
     <message>
         <source>Select a plot window before saving a figure in a model.</source>
         <translation>Välj ett diagramfönster innan du sparar en figur i en modell.</translation>
+    </message>
+    <message>
+        <source>Interactive Plot: %1</source>
+        <translation>Interaktivt diagram: %1</translation>
     </message>
     <message>
         <source>There are no curves to save in the model annotation.</source>
@@ -7079,10 +7154,6 @@ Ange värdet 0 om du inte vill ha någon fördröjning.</translation>
         <translation>dryRun = true ersätter inte delmodellen utan visar listan med varningar, och dryRun = false ersätter delmodellen</translation>
     </message>
     <message>
-        <source>ReplaceSubModel</source>
-        <translation>ReplaceSubModel</translation>
-    </message>
-    <message>
         <source>Unable to find the SubModel file.</source>
         <translation>Kunde inte hitta delmodellsfilen.</translation>
     </message>
@@ -7093,6 +7164,10 @@ Ange värdet 0 om du inte vill ha någon fördröjning.</translation>
     <message>
         <source>The submodel was not replaced (dryRun = true). The following changes were detected in the replacing submodel. See the Messages Browser for details.</source>
         <translation>Delmodellen ersattes inte (dryRun = true). Följande ändringar upptäcktes i den ersättande delmodellen. Se fönstret Meddelanden för detaljer.</translation>
+    </message>
+    <message>
+        <source>SubModel file</source>
+        <translation>delmodellsfil</translation>
     </message>
     <message>
         <source>The submodel was replaced (dryRun =false). The following changes were detected and applied. See the Messages Browser for details.</source>
@@ -7225,7 +7300,7 @@ Ange värdet 0 om du inte vill ha någon fördröjning.</translation>
         <translation>Rensa alla</translation>
     </message>
     <message>
-        <source>clears all the result</source>
+        <source>Clears all the results</source>
         <translation>Rensar alla resultat</translation>
     </message>
     <message>
@@ -7701,6 +7776,10 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
         <translation>Simuleringsprocessen misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
+        <source>URL is &lt;b&gt;%1&lt;/b&gt;</source>
+        <translation>URL: &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
         <source>Simulation of %1 finished.</source>
         <translation>Simuleringen av %1 är klar.</translation>
     </message>
@@ -7741,10 +7820,6 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
 </source>
         <translation>Kompileringen avslutades utan fel.
 </translation>
-    </message>
-    <message>
-        <source>Url is &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation>URL: &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Running simulation of %1.</source>
@@ -7818,7 +7893,7 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
         <translation>Spara klass före simulering</translation>
     </message>
     <message>
-        <source>Disabling this will effect the debugger functionality.</source>
+        <source>Disabling this will affect the debugger functionality.</source>
         <translation>Om du inaktiverar detta påverkas debuggerns funktion.</translation>
     </message>
     <message>
@@ -7861,7 +7936,7 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
 <context>
     <name>SolverSettingsDialog</name>
     <message>
-        <source>SolverSettings - %1 (%2)</source>
+        <source>Solver Settings - %1 (%2)</source>
         <translation>Lösarinställningar - %1 (%2)</translation>
     </message>
     <message>
@@ -8145,7 +8220,7 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
         <translation>Git-repository:</translation>
     </message>
     <message>
-        <source>Traceability Daemon IP Adress:</source>
+        <source>Traceability Daemon IP Address:</source>
         <translation>IP-adress för spårbarhetsdemonen:</translation>
     </message>
     <message>
@@ -8531,7 +8606,7 @@ Variabilitet: %4</translation>
         <translation>Systembibliotek</translation>
     </message>
     <message>
-        <source>Sorry, no internet no news items.</source>
+        <source>No news without an internet connection.</source>
         <translation>Ingen internetanslutning, så inga nyheter kan visas.</translation>
     </message>
     <message>

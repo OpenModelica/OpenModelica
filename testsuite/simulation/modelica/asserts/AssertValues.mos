@@ -29,7 +29,7 @@ simulate(AssertValues); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AssertValues', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AssertValues', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: AssertValues
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [<interactive>:14:3-14:84:writable]

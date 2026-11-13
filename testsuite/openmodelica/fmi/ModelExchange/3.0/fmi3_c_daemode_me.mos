@@ -85,7 +85,7 @@ system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEn
 // ""
 // record SimulationResult
 //     resultFile = "fmi3_c_daemode_me_ref_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi3_c_daemode_me_ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'fmi3_c_daemode_me_ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -109,7 +109,7 @@ system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEn
 // ""
 // record SimulationResult
 //     resultFile = "fmi3_c_daemode_me_event_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi3_c_daemode_me_event', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'fmi3_c_daemode_me_event', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

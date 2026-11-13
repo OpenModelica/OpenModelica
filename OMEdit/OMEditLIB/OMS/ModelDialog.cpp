@@ -144,8 +144,7 @@ void CreateModelDialog::createNewModel()
     LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
         QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                              GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
-                                  .arg(tr("Model"), mpNameTextBox->text(), "in scope"), QMessageBox::Ok);
+                              tr("A top-level class named <b>%1</b> already exists.").arg(mpNameTextBox->text()), QMessageBox::Ok);
         return;
     }
   }
@@ -229,7 +228,7 @@ void AddSystemDialog::addSystem()
   // Check if Model already have the system
   if (pParentLibraryTreeItem->isTopLevel() && pParentLibraryTreeItem->childrenSize() > 0) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("A model already have a system. Only one system is allowed inside a model."), QMessageBox::Ok);
+                          tr("The model already has a root system. An SSP model can have only one root system."), QMessageBox::Ok);
     return;
   }
   // Check if system already exists
@@ -496,7 +495,7 @@ void ReplaceSubModelDialog::browseSubModelPath()
 void ReplaceSubModelDialog::replaceSubModel()
 {
   if (mpPathTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("ReplaceSubModel")), QMessageBox::Ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("SubModel file")), QMessageBox::Ok);
     return;
   }
 

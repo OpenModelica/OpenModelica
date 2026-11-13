@@ -423,6 +423,15 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   solverInfo->didEventStep = 1;
 }
 
+/* The last output point is stopTime, which the grid formula can round below. */
+static double outputPointTime(SIMULATION_INFO* simInfo, unsigned int stepNo)
+{
+  if (simInfo->useStopTime && (modelica_integer) stepNo >= simInfo->numSteps) {
+    return simInfo->stopTime;
+  }
+  return (double)(stepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime;
+}
+
 static void saveIntegratorStats(SOLVER_INFO* solverInfo)
 {
   if (!(omc_flag[FLAG_NO_RESTART] && (solverInfo->solverMethod==S_DASSL || solverInfo->solverMethod==S_GBODE)) && solverInfo->didEventStep)
@@ -583,7 +592,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
             {
               do {
                 __currStepNo++;
-                solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+                solverInfo->currentStepSize = outputPointTime(simInfo, __currStepNo) - solverInfo->currentTime;
               } while(solverInfo->currentStepSize <= 0);
             }
           } else {
@@ -604,7 +613,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
             break;
           }
         } else {
-          solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+          solverInfo->currentStepSize = outputPointTime(simInfo, __currStepNo) - solverInfo->currentTime;
         }
 
         solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -629,6 +638,11 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
           continueSimulationData(data);
+          if (simInfo->useStopTime && (modelica_integer) __currStepNo > simInfo->numSteps) {
+            /* the event was at stopTime up to rounding */
+            solverInfo->currentTime = simInfo->stopTime;
+            data->localData[0]->timeValue = simInfo->stopTime;
+          }
           continue;
         }
 

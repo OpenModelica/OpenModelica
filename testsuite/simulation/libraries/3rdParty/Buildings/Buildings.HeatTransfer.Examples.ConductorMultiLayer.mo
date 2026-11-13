@@ -162,6 +162,7 @@ package Modelica
   package Constants
     extends Modelica.Icons.Package;
     final constant Real pi = 2 * Math.asin(1.0);
+    final constant Real eps=ModelicaServices.Machine.eps;
     final constant Real small = ModelicaServices.Machine.small;
     final constant .Modelica.SIunits.Velocity c = 299792458;
     final constant Real mue_0(final unit = "N/A2") = 4 * pi * 1.e-7;
@@ -259,7 +260,7 @@ package Buildings
       extends Modelica.Icons.VariantsPackage;
 
       model SingleLayer
-        extends Buildings.HeatTransfer.Conduction.BaseClasses.PartialConductor(final R = if material.R == 0 then material.x / material.k / A else material.R / A);
+        extends Buildings.HeatTransfer.Conduction.BaseClasses.PartialConductor(final R = if material.R < Modelica.Constants.eps then material.x / material.k / A else material.R / A);
         Modelica.SIunits.Temperature[nSta] T(start = array(T_a_start + (T_b_start - T_a_start) * UA * sum(1 / (if k == 1 or k == nSta + 1 then UAnSta2 else UAnSta) for k in 1:i) for i in 1:nSta), each nominal = 300);
         Modelica.SIunits.HeatFlowRate[nSta + 1] Q_flow;
         Modelica.SIunits.SpecificInternalEnergy[nSta] u(start = material.c * array(T_a_start + (T_b_start - T_a_start) * UA * sum(1 / (if k == 1 or k == nSta + 1 then UAnSta2 else UAnSta) for k in 1:i) for i in 1:nSta), each nominal = 270000);

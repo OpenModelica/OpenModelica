@@ -10,7 +10,7 @@ simulate(CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif); getError
 // ""
 // record SimulationResult
 //     resultFile = "CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 14.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 14.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
