@@ -27,12 +27,12 @@ simulate(Test3); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) y = 3.0 + time; ($RES_SIM_1)
+// 	Constant/Parameter/Input Binding: [SCAL] (1) y = 3.0 + time; ($RES_SIM_1)
 // 	###<No Set Equations>
 //
 // Alias Set 2:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
@@ -43,7 +43,7 @@ simulate(Test3); getErrorString();
 //     messages = "Failed to build model: Test3"
 // end SimulationResult;
 // "Error: Internal error NBAlias.stateSelectAlways failed because multiple variables have StateSelect = always!
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)

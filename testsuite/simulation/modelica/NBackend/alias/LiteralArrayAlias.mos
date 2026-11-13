@@ -36,12 +36,12 @@ val(x[3], 1);
 //
 // Alias Set 1:
 // **************
-// 	Constant/Parameter Binding: [ARRY] (3) a = k*{0.0, 1.0, -1.0}; ($RES_SIM_0)
+// 	Constant/Parameter/Input Binding: [ARRY] (3) a = k*{0.0, 1.0, -1.0}; ($RES_SIM_0)
 // 	###<No Set Equations>
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [ARRY] (3) b = -c; ($RES_SIM_2)
+// 	Constant/Parameter/Input Binding: [ARRY] (3) b = -c; ($RES_SIM_2)
 // 	###<No Set Equations>
 //
 // [dumprepl] Constant Replacements:

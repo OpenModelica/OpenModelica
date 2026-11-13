@@ -26,7 +26,7 @@ simulate(ArrayAlias1); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[ARRY] (2) a = b; ($RES_SIM_2)
 //

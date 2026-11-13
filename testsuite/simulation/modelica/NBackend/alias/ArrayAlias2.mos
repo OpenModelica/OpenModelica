@@ -25,7 +25,7 @@ simulate(ArrayAlias2); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[ARRY] (2) a = b; ($RES_SIM_1)
 //
@@ -71,7 +71,7 @@ simulate(ArrayAlias2); getErrorString();
 // "
 // end SimulationResult;
 // "Warning: NBAlias.checkNominalThresholdSingle: The quotient of the greatest and lowest nominal value is greater than the nominal threshold = 1000.0.
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[ARRY] (2) a = b; ($RES_SIM_1)
 //
