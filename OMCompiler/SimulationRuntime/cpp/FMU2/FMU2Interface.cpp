@@ -115,6 +115,8 @@ extern "C"
   void fmi2FreeInstance(fmi2Component c)
   {
     FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    if (w == NULL)
+      return;  // FMI 2.0: the call is ignored for a null pointer
     LOG_CALL(w, "fmi2FreeInstance");
     delete w;
   }

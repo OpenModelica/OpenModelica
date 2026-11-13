@@ -14,7 +14,7 @@ getErrorString(); // simulation failed, check error string.
 // true
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'HeatTank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-5, method = 'auto', fileNamePrefix = 'HeatTank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: HeatTank"
 // end SimulationResult;
 // "[simulation/modelica/connectors/HeatTank.mo:18:3-18:27:writable] Warning: Connector inlet is not balanced: The number of potential variables (2) is not equal to the number of flow variables (1).

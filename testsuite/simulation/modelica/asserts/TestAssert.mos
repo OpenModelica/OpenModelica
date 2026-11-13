@@ -73,7 +73,7 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "TestAssert.TestWarningConstant_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestWarningConstant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'TestAssert.TestWarningConstant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_ASSERT        | warning | [<interactive>:7:5-7:76:writable]
 // |                 | |       | The following assertion has been violated during initialization at time 0.000000
 // |                 | |       | ((false)) --> \"Variable x is probably too big\"
@@ -88,7 +88,7 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "TestAssert.TestWarningVariable_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestWarningVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'TestAssert.TestWarningVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [<interactive>:7:5-7:76:writable]
 // |                 | |       | The following assertion has been violated at time 0.834000
@@ -99,7 +99,7 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "TestAssert.TestWarningRecurring_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestWarningRecurring', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'TestAssert.TestWarningRecurring', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [<interactive>:7:5-7:76:writable]
 // |                 | |       | The following assertion has been violated at time 0.158000
@@ -110,7 +110,7 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestErrorConstant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'TestAssert.TestErrorConstant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: TestAssert.TestErrorConstant
 // LOG_ASSERT        | error   | [<interactive>:6:5-6:44:writable]
 // |                 | |       | The following assertion has been violated during initialization at time 0.000000
@@ -121,7 +121,7 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestErrorVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'TestAssert.TestErrorVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: TestAssert.TestErrorVariable
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [<interactive>:7:5-7:76:writable]

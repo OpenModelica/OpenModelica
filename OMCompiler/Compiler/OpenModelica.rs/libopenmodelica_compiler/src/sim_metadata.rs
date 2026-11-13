@@ -223,7 +223,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Enable scaling of the IDA solver.".as_ptr(),
     c"  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.".as_ptr(),
     c"  Emits also variables with HideResult=true annotation.".as_ptr(),
-    c"  Value specifies an external file for the initialization of the model.".as_ptr(),
+    c"  Value specifies an external file for the initialization of the model.\x0a  It can be a result file in any format the simulation writes (.mat, .csv, .plt or .arrow), selected by its suffix.".as_ptr(),
     c"  Value specifies the initialization method.\x0a  Following options are available: 'symbolic' (default) and 'none'.".as_ptr(),
     c"  Value [Real] specifies a time for the initialization of the model.".as_ptr(),
     c"  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\x0a  The value is an Integer with default value 3.".as_ptr(),
@@ -342,8 +342,9 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_NAME: CStrTable<14> = CStrTable([
+pub static SOLVER_METHOD_NAME: CStrTable<15> = CStrTable([
     c"unknown".as_ptr(),
+    c"auto".as_ptr(),
     c"dassl".as_ptr(),
     c"ida".as_ptr(),
     c"cvode".as_ptr(),
@@ -360,18 +361,19 @@ pub static SOLVER_METHOD_NAME: CStrTable<14> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_DESC: CStrTable<14> = CStrTable([
+pub static SOLVER_METHOD_DESC: CStrTable<15> = CStrTable([
     c"unknown".as_ptr(),
-    c"dassl (default) - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location".as_ptr(),
+    c"auto (default) - chooses the method from the model: ida for a model compiled with --daeMode, otherwise dassl".as_ptr(),
+    c"dassl - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location".as_ptr(),
     c"ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity".as_ptr(),
     c"cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration".as_ptr(),
     c"gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls".as_ptr(),
     c"euler - explicit Euler, fixed step size, order 1".as_ptr(),
-    c"rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta -gbctrl=const - explicit, fixed step, order 4".as_ptr(),
-    c"heun - shorthand for gbode with -gbm=heun -gbctrl=const".as_ptr(),
-    c"impeuler - shorthand for gbode with -gbm=impl_euler -gbctrl=const".as_ptr(),
-    c"trapezoid - shorthand for gbode with -gbm=trapezoid -gbctrl=const".as_ptr(),
-    c"imprungekutta - shorthand for gbode with -gbm=radauIA2 -gbctrl=const".as_ptr(),
+    c"rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta - explicit, order 4".as_ptr(),
+    c"heun - shorthand for gbode with -gbm=heun".as_ptr(),
+    c"impeuler - shorthand for gbode with -gbm=impl_euler".as_ptr(),
+    c"trapezoid - shorthand for gbode with -gbm=trapezoid".as_ptr(),
+    c"imprungekutta - shorthand for gbode with -gbm=radauIA2".as_ptr(),
     c"irksco - shorthand for gbode with -gbm=trapezoid".as_ptr(),
     c"rungekuttassc - shorthand for gbode with -gbm=rungekuttaSsc".as_ptr(),
     c"optimization - Special solver for dynamic optimization".as_ptr(),

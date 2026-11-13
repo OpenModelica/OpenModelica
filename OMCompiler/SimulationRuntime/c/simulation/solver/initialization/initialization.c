@@ -39,7 +39,7 @@
 #include "../../arrayIndex.h"
 #include "../model_help.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
-#include "../../../util/read_matlab4.h"
+#include "omc_result.h"
 #endif
 #include "../events.h"
 #include "../stateset.h"
@@ -561,25 +561,27 @@ enum import_type { IMPORT_REAL, IMPORT_INTEGER, IMPORT_BOOLEAN };
 #define IMPORT_NAME_LENGTH 4096
 
 /**
- * @brief Find variable in initialization file.
+ * @brief Read value of variable from initialization file.
  *
  * Also tries the Dymola naming of derivatives.
  *
  * @param reader      Reader of initialization file.
  * @param name        Name of scalar variable.
- * @return ModelicaMatVariable_t*  Variable or NULL if not found.
+ * @param time        Time to read value at; interpolated between rows.
+ * @param value       Value of variable at time `time`.
+ * @return int        1 if found, 0 otherwise.
  */
-static ModelicaMatVariable_t* findImportVariable(ModelicaMatReader *reader, const char *name)
+static int readImportValue(omc_result *reader, const char *name, double time, double *value)
 {
-  ModelicaMatVariable_t *pVar = omc_matlab4_find_var(reader, name);
   char *newVarname;
+  int found = omc_result_value_at(reader, name, time, value);
 
-  if (!pVar) {
+  if (!found) {
     newVarname = mapToDymolaVars(name);
-    pVar = omc_matlab4_find_var(reader, newVarname);
+    found = omc_result_value_at(reader, newVarname, time, value);
     free(newVarname);
   }
-  return pVar;
+  return found;
 }
 
 /**
@@ -598,7 +600,7 @@ static ModelicaMatVariable_t* findImportVariable(ModelicaMatReader *reader, cons
  *                        the parameter to update as well, NULL for variables.
  * @param kind            "variable" or "parameter", for messages.
  */
-static void importStartValue(ModelicaMatReader *reader,
+static void importStartValue(omc_result *reader,
                              double initTime,
                              const VAR_INFO *info,
                              const DIMENSION_INFO *dimension,
@@ -610,7 +612,6 @@ static void importStartValue(ModelicaMatReader *reader,
   static const char *type_names[] = {"real", "integer", "boolean"};
   const size_t n = dimension->numberOfDimensions > 0 ? dimension->scalar_length : 1;
   char name[IMPORT_NAME_LENGTH];
-  ModelicaMatVariable_t *pVar;
   double value;
   size_t k;
 
@@ -628,9 +629,7 @@ static void importStartValue(ModelicaMatReader *reader,
 
   for (k = 0; k < n; k++) {
     printArrayElementName(name, IMPORT_NAME_LENGTH, info->name, dimension, k, TRUE);
-    pVar = findImportVariable(reader, name);
-
-    if (!pVar) {
+    if (!readImportValue(reader, name, initTime, &value)) {
       /* skip warnings about self-generated variables */
       if (parameterValues != NULL ||
           (strlen(name) > 0 && name[0] != '$' && strncmp(name, "der($", 5) != 0)) {
@@ -639,7 +638,6 @@ static void importStartValue(ModelicaMatReader *reader,
       continue;
     }
 
-    omc_matlab4_val(&value, reader, pVar, initTime);
     switch (type) {
       case IMPORT_REAL:
         put_real_element(value, k, start);
@@ -668,14 +666,19 @@ static void importStartValue(ModelicaMatReader *reader,
   *
   * @param data         Pointer to data struct to fill member `modelData` with start values.
   * @param threadData   Thread data for error handling.
-  * @param pInitFile    Initialization file (MATv4 format).
+  * @param pInitFile    Initialization file, a result file in any format
+  *                     OpenModelica writes (.mat, .csv, .plt, .arrow),
+  *                     selected by its suffix.
   * @param initTime     Initialization time (simulation start time).
   * @return int         0 on success, 1 otherwise.
   */
 int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFile, const double initTime)
 {
-  ModelicaMatReader reader;
-  const char *pError = NULL;
+  omc_result *reader;
+  char *pError = NULL;
+  char errorMsg[1024];
+  double startTime, stopTime;
+  modelica_boolean importVariables;
 
   MODEL_DATA *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
@@ -689,52 +692,62 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     return 1;
   }
 
-  pError = omc_new_matlab4_reader(pInitFile, &reader);
-  if(pError) {
-    throwStreamPrint(threadData, "unable to read input-file <%s> [%s]", pInitFile, pError);
+  reader = omc_result_open(pInitFile, &pError);
+  if(!reader) {
+    snprintf(errorMsg, sizeof(errorMsg), "%s", pError ? pError : "unknown error");
+    omc_result_free_string(pError);
+    throwStreamPrint(threadData, "unable to read input-file <%s> [%s]", pInitFile, errorMsg);
     return 1;
   }
 
+  /* Variables are only defined inside the time range of the file, parameters everywhere. */
+  startTime = omc_result_start_time(reader);
+  stopTime = omc_result_stop_time(reader);
+  importVariables = initTime >= startTime && initTime <= stopTime;
+  if(!importVariables) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Initialization time %g is outside of the time range [%g, %g] of input-file <%s>. Only parameters are imported.", initTime, startTime, stopTime, pInitFile);
+  }
+
   infoStreamPrint(OMC_LOG_INIT, 0, "import real variables");
-  for(i=0; i<mData->nVariablesRealArray; ++i) {
-    importStartValue(&reader, initTime, &mData->realVarsData[i].info, &mData->realVarsData[i].dimension,
+  for(i=0; importVariables && i<mData->nVariablesRealArray; ++i) {
+    importStartValue(reader, initTime, &mData->realVarsData[i].info, &mData->realVarsData[i].dimension,
                      &mData->realVarsData[i].attribute.start, IMPORT_REAL, NULL, "variable");
   }
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import integer variables");
-  for(i=0; i<mData->nVariablesIntegerArray; ++i) {
-    importStartValue(&reader, initTime, &mData->integerVarsData[i].info, &mData->integerVarsData[i].dimension,
+  for(i=0; importVariables && i<mData->nVariablesIntegerArray; ++i) {
+    importStartValue(reader, initTime, &mData->integerVarsData[i].info, &mData->integerVarsData[i].dimension,
                      &mData->integerVarsData[i].attribute.start, IMPORT_INTEGER, NULL, "variable");
   }
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import boolean variables");
-  for(i=0; i<mData->nVariablesBooleanArray; ++i) {
-    importStartValue(&reader, initTime, &mData->booleanVarsData[i].info, &mData->booleanVarsData[i].dimension,
+  for(i=0; importVariables && i<mData->nVariablesBooleanArray; ++i) {
+    importStartValue(reader, initTime, &mData->booleanVarsData[i].info, &mData->booleanVarsData[i].dimension,
                      &mData->booleanVarsData[i].attribute.start, IMPORT_BOOLEAN, NULL, "variable");
   }
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import real parameters");
   for(i=0; i<mData->nParametersRealArray; ++i) {
-    importStartValue(&reader, initTime, &mData->realParameterData[i].info, &mData->realParameterData[i].dimension,
+    importStartValue(reader, initTime, &mData->realParameterData[i].info, &mData->realParameterData[i].dimension,
                      &mData->realParameterData[i].attribute.start, IMPORT_REAL,
                      &sInfo->realParameter[sInfo->realParamsIndex[i]], "parameter");
   }
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import integer parameters");
   for(i=0; i<mData->nParametersIntegerArray; ++i) {
-    importStartValue(&reader, initTime, &mData->integerParameterData[i].info, &mData->integerParameterData[i].dimension,
+    importStartValue(reader, initTime, &mData->integerParameterData[i].info, &mData->integerParameterData[i].dimension,
                      &mData->integerParameterData[i].attribute.start, IMPORT_INTEGER,
                      &sInfo->integerParameter[sInfo->integerParamsIndex[i]], "parameter");
   }
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import boolean parameters");
   for(i=0; i<mData->nParametersBooleanArray; ++i) {
-    importStartValue(&reader, initTime, &mData->booleanParameterData[i].info, &mData->booleanParameterData[i].dimension,
+    importStartValue(reader, initTime, &mData->booleanParameterData[i].info, &mData->booleanParameterData[i].dimension,
                      &mData->booleanParameterData[i].attribute.start, IMPORT_BOOLEAN,
                      &sInfo->booleanParameter[sInfo->booleanParamsIndex[i]], "parameter");
   }
 
-  omc_free_matlab4_reader(&reader);
+  omc_result_close(reader);
 
   return 0;
 }

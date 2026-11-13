@@ -37,7 +37,7 @@ abs(val(r[4], 1.5, "resizableDiffIteratorArray_4.mat") - 0.932750) < 1e-4;
 // ""
 // record SimulationResult
 //     resultFile = "resizableDiffIteratorArray_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableDiffIteratorArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'resizableDiffIteratorArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

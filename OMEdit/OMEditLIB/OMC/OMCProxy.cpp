@@ -146,6 +146,7 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
   Module.__omcCallId = 0;
   Module.__omcReplies = {};
   Module.__omcCallPromises = {};
+  Module.__omcLoadedModels = [];
   Module.__omcQueue = Promise.resolve();
   Module.__omcSend = (msg) => {
     const run = () => new Promise((resolve) => {
@@ -171,6 +172,7 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
     const id = ++Module.__omcCallId;
     Module.__omcCallPromises[id] = Module.__omcSend(msg).then((reply) => {
       Module.__omcReplies[id] = reply || {};
+      if (reply && reply.loaded) Module.__omcLoadedModels.push(...reply.loaded);
       Module.__omcWake();
     }).catch((e) => {
       Module.__omcReplies[id] = { __bridgeError: String(e) };
@@ -459,6 +461,21 @@ EM_JS(int, omedit_progress_phase, (), {
   return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 2) : 0;
 });
 
+EM_JS(char *, omedit_take_loaded_models, (), {
+  const names = Module.__omcLoadedModels || [];
+  Module.__omcLoadedModels = [];
+  return stringToNewUTF8(names.join("\n"));
+});
+
+// The worker replies carry what the native loadModel callback reports.
+static void omcDeliverLoadedModels() {
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->isLibraryWidgetReady()) return;
+  for (const QString &name : takeLines(omedit_take_loaded_models())) {
+    MainWindow::LoadModelCallbackFunction(w, name.toUtf8().constData());
+  }
+}
+
 static QVarLengthArray<QEventLoop *> g_omcWaitStack;
 static bool g_omcWakeInstalled = false;
 
@@ -516,7 +533,7 @@ static void omcClearProgressUi(bool ownsBar, bool ownsCancel) {
   }
 }
 
-void omcWorkerWaitReply(int id) {
+static void omcWaitForReply(int id) {
   if (omedit_call_ready(id)) return;
   if (!g_omcMainLoopRunning) {
     omedit_await_call(id);
@@ -553,6 +570,11 @@ void omcWorkerWaitReply(int id) {
   g_omcWaitStack.removeLast();
   if (ownsBar || ownsCancel) omcClearProgressUi(ownsBar, ownsCancel);
   if (!g_omcWaitStack.isEmpty()) omedit_wake_now();
+}
+
+void omcWorkerWaitReply(int id) {
+  omcWaitForReply(id);
+  omcDeliverLoadedModels();
 }
 
 // Spawn + initialise the worker (replaces the in-process GC + omc_Main_init).
@@ -1092,8 +1114,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   settingsLocale = settingsLocale.name() == "C" ? QLocale::system() : settingsLocale;
 #if defined(__EMSCRIPTEN__)
   // omc runs in the Web Worker: spawn + initialise it instead of an in-process
-  // MMC runtime. The plot/loadModel callbacks are delivered as worker messages
-  // (TODO) rather than threadData function pointers. threadData is null here.
+  // MMC runtime. The loadModel callback comes with the worker replies (see
+  // omcWorkerWaitReply); the plot callback is a TODO. threadData is null here.
   (void) settingsLocale;
   {
     char *initErr = omedit_worker_init();
@@ -3119,8 +3141,9 @@ bool OMCProxy::setComponentCondition(QString className, QString componentName, Q
  * \param to - the connection end component name.
  * \param className - the name of the class.
  * \param annotation - the connection annotation.
+ * \return
  */
-void OMCProxy::addConnection(QString from, QString to, QString className, QString annotation)
+bool OMCProxy::addConnection(QString from, QString to, QString className, QString annotation)
 {
   if (annotation.compare("annotate=Line()") == 0) {
     sendCommand("addConnection(" + from + "," + to + "," + className + ")");
@@ -3128,9 +3151,11 @@ void OMCProxy::addConnection(QString from, QString to, QString className, QStrin
     sendCommand("addConnection(" + from + "," + to + "," + className + "," + annotation + ")");
   }
 
-  if (!StringHandler::unparseBool(getResult())) {
+  bool result = StringHandler::unparseBool(getResult());
+  if (!result) {
     printMessagesStringInternal();
   }
+  return result;
 }
 
 /*!
@@ -4269,6 +4294,19 @@ bool OMCProxy::generateVerificationScenarios(QString className)
 QList<QList<QString > > OMCProxy::getUses(QString className)
 {
   QList<QList<QString > > result = mpOMCInterface->getUses(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getUsedClassNames
+ * Returns the classes used by the total program of the class.
+ * \param className
+ * \return
+ */
+QList<QString> OMCProxy::getUsedClassNames(QString className)
+{
+  QList<QString> result = mpOMCInterface->getUsedClassNames(className);
   printMessagesStringInternal();
   return result;
 }

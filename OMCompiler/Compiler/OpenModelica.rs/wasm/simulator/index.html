@@ -362,18 +362,16 @@ if (DEBUG) window.__sim = {
 
 // --- Worker RPC ------------------------------------------------------------
 let nextId = 1;
-let w1 = null, w2 = null;          // w1: plain, fast start. w2: MSL, ready later.
-let primaryWorker = null;          // w1 until the MSL worker is promoted, then w2
-let mslReady = null;               // resolves to w2 once its MSL is installed
-let jobWorker = null;              // worker running the current foreground job
-let statusFocus = null;            // also surface this worker's status (while awaiting MSL)
+let worker = null;
+let jobWorker = null;              // the worker while it runs a foreground job
+let libraryWait = false;           // a job waits for the library: show its progress
 
 function attach(worker, tag) {
   worker._tag = tag; worker._pending = new Map();
   worker.onmessage = (ev) => {
     const d = ev.data;
     if (d.type === 'log') { log(tag + ':', d.text); return; }
-    if (d.type === 'status') { if (worker === jobWorker || worker === statusFocus) setStatus(d.text, 'busy'); return; }
+    if (d.type === 'status') { if (worker === jobWorker || libraryWait) setStatus(d.text, 'busy'); return; }
     const p = worker._pending.get(d.id); if (!p) return;
     worker._pending.delete(d.id);
     if (d.ok) p.resolve(d.result); else p.reject(new Error(d.error));
@@ -426,7 +424,7 @@ function applyTheme(theme) {
   else delete document.documentElement.dataset.theme;
 }
 applyTheme(PARAMS.get('theme'));
-// What the MSL worker installs: the requested library, or the MSL by default.
+// The library to install: the requested one, or the MSL by default.
 let LIBRARY = REQUEST
   ? { name: REQUEST.package, version: REQUEST.version }
   : { name: PARAMS.get('package') || 'Modelica', version: PARAMS.get('version') || '' };
@@ -459,42 +457,42 @@ function makeWorker(tag) {
   if (DRIVER_MODE !== null) w.postMessage({ cmd: 'setDriver', mode: DRIVER_MODE });
   return w;
 }
-// The MSL worker took over: make it primary and terminate the plain worker so we
-// keep a single wasm instance. A model built on w1 is dropped (rebuilt on demand).
-function promote() {
-  if (primaryWorker === w2) return;
-  primaryWorker = w2;
-  log('promoted MSL worker to primary');
-  retireW1();
-}
-async function retireW1() {
-  // Not while a job is on it: terminating a worker mid-call leaves the page
-  // waiting on a reply that can never come. An export holds w1 through
-  // activeExportWorker rather than jobWorker, and retires it when it finishes.
-  if (primaryWorker === w1 || !w1 || jobWorker === w1 || activeExportWorker === w1) return;
-  const dying = w1, model = builtModel;
-  // The result file lives in this worker, but the plot the user is looking at
-  // outlives it — so copy the file out first.
-  if (builtWorker === dying && resultReady && !resultCache) {
-    const got = await fetchResultFile(dying, model).catch(() => null);
-    // A run started while that was in flight: its result replaces this one.
-    if (got && resultReady && builtWorker === dying) resultCache = got;
+// The library is downloaded after the first run and loaded when the page is
+// idle; a model that needs it waits for both.
+let installed = null, loaded = null, installDone = false;
+function installLibrary() {
+  if (!installed) {
+    installed = call(worker, 'installPackage', LIBRARY);
+    installed.then(() => { installDone = true; loadWhenIdle(); }, (e) => log('library install failed', e));
   }
-  if (w1 !== dying || jobWorker === dying || activeExportWorker === dying) return;   // raced
-  log('terminating w1');
-  if (builtWorker === dying) { builtModel = null; builtWorker = null; }   // its model is gone → next run rebuilds
-  dying.terminate(); w1 = null;
-  syncResultDownload();
+  return installed;
+}
+function loadLibrary() {
+  loaded ||= installLibrary().then(() => call(worker, 'loadLibrary', LIBRARY)).then(() => {
+    mslDone = true;
+    // Warm the JIT with a throwaway run, unless a real one is already waiting.
+    if (!mslJobStarted) call(worker, 'warmup').catch((e) => log('warmup failed', e));
+    return worker;
+  });
+  return loaded;
+}
+function loadWhenIdle() {
+  if (installDone && !running && !exporting) loadLibrary().catch((e) => log('library load failed', e));
+}
+async function libraryWorker() {
+  mslJobStarted = true;
+  if (mslDone) return worker;
+  libraryWait = true;
+  try { return await loadLibrary(); } finally { libraryWait = false; }
 }
 
 // A user model needs the MSL if it is a library copy, imports/extends Modelica,
-// or refers to a Modelica.* name. Such models must run on the MSL worker.
+// or refers to a Modelica.* name. Such models wait for the library.
 function needsMsl(text) {
   return mode === 'librarycopy' || /\bwithin\s+Modelica\b|\bimport\s+Modelica\b|\bextends\s+Modelica\b|\bModelica\./.test(text);
 }
 async function pickWorker(text) {
-  if (needsMsl(text)) { mslJobStarted = true; if (!mslDone) statusFocus = w2; try { return await mslReady; } finally { statusFocus = null; } }
-  return primaryWorker;
+  return needsMsl(text) ? libraryWorker() : worker;
 }
 
 // Protect the single loaded MSL: never load a class into the Modelica namespace
@@ -529,14 +527,13 @@ let modelDoc = '';            // current model's documentation HTML (persists ac
 let currentExample = null;
 let mode = 'inline';          // 'inline' | 'librarycopy'
 let builtWorker = null;       // worker that holds the current built model (for resim)
-let mslDone = false;          // true once the MSL worker has finished install+load
+let mslDone = false;          // true once the library is installed and loaded
 let mslJobStarted = false;    // true once a real MSL job is requested → skip the throwaway warmup
 let copyName = null;          // top-level name of the current library copy (copyClass), else null
 let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
 let animView = null;          // the shared 3D animation panel (lazily created on first use)
 let resultReady = false;      // the built worker's VFS holds a complete `<model>_res.arrow`
-let resultCache = null;       // { name, bytes } — kept when the worker holding it had to go
 
 // Only the parameters the user actually edited. Sending the whole grid back would
 // re-seed every start value from the last run's row 0, and the flag string is
@@ -657,7 +654,7 @@ async function run(kind) {                       // 'full' | 'resim'
     return;
   }
   running = true; runningKind = kind; setRunUI(true);
-  resultReady = false; resultCache = null; syncResultDownload();
+  resultReady = false; syncResultDownload();
   const tRun = beginOp(kind === 'resim' ? 'Re-simulation failed' : 'Simulation failed');
   let runMs = 0;
   log('run', kind, 'mode', mode);
@@ -737,17 +734,18 @@ async function run(kind) {                       // 'full' | 'resim'
     log('run failed', e); fail('' + e);
   }
   finally {
-    running = false; runningKind = null; setRunUI(false); jobWorker = null; retireW1();
+    running = false; runningKind = null; setRunUI(false); jobWorker = null;
     if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); }
+    installLibrary();
+    loadWhenIdle();
   }
 }
 
-// Read back on demand from the worker, or from retireW1's copy once that worker is
-// gone. Offered only for a run that finished: a failed one leaves a truncated file.
+// Read back on demand from the worker. Offered only for a run that finished: a
+// failed one leaves a truncated file.
 function syncResultDownload() {
-  const name = resultCache ? resultCache.name
-             : (resultReady && builtModel && builtWorker)
-               ? ((snap && snap.info && snap.info.file) || `${builtModel}_res.arrow`) : null;
+  const name = (resultReady && builtModel && builtWorker)
+    ? ((snap && snap.info && snap.info.file) || `${builtModel}_res.arrow`) : null;
   downloadWrap.hidden = !name;
   if (name) syncResultTitle(name);
 }
@@ -765,22 +763,8 @@ async function fetchResultFile(worker, model, format) {
   return { name: r.filename, bytes: r.bytes };
 }
 
-// The retired worker's copy is the run's own format, and converting it needs a
-// reader. The OMPlot module is one: the same `ResultFile::write`, without omc.
-async function convertCached(cached, format) {
-  if (cached.name.endsWith('.' + format)) return cached;
-  const mod = await import('../omplot/openmodelica_result_web.js');
-  await mod.default();
-  const rf = new mod.ResultFile(cached.name, new Uint8Array(cached.bytes));
-  try {
-    const out = format === 'csv' ? new TextEncoder().encode(rf.write_csv([], 0))
-              : format === 'mat' ? rf.write_mat([], 0) : rf.write_arrow([], 0);
-    return { name: cached.name.replace(/\.[^.]*$/, '') + '.' + format, bytes: out };
-  } finally { rf.free(); }
-}
-
 resFormatEl.addEventListener('change', () => {
-  const name = resultCache ? resultCache.name : (snap && snap.info && snap.info.file);
+  const name = snap && snap.info && snap.info.file;
   if (name) syncResultTitle(name);
 });
 
@@ -789,8 +773,7 @@ downloadResBtn.addEventListener('click', async () => {
   downloadResBtn.disabled = true;
   const format = resFormatEl.value;
   try {
-    const r = resultCache ? await convertCached(resultCache, format)
-                          : await fetchResultFile(builtWorker, builtModel, format);
+    const r = await fetchResultFile(builtWorker, builtModel, format);
     if (!r) return;
     downloadBlob(r.name, r.bytes);
     setStatus(`${r.name} — ${r.bytes.length} bytes.`);
@@ -837,10 +820,8 @@ async function checkClass(name) {
   showBuilding();
   showEmpty('Checking ' + name + '…');
   setStatus('Checking ' + name + '…', 'busy');
-  mslJobStarted = true;
   let worker;
-  try { if (!mslDone) statusFocus = w2; worker = await mslReady; }
-  catch (e) { return fail('' + e); } finally { statusFocus = null; }
+  try { worker = await libraryWorker(); } catch (e) { return fail('' + e); }
   let r;
   try { r = await call(worker, 'checkModel', { name }); } catch (e) { return fail('' + e); }
   if (!r.ok) return fail(r.error);
@@ -881,18 +862,17 @@ async function selectExample(ex) {
   daeEl.checked = !!ex.daeMode && !daeEl.disabled;
   syncDaeMode();
   builtModel = null; builtWorker = null; lastText = null; builtDae = null; preloaded = null; freshModel = true;
-  snap = null; resultReady = false; resultCache = null; syncResultDownload();
+  snap = null; resultReady = false; syncResultDownload();
   showBuilding();
   if (ex.library) {
     // A genuine editable copy via copyClass: a self-contained top-level class with
     // fully-qualified references. It never modifies the library and owns the copied
-    // figures/doc annotations. Runs on the MSL worker.
+    // figures/doc annotations.
     mode = 'librarycopy';
     copyName = ex.library.split('.').pop();
-    mslJobStarted = true;
     if (!mslDone) setStatus('Loading Modelica library…', 'busy');
     let worker;
-    try { if (!mslDone) statusFocus = w2; worker = await mslReady; } catch (e) { return fail('' + e); } finally { statusFocus = null; }
+    try { worker = await libraryWorker(); } catch (e) { return fail('' + e); }
     let cc;
     try { cc = await call(worker, 'copyClass', { from: ex.library, name: copyName, figures: ex.figures }); } catch (e) { return fail('' + e); }
     if (!cc.ok) return fail(cc.error);
@@ -1306,7 +1286,7 @@ async function exportFmu({ fmuType, method, platforms, daeMode }) {
     downloadBlob(r.filename, r.bytes);
     setStatus(`Exported ${r.filename} (${fmuType}) — ${r.bytes.length} bytes.`);
   } catch (e) { fail('' + e); }
-  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; retireW1(); }
+  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; loadWhenIdle(); }
 }
 
 // FMU export dialog: pick interface(s) and (for CS) the embedded solver.
@@ -1401,21 +1381,8 @@ window.addEventListener('message', (event) => {
     await loadConfig();                             // examples + title, before the first run
 
     if (DRIVER_MODE !== null) log('sim driver forced to', DRIVER_MODE ? 'in-wasm' : 'host', '(?driver=)');
-    w1 = makeWorker('w1');
-    w2 = makeWorker('w2-msl');
-    primaryWorker = w1;
-
-    // Bring the MSL worker up in the background; it takes over once ready. Once
-    // loaded, if the user hasn't already asked for an MSL model, warm it with a
-    // throwaway simulate so its first real run isn't cold (see mslJobStarted).
-    mslReady = (async () => {
-      await call(w2, 'init', { flags: INIT_FLAGS }); await call(w2, 'installLibrary', LIBRARY); mslDone = true; promote();
-      if (!mslJobStarted) call(w2, 'warmup').catch((e) => log('warmup failed', e));
-      return w2;
-    })();
-    mslReady.catch((e) => log('MSL worker failed to initialise', e));
-
-    const v = await call(w1, 'init', { flags: INIT_FLAGS });
+    worker = makeWorker('omc');
+    const v = await call(worker, 'init', { flags: INIT_FLAGS });
     if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
     fillSolverMenus(v.solverOptions);
     fillCsSolvers(v.fmuCsSolvers);

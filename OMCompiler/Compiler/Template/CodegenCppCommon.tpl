@@ -2169,8 +2169,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%tvar%>'
 
   case CALL(path=IDENT(name="delay"),
-            expLst={ICONST(integer=index), e, d, delayMax}) then
+            expLst={idx, e, d, delayMax}) then
     let tvar = tempDecl("double", &varDecls /*BUFD*/)
+    let index = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

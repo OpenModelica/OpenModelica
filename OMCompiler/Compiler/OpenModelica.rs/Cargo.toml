@@ -93,11 +93,11 @@ members = [
   "omshell_omc",
   "omshell_wgpu",
   "omshell_egui",
-  "omshell_dioxus",
   "openmodelica_fmi",
   "openmodelica_fmi_driver",
   "openmodelica_ext_native_marshal",
   "openmodelica_ext_native",
+  "openmodelica_fmi_state_machine",
   "../../SimulationRuntime/rust/daskr",
   "../../SimulationRuntime/rust/minpack",
   "../../SimulationRuntime/rust/openmodelica_mat_reader",
@@ -125,7 +125,7 @@ exclude = [
   "openmodelica_codegen_wasm_jit_runtime",
   "../../SimulationRuntime/rust/openmodelica_result_web_embed",
 ]
-# The OMShell GUI crates pull modern UI frameworks (eframe/dioxus) that require a
+# The OMShell GUI crate pulls a modern UI framework (eframe) that requires a
 # recent wasm-bindgen. Since wasmer 7.2 the compiler's wasm build uses the same
 # recent wasm-bindgen, so they share one resolution and are ordinary members.
 [workspace.dependencies]
@@ -169,7 +169,7 @@ zmq = "0.10"
 # the native `sys`/cranelift backend. wasmer errors are wrapped with
 # anyhow::anyhow! via the `wt` helper (their Debug formatting), since the
 # crate's many engine error types do not share one anyhow-convertible type.
-wasm-encoder = "0.259"
+wasm-encoder = "0.263"
 # Engine backends for the wasm-jit target, selected by feature/target in
 # openmodelica_codegen_wasm_jit: wasmtime (native default, fastest cranelift),
 # or wasmer — whose `js` backend is the only one that can JIT inside a

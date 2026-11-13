@@ -81,7 +81,7 @@ abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
 // "
 // record SimulationResult
 //     resultFile = "literalConnects_Separate_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'literalConnects_Separate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'literalConnects_Separate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -90,7 +90,7 @@ abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
 // true
 // record SimulationResult
 //     resultFile = "literalConnects_Same_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'literalConnects_Same', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'literalConnects_Same', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -105,7 +105,7 @@ abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
 // ""
 // record SimulationResult
 //     resultFile = "literalConnects_SameAC_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'literalConnects_SameAC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'literalConnects_SameAC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

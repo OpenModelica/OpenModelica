@@ -927,10 +927,11 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   QString progressStr;
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
+  const bool encrypted = usesEncryptedLibrary();
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(1);
     bool profiling = mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
-    if (mSimulationOptions.getBuildOnly() &&
+    if (!encrypted && mSimulationOptions.getBuildOnly() &&
         (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
          mSimulationOptions.getLaunchTransformationalDebugger() || profiling)) {
       MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling, false);
@@ -945,19 +946,57 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   updateMessageTab(progressStr);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files
-  if (mSimulationOptions.getBuildOnly()) {
+  if (encrypted) {
+    // the generated code and the equations of an encrypted library must not stay on disk
+    deleteIntermediateCompilationFiles(true);
+    QFile::remove(QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()));
+    mpOpenTransformationalDebuggerButton->setEnabled(false);
+  } else if (mSimulationOptions.getBuildOnly()) {
     deleteIntermediateCompilationFiles();
   }
 }
 #endif // QT_CONFIG(process)
 
 /*!
+ * \brief SimulationOutputWidget::usesEncryptedLibrary
+ * Returns true if the simulated class uses an encrypted library.
+ */
+bool SimulationOutputWidget::usesEncryptedLibrary() const
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pRootLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem();
+  bool encryptedLibraryLoaded = false;
+  for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); i++) {
+    if (pRootLibraryTreeItem->childAt(i)->isEncryptedClass()) {
+      encryptedLibraryLoaded = true;
+      break;
+    }
+  }
+  if (!encryptedLibraryLoaded) {
+    return false;
+  }
+  const QList<QString> usedClassNames = MainWindow::instance()->getOMCProxy()->getUsedClassNames(mSimulationOptions.getClassName());
+  // omc could not tell which classes are used, so assume the encrypted library is one of them
+  if (usedClassNames.isEmpty()) {
+    return true;
+  }
+  foreach (const QString &usedClassName, usedClassNames) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(StringHandler::getFirstWordBeforeDot(usedClassName));
+    if (pLibraryTreeItem && pLibraryTreeItem->isEncryptedClass()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*!
  * \brief SimulationOutputWidget::deleteIntermediateCompilationFiles
  * Deletes the intermediate compilation files
+ * \param force - delete the files even if the user wants to keep them.
  */
-void SimulationOutputWidget::deleteIntermediateCompilationFiles()
+void SimulationOutputWidget::deleteIntermediateCompilationFiles(bool force)
 {
-  if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
+  if (force || OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
     const QString workingDirectory = mSimulationOptions.getWorkingDirectory();
 
     QStringList filesList = QDir(workingDirectory).entryList(mGeneratedFilesList, QDir::Files | QDir::NoSymLinks |
@@ -1404,7 +1443,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
                             .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
-                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
+                            .arg(tr("URL is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
     }
   } else if (url.scheme().compare("file") == 0) {
     // we know that file link is always simulation log file.

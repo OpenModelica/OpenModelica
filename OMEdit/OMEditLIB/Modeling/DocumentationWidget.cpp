@@ -265,7 +265,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpBackgroundColorToolButton = new QToolButton;
   mpBackgroundColorToolButton->setText(tr("Background Color"));
   mpBackgroundColorToolButton->setToolTip(mpBackgroundColorToolButton->text());
-  mpBackgroundColorToolButton->setStatusTip(tr("Change the color of your text"));
+  mpBackgroundColorToolButton->setStatusTip(tr("Change the background color of your text"));
   mpBackgroundColorToolButton->setMenu(pBackgroundColorMenu);
   mpBackgroundColorToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpBackgroundColorToolButton->setIcon(createPixmapForToolButton(mBackgroundColor, QIcon(":/Resources/icons/background-color-icon.svg")));
@@ -1288,7 +1288,7 @@ void DocumentationWidget::createLink()
                                "getLinkHref()");
   QString href;
   href = runJavaScript(javaScript).toString();
-  href = QInputDialog::getText(this, tr("Create Link"), "Enter URL", QLineEdit::Normal, href);
+  href = QInputDialog::getText(this, tr("Create Link"), tr("URL:"), QLineEdit::Normal, href);
   execCommand("createLink", href);
 }
 

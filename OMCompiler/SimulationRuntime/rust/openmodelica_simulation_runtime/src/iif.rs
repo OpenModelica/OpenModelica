@@ -1,8 +1,10 @@
 //! `-iif=<file>`: the start values to import, resolved against the model's
-//! [`SimMeta::import_roster`] with the shared MAT4 reader. The driver applies and
-//! logs them where C's `importStartValues` does.
+//! [`SimMeta::import_roster`] with the shared result-file reader, which selects
+//! the format by the file suffix. The driver applies and logs them where C's
+//! `importStartValues` does.
 
 use openmodelica_mat_reader::MatReader;
+use openmodelica_result_files::ResultFile;
 use openmodelica_sim_meta::{SimMeta, driver, omclog, simflags};
 
 /// C's `mapToDymolaVars`: `der(a.b)` -> `a.der(b)`, and a space after each
@@ -43,25 +45,21 @@ pub fn resolve(meta: &SimMeta, result_file: &str) -> bool {
         );
         return false;
     }
-    let mut reader = match MatReader::open(&file) {
+    let mut reader = match ResultFile::open(&file) {
         Ok(r) => r,
         Err(why) => {
             omclog::debug!(omclog::ASSERT, false, "unable to read input-file <{file}> [{why}]");
             return false;
         }
     };
+    let range = (reader.start_time(), reader.stop_time());
     let overridden = |n: &str| simflags::with_flags(|f| f.overrides.iter().any(|(o, _)| o == n));
-    let mut values = Vec::new();
-    for (i, (name, _, _)) in meta.import_roster().iter().flatten().enumerate() {
-        if overridden(name) {
-            continue;
-        }
-        let var = reader.find_var(name).or_else(|| reader.find_var(&dymola_name(name)));
-        if let Some(v) = var.and_then(|idx| reader.val(idx, time)) {
-            values.push((i as u32, v));
-        }
-    }
-    driver::set_start_imports(Some(driver::StartImports { file, time, values }));
+    let imports = driver::collect_start_imports(meta, file, time, range, overridden, |name| {
+        reader
+            .value_at(name, time)
+            .or_else(|| reader.value_at(&dymola_name(name), time))
+    });
+    driver::set_start_imports(Some(imports));
     true
 }
 

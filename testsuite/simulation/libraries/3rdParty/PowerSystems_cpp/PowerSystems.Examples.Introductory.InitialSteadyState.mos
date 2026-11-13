@@ -40,7 +40,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Introductory.InitialSteadyState', options = '', outputFormat = 'mat', variableFilter = 'time|meter_dq0.p.1.|meter_dq0.p.2.|meter_dq0.p.3.|meter_dq0.v.1.|meter_dq0.v.2.|meter_dq0.v.3.|meter_dq0.i.1.|meter_dq0.i.2.|meter_dq0.i.3.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.Introductory.InitialSteadyState', options = '', outputFormat = 'mat', variableFilter = 'time|meter_dq0.p.1.|meter_dq0.p.2.|meter_dq0.p.3.|meter_dq0.v.1.|meter_dq0.v.2.|meter_dq0.v.3.|meter_dq0.i.1.|meter_dq0.i.2.|meter_dq0.i.3.', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.Introductory.InitialSteadyState_res.mat
 // Files Equal!
 // "true

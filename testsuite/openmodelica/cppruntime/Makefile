@@ -16,6 +16,7 @@ clockedInitTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
+delayTest.mos \
 externalArrayInputTest.mos \
 externalIncludeDirectoryTest.mos \
 externalRecordTest.mos \

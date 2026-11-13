@@ -8,7 +8,23 @@
         <translation>Informazioni su %1</translation>
     </message>
     <message>
-        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3 %4 encryption support&lt;/b&gt;&lt;br /&gt;%5&lt;br /&gt;Compiled with &lt;b&gt;Qt %7&lt;/b&gt;, running with &lt;b&gt;Qt %8&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%6&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
+        <source>Connected to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1 with encryption support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1 without encryption support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Compiled without 3D animation support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;%3&lt;/b&gt;&lt;br /&gt;%4&lt;br /&gt;Compiled with &lt;b&gt;Qt %5&lt;/b&gt;, running with &lt;b&gt;Qt %6&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%7&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -102,8 +118,8 @@
         <translation>Sistema</translation>
     </message>
     <message>
-        <source>A model already have a system. Only one system is allowed inside a model.</source>
-        <translation>Il modello ha già un sistema. In un modello è consentito un solo sistema.</translation>
+        <source>The model already has a root system. An SSP model can have only one root system.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -255,8 +271,12 @@
 <context>
     <name>BreakpointDialog</name>
     <message>
-        <source>%1 Breakpoint</source>
-        <translation>%1 punto di interruzione</translation>
+        <source>Edit Breakpoint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Breakpoint</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File Name:</source>
@@ -283,8 +303,8 @@
         <translation>Passaggi da ignorare:</translation>
     </message>
     <message>
-        <source>* Use &quot;%1&quot; to set condition on simulation time.</source>
-        <translation>* Usare &quot;%1&quot; per impostare una condizione sul tempo di simulazione.</translation>
+        <source>* In a condition, &quot;%1&quot; is the simulation time.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select Class</source>
@@ -333,12 +353,12 @@
         <translation>Argomenti del compilatore:</translation>
     </message>
     <message>
-        <source>Processor:</source>
-        <translation>Processore:</translation>
+        <source>Java Executable:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resets to default Processor path</source>
-        <translation>Ripristina il percorso predefinito del processore</translation>
+        <source>Resets to the default Java executable</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Modelica Library Paths:</source>
@@ -918,6 +938,10 @@ La copia locale e il suo stato di sincronizzazione vengono rimossi. Nel cloud no
         <source>Commit Message </source>
         <translation>Messaggio di commit </translation>
     </message>
+    <message>
+        <source>Commit description:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ComponentNameDialog</name>
@@ -976,8 +1000,8 @@ La copia locale e il suo stato di sincronizzazione vengono rimossi. Nel cloud no
         <translation>Invia rapporto</translation>
     </message>
     <message>
-        <source>Your Email (in case you want us to contact you regarding this issue):</source>
-        <translation>La tua email (se vuoi che ti contattiamo riguardo a questo problema):</translation>
+        <source>Your email (if we may contact you with questions about this issue):</source>
+        <translation>La tua email (se possiamo contattarti per domande su questo problema):</translation>
     </message>
     <message>
         <source>Describe the issue in few words:</source>
@@ -1044,6 +1068,10 @@ La copia locale e il suo stato di sincronizzazione vengono rimossi. Nel cloud no
     <message>
         <source>System</source>
         <translation>Sistema</translation>
+    </message>
+    <message>
+        <source>A top-level class named &lt;b&gt;%1&lt;/b&gt; already exists.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1406,6 +1434,10 @@ Selezionare i modelli per cui scartare i flag di traduzione locali e applicare i
         <translation>Colore di sfondo</translation>
     </message>
     <message>
+        <source>Change the background color of your text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Align Left</source>
         <translation>Allinea a sinistra</translation>
     </message>
@@ -1516,6 +1548,10 @@ Selezionare i modelli per cui scartare i flag di traduzione locali e applicare i
     <message>
         <source>The model instance for %1 is not available; the documentation changes were not saved.</source>
         <translation>L&apos;istanza del modello per %1 non è disponibile; le modifiche alla documentazione non sono state salvate.</translation>
+    </message>
+    <message>
+        <source>URL:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1964,7 +2000,7 @@ Se non è selezionata alcuna piattaforma, la FMU viene esportata come FMI 3.0 (f
         <translation>Generazione dei file target cmake di %1. Attendere.</translation>
     </message>
     <message>
-        <source>Generated cmake target files failed. Exited with code %1.</source>
+        <source>Generating the cmake target files failed with exit code %1.</source>
         <translation>La generazione dei file target cmake non è riuscita. Terminata con codice %1.</translation>
     </message>
     <message>
@@ -2072,10 +2108,6 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; esiste già in &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>The file &lt;b&gt;%1&lt;/b&gt; not found.</source>
-        <translation>File &lt;b&gt;%1&lt;/b&gt; non trovato.</translation>
-    </message>
-    <message>
         <source>Error has occurred while loading the file/library &lt;b&gt;%1&lt;/b&gt;. Unable to load the file/library.</source>
         <translation>Impossibile caricare il file/libreria &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -2156,10 +2188,6 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>Il file di indice delle librerie &lt;b&gt;%1&lt;/b&gt; non esiste.</translation>
     </message>
     <message>
-        <source>The FIGARO is generated.</source>
-        <translation>FIGARO è stato generato.</translation>
-    </message>
-    <message>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be unloaded.</source>
         <translation>Sei sicuro di voler rimuovere &lt;b&gt;%1&lt;/b&gt;? Verrà rimosso anche tutto il contenuto della classe.</translation>
     </message>
@@ -2178,10 +2206,6 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
         <translation>Il comando del terminale non è impostato. È possibile definire un nuovo comando del terminale in &lt;b&gt;%1-&gt;Generale-&gt;Comando del terminale&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;b&gt;.</source>
-        <translation>Esiste già una configurazione di debug con il nome &lt;b&gt;%1&lt;/b&gt;. Si è verificato un errore durante il salvataggio della configurazione di debug &lt;b&gt;%2&lt;b&gt;.</translation>
     </message>
     <message>
         <source>Please check the message browser for more error specific details.</source>
@@ -2224,6 +2248,10 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>Impossibile eliminare &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <source>The file &lt;b&gt;%1&lt;/b&gt; was not found.</source>
+        <translation>File &lt;b&gt;%1&lt;/b&gt; non trovato.</translation>
+    </message>
+    <message>
         <source>Only single nonstructured entity is allowed to be stored in the file.&lt;br /&gt;If the file was generated by the API function &lt;b&gt;saveTotalModel()&lt;/b&gt;, you can only load it with the API function &lt;b&gt;loadFile()&lt;/b&gt; in a script or in the interactive environment, not in OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contains following classes &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nel file è consentito memorizzare una sola entità non strutturata.&lt;br /&gt;Se il file è stato generato con la funzione API &lt;b&gt;saveTotalModel()&lt;/b&gt;, può essere caricato solo con la funzione API &lt;b&gt;loadFile()&lt;/b&gt; in uno script o nell&apos;ambiente interattivo, non in OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contiene le seguenti classi &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
@@ -2252,12 +2280,20 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>L&apos;XML è stato generato in &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <source>The Figaro file is generated.</source>
+        <translation>Il file Figaro è stato generato.</translation>
+    </message>
+    <message>
         <source>The read-only package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Il pacchetto di sola lettura è stato generato in &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;This will also delete from file system.</source>
         <translation>Sei sicuro di voler eliminare &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;Verrà eliminato anche dal file system.</translation>
+    </message>
+    <message>
+        <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Esiste già una configurazione di debug con il nome &lt;b&gt;%1&lt;/b&gt;. Si è verificato un errore durante il salvataggio della configurazione di debug &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Maximum &lt;b&gt;%1&lt;/b&gt; debug configurations are allowed.</source>
@@ -2545,7 +2581,7 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>Vista predefinita</translation>
     </message>
     <message>
-        <source>This settings will be used when no preferredView annotation is defined.</source>
+        <source>This setting is used when no preferredView annotation is defined.</source>
         <translation>Questa impostazione viene usata quando non è definita alcuna annotazione preferredView.</translation>
     </message>
     <message>
@@ -3020,12 +3056,12 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Istanzia e appiattisce la classe Modelica</translation>
     </message>
     <message>
-        <source>Exports the model as Functional Mockup Unit (FMU)</source>
-        <translation>Esporta il modello come Functional Mockup Unit (FMU)</translation>
+        <source>Exports the package as a read-only package</source>
+        <translation>Esporta il pacchetto come pacchetto di sola lettura</translation>
     </message>
     <message>
-        <source>Imports the model from Functional Mockup Interface (FMU)</source>
-        <translation>Importa il modello da Functional Mockup Unit (FMU)</translation>
+        <source>Exports the package as an encrypted package</source>
+        <translation>Esporta il pacchetto come pacchetto cifrato</translation>
     </message>
     <message>
         <source>Exports the model as XML</source>
@@ -3160,10 +3196,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Traduci come</translation>
     </message>
     <message>
-        <source>Translates As the CRML model to Modelica</source>
-        <translation>Traduce il modello CRML in una nuova classe Modelica</translation>
-    </message>
-    <message>
         <source>Run</source>
         <translation>Esegui</translation>
     </message>
@@ -3216,10 +3248,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Rotazione:</translation>
     </message>
     <message>
-        <source>Bezier</source>
-        <translation>Bezier</translation>
-    </message>
-    <message>
         <source>Start Arrow:</source>
         <translation>Freccia di inizio:</translation>
     </message>
@@ -3248,6 +3276,10 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Filtra elementi</translation>
     </message>
     <message>
+        <source>Committing modified files to the repository</source>
+        <translation>Esegue il commit dei file modificati nel repository</translation>
+    </message>
+    <message>
         <source>Report Issue</source>
         <translation>Segnala un problema</translation>
     </message>
@@ -3258,6 +3290,14 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Version:</source>
         <translation>Versione:</translation>
+    </message>
+    <message>
+        <source>Adds the system, e.g. FMI or TLM</source>
+        <translation>Aggiunge un sistema, ad esempio FMI o TLM</translation>
+    </message>
+    <message>
+        <source>Adds the submodel, e.g. FMU or table</source>
+        <translation>Aggiunge un sottomodello, ad esempio FMU o tabella</translation>
     </message>
     <message>
         <source>Replace SubModel</source>
@@ -3360,16 +3400,8 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Pacchetto di sola lettura</translation>
     </message>
     <message>
-        <source>Exports the package as read-only package</source>
-        <translation>Esporta il pacchetto come pacchetto di sola lettura</translation>
-    </message>
-    <message>
         <source>Encrypted Package</source>
         <translation>Pacchetto cifrato</translation>
-    </message>
-    <message>
-        <source>Exports the package as Encrytped package</source>
-        <translation>Esporta il pacchetto come pacchetto cifrato</translation>
     </message>
     <message>
         <source>XML</source>
@@ -3508,6 +3540,22 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Ricarica</translation>
     </message>
     <message>
+        <source>Exports the model as Functional Mock-up Unit (FMU)</source>
+        <translation>Esporta il modello come Functional Mock-up Unit (FMU)</translation>
+    </message>
+    <message>
+        <source>Imports the model from a Functional Mock-up Unit (FMU)</source>
+        <translation>Importa il modello da Functional Mock-up Unit (FMU)</translation>
+    </message>
+    <message>
+        <source>Translates the CRML model to Modelica with options</source>
+        <translation>Traduce il modello CRML in una nuova classe Modelica</translation>
+    </message>
+    <message>
+        <source>Bézier</source>
+        <translation>Bézier</translation>
+    </message>
+    <message>
         <source>Index</source>
         <translation>Indice</translation>
     </message>
@@ -3586,10 +3634,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Commit</source>
         <translation>Esegui commit</translation>
-    </message>
-    <message>
-        <source>Commiting modified files to the repository</source>
-        <translation>Esegue il commit dei file modificati nel repository</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -3704,16 +3748,8 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Modello SSP</translation>
     </message>
     <message>
-        <source>Adds the System i.e., FMI or TLM</source>
-        <translation>Aggiunge un sistema, ovvero FMI o TLM</translation>
-    </message>
-    <message>
         <source>Add SubModel</source>
         <translation>Aggiungi sottomodello</translation>
-    </message>
-    <message>
-        <source>Adds the SubModel i.e., FMU or Table</source>
-        <translation>Aggiunge un sottomodello, ovvero FMU o tabella</translation>
     </message>
     <message>
         <source>Add Connector</source>
@@ -3750,14 +3786,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Condition:</source>
         <translation>Condizione:</translation>
-    </message>
-    <message>
-        <source>Immediate</source>
-        <translation>Immediate</translation>
-    </message>
-    <message>
-        <source>Synchronize</source>
-        <translation>Synchronize</translation>
     </message>
     <message>
         <source>Priority:</source>
@@ -4093,6 +4121,37 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>The library &lt;b&gt;%1&lt;/b&gt; is not installed. See message browser for any possible messages.</source>
         <translation>La libreria &lt;b&gt;%1&lt;/b&gt; non è stata installata. Consultare la finestra Messaggi per eventuali messaggi.</translation>
+    </message>
+</context>
+<context>
+    <name>InstallLibraryFromPathDialog</name>
+    <message>
+        <source>Install these packages of &lt;b&gt;%1&lt;/b&gt;:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An installed library is read-only. To change a library, open it with %1 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Installing the packages. Please wait.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not contain exactly one top-level class, so it is not a package to install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (replaces the installed %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not install %1. See message browser for any possible messages.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4454,8 +4513,28 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Aggiorna i binding</translation>
     </message>
     <message>
-        <source>updates the bindings</source>
+        <source>Updates the bindings</source>
         <translation>Aggiorna i binding</translation>
+    </message>
+    <message>
+        <source>Version: %1</source>
+        <translation>Versione: %1</translation>
+    </message>
+    <message>
+        <source>Version Date: %1</source>
+        <translation>Data della versione: %1</translation>
+    </message>
+    <message>
+        <source>Version Build: %1</source>
+        <translation>Build della versione: %1</translation>
+    </message>
+    <message>
+        <source>Date Modified: %1</source>
+        <translation>Data di modifica: %1</translation>
+    </message>
+    <message>
+        <source>Revision ID: %1</source>
+        <translation>RevisionId: %1</translation>
     </message>
     <message>
         <source>Generate Verification Scenarios</source>
@@ -4476,26 +4555,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     <message>
         <source>Deletes the Modelica class</source>
         <translation>Elimina la classe Modelica</translation>
-    </message>
-    <message>
-        <source>Version : %1</source>
-        <translation>Versione: %1</translation>
-    </message>
-    <message>
-        <source>Version Date : %1</source>
-        <translation>Data della versione: %1</translation>
-    </message>
-    <message>
-        <source>Version Build : %1</source>
-        <translation>Build della versione: %1</translation>
-    </message>
-    <message>
-        <source>Date Modified : %1</source>
-        <translation>Data di modifica: %1</translation>
-    </message>
-    <message>
-        <source>RevisionId : %1</source>
-        <translation>RevisionId: %1</translation>
     </message>
     <message>
         <source>Calibrate...</source>
@@ -4521,7 +4580,7 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Impossibile salvare il file, tipo di libreria sconosciuto.</translation>
     </message>
     <message>
-        <source>It is not possible to save as a Modelica package saved in a directory hierarchy Mapping.</source>
+        <source>Save As is not possible for a Modelica package that is saved as a directory hierarchy.</source>
         <translation>Non è possibile usare Salva come per un pacchetto Modelica salvato in una gerarchia di directory.</translation>
     </message>
     <message>
@@ -4597,12 +4656,12 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Seleziona commit</translation>
     </message>
     <message>
-        <source>Sha1</source>
-        <translation>Sha1</translation>
-    </message>
-    <message>
         <source>Subject</source>
         <translation>Oggetto</translation>
+    </message>
+    <message>
+        <source>SHA-1</source>
+        <translation>SHA-1</translation>
     </message>
     <message>
         <source>Ok</source>
@@ -4681,6 +4740,10 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     <message>
         <source>Please open a model before starting the OMSens plugin.</source>
         <translation>Aprire un modello prima di avviare il plugin OMSens.</translation>
+    </message>
+    <message>
+        <source>Imports the model from the model description of a Functional Mock-up Unit (FMU)</source>
+        <translation>Importa il modello da una descrizione del modello FMU</translation>
     </message>
     <message>
         <source>Grid Lines</source>
@@ -4899,10 +4962,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Impossibile eseguire il comando del terminale &lt;b&gt;%1&lt;/b&gt; con gli argomenti &lt;b&gt;%2&lt;/b&gt;. Il processo non è riuscito con errore &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>OMSens is not supported on MacOS</source>
-        <translation>OMSens non è supportato su macOS</translation>
-    </message>
-    <message>
         <source>Opens the Modelica file(s)</source>
         <translation>Apre i file Modelica</translation>
     </message>
@@ -4941,10 +5000,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     <message>
         <source>Instantiate Model</source>
         <translation>Istanzia modello</translation>
-    </message>
-    <message>
-        <source>Instantiates the modelica model</source>
-        <translation>Istanzia il modello Modelica</translation>
     </message>
     <message>
         <source>New Parametric Plot Window</source>
@@ -5031,16 +5086,24 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Documentazione</translation>
     </message>
     <message>
-        <source>FMU_EXPORT Failed</source>
-        <translation>Esportazione FMU non riuscita</translation>
-    </message>
-    <message>
         <source>Translating model %1 as FMU</source>
         <translation>Traduzione del modello %1 come FMU</translation>
     </message>
     <message>
         <source>making read-only package</source>
         <translation>creare un pacchetto di sola lettura</translation>
+    </message>
+    <message>
+        <source>There is no package to install in &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modelica Packages (*.mo *.zip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OMSens is not supported on macOS</source>
+        <translation>OMSens non è supportato su macOS</translation>
     </message>
     <message>
         <source>CRML Testsuite</source>
@@ -5075,10 +5138,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Descrizione del modello FMU</translation>
     </message>
     <message>
-        <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
-        <translation>Importa il modello da una descrizione del modello FMU</translation>
-    </message>
-    <message>
         <source>From OMNotebook</source>
         <translation>Da OMNotebook</translation>
     </message>
@@ -5105,6 +5164,22 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     <message>
         <source>Opens the install library window</source>
         <translation>Apre la finestra di installazione delle librerie</translation>
+    </message>
+    <message>
+        <source>Install Library From File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a .mo or .zip file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install Library From Directory...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a directory</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Upgrades the installed libraries</source>
@@ -5153,6 +5228,10 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     <message>
         <source>Toggle between tab or sub-window view mode</source>
         <translation>Alterna tra la modalità di visualizzazione a schede e a finestre</translation>
+    </message>
+    <message>
+        <source>Instantiates the Modelica model</source>
+        <translation>Istanzia il modello Modelica</translation>
     </message>
     <message>
         <source>Shows the list of archived simulations</source>
@@ -5363,6 +5442,10 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>&amp;Debug</translation>
     </message>
     <message>
+        <source>No active simulation output window. Please select a simulation output window for the re-simulation.</source>
+        <translation>Nessuna finestra di output della simulazione attiva. Selezionare una finestra di output della simulazione per la nuova simulazione.</translation>
+    </message>
+    <message>
         <source>&amp;SSP</source>
         <translation>&amp;SSP</translation>
     </message>
@@ -5373,10 +5456,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     <message>
         <source>&amp;Git</source>
         <translation>&amp;Git</translation>
-    </message>
-    <message>
-        <source>TraceabilityMenu</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Traceability</source>
@@ -5551,10 +5630,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>&amp;Modelli recenti</translation>
     </message>
     <message>
-        <source>No active simulation output window. Please select a simulation output window for re-simulate.</source>
-        <translation>Nessuna finestra di output della simulazione attiva. Selezionare una finestra di output della simulazione per la nuova simulazione.</translation>
-    </message>
-    <message>
         <source>Open a Modelica class first; it is the active class that gets saved.</source>
         <translation>Aprire prima una classe Modelica; viene salvata la classe attiva.</translation>
     </message>
@@ -5648,16 +5723,16 @@ Continuare?</numerusform>
         <translation>Cancella questa scheda</translation>
     </message>
     <message>
-        <source>clears the messages from this tab</source>
+        <source>Clears the messages from this tab</source>
         <translation>Cancella i messaggi di questa scheda</translation>
+    </message>
+    <message>
+        <source>Clears the messages from all tabs</source>
+        <translation>Cancella i messaggi di tutte le schede</translation>
     </message>
     <message>
         <source>Clear All Tabs</source>
         <translation>Cancella tutte le schede</translation>
-    </message>
-    <message>
-        <source>clears the messages from all tabs</source>
-        <translation>Cancella i messaggi di tutte le schede</translation>
     </message>
 </context>
 <context>
@@ -6615,10 +6690,6 @@ Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; O
 <context>
     <name>PlotWindowContainer</name>
     <message>
-        <source>Interactive Plot : %1</source>
-        <translation>Grafico interattivo: %1</translation>
-    </message>
-    <message>
         <source>Name Plot Tab</source>
         <translation>Assegna nome alla scheda del grafico</translation>
     </message>
@@ -6661,6 +6732,10 @@ Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; O
     <message>
         <source>Select a plot window before saving a figure in a model.</source>
         <translation>Selezionare una finestra del grafico prima di salvare una figura in un modello.</translation>
+    </message>
+    <message>
+        <source>Interactive Plot: %1</source>
+        <translation>Grafico interattivo: %1</translation>
     </message>
     <message>
         <source>There are no curves to save in the model annotation.</source>
@@ -7078,10 +7153,6 @@ Impostare il valore a 0 per non avere alcun ritardo.</translation>
         <translation>dryRun = true non sostituisce il sottomodello ma mostra l&apos;elenco degli avvertimenti; dryRun = false sostituisce il sottomodello</translation>
     </message>
     <message>
-        <source>ReplaceSubModel</source>
-        <translation>ReplaceSubModel</translation>
-    </message>
-    <message>
         <source>Unable to find the SubModel file.</source>
         <translation>Impossibile trovare il file del sottomodello.</translation>
     </message>
@@ -7092,6 +7163,10 @@ Impostare il valore a 0 per non avere alcun ritardo.</translation>
     <message>
         <source>The submodel was not replaced (dryRun = true). The following changes were detected in the replacing submodel. See the Messages Browser for details.</source>
         <translation>Il sottomodello non è stato sostituito (dryRun = true). Nel sottomodello sostitutivo sono state rilevate le seguenti modifiche. Consultare la finestra Messaggi per i dettagli.</translation>
+    </message>
+    <message>
+        <source>SubModel file</source>
+        <translation>file del sottomodello</translation>
     </message>
     <message>
         <source>The submodel was replaced (dryRun =false). The following changes were detected and applied. See the Messages Browser for details.</source>
@@ -7224,7 +7299,7 @@ Impostare il valore a 0 per non avere alcun ritardo.</translation>
         <translation>Cancella tutto</translation>
     </message>
     <message>
-        <source>clears all the result</source>
+        <source>Clears all the results</source>
         <translation>Cancella tutti i risultati</translation>
     </message>
     <message>
@@ -7700,6 +7775,10 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
         <translation>Il processo di simulazione non è riuscito. Terminato con codice %1.</translation>
     </message>
     <message>
+        <source>URL is &lt;b&gt;%1&lt;/b&gt;</source>
+        <translation>URL: &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
         <source>Simulation of %1 finished.</source>
         <translation>Simulazione di %1 completata.</translation>
     </message>
@@ -7740,10 +7819,6 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
 </source>
         <translation>Processo di compilazione completato correttamente.
 </translation>
-    </message>
-    <message>
-        <source>Url is &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation>URL: &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Running simulation of %1.</source>
@@ -7817,7 +7892,7 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
         <translation>Salva la classe prima della simulazione</translation>
     </message>
     <message>
-        <source>Disabling this will effect the debugger functionality.</source>
+        <source>Disabling this will affect the debugger functionality.</source>
         <translation>Disattivando questa opzione si influisce sul funzionamento del debugger.</translation>
     </message>
     <message>
@@ -7860,7 +7935,7 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
 <context>
     <name>SolverSettingsDialog</name>
     <message>
-        <source>SolverSettings - %1 (%2)</source>
+        <source>Solver Settings - %1 (%2)</source>
         <translation>Impostazioni del solutore - %1 (%2)</translation>
     </message>
     <message>
@@ -8144,7 +8219,7 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
         <translation>Repository Git:</translation>
     </message>
     <message>
-        <source>Traceability Daemon IP Adress:</source>
+        <source>Traceability Daemon IP Address:</source>
         <translation>Indirizzo IP del demone di tracciabilità:</translation>
     </message>
     <message>
@@ -8530,7 +8605,7 @@ Variabilità: %4</translation>
         <translation>Librerie di sistema</translation>
     </message>
     <message>
-        <source>Sorry, no internet no news items.</source>
+        <source>No news without an internet connection.</source>
         <translation>Nessuna connessione a Internet, quindi non è possibile mostrare notizie.</translation>
     </message>
     <message>

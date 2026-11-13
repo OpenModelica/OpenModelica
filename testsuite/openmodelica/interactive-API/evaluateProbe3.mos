@@ -68,6 +68,6 @@ print(evaluateProbe("evaluateProbe3.mo", "0.0.3.2", "stateSelection", "SP.B")); 
 // ""
 // {"node":"0.0.5", "property":"stateSelection", "result":[{"text":"SP.B: 1 states, 1 dummy states"}, {"text":"c2.v: state, stateSelect = StateSelect.prefer"}, {"text":"der(c2.v): derivative"}, {"text":"c1.v: dummy state, not chosen as a state by index reduction, = c2.v"}, {"text":"    solved: c1.v = c2.v"}, {"text":"    substitution: c1.v  =>  c1.p.v"}, {"text":"    simplify: c1.v = c1.p.v - 0.0  =>  c1.v = c1.p.v"}, {"text":"    substitution: c1.p.v - c1.n.v  =>  c1.p.v - 0.0"}]}
 // ""
-// {"node":"0.0.3.2", "property":"stateSelection", "result":[{"text":"c2.v: state, stateSelect = StateSelect.prefer"}, {"text":"der(c2.v): derivative"}, {"text":"c1.v: dummy state, not chosen as a state by index reduction, = c2.v"}, {"text":"    solved: c1.v = c2.v"}, {"text":"    substitution: c1.v  =>  c1.p.v"}, {"text":"    simplify: c1.v = c1.p.v - 0.0  =>  c1.v = c1.p.v"}, {"text":"    substitution: c1.p.v - c1.n.v  =>  c1.p.v - 0.0"}]}
+// {"node":"0.0.3.2", "property":"stateSelection", "result":[{"text":"c2.v: state, stateSelect = StateSelect.prefer"}, {"text":"der(c2.v): derivative"}, {"text":"der(c1.v): variable, = der(c2.v)"}, {"text":"c1.v: dummy state, not chosen as a state by index reduction, = c2.v"}, {"text":"    solved: c1.v = c2.v"}, {"text":"    substitution: c1.v  =>  c1.p.v"}, {"text":"    simplify: c1.v = c1.p.v - 0.0  =>  c1.v = c1.p.v"}, {"text":"    substitution: c1.p.v - c1.n.v  =>  c1.p.v - 0.0"}]}
 // ""
 // endResult

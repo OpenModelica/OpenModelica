@@ -19,7 +19,7 @@ val(V_source.i, 0.01);
 // ""
 // record SimulationResult
 //     resultFile = "resizableSparseLoop_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.01, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableSparseLoop', options = '', outputFormat = 'mat', variableFilter = 'V_source.i', cflags = '', simflags = '-override=N=100,M=100'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.01, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'resizableSparseLoop', options = '', outputFormat = 'mat', variableFilter = 'V_source.i', cflags = '', simflags = '-override=N=100,M=100'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

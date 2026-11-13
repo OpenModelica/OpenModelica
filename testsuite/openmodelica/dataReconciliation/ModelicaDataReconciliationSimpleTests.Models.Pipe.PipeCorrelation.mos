@@ -212,7 +212,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_Inputs.csv -cx=modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_InputsS_xj.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_Inputs.csv -cx=modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_InputsS_xj.csv'",
 //     messages = "Simulation execution failed for model: ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

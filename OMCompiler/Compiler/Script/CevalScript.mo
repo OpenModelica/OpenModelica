@@ -1977,6 +1977,12 @@ algorithm
     // template based translation
     case (cache, env, path) guard Flags.isSet(Flags.GEN) and (not Flags.isSet(Flags.GENERATE_CODE_CHEAT))
       algorithm
+        if Config.acceptMetaModelicaGrammar() and not Autoconf.haveMetaModelicaRuntime and
+           Config.simCodeTarget() <> "wasm-jit" then
+          Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
+            {"compiling a MetaModelica function to C in this omc", "evaluate it with -d=evalfunc"});
+          fail();
+        end if;
         (cache, mainFunction, dependencies, metarecordTypes) := collectDependencies(cache, env, path);
         pathstr  := generateFunctionName(path);
         fileName := generateFunctionFileName(path);

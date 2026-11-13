@@ -397,6 +397,7 @@ DimUnknown16.mo \
 DimUnknown17.mo \
 DimUnknown18.mo \
 DimUnknown19.mo \
+DimUnknown20.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -989,6 +990,8 @@ OperationPow2.mo \
 OperationPow3.mo \
 OperationPowEW1.mo \
 OperationRelational1.mo \
+OperationRelational2.mo \
+OperationRelational3.mo \
 OperationSub1.mo \
 OperationSubEW1.mo \
 OperationSubEW2.mo \

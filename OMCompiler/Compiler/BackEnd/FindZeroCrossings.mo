@@ -1943,7 +1943,7 @@ algorithm
   end match;
 end createZeroCrossing;
 
-protected function createIterator
+public function createIterator
   input DAE.ReductionIterator red_iter;
   output BackendDAE.SimIterator iter;
 algorithm

@@ -72,7 +72,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // Email label and textbox
-  mpEmailLabel = new Label(tr("Your Email (in case you want us to contact you regarding this issue):"));
+  mpEmailLabel = new Label(tr("Your email (if we may contact you with questions about this issue):"));
   mpEmailTextBox = new QLineEdit;
   // bug description label and textbox
   mpBugDescriptionLabel = new Label(tr("Describe the issue in few words:"));

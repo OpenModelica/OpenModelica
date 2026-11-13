@@ -43,6 +43,8 @@ extern "C" {
     fn omc_fmu_loader_js(platform: &str) -> Option<Vec<u8>>;
     #[wasm_bindgen(js_namespace = globalThis, js_name = __omcWasmBlob)]
     fn omc_wasm_blob_js(file: &str) -> Option<Vec<u8>>;
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcStoreRead)]
+    fn omc_store_read_js(seg: u32, off: f64, buf: &mut [u8]) -> bool;
 }
 
 fn wall_ms() -> f64 {
@@ -109,6 +111,14 @@ thread_local! {
     /// The last panic message the hook saw, so [`omc_eval`] can report the real
     /// reason (location + message) instead of a bare "evaluation panicked".
     static LAST_PANIC: RefCell<Option<String>> = const { RefCell::new(None) };
+    static LOADED_MODELS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+unsafe extern "C" fn load_model_callback(_class: *mut std::ffi::c_void, name: *const std::ffi::c_char) {
+    if !name.is_null() {
+        let name = unsafe { std::ffi::CStr::from_ptr(name) }.to_string_lossy().into_owned();
+        LOADED_MODELS.with(|l| l.borrow_mut().push(name));
+    }
 }
 
 fn buffer_lines(buf: &'static std::thread::LocalKey<RefCell<String>>, s: &str, emit: fn(&str)) {
@@ -163,6 +173,7 @@ pub fn omc_init() -> bool {
     // Route `plot(...)` through the in-page charton renderer instead of spawning
     // the external OMPlot process (which does not exist on wasm).
     crate::wasm_plot::register();
+    openmodelica_util::System::omc_set_loadmodel_callback(std::ptr::null_mut(), Some(load_model_callback));
 
     // wasm has no `Instant`; give the sim driver a wall-clock for the chunk budget.
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_clock(wall_ms);
@@ -299,6 +310,73 @@ pub fn wasi_rename(from: &str, to: &str) -> bool {
     openmodelica_wasi::fs::rename(from, to).is_ok()
 }
 
+fn store_read(seg: u32, off: u64, buf: &mut [u8]) -> bool {
+    omc_store_read_js(seg, off as f64, buf)
+}
+
+fn set(obj: &js_sys::Object, key: &str, value: JsValue) {
+    let _ = js_sys::Reflect::set(obj, &JsValue::from_str(key), &value);
+}
+
+/// Persist `<home>/.openmodelica` in the host's segment files (`wasm/omc-store.js`),
+/// read through `globalThis.__omcStoreRead`, but not the package manager's
+/// downloads in its `cache/`. Returns that root.
+#[wasm_bindgen]
+pub fn omc_store_enable() -> String {
+    let root = format!("{}/.openmodelica", openmodelica_util::Settings::getHomeDir(false));
+    openmodelica_wasi::set_persistent_root(&root, &["cache"], store_read);
+    root
+}
+
+/// Mount stored files: NUL-separated `paths`, and `[segment, mtime seconds, mtime
+/// nanoseconds, offset, length]` for each in `nums`.
+#[wasm_bindgen]
+pub fn omc_store_mount(paths: &str, nums: &[f64]) -> usize {
+    let mut mounted = 0;
+    for (path, f) in paths.split('\0').zip(nums.chunks_exact(5)) {
+        let mtime = std::time::Duration::new(f[1] as u64, f[2] as u32);
+        openmodelica_wasi::mount(path, mtime, f[0] as u32, f[3] as u64, f[4] as u64);
+        mounted += 1;
+    }
+    mounted
+}
+
+/// What changed below the root since the last commit, or `undefined`:
+/// `{ paths, nums, data, removed }`, with NUL-separated `paths` and `removed`,
+/// `[mtime seconds, mtime nanoseconds, length]` for each file in `nums`, and the
+/// files' bytes one after the other in `data`.
+#[wasm_bindgen]
+pub fn omc_store_snapshot() -> JsValue {
+    let Some(snap) = openmodelica_wasi::take_snapshot() else {
+        return JsValue::UNDEFINED;
+    };
+    let paths: Vec<&str> = snap.files.iter().map(|f| f.0.as_str()).collect();
+    let nums: Vec<f64> = snap
+        .files
+        .iter()
+        .flat_map(|(_, t, len)| [t.as_secs() as f64, t.subsec_nanos() as f64, *len as f64])
+        .collect();
+    let obj = js_sys::Object::new();
+    set(&obj, "paths", JsValue::from_str(&paths.join("\0")));
+    set(&obj, "nums", js_sys::Float64Array::from(&nums[..]).into());
+    set(&obj, "data", js_sys::Uint8Array::from(&snap.data[..]).into());
+    set(&obj, "removed", JsValue::from_str(&snap.removed.join("\0")));
+    obj.into()
+}
+
+/// Stop recording changes below the root; the host could not save them.
+#[wasm_bindgen]
+pub fn omc_store_disable() {
+    openmodelica_wasi::stop_persisting();
+}
+
+/// The last snapshot is stored in segment `seg`, file `i` at `offsets[i]`.
+#[wasm_bindgen]
+pub fn omc_store_commit(seg: u32, offsets: &[f64]) {
+    let offsets: Vec<u64> = offsets.iter().map(|&o| o as u64).collect();
+    openmodelica_wasi::commit(seg, &offsets);
+}
+
 /// Drain the files the last command tried to download but did not find in the
 /// VFS, as an array of `{ urls: string[], filename: string }`. `omc_eval` is
 /// synchronous, so it cannot fetch over the network itself; instead the JS host
@@ -319,6 +397,13 @@ pub fn omc_take_pending_downloads() -> JsValue {
         arr.push(&item);
     }
     arr.into()
+}
+
+/// Drain the top-level classes that omc loaded on its own (a `uses` annotation, a
+/// name lookup) since the last call: the native host's loadModel callback.
+#[wasm_bindgen]
+pub fn omc_take_loaded_models() -> Vec<String> {
+    LOADED_MODELS.with(|l| std::mem::take(&mut *l.borrow_mut()))
 }
 
 /// Drain the plot commands the last `omc_eval` recorded, as an array of string

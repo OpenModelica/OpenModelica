@@ -398,6 +398,8 @@ private:
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpInstallLibraryAction;
+  QAction *mpInstallLibraryFromFileAction;
+  QAction *mpInstallLibraryFromDirectoryAction;
   QAction *mpUpgradeInstalledLibrariesAction;
   QAction *mpUpdateLibraryIndexAction;
   QAction *mpClearRecentFilesAction;
@@ -611,6 +613,8 @@ public slots:
   void runOMSensPlugin();
   void exportModelToOMNotebook();
   bool openInstallLibraryDialog();
+  void installLibraryFromFile();
+  void installLibraryFromDirectory();
   void upgradeInstalledLibraries();
   void updateLibraryIndex();
   void updateLibraryIndex(bool forceUpdate);

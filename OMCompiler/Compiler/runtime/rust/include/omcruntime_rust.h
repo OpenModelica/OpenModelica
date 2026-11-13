@@ -50,6 +50,12 @@ extern "C" {
 
 char *omcrs_unzip_path(const char *zipFileName, const char *pathToExtract, const char *destPath);
 char *omcrs_unzip_all(const char *zipFileName, const char *destPath);
+/* The files of zipFileName as omcrs_unzip_path names them, without the directory
+ * all entries share, one per line in *entries. Free *entries and *contents
+ * with omcrs_free_string. */
+char *omcrs_zip_entries(const char *zipFileName, char **entries);
+/* The contents of one of those files in *contents, without NUL bytes. */
+char *omcrs_zip_read(const char *zipFileName, const char *path, char **contents);
 
 /* paths[i] (a file, or a directory recursively) is stored as entryNames[i]; an
  * empty name puts a directory's contents at the root. Entries named in excludes,

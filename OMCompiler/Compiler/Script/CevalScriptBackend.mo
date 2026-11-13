@@ -204,7 +204,7 @@ constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)       "default stopT
 constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)       "default numberOfIntervals";
 constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)       "default stepSize";
 constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)       "default tolerance";
-constant DAE.Exp defaultMethod            = DAE.SCONST("dassl")          "default method";
+constant DAE.Exp defaultMethod            = DAE.SCONST("auto")           "default method";
 constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("") "default fileNamePrefix";
 constant DAE.Exp defaultOptions           = DAE.SCONST("")         "default options";
 constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
@@ -334,7 +334,7 @@ public function buildSimulationOptions
   input DAE.Exp numberOfIntervals "number of intervals, default 500";
   input DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
   input DAE.Exp tolerance "tolerance, default 1e-6";
-  input DAE.Exp method "method, default 'dassl'";
+  input DAE.Exp method "method, default 'auto'";
   input DAE.Exp fileNamePrefix "file name prefix, default ''";
   input DAE.Exp options "options, default ''";
   input DAE.Exp outputFormat "output format, default 'plt'";
@@ -622,7 +622,7 @@ algorithm
   InteractiveTypes.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   if UseOtimica then
     method := DAE.SCONST("optimization");
-  elseif  Flags.getConfigBool(Flags.DAE_MODE) then
+  elseif Flags.getConfigBool(Flags.DAE_MODE) and ExpressionBasics.expEqual(method, defaultMethod) then
     method := DAE.SCONST("ida");
   end if;
   numberOfIntervals := if UseOtimica then DAE.ICONST(50) else numberOfIntervals;
@@ -1719,7 +1719,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiTypeDefinitionsList := listReverse(quoteFMIEnumerationItems(td) for td in fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         name := AbsynUtil.pathString(classpath);
@@ -1765,7 +1765,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiTypeDefinitionsList := listReverse(quoteFMIEnumerationItems(td) for td in fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         str := Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
@@ -1815,6 +1815,44 @@ algorithm
 
   end matchcontinue;
 end cevalInteractiveFunctions3;
+
+protected function quoteFMIEnumerationItems
+  "Makes each item name of an FMI enumeration type a Modelica identifier
+   for importFMU. See fmiEnumerationItemIdent."
+  input output FMI.TypeDefinitions typeDefinition;
+algorithm
+  () := match typeDefinition
+    case FMI.ENUMERATIONTYPE()
+      algorithm
+        typeDefinition.items := list(FMI.ENUMERATIONITEM(fmiEnumerationItemIdent(item.name), item.description)
+          for item in typeDefinition.items);
+      then
+        ();
+  end match;
+end quoteFMIEnumerationItems;
+
+protected function fmiEnumerationItemIdent
+  "Returns the name of an FMI enumeration item as a Modelica identifier.
+   FMI allows any string as the name, for example \"Option 1\". A name that
+   is not a Modelica identifier becomes a quoted identifier, for example
+   'Option 1'. A name that is an identifier stays unchanged."
+  input String name;
+  output String ident;
+protected
+  String id;
+algorithm
+  // Use the Modelica parser: it knows the identifier rules and the keywords.
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    Absyn.IDENT(name = id) := Parser.stringPath(name);
+    // The parser ignores white space and comments around the identifier.
+    true := id == name;
+    ident := name;
+  else
+    ident := Util.makeQuotedIdentifier(name);
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+end fmiEnumerationItemIdent;
 
 public function cevalInteractiveFunctions4
 "defined in the interactive environment."
@@ -4451,7 +4489,7 @@ protected function fmuMethodToSimulationFlag
    takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
    `dassl` default must not become `s:dassl`); a wasm FMU serves the whole
    wasm-jit driver set. An unaccepted method is left out, and the FMU falls back
-   to what it defaults to without one: euler for C, the model's own method (else
+   to what it defaults to without one: CVODE for C, the model's own method (else
    DASKR) for wasm."
   input String method;
   input Boolean isWasmFMU;

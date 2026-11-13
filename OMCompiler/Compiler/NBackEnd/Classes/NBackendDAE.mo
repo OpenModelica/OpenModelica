@@ -40,11 +40,13 @@ encapsulated uniontype NBackendDAE
               all data. It further contains the lower and solve main function.
 "
 public
+  import Absyn;
   import BVariable = NBVariable;
   import DAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, EquationKind, IfEquationBody, Iterator};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
+  import DataReconciliation = NBDataReconciliation;
   import Evaluation = NBEvaluation;
   import Events = NBEvents;
   import Jacobian = NBJacobian;
@@ -104,9 +106,11 @@ protected
 
   // Util imports
   import ClockIndexes;
+  import ElementSource;
   import Error;
   import ExecStat;
   import Flags;
+  import SCode;
   import StringUtil;
   import System;
 
@@ -129,6 +133,8 @@ public
     Events.EventInfo eventInfo            "contains time and state events";
     Partitioning.ClockedInfo clockedInfo  "contains information about clocked partitions";
     UnorderedMap<Path, Function> funcMap  "Function bodies";
+    Option<DataReconciliation.ReconciliationData> dataReconciliation "set by the data reconciliation module";
+    ExtraInfo info;
   end MAIN;
 
   record JACOBIAN
@@ -144,6 +150,31 @@ public
     VarData varData "Variable data";
     EqData eqData   "Equation data";
   end HESSIAN;
+
+  uniontype ExtraInfo "extra information that we should send around with the DAE"
+    record EXTRA_INFO
+      String description        "the model description string";
+      String fileNamePrefix     "the model name to be used in the dumps";
+      Option<String> simflags   "the simulation flags, data reconciliation reads the -sx csv file";
+      Absyn.Program program     "to resolve modelica:// uris";
+    end EXTRA_INFO;
+
+    function empty
+      output ExtraInfo info = EXTRA_INFO("", "", NONE(), Absyn.PROGRAM({}, Absyn.TOP()));
+    end empty;
+  end ExtraInfo;
+
+  function getExtraInfo
+    input BackendDAE bdae;
+    output ExtraInfo info;
+  algorithm
+    info := match bdae
+      case MAIN() then bdae.info;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because only the main backend DAE has extra info."});
+      then fail();
+    end match;
+  end getExtraInfo;
 
   function toString
     input BackendDAE bdae;
@@ -262,6 +293,9 @@ public
     "This function transforms the FlatModel structure to BackendDAE."
     input FlatModel flatModel;
     input UnorderedMap<Path, Function> funcMap;
+    input String fileNamePrefix;
+    input Option<String> simflags;
+    input Absyn.Program program;
     output BackendDAE bdae;
   protected
     VarData variableData;
@@ -269,12 +303,18 @@ public
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
     FlatModel flat = FlatModel.mapExp(flatModel, lowerExp);
+    String description;
   algorithm
     flat := splitRaggedVariables(flat);
+    description := match ElementSource.getOptComment(flatModel.source)
+      case SOME(SCode.COMMENT(comment = SOME(description))) then description;
+      else "";
+    end match;
     variableData := lowerVariableData(continuousImplicitDiscretes(flat.variables, listAppend(flat.equations, flat.initialEquations),
       listAppend(flat.algorithms, flat.initialAlgorithms)));
     (equationData, variableData) := lowerEquationData(flat.equations, flat.algorithms, flat.initialEquations, flat.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap), NONE(),
+      EXTRA_INFO(description, fileNamePrefix, simflags, program));
   end lower;
 
   function lowerExp
@@ -693,8 +733,11 @@ public
 
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
+    // (do not change order BINDINGS -> DATA RECONCILIATION -> FUNCTIONALIAS -> ALIAS, data
+    // reconciliation needs the binding equations, which the alias modules remove)
     preOptModules := {
       (Bindings.main,      "Bindings"),
+      (DataReconciliation.main, "Data Reconciliation"),
       (function FunctionAlias.main(kind = kind), "FunctionAlias"),
       (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
       (function simplify(init = false), "Simplify"),
@@ -714,13 +757,15 @@ public
     }, mainModules);
 
     // (do not change order SOLVE -> JACOBIAN)
+    // (data reconciliation jacobian needs the solved strong components)
     postOptModules := {
       (Evaluation.removeDummies,              "Remove Dummies"),
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),
       (function Jacobian.main(kind = kind),   "Jacobian"),
-      (Initialization.minimizeHomotopySystem, "Minimize Homotopy System")
+      (Initialization.minimizeHomotopySystem, "Minimize Homotopy System"),
+      (DataReconciliation.createJacobian,     "Data Reconciliation Jacobian")
     };
 
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);

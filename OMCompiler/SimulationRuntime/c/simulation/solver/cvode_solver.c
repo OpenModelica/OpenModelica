@@ -415,7 +415,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
   if (measure_time_flag)
     rt_tick(SIM_TIMER_SOLVER);
 
-  return 0;
+  return OMC_ERROR_RAISED() ? -1 : 0;
 }
 
 /**
@@ -1015,6 +1015,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   int flag;
   int retVal = 0;
   int finished = FALSE;
+  int rootFailed = FALSE;
   int workRetries = 0;
   double tout = 0;
   long int i;
@@ -1133,6 +1134,12 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## root found at time = %.15g", solverInfo->currentTime);
       finished = TRUE;
     }
+    else if (flag == CV_RTFUNC_FAIL)
+    {
+      /* the root function raised an error, which fails the step */
+      rootFailed = TRUE;
+      finished = TRUE;
+    }
     else if (flag == CV_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
       warningStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
@@ -1152,7 +1159,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   } while (!finished && !OMC_ERROR_RAISED());
 
   /* Catch */
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !rootFailed) { OMC_ERROR_CLEAR(); }
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;
 
