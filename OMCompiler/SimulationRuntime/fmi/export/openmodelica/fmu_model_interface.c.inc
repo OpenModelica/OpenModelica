@@ -1858,7 +1858,6 @@ fmiXStatus FMIX(Terminate)(fmiXComponent c)
 fmiXStatus FMIX(Reset)(fmiXComponent c)
 {
   ModelInstance* comp = (ModelInstance *)c;
-  modelica_boolean modelDataVarsFreed = FALSE;
   OMC_FMU_INIT *init;
   if (invalidState(comp, FMIX_STR "Reset", CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmiXError;
@@ -1874,26 +1873,23 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   }
 #endif
 
-  /* Free modelData */
-  if (!(comp->state & model_state_terminated)) {
-    /* call external objects destructors */
-    comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
+  /* Free modelData. Terminate frees nothing, so this is also needed after it. */
+  /* call external objects destructors */
+  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-    /* free nonlinear system data */
-    freeNonlinearSystems(comp->fmuData, comp->threadData);
+  /* free nonlinear system data */
+  freeNonlinearSystems(comp->fmuData, comp->threadData);
 #endif
 #if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
-    /* free mixed system data */
-    freeMixedSystems(comp->fmuData, comp->threadData);
+  /* free mixed system data */
+  freeMixedSystems(comp->fmuData, comp->threadData);
 #endif
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
-    /* free linear system data */
-    freeLinearSystems(comp->fmuData, comp->threadData);
+  /* free linear system data */
+  freeLinearSystems(comp->fmuData, comp->threadData);
 #endif
-    /* free data struct */
-    deInitializeDataStruc(comp->fmuData);
-    modelDataVarsFreed = TRUE;
-  }
+  /* free data struct */
+  deInitializeDataStruc(comp->fmuData);
 
   /* Initialize modelData */
   omc_useStream[OMC_LOG_STDOUT] = 1;
@@ -1909,16 +1905,14 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
     comp->state = model_state_error;
     return fmiXError;
   }
-  if (modelDataVarsFreed) {
-    /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
-     * initialized and filled again, mirroring Instantiate. */
-    allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
-    scalarAllocArrayAttributes(comp->fmuData->modelData);
-    if (comp->fmuData->callback->updateStructuralParameters) {
-      comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
-    }
-    calculateAllScalarLength(comp->fmuData->modelData);
+  /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
+   * initialized and filled again, mirroring Instantiate. */
+  allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
+  scalarAllocArrayAttributes(comp->fmuData->modelData);
+  if (comp->fmuData->callback->updateStructuralParameters) {
+    comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
   }
+  calculateAllScalarLength(comp->fmuData->modelData);
   omc_fmu_init_experiment(init, comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 #ifdef OMC_FMI_LS_DAE
