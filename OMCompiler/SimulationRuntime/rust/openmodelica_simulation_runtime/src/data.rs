@@ -765,12 +765,34 @@ fn each<T>(p: *mut T, n: c_long, mut f: impl FnMut(&mut T)) {
 }
 
 #[cfg(feature = "fmi")]
-/// C's `freeModelDataVars` and `freeModelDataVarArrays` up to the blocks
-/// themselves: the variable infos, and the refcounted attribute arrays and unit
-/// strings that hang off them.
+/// C's `freeModelDataVars`: the names, comments and file names of the variables,
+/// which `omc_fmu_init.c` allocates when it reads `_init.bin`.
+pub(crate) fn free_var_infos(md: &mut MODEL_DATA) {
+    let info = |i: &mut VAR_INFO| unsafe { freeVarInfo(i) };
+    each(md.realVarsData, md.nVariablesRealArray, |v| info(&mut v.info));
+    each(md.integerVarsData, md.nVariablesIntegerArray, |v| info(&mut v.info));
+    each(md.booleanVarsData, md.nVariablesBooleanArray, |v| info(&mut v.info));
+    each(md.stringVarsData, md.nVariablesStringArray, |v| info(&mut v.info));
+    each(md.realParameterData, md.nParametersRealArray, |v| info(&mut v.info));
+    each(md.integerParameterData, md.nParametersIntegerArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.booleanParameterData, md.nParametersBooleanArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.stringParameterData, md.nParametersStringArray, |v| info(&mut v.info));
+    each(md.realSensitivityData, md.nSensitivityVars, |v| info(&mut v.info));
+    each(md.realAlias, md.nAliasRealArray, |a| info(&mut a.info));
+    each(md.integerAlias, md.nAliasIntegerArray, |a| info(&mut a.info));
+    each(md.booleanAlias, md.nAliasBooleanArray, |a| info(&mut a.info));
+    each(md.stringAlias, md.nAliasStringArray, |a| info(&mut a.info));
+}
+
+#[cfg(feature = "fmi")]
+/// C's `freeModelDataVarArrays` up to the blocks themselves: the refcounted
+/// attribute arrays and unit strings that hang off them.
 fn release_var_attributes(md: &mut MODEL_DATA) {
     let real = |v: &mut STATIC_REAL_DATA| unsafe {
-        freeVarInfo(&mut v.info);
         let a = &mut v.attribute;
         omc_array_release(&mut a.start);
         omc_array_release(&mut a.min);
@@ -784,27 +806,19 @@ fn release_var_attributes(md: &mut MODEL_DATA) {
     each(md.realParameterData, md.nParametersRealArray, real);
     each(md.realSensitivityData, md.nSensitivityVars, real);
     let integer = |v: &mut STATIC_INTEGER_DATA| unsafe {
-        freeVarInfo(&mut v.info);
         omc_array_release(&mut v.attribute.start);
         omc_array_release(&mut v.attribute.min);
         omc_array_release(&mut v.attribute.max);
     };
     each(md.integerVarsData, md.nVariablesIntegerArray, integer);
     each(md.integerParameterData, md.nParametersIntegerArray, integer);
-    let boolean = |v: &mut STATIC_BOOLEAN_DATA| unsafe {
-        freeVarInfo(&mut v.info);
-        omc_array_release(&mut v.attribute.start);
-    };
+    let boolean = |v: &mut STATIC_BOOLEAN_DATA| unsafe { omc_array_release(&mut v.attribute.start) };
     each(md.booleanVarsData, md.nVariablesBooleanArray, boolean);
     each(md.booleanParameterData, md.nParametersBooleanArray, boolean);
-    let string = |v: &mut STATIC_STRING_DATA| unsafe {
-        freeVarInfo(&mut v.info);
-        omc_string_array_release(&mut v.attribute.start);
-    };
+    let string = |v: &mut STATIC_STRING_DATA| unsafe { omc_string_array_release(&mut v.attribute.start) };
     each(md.stringVarsData, md.nVariablesStringArray, string);
     each(md.stringParameterData, md.nParametersStringArray, string);
     let alias = |a: &mut DATA_ALIAS| {
-        unsafe { freeVarInfo(&mut a.info) };
         release_string(&mut a.unit);
         release_string(&mut a.displayUnit);
     };
