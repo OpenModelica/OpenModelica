@@ -5126,9 +5126,12 @@ pub fn fmi_handle_timers(
 /// Output point `row` of the equidistant grid, as C's `perform_simulation`
 /// computes it: `row*(stop-start)/numSteps + start`, *not* `start + row*h` —
 /// the two round differently and the result files must agree bit for bit.
+/// The last point is `stop`, which the formula can round below.
 fn grid_time(row: u32, start: f64, stop: f64, n_steps: u32) -> f64 {
     if n_steps == 0 {
         start
+    } else if row >= n_steps {
+        stop
     } else {
         row as f64 * (stop - start) / n_steps as f64 + start
     }
@@ -8813,6 +8816,8 @@ struct EventsDriver {
     /// Where a retried step ends, short of this row's grid point.
     pending_tout: Option<f64>,
     retry: StepRetry,
+    /// Set when an event step reached the last grid point.
+    terminal_at: Option<f64>,
 }
 
 impl SolverCore {
@@ -10698,7 +10703,18 @@ impl EventsDriver {
             finished: false,
             pending_tout: None,
             retry,
+            terminal_at: None,
         })
+    }
+
+    /// C's skip of an output point an event step reached. At the last point the
+    /// event was at `stop` up to rounding, so the run ends at `stop`.
+    fn skip_row(&mut self, n_steps: u32, stop: f64) {
+        self.row += 1;
+        if self.row > n_steps {
+            self.reached = stop;
+            self.terminal_at = Some(stop);
+        }
     }
 }
 
@@ -10730,8 +10746,7 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| if no_grid { stop } else { grid(row) };
-        // C ends on `currentTime >= stopTime`, not on a row count, so a last grid
-        // point left short of `stop` gets one more step at `grid(n_steps + 1)`.
+        // C ends on `currentTime >= stopTime`, not on a row count.
         let more = |row: u32, t: f64| {
             if no_grid || n_steps == 0 {
                 row < n_rows
@@ -10759,7 +10774,7 @@ impl Driver for EventsDriver {
             }
             while more(self.row, self.reached) {
                 if skip_grid(self.row, self.reached, self.did_event_step) {
-                    self.row += 1;
+                    self.skip_row(n_steps, stop);
                     continue;
                 }
                 if did_step && past_deadline(deadline) {
@@ -10980,7 +10995,7 @@ impl Driver for EventsDriver {
                 break Advance::Done;
             }
             if !self.mid_row && skip_grid(self.row, self.reached, self.did_event_step) {
-                self.row += 1;
+                self.skip_row(n_steps, stop);
                 continue;
             }
             if did_step && past_deadline(deadline) {
@@ -11125,6 +11140,10 @@ impl Driver for EventsDriver {
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
+    }
+
+    fn terminal_time(&self) -> Option<f64> {
+        self.terminal_at
     }
 }
 
