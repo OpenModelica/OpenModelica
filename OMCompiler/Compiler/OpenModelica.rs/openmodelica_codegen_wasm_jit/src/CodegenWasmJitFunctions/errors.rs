@@ -132,6 +132,38 @@ pub(super) fn emit_assert(
         emit_assert_cond(ctx, cond)?;
         ctx.emit(we::Instruction::LocalSet(cond_h));
     }
+    emit_assert_report(ctx, msg_h, file_h, cond_h, info, in_function, when_body)?;
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// C's `omc_assert(threadData, info, msg)` in a function, for a failure the
+/// generated code detects itself.
+pub(super) fn emit_function_assert(ctx: &mut FnCtx, msg: &str, info: &metamodelica::SourceInfo) -> Result<()> {
+    let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
+    let msg_h = ctx.alloc_temp(WTy::I32);
+    emit_str_literal(ctx, msg.as_bytes())?;
+    ctx.emit(we::Instruction::LocalSet(msg_h));
+    let file_h = ctx.alloc_temp(WTy::I32);
+    emit_str_literal(ctx, file.as_bytes())?;
+    ctx.emit(we::Instruction::LocalSet(file_h));
+    let cond_h = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalSet(cond_h));
+    emit_assert_report(ctx, msg_h, file_h, cond_h, info, true, false)
+}
+
+/// The failing arm of [`emit_assert`]: report the message, file and condition
+/// String handles with `info` and unwind.
+fn emit_assert_report(
+    ctx: &mut FnCtx,
+    msg_h: u32,
+    file_h: u32,
+    cond_h: u32,
+    info: &metamodelica::SourceInfo,
+    in_function: bool,
+    when_body: bool,
+) -> Result<()> {
     // Only one arm runs, and it consumes the Strings; `initial` and `sim_data` follow.
     let report_args = |ctx: &mut FnCtx| -> Result<()> {
         ctx.emit(we::Instruction::LocalGet(msg_h));
@@ -174,7 +206,6 @@ pub(super) fn emit_assert(
     // Unwind unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     emit_assert_unwind(ctx);
-    ctx.emit(we::Instruction::End);
     ctx.emit(we::Instruction::End);
     Ok(())
 }

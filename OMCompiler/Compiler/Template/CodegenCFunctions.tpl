@@ -2066,6 +2066,16 @@ case efn as EXTERNAL_FUNCTION(__) then
        case v::_ then 'omc_ret_ = <%funArgName(v)%>;<%\n%>'
     %><%match outVars case v::_ then rcRetainOut(v)%><%varFrees%>
     <%match outVars
+       case {VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(path=extObjPath)))} then
+         // MLS 3.7, 12.9.8: a constructor returns a null pointer to indicate failure.
+         <<
+         if (!omc_ret_) {
+           FILE_INFO info = {<%infoArgs(info)%>};
+           omc_assert(threadData, info, "The constructor of external object %s failed.", "<%Util.escapeModelicaStringToCString(dotPath(extObjPath))%>");
+         }
+         >>
+    %>
+    <%match outVars
        case v::_ then 'return omc_ret_;'
        else 'return;'
     %>
