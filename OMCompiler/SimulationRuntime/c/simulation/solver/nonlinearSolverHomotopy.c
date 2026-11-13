@@ -2263,11 +2263,11 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
   }
   /* Use actual working point for scaling */
   for (i=0;i<homotopyData->n;i++){
-    homotopyData->xScaling[i] = fmax(nlsData->nominal[i],fabs(homotopyData->x0[i]));
+    homotopyData->xScaling[i] = fmax(nlsData->positiveNominal[i],fabs(homotopyData->x0[i]));
   }
   homotopyData->xScaling[homotopyData->n] = 1.0;
 
-  debugVectorDouble(OMC_LOG_NLS_V,"Nominal values", nlsData->nominal, homotopyData->n);
+  debugVectorDouble(OMC_LOG_NLS_V,"Nominal values", nlsData->positiveNominal, homotopyData->n);
   debugVectorDouble(OMC_LOG_NLS_V,"Scaling values", homotopyData->xScaling, homotopyData->m);
 
 

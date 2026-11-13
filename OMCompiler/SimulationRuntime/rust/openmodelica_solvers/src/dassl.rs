@@ -66,9 +66,8 @@ pub struct Dassl {
 /// C's `dassl_limits`: `-maxIntegrationOrder`, `-maxStepSize` (which
 /// `-noEquidistantOutputTime` also sets) and `-initialStepSize`.
 pub fn limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
-    let (order, h_max, out_time, h0) = crate::simflags::with_flags(|f| {
-        (f.max_order, f.max_step_size, f.no_equidistant_time, f.initial_step_size)
-    });
+    let (order, h_max, out_time, h0) =
+        crate::simflags::with_flags(|f| (f.max_order, f.max_step_size, f.no_equidistant_time, f.initial_step_size));
     if let Some(n) = order {
         info[8] = 1;
         iwork[2] = n;
@@ -90,13 +89,7 @@ pub const FIRST_STEP_RESTARTS: u32 = 3;
 /// step that needs a smaller H is never taken. When IDID = -7 came before any
 /// step, set DASKR up to restart from the H it reached (RWORK(3)); the caller
 /// calls it again and then [`reset_initial_step`].
-pub fn restart_first_step(
-    idid: i32,
-    info: &mut [i32; 24],
-    rwork: &[f64],
-    iwork: &[i32],
-    restarts: &mut u32,
-) -> bool {
+pub fn restart_first_step(idid: i32, info: &mut [i32; 24], rwork: &[f64], iwork: &[i32], restarts: &mut u32) -> bool {
     use crate::omclog;
     if idid != -7 || iwork[10] != 0 || *restarts >= FIRST_STEP_RESTARTS {
         return false;
@@ -144,7 +137,7 @@ impl Dassl {
         // accuracy of one whose magnitude is one.
         let (rtol, atol) = (0..n_states)
             .map(|i| {
-                let nominal = nominals.get(i).copied().unwrap_or(1.0).abs().max(1e-32);
+                let nominal = nominals.get(i).copied().unwrap_or(1.0);
                 (tolerance, tolerance * nominal)
             })
             .unzip();
@@ -187,13 +180,7 @@ impl Dassl {
     }
 
     /// Integrate from `(t, y)` toward `target`.
-    pub fn step(
-        &mut self,
-        ode: &mut dyn Ode,
-        target: f64,
-        t: &mut f64,
-        y: &mut [f64],
-    ) -> Result<DasslStep> {
+    pub fn step(&mut self, ode: &mut dyn Ode, target: f64, t: &mut f64, y: &mut [f64]) -> Result<DasslStep> {
         use daskr::solver;
 
         if y.is_empty() {
@@ -499,7 +486,7 @@ unsafe fn jacobian(
     for group in &colors {
         for &col in group {
             let ci = col as usize;
-            let nominal = ctx.nominals.get(ci).copied().unwrap_or(1.0).abs().max(1e-32);
+            let nominal = ctx.nominals.get(ci).copied().unwrap_or(1.0);
             let mut step = difference_step(delta_x, y[ci], h * yprime[ci], ctx.tolerance, nominal);
             step = y[ci] + step - y[ci]; // the step the addition actually took
             if step == 0.0 {
@@ -569,7 +556,12 @@ mod tests {
         for k in 1..=10 {
             let target = k as f64 * 0.5;
             d.step(&mut ode, target, &mut t, &mut y).expect("step");
-            assert!((y[0] - (-t).exp()).abs() < 1e-8, "x({t}) = {}, not {}", y[0], (-t).exp());
+            assert!(
+                (y[0] - (-t).exp()).abs() < 1e-8,
+                "x({t}) = {}, not {}",
+                y[0],
+                (-t).exp()
+            );
         }
     }
 
@@ -617,6 +609,10 @@ mod tests {
             ode.0.expect("no evaluation")
         };
         assert!(first(None) >= 1.0, "{} is not a thousandth of 1000", first(None));
-        assert!(first(Some(1e6)) < 1e-6, "first step of {} does not follow y'", first(Some(1e6)));
+        assert!(
+            first(Some(1e6)) < 1e-6,
+            "first step of {} does not follow y'",
+            first(Some(1e6))
+        );
     }
 }

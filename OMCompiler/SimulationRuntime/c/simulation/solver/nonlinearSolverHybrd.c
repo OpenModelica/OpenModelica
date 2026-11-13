@@ -468,7 +468,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     for(i = 0; i < hybrdData->n; i++) {
       infoStreamPrint(OMC_LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i), nlsData->nlsx[i]);
       infoStreamPrint(OMC_LOG_NLS_V, 0, "    nominal = %f\nold = %f\nextrapolated = %f",
-          nlsData->nominal[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
+          nlsData->nominalSign[i]*nlsData->positiveNominal[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
       messageClose(OMC_LOG_NLS_V);
     }
     messageClose(OMC_LOG_NLS_V);
@@ -481,7 +481,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     memcpy(hybrdData->x, nlsData->nlsxExtrapolation, hybrdData->n*(sizeof(double)));
 
   for(i=0; i<hybrdData->n; i++){
-    hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->nominal[i]);
+    hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->positiveNominal[i]);
   }
 
   /* start solving loop */
@@ -492,7 +492,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       hybrdData->x[i] = fmax(nlsData->min[i], fmin(hybrdData->x[i], nlsData->max[i]));
 
     for(i=0; i<hybrdData->n; i++)
-      hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->nominal[i]);
+      hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->positiveNominal[i]);
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V)) {
@@ -741,8 +741,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
         {
           if(nlsData->nlsx[i] == 0)
           {
-            nlsData->nlsx[i] = nlsData->nominal[i];
-            hybrdData->x[i] = nlsData->nominal[i];
+            nlsData->nlsx[i] = nlsData->nominalSign[i]*nlsData->positiveNominal[i];
+            hybrdData->x[i] = nlsData->nlsx[i];
           }
         }
       }
@@ -750,7 +750,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       else if(assertRetries < hybrdData->n+1)
       {
         i = assertRetries-1;
-        hybrdData->x[i] += 0.01*nlsData->nominal[i];
+        hybrdData->x[i] += 0.01*nlsData->nominalSign[i]*nlsData->positiveNominal[i];
       }
 
       giveUp = 0;
@@ -788,7 +788,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       /* try to vary the initial values */
 
       for(i = 0; i < hybrdData->n; i++)
-        hybrdData->x[i] += nlsData->nominal[i] * 0.1;
+        hybrdData->x[i] += nlsData->nominalSign[i]*nlsData->positiveNominal[i] * 0.1;
 
       hybrdData->factor = initial_factor;
       retries++;
@@ -813,7 +813,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
 
       for(i=0; i<hybrdData->n; i++)
-        hybrdData->xScalefactors[i] = fmax(fabs(nlsData->nlsxOld[i]), nlsData->nominal[i]);
+        hybrdData->xScalefactors[i] = fmax(fabs(nlsData->nlsxOld[i]), nlsData->positiveNominal[i]);
 
       retries++;
       giveUp = 0;
@@ -841,7 +841,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
       /* reset x-scaling factors */
       for(i=0; i<hybrdData->n; i++)
-        hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->nominal[i]);
+        hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->positiveNominal[i]);
 
       retries++;
       giveUp = 0;
@@ -938,7 +938,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     /* try to vary the initial values */
     } else if((hybrdData->info == 4 || hybrdData->info == 5) && retries2 < 4) {
       /* set x vector */
-      memcpy(hybrdData->x, nlsData->nominal, hybrdData->n*(sizeof(double)));
+      for(i = 0; i < hybrdData->n; i++)
+        hybrdData->x[i] = nlsData->nominalSign[i]*nlsData->positiveNominal[i];
       retries = 0;
       retries2++;
       giveUp = 0;

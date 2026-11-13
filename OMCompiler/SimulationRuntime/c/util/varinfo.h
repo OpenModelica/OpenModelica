@@ -70,6 +70,8 @@ extern void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double
 
 extern void freeVarInfo(VAR_INFO* info);
 
+extern void normalizeNominal(REAL_ATTRIBUTE *attribute, const char *name);
+
 #ifdef __cplusplus
 }
 #endif

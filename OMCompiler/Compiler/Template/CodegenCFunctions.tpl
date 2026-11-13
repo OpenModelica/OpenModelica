@@ -9207,11 +9207,11 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       for (int k = 0; k < runs[r][2]; ++k) {
         const int i = runs[r][0] + k;
         if (runs[r][3] == 0) {
-          linearSystemData->nominal[i] = 1.0;
+          linearSystemData->positiveNominal[i] = 1.0;
           linearSystemData->min[i]     = -DBL_MAX;
           linearSystemData->max[i]     = DBL_MAX;
         } else {
-          linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
+          linearSystemData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
           linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
           linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
         }

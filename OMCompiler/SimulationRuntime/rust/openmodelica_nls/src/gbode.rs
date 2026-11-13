@@ -28,7 +28,19 @@ fn newton(req: &mut GbNlsRequest) -> bool {
     let n = req.n;
     let mut x = req.start.to_vec();
     let ok = with_res_scaling(req.handle, n, |res_scaling| {
-        crate::solve_newton_c(n, &mut x, req.old, req.nominal, res_scaling, false, req.eval, &mut |_, _| {}, false)
+        let nominal_sign = vec![1.0f64; n];
+        crate::solve_newton_c(
+            n,
+            &mut x,
+            req.old,
+            req.nominal,
+            &nominal_sign,
+            res_scaling,
+            false,
+            req.eval,
+            &mut |_, _| {},
+            false,
+        )
     });
     if ok {
         req.x.copy_from_slice(&x);

@@ -657,7 +657,7 @@ pub(super) fn build_sim_model(
     ] {
         for (i, sv) in list.iter().enumerate() {
             let off = base + SimOff::from((i as u32) * 8);
-            nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
+            nominal_defaults.push((off, positive_nominal(const_value(&sv.nominalValue).unwrap_or(1.0))));
             if let Some(t) = attr_targets.of(&sv.name) {
                 t.nom_offs.push(off);
             }
@@ -1075,7 +1075,10 @@ pub(super) fn build_sim_model(
     // `functionUpdateBoundVariableAttributes` fills these slots from those.
     for (i, sv) in all_reals.iter().enumerate() {
         let nom_off = at_real(&lz.real_nom_off, &real_pos.fixed(i))?;
-        nominal_defaults.push((nom_off, literal_value(&sv.nominalValue).unwrap_or(1.0)));
+        nominal_defaults.push((
+            nom_off,
+            positive_nominal(literal_value(&sv.nominalValue).unwrap_or(1.0)),
+        ));
         if let Some(t) = attr_targets.of(&sv.name) {
             t.start_offs.push(at_real(&lz.start_off, &real_pos.fixed(i))?);
             t.raw_nom_offs.push(nom_off);
@@ -1085,7 +1088,7 @@ pub(super) fn build_sim_model(
     let mut dyn_defaults: Vec<(SimOff, Sz, ConstSlot, u32)> = dyn_scratch.fills.clone();
     let mut sidx = Sz::lit(states.len() as i64);
     for dv in &dyn_vars.states {
-        let nom = const_value(&dv.sv.nominalValue).unwrap_or(1.0).abs().max(1e-32);
+        let nom = positive_nominal(const_value(&dv.sv.nominalValue).unwrap_or(1.0));
         dyn_defaults.push((at_real(&lz.state_nom_off, &sidx)?, dv.len(), ConstSlot::f64(nom), 8));
         dyn_defaults.push((
             at_real(&lz.state_max_off, &sidx)?,
@@ -1102,7 +1105,7 @@ pub(super) fn build_sim_model(
         sidx = sidx + dv.len();
     }
     for (dv, idx) in &real_pos.dyn_reals {
-        let nom = literal_value(&dv.sv.nominalValue).unwrap_or(1.0);
+        let nom = positive_nominal(literal_value(&dv.sv.nominalValue).unwrap_or(1.0));
         dyn_defaults.push((at_real(&lz.real_nom_off, idx)?, dv.len(), ConstSlot::f64(nom), 8));
     }
     // The integrator loop calls `functionCheckAsserts`, whose index is only known
@@ -1329,6 +1332,14 @@ pub(super) fn build_sim_model(
     }
     let (soti, soti_dims) = soti_vars(vars, &array_runs, &dyn_vars)?;
     let meta_lay = meta_layout(&layout)?;
+    // C's `read_input_xml` warns for a literal nominal as it reads it.
+    let mut startup_warnings = Vec::new();
+    for sv in all_reals.iter().copied().chain(svs(&vars.paramVars)) {
+        if let Some(v) = literal_value(&sv.nominalValue) {
+            startup_warnings.extend(nominal_warning(&cref_display(&sv.name)?, v));
+        }
+    }
+    startup_warnings.extend(nls_warnings.iter().cloned());
     let mut meta = build_sim_meta(
         &meta_lay,
         &result_vars,
@@ -1348,7 +1359,7 @@ pub(super) fn build_sim_model(
         param_vars(vars)?,
         attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
-        nls_warnings.clone(),
+        startup_warnings,
         samples.iter().map(|s| s.index).collect(),
         soti,
         sens_params,

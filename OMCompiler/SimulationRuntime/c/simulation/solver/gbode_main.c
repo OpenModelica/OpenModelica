@@ -370,7 +370,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 void gbode_setVarAttributes(DATA* data, DATA_GBODE* gbData)
 {
   for (int i = 0; i < gbData->nStates; i++) {
-    gbData->nominals[i] = fmax(fabs(getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i)), 1e-32);
+    gbData->nominals[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     gbData->mins[i] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
     gbData->maxs[i] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
   }
@@ -550,7 +550,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     } else {
       infoStreamPrint(OMC_LOG_SOLVER, 1, "Nominal values of the states:");
       for (int i = 0; i < gbData->nStates; i++) {
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[i]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->positiveNominal[i]);
       }
       messageClose(OMC_LOG_SOLVER);
     }
@@ -971,10 +971,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     infoStreamPrint(OMC_LOG_GBODE, 1, "Fast states and corresponding nominal values:");
     for (ii = 0; ii < nFastStates; ii++) {
       i = gbData->fastStatesIdx[ii];
-      gbfData->nlsData->nominal[ii] = gbData->nominals[i];
+      gbfData->nlsData->positiveNominal[ii] = gbData->nominals[i];
       gbfData->nlsData->min[ii] = gbData->mins[i];
       gbfData->nlsData->max[ii] = gbData->maxs[i];
-      infoStreamPrint(OMC_LOG_GBODE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbfData->nlsData->nominal[ii]);
+      infoStreamPrint(OMC_LOG_GBODE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbfData->nlsData->positiveNominal[ii]);
     }
     messageClose(OMC_LOG_GBODE);
 

@@ -772,7 +772,8 @@ fn release_var_attributes(md: &mut MODEL_DATA) {
         omc_array_release(&mut a.start);
         omc_array_release(&mut a.min);
         omc_array_release(&mut a.max);
-        omc_array_release(&mut a.nominal);
+        omc_array_release(&mut a.positiveNominal);
+        omc_array_release(&mut a.nominalSign);
         release_string(&mut a.unit);
         release_string(&mut a.displayUnit);
     };
