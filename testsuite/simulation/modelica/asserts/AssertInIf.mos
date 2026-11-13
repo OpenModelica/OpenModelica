@@ -1,0 +1,107 @@
+// name:     AssertInIf
+// keywords: assert if
+// status:   correct
+//
+// An assert(false, ...) in a branch of an if-equation or if-statement must
+// only trigger if the branch is selected, #14791.
+//
+
+loadString("
+model AssertInIfEq
+  Real x = time;
+equation
+  if x > -1 then
+  else
+    assert(false, \"else branch of if-equation\");
+  end if;
+end AssertInIfEq;
+
+model AssertInInitialIfEq
+  parameter Real a = 3 annotation(Evaluate = false);
+  Real x = time;
+initial equation
+  if a > 2 then
+    assert(a > 0, \"then branch of initial if-equation\");
+  else
+    assert(false, \"else branch of initial if-equation\");
+  end if;
+end AssertInInitialIfEq;
+
+model AssertInInitialIfEqEmpty
+  parameter Real a = 3 annotation(Evaluate = false);
+  Real x = time;
+initial equation
+  if a > 2 then
+  else
+    assert(false, \"else branch of initial if-equation\");
+  end if;
+end AssertInInitialIfEqEmpty;
+
+model AssertInIfStmt
+  Real x = time;
+  Real y;
+algorithm
+  y := 1;
+  if x > -1 then
+  else
+    y := 2;
+    assert(false, \"else branch of if-statement\");
+  end if;
+end AssertInIfStmt;
+"); getErrorString();
+
+simulate(AssertInIfEq, numberOfIntervals = 10); getErrorString();
+simulate(AssertInInitialIfEq, numberOfIntervals = 10); getErrorString();
+simulate(AssertInInitialIfEq, numberOfIntervals = 10, simflags = "-override=a=1"); getErrorString();
+simulate(AssertInInitialIfEqEmpty, numberOfIntervals = 10); getErrorString();
+simulate(AssertInIfStmt, numberOfIntervals = 10); getErrorString();
+val(y, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AssertInIfEq_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AssertInIfEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "AssertInInitialIfEq_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AssertInInitialIfEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AssertInInitialIfEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=a=1'",
+//     messages = "Simulation execution failed for model: AssertInInitialIfEq
+// LOG_ASSERT        | error   | [<interactive>:18:5-18:56:writable]
+// |                 | |       | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | ((a > 2.0), a=1) --> \"else branch of initial if-equation\"
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "AssertInInitialIfEqEmpty_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AssertInInitialIfEqEmpty', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "AssertInIfStmt_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AssertInIfStmt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// endResult
