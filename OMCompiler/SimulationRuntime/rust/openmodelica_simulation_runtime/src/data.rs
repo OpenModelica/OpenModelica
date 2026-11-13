@@ -736,6 +736,7 @@ unsafe extern "C" {
     fn omc_rc_release(obj: *mut c_void);
     fn omc_array_release(a: *mut base_array_t);
     fn omc_string_array_release(a: *mut base_array_t);
+    fn freeVarInfo(info: *mut VAR_INFO);
 }
 
 #[cfg(feature = "fmi")]
@@ -764,10 +765,12 @@ fn each<T>(p: *mut T, n: c_long, mut f: impl FnMut(&mut T)) {
 }
 
 #[cfg(feature = "fmi")]
-/// C's `freeModelDataVarArrays` up to the blocks themselves: the refcounted
-/// attribute arrays and unit strings that hang off them.
+/// C's `freeModelDataVars` and `freeModelDataVarArrays` up to the blocks
+/// themselves: the variable infos, and the refcounted attribute arrays and unit
+/// strings that hang off them.
 fn release_var_attributes(md: &mut MODEL_DATA) {
     let real = |v: &mut STATIC_REAL_DATA| unsafe {
+        freeVarInfo(&mut v.info);
         let a = &mut v.attribute;
         omc_array_release(&mut a.start);
         omc_array_release(&mut a.min);
@@ -781,19 +784,27 @@ fn release_var_attributes(md: &mut MODEL_DATA) {
     each(md.realParameterData, md.nParametersRealArray, real);
     each(md.realSensitivityData, md.nSensitivityVars, real);
     let integer = |v: &mut STATIC_INTEGER_DATA| unsafe {
+        freeVarInfo(&mut v.info);
         omc_array_release(&mut v.attribute.start);
         omc_array_release(&mut v.attribute.min);
         omc_array_release(&mut v.attribute.max);
     };
     each(md.integerVarsData, md.nVariablesIntegerArray, integer);
     each(md.integerParameterData, md.nParametersIntegerArray, integer);
-    let boolean = |v: &mut STATIC_BOOLEAN_DATA| unsafe { omc_array_release(&mut v.attribute.start) };
+    let boolean = |v: &mut STATIC_BOOLEAN_DATA| unsafe {
+        freeVarInfo(&mut v.info);
+        omc_array_release(&mut v.attribute.start);
+    };
     each(md.booleanVarsData, md.nVariablesBooleanArray, boolean);
     each(md.booleanParameterData, md.nParametersBooleanArray, boolean);
-    let string = |v: &mut STATIC_STRING_DATA| unsafe { omc_string_array_release(&mut v.attribute.start) };
+    let string = |v: &mut STATIC_STRING_DATA| unsafe {
+        freeVarInfo(&mut v.info);
+        omc_string_array_release(&mut v.attribute.start);
+    };
     each(md.stringVarsData, md.nVariablesStringArray, string);
     each(md.stringParameterData, md.nParametersStringArray, string);
     let alias = |a: &mut DATA_ALIAS| {
+        unsafe { freeVarInfo(&mut a.info) };
         release_string(&mut a.unit);
         release_string(&mut a.displayUnit);
     };
