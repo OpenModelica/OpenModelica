@@ -16,7 +16,8 @@ testCSTR.mos \
 testDrumBoiler.mos \
 ticket6296.mos \
 testCombiTable2D.mos \
-fmi2FreeInstanceNull.mos
+fmi2FreeInstanceNull.mos \
+fmi2LogFormatCpp.mos
 
 FAILINGTESTFILES = \
 Crane_FMU2_CPP.mos \
@@ -26,7 +27,8 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-fmi2FreeInstanceNull.py
+fmi2FreeInstanceNull.py \
+fmi2LogFormatCpp.py
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

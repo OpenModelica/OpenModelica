@@ -2,7 +2,8 @@ TEST = ../../../../../rtest -v
 
 TESTFILES = \
 testCppFMI3.mos \
-fmi3_array_cpp.mos
+fmi3_array_cpp.mos \
+fmi3LogFormatCpp.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -10,6 +11,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+fmi3LogFormatCpp.py
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
