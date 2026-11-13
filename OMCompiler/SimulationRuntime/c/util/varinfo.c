@@ -109,7 +109,7 @@ void normalizeNominal(REAL_ATTRIBUTE *attribute, const char *name)
   for (i = 0; i < n; i++) {
     modelica_real magnitude = fabs(nominal[i]);
     sign[i] = nominal[i] < 0 ? -1.0 : 1.0;
-    if (magnitude > 0 && isfinite(magnitude)) {
+    if (isnormal(magnitude)) {
       nominal[i] = magnitude;
       continue;
     }

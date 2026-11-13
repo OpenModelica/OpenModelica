@@ -282,12 +282,11 @@ pub struct Layout<T = u32> {
     pub start_off: T,
     /// C's `realVarsData[i].attribute.positiveNominal`, one f64 per real variable
     /// in [`Layout::start_off`] order. [`Layout::state_nom_off`] is the
-    /// integrator's floored copy.
+    /// integrator's copy.
     pub real_nom_off: T,
     /// Base of the per-state `nominal` attribute (one f64 per state), written by
     /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
-    /// `fmax(positiveNominal, 1e-32)` rather than the attribute itself: it is the
-    /// integrator's `atol` scale and the Jacobian's FD step floor.
+    /// It is the integrator's `atol` scale and the Jacobian's FD step floor.
     pub state_nom_off: T,
     /// Base of the per-state `max` attribute, written the same way; C's
     /// `functionJacAC_num` flips its difference quotient at the bound.
@@ -1249,11 +1248,11 @@ pub struct AttrLog {
 pub const ATTR_NAME: [&str; 4] = ["min", "max", "nominal", "start"];
 
 fn nominal_is_usable(nominal: f64) -> bool {
-    let magnitude = fmath::fabs(nominal);
-    magnitude > 0.0 && magnitude.is_finite()
+    nominal.is_normal()
 }
 
-/// C's `normalizeNominal`: the magnitude the solvers scale by, 1.0 for 0, inf and NaN.
+/// C's `normalizeNominal`: the magnitude the solvers scale by, 1.0 for 0, a
+/// subnormal value, inf and NaN.
 pub fn positive_nominal(nominal: f64) -> f64 {
     if nominal_is_usable(nominal) {
         fmath::fabs(nominal)
@@ -1262,7 +1261,7 @@ pub fn positive_nominal(nominal: f64) -> f64 {
     }
 }
 
-/// C's `normalizeNominal` warning for a nominal of 0, inf or NaN that the model gave.
+/// C's `normalizeNominal` warning for a nominal that [`positive_nominal`] replaces.
 pub fn nominal_warning(name: &str, nominal: f64) -> Option<String> {
     (!nominal_is_usable(nominal)).then(|| {
         format!(

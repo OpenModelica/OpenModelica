@@ -7111,16 +7111,15 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
 
 /// C's `realVarsData[i].attribute.positiveNominal` for the states, which scales a
 /// solver's absolute tolerance and is what `fmi3GetNominalsOfContinuousStates`
-/// answers. Floored as `ida_solver_setNominals` does: read before
-/// `initializeModel` has floored them, a zero nominal is an infinite error
-/// weight.
+/// answers. Before `functionUpdateBoundVariableAttributes` has written them,
+/// the slots are 0, which [`crate::positive_nominal`] makes 1.0.
 pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
     (0..layout.n_states)
         .map(|i| {
-            Ok(fmath::fmax(
-                read_f64(e, sim_data + layout.state_nom_off + i * 8)?,
-                1e-32,
-            ))
+            Ok(crate::positive_nominal(read_f64(
+                e,
+                sim_data + layout.state_nom_off + i * 8,
+            )?))
         })
         .collect()
 }
@@ -7132,7 +7131,7 @@ fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
         let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
-        nominals.push(fmath::fmax(n, 1e-32));
+        nominals.push(crate::positive_nominal(n));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -7294,7 +7293,7 @@ impl DasslDriver {
             info[4] = 1; // INFO(5)=1: a user Jacobian routine
         }
         // Per-state tolerances scaled by nominal, matching the C runtime
-        // (`dassl.c`: INFO(2)=1, atol[i]=tol·max(|nominal_i|,1e-32)).
+        // (`dassl.c`: INFO(2)=1, atol[i]=tol·nominal_i).
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
         if n_states > 0 {

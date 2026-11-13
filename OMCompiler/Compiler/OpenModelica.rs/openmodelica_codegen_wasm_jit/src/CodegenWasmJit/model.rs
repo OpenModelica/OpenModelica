@@ -657,10 +657,7 @@ pub(super) fn build_sim_model(
     ] {
         for (i, sv) in list.iter().enumerate() {
             let off = base + SimOff::from((i as u32) * 8);
-            nominal_defaults.push((
-                off,
-                positive_nominal(const_value(&sv.nominalValue).unwrap_or(1.0)).max(1e-32),
-            ));
+            nominal_defaults.push((off, positive_nominal(const_value(&sv.nominalValue).unwrap_or(1.0))));
             if let Some(t) = attr_targets.of(&sv.name) {
                 t.nom_offs.push(off);
             }
@@ -1091,7 +1088,7 @@ pub(super) fn build_sim_model(
     let mut dyn_defaults: Vec<(SimOff, Sz, ConstSlot, u32)> = dyn_scratch.fills.clone();
     let mut sidx = Sz::lit(states.len() as i64);
     for dv in &dyn_vars.states {
-        let nom = positive_nominal(const_value(&dv.sv.nominalValue).unwrap_or(1.0)).max(1e-32);
+        let nom = positive_nominal(const_value(&dv.sv.nominalValue).unwrap_or(1.0));
         dyn_defaults.push((at_real(&lz.state_nom_off, &sidx)?, dv.len(), ConstSlot::f64(nom), 8));
         dyn_defaults.push((
             at_real(&lz.state_max_off, &sidx)?,

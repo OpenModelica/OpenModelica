@@ -370,7 +370,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 void gbode_setVarAttributes(DATA* data, DATA_GBODE* gbData)
 {
   for (int i = 0; i < gbData->nStates; i++) {
-    gbData->nominals[i] = fmax(getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i), 1e-32);
+    gbData->nominals[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     gbData->mins[i] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
     gbData->maxs[i] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
   }

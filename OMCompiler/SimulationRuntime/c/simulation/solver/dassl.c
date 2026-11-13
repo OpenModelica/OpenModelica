@@ -161,7 +161,7 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
   for(i=0; i<dasslData->N; ++i)
   {
     const modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    dasslData->nominal[i] = fmax(nominal, 1e-32);
+    dasslData->nominal[i] = nominal;
     dasslData->rtol[i] = data->simulationInfo->tolerance;
     dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {

@@ -606,7 +606,7 @@ int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER 
   for (i = 0; i < cvodeData->N; ++i)
   {
     const modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    abstol[i] = fmax(nominal, 1e-32) * data->simulationInfo->tolerance;
+    abstol[i] = nominal * data->simulationInfo->tolerance;
   }
   flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");

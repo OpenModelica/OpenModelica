@@ -386,7 +386,7 @@ pub(crate) struct AttrTargets {
     /// A state's `SimData` `max` slot, which the numeric linearization reads.
     pub(crate) max_offs: Vec<SimOff>,
     /// C's `realVarsData[i].attribute` (`Layout::real_nom_off` and the optimizer's
-    /// arrays): the nominal's magnitude without the 1e-32 floor.
+    /// arrays).
     pub(crate) raw_min_offs: Vec<SimOff>,
     pub(crate) raw_max_offs: Vec<SimOff>,
     pub(crate) raw_nom_offs: Vec<SimOff>,
@@ -1206,8 +1206,8 @@ impl<'a> FnCtx<'a> {
             self.emit(we::Instruction::LocalTee(val));
             self.emit(we::Instruction::F64Const(1.0f64.into()));
             self.emit(we::Instruction::LocalGet(val));
-            self.emit(we::Instruction::F64Const(0.0f64.into()));
-            self.emit(we::Instruction::F64Gt);
+            self.emit(we::Instruction::F64Const(f64::MIN_POSITIVE.into()));
+            self.emit(we::Instruction::F64Ge);
             self.emit(we::Instruction::LocalGet(val));
             self.emit(we::Instruction::F64Const(f64::INFINITY.into()));
             self.emit(we::Instruction::F64Lt);
@@ -1224,11 +1224,8 @@ impl<'a> FnCtx<'a> {
         self.emit(we::Instruction::F64Store(sim_mem(log_off, 3)?));
         if matches!(attr, Attr::Nominal) {
             for off in &targets.nom_offs {
-                // C's `dassl.c`: `atol[i] = tol * fmax(nominal, 1e-32)`.
                 let rel = self.emit_sim_base(*off)?;
                 self.emit(we::Instruction::LocalGet(stored));
-                self.emit(we::Instruction::F64Const(1e-32f64.into()));
-                self.emit(we::Instruction::F64Max);
                 self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
             }
         }

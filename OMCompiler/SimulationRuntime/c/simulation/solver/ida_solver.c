@@ -125,16 +125,13 @@ int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* ida
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i < data->modelData->nStates; ++i) {
     const modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    idaData->nominal[i] = fmax(nominal, 1e-32);
+    idaData->nominal[i] = nominal;
     infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[data->simulationInfo->realVarsReverseIndex[i].array_idx].info.name, idaData->nominal[i]);
   }
 
   /* daeMode: set nominal values for algebraic variables */
   if (idaData->daeMode) {
     getAlgebraicDAEVarNominals(data, idaData->nominal + data->modelData->nStates);
-    for(i=data->modelData->nStates; i < idaData->N; ++i) {
-      idaData->nominal[i] = fmax(idaData->nominal[i], 1e-32);
-    }
   }
   /* multiply by tolerance to obtain a relative tolerace */
   for(i=0; i < idaData->N; ++i) {
