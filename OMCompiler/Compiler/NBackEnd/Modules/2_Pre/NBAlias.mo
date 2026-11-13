@@ -213,10 +213,10 @@ protected
       output String str;
     algorithm
       if isSome(set.const_opt) then
-        str := "\tConstant/Parameter Binding: "
+        str := "\tConstant/Parameter/Input Binding: "
           + Equation.toString(Pointer.access(Util.getOption(set.const_opt))) + "\n";
       else
-        str := "\t<No Constant/Parameter Binding>\n";
+        str := "\t<No Constant/Parameter/Input Binding>\n";
       end if;
       if listEmpty(set.simple_equations) then
         str := str + "\t###<No Set Equations>\n";
@@ -1741,7 +1741,9 @@ protected
 
       // time, parameter or constant found (nothing happens)
       case Expression.CREF()
-        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref, sourceInfo())) or ComponentRef.isTime(exp.cref))
+        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref, sourceInfo()))
+          or ComponentRef.isTime(exp.cref)
+          or Variable.isTopLevelInput(BVariable.getVar(exp.cref, sourceInfo())))
       then tpl;
 
       // do not handle state and previous alias in post causalization
