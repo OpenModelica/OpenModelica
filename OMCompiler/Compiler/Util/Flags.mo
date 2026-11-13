@@ -1488,6 +1488,15 @@ constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "buildModelFMU(version=\"2.0+3.0\"): the FMI 3.0 FMU also serves FMI 2.0, for OpenModelicaLibraryTesting only.");
 
+constant ConfigFlag INPUT_DERIVATIVES = CONFIG_FLAG(175, "inputDerivatives",
+  NONE(), EXTERNAL(), STRING_FLAG("error"),
+  SOME(STRING_DESC_OPTION({
+    ("error", "Stop the translation with an error that lists the derivatives of inputs that the model needs."),
+    ("input", "Make each needed derivative der(u) an additional input named der(u)."),
+    ("zero", "Take the derivatives of inputs that index reduction and alias elimination need as zero, without a check (the old behavior). der(u) in the model is still an error.")
+    })),
+  "Sets how derivatives of top-level inputs are treated, e.g. der(u) in the model or from index reduction.");
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

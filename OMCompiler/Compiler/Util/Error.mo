@@ -983,7 +983,7 @@ public constant ErrorTypes.Message INST_NON_LOADED = ErrorTypes.MESSAGE(526, Err
 public constant ErrorTypes.Message RECURSION_DEPTH_REACHED = ErrorTypes.MESSAGE(527, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "The maximum recursion depth of %s was reached, probably due to mutual recursion. The current scope: %s.");
 public constant ErrorTypes.Message DERIVATIVE_INPUT = ErrorTypes.MESSAGE(528, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "The model requires derivatives of some inputs as listed below:\n%s");
+  "The model requires derivatives of some inputs as listed below:\n%s\nUse --inputDerivatives=input to make them additional inputs.");
 public constant ErrorTypes.Message UTF8_COMMAND_LINE_ARGS = ErrorTypes.MESSAGE(529, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "The compiler was sent command-line arguments that were not UTF-8 encoded and will abort the current execution.");
 public constant ErrorTypes.Message PACKAGE_ORDER_FILE_NOT_COMPLETE = ErrorTypes.MESSAGE(530, ErrorTypes.GRAMMAR(), ErrorTypes.WARNING(),

@@ -1971,7 +1971,7 @@ algorithm
       Option<BackendDAE.BackendDAE> initDAE_lambda0;
       list<BackendDAE.Equation> removedInitialEquationLst;
       Option<list<String>> strPreOptModules;
-      Boolean isFMI2;
+      Boolean isFMI2, zeroInputDerivatives = false;
       BackendDAE.SymbolicJacobians fmiDer;
       AvlTreePathFunction.Tree funcs;
 
@@ -2018,10 +2018,19 @@ algorithm
       // FMI 2.0/3.0: enable postOptModule "introduceOutputRealDerivatives" to set maxOutputDerivativeOrder = 1
       if (isFMI2 and fmuType == "cs") then
         strPreOptModules := SOME("introduceOutputRealDerivatives":: Util.getOption(strPreOptModules));
+        // the output derivatives take the derivatives of inputs as zero; on
+        // failure translateModelFMU's saveFlags wrapper resets the flag
+        zeroInputDerivatives := Flags.getConfigString(Flags.INPUT_DERIVATIVES) == "error";
+        if zeroInputDerivatives then
+          FlagsUtil.setConfigString(Flags.INPUT_DERIVATIVES, "zero");
+        end if;
       end if;
 
       //BackendDump.printBackendDAE(dlow);
       (dlow, initDAE, initDAE_lambda0, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);
+      if zeroInputDerivatives then
+        FlagsUtil.setConfigString(Flags.INPUT_DERIVATIVES, "error");
+      end if;
       restart := listLength(getGlobalRoot(Global.structuralParameters)) > numStructuralParameters;
 
       // generate derivatives
