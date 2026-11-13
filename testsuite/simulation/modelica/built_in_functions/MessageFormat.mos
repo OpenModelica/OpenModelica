@@ -66,13 +66,16 @@ echo(false);
 r1 := simulate(MessageFormat.TerminateEquation);
 r2 := simulate(MessageFormat.TerminateAlgorithm);
 r3 := simulate(MessageFormat.Error);
+m1 := r1.messages;
+m2 := r2.messages;
+m3 := r3.messages;
 echo(true);
 // Each message is shown as it is, as a whole line. The message texts and their
 // log levels differ between the simulation targets, so only the text is checked.
-regexBool(r1.messages, "\\| f: 100%s %d %%\n");
-regexBool(r1.messages, ": stop equation: 100%s %d %%\n");
-regexBool(r2.messages, ": stop algorithm: 100%s %d %%\n");
-regexBool(r3.messages, "\\| g: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m1, "\\| f: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m1, ": stop equation: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m2, ": stop algorithm: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m3, "\\| g: 100%s %d %%\n");
 
 // Result:
 // true
