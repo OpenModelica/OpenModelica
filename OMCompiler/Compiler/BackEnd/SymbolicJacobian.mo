@@ -2261,9 +2261,9 @@ algorithm
                                "inlineArrayEqn",
                                "constantLinearSystem",
                                "solveSimpleEquations",
+                               "removeConstants",
                                "tearingSystem",
                                "calculateStrongComponentJacobians",
-                               "removeConstants",
                                "simplifyTimeIndepFuncCalls"};
 
           // Add removeSimpleEquation to remove constant(= independent of seed) equations.

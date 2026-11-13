@@ -1106,6 +1106,8 @@ public constant ErrorTypes.Message NON_CAUSAL_BLOCK_CONNECTOR = ErrorTypes.MESSA
   "Public connector %s in a block may only have variables that are input or output, but the following are neither: %s.");
 public constant ErrorTypes.Message OLD_FRONTEND_DEPRECATED = ErrorTypes.MESSAGE(634, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.");
+public constant ErrorTypes.Message POST_OPT_MODULE_DISCARDED_TEARING = ErrorTypes.MESSAGE(635, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
+  "The post-optimization module %s discarded the tearing of %s strong component(s), which are now solved without tearing. Run modules that change the equations before tearingSystem.");
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid dimensions %s in %s, no more than one dimension may have size > 1.");
 public constant ErrorTypes.Message NF_ARRAY_TYPE_MISMATCH = ErrorTypes.MESSAGE(587, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

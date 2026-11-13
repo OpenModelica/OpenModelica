@@ -8335,22 +8335,32 @@ public function postOptimizeDAE
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
   BackendDAEFunc.optimizationModule optModule;
-  String moduleStr;
+  String moduleName, moduleStr;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
+  Boolean tearingDone = false, rematch;
+  Integer tornBefore = 0, notTornBefore = 0;
   constant Boolean debug = false;
 algorithm
   execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
     Error.checkCancel();
-    (optModule, moduleStr) := postOptModule;
-    moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
+    (optModule, moduleName) := postOptModule;
+    moduleStr := moduleName + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
+      if tearingDone then
+        (tornBefore, notTornBefore) := numberOfAlgebraicLoops(outDAE.eqs);
+      end if;
       BackendDAE.DAE(systs, shared) := optModule(outDAE);
       (systs, shared) := filterEmptySystems(systs, shared);
+      rematch := tearingDone and List.any(systs, hasNoMatching);
       outDAE := BackendDAE.DAE(systs, shared);
       if debug then execStat("postOpt " + moduleStr); end if;
       outDAE := causalizeDAE(outDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), inMatchingAlgorithm, inDAEHandler, false);
+      if rematch then
+        warnDiscardedTearing(outDAE.eqs, tornBefore, notTornBefore, moduleName);
+      end if;
+      tearingDone := tearingDone or moduleName == "tearingSystem";
       execStat("postOpt " + (if debug then "causalize " else "") + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         BackendDump.dumpBackendDAE(outDAE, "post-optimization module " + moduleStr);
@@ -8366,6 +8376,58 @@ algorithm
     print("post-optimization done.\n");
   end if;
 end postOptimizeDAE;
+
+protected function hasNoMatching
+  input BackendDAE.EqSystem syst;
+  output Boolean b;
+algorithm
+  b := match syst.matching
+    case BackendDAE.NO_MATCHING() then true;
+    else false;
+  end match;
+end hasNoMatching;
+
+protected function numberOfAlgebraicLoops
+  input BackendDAE.EqSystems systs;
+  output Integer torn = 0;
+  output Integer notTorn = 0;
+algorithm
+  for syst in systs loop
+    () := match syst.matching
+      local
+        BackendDAE.StrongComponents comps;
+      case BackendDAE.MATCHING(comps = comps)
+        algorithm
+          for comp in comps loop
+            () := match comp
+              case BackendDAE.TORNSYSTEM() algorithm torn := torn + 1; then ();
+              case BackendDAE.EQUATIONSYSTEM() algorithm notTorn := notTorn + 1; then ();
+              else ();
+            end match;
+          end for;
+        then ();
+      else ();
+    end match;
+  end for;
+end numberOfAlgebraicLoops;
+
+protected function warnDiscardedTearing
+  "Causalizing a system again after tearingSystem gives algebraic loops
+   without tearing. A module can also remove a torn loop, e.g.
+   extendDynamicOptimization, which discards no tearing."
+  input BackendDAE.EqSystems systs;
+  input Integer tornBefore;
+  input Integer notTornBefore;
+  input String moduleName;
+protected
+  Integer torn, notTorn, lost;
+algorithm
+  (torn, notTorn) := numberOfAlgebraicLoops(systs);
+  lost := intMin(tornBefore - torn, notTorn - notTornBefore);
+  if lost > 0 then
+    Error.addMessage(Error.POST_OPT_MODULE_DISCARDED_TEARING, {moduleName, intString(lost)});
+  end if;
+end warnDiscardedTearing;
 
 public function getSolvedSystemforJacobians "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
@@ -8751,6 +8813,7 @@ public function allPostOptimizationModules
     (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (ResolveLoops.reshuffling_post, "reshufflePost"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
+    (BackendDAEOptimize.removeConstants, "removeConstants"),
     (Tearing.tearingSystem, "tearingSystem"),
     (BackendDAEOptimize.simplifyLoops, "simplifyLoops"),
     (Tearing.recursiveTearing, "recursiveTearing"),
@@ -8764,7 +8827,6 @@ public function allPostOptimizationModules
     (SymbolicJacobian.symbolicJacobian, "symbolicJacobian"),
     (SymbolicJacobian.generateSymbolicSensitivities, "generateSymbolicSensitivities"),
     (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization"),
-    (BackendDAEOptimize.removeConstants, "removeConstants"),
     (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     (BackendDAEOptimize.hets, "hets"),
