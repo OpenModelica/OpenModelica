@@ -2089,12 +2089,13 @@ pub extern "C" fn rt_array_extreme_i32(obj: u32, want_max: i32) -> i32 {
     acc
 }
 
-/// `min(a)`/`max(a)` over a Real array (see `rt_array_extreme_i32`).
+/// `min(a)`/`max(a)` over a Real array (see `rt_array_extreme_i32`). An empty
+/// array gives the greatest (`min`) or least (`max`) finite Real.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_extreme_f64(obj: u32, want_max: i32) -> f64 {
     let total = rt_array_total(obj);
     if total == 0 {
-        trap();
+        return if want_max != 0 { -f64::MAX } else { f64::MAX };
     }
     let data = arr_data(obj);
     let mut acc = unsafe { load_f64(data) };
