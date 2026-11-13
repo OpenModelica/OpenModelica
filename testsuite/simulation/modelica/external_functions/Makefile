@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 CevalModelicaStrings.mos \
+EnvironmentVariable.mos \
 ExternalCFuncInputOnly.mos \
 ExternalLibraries.mos \
 ExternalNlsRecovery.mos \

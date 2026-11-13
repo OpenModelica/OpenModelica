@@ -730,6 +730,7 @@ openmodelica_util_datatypes_basic/src/unittests/mutable_tests.rs
 openmodelica_version/Cargo.toml
 openmodelica_version/src/lib.rs
 openmodelica_wasi/Cargo.toml
+openmodelica_wasi/src/env.rs
 openmodelica_wasi/src/fs.rs
 openmodelica_wasi/src/lib.rs
 openmodelica_wasi/src/stdio.rs
