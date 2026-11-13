@@ -29,6 +29,7 @@ testArrayAlg.mos \
 testDrumBoiler.mos \
 testknownvar.mos \
 testMathFuncs.mos \
+testNoEventDiff.mos \
 testRecordDiff.mos \
 testSortFunction.mos \
 testSteamPipe.mos \

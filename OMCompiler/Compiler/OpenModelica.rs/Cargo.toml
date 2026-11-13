@@ -97,6 +97,7 @@ members = [
   "openmodelica_fmi_driver",
   "openmodelica_ext_native_marshal",
   "openmodelica_ext_native",
+  "openmodelica_fmi_state_machine",
   "../../SimulationRuntime/rust/daskr",
   "../../SimulationRuntime/rust/minpack",
   "../../SimulationRuntime/rust/openmodelica_mat_reader",

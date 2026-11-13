@@ -1621,6 +1621,13 @@ algorithm
         (exp_1, funcs) := differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter);
     then (exp_1, funcs);
 
+    case ("noEvent",_)
+      algorithm
+        tp := Expression.typeof(exp);
+        (exp_1, funcs) := differentiateExp(exp, inDiffwrtCref, inInputData, inDiffType, inFuncs, maxIter);
+        exp_1 := Expression.makePureBuiltinCall("noEvent", {exp_1}, tp);
+      then (exp_1, funcs);
+
     case ("firstTick",_) then (exp, inFuncs);
     case ("interval",_) then (exp, inFuncs);
 
@@ -1850,13 +1857,6 @@ algorithm
         res2 := if intGe(i,1) then Expression.makePureBuiltinCall("smooth", {e1, res1}, tp) else res1;
       then
         (res2, funcs);
-
-    case ("noEvent",{e1}, DAE.CALL_ATTR(ty=tp))
-      algorithm
-        (res1, funcs) := differentiateExp(e1,inDiffwrtCref,inInputData,inDiffType,inFunctionTree, maxIter);
-        res1 := Expression.makePureBuiltinCall("noEvent", {res1}, tp);
-      then
-        (res1, funcs);
 
     // der(arctan2(x,y)) = der(x/y)/(1+(x/y)^2)
     case ("atan2",{e,e1}, DAE.CALL_ATTR(ty=tp))

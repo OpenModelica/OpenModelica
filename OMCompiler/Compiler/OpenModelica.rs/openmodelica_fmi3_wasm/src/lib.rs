@@ -611,6 +611,10 @@ pub trait FmiHost: SimEngine {
     fn opaque_state(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout) -> Vec<u8> {
         Vec::new()
     }
+    /// Whether [`FmiHost::set_opaque_state`] takes `state`; changes nothing.
+    fn opaque_state_fits(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
+        state.is_empty()
+    }
     /// [`FmiHost::opaque_state`]'s inverse; `false` for bytes it did not write.
     fn set_opaque_state(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
         state.is_empty()
@@ -651,32 +655,16 @@ impl FmiHost for Engine {
         out.extend(words.iter().flat_map(|w| w.to_le_bytes()));
         out
     }
+    fn opaque_state_fits(&mut self, _sim_data: u32, layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
+        read_opaque(layout, state).is_some()
+    }
     fn set_opaque_state(&mut self, sim_data: u32, layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
         use openmodelica_codegen_wasm_jit_runtime as rt;
-        let mut strings = Vec::new();
-        let mut at = 0;
-        for _ in 0..layout.n_str_alg() {
-            let Some(len) = state
-                .get(at..at + 8)
-                .map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize)
-            else {
-                return false;
-            };
-            let Some(s) = state.get(at + 8..at + 8 + len) else {
-                return false;
-            };
-            strings.push(s);
-            at += 8 + len;
-        }
-        let rest = &state[at..];
-        if rest.len() % 8 != 0 {
+        let Some((strings, delay, spatial)) = read_opaque(layout, state) else {
             return false;
-        }
-        let mut words = rest.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap()));
-        if !(rt::delay::set_from_words(&mut words) && rt::spatial::set_from_words(&mut words) && words.next().is_none())
-        {
-            return false;
-        }
+        };
+        rt::delay::restore(delay);
+        rt::spatial::restore(spatial);
         for (k, s) in strings.into_iter().enumerate() {
             let slot = (sim_data + layout.str_off + 4 * k as u32) as *mut u32;
             let h = rt::rt_str_new(s.len() as u32);
@@ -688,6 +676,37 @@ impl FmiHost for Engine {
         }
         true
     }
+}
+
+/// The string variables and histories in `state`, not applied yet; `None` if
+/// [`FmiHost::opaque_state`] did not write it for this model.
+#[cfg(feature = "wasm")]
+#[allow(clippy::type_complexity)]
+fn read_opaque<'a>(
+    layout: &openmodelica_sim_meta::Layout,
+    state: &'a [u8],
+) -> Option<(
+    Vec<&'a [u8]>,
+    Option<openmodelica_sim_meta::delay::DelayState>,
+    Option<openmodelica_sim_meta::spatial::SpatialState>,
+)> {
+    use openmodelica_codegen_wasm_jit_runtime as rt;
+    let mut strings = Vec::new();
+    let mut at = 0;
+    for _ in 0..layout.n_str_alg() {
+        let len = u64::from_le_bytes(state.get(at..at + 8)?.try_into().unwrap()) as usize;
+        let end = (at + 8).checked_add(len)?;
+        strings.push(state.get(at + 8..end)?);
+        at = end;
+    }
+    let rest = &state[at..];
+    if rest.len() % 8 != 0 {
+        return None;
+    }
+    let mut words = rest.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap()));
+    let delay = rt::delay::from_words(&mut words)?;
+    let spatial = rt::spatial::from_words(&mut words)?;
+    words.next().is_none().then_some((strings, delay, spatial))
 }
 
 #[cfg(feature = "wasm")]
@@ -1109,6 +1128,44 @@ impl<E: FmiHost + 'static> MeState<E> {
             return d.set_schedule_words(w);
         }
         openmodelica_sim_meta::driver::set_schedule_words(self.samples.as_mut(), self.sync.as_mut(), w)
+    }
+
+    fn schedule_words_fit(&self, w: &[f64]) -> bool {
+        #[cfg(feature = "cs")]
+        if let Some(d) = &self.cs {
+            return d.schedule_words_fit(w);
+        }
+        openmodelica_sim_meta::driver::schedule_words_fit(self.sync.as_ref(), w)
+    }
+
+    /// The parts of an FMU state: `SimData`, the engine's opaque bytes and the
+    /// schedule. `None`, with nothing changed, if `state` does not fit this
+    /// instance.
+    fn split_fmu_state<'a>(&mut self, state: &'a [u8]) -> Option<(&'a [u8], &'a [u8], Vec<f64>)> {
+        let n = state.len();
+        let word = |k: usize| {
+            n.checked_sub(24 - 8 * k)
+                .and_then(|at| state.get(at..at + 8))
+                .map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize)
+        };
+        let (n_opaque, n_schedule, flat) = (word(0)?, word(1)?, word(2)?);
+        if flat != self.layout.total as usize
+            || n_schedule % 8 != 0
+            || flat.checked_add(n_opaque)?.checked_add(n_schedule)? != n - 24
+        {
+            return None;
+        }
+        let opaque = &state[flat..flat + n_opaque];
+        let schedule: Vec<f64> = state[flat + n_opaque..n - 24]
+            .chunks_exact(8)
+            .map(|b| f64::from_le_bytes(b.try_into().unwrap()))
+            .collect();
+        let (sim_data, layout) = (self.sim_data, self.layout);
+        (self.engine.opaque_state_fits(sim_data, &layout, opaque) && self.schedule_words_fit(&schedule)).then_some((
+            &state[..flat],
+            opaque,
+            schedule,
+        ))
     }
 
     /// The base clock a Clock value reference names: they sit just before `time`'s.
@@ -2534,21 +2591,12 @@ macro_rules! shared_instance_methods {
     $($vis)? fn set_fmu_state(&self, state: Vec<u8>) -> Status {
         let mut st = self.st.borrow_mut();
         let l = st.layout;
-        let n = state.len();
-        let word = |k: usize| {
-            n.checked_sub(24 - 8 * k)
-                .and_then(|at| state.get(at..at + 8))
-                .map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize)
-        };
-        let (Some(n_opaque), Some(n_schedule), Some(flat)) = (word(0), word(1), word(2)) else {
+        // Nothing is changed before the whole state is known to fit.
+        let Some((sim_bytes, opaque, schedule)) = st.split_fmu_state(&state) else {
             return Status::Error;
         };
-        if flat != l.total as usize || flat.checked_add(n_opaque).and_then(|v| v.checked_add(n_schedule)) != Some(n - 24) {
-            return Status::Error;
-        }
-        let (opaque, schedule) = (&state[flat..flat + n_opaque], &state[flat + n_opaque..n - 24]);
-        let schedule: Vec<f64> = schedule.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap())).collect();
-        let mut state = state[..flat].to_vec();
+        let flat = sim_bytes.len();
+        let mut state = sim_bytes.to_vec();
         let sim_data = st.sim_data;
         // The string and external-object slots hold handles, which only the
         // current state owns: the engine puts the saved strings back itself.
@@ -2971,6 +3019,11 @@ impl<E: FmiHost + 'static> Instance<E> {
             }
             Err(s) => s,
         }
+    }
+
+    /// Whether [`Self::set_fmu_state`] takes `state`; changes nothing.
+    pub fn fmu_state_fits(&self, state: &[u8]) -> bool {
+        self.st.borrow_mut().split_fmu_state(state).is_some()
     }
 
     shared_instance_methods!(pub);

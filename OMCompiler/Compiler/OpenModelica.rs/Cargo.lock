@@ -4489,6 +4489,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_fmi_state_machine"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_frontend"
 version = "0.1.0"
 dependencies = [
@@ -4934,6 +4938,7 @@ dependencies = [
  "cc",
  "libc",
  "openmodelica_fmi3_wasm",
+ "openmodelica_fmi_state_machine",
  "openmodelica_lapack",
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",

@@ -115,6 +115,33 @@ endif()
 install(TARGETS OpenModelicaRuntimeC
   COMPONENT omc)
 
+# The ffi/ DLLs the Rust omc loads import ModelicaUtilities from a DLL, so MSVC
+# needs a shared copy as well. Its import library and PDB get their own names so
+# that they do not replace the static library's.
+if(MSVC AND OM_OMC_ENABLE_RUST)
+  add_library(OpenModelicaRuntimeC_shared SHARED)
+  target_link_libraries(OpenModelicaRuntimeC_shared
+    PUBLIC
+      omc::simrt::runtime::gc
+      omc::simrt::runtime::util
+      OMCPThreads::OMCPThreads
+      omc::simrt::runtime::headers
+  )
+  target_compile_definitions(OpenModelicaRuntimeC_shared
+    PUBLIC WIN32_LEAN_AND_MEAN
+    INTERFACE IMPORT_INTO=1)
+  set_target_properties(OpenModelicaRuntimeC_shared PROPERTIES
+    OUTPUT_NAME OpenModelicaRuntimeC
+    ARCHIVE_OUTPUT_NAME OpenModelicaRuntimeC_shared
+    PDB_NAME OpenModelicaRuntimeC_shared
+    WINDOWS_EXPORT_ALL_SYMBOLS true)
+  install(TARGETS OpenModelicaRuntimeC_shared
+    COMPONENT omc)
+  add_library(omc::simrt::runtime::shared ALIAS OpenModelicaRuntimeC_shared)
+else()
+  add_library(omc::simrt::runtime::shared ALIAS OpenModelicaRuntimeC)
+endif()
+
 
 # ######################################################################################################################
 # Library: SimulationRuntimeC (--simCodeTarget=C). The subdirectories install

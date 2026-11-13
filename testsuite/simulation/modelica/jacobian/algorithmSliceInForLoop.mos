@@ -1,0 +1,40 @@
+// name: algorithmSliceInForLoop
+// keywords: symbolic jacobian algorithm for loop slice
+// status: correct
+// teardown_command: rm -f SliceInForLoop*
+//
+// #18004: the for-loop iterator is not the first subscript of the assigned
+// slice.
+
+loadString("
+model SliceInForLoop
+  Real x(start = 1, fixed = true);
+  Real a[1, 2, 1];
+algorithm
+  for i in 1:2 loop
+    a[1, i, :] := {x};
+  end for;
+equation
+  der(x) = -sum(a);
+end SliceInForLoop;
+"); getErrorString();
+
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
+simulate(SliceInForLoop, simflags="-jacobian=symbolical"); getErrorString();
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SliceInForLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SliceInForLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=symbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.13533632115673702
+// endResult

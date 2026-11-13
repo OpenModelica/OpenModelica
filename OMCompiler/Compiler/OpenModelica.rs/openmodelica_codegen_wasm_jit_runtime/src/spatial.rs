@@ -53,14 +53,7 @@ pub extern "C" fn rt_spatial_init_profile(index: u32, points: u32, values: u32) 
 
 /// C `storeSpatialDistribution`: commit the boundary condition of an accepted step.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_spatial_store(
-    index: u32,
-    time: f64,
-    in0: f64,
-    in1: f64,
-    pos_x: f64,
-    positive: u32,
-) {
+pub extern "C" fn rt_spatial_store(index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: u32) {
     state().store(index, time, in0, in1, pos_x, positive != 0);
 }
 
@@ -105,16 +98,18 @@ pub fn to_words(out: &mut alloc::vec::Vec<f64>) {
     }
 }
 
-/// [`to_words`]' inverse; `false` for words it did not write.
-pub fn set_from_words(w: &mut dyn Iterator<Item = f64>) -> bool {
-    let state = match w.next() {
-        Some(0.0) => None,
-        Some(_) => match SpatialState::from_words(w) {
-            Some(s) => Some(s),
-            None => return false,
-        },
-        None => return false,
-    };
+/// [`to_words`]' inverse, not applied yet: `None` for words it did not write or
+/// whose count differs from the current state's.
+pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Option<SpatialState>> {
+    if w.next()? == 0.0 {
+        return Some(None);
+    }
+    let s = SpatialState::from_words(w)?;
+    let n = unsafe { (*SPATIAL.0.get()).as_ref() }.map_or(s.count(), SpatialState::count);
+    (s.count() == n).then_some(Some(s))
+}
+
+/// Puts in place what [`from_words`] read.
+pub fn restore(state: Option<SpatialState>) {
     unsafe { *SPATIAL.0.get() = state };
-    true
 }
