@@ -379,6 +379,7 @@ pub const MODEL_FNS: &[&str] = &[
     "functionReconSetC",
     "functionReconSetB",
     "functionNextTimeEvent",
+    "resetAssertWarnings",
 ];
 
 /// The clock a model entry point runs under, where `CodegenC.tpl` ticks one inside
