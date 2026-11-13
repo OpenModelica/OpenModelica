@@ -10,7 +10,7 @@ use crate::CodegenWasmJitFunctions::{SimOff, plain_off};
 use std::string::String;
 
 use openmodelica_backend_types::BackendDAE;
-use openmodelica_sim_meta::{OptInfo, OptJac, OptTerm};
+use openmodelica_sim_meta::{OptInfo, OptJac, OptTerm, positive_nominal};
 use openmodelica_simcode_types::{SimCode, SimCodeVar};
 
 use crate::CodegenWasmJit::{SimLayout, count, lst, svs};
@@ -66,8 +66,13 @@ pub(crate) fn attr_defaults(
             (layout.opt_nom_off, &sv.nominalValue, 1.0),
         ] {
             let off = base + SimOff::from(i * 8);
-            out.reals
-                .push((off, crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback)));
+            let value = crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback);
+            let value = if base == layout.opt_nom_off {
+                positive_nominal(value)
+            } else {
+                value
+            };
+            out.reals.push((off, value));
             if let Some(t) = attr_targets.of(&sv.name) {
                 if base == layout.opt_min_off {
                     t.raw_min_offs.push(off);

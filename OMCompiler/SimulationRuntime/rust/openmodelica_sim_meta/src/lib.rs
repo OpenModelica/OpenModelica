@@ -280,13 +280,13 @@ pub struct Layout<T = u32> {
     /// `functionInitStartValues` fills it; `-iif`/`-override` may replace entries;
     /// the driver then copies it over the live region (C's `setAllVarsToStart`).
     pub start_off: T,
-    /// C's `realVarsData[i].attribute.nominal` as declared, one f64 per real
-    /// variable in [`Layout::start_off`] order. [`Layout::state_nom_off`] is the
-    /// integrator's clamped copy.
+    /// C's `realVarsData[i].attribute.positiveNominal`, one f64 per real variable
+    /// in [`Layout::start_off`] order. [`Layout::state_nom_off`] is the
+    /// integrator's floored copy.
     pub real_nom_off: T,
     /// Base of the per-state `nominal` attribute (one f64 per state), written by
     /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
-    /// `fmax(|nominal|, 1e-32)` rather than the attribute itself: it is the
+    /// `fmax(positiveNominal, 1e-32)` rather than the attribute itself: it is the
     /// integrator's `atol` scale and the Jacobian's FD step floor.
     pub state_nom_off: T,
     /// Base of the per-state `max` attribute, written the same way; C's
@@ -1248,6 +1248,35 @@ pub struct AttrLog {
 /// [`AttrLog::kind`], in the group order C prints.
 pub const ATTR_NAME: [&str; 4] = ["min", "max", "nominal", "start"];
 
+fn nominal_is_usable(nominal: f64) -> bool {
+    let magnitude = fmath::fabs(nominal);
+    magnitude > 0.0 && magnitude.is_finite()
+}
+
+/// C's `normalizeNominal`: the magnitude the solvers scale by, 1.0 for 0, inf and NaN.
+pub fn positive_nominal(nominal: f64) -> f64 {
+    if nominal_is_usable(nominal) {
+        fmath::fabs(nominal)
+    } else {
+        1.0
+    }
+}
+
+/// C's `normalizeNominal` warning for a nominal of 0, inf or NaN that the model gave.
+pub fn nominal_warning(name: &str, nominal: f64) -> Option<String> {
+    (!nominal_is_usable(nominal)).then(|| {
+        format!(
+            "The nominal value of {name} is {}, but it must be nonzero and finite. The solvers use 1.0 instead.",
+            openmodelica_solvers::format_g(nominal, 6)
+        )
+    })
+}
+
+/// C's `nominalSign`: -1.0 for a negative nominal, otherwise 1.0.
+pub fn nominal_sign(nominal: f64) -> f64 {
+    if nominal < 0.0 { -1.0 } else { 1.0 }
+}
+
 /// [`MetaVar::filter`] bits: what keeps a variable out of the result file, and
 /// which flag lets it back in (C's `shouldFilterOutput` +
 /// `initializeOutputFilter`).
@@ -1684,9 +1713,10 @@ pub struct SimMeta {
     /// Modelica source of each residual `functionRemovedInitialEquations` checks;
     /// C bakes the same text into the generated `errorStreamPrint`.
     pub removed_init_desc: Vec<String>,
-    /// C's `initializeNonlinearSystems` startup warnings, decided at compile time:
-    /// so far only a sparsity pattern `sparsitySanityCheck` rejects.
-    pub nls_warnings: Vec<String>,
+    /// Startup warnings decided at compile time: C's `normalizeNominal` for a
+    /// literal nominal of 0, inf or NaN, then `initializeNonlinearSystems` for a
+    /// sparsity pattern `sparsitySanityCheck` rejects.
+    pub startup_warnings: Vec<String>,
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
@@ -2437,8 +2467,8 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for d in &m.removed_init_desc {
         put_str(&mut o, d);
     }
-    put_u32(&mut o, m.nls_warnings.len() as u32);
-    for d in &m.nls_warnings {
+    put_u32(&mut o, m.startup_warnings.len() as u32);
+    for d in &m.startup_warnings {
         put_str(&mut o, d);
     }
     put_u32(&mut o, m.sample_index.len() as u32);
@@ -3011,9 +3041,9 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         removed_init_desc.push(r.string()?);
     }
     let nwarn = r.u32()? as usize;
-    let mut nls_warnings = Vec::with_capacity(nwarn);
+    let mut startup_warnings = Vec::with_capacity(nwarn);
     for _ in 0..nwarn {
-        nls_warnings.push(r.string()?);
+        startup_warnings.push(r.string()?);
     }
     let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
     let mut soti = SotiVars::default();
@@ -3388,7 +3418,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         params,
         attr_log,
         removed_init_desc,
-        nls_warnings,
+        startup_warnings,
         sample_index,
         soti,
         sens_params,
@@ -3637,7 +3667,7 @@ mod tests {
                 },
             ],
             removed_init_desc: vec!["4.0 - z".to_string()],
-            nls_warnings: Vec::new(),
+            startup_warnings: Vec::new(),
             sample_index: vec![1],
             soti: SotiVars::default(),
             sens_params: vec![88],

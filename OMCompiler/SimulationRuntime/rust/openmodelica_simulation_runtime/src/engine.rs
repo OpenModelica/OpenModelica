@@ -966,17 +966,17 @@ impl CEngine {
                     if base + k >= nominal.len() {
                         break;
                     }
-                    nominal[base + k] = v.attribute.nominal.real_at(k, 1.0);
+                    nominal[base + k] = v.attribute.positiveNominal.real_at(k, 1.0);
                 }
             }
         }
         let bytes: Vec<u8> = nominal.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let _ = self.rt.write(l.real_nom_off, &bytes);
-        // The integrator's copies: C clamps the nominal away from zero and takes
+        // The integrator's copies: C floors the nominal at 1e-32 and takes
         // the declared `max` as the difference quotient's bound.
         let clamped: Vec<u8> = nominal[..n_states]
             .iter()
-            .flat_map(|v| v.abs().max(1e-32).to_ne_bytes())
+            .flat_map(|v| v.max(1e-32).to_ne_bytes())
             .collect();
         let _ = self.rt.write(l.state_nom_off, &clamped);
         let mut maxs = vec![f64::MAX; n_states];
@@ -1032,7 +1032,7 @@ impl CEngine {
             let alg: Vec<u8> = (0..l.n_dae_alg as usize)
                 .flat_map(|i| {
                     let k = unsafe { *ix.add(i) } as usize;
-                    nominal.get(k).copied().unwrap_or(1.0).abs().max(1e-32).to_ne_bytes()
+                    nominal.get(k).copied().unwrap_or(1.0).max(1e-32).to_ne_bytes()
                 })
                 .collect();
             let _ = self.rt.write(l.dae_alg_nom_off, &alg);

@@ -1297,7 +1297,7 @@ fn real_attribute(
 }
 
 /// `getStartFromScalarIdx` / `getMinFromScalarIdx` / `getMaxFromScalarIdx` take a
-/// `var_type` before the kind; `getNominalFromScalarIdx` does not.
+/// `var_type` before the kind; the nominal getters do not.
 #[unsafe(no_mangle)]
 pub extern "C" fn getStartFromScalarIdx(
     simulationInfo: *const SIMULATION_INFO,
@@ -1353,7 +1353,7 @@ pub extern "C" fn getMaxFromScalarIdx(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn getNominalFromScalarIdx(
+pub extern "C" fn getPositiveNominalFromScalarIdx(
     simulationInfo: *const SIMULATION_INFO,
     modelData: *const MODEL_DATA,
     kind: c_int,
@@ -1364,7 +1364,24 @@ pub extern "C" fn getNominalFromScalarIdx(
         unsafe { &*modelData },
         kind,
         scalar_idx,
-        |a| &a.nominal,
+        |a| &a.positiveNominal,
+        1.0,
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn getNominalSignFromScalarIdx(
+    simulationInfo: *const SIMULATION_INFO,
+    modelData: *const MODEL_DATA,
+    kind: c_int,
+    scalar_idx: usize,
+) -> f64 {
+    real_attribute(
+        unsafe { &*simulationInfo },
+        unsafe { &*modelData },
+        kind,
+        scalar_idx,
+        |a| &a.nominalSign,
         1.0,
     )
 }

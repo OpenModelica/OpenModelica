@@ -133,7 +133,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
     }
 
     /* Allocate nominal, min and max */
-    linsys[i].nominal = (double*) malloc(size*sizeof(double));
+    linsys[i].positiveNominal = (double*) malloc(size*sizeof(double));
     linsys[i].min = (double*) malloc(size*sizeof(double));
     linsys[i].max = (double*) malloc(size*sizeof(double));
 
@@ -237,7 +237,7 @@ int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
     // check if LS is initialized
-    if (linsys[i].nominal == NULL || linsys[i].min == NULL || linsys[i].max==NULL)
+    if (linsys[i].positiveNominal == NULL || linsys[i].min == NULL || linsys[i].max==NULL)
     {
       throwStreamPrint(threadData, "Static data of Linear system not initialized for linear system %i",i);
     }
@@ -284,7 +284,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
     /* free system and solver data */
-    free(linsys[i].nominal); linsys[i].nominal = NULL;
+    free(linsys[i].positiveNominal); linsys[i].positiveNominal = NULL;
     free(linsys[i].min); linsys[i].min = NULL;
     free(linsys[i].max); linsys[i].max = NULL;
 
@@ -542,7 +542,7 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
         {
         done = 1;
         real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-        real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
+        real_vector_to_string(&mData->realVarsData[k].attribute.positiveNominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
         warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%s)",
                            j+1,
                            mData->realVarsData[k].info.name,

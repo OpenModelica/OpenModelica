@@ -403,7 +403,7 @@ pub mod sun {
 
         /// `xScale[i] = 1/max(nominal_i, |x_i|)` at the start point (C's
         /// `SCALING_NOMINALSTART`).
-        fn x_scaling(&mut self, nominal: &[f64]) {
+        fn x_scaling(&mut self, positive_nominal: &[f64]) {
             if openmodelica_solvers::solverflags::no_scaling() {
                 data(self.xscale, self.n).fill(1.0);
                 return;
@@ -411,7 +411,7 @@ pub mod sun {
             let start = data(self.u, self.n);
             for (s, (nom, x)) in data(self.xscale, self.n)
                 .iter_mut()
-                .zip(nominal.iter().zip(start.iter()))
+                .zip(positive_nominal.iter().zip(start.iter()))
             {
                 *s = 1.0 / fmath::fmax(*nom, fmath::fabs(*x));
             }
@@ -466,7 +466,7 @@ pub mod sun {
 
         /// C's `nlsKinsolSetConstraints`: keep the sign of a variable with a
         /// non-negative min or non-positive max, if the start point has it clearly.
-        fn set_constraints(&mut self, min: &[f64], max: &[f64], nominal: &[f64]) {
+        fn set_constraints(&mut self, min: &[f64], max: &[f64], positive_nominal: &[f64]) {
             let x = data(self.u, self.n);
             let c = data(self.constraints, self.n);
             for i in 0..self.n {
@@ -475,7 +475,7 @@ pub mod sun {
                     max.get(i).copied().unwrap_or(f64::MAX),
                 );
                 // a variable on the bound, up to rounding, would block every step that points outside
-                let tol = fmath::sqrt(f64::EPSILON) * fmath::fabs(nominal.get(i).copied().unwrap_or(1.0));
+                let tol = fmath::sqrt(f64::EPSILON) * positive_nominal.get(i).copied().unwrap_or(1.0);
                 c[i] = if lo >= 0.0 && x[i] > tol {
                     if lo > 0.0 { 2.0 } else { 1.0 }
                 } else if hi <= 0.0 && x[i] < -tol {
@@ -557,7 +557,7 @@ pub mod sun {
         pub fn solve(
             &mut self,
             guess: &[f64],
-            nominal: &[f64],
+            positive_nominal: &[f64],
             pat: &super::Pattern,
             x: &mut [f64],
             eq_index: u32,
@@ -591,10 +591,10 @@ pub mod sun {
             let mut passes = 0;
             loop {
                 data(self.u, self.n).copy_from_slice(guess);
-                self.x_scaling(nominal);
+                self.x_scaling(positive_nominal);
                 self.f_scaling(&mut ud);
                 self.max_newton_step();
-                self.set_constraints(pat.min, pat.max, nominal);
+                self.set_constraints(pat.min, pat.max, positive_nominal);
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
                 let mut iters: c_long = 0;
                 unsafe { KINGetNumNonlinSolvIters(self.kin, &mut iters) };
@@ -1021,7 +1021,7 @@ pub mod sun {
         }
 
         /// C's `B_nlsKinsolXScaling`.
-        fn x_scaling(&self, ud: &mut BUd, nominal: &[f64], mode: BScaling) {
+        fn x_scaling(&self, ud: &mut BUd, positive_nominal: &[f64], mode: BScaling) {
             let mode = if openmodelica_solvers::solverflags::no_scaling() {
                 BScaling::Ones
             } else {
@@ -1031,7 +1031,7 @@ pub mod sun {
             match mode {
                 BScaling::NominalStart => {
                     for (i, s) in ud.xscale.iter_mut().enumerate() {
-                        *s = 1.0 / fmath::fmax(nominal[i], fmath::fabs(start[i]));
+                        *s = 1.0 / fmath::fmax(positive_nominal[i], fmath::fabs(start[i]));
                     }
                 }
                 _ => ud.xscale.fill(1.0),
@@ -1105,7 +1105,7 @@ pub mod sun {
             &mut self,
             code: c_int,
             ud: &mut BUd,
-            nominal: &[f64],
+            positive_nominal: &[f64],
             start: &[f64],
             old: &[f64],
             retries: &mut i32,
@@ -1150,7 +1150,7 @@ pub mod sun {
             }
             match *retries {
                 0 => {
-                    self.x_scaling(ud, nominal, BScaling::Ones);
+                    self.x_scaling(ud, positive_nominal, BScaling::Ones);
                     self.f_scaling(ud, BScaling::Ones);
                 }
                 1 => {
@@ -1162,14 +1162,14 @@ pub mod sun {
                     self.strategy = KIN_NONE;
                 }
                 3 => {
-                    self.x_scaling(ud, nominal, BScaling::NominalStart);
+                    self.x_scaling(ud, positive_nominal, BScaling::NominalStart);
                     self.f_scaling(ud, BScaling::Jacobian);
                     self.reset_initial(BInitial::Extrapolation, start, old);
                     unsafe { KINSetMaxSetupCalls(self.kin, 1) };
                     self.strategy = KIN_LINESEARCH;
                 }
                 4 => {
-                    self.x_scaling(ud, nominal, BScaling::Ones);
+                    self.x_scaling(ud, positive_nominal, BScaling::Ones);
                     self.f_scaling(ud, BScaling::Ones);
                     self.reset_initial(BInitial::OldValues, start, old);
                     unsafe { KINSetMaxSetupCalls(self.kin, 1) };
@@ -1186,7 +1186,7 @@ pub mod sun {
             &mut self,
             start: &[f64],
             old: &[f64],
-            nominal: &[f64],
+            positive_nominal: &[f64],
             pattern: Option<(&'a [i32], &'a [i32])>,
             x: &mut [f64],
             eq_index: u32,
@@ -1226,7 +1226,7 @@ pub mod sun {
             loop {
                 ud.scaling = false;
                 self.reset_initial(BInitial::Extrapolation, start, old);
-                self.x_scaling(&mut ud, nominal, BScaling::NominalStart);
+                self.x_scaling(&mut ud, positive_nominal, BScaling::NominalStart);
                 self.f_scaling(&mut ud, BScaling::Jacobian);
                 self.max_newton_step(&ud);
                 ud.scaling = true;
@@ -1279,7 +1279,7 @@ pub mod sun {
                 success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
                 let retry = flag < 0
                     && self.attempt_retry
-                    && self.handle_error(flag, &mut ud, nominal, start, old, &mut retries);
+                    && self.handle_error(flag, &mut ud, positive_nominal, start, old, &mut retries);
                 retries += 1;
                 passes += 1;
                 openmodelica_solvers::omclog::info!(
@@ -1449,7 +1449,7 @@ pub fn gb_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -
         max: req.max,
         min: req.min,
     };
-    let (start, nominal, kinsol, time) = (req.start, req.nominal, req.kinsol, req.time);
+    let (start, positive_nominal, kinsol, time) = (req.start, req.nominal, req.kinsol, req.time);
     let has_jacobian = req.jacobian.is_some();
     let mut jacobian = req.jacobian.as_deref_mut();
     let mut assemble = |x: &[f64], vals: &mut [f64]| {
@@ -1468,7 +1468,7 @@ pub fn gb_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -
             solver.configure(&kinsol);
             solver.solve(
                 start,
-                nominal,
+                positive_nominal,
                 &pat,
                 x,
                 u32::MAX,
@@ -1491,7 +1491,7 @@ pub fn gb_b_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest)
             m.remove(&handle);
         }
     });
-    let (colptr, rowidx, old, start, nominal, kinsol, time) = (
+    let (colptr, rowidx, old, start, positive_nominal, kinsol, time) = (
         req.colptr,
         req.rowidx,
         req.old,
@@ -1526,7 +1526,7 @@ pub fn gb_b_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest)
             solver.solve(
                 start,
                 old,
-                nominal,
+                positive_nominal,
                 Some((colptr, rowidx)),
                 x,
                 u32::MAX,
@@ -1548,7 +1548,7 @@ pub fn b_solve<'a>(
     n: usize,
     nnz: usize,
     pattern: Option<(&'a [i32], &'a [i32])>,
-    nominal: &[f64],
+    positive_nominal: &[f64],
     start: &[f64],
     old: &[f64],
     x: &mut [f64],
@@ -1563,7 +1563,16 @@ pub fn b_solve<'a>(
         || sun::BSolver::new(n, nnz),
         |solver| {
             solver.solve(
-                start, old, nominal, pattern, x, eq_index, time, load_guess, eval, assemble,
+                start,
+                old,
+                positive_nominal,
+                pattern,
+                x,
+                eq_index,
+                time,
+                load_guess,
+                eval,
+                assemble,
             )
         },
     )
@@ -1577,7 +1586,7 @@ pub fn solve(
     handle: u32,
     n: usize,
     pat: &Pattern,
-    nominal: &[f64],
+    positive_nominal: &[f64],
     guess: &[f64],
     x: &mut [f64],
     eq_index: u32,
@@ -1598,7 +1607,17 @@ pub fn solve(
                     None => return false,
                 }
             }
-            solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble)
+            solver.solve(
+                guess,
+                positive_nominal,
+                pat,
+                x,
+                eq_index,
+                time,
+                has_jacobian,
+                eval,
+                assemble,
+            )
         },
     )
 }
@@ -1671,7 +1690,7 @@ pub fn solve_selected(
     handle: u32,
     n: usize,
     pat: &Pattern,
-    nominal: &[f64],
+    positive_nominal: &[f64],
     guess: &[f64],
     old_values: &[f64],
     x: &mut [f64],
@@ -1691,7 +1710,7 @@ pub fn solve_selected(
             n,
             pat.nnz,
             Some((pat.colptr, pat.rowidx)),
-            nominal,
+            positive_nominal,
             &start,
             old_values,
             x,
@@ -1706,7 +1725,7 @@ pub fn solve_selected(
         handle,
         n,
         pat,
-        nominal,
+        positive_nominal,
         guess,
         x,
         eq_index,

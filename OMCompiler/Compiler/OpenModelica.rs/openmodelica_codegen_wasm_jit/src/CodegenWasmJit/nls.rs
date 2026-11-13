@@ -165,7 +165,7 @@ pub(super) fn is_homotopy_lambda(cr: Option<&metamodelica::Ref<DAE::ComponentRef
 /// threaded to the equation lowering via `SimVarMap`/`SimCtx`.
 pub(super) fn collect_nls_jobs(
     eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]],
-    nominal_of: &HashMap<String, (f64, f64, f64)>,
+    nominal_of: &HashMap<String, (f64, f64, f64, f64)>,
     attr_targets: &mut AttrTargetMap,
     dyn_scratch: &mut DynScratch,
     mut sizes: Option<&mut SizeParams>,
@@ -189,8 +189,9 @@ pub(super) fn collect_nls_jobs(
     // Concatenated `colptr[n+1] | rowidx[nnz]` of every sparsely-solved system, in
     // system order; the module `start` writes them into the pattern block.
     let mut patterns: Vec<i32> = Vec::new();
-    // Concatenated nominal values, in system order; the module `start` writes them
-    // into the nominal block, and each job's `nominal_off` indexes into it.
+    // Per system its nominal magnitudes, then their signs, in system order; the
+    // module `start` writes them into the nominal block, and each job's
+    // `nominal_off` indexes into it.
     let mut nominals: Vec<f64> = Vec::new();
     // `min`/`max` pairs alongside them, in the same order.
     let mut bounds: Vec<f64> = Vec::new();
@@ -308,20 +309,30 @@ pub(super) fn collect_nls_jobs(
                     pat_off += 4 * (2 * n + 1 + nnz);
                 }
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
-                nominal_off += 8 * n;
-                for cr in &nls_crefs(nlSystem) {
+                let mut signs: Vec<f64> = Vec::new();
+                for (i, cr) in nls_crefs(nlSystem).iter().enumerate() {
                     let key = resolve_sim_key(cr, |k| nominal_of.contains_key(k)).ok();
-                    let (nom, lo, hi) =
-                        key.as_ref()
-                            .and_then(|k| nominal_of.get(k).copied())
-                            .unwrap_or((1.0, -f64::MAX, f64::MAX));
+                    let (nom, sign, lo, hi) = key.as_ref().and_then(|k| nominal_of.get(k).copied()).unwrap_or((
+                        1.0,
+                        1.0,
+                        -f64::MAX,
+                        f64::MAX,
+                    ));
                     if let Some(t) = key.and_then(|k| attr_targets.of_key(&k)) {
-                        t.nls.push(nominals.len() as u32);
+                        let i = i as u32;
+                        t.nls.push(NlsSlot {
+                            bounds: 8 * bounds.len() as u32,
+                            nominal: nominal_off + 8 * i,
+                            sign: nominal_off + 8 * (n + i),
+                        });
                     }
                     nominals.push(nom);
+                    signs.push(sign);
                     bounds.push(lo);
                     bounds.push(hi);
                 }
+                nominals.extend(signs);
+                nominal_off += 16 * n;
                 systems.push(nlSystem.clone());
             }
         }
@@ -385,12 +396,13 @@ pub(super) fn nls_iteration_keys(eq_lists: &[&[metamodelica::Ref<SimCode::SimEqS
     keys
 }
 
-/// Map each scalar Real (and Integer) variable's cref key to its `(nominal, min, max)` attributes,
-/// defaulting to `(1.0, -inf, +inf)` where unset or non-constant.
+/// Map each scalar Real (and Integer) variable's cref key to its `(positive nominal,
+/// nominal sign, min, max)` attributes, defaulting to `(1.0, 1.0, -inf, +inf)` where
+/// unset or non-constant.
 pub(super) fn build_nls_nominal_map(
     vars: &SimCodeVar::SimVars,
     wanted: &HashSet<String>,
-) -> HashMap<String, (f64, f64, f64)> {
+) -> HashMap<String, (f64, f64, f64, f64)> {
     let mut map = HashMap::default();
     if wanted.is_empty() {
         return map;
@@ -405,13 +417,11 @@ pub(super) fn build_nls_nominal_map(
         .chain(lst(&vars.aliasVars));
     for sv in all {
         if let Some(key) = sim_cref_key(&sv.name).ok().filter(|k| wanted.contains(k)) {
-            let nom = const_value(&sv.nominalValue)
-                .map(|v| v.abs())
-                .filter(|v| *v > 0.0)
-                .unwrap_or(1.0);
+            let nom = const_value(&sv.nominalValue).unwrap_or(1.0);
             let lo = const_value(&sv.minValue).unwrap_or(-f64::MAX);
             let hi = const_value(&sv.maxValue).unwrap_or(f64::MAX);
-            map.entry(key).or_insert((nom, lo, hi));
+            map.entry(key)
+                .or_insert((positive_nominal(nom), nominal_sign(nom), lo, hi));
         }
     }
     map
@@ -600,9 +610,10 @@ impl DynScratch {
         }
         // `nls_hist_bytes`: count + last solved, scaling, extrapolation, 10 stored solutions.
         let hist_off = self.take(Sz::lit(16) + n.clone() * 16 + (Sz::lit(8) + n.clone() * 8) * 10)?;
-        let nominal_off = self.take(n.clone() * 8)?;
+        let nominal_off = self.take(n.clone() * 16)?;
         let bounds_off = self.take(n.clone() * 16)?;
-        self.fills.push((nominal_off, n.clone(), ConstSlot::f64(1.0), 8));
+        // The magnitudes and then the signs, all 1.
+        self.fills.push((nominal_off, n.clone() * 2, ConstSlot::f64(1.0), 8));
         self.fills.push((bounds_off, n.clone(), ConstSlot::f64(-f64::MAX), 16));
         self.fills
             .push((bounds_off + 8, n.clone(), ConstSlot::f64(f64::MAX), 16));

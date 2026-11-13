@@ -45,6 +45,7 @@
 #include "omc_string.h"
 #include "real_array.h"
 #include "string_array.h"
+#include "varinfo.h"
 
 #define VERSION 1
 #define NUM_ARRAYS 8
@@ -340,6 +341,7 @@ static void read_variables(OMC_FMU_INIT *init, MODEL_DATA *md, int startOnly)
   for (a = 0; a < NUM_ARRAYS; a++) {
     for (i = 0; i < init->counts[a] && !init->failed; i++, id++) {
       TARGET t;
+      STATIC_REAL_DATA *realVar = NULL;
       memset(&t, 0, sizeof(t));
       if (md) {
         switch (a) {
@@ -352,9 +354,10 @@ static void read_variables(OMC_FMU_INIT *init, MODEL_DATA *md, int startOnly)
               t.dimension = &d->dimension;
               t.attribute[ATTR_MIN] = &d->attribute.min;
               t.attribute[ATTR_MAX] = &d->attribute.max;
-              t.attribute[ATTR_NOMINAL] = &d->attribute.nominal;
+              t.attribute[ATTR_NOMINAL] = &d->attribute.positiveNominal;
               t.fixed = &d->attribute.fixed;
               t.useNominal = &d->attribute.useNominal;
+              realVar = d;
             }
             break;
           }
@@ -394,6 +397,9 @@ static void read_variables(OMC_FMU_INIT *init, MODEL_DATA *md, int startOnly)
         }
       }
       read_variable(init, KIND_OF[a], id, &t);
+      if (realVar) {
+        normalizeNominal(&realVar->attribute, realVar->info.name);
+      }
     }
   }
 }

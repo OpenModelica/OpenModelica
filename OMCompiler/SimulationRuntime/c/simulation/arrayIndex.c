@@ -34,6 +34,7 @@
 #include "arrayIndex.h"
 #include "../util/omc_error.h"
 
+#include <math.h>
 #include <string.h>
 
 /**
@@ -874,23 +875,15 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 }
 
 /**
- * @brief Get nominal attribute by scalar (flattened) index.
- *
- * Look up array index and dimension from reverse index map based on variable
- * kind.
- * Performs simple out of bounds check.
- *
- * @param simulationInfo  Simulation info with reverse map.
- * @param modelData       Model data containing nominal.
- * @param kind            Kind of variable to get nominal for.
- *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
- * @param scalar_idx      Scalar index of real variable.
- * @return modelica_real  Nominal value
+ * @brief Real variable or parameter by scalar (flattened) index, with the
+ * index inside the array variable in `dim_idx`.
  */
-modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
-                                      const MODEL_DATA *modelData,
-                                      enum var_kind kind,
-                                      size_t scalar_idx)
+static STATIC_REAL_DATA *realVarFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                              const MODEL_DATA *modelData,
+                                              enum var_kind kind,
+                                              size_t scalar_idx,
+                                              const char *caller,
+                                              size_t *dim_idx)
 {
   array_index_t* revIndex;
 
@@ -898,30 +891,107 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
   {
     case VAR_KIND_STATE:
       assertStreamPrint(NULL, scalar_idx < modelData->nStates,
-                        "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
-                        scalar_idx, (size_t)modelData->nStates);
+                        "%s: scalar_idx %zu out of bounds [0, %zu)",
+                        caller, scalar_idx, (size_t)modelData->nStates);
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-      return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      *dim_idx = revIndex->dim_idx;
+      return &modelData->realVarsData[revIndex->array_idx];
 
     case VAR_KIND_VARIABLE:
       assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
-                        "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
-                        scalar_idx, (size_t)modelData->nVariablesReal);
+                        "%s: scalar_idx %zu out of bounds [0, %zu)",
+                        caller, scalar_idx, (size_t)modelData->nVariablesReal);
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-      return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      *dim_idx = revIndex->dim_idx;
+      return &modelData->realVarsData[revIndex->array_idx];
 
     case VAR_KIND_PARAMETER:
       assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
-                        "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
-                        scalar_idx, (size_t)modelData->nParametersReal);
+                        "%s: scalar_idx %zu out of bounds [0, %zu)",
+                        caller, scalar_idx, (size_t)modelData->nParametersReal);
       revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-      return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      *dim_idx = revIndex->dim_idx;
+      return &modelData->realParameterData[revIndex->array_idx];
 
     default:
       throwStreamPrint(NULL,
-        "getNominalFromScalarIdx not implemented for variables of kind %s.",
-        var_kind_names[kind]);
+        "%s not implemented for variables of kind %s.",
+        caller, var_kind_names[kind]);
   }
+}
+
+/**
+ * @brief Get the magnitude of the nominal attribute by scalar (flattened) index.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing nominal.
+ * @param kind            Kind of variable to get nominal for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index of real variable.
+ * @return modelica_real  Positive and finite nominal value, see normalizeNominal.
+ */
+modelica_real getPositiveNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                              const MODEL_DATA *modelData,
+                                              enum var_kind kind,
+                                              size_t scalar_idx)
+{
+  size_t dim_idx;
+  const STATIC_REAL_DATA *var = realVarFromScalarIdx(simulationInfo, modelData, kind, scalar_idx,
+                                                     "getPositiveNominalFromScalarIdx", &dim_idx);
+  return real_attribute_get(&var->attribute.positiveNominal, dim_idx);
+}
+
+/**
+ * @brief Get the sign of the nominal attribute by scalar (flattened) index.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing nominal.
+ * @param kind            Kind of variable to get the sign for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index of real variable.
+ * @return modelica_real  -1.0 for a negative nominal, otherwise 1.0.
+ */
+modelica_real getNominalSignFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                          const MODEL_DATA *modelData,
+                                          enum var_kind kind,
+                                          size_t scalar_idx)
+{
+  size_t dim_idx;
+  const STATIC_REAL_DATA *var = realVarFromScalarIdx(simulationInfo, modelData, kind, scalar_idx,
+                                                     "getNominalSignFromScalarIdx", &dim_idx);
+  return real_attribute_get(&var->attribute.nominalSign, dim_idx);
+}
+
+/**
+ * @brief Set the magnitude of the nominal attribute by scalar (flattened) index.
+ *
+ * The sign does not change. An attribute with one value for all elements of an
+ * array variable first gets one value per element.
+ *
+ * @param simulationInfo   Simulation info with reverse map.
+ * @param modelData        Model data containing nominal.
+ * @param kind             Kind of variable to set the nominal for.
+ * @param scalar_idx       Scalar index of real variable.
+ * @param positiveNominal  New nominal value, positive and finite.
+ */
+void setPositiveNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                     MODEL_DATA *modelData,
+                                     enum var_kind kind,
+                                     size_t scalar_idx,
+                                     modelica_real positiveNominal)
+{
+  size_t dim_idx;
+  STATIC_REAL_DATA *var = realVarFromScalarIdx(simulationInfo, modelData, kind, scalar_idx,
+                                               "setPositiveNominalFromScalarIdx", &dim_idx);
+  int n = (int) var->dimension.scalar_length;
+
+  assertStreamPrint(NULL, positiveNominal > 0 && isfinite(positiveNominal),
+                    "setPositiveNominalFromScalarIdx: nominal %g is not positive and finite", positiveNominal);
+  if (base_array_nr_of_elements(var->attribute.positiveNominal) != n) {
+    real_array_ensure_size(&var->attribute.positiveNominal, n);
+    real_array_ensure_size(&var->attribute.nominalSign, n);
+  }
+  put_real_element(positiveNominal, dim_idx, &var->attribute.positiveNominal);
 }
 
 /**

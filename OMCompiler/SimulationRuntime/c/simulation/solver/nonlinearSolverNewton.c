@@ -187,7 +187,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     for(i = 0; i < solverData->n; i++) {
       infoStreamPrint(OMC_LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo->discreteCall ? nlsData->nlsx[i] : nlsData->nlsxExtrapolation[i]);
       infoStreamPrint(OMC_LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
-          nlsData->nominal[i], nlsData->nlsx[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
+          nlsData->nominalSign[i]*nlsData->positiveNominal[i], nlsData->nlsx[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
       messageClose(OMC_LOG_NLS_V);
     }
     messageClose(OMC_LOG_NLS_V);
@@ -267,7 +267,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     else if(retries < 2)
     {
       for(i = 0; i < solverData->n; i++)
-        solverData->x[i] += nlsData->nominal[i] * 0.01;
+        solverData->x[i] += nlsData->nominalSign[i]*nlsData->positiveNominal[i] * 0.01;
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
@@ -277,7 +277,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     else if(retries < 3)
     {
       for(i = 0; i < solverData->n; i++)
-        solverData->x[i] = nlsData->nominal[i];
+        solverData->x[i] = nlsData->nominalSign[i]*nlsData->positiveNominal[i];
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;

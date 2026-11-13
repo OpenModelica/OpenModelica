@@ -88,7 +88,7 @@ void getAlgebraicDAEVarNominals(DATA* data, double *algebraicNominals)
 
   DAEMODE_DATA* daeModeData = data->simulationInfo->daeModeData;
   for(i=0; i < daeModeData->nAlgebraicDAEVars; i++){
-    algebraicNominals[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, daeModeData->algIndexes[i]);
+    algebraicNominals[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, daeModeData->algIndexes[i]);
   }
 }
 
@@ -186,7 +186,6 @@ NONLINEAR_SYSTEM_DATA* initDAEModeExplicitNLS(DATA *data, threadData_t *threadDa
   NONLINEAR_SYSTEM_DATA *nlsData;
   struct dataSolver *solverData;
   NLS_USERDATA *userData;
-  double nom;
 
   if (n <= 0 || daeModeData->nAlgebraicDAEVars + nStates != n) {
     return NULL;
@@ -200,21 +199,19 @@ NONLINEAR_SYSTEM_DATA* initDAEModeExplicitNLS(DATA *data, threadData_t *threadDa
   nlsData->nlsxExtrapolation = (double*) calloc(n, sizeof(double));
   nlsData->nlsxOld = (double*) calloc(n, sizeof(double));
   nlsData->resValues = (double*) calloc(n, sizeof(double));
-  nlsData->nominal = (double*) calloc(n, sizeof(double));
+  nlsData->positiveNominal = (double*) calloc(n, sizeof(double));
+  nlsData->nominalSign = (double*) calloc(n, sizeof(double));
   nlsData->min = (double*) calloc(n, sizeof(double));
   nlsData->max = (double*) calloc(n, sizeof(double));
 
   /* der(x) has no nominal of its own; z has its variable's. No bounds. */
   for (j = 0; j < n; j++) {
-    nlsData->nominal[j] = 1.0;
+    nlsData->positiveNominal[j] = 1.0;
+    nlsData->nominalSign[j] = 1.0;
     nlsData->min[j] = -DBL_MAX;
     nlsData->max[j] = DBL_MAX;
   }
-  getAlgebraicDAEVarNominals(data, nlsData->nominal + nStates);
-  for (j = nStates; j < n; j++) {
-    nom = fabs(nlsData->nominal[j]);
-    nlsData->nominal[j] = nom > 0.0 && isfinite(nom) ? nom : 1.0;
-  }
+  getAlgebraicDAEVarNominals(data, nlsData->positiveNominal + nStates);
 
   nlsData->residualFunc = daeModeExplicitResidual;
   nlsData->sparsePattern = usablePattern(daeModeData);
@@ -250,7 +247,8 @@ void freeDAEModeExplicitNLS(NONLINEAR_SYSTEM_DATA *nlsData)
   free(nlsData->nlsxExtrapolation);
   free(nlsData->nlsxOld);
   free(nlsData->resValues);
-  free(nlsData->nominal);
+  free(nlsData->positiveNominal);
+  free(nlsData->nominalSign);
   free(nlsData->min);
   free(nlsData->max);
   free(nlsData);

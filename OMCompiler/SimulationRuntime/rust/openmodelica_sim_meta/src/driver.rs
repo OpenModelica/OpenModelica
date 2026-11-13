@@ -2865,9 +2865,9 @@ fn init_model(
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
-    // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
+    // C's `read_input_xml` and `initializeNonlinearSystems` report these.
     if let Some(m) = model {
-        for w in &m.nls_warnings {
+        for w in &m.startup_warnings {
             omclog::warning(omclog::STDOUT, false, w);
         }
     }
@@ -3245,10 +3245,21 @@ fn update_bound_values(
 /// attribute-log region. A group's header appears even when it is empty, as C's
 /// unconditional `infoStreamPrint` in that function gives.
 fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, model: Option<&SimMeta>) {
+    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
+    let nominal_kind = crate::ATTR_NAME.iter().position(|n| *n == "nominal");
+    for (i, a) in entries
+        .iter()
+        .enumerate()
+        .filter(|(_, a)| Some(a.kind as usize) == nominal_kind)
+    {
+        let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(1.0);
+        if let Some(w) = crate::nominal_warning(&a.name, v) {
+            omclog::warning(omclog::STDOUT, false, &w);
+        }
+    }
     if !omclog::active(omclog::INIT) {
         return;
     }
-    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
     for (kind, name) in crate::ATTR_NAME.iter().enumerate() {
         let header = match *name {
             "start" => "primary start-values".to_string(),
@@ -3258,6 +3269,11 @@ fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, 
         if omclog::active(omclog::INIT_V) {
             for (i, a) in entries.iter().enumerate().filter(|(_, a)| a.kind as usize == kind) {
                 let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(0.0);
+                let v = if *name == "nominal" {
+                    crate::positive_nominal(v)
+                } else {
+                    v
+                };
                 let line = match *name {
                     "start" => format!("updated start value: {}(start={})", a.name, format_g(v, 6)),
                     _ => format!("{}({name}={})", a.name, format_g(v, 6)),
@@ -7093,7 +7109,7 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// C's `realVarsData[i].attribute.nominal` for the states, which scales a
+/// C's `realVarsData[i].attribute.positiveNominal` for the states, which scales a
 /// solver's absolute tolerance and is what `fmi3GetNominalsOfContinuousStates`
 /// answers. Floored as `ida_solver_setNominals` does: read before
 /// `initializeModel` has floored them, a zero nominal is an infinite error
@@ -7102,7 +7118,7 @@ pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> R
     (0..layout.n_states)
         .map(|i| {
             Ok(fmath::fmax(
-                fmath::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?),
+                read_f64(e, sim_data + layout.state_nom_off + i * 8)?,
                 1e-32,
             ))
         })
@@ -7116,7 +7132,7 @@ fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
         let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
-        nominals.push(fmath::fmax(fmath::fabs(n), 1e-32));
+        nominals.push(fmath::fmax(n, 1e-32));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -12817,7 +12833,7 @@ pub fn dae_solve_explicit(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
         .collect();
     let mut nominal = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             nominal[ns + k] = nom;
         }
@@ -12936,7 +12952,7 @@ fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, da
         .collect();
     let mut scale = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             scale[ns + k] = nom;
         }

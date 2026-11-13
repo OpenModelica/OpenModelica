@@ -1219,7 +1219,7 @@ static void B_nlsKinsolXScaling(DATA *data, B_NLS_KINSOL_DATA *kinsolData,
   switch (mode) {
   case B_SCALING_NOMINALSTART:
     for (i = 0; i < nlsData->size; i++) {
-      xScaling[i] = 1.0 / fmax(nlsData->nominal[i], fabs(xStart[i]));
+      xScaling[i] = 1.0 / fmax(nlsData->positiveNominal[i], fabs(xStart[i]));
     }
     break;
   case B_SCALING_ONES:

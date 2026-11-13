@@ -25,6 +25,8 @@
  *
  */
 
+#include <math.h>
+
 #include "omc_error.h"
 #include "../simulation_data.h"
 #include "varinfo.h"
@@ -79,4 +81,44 @@ void freeVarInfo(VAR_INFO* info)
   free((void*)info->info.filename);
   free((void*)info->name);
   free((void*)info->comment);
+}
+
+/**
+ * @brief Split the nominal values just written to `positiveNominal` into
+ * magnitude and sign.
+ *
+ * The solvers scale by the magnitude. It is 1.0 if the nominal is 0, inf or
+ * NaN, with a warning if the model gave that value. `nominalSign` gets the
+ * same number of elements.
+ *
+ * @param attribute  Attribute of a real variable or parameter.
+ * @param name       Name of the variable, for the warning.
+ */
+void normalizeNominal(REAL_ATTRIBUTE *attribute, const char *name)
+{
+  size_t i, n = base_array_nr_of_elements(attribute->positiveNominal);
+  modelica_real *nominal = (modelica_real*) attribute->positiveNominal.data;
+  modelica_real *sign;
+  int warned = 0;
+
+  if (attribute->nominalSign.data == NULL || base_array_nr_of_elements(attribute->nominalSign) != n) {
+    omc_array_release(&attribute->nominalSign);
+    simple_alloc_1d_real_array(&attribute->nominalSign, (int) n);
+  }
+  sign = (modelica_real*) attribute->nominalSign.data;
+  for (i = 0; i < n; i++) {
+    modelica_real magnitude = fabs(nominal[i]);
+    sign[i] = nominal[i] < 0 ? -1.0 : 1.0;
+    if (magnitude > 0 && isfinite(magnitude)) {
+      nominal[i] = magnitude;
+      continue;
+    }
+    if (attribute->useNominal && !warned) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0,
+                         "The nominal value of %s is %g, but it must be nonzero and finite. The solvers use 1.0 instead.",
+                         name, nominal[i]);
+      warned = 1;
+    }
+    nominal[i] = 1.0;
+  }
 }

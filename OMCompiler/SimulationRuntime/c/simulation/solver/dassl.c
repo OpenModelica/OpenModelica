@@ -160,8 +160,8 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i<dasslData->N; ++i)
   {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    dasslData->nominal[i] = fmax(fabs(nominal), 1e-32);
+    const modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    dasslData->nominal[i] = fmax(nominal, 1e-32);
     dasslData->rtol[i] = data->simulationInfo->tolerance;
     dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
