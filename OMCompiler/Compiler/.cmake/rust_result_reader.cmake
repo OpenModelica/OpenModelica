@@ -15,7 +15,7 @@ function(omc_result_reader_library)
   set(_workspace ${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/SimulationRuntime/rust)
   set(_crate ${_workspace}/openmodelica_result_capi)
   set(_target_dir ${CMAKE_CURRENT_BINARY_DIR}/rust-result-target)
-  omc_rust_cargo_command(${_target_dir} omc_result)
+  omc_rust_cargo_command(${_target_dir})
   if(WIN32 OR RUST_OMC_TARGET MATCHES "windows")
     set(_lib ${_out}/omc_result.dll)
     if(MSVC OR RUST_OMC_TARGET MATCHES "msvc$")
@@ -29,7 +29,7 @@ function(omc_result_reader_library)
     set(_lib ${_out}/libomc_result.so)
   endif()
   file(GLOB_RECURSE _rust_srcs CONFIGURE_DEPENDS
-       ${_crate}/src/*.rs ${_crate}/Cargo.toml ${_crate}/include/omc_result.h
+       ${_crate}/src/*.rs ${_crate}/build.rs ${_crate}/Cargo.toml ${_crate}/include/omc_result.h
        ${_workspace}/openmodelica_result_files/src/*.rs
        ${_workspace}/openmodelica_result_diff/src/*.rs
        ${_workspace}/openmodelica_mat_reader/src/*.rs
