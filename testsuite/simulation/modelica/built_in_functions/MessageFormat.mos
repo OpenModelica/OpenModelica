@@ -62,49 +62,24 @@ package MessageFormat
 end MessageFormat;
 "); getErrorString();
 
-simulate(MessageFormat.TerminateEquation); getErrorString();
-simulate(MessageFormat.TerminateAlgorithm); getErrorString();
-simulate(MessageFormat.Error); getErrorString();
+echo(false);
+r1 := simulate(MessageFormat.TerminateEquation);
+r2 := simulate(MessageFormat.TerminateAlgorithm);
+r3 := simulate(MessageFormat.Error);
+echo(true);
+// Each message is shown as it is, as a whole line. The message texts and their
+// log levels differ between the simulation targets, so only the text is checked.
+regexBool(r1.messages, "\\| f: 100%s %d %%\n");
+regexBool(r1.messages, ": stop equation: 100%s %d %%\n");
+regexBool(r2.messages, ": stop algorithm: 100%s %d %%\n");
+regexBool(r3.messages, "\\| g: 100%s %d %%\n");
 
 // Result:
 // true
 // ""
-// record SimulationResult
-//     resultFile = "MessageFormat.TerminateEquation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'MessageFormat.TerminateEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_ASSERT        | warning | [<interactive>:7:5-7:62:writable]
-// |                 | |       | f: 100%s %d %%
-// [<interactive>:33:7-33:46:writable]
-// LOG_STDOUT        | info    | Simulation call terminate() at time 0.800000
-// |                 | |       | Message : stop equation: 100%s %d %%
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "MessageFormat.TerminateAlgorithm_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'MessageFormat.TerminateAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// [<interactive>:43:7-43:47:writable]
-// LOG_STDOUT        | info    | Simulation call terminate() at time 0.800000
-// |                 | |       | Message : stop algorithm: 100%s %d %%
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'MessageFormat.Error', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: MessageFormat.Error
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_ASSERT        | error   | [<interactive>:11:3-14:10:writable]
-// |                 | |       | g: 100%s %d %%
-// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
-// LOG_ASSERT        | error   | [<interactive>:11:3-14:10:writable]
-// |                 | |       | g: 100%s %d %%
-// LOG_STDOUT        | info    | model terminate | Simulation terminated by an assert at time: 0.501
-// "
-// end SimulationResult;
-// ""
+// true
+// true
+// true
+// true
+// true
 // endResult
