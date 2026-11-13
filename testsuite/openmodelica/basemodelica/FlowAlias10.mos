@@ -74,12 +74,12 @@ instantiateModel(TestAliasStream.Test10); getErrorString();
 //     Real 'pump.outlet.w'(max = 60.0, min = -60.0, unit = \"kg/s\", quantity = \"MassFlowRate\") = -'pump.w' \"Alias variable\";
 //   equation
 //     'pump.outlet.p' = 'tank.port.p';
-//     'pump.outlet.h' = 4200.0 * 'pump.T';
-//     'pump.P' = if 'pump.w' > 0.0 then 'pump.w' * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
-//     1000.0 * 'tank.A' * der('tank.y') = 'pump.w';
-//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = 'pump.w' * (if 'pump.w' > 0.0 then 'pump.outlet.h' else 'tank.port.h');
-//     'tank.port.h' = 4200.0 * 'tank.T';
-//     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
+//     'pump.outlet.h' = 4200.0*'pump.T';
+//     'pump.P' = if 'pump.w' > 0.0 then 'pump.w'*('pump.outlet.p' - 1e5)/1000.0 else 0.0;
+//     1000.0*'tank.A'*der('tank.y') = 'pump.w';
+//     1000.0*'tank.A'*4200.0*der('tank.y'*'tank.T') = 'pump.w'*(if 'pump.w' > 0.0 then 'pump.outlet.h' else 'tank.port.h');
+//     'tank.port.h' = 4200.0*'tank.T';
+//     'tank.port.p' = 1e5 + 9810.0*'tank.y';
 //   end 'Test10';
 // end 'Test10';
 // "

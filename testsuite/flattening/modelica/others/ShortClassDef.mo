@@ -2,14 +2,14 @@
 // keywords: class
 // status: correct
 //
-// Tests short class definitions of the form class foo = bar;
+// Tests short class definitions of the form model foo = bar;
 //
 
-class TestClass
+model TestClass
   Integer i1;
 end TestClass;
 
-class ShortClassDef = TestClass annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+model ShortClassDef = TestClass;
 
 // Result:
 // class ShortClassDef

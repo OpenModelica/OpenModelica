@@ -122,6 +122,7 @@ public
     Variability variability;
     Source source;
     Integer confidence;
+    SourceInfo info;
   end FLAT_BINDING;
 
   record CEVAL_BINDING
@@ -366,7 +367,7 @@ public
           exp := Expression.recordElement(field_name, fieldBinding.bindingExp);
           var := Expression.variability(exp);
         then
-          FLAT_BINDING(exp, var, fieldBinding.source, fieldBinding.confidence);
+          FLAT_BINDING(exp, var, fieldBinding.source, fieldBinding.confidence, fieldBinding.info);
 
       case CEVAL_BINDING()
         algorithm
@@ -421,6 +422,7 @@ public
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
+      case FLAT_BINDING() then binding.info;
       else Absyn.dummyInfo;
     end match;
   end getInfo;
@@ -966,10 +968,11 @@ public
     input Expression exp;
     input Variability var;
     input Source source;
+    input SourceInfo info;
     input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
-    binding := FLAT_BINDING(exp, var, source, confidence);
+    binding := FLAT_BINDING(exp, var, source, confidence, info);
   end makeFlat;
 
   function isEvaluated

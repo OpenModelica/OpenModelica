@@ -6,14 +6,14 @@
 //! uses (`LinzPlan`); this module adds the per-column entry point the optimizer
 //! drives them through, and assembles [`OptInfo`].
 
-use crate::CodegenWasmJitFunctions::HashMap;
+use crate::CodegenWasmJitFunctions::{SimOff, plain_off};
 use std::string::String;
 
 use openmodelica_backend_types::BackendDAE;
-use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::{OptInfo, OptJac, OptTerm};
+use openmodelica_simcode_types::{SimCode, SimCodeVar};
 
-use crate::CodegenWasmJit::{count, lst, svs};
+use crate::CodegenWasmJit::{SimLayout, count, lst, svs};
 
 /// C's `BackendDAE.optimizationMayerTermName` / `optimizationLagrangeTermName`.
 const MAYER_TERM: &str = "$OMC$objectMayerTerm";
@@ -28,9 +28,7 @@ pub(crate) fn is_optimization(sim_code: &SimCode::SimCode) -> bool {
 
 /// The real variables C appends after the algebraics: the path and then the final
 /// constraints.
-pub(crate) fn constraint_vars(
-    vars: &SimCodeVar::SimVars,
-) -> Vec<&SimCodeVar::SimVar> {
+pub(crate) fn constraint_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::SimVar> {
     svs(&vars.realOptimizeConstraintsVars)
         .chain(svs(&vars.realOptimizeFinalConstraintsVars))
         .collect()
@@ -42,9 +40,9 @@ pub(crate) fn constraint_vars(
 /// literals (and C's fallbacks for an attribute the model never gives).
 pub(crate) struct AttrDefaults {
     /// `(offset, value)` for the three f64 regions.
-    pub reals: Vec<(u32, f64)>,
+    pub reals: Vec<(SimOff, f64)>,
     /// `(offset, value)` for the `useNominal` i32 region.
-    pub ints: Vec<(u32, i32)>,
+    pub ints: Vec<(SimOff, i32)>,
 }
 
 /// Collect them for `reals` in real-variable index order (states, derivatives,
@@ -52,10 +50,13 @@ pub(crate) struct AttrDefaults {
 /// `attr_targets` so they are updated after `functionParameters`.
 pub(crate) fn attr_defaults(
     reals: &[&SimCodeVar::SimVar],
-    layout: &openmodelica_sim_meta::Layout,
+    layout: &SimLayout,
     attr_targets: &mut crate::CodegenWasmJitFunctions::AttrTargetMap,
 ) -> AttrDefaults {
-    let mut out = AttrDefaults { reals: Vec::new(), ints: Vec::new() };
+    let mut out = AttrDefaults {
+        reals: Vec::new(),
+        ints: Vec::new(),
+    };
     for (i, sv) in reals.iter().enumerate() {
         let i = i as u32;
         // C's `dummyREAL_ATTRIBUTE` / the xml reader's defaults.
@@ -64,8 +65,9 @@ pub(crate) fn attr_defaults(
             (layout.opt_max_off, &sv.maxValue, f64::MAX),
             (layout.opt_nom_off, &sv.nominalValue, 1.0),
         ] {
-            let off = base + i * 8;
-            out.reals.push((off, crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback)));
+            let off = base + SimOff::from(i * 8);
+            out.reals
+                .push((off, crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback)));
             if let Some(t) = attr_targets.of(&sv.name) {
                 if base == layout.opt_min_off {
                     t.raw_min_offs.push(off);
@@ -76,7 +78,8 @@ pub(crate) fn attr_defaults(
                 }
             }
         }
-        out.ints.push((layout.opt_use_nom_off + i * 4, use_nominal(sv) as i32));
+        out.ints
+            .push((layout.opt_use_nom_off + SimOff::from(i * 4), use_nominal(sv) as i32));
     }
     out
 }
@@ -102,7 +105,10 @@ pub(crate) fn build_opt_info(
             "Optimization does not support array variables, but {name} is an array. Use \
              --simCodeScalarize=true."
         );
-        return Ok(Some(OptInfo { setup_error: Some(msg), ..Default::default() }));
+        return Ok(Some(OptInfo {
+            setup_error: Some(msg),
+            ..Default::default()
+        }));
     }
     if !is_optimization(sim_code) {
         return Ok(None);
@@ -135,9 +141,10 @@ pub(crate) fn build_opt_info(
     // The objective terms: their own real index, and the Jacobian row their
     // derivative lands in — C reads the row off the `$pDER` cref's `SimVar.index`.
     let term = |name: &str| -> Option<OptTerm> {
-        let index = reals.iter().position(|r| {
-            crate::CodegenWasmJit::sim_cref_key(&r.name).is_ok_and(|k| k == name)
-        })? as u32;
+        let index = reals
+            .iter()
+            .position(|r| crate::CodegenWasmJit::sim_cref_key(&r.name).is_ok_and(|k| k == name))?
+            as u32;
         Some(OptTerm {
             index,
             row_b: term_row(sim_code, "B", name),
@@ -150,9 +157,9 @@ pub(crate) fn build_opt_info(
         .filter_map(|sv| {
             crate::CodegenWasmJit::sim_cref_key(&sv.name)
                 .ok()
-                .and_then(|k| var_map.vars.get(&k).map(|s| s.off))
+                .and_then(|k| var_map.vars.get(&k).map(|s| plain_off(s.off)))
         })
-        .collect();
+        .collect::<metamodelica::Result<_>>()?;
     // C's `realVarsData[i].info.name`, which the optimizer's messages quote.
     let real_names: Vec<String> = reals
         .iter()
@@ -213,9 +220,7 @@ fn term_row(sim_code: &SimCode::SimCode, matrix: &str, term: &str) -> Option<u32
     crate::CodegenWasmJit::jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
-        .find(|v| {
-            crate::CodegenWasmJit::sim_cref_key(&v.name).is_ok_and(|k| k.starts_with(&prefix))
-        })
+        .find(|v| crate::CodegenWasmJit::sim_cref_key(&v.name).is_ok_and(|k| k.starts_with(&prefix)))
         .and_then(|v| crate::CodegenWasmJit::jac_result_row(v))
         .map(|r| r as u32)
 }
@@ -267,8 +272,13 @@ pub(crate) fn opt_jac(
 /// `constantEqns` once per evaluation point, `columnEqns` once per colour.
 pub(crate) fn jac_eqns(
     jm: &SimCode::JacobianMatrix,
-) -> (Vec<metamodelica::Ref<SimCode::SimEqSystem>>, Vec<metamodelica::Ref<SimCode::SimEqSystem>>) {
-    let Some(col) = lst(&jm.columns).next() else { return (Vec::new(), Vec::new()) };
+) -> (
+    Vec<metamodelica::Ref<SimCode::SimEqSystem>>,
+    Vec<metamodelica::Ref<SimCode::SimEqSystem>>,
+) {
+    let Some(col) = lst(&jm.columns).next() else {
+        return (Vec::new(), Vec::new());
+    };
     (
         lst(&col.constantEqns).cloned().collect(),
         lst(&col.columnEqns).cloned().collect(),

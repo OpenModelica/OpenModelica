@@ -921,7 +921,6 @@ model BS2
 
 equation
   connect(constant1.outPort,der1.inPort) annotation(Line(visible=true,points={{-22.91,8.32},{-8.01,6.19}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS2;
 
 // class BS2
@@ -947,25 +946,24 @@ end BS2;
 // end BS2;
 // Result:
 // class BS2
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
-//   parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer der1.inPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer der1.inPort.n = 1 "Dimension of signal vector";
 //   Real der1.inPort.signal[1] "Real input signals";
-//   parameter Integer der1.outPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.outPort.n = 1 "Dimension of signal vector";
 //   Real der1.outPort.signal[1] "Real output signals";
 //   Real der1.y[1] "Output signals";
 //   protected Real der1.u[1] "Input signals";
 // equation
+//   constant1.outPort.signal[1] = der1.inPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   der1.u = {der1.inPort.signal[1]};
+//   der1.u = der1.inPort.signal;
 //   der1.y[1] = der(der1.u[1]);
 //   der1.y[1] = der1.outPort.signal[1];
-//   assert(constant1.outPort.n == der1.inPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = der1.inPort.signal[1];
 // end BS2;
 // endResult

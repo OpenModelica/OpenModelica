@@ -26,7 +26,6 @@ equation
   a = sum(A[i] for i in Package1.Package2.E.one : Package1.Package2.E.two);
   b = sum(B[i] for i in E2.b : E2.e);
   c = sum(C[i] for i in Test.E3.x : Test.E3.z);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumRange;
 
 // Result:
@@ -34,12 +33,12 @@ end EnumRange;
 //   Real A[Package1.Package2.E.one];
 //   Real A[Package1.Package2.E.two];
 //   Real A[Package1.Package2.E.three];
-//   Real B[EnumRange.E2.a];
-//   Real B[EnumRange.E2.b];
-//   Real B[EnumRange.E2.c];
-//   Real B[EnumRange.E2.d];
-//   Real B[EnumRange.E2.e];
-//   Real B[EnumRange.E2.f];
+//   Real B[E2.a];
+//   Real B[E2.b];
+//   Real B[E2.c];
+//   Real B[E2.d];
+//   Real B[E2.e];
+//   Real B[E2.f];
 //   Real C[Test.E3.x];
 //   Real C[Test.E3.y];
 //   Real C[Test.E3.z];
@@ -48,7 +47,7 @@ end EnumRange;
 //   Real c;
 // equation
 //   a = A[Package1.Package2.E.one] + A[Package1.Package2.E.two];
-//   b = B[EnumRange.E2.b] + B[EnumRange.E2.c] + B[EnumRange.E2.d] + B[EnumRange.E2.e];
+//   b = B[E2.b] + B[E2.c] + B[E2.d] + B[E2.e];
 //   c = C[Test.E3.x] + C[Test.E3.y] + C[Test.E3.z];
 // end EnumRange;
 // endResult

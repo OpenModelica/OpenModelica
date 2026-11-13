@@ -1,12 +1,11 @@
 // name: TryExtends
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica
 // suite: metamodelica
 //
 // Checks that the compiler handles try in inherited functions correctly.
 //
 
-setCommandLineOptions("-g=MetaModelica");
 loadString("
   model P1
     function f
@@ -27,7 +26,6 @@ loadString("
 instantiateModel(P2); getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // "function P2.f

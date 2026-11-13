@@ -1,0 +1,9 @@
+[package]
+name = "openmodelica_version"
+version = "0.1.0"
+edition = "2024"
+workspace = ".."
+
+# Version numbers of Modelica libraries, for both omcs; the C omc links it
+# through runtime/rust. No dependencies, so that crate builds it from its own root.
+[dependencies]

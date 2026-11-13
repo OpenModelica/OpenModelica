@@ -20,22 +20,9 @@ model Constant11
   end def;
 
   constant Real x = abc();
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant11;
 
 // Result:
-// function Constant11.abc
-//   output Real r;
-// algorithm
-//   r := 1.0;
-// end Constant11.abc;
-//
-// function Constant11.def
-//   output Real r;
-// algorithm
-//   r := 1.0;
-// end Constant11.def;
-//
 // class Constant11
 //   constant Real x = 1.0;
 // end Constant11;

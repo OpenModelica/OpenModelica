@@ -1,10 +1,9 @@
 // name: JSONParser
 // depends: test.json
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -d=gen,rml,noevalfunc
 // suite: metamodelica
 
-setCommandLineOptions("-g=MetaModelica -d=gen,rml,noevalfunc");
 echo(false);
 pathPrefix := "../../../OMCompiler/Compiler/";
 
@@ -52,7 +51,6 @@ end testJSON;");
 testJSON("test.json");
 getErrorString();
 // Result:
-// true
 // true
 // true
 // ""

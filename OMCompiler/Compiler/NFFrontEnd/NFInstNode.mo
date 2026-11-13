@@ -55,6 +55,7 @@ import Visibility = NFPrefixes.Visibility;
 import AccessLevel = NFPrefixes.AccessLevel;
 import NFModifier.Modifier;
 import SCodeDump;
+import Flags;
 import DAE;
 import Expression = NFExpression;
 import Global;
@@ -1887,25 +1888,87 @@ uniontype InstNode
   protected
     InstNode n1 = resolveOuter(node1);
     InstNode n2 = resolveOuter(node2);
+    Boolean identical_decl = true, identical;
+    list<String> strs;
   algorithm
     if referenceEq(n1, n2) then
       return;
     end if;
 
-    () := matchcontinue (n1, n2)
+    identical := match (n1, n2)
       case (CLASS_NODE(), CLASS_NODE())
-        guard Class.isIdentical(getClass(n1), getClass(n2)) then ();
+        then Class.isIdentical(getClass(n1), getClass(n2));
       case (COMPONENT_NODE(), COMPONENT_NODE())
-        guard Component.isIdentical(component(n1), component(n2)) then ();
-      else
         algorithm
-          Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,
-            {toString(n1), toString(n2)},
-            {InstNode.info(n1), InstNode.info(n2)});
+          identical_decl := isIdenticalDeclaration(n1, n2);
         then
-          fail();
-    end matchcontinue;
+          isSameClass(n1, n2) and Component.isIdentical(component(n1), component(n2));
+      else false;
+    end match;
+
+    // Declarations of the same class that only differ in e.g. modifiers are
+    // not identical either, but this is common enough even in the Modelica
+    // Standard Library that it is only checked with --strict.
+    if not identical_decl and Flags.getConfigBool(Flags.STRICT) then
+      identical := false;
+    end if;
+
+    if not identical then
+      // Show the declarations if they differ, otherwise the instances which
+      // show e.g. differing modifiers from extends clauses.
+      strs := match (n1, n2)
+        local
+          SCode.Element def1, def2;
+
+        case (COMPONENT_NODE(definition = SOME(def1)), COMPONENT_NODE(definition = SOME(def2)))
+          guard not SCodeUtil.elementEqual(def1, def2)
+          then {SCodeDump.unparseElementStr(def1), SCodeDump.unparseElementStr(def2)};
+
+        else {toString(n1), toString(n2)};
+      end match;
+
+      Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL, strs,
+        {InstNode.info(n1), InstNode.info(n2)});
+      fail();
+    end if;
   end checkIdentical;
+
+  function isIdenticalDeclaration
+    "Returns true if two components that are inherited with the same name have
+     the same prefixes, attributes, modifiers and condition, MLS 3.7 section 7.1."
+    input InstNode node1;
+    input InstNode node2;
+    output Boolean identical;
+  algorithm
+    identical := match (node1, node2)
+      local
+        SCode.Element def1, def2;
+
+      case (COMPONENT_NODE(definition = SOME(def1 as SCode.COMPONENT())),
+            COMPONENT_NODE(definition = SOME(def2 as SCode.COMPONENT())))
+        then referenceEq(def1, def2) or
+             (SCodeUtil.prefixesEqual(def1.prefixes, def2.prefixes) and
+              SCodeUtil.attributesEqual(def1.attributes, def2.attributes) and
+              SCodeUtil.modEqual(def1.modifications, def2.modifications) and
+              valueEq(def1.condition, def2.condition));
+
+      else true;
+    end match;
+  end isIdenticalDeclaration;
+
+  function isSameClass
+    "Returns true if two components have the same class, which may be referred
+     to by different names. Components without a class instance, like outer
+     components, are not compared."
+    input InstNode node1;
+    input InstNode node2;
+    output Boolean same;
+  protected
+    InstNode cls1 = Component.classInstance(component(node1));
+    InstNode cls2 = Component.classInstance(component(node2));
+  algorithm
+    same := isEmpty(cls1) or isEmpty(cls2) or isSame(cls1, cls2);
+  end isSameClass;
 
   function toString
     input InstNode node;

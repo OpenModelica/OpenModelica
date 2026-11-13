@@ -10,6 +10,8 @@ model FuncBuiltinChange
   Boolean y = change(x);
   Boolean b = true;
   Boolean z = change(b);
+  constant Boolean b2 = true;
+  Boolean b3 = change(b2);
 end FuncBuiltinChange;
 
 // Result:
@@ -18,5 +20,7 @@ end FuncBuiltinChange;
 //   Boolean y = change(x);
 //   Boolean b = true;
 //   Boolean z = change(b);
+//   constant Boolean b2 = true;
+//   Boolean b3 = false;
 // end FuncBuiltinChange;
 // endResult

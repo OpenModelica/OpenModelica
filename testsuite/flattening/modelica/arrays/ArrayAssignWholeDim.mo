@@ -10,6 +10,7 @@ model ArrayAssignWholeDim
        input Real[:] x;
        output Real[size(x,1),4] a;
      algorithm
+        a := fill(0.0, size(x, 1), 4);
         a[:,1] := x; //just to trigger compilation and usage of the indexed_assign_real_array()
         a[1,:] := { 10, 20, 30, 40 }; //here was the bug in indexed_assign_real_array()
         a[size(x,1), :] := { 0.1, 0.2, 0.3, 0.4 }; //and here
@@ -17,20 +18,9 @@ model ArrayAssignWholeDim
   end GetA;
   constant Real X[:] = {1,2,3,4,5};
   constant Real A[:,4] = GetA(X);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAssignWholeDim;
 
 // Result:
-// function ArrayAssignWholeDim.GetA
-//   input Real[:] x;
-//   output Real[size(x, 1), 4] a;
-// algorithm
-//   a[:,1] := x;
-//   a[1,:] := {10.0, 20.0, 30.0, 40.0};
-//   a[size(x, 1),:] := {0.1, 0.2, 0.3, 0.4};
-//   a[{2, 3},2] := {x[2], x[3]};
-// end ArrayAssignWholeDim.GetA;
-//
 // class ArrayAssignWholeDim
 //   constant Real X[1] = 1.0;
 //   constant Real X[2] = 2.0;

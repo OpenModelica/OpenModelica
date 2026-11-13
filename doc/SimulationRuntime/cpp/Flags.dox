@@ -16,7 +16,7 @@
   -G \<VALUE\>                                                        | Number of output intervals in equidistant grid (default: 500)                                            |
   -T \<VALUE\>                                                        | Tolerance for the time integration algorithm (default: 1e-6)                                             |
   -I \[\"euler\"\|\"peer\"\|\"rtrk\"\|\"ida\"\|\"cvode\"\|\"dassl\"\] | Time integration algorithm that should be used (default: \"euler\")                                      |
-  -L \[\"umfpack\"\|\<NONLINEARSOLVER\>\]                             | Solver for linear equation systems that should be used (default: \"kinsol\")                             |
+  -L \[\"linearSolver\"\|\<NONLINEARSOLVER\>\]                        | Solver for linear equation systems that should be used (default: \"kinsol\")                             |
   -N \[\"newton\"\|\"kinsol\"\|\"hybrj\"\]                            | Solver for non linear equation systems that should be used (default: \"kinsol\")                         |
   -V \<VALUE\>                                                        | This flag can be added multiple times. Pass a key=value pair as argument. See the description below.     |
   -A \<VALUE\>                                                        | Timeout in seconds for the simulation (default: 360)                                                     |

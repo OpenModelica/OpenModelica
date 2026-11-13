@@ -40,7 +40,7 @@ getErrorString();
 // #[+], TestCheckAll.A
 // -------------------------------------------------------------------------
 // Checking: encapsulated model TestCheckAll.B... FAILED!
-//
+// 	Check of TestCheckAll.B failed with 1 error(s).
 // Error String:
 //
 // Error Buffer:

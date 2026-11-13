@@ -54,7 +54,7 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 5, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initPartialSliceOffset', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_LS,LOG_STDOUT'",
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 1 linear systems
-// LOG_LS            | info    | Start solving Linear System 5 (size 2) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 7 (size 2) at time 0 with Lapack Solver
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

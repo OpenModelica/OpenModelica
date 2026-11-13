@@ -56,6 +56,7 @@ protected
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
+  import Type = NFType;
 
   // old backend import
   import OldSimCode = SimCode;
@@ -107,6 +108,18 @@ public
       else call;
     end match;
   end mapShallow;
+
+  function getIterators
+    input SimGenericCall call;
+    output list<SimIterator> iters;
+  algorithm
+    iters := match call
+      case SINGLE_GENERIC_CALL() then call.iters;
+      case IF_GENERIC_CALL() then call.iters;
+      case WHEN_GENERIC_CALL() then call.iters;
+      else {};
+    end match;
+  end getIterators;
 
   function toString
     input SimGenericCall call;
@@ -379,6 +392,48 @@ public
         end match;
       end for;
     end subIterators;
+
+    function names
+      "the name of the iterator and of its dependent iterators"
+      input SimIterator iter;
+      output list<ComponentRef> names;
+    algorithm
+      names := match iter
+        case SIM_ITERATOR_RANGE() then iter.name :: list(Util.tuple21(si) for si in iter.sub_iter);
+        case SIM_ITERATOR_LIST()  then iter.name :: list(Util.tuple21(si) for si in iter.sub_iter);
+        else {};
+      end match;
+    end names;
+
+    function flatIndex
+      "first + zero based flat index of the current iteration, and the number of iterations.
+      The first iterator is the fastest like in the zero crossing loops of CodegenC.tpl.
+      Only for literal ranges with step 1."
+      input list<SimIterator> iters;
+      input Integer first = 0;
+      output Expression index = Expression.INTEGER(first);
+      output Integer size = 1;
+      output Boolean supported = true;
+    protected
+      ComponentRef name;
+      Integer start, n, shift = first;
+      list<Expression> terms = {};
+    algorithm
+      for iter in iters loop
+        supported := match iter
+          case SIM_ITERATOR_RANGE(name = name, start = Expression.INTEGER(start), step = Expression.INTEGER(1), size = Expression.INTEGER(n)) algorithm
+            terms := (if size == 1 then Expression.fromCref(name) else Expression.MULTARY({Expression.INTEGER(size), Expression.fromCref(name)}, {}, Operator.makeMul(Type.INTEGER()))) :: terms;
+            shift := shift - size * start;
+            size := size * n;
+          then true;
+          else false;
+        end match;
+        if not supported then
+          return;
+        end if;
+      end for;
+      index := SimplifyExp.simplify(Expression.MULTARY(Expression.INTEGER(shift) :: listReverse(terms), {}, Operator.makeAdd(Type.INTEGER())));
+    end flatIndex;
 
     function convert
       input SimIterator iter;

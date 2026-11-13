@@ -199,6 +199,16 @@ public
     end try;
   end main;
 
+  function getNoReturnEquations
+    "Returns the initial equations without return value. Calls without
+    return value of the simulation equations are left to the simulation system."
+    input EquationPointers initialEqs;
+    output EquationPointers noReturnEqs;
+  algorithm
+    noReturnEqs := EquationPointers.fromList(list(eqn for eqn guard(Equation.isInitial(eqn) and Equation.size(eqn) == 0)
+      in EquationPointers.toList(initialEqs)));
+  end getNoReturnEquations;
+
   function createStartEquations
     "Creates start equations from (fixed) start values."
     input VariablePointers states;
@@ -240,7 +250,9 @@ public
     input UnorderedSet<ComponentRef> algorithm_outputs;
     input VariablePointers aliasVars;
   algorithm
-    if not UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) then
+    // variables only one algorithm uses are not part of the system, the init xml sets their start values
+    // empty arrays have nothing to start
+    if not (UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) or BVariable.isAlgorithmLocal(var) or BVariable.size(var) == 0) then
       () := match Pointer.access(var)
         local
           ComponentRef name, start_name;
@@ -253,7 +265,7 @@ public
         // if it is an array create for-equation (fixed or unfixed)
         case Variable.VARIABLE() guard BVariable.isArray(var) algorithm
           // the start value of a function output is the call at the start values of its arguments
-          if not BVariable.isFixed(var) and isFunctionAliasOrElement(var) then
+          if not BVariable.isFixed(var) and BVariable.isFunctionAliasOrElement(var) then
             start_ok := Pointer.create(true);
             () := match BVariable.getStartAttribute(var)
               case SOME(start_exp) guard not Expression.isLiteralXML(start_exp) algorithm
@@ -305,7 +317,7 @@ public
             case SOME(e) guard not Expression.isLiteralXML(e) algorithm
               // the start value of a function output is the call at the start values of its arguments
               start_ok := Pointer.create(true);
-              if isFunctionAliasOrElement(var) then
+              if BVariable.isFunctionAliasOrElement(var) then
                 e := resolveStartCrefs(e, ptr_start_vars, aliasVars, start_ok, 0);
               end if;
               if Pointer.access(start_ok) then
@@ -550,10 +562,14 @@ public
   function isFunctionAliasCref
     input ComponentRef cref;
     output Boolean b;
+  protected
+    Pointer<Variable> var_ptr;
   algorithm
     b := match cref
-      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref))
-        then BVariable.isFunctionAlias(BVariable.getVarPointer(cref, sourceInfo()));
+      // the start value $START.$FUN_1 is the initial guess of $FUN_1, it has to stay in the initialization
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) algorithm
+        var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+      then BVariable.isFunctionAlias(var_ptr) and not BVariable.isStart(var_ptr);
       else false;
     end match;
   end isFunctionAliasCref;
@@ -771,19 +787,6 @@ public
     input VariablePointers aliasVars;
     output Boolean b = VariablePointers.containsCref(BVariable.getVarName(var_ptr), aliasVars);
   end isAliasVar;
-
-  function isFunctionAliasOrElement
-    "true for function alias variables and the elements of function alias records"
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
-  algorithm
-    b := match BVariable.getParent(var_ptr)
-      local
-        Pointer<Variable> parent;
-      case SOME(parent) then isFunctionAliasOrElement(parent);
-      else BVariable.isFunctionAlias(var_ptr);
-    end match;
-  end isFunctionAliasOrElement;
 
   function resolveStartCrefs
     "Replaces the variables in a start expression by their start values, e.g. the start value of a function output
@@ -1023,14 +1026,18 @@ public
     list<InstNode> iterators;
     list<Expression> ranges;
     list<ComponentRef> iter_crefs;
+    Integer num_whole;
   algorithm
     // make unique iterators for the new for-loop
     dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
+    num_whole   := if num_dim == 0 then 0 else listLength(dims) - num_dim;
     dims        := if num_dim == 0 then dims else List.firstN(dims, num_dim);
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
     iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
     iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
     subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
+    // the subscripts are innermost first, the trailing dimensions are not iterated
+    subscripts  := listAppend(List.fill(Subscript.WHOLE(), num_whole), subscripts);
     frames      := List.zip3(iter_crefs, ranges, List.fill(NONE(), listLength(iter_crefs)));
     iterator    := Iterator.fromFrames(frames);
 
@@ -1130,6 +1137,9 @@ public
           bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in Util.getOption(bdae.dae)));
         end if;
 
+        // delay(expr, delayTime, delayMax) -> expr
+        bdae.init := list(Partition.mapExp(par, cleanupDelay) for par in bdae.init);
+
         // check if we have init lambda0 system
         bdae.init := list(Partition.mapExp(par, function containsLambda0(b = hasHom)) for par in bdae.init);
 
@@ -1195,6 +1205,20 @@ public
     end match;
   end cleanupHomotopy;
 
+  function cleanupDelay
+    "during initialization delay() returns the value of its expression at the start time"
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay")
+      then listHead(call.arguments);
+      else exp;
+    end match;
+  end cleanupDelay;
+
   function containsHomotopyCall
     input output Expression exp;
     input Pointer<Boolean> b;
@@ -1249,6 +1273,8 @@ public
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
         Algorithm alg;
+        UnorderedSet<ComponentRef> kept;
+        UnorderedSet<ComponentRef> removed;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -1275,19 +1301,48 @@ public
         eqn.size := IfEquationBody.size(eqn.body);
       then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
 
+      // without outputs only the active when-bodies are needed, the simulation system evaluates the rest
+      case Equation.ALGORITHM(alg = alg) guard(eqn.size == 0 and List.any(alg.statements, Statement.isWhen)) algorithm
+        stmts := removeWhenEquationAlgorithmBody(list(stmt for stmt guard(Statement.isWhen(stmt)) in alg.statements));
+        if not listEmpty(stmts) then
+          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
+          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+        else
+          new_eqn := Equation.DUMMY_EQUATION();
+        end if;
+      then new_eqn;
+
       // reduce the body of algorithms
       case Equation.ALGORITHM(alg = alg) algorithm
         stmts := removeWhenEquationAlgorithmBody(alg.statements);
+        lhs_crefs := alg.outputs;
         if not listEmpty(stmts) then
           // update alg in-place to preserve original equation kind: re-evaluating via
           // makeAlgorithm would set DISCRETE if event auxiliaries (e.g. $SEV_0) are in outputs
           alg.statements := stmts;
-          eqn.alg := Algorithm.setInputsOutputs(alg);
+          eqn.alg := Equation.setAlgorithmInputsOutputs(alg);
           eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
-          new_eqn := eqn;
+          kept := UnorderedSet.fromList(eqn.alg.outputs, ComponentRef.hash, ComponentRef.isEqual);
+          lhs_crefs := list(cref for cref guard(not UnorderedSet.contains(cref, kept)) in lhs_crefs);
+          if not listEmpty(lhs_crefs) then
+            // cref = pre.cref replaces the pre.cref := cref statements of these outputs, otherwise
+            // both would only determine each other (OpenIPSL Deadband2)
+            removed := UnorderedSet.fromList(lhs_crefs, ComponentRef.hash, ComponentRef.isEqual);
+            stmts := list(stmt for stmt guard(not isPreOfAssignment(stmt, removed)) in stmts);
+            if listEmpty(stmts) then
+              eqn.size := 0;
+            else
+              alg.statements := stmts;
+              eqn.alg := Equation.setAlgorithmInputsOutputs(alg);
+              eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
+            end if;
+          end if;
+          new_eqn := if listEmpty(stmts) then Equation.DUMMY_EQUATION() else eqn;
         else
           new_eqn := Equation.DUMMY_EQUATION();
         end if;
+        // outputs only assigned in removed when-statements keep their pre value (MLS 11.1.2): cref = pre.cref
+        for cref in lhs_crefs loop UnorderedMap.add(cref, iter, cref_map); end for;
       then new_eqn;
 
       else eqn;
@@ -1408,6 +1463,22 @@ public
       else {stmt};
     end match;
   end removeConditionEquation;
+
+  function isPreOfAssignment
+    "true for statements pre.cref := cref where cref is in the set."
+    input Statement stmt;
+    input UnorderedSet<ComponentRef> crefs;
+    output Boolean b;
+  algorithm
+    b := match stmt
+      local
+        ComponentRef pre, post;
+      case Statement.ASSIGNMENT(lhs = Expression.CREF(cref = pre), rhs = Expression.CREF(cref = post))
+      then BVariable.isPrevious(BVariable.getVarPointer(pre, sourceInfo()))
+        and UnorderedSet.contains(ComponentRef.stripSubscriptsAll(post), crefs);
+      else false;
+    end match;
+  end isPreOfAssignment;
 
   function findPreVars
     input output Expression exp;

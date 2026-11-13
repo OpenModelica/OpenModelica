@@ -22,6 +22,8 @@ set(OMC_SIMRT_UTIL_SOURCES
   "OldModelicaTables.c"
   "omc_error.c"
   "omc_file.c"
+  "omc_fmu_init.c"
+  "omc_fmu_paramdeps.c"
   "omc_init.c"
   "omc_mmap.c"
   "omc_msvc.c"
@@ -50,15 +52,13 @@ set(OMC_SIMRT_UTIL_HEADERS
   "generic_array.h"
   "index_spec.h"
   "integer_array.h"
-  "jni_md_solaris.h"
-  "jni_md_windows.h"
-  "jni_md.h"
-  "jni.h"
   "libcsv.h"
   "list.h"
   "modelica_string_lit.h"
   "modelica_string.h"
   "omc_box.h"
+  "omc_fmu_init.h"
+  "omc_fmu_paramdeps.h"
   "omc_string.h"
   "read_write.h"
   "omc_str_utils.h"
@@ -116,23 +116,25 @@ install(
 # The same sources for the MetaModelica runtime, minus the counted string and
 # box: meta/meta_modelica_string.h owns those names there. modelica_string.c
 # stays for the String(x) formatters.
-set(OMC_SIMRT_UTIL_SOURCES_MMC ${OMC_SIMRT_UTIL_SOURCES})
-list(REMOVE_ITEM OMC_SIMRT_UTIL_SOURCES_MMC
-  "modelica_string_lit.c"
-  "omc_box.c"
-  "omc_string.c")
+if(NOT OM_OMC_ENABLE_RUST)
+  set(OMC_SIMRT_UTIL_SOURCES_MMC ${OMC_SIMRT_UTIL_SOURCES})
+  list(REMOVE_ITEM OMC_SIMRT_UTIL_SOURCES_MMC
+    "modelica_string_lit.c"
+    "omc_box.c"
+    "omc_string.c")
 
-add_library(OpenModelicaRuntimeCUtilMMC OBJECT ${OMC_SIMRT_UTIL_SOURCES_MMC})
-add_library(omc::mmc::util ALIAS OpenModelicaRuntimeCUtilMMC)
-target_compile_definitions(OpenModelicaRuntimeCUtilMMC PUBLIC OMC_METAMODELICA_RUNTIME=1)
-set_target_properties(OpenModelicaRuntimeCUtilMMC PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_include_directories(OpenModelicaRuntimeCUtilMMC PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
-target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC omc::3rd::omcgc OMCPThreads::OMCPThreads)
+  add_library(OpenModelicaRuntimeCUtilMMC OBJECT ${OMC_SIMRT_UTIL_SOURCES_MMC})
+  add_library(omc::mmc::util ALIAS OpenModelicaRuntimeCUtilMMC)
+  target_compile_definitions(OpenModelicaRuntimeCUtilMMC PUBLIC OMC_METAMODELICA_RUNTIME=1)
+  set_target_properties(OpenModelicaRuntimeCUtilMMC PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_include_directories(OpenModelicaRuntimeCUtilMMC PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
+  target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC omc::3rd::omcgc OMCPThreads::OMCPThreads)
 
-if(MINGW)
-  target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC regex)
-elseif(MSVC)
-  target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC omc::3rd::regex)
+  if(MINGW)
+    target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC regex)
+  elseif(MSVC)
+    target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC omc::3rd::regex)
+  endif()
 endif()

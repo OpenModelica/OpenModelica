@@ -5,8 +5,8 @@ type Posture = enumeration(
     Tilting);
 
 model TorsoModel
-   parameter Real arrayByEnum[Posture];
-   parameter Real arrayByInt[5];
+   parameter Real arrayByEnum[Posture](each start = 0);
+   parameter Real arrayByInt[5](each start = 0);
    Posture enmIndex;
    Integer intIndex;
    Real resultE;

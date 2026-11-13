@@ -9,7 +9,6 @@ model HoldTest
 equation
   x = hold(3);
   y = hold(z);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HoldTest;
 
 // Result:
@@ -20,8 +19,7 @@ end HoldTest;
 //   Real z[1];
 //   Real z[2];
 // equation
-//   x = /*Real*/(hold(3));
-//   y[1] = hold(z[1]);
-//   y[2] = hold(z[2]);
+//   x = 3.0;
+//   y = hold(z);
 // end HoldTest;
 // endResult

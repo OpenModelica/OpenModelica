@@ -14,12 +14,12 @@ end Modelica;
 type MyType = enumeration(divisionType1 , divisionType2 );
 
 partial model myPartialModel
+  parameter Integer n(min = 1) = 3;
   parameter Integer m(min = 1) = 2;
   input Modelica.SIunits.Volume[n] v;
 end myPartialModel;
 
 partial model mySecondPartialModel
-  parameter Integer n(min = 1) = 3;
   parameter MyType myDivision = MyType.divisionType1;
   extends myPartialModel(final m = n - 1, final v = z);
   parameter Modelica.SIunits.Length[n] x;
@@ -35,39 +35,40 @@ model Modification17
   final parameter Modelica.SIunits.Length[n] lengths = if n == 1 then {b} elseif myDivision == MyType.divisionType1 then cat(1, {b / (n - 1) / 2}, fill(b / (n - 1), n - 2), {b / (n - 1) / 2}) else fill(b / n, n);
   final parameter Modelica.SIunits.Volume[n] volumes = array(areas[i] * lengths[i] for i in 1:n);
   extends mySecondPartialModel(final x = lengths, final y = areas, final z = volumes);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification17;
 
 // Result:
 // class Modification17
-//   parameter Integer n(min = 1) = 3;
-//   parameter enumeration(divisionType1, divisionType2) myDivision = MyType.divisionType1;
-//   parameter Integer m(min = 1) = -1 + n;
-//   input Real v[1];
-//   input Real v[2];
-//   input Real v[3];
-//   parameter Real x[1] = lengths[1];
-//   parameter Real x[2] = lengths[2];
-//   parameter Real x[3] = lengths[3];
-//   parameter Real y[1] = areas[1];
-//   parameter Real y[2] = areas[2];
-//   parameter Real y[3] = areas[3];
-//   parameter Real z[1] = volumes[1];
-//   parameter Real z[2] = volumes[2];
-//   parameter Real z[3] = volumes[3];
 //   parameter Real a = 1.0;
 //   parameter Real b = 1.0;
-//   final parameter Real c = a ^ 2.0;
-//   final parameter Real areas[1] = c / /*Real*/(n);
-//   final parameter Real areas[2] = c / /*Real*/(n);
-//   final parameter Real areas[3] = c / /*Real*/(n);
-//   final parameter Real lengths[1] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(-1 + n) else b / /*Real*/(n);
-//   final parameter Real lengths[2] = if myDivision == MyType.divisionType1 then b / /*Real*/(-1 + n) else b / /*Real*/(n);
-//   final parameter Real lengths[3] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(-1 + n) else b / /*Real*/(n);
+//   final parameter Real c = a * a;
+//   final parameter Real areas[1] = c / 3.0;
+//   final parameter Real areas[2] = c / 3.0;
+//   final parameter Real areas[3] = c / 3.0;
+//   final parameter Real lengths[1] = if myDivision == MyType.divisionType1 then b / 2.0 / 2.0 else b / 3.0;
+//   final parameter Real lengths[2] = if myDivision == MyType.divisionType1 then b / 2.0 else b / 3.0;
+//   final parameter Real lengths[3] = if myDivision == MyType.divisionType1 then b / 2.0 / 2.0 else b / 3.0;
 //   final parameter Real volumes[1] = areas[1] * lengths[1];
 //   final parameter Real volumes[2] = areas[2] * lengths[2];
 //   final parameter Real volumes[3] = areas[3] * lengths[3];
+//   parameter enumeration(divisionType1, divisionType2) myDivision = MyType.divisionType1;
+//   final parameter Integer n(min = 1) = 3;
+//   final parameter Integer m(min = 1) = 2;
+//   final Real v[1];
+//   final Real v[2];
+//   final Real v[3];
+//   final parameter Real x[1] = lengths[1];
+//   final parameter Real x[2] = lengths[2];
+//   final parameter Real x[3] = lengths[3];
+//   final parameter Real y[1] = areas[1];
+//   final parameter Real y[2] = areas[2];
+//   final parameter Real y[3] = areas[3];
+//   final parameter Real z[1] = volumes[1];
+//   final parameter Real z[2] = volumes[2];
+//   final parameter Real z[3] = volumes[3];
 // equation
-//   v = {z[1], z[2], z[3]};
+//   v = z;
 // end Modification17;
+// [flattening/modelica/modification/Modification17.mo:19:3-19:37:writable] Notification: Top-level input 'v' has a binding equation and will not be accessible as an input of the model.
+//
 // endResult

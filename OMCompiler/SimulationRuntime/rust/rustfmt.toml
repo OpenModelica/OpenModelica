@@ -1,0 +1,15 @@
+# Formatting rules for the hand-written Rust files of the omc port. They apply
+# to files as they are added or changed: common/pre-commit.sh formats what you
+# commit and .github/workflows/rust-format.yml checks the files a pull request
+# touches, both through OMCompiler/Compiler/OpenModelica.rs/format.sh.
+#
+# There is one copy per cargo workspace root (OMCompiler/Compiler/OpenModelica.rs
+# and OMCompiler/SimulationRuntime/rust); they must stay identical, which
+# format.sh checks.
+#
+# Stable options only, so any rustfmt (editor, rust-analyzer, cargo fmt) agrees.
+edition = "2024"
+style_edition = "2024"
+# MetaModelica-derived names and the generated generic bounds are long; 120
+# keeps signatures readable without wrapping nearly every call.
+max_width = 120

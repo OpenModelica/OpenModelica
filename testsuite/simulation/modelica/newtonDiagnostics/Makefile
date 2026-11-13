@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 newtonDiagnostics-01.mos \
+newtonDiagnosticsKinsol.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

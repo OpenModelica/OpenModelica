@@ -95,7 +95,7 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"z\"
 //     valueReference=\"6\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"10.0\"/>

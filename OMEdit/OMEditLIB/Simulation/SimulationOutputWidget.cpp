@@ -45,6 +45,7 @@
 #include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
+#include "Util/Style.h"
 #include "SimulationOutputHandler.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
@@ -62,6 +63,7 @@
 #include <QTextDocumentFragment>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QTimer>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -359,8 +361,6 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "%1_16dae*.c"
                         << "%1_16dae*.o"
                         << "%1_16dae*.h"
-                        << "%1_17inl*.c"
-                        << "%1_17inl*.o"
                         << "%1_18spd*.c"
                         << "%1_18spd*.o"
                         << "%1_functions.c"
@@ -490,10 +490,10 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
   mIsLogFileWrittenByOmc = true;
   mpProgressBar->setRange(0, 0);
   mpProgressLabel->setText(tr("Running simulation of %1.").arg(mSimulationOptions.getClassName()));
-  writeCompilationOutput(tr("Model translated to the wasm-jit target; running in-process (no external compilation)."), Qt::black);
+  writeCompilationOutput(tr("Model translated to the wasm-jit target; running in-process (no external compilation)."), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  // the in-process run writes its result into omc's cwd; read it back from there.
-  pOMCProxy->changeDirectory(mSimulationOptions.getWorkingDirectory());
+  // Run where the executable would (Ticket:4583), so the model finds its input files.
+  pOMCProxy->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   // The runtime flags (-lv logging streams, solver options, …) are not part of
   // simulationParameters; pass them via simflags so the wasm-jit run honours them
   // (e.g. -lv=LOG_STATS), as the native executable would receive on its command line.
@@ -505,7 +505,7 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
                                    mSimulationOptions.getOutputFileName(), simflags);
   // Echo the flags in the compilation output (always visible) so the run is
   // debuggable even if the simulation-messages path has a problem.
-  writeCompilationOutput(tr("Simulation flags: %1").arg(simflags.isEmpty() ? tr("(none)") : simflags), Qt::black);
+  writeCompilationOutput(tr("Simulation flags: %1").arg(simflags.isEmpty() ? tr("(none)") : simflags), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 #if defined(__EMSCRIPTEN__)
   // Cooperative cancel: enable the button (sendCommand spins a nested QEventLoop, so
   // a click reaches cancelCompilationOrSimulation and sets the shared flag the omc
@@ -520,6 +520,15 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
 #endif
   {
     OMCLongOperation longOperation;
+    QTimer progressTimer;
+    connect(&progressTimer, &QTimer::timeout, this, [this]() {
+      const int permille = OMCProxy::simulationProgress();
+      if (permille >= 0) {
+        mpProgressBar->setRange(0, 1000);
+        mpProgressBar->setValue(permille);
+      }
+    });
+    progressTimer.start(100);
     pOMCProxy->sendCommand(command);
   }
 #if defined(__EMSCRIPTEN__)
@@ -571,8 +580,8 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
     writeSimulationOutput(tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName()), StringHandler::Error, true);
   }
 #if defined(__EMSCRIPTEN__)
-  // omc cd'd into the working directory, so the result lands there in the worker
-  // VFS. Stage it into the page MEMFS at the same path for OMPlot's .mat reader.
+  // -r puts the result in the model's directory in the worker VFS. Stage it into
+  // the page MEMFS at the same path for OMPlot's .mat reader.
   omcWorkerStageFile(QString("%1/%2").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getFullResultFileName()).toUtf8().constData());
 #endif
   mpProgressBar->setRange(0, 100);
@@ -664,7 +673,7 @@ void SimulationOutputWidget::compileModel()
        << pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString()
        << System_openModelicaPlatform() << "parallel" << linkType << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
-  writeCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
+  writeCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Style::messagesCommandColor());
   mpCompilationProcess->start(compilationProcessPath, args);
 #else
   int numProcsInt = numProcs.toInt();
@@ -673,10 +682,10 @@ void SimulationOutputWidget::compileModel()
   }
   args << "-f" << mSimulationOptions.getOutputFileName() + ".makefile";
 #  if !defined(__FreeBSD__)
-  writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
+  writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Style::messagesCommandColor());
   mpCompilationProcess->start("make", args);
 #  else
-  writeCompilationOutput(QString("%1 %2\n").arg("gmake").arg(args.join(" ")), Qt::blue);
+  writeCompilationOutput(QString("%1 %2\n").arg("gmake").arg(args.join(" ")), Style::messagesCommandColor());
   mpCompilationProcess->start("gmake", args);
 #  endif
 #endif
@@ -698,7 +707,7 @@ void SimulationOutputWidget::runPostCompilation()
     connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
     connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
     connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
-    writeCompilationOutput(QString("%1\n").arg(postCompilationCommand), Qt::blue);
+    writeCompilationOutput(QString("%1\n").arg(postCompilationCommand), Style::messagesCommandColor());
     QStringList args(QProcess::splitCommand(postCompilationCommand));
     const QString program(args.takeFirst());
     mpPostCompilationProcess->start(program, args);
@@ -733,7 +742,7 @@ void SimulationOutputWidget::postCompilationProcessStarted()
  */
 void SimulationOutputWidget::readPostCompilationStandardOutput()
 {
-  writeCompilationOutput(QString(mpPostCompilationProcess->readAllStandardOutput()), Qt::black);
+  writeCompilationOutput(QString(mpPostCompilationProcess->readAllStandardOutput()), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -744,7 +753,7 @@ void SimulationOutputWidget::readPostCompilationStandardError()
 {
   QString output = QString(mpPostCompilationProcess->readAllStandardError());
   mCompilationStandardError += output;
-  writeCompilationOutput(output, Qt::red);
+  writeCompilationOutput(output, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -762,7 +771,7 @@ void SimulationOutputWidget::postCompilationProcessError(QProcess::ProcessError 
   }
   QString errorString = mpPostCompilationProcess->errorString();
   mCompilationStandardError += errorString;
-  writeCompilationOutput(errorString, Qt::red);
+  writeCompilationOutput(errorString, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -777,17 +786,17 @@ void SimulationOutputWidget::postCompilationProcessFinished(int exitCode, QProce
   mIsPostCompilationProcessRunning = false;
   QString exitCodeStr = tr("Post compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writeCompilationOutput(tr("Post compilation process finished successfully.\n"), Qt::blue);
+    writeCompilationOutput(tr("Post compilation process finished successfully.\n"), Style::messagesCommandColor());
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
     // if not build only and launch the algorithmic debugger is false then run the simulation process.
     if (!mSimulationOptions.getBuildOnly() && !mSimulationOptions.getLaunchAlgorithmicDebugger()) {
       runSimulationExecutable();
     }
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writeCompilationOutput(exitCodeStr, Qt::red);
+    writeCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
   } else {
-    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
   }
 }
@@ -918,10 +927,11 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   QString progressStr;
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
+  const bool encrypted = usesEncryptedLibrary();
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(1);
     bool profiling = mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
-    if (mSimulationOptions.getBuildOnly() &&
+    if (!encrypted && mSimulationOptions.getBuildOnly() &&
         (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
          mSimulationOptions.getLaunchTransformationalDebugger() || profiling)) {
       MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling, false);
@@ -936,19 +946,57 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   updateMessageTab(progressStr);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files
-  if (mSimulationOptions.getBuildOnly()) {
+  if (encrypted) {
+    // the generated code and the equations of an encrypted library must not stay on disk
+    deleteIntermediateCompilationFiles(true);
+    QFile::remove(QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()));
+    mpOpenTransformationalDebuggerButton->setEnabled(false);
+  } else if (mSimulationOptions.getBuildOnly()) {
     deleteIntermediateCompilationFiles();
   }
 }
 #endif // QT_CONFIG(process)
 
 /*!
+ * \brief SimulationOutputWidget::usesEncryptedLibrary
+ * Returns true if the simulated class uses an encrypted library.
+ */
+bool SimulationOutputWidget::usesEncryptedLibrary() const
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pRootLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem();
+  bool encryptedLibraryLoaded = false;
+  for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); i++) {
+    if (pRootLibraryTreeItem->childAt(i)->isEncryptedClass()) {
+      encryptedLibraryLoaded = true;
+      break;
+    }
+  }
+  if (!encryptedLibraryLoaded) {
+    return false;
+  }
+  const QList<QString> usedClassNames = MainWindow::instance()->getOMCProxy()->getUsedClassNames(mSimulationOptions.getClassName());
+  // omc could not tell which classes are used, so assume the encrypted library is one of them
+  if (usedClassNames.isEmpty()) {
+    return true;
+  }
+  foreach (const QString &usedClassName, usedClassNames) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(StringHandler::getFirstWordBeforeDot(usedClassName));
+    if (pLibraryTreeItem && pLibraryTreeItem->isEncryptedClass()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*!
  * \brief SimulationOutputWidget::deleteIntermediateCompilationFiles
  * Deletes the intermediate compilation files
+ * \param force - delete the files even if the user wants to keep them.
  */
-void SimulationOutputWidget::deleteIntermediateCompilationFiles()
+void SimulationOutputWidget::deleteIntermediateCompilationFiles(bool force)
 {
-  if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
+  if (force || OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
     const QString workingDirectory = mSimulationOptions.getWorkingDirectory();
 
     QStringList filesList = QDir(workingDirectory).entryList(mGeneratedFilesList, QDir::Files | QDir::NoSymLinks |
@@ -1165,7 +1213,7 @@ void SimulationOutputWidget::compilationProcessStarted()
  */
 void SimulationOutputWidget::readCompilationStandardOutput()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), Qt::black);
+  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -1176,7 +1224,7 @@ void SimulationOutputWidget::readCompilationStandardError()
 {
   QString output = QString(mpCompilationProcess->readAllStandardError());
   mCompilationStandardError += output;
-  writeCompilationOutput(output, Qt::red);
+  writeCompilationOutput(output, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -1194,7 +1242,7 @@ void SimulationOutputWidget::compilationProcessError(QProcess::ProcessError erro
   }
   QString errorString = mpCompilationProcess->errorString();
   mCompilationStandardError += errorString;
-  writeCompilationOutput(errorString, Qt::red);
+  writeCompilationOutput(errorString, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -1218,14 +1266,14 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     exitCodeStr.append("\nTry compiling with the default MinGW compiler. Select \"MinGW\" in \"Tools->Options->Simulation->Target Build\".");
   }
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writeCompilationOutput(tr("Compilation process finished successfully.\n"), Qt::blue);
+    writeCompilationOutput(tr("Compilation process finished successfully.\n"), Style::messagesCommandColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
     runPostCompilation();
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writeCompilationOutput(exitCodeStr, Qt::red);
+    writeCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
   } else {
-    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
   }
 }
@@ -1395,7 +1443,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
                             .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
-                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
+                            .arg(tr("URL is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
     }
   } else if (url.scheme().compare("file") == 0) {
     // we know that file link is always simulation log file.

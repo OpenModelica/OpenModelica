@@ -81,6 +81,7 @@ PackageConst1.mos \
 PartialFn1.mo \
 PartialFn2.mo \
 PartialFn3.mos \
+PartialFn3NF.mos \
 PartialFn4.mo \
 PartialFn5.mo \
 PartialFn6.mo \

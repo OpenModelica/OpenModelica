@@ -40,6 +40,7 @@
 
 #include <QPen>
 #include <QApplication>
+#include <QMouseEvent>
 
 using namespace OMPlot;
 
@@ -69,4 +70,25 @@ PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
 PlotZoomer::~PlotZoomer()
 {
 
+}
+
+/*! Forwards press, move, and release events through Qwt's zoomer state machine.
+ * Used when an axis widget captures a drag that later enters the canvas.
+ * \param event Mouse event in canvas coordinates.
+ */
+void PlotZoomer::handleMouseEvent(QMouseEvent *event)
+{
+  switch (event->type()) {
+    case QEvent::MouseButtonPress:
+      widgetMousePressEvent(event);
+      break;
+    case QEvent::MouseMove:
+      widgetMouseMoveEvent(event);
+      break;
+    case QEvent::MouseButtonRelease:
+      widgetMouseReleaseEvent(event);
+      break;
+    default:
+      break;
+  }
 }

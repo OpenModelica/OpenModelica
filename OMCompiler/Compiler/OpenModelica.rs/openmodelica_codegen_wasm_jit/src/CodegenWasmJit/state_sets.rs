@@ -12,7 +12,7 @@ pub(super) fn build_state_set_infos(
 ) -> Result<Vec<StateSetInfo>> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let mut infos = Vec::new();
-    let mut cursor = layout.stateset_off;
+    let mut cursor = plain_off(layout.stateset_off)?;
     let real_slot = |var_map: &SimVarMap, cr: &metamodelica::Ref<DAE::ComponentRef>| -> Result<u32> {
         let key = sim_cref_key(cr)?;
         let slot = var_map
@@ -22,7 +22,7 @@ pub(super) fn build_state_set_infos(
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: state-set variable is not a Real variable");
         }
-        Ok(slot.off)
+        plain_off(slot.off)
     };
     for set in lst(state_sets) {
         let n_candidates = set.nCandidates.max(0) as u32;
@@ -32,7 +32,16 @@ pub(super) fn build_state_set_infos(
         let register = |var_map: &mut SimVarMap, sv: &SimCodeVar::SimVar, cursor: &mut u32| -> Result<u32> {
             let off = *cursor;
             *cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 });
+            Arc::make_mut(&mut var_map.vars).insert(
+                sim_cref_key(&sv.name)?,
+                SimSlot {
+                    off: SimOff::from(off),
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                    pre: 0,
+                },
+            );
             Ok(off)
         };
 
@@ -60,8 +69,9 @@ pub(super) fn build_state_set_infos(
         let candidate_offs: Vec<u32> = lst(&set.statescandidates)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
-        let candidate_names: Vec<String> =
-            lst(&set.statescandidates).map(|cr| cref_display(cr)).collect::<Result<_>>()?;
+        let candidate_names: Vec<String> = lst(&set.statescandidates)
+            .map(|cr| cref_display(cr))
+            .collect::<Result<_>>()?;
         let state_offs: Vec<u32> = lst(&set.states)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
@@ -75,7 +85,7 @@ pub(super) fn build_state_set_infos(
             for c in 1..=n_candidates {
                 let slot = stateset_a_slot(var_map, &a_base, row, c, n_candidates)
                     .ok_or_else(|| "CodegenWasmJit: state-set matrix entry has no slot")?;
-                a_offs.push(slot.off);
+                a_offs.push(plain_off(slot.off)?);
             }
         }
 
@@ -105,26 +115,29 @@ pub(super) fn build_stateset_jac_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let mut eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = Vec::new();
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let mut pending = BTreeMap::new();
     for set in lst(state_sets) {
-        for col in lst(&set.jacobianMatrix.columns) {
-            eqs.extend(lst(&col.constantEqns).cloned());
-            eqs.extend(lst(&col.columnEqns).cloned());
+        let jm = &set.jacobianMatrix;
+        for col in lst(&jm.columns) {
+            let eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
+                lst(&col.constantEqns).chain(lst(&col.columnEqns)).cloned().collect();
+            lower_with_jac_calls(&mut ctx, jm, |c| {
+                for unit in &eq_units(&eqs) {
+                    lower_unit(c, unit, eq_index, &mut pending)?;
+                }
+                Ok(())
+            })?;
         }
     }
-    build_eq_fn_single(&eq_units(&eqs), var_map, eq_index, by_name, literals)
+    emit_sim_const_stores(&mut ctx, &pending)?;
+    Ok(finish_fn(ctx))
 }
 
 /// Slot of the state-set selection-matrix entry `A[row,col]` (1-based). The backend
 /// scalarizes `$STATESET{n}.A` either 2D (key `A[row][col]`) or flat row-major (key
 /// `A[k]`, `k = (row-1)*nCandidates + col`); try the 2D key first, then the flat one.
-fn stateset_a_slot(
-    var_map: &SimVarMap,
-    a_base: &str,
-    row: u32,
-    col: u32,
-    n_candidates: u32,
-) -> Option<SimSlot> {
+fn stateset_a_slot(var_map: &SimVarMap, a_base: &str, row: u32, col: u32, n_candidates: u32) -> Option<SimSlot> {
     var_map.vars.get(&format!("{a_base}[{row}][{col}]")).or_else(|| {
         let k = (row - 1) * n_candidates + col;
         var_map.vars.get(&format!("{a_base}[{k}]"))
@@ -140,10 +153,7 @@ fn stateset_a_slot(
 /// `nStates` candidates) is a valid selection whenever those candidates stay
 /// independent (true for the models in scope; a candidate going singular
 /// mid-run would need the runtime `pivot`/`stateSelection` port).
-pub(super) fn stateset_diag_offsets(
-    state_sets: &List<SimCode::StateSet>,
-    var_map: &SimVarMap,
-) -> Result<Vec<u32>> {
+pub(super) fn stateset_diag_offsets(state_sets: &List<SimCode::StateSet>, var_map: &SimVarMap) -> Result<Vec<u32>> {
     let mut offs = Vec::new();
     for set in lst(state_sets) {
         // `crA` names the first `A` element; strip its subscripts to the base `A`.
@@ -156,7 +166,7 @@ pub(super) fn stateset_diag_offsets(
             if slot.wty != WTy::I32 {
                 return Err("CodegenWasmJit: state-set matrix entry is not an Integer variable");
             }
-            offs.push(slot.off);
+            offs.push(plain_off(slot.off)?);
         }
     }
     Ok(offs)

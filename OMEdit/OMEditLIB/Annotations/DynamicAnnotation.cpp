@@ -261,6 +261,26 @@ FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expres
         if (value.second) {
           return FlatModelica::Expression(value.first);
         }
+        ModelInstance::Name variableName(vname);
+        const ModelInstance::Model *pCurrentModel = pModel;
+        bool isProtected = false;
+        for (const auto &part : variableName.getParts()) {
+          if (!pCurrentModel) {
+            break;
+          }
+          const ModelInstance::Element *pElement = pCurrentModel->lookupElement(part.getName(false));
+          if (!pElement) {
+            break;
+          }
+          if (!pElement->isPublic()) {
+            isProtected = true;
+            break;
+          }
+          pCurrentModel = pElement->getModel();
+        }
+        if (isProtected) {
+          MainWindow::instance()->getVariablesWidget()->warnProtectedVariableNotFound(pModel->getName(), vname);
+        }
       } else {
         // qDebug() << "Evaluating variable:" << vname << "from model:" << (pModel ? pModel->getName() : "null") << "using value:" << value;
         auto valueOrBindingExpression = pModel ? pModel->getVariableValueOrBinding(vname, value) : nullptr;

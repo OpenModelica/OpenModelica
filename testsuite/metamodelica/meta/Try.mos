@@ -1,8 +1,7 @@
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -d=gen
 // suite: metamodelica
 
-setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("package Try
 function f
   output Real o;
@@ -24,8 +23,6 @@ instantiateModel(Try.M);getErrorString();
 Try.f();getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // "package Try

@@ -20,7 +20,7 @@ end Scalarize3;
 // package 'Scalarize3'
 //   function 'f'
 //     input Real 'x'[2];
-//     output Real 'y'[2] = {'x'[1] * 2.0, 'x'[2] * 2.0};
+//     output Real 'y'[2] = {'x'[1]*2.0, 'x'[2]*2.0};
 //   end 'f';
 //
 //   model 'Scalarize3'

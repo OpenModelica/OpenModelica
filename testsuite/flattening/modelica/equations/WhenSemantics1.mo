@@ -14,7 +14,6 @@ equation
   when {sample(0.1,0.1),time>=0.15,time>=0.25} then
     z=time;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenSemantics1;
 
 // Result:

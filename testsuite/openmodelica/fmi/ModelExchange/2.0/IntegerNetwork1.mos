@@ -2,7 +2,6 @@
 // keywords: IntegerNetwork1 FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml IntegerNetwork1.fmu IntegerNetwork1_me_FMU.mo IntegerNetwork1.lib* IntegerNetwork1.so IntegerNetwork1.dll IntegerNetwork1_*.c IntegerNetwork1_*.h IntegerNetwork1_*.o IntegerNetwork1_*.json documentation resources IntegerNetwork1.log
-// cflags: -d=-newInst
 // Integer variables, Integer input variables, no continuous-time states, time events, state events
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
@@ -40,7 +39,7 @@ val(y5, 7.5);
 // ""
 // record SimulationResult
 //     resultFile = "IntegerNetwork1_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'IntegerNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|y5', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'IntegerNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|y5', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

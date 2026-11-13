@@ -20,7 +20,7 @@ encapsulated package TestPkg
     r.tmp := b;
   end mk_r;
 
-  class subm
+  model subm
     Boolean q;
     parameter Boolean init = false;
   equation
@@ -28,7 +28,7 @@ encapsulated package TestPkg
   end subm;
 end TestPkg;
 
-class m
+model m
   Boolean q;
 equation
   q = TestPkg.fkn(TestPkg.mk_r(true, "not"));

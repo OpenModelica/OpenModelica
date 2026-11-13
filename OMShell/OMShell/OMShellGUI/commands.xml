@@ -116,10 +116,6 @@
 		<field name="$0">str</field>
 		<helptext>Execute str as a system(shell) command, return integer success value. Ex: system("touch myFile").</helptext>
 	</command>
-	<command name="timing($0)">
-		<field name="$0">expr</field>
-		<helptext>Evaluates expression and returns the number of seconds the evaluation took. Ex: timing(x*4711+5).</helptext>
-	</command>
 	<command name="typeOf($0)">
 		<field name="$0">variable</field>
 		<helptext>Returns the type of the variable as a string. Ex: typeOf(R1.v).</helptext>

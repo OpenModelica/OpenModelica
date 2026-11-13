@@ -18,7 +18,6 @@ algorithm
     i := i + 1;
     delta := exp(-0.01 * i);
   end while;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumSeries;
 
 // class SumSeries

@@ -26,7 +26,7 @@ end Expression1;
 //     output Real 'Y';
 //     constant Real 'Z'[2] = {2.0, 3.0};
 //   algorithm
-//     'Y' := 1.0 / ('X' * 'Z');
+//     'Y' := 1.0/('X'*'Z');
 //   end 'f';
 //
 //   model 'Expression1'

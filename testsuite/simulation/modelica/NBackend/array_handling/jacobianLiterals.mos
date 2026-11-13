@@ -1,0 +1,42 @@
+// name: jacobianLiterals
+// keywords: NewBackend Jacobian literal
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f jacobianLiterals jacobianLiterals_* jacobianLiterals.log jacobianLiterals.c jacobianLiterals.o jacobianLiterals.makefile jacobianLiterals.libs
+//
+// The constant c is a literal array in a generic call of the Jacobian of the
+// loop. It is generated as a shared literal, not as a switch over its elements.
+
+loadString("
+model jacobianLiterals
+  parameter Integer N = 3;
+  constant Real c[3] = {1.5, 2.0, 3.25};
+  Real x[N](each start = 1);
+  Real y[N];
+  Real z[N];
+equation
+  for i in 1:N loop
+    y[i] = c[mod(i - 1, 3) + 1] * x[i]^3;
+    z[i] = c[mod(i, 3) + 1] * y[i] + sin(x[i]);
+    x[i] + z[i] = time + i;
+  end for;
+end jacobianLiterals;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --resizableArrays"); getErrorString();
+buildModel(jacobianLiterals); getErrorString();
+system("grep -q 'real_get(_OMC_LIT' jacobianLiterals_12jac.c");
+system("./jacobianLiterals -override=N=5", "jacobianLiterals.log");
+val(x[5], 1, "jacobianLiterals_res.mat");
+// Result:
+// true
+// ""
+// true
+// ""
+// {"jacobianLiterals", "jacobianLiterals_init.xml"}
+// ""
+// 0
+// 0
+// 0.8751788566251066
+// endResult

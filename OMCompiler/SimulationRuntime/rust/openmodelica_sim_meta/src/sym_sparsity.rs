@@ -100,7 +100,11 @@ impl SymPattern {
         let vars = |vs: &[SymVar]| -> Option<Vec<(usize, Vec<usize>)>> {
             vs.iter()
                 .map(|v| {
-                    let dims = v.dims.iter().map(|d| usize::try_from(ev(d)).ok()).collect::<Option<Vec<_>>>()?;
+                    let dims = v
+                        .dims
+                        .iter()
+                        .map(|d| usize::try_from(ev(d)).ok())
+                        .collect::<Option<Vec<_>>>()?;
                     Some((usize::try_from(ev(&v.base)).ok()?, dims))
                 })
                 .collect()
@@ -132,7 +136,13 @@ impl SymPattern {
                     for (k, &dim) in dims.iter().enumerate() {
                         let p = match r.subs.get(k).unwrap_or(&SymSub::All) {
                             SymSub::All => Pos::All,
-                            SymSub::Index(a) => Pos::Some(usize::try_from(aff(a) - 1).ok().filter(|&p| p < dim).into_iter().collect()),
+                            SymSub::Index(a) => Pos::Some(
+                                usize::try_from(aff(a) - 1)
+                                    .ok()
+                                    .filter(|&p| p < dim)
+                                    .into_iter()
+                                    .collect(),
+                            ),
                             SymSub::Slice { start, step, stop } => {
                                 let (mut v, stop) = (aff(start), aff(stop));
                                 let mut ps = Vec::new();
@@ -153,8 +163,9 @@ impl SymPattern {
                 };
                 for sc in &row.solved {
                     let sc = bind(sc, &row_vars)?;
-                    // A trailing whole dimension of a looped residual is the loop itself.
-                    let iter_row = !iters.is_empty() && sc.dims.last().is_some_and(|(_, p)| matches!(p, Pos::All));
+                    // A whole looped residual is the loop itself, unless the iterators select its element.
+                    let iter_row =
+                        !iters.is_empty() && !sc.dims.is_empty() && sc.dims.iter().all(|(_, p)| matches!(p, Pos::All));
                     let sc_offs = match iter_row {
                         true => vec![sc.base + flat],
                         false => sc.offsets(),
@@ -165,7 +176,8 @@ impl SymPattern {
                         let seed = bind(seed, &col_vars)?;
                         if *may_pair && seed.whole_1d() && pairs_regular {
                             match iters.is_empty() {
-                                true => (0..sc.dims.first().map_or(0, |d| d.0)).for_each(|k| add(sc.base + k, seed.base + k)),
+                                true => (0..sc.dims.first().map_or(0, |d| d.0))
+                                    .for_each(|k| add(sc.base + k, seed.base + k)),
                                 false => add(sc.base + flat, seed.base + flat),
                             }
                             continue;
@@ -232,7 +244,7 @@ pub fn color_columns(rows_by_col: &[Vec<u32>]) -> Vec<Vec<u32>> {
     groups
 }
 
-pub(crate) fn put(o: &mut Vec<u8>, p: &Option<SymPattern>) {
+pub fn put(o: &mut Vec<u8>, p: &Option<SymPattern>) {
     let Some(p) = p else {
         o.push(0);
         return;
@@ -297,7 +309,7 @@ pub(crate) fn put(o: &mut Vec<u8>, p: &Option<SymPattern>) {
     }
 }
 
-pub(crate) fn get(b: &[u8], p: &mut usize) -> Result<Option<SymPattern>, &'static str> {
+pub fn get(b: &[u8], p: &mut usize) -> Result<Option<SymPattern>, &'static str> {
     fn take<'a>(b: &'a [u8], p: &mut usize, n: usize) -> Result<&'a [u8], &'static str> {
         let s = b.get(*p..*p + n).ok_or("sim_meta: truncated sparsity")?;
         *p += n;
@@ -329,7 +341,11 @@ pub(crate) fn get(b: &[u8], p: &mut usize) -> Result<Option<SymPattern>, &'stati
                 _ => {
                     let start = aff(b, p)?;
                     let step = i64_(b, p)?;
-                    SymSub::Slice { start, step, stop: aff(b, p)? }
+                    SymSub::Slice {
+                        start,
+                        step,
+                        stop: aff(b, p)?,
+                    }
                 }
             });
         }
@@ -355,7 +371,11 @@ pub(crate) fn get(b: &[u8], p: &mut usize) -> Result<Option<SymPattern>, &'stati
         for _ in 0..u32_(b, p)? {
             let start = Sz::decode(b, p)?;
             let step = i64_(b, p)?;
-            iters.push(SymIter { start, step, size: Sz::decode(b, p)? });
+            iters.push(SymIter {
+                start,
+                step,
+                size: Sz::decode(b, p)?,
+            });
         }
         let solved = (0..u32_(b, p)?).map(|_| rf(b, p)).collect::<Result<_, _>>()?;
         let mut deps = Vec::new();
@@ -365,7 +385,12 @@ pub(crate) fn get(b: &[u8], p: &mut usize) -> Result<Option<SymPattern>, &'stati
         }
         rows.push(SymRow { iters, solved, deps });
     }
-    Ok(Some(SymPattern { n, rows_vars, cols_vars, rows }))
+    Ok(Some(SymPattern {
+        n,
+        rows_vars,
+        cols_vars,
+        rows,
+    }))
 }
 
 #[cfg(test)]
@@ -376,18 +401,43 @@ mod tests {
     fn cascade_pattern() {
         // der(x[i]) depends on x[i] and x[i-1] for i in 1:N.
         let n = Sz::param(0);
-        let var = SymVar { base: Sz::lit(0), dims: vec![n.clone()] };
-        let it = |c: i64| Affine { c: Sz::lit(c), k: vec![1] };
+        let var = SymVar {
+            base: Sz::lit(0),
+            dims: vec![n.clone()],
+        };
+        let it = |c: i64| Affine {
+            c: Sz::lit(c),
+            k: vec![1],
+        };
         let p = SymPattern {
             n: n.clone(),
             rows_vars: vec![var.clone()],
             cols_vars: vec![var],
             rows: vec![SymRow {
-                iters: vec![SymIter { start: Sz::lit(1), step: 1, size: n }],
-                solved: vec![SymRef { var: 0, subs: vec![SymSub::All] }],
+                iters: vec![SymIter {
+                    start: Sz::lit(1),
+                    step: 1,
+                    size: n,
+                }],
+                solved: vec![SymRef {
+                    var: 0,
+                    subs: vec![SymSub::All],
+                }],
                 deps: vec![
-                    (SymRef { var: 0, subs: vec![SymSub::Index(it(0))] }, false),
-                    (SymRef { var: 0, subs: vec![SymSub::Index(it(-1))] }, false),
+                    (
+                        SymRef {
+                            var: 0,
+                            subs: vec![SymSub::Index(it(0))],
+                        },
+                        false,
+                    ),
+                    (
+                        SymRef {
+                            var: 0,
+                            subs: vec![SymSub::Index(it(-1))],
+                        },
+                        false,
+                    ),
                 ],
             }],
         };
@@ -398,5 +448,41 @@ mod tests {
         put(&mut b, &Some(p.clone()));
         let mut pos = 0;
         assert_eq!(get(&b, &mut pos).unwrap(), Some(p));
+    }
+
+    #[test]
+    fn component_array_rows() {
+        // der(c[i].x[:]) depends on c[i].x[:] for i in 1:N, x[3].
+        let n = Sz::param(0);
+        let var = SymVar {
+            base: Sz::lit(0),
+            dims: vec![n.clone(), Sz::lit(3)],
+        };
+        let elem = SymRef {
+            var: 0,
+            subs: vec![
+                SymSub::Index(Affine {
+                    c: Sz::lit(0),
+                    k: vec![1],
+                }),
+                SymSub::All,
+            ],
+        };
+        let p = SymPattern {
+            n: Sz::lit(6),
+            rows_vars: vec![var.clone()],
+            cols_vars: vec![var],
+            rows: vec![SymRow {
+                iters: vec![SymIter {
+                    start: Sz::lit(1),
+                    step: 1,
+                    size: n,
+                }],
+                solved: vec![elem.clone()],
+                deps: vec![(elem, false)],
+            }],
+        };
+        let cols = p.expand(&[2]).unwrap();
+        assert_eq!(cols, [vec![vec![0, 1, 2]; 3], vec![vec![3, 4, 5]; 3]].concat());
     }
 }

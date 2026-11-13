@@ -31,7 +31,6 @@ equation
   when doSample then
     x=f(pre(x), u);
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BaseSampler;
 // Result:
 // class BaseSampler

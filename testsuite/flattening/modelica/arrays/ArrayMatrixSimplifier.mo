@@ -16,7 +16,9 @@ model ArrayMatrixSimplifier
 equation
   z[{1,2},{3,4}]=q;
   x1=(u - a[2:size(a, 1)]*pre(x))/a[1];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  when sample(0, 1) then
+    x = fill(x1, size(x, 1));
+  end when;
 end ArrayMatrixSimplifier;
 
 // Result:
@@ -52,5 +54,8 @@ end ArrayMatrixSimplifier;
 //   z[2,3] = q[2,1];
 //   z[2,4] = q[2,2];
 //   x1 = (u - a[2] * pre(x[1])) / a[1];
+//   when sample(0.0, 1.0) then
+//     x[1] = x1;
+//   end when;
 // end ArrayMatrixSimplifier;
 // endResult

@@ -35,11 +35,7 @@
 
 encapsulated package PackageManagement
 
-encapsulated package AvailableLibraries
-  function listKeys
-    input output list<String> lst;
-  end listKeys;
-end AvailableLibraries;
+import JSON;
 
 function versionsThatProvideTheWanted
   input String id;
@@ -49,6 +45,63 @@ function versionsThatProvideTheWanted
 algorithm
   result := {};
 end versionsThatProvideTheWanted;
+
+uniontype Requirement
+  record REQUIREMENT
+    String name;
+    list<String> versions;
+    Boolean exact;
+    String origin;
+  end REQUIREMENT;
+end Requirement;
+
+uniontype Selection
+  record SELECTION
+    String name;
+    String version;
+    String path;
+    Boolean loaded;
+    String origin;
+  end SELECTION;
+end Selection;
+
+uniontype ConversionHint
+  record CONVERSION_HINT
+    String name;
+    String version;
+    String to;
+    String origin;
+  end CONVERSION_HINT;
+end ConversionHint;
+
+uniontype ResolveMessage
+  record RESOLVE_MESSAGE
+    String kind;
+    String name;
+    String version;
+    String selected;
+    String origin;
+  end RESOLVE_MESSAGE;
+end ResolveMessage;
+
+partial function ReadLibraryMetadata
+  input String fileName;
+  output JSON json;
+end ReadLibraryMetadata;
+
+function resolve
+  input list<Requirement> requirements;
+  input list<tuple<String, String>> loaded;
+  input Boolean install;
+  input Boolean exactUses;
+  input ReadLibraryMetadata readMetadata;
+  input String modelicaPath = "";
+  output Boolean ok = true;
+  output list<Selection> selected = {};
+  output list<ResolveMessage> messages = {};
+  output String error = "";
+  output list<ConversionHint> conversions = {};
+end resolve;
 
 function getInstalledLibraries
   output list<String> lst;

@@ -6,7 +6,7 @@
 //
 // Drmodelica: 15.4.2 An Energy Forest Annual Growth Model for Willow Trees (p. 559) Not in the notebook
 //
-class WillowForest
+model WillowForest
   parameter Real h = 0.95 "Harvest fraction";
   parameter Real[4] e = {0.73,0.80,0.66,0.55} "Radiation efficiency fraction";
   parameter Real[4] a = {0.59,0.73,0.76,0.74} "Intercepted radiation fraction";
@@ -41,7 +41,6 @@ equation
     // Dead biomass accumulates by mortality
     wMortAcc = if(c == 1) then wMort else pre(wMortAcc) + wMort;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WillowForest;
 
 // Result:
@@ -106,15 +105,15 @@ end WillowForest;
 //   Integer mbiomass "Measured biomass for current year";
 // equation
 //   when sample(0.0, 1.0) then
-//   t = 1 + pre(t);
-//   mbiomass = mbiomasses[t];
-//   c = growthCycles[t];
-//   w = pre(w) + wGrowth + (-wMort) - wHarvest;
-//   wBiomass = wGrowth - wMort;
-//   wGrowth = e[c] * a[c] * /*Real*/(r[t]);
-//   wMort = if c == 1 and t > 1 then (1.0 - h) * m[t] * (pre(w) + wGrowth) else m[t] * (pre(w) + wGrowth);
-//   wHarvest = if c == 1 and t > 1 then h * pre(w) + pre(wMortAcc) else 0.0;
-//   wMortAcc = if c == 1 then wMort else pre(wMortAcc) + wMort;
+//     t = pre(t) + 1;
+//     mbiomass = mbiomasses[t];
+//     c = growthCycles[t];
+//     w = pre(w) + wGrowth - wMort - wHarvest;
+//     wBiomass = wGrowth - wMort;
+//     wGrowth = e[c] * a[c] * /*Real*/(r[t]);
+//     wMort = if c == 1 and t > 1 then (1.0 - h) * m[t] * (pre(w) + wGrowth) else m[t] * (pre(w) + wGrowth);
+//     wHarvest = if c == 1 and t > 1 then h * pre(w) + pre(wMortAcc) else 0.0;
+//     wMortAcc = if c == 1 then wMort else pre(wMortAcc) + wMort;
 //   end when;
 // end WillowForest;
 // endResult

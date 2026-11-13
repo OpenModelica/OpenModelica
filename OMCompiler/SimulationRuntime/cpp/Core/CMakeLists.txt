@@ -12,6 +12,10 @@
 # compilation code. It needs to be set to a valid directory resembling path.
 set(SCOREP_INCLUDE_ ".")
 
+# The generated makefiles use -I"$(SUNDIALS_INCLUDE)". If it is empty, the compiler
+# takes the next argument as the directory, and that include path is lost.
+set(SUNDIALS_INCLUDE_DIR_ "$(OMHOME)/include/omc/sundials")
+
 # Lapack libs are also expected to be in the system directories.
 set(LAPACK_LIBS_ ".")
 if(UNIX)

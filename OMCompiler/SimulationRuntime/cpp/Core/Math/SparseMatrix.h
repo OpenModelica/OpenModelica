@@ -65,14 +65,3 @@ struct BOOST_EXTENSION_EXPORT_DECL sparse_inserter  {
 
 };
 
-struct BOOST_EXTENSION_EXPORT_DECL sparse_matrix {
-    std::vector<int> Ap;
-    std::vector<int> Ai;
-    std::vector<double> Ax;
-    int n;
-    sparse_matrix(int n=-1): n(n) {}
-
-    void build(sparse_inserter& ins);
-    int solve(const double* b,double* x);
-};
-

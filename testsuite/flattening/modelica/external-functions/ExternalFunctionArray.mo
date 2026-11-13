@@ -6,7 +6,7 @@
 
 model ExternalFunctionArray
 
-function get_results
+pure function get_results
   input Real m;
   input String property;
   input Integer n;
@@ -25,7 +25,7 @@ function f
 end f;
 
   Real res[2] = f(1.5);
-  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen");
 end ExternalFunctionArray;
 // Result:
 // function ExternalFunctionArray.f
@@ -46,6 +46,6 @@ end ExternalFunctionArray;
 //   Real res[1];
 //   Real res[2];
 // equation
-//   res = {6.75, 11.25};
+//   res = ExternalFunctionArray.f(1.5);
 // end ExternalFunctionArray;
 // endResult

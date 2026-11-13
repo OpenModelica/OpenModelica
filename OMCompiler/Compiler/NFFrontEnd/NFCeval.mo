@@ -72,8 +72,10 @@ import Prefixes = NFPrefixes;
 import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
 import Absyn;
+import BackendInterface;
 import ErrorExt;
 import Array;
+import Values;
 import Vector;
 
 public
@@ -261,6 +263,12 @@ algorithm
     case Expression.INSTANCE_NAME()
       then evalGetInstanceName(exp.scope);
 
+    case Expression.PARTIAL_FUNCTION_APPLICATION()
+      algorithm
+        exp.args := list(evalExp(a, target) for a in exp.args);
+      then
+        exp;
+
     else exp;
   end match;
 end evalExp;
@@ -286,6 +294,14 @@ function evalExpPartialDefault
 algorithm
   exp := evalExpPartial(exp);
 end evalExpPartialDefault;
+
+function evalExpPartialTarget
+  "evalExpPartial as a function pointer, see evalExpPartialDefault."
+  input output Expression exp;
+  input EvalTarget target;
+algorithm
+  exp := evalExpPartial(exp, target);
+end evalExpPartialTarget;
 
 function evalExpPartial
   "Evaluates the parts of an expression that are possible to evaluate. This
@@ -530,6 +546,8 @@ algorithm
 
         // Replace the split subscripts with the corresponding subscripts from the cref.
         subs := list(subscriptBinding3(s, sub_map) for s in subs);
+        (subs, subMap) := List.mapFold(subs, function Subscript.mapFoldExpShallow(
+          func = function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts)), subMap);
 
         // Evaluate the subscripts if it was requested.
         if evalSubscripts then
@@ -910,6 +928,7 @@ function evalRangeReal
   output list<Expression> result;
 protected
   Integer steps;
+  Real last;
 algorithm
   steps := Util.realRangeSize(start, step, stop);
 
@@ -920,7 +939,8 @@ algorithm
   elseif steps == 1 then
     result := {Expression.REAL(start)};
   else
-    result := {Expression.REAL(stop)};
+    last := start + (steps - 1) * step;
+    result := {Expression.REAL(if abs(stop - last) < 1e-10 * abs(step) then stop else last)};
     for i in steps-2:-1:1 loop
       result := Expression.REAL(start + i * step) :: result;
     end for;
@@ -971,7 +991,7 @@ algorithm
     case Op.SUB then evalBinarySub(exp1, exp2);
     case Op.MUL then evalBinaryMul(exp1, exp2);
     case Op.DIV then evalBinaryDiv(exp1, exp2, target);
-    case Op.POW then evalBinaryPow(exp1, exp2, target);
+    case Op.POW then evalBinaryPow(exp1, exp2, op.integerRHS, target);
     case Op.ADD_EW then evalBinaryAdd(exp1, exp2);
     case Op.SUB_EW then evalBinarySub(exp1, exp2);
     case Op.MUL_EW then evalBinaryMul(exp1, exp2);
@@ -989,8 +1009,8 @@ algorithm
       then evalBinaryScalarArray(exp1, exp2, function evalBinaryDiv(target = target));
     case Op.DIV_ARRAY_SCALAR
       then evalBinaryArrayScalar(exp1, exp2, function evalBinaryDiv(target = target));
-    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(target = target));
-    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(target = target));
+    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(integerRHS = op.integerRHS, target = target));
+    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(integerRHS = op.integerRHS, target = target));
     case Op.POW_MATRIX then evalBinaryPowMatrix(exp1, exp2);
     else
       algorithm
@@ -1200,6 +1220,10 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // first element is divided from nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then evalBinaryDiv(Expression.makeOne(Expression.typeOf(exp2)), exp2, target);
+    case (_, Expression.EMPTY()) then exp1;
+
     // Division by zero
     case (_, _) guard Expression.isZero(exp2)
       algorithm
@@ -1242,10 +1266,6 @@ algorithm
         Array.map(exp2.elements, function evalBinaryDiv(exp1 = exp1, target = target)),
         literal = exp2.literal);
 
-    // first element is divided from nothing. To make sure the right typing is used
-    case (Expression.EMPTY(), _) then evalBinaryDiv(Expression.makeOne(Expression.typeOf(exp2)), exp2, target);
-    case (_, Expression.EMPTY()) then exp1;
-
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeDiv(Type.UNKNOWN()), exp2);
@@ -1279,12 +1299,13 @@ end evalMultaryMulDiv;
 function evalBinaryPow
   input Expression exp1;
   input Expression exp2;
+  input Boolean integerRHS;
   input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
     case (Expression.REAL(), Expression.REAL())
-      guard exp1.value < 0 and realInt(exp2.value) <> exp2.value
+      guard exp1.value < 0 and not integerRHS
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.INVALID_NEGATIVE_POW,
@@ -1300,7 +1321,7 @@ algorithm
     case (Expression.ARRAY(), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
-        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(target = target)),
+        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(integerRHS = integerRHS, target = target)),
         literal = true);
 
     else
@@ -2025,6 +2046,7 @@ function evalCall
   output Expression exp;
 protected
   Call c = call;
+  EvalTarget iter_target;
 algorithm
   exp := match c
     local
@@ -2040,17 +2062,19 @@ algorithm
 
     case Call.TYPED_ARRAY_CONSTRUCTOR()
       algorithm
-        c.exp := evalExpPartial(c.exp);
-        c.iters := Call.mapIteratorsExpShallow(c.iters, evalExpPartialDefault);
+        iter_target := iterationTarget(target);
+        c.exp := evalExpPartial(c.exp, iter_target);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = iter_target));
       then
-        Expression.mapSplitExpressions(Expression.CALL(c), evalArrayConstructor);
+        Expression.mapSplitExpressions(Expression.CALL(c), function evalArrayConstructor(target = iter_target));
 
     case Call.TYPED_REDUCTION()
       algorithm
-        c.exp := evalExpPartial(c.exp);
-        c.iters := Call.mapIteratorsExpShallow(c.iters, evalExpPartialDefault);
+        iter_target := iterationTarget(target);
+        c.exp := evalExpPartial(c.exp, iter_target);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = iter_target));
       then
-        Expression.mapSplitExpressions(Expression.CALL(c), evalReduction);
+        Expression.mapSplitExpressions(Expression.CALL(c), function evalReduction(target = iter_target));
 
     else
       algorithm
@@ -2090,21 +2114,25 @@ algorithm
     case "atan" then evalBuiltinAtan(listHead(args));
     case "cat" then evalBuiltinCat(listHead(args), listRest(args), target);
     case "ceil" then evalBuiltinCeil(listHead(args));
+    case "change" then Expression.BOOLEAN(false);
     case "cosh" then evalBuiltinCosh(listHead(args));
     case "cos" then evalBuiltinCos(listHead(args));
     case "der" then evalBuiltinDer(listHead(args));
     // TODO: Fix typing of diagonal so the argument isn't boxed.
     case "diagonal" then evalBuiltinDiagonal(Expression.unbox(listHead(args)));
     case "div" then evalBuiltinDiv(args, target);
+    case "edge" then Expression.BOOLEAN(false);
     case "exp" then evalBuiltinExp(listHead(args));
     case "fill" then evalBuiltinFill(args);
     case "floor" then evalBuiltinFloor(listHead(args));
+    // hold of a parameter expression is that value, MLS 3.7 section 16.5.1.
+    case "hold" then listHead(args);
     case "identity" then evalBuiltinIdentity(listHead(args));
     case "integer" then evalBuiltinInteger(listHead(args));
     case "Integer" then evalBuiltinIntegerEnum(listHead(args));
     case "log10" then evalBuiltinLog10(listHead(args), target);
     case "log" then evalBuiltinLog(listHead(args), target);
-    case "matrix" then evalBuiltinMatrix(listHead(args));
+    case "matrix" then evalBuiltinMatrix(listHead(args), target);
     case "max" then evalBuiltinMax(args, fn);
     case "min" then evalBuiltinMin(args, fn);
     case "mod" then evalBuiltinMod(args, target);
@@ -2137,6 +2165,7 @@ algorithm
     case "intBitLShift" then evalIntBitLShift(args);
     case "intBitRShift" then evalIntBitRShift(args);
     case "intMaxLit" then Expression.INTEGER(System.intMaxLit());
+    case "nan" then Expression.REAL(System.realNaN());
     case "inferredClock" then evalInferredClock(args);
     case "rationalClock" then evalRationalClock(args);
     case "realClock" then evalRealClock(args);
@@ -2144,6 +2173,10 @@ algorithm
     case "solverClock" then evalSolverClock(args);
     case "$OMC$PositiveMax" then evalPositiveMax(listGet(args,1),listGet(args,2));
     case "$OMC$inStreamDiv" then listHead(args);
+    case "print" guard InstContext.inScripting(target.context) then evalScriptPrint(listHead(args));
+    case "assert" guard InstContext.inScripting(target.context) then evalScriptAssert(args, target);
+    case _ guard InstContext.inScripting(target.context) and Function.isScripting(fn)
+      then evalScriptingCall(fn, AbsynUtil.pathFirstIdent(fn_path), args, target);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -2152,6 +2185,60 @@ algorithm
         fail();
   end match;
 end evalBuiltinCall;
+
+function evalScriptPrint
+  input Expression arg;
+  output Expression result = Expression.EMPTY(Type.NORETCALL());
+protected
+  String str;
+algorithm
+  Expression.STRING(value = str) := arg;
+  print(str);
+end evalScriptPrint;
+
+function evalScriptAssert
+  "assert(condition, message, level) called in a script, which reports the
+   assertion as NFEvalFunction does for an assert statement."
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result = Expression.EMPTY(Type.NORETCALL());
+protected
+  Expression condition, msg, level;
+algorithm
+  condition :: msg :: level :: _ := args;
+
+  if Expression.isFalse(condition) then
+    () := match (msg, level)
+      case (Expression.STRING(), Expression.ENUM_LITERAL(name = "warning"))
+        algorithm
+          Error.addSourceMessage(Error.ASSERT_TRIGGERED_WARNING, {msg.value}, target.info);
+        then
+          ();
+
+      case (Expression.STRING(), _)
+        algorithm
+          Error.addSourceMessage(Error.ASSERT_TRIGGERED_ERROR, {msg.value}, target.info);
+        then
+          fail();
+    end match;
+  end if;
+end evalScriptAssert;
+
+function evalScriptingCall
+  "Evaluates a call to a builtin OpenModelica.Scripting function through the
+   scripting API."
+  input Function fn;
+  input String name;
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Values.Value value;
+algorithm
+  value := BackendInterface.evalScriptingFunction(name,
+    list(Expression.toDAEValue(arg) for arg in args), target.info);
+  result := Expression.fromDAEValue(value, Function.returnType(fn));
+end evalScriptingCall;
 
 function evalNormalCallExp
   input Expression callExp;
@@ -2542,12 +2629,14 @@ end evalBuiltinLog;
 
 function evalBuiltinMatrix
   input Expression arg;
+  input EvalTarget target;
   output Expression result;
 algorithm
   result := match arg
     local
-      Integer dim_count;
+      Integer dim_count, i;
       Dimension dim1, dim2;
+      list<Dimension> dims;
       Type ty;
       array<Expression> arr;
 
@@ -2560,7 +2649,19 @@ algorithm
         elseif dim_count == 2 then
           result := arg;
         else
-          dim1 :: dim2 :: _ := Type.arrayDims(ty);
+          dim1 :: dim2 :: dims := Type.arrayDims(ty);
+          i := 3;
+
+          for dim in dims loop
+            if Dimension.size(dim) <> 1 then
+              Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
+                {String(i), "matrix", "1", Dimension.toString(dim)}, EvalTarget.getInfo(target));
+              fail();
+            end if;
+
+            i := i + 1;
+          end for;
+
           ty := Type.liftArrayLeft(Type.arrayElementType(ty), dim2);
           arr := Array.map(arg.elements, function evalBuiltinMatrix2(ty = ty));
           ty := Type.liftArrayLeft(ty, dim1);
@@ -3313,8 +3414,17 @@ algorithm
   result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(scope)));
 end evalGetInstanceName;
 
+protected function iterationTarget
+  "The body of an array constructor or reduction is evaluated without the
+   caller's target, except for the script context."
+  input EvalTarget target;
+  output EvalTarget iterTarget = if InstContext.inScripting(target.context) then
+    EvalTarget.new(Absyn.dummyInfo, NFInstContext.SCRIPTING) else noTarget;
+end iterationTarget;
+
 protected function evalArrayConstructor
   input Expression callExp;
+  input EvalTarget target;
   output Expression result;
 protected
   Expression exp;
@@ -3324,13 +3434,14 @@ protected
 algorithm
   Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = exp, iters = iters)) := callExp;
   (exp, ranges, iter_exps) := Expression.createIterationRanges(exp, iters);
-  result := evalArrayConstructor2(exp, ranges, iter_exps);
+  result := evalArrayConstructor2(exp, ranges, iter_exps, target);
 end evalArrayConstructor;
 
 function evalArrayConstructor2
   input Expression exp;
   input list<Expression> ranges;
   input list<Mutable<Expression>> iterators;
+  input EvalTarget target;
   output Expression result;
 protected
   Expression range;
@@ -3343,17 +3454,17 @@ protected
   Type ty;
 algorithm
   if listEmpty(ranges) then
-    result := evalExp(exp);
+    result := evalExp(exp, target);
   else
     range :: ranges_rest := ranges;
-    range := evalExp(range);
+    range := evalExp(range, target);
     iter :: iters_rest := iterators;
     range_iter := ExpressionIterator.fromExp(range);
 
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest) :: expl;
+      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest, target) :: expl;
     end while;
 
     arr := listArray(listReverseInPlace(expl));
@@ -3375,6 +3486,7 @@ end ReductionFn;
 
 function evalReduction
   input Expression callExp;
+  input EvalTarget target;
   output Expression result;
 protected
   Function fn;
@@ -3408,7 +3520,7 @@ algorithm
   end match;
 
   result := Expression.foldReduction(exp, iters, default_exp,
-    function evalExp(target = noTarget), red_fn);
+    function evalExp(target = target), red_fn);
 end evalReduction;
 
 function evalSize

@@ -1,0 +1,51 @@
+// name: FunctionDefaultArgNF
+// status: correct
+// suite: nfScripting
+
+loadString("
+function g
+  input Real r = 1.5;
+  output Real o = r;
+protected
+  Real y; // Should not be possible to change
+end g;
+function f
+  extends g;
+end f;
+");getErrorString();
+f(r=2.5);getErrorString();
+f();getErrorString();
+f(x=5.0);getErrorString();
+f(y=9.0);getErrorString();
+f(4.5);getErrorString();
+f(4.5,"abc");getErrorString();
+f(4.5,x=1.3);getErrorString();
+f(r=1.3,y=2.5);getErrorString();
+
+// Result:
+// true
+// ""
+// 2.5
+// ""
+// 1.5
+// ""
+//
+// "[flattening/modelica/mosfiles/FunctionDefaultArgNF.mos:18:1-18:9:writable] Error: Function f has no input parameter named x.
+// "
+//
+// "[flattening/modelica/mosfiles/FunctionDefaultArgNF.mos:19:1-19:9:writable] Error: Function f has no input parameter named y.
+// "
+// 4.5
+// ""
+//
+// "[flattening/modelica/mosfiles/FunctionDefaultArgNF.mos:21:1-21:13:writable] Error: No matching function found for f(/*Real*/ 4.5, /*String*/ \"abc\").
+// Candidates are:
+// f(Real r = 1.5) => Real
+// "
+//
+// "[flattening/modelica/mosfiles/FunctionDefaultArgNF.mos:22:1-22:13:writable] Error: Function f has no input parameter named x.
+// "
+//
+// "[flattening/modelica/mosfiles/FunctionDefaultArgNF.mos:23:1-23:15:writable] Error: Function f has no input parameter named y.
+// "
+// endResult

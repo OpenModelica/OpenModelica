@@ -5,14 +5,13 @@
 // Tests simple inheritance using the extends keyword
 //
 
-class C1
+model C1
   Integer i1;
 end C1;
 
-class C2
+model C2
   extends C1;
   Integer i2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end C2;
 
 // Result:

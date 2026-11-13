@@ -76,10 +76,23 @@ getModelInstance(M, prettyPrint=true);
 //           \"iterators\": [
 //             {
 //               \"name\": \"e\",
-//               \"range\": {
-//                 \"$kind\": \"typename\",
-//                 \"name\": \"E\"
-//               }
+//               \"range\": [
+//                 {
+//                   \"$kind\": \"enum\",
+//                   \"name\": \"E.a\",
+//                   \"index\": 1
+//                 },
+//                 {
+//                   \"$kind\": \"enum\",
+//                   \"name\": \"E.b\",
+//                   \"index\": 2
+//                 },
+//                 {
+//                   \"$kind\": \"enum\",
+//                   \"name\": \"E.c\",
+//                   \"index\": 3
+//                 }
+//               ]
 //             }
 //           ]
 //         }

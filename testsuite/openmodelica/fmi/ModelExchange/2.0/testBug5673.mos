@@ -2,7 +2,7 @@
 // keywords: FMI 2.0 export
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml Bug5673.xml aliasCheck*
-// cflags: -d=-newInst,omedit
+// cflags: -d=omedit
 
 loadString("
 package aliasCheck
@@ -131,7 +131,7 @@ readFile("Bug5673.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"a\"
 //     valueReference=\"0\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real/>
@@ -140,7 +140,7 @@ readFile("Bug5673.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"b\"
 //     valueReference=\"1\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\"/>

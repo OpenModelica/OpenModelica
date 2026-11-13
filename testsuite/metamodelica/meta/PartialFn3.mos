@@ -1,8 +1,7 @@
 // name:     PartialFn3
 // keywords: PartialFn
 // status:   incorrect
-// cflags: -d=-newInst
-// suite: metamodelica
+// suite: metamodelica, ofScripting
 //
 // Partial Function Testing
 //

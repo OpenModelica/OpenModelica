@@ -20,7 +20,7 @@ algorithm
 end inv;
 
 package LAPACK
-  function dgetrf
+  pure function dgetrf
     input Real[:, :] A;
     output Real[size(A, 1), size(A, 2)] LU = A;
     output Integer[min(size(A, 1), size(A, 2))] pivots;
@@ -30,7 +30,7 @@ package LAPACK
     external "FORTRAN 77" dgetrf(size(A, 1), size(A, 2), LU, lda, pivots, info);
   end dgetrf;
 
-  function dgetri
+  pure function dgetri
     input Real[:, size(LU, 1)] LU;
     input Integer[size(LU, 1)] pivots;
     output Real[size(LU, 1), size(LU, 2)] inv = LU;
@@ -50,7 +50,6 @@ model FunctionInverse
   Real[N, N] C;
 equation
   C = inv(A) * B;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionInverse;
 
 // Result:
@@ -90,7 +89,7 @@ end FunctionInverse;
 // end inv;
 //
 // class FunctionInverse
-//   parameter Integer N = 3;
+//   final parameter Integer N = 3;
 //   Real A[1,1];
 //   Real A[1,2];
 //   Real A[1,3];
@@ -121,6 +120,6 @@ end FunctionInverse;
 // equation
 //   A = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 //   B = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
-//   C = inv({{A[1,1], A[1,2], A[1,3]}, {A[2,1], A[2,2], A[2,3]}, {A[3,1], A[3,2], A[3,3]}}) * B;
+//   C = inv(A) * B;
 // end FunctionInverse;
 // endResult

@@ -7,7 +7,6 @@
 
 model RealPow
   constant Real r = 2.3 ^ 9.5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RealPow;
 
 // Result:

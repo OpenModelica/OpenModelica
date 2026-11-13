@@ -9,7 +9,6 @@ model SubSampleTest
 equation
   y = subSample(2.1);
   x = subSample(z, 2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SubSampleTest;
 
 // Result:
@@ -21,6 +20,6 @@ end SubSampleTest;
 //   Integer z[2];
 // equation
 //   y = subSample(2.1, 0);
-//   x = subSample({z[1], z[2]}, 2);
+//   x = subSample(z, 2);
 // end SubSampleTest;
 // endResult

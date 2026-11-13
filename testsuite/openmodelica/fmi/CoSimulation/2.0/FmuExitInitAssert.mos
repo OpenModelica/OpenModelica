@@ -1,0 +1,69 @@
+// name:     FmuExitInitAssert
+// keywords: FMI 2.0 export co-simulation initialization assert
+// status:   correct
+// teardown_command: rm -rf FmuExitInitAssert*.fmu FmuExitInitAssert*.fmutmp/ FmuExitInitAssert*.log FmuExitInitAssert*_out.txt
+//
+// An assert during initialization makes fmi2ExitInitializationMode fail.
+// The instance must then refuse fmi2DoStep, whether the assert is in an
+// equation or in a function (#17740).
+
+loadString("
+model FmuExitInitAssertEquation
+  parameter Real p = 1;
+  Real x(start = 0, fixed = true);
+initial algorithm
+  assert(p > 2, \"p must exceed 2\");
+equation
+  der(x) = 1;
+end FmuExitInitAssertEquation;
+
+model FmuExitInitAssertFunction
+  function f
+    input Real p;
+    output Real y;
+  algorithm
+    assert(p > 2, \"p must exceed 2\");
+    y := p;
+  end f;
+  parameter Real p = 1;
+  parameter Real q(fixed = false);
+  Real x(start = 0, fixed = true);
+initial equation
+  q = f(p);
+equation
+  der(x) = q;
+end FmuExitInitAssertFunction;
+"); getErrorString();
+
+buildModelFMU(FmuExitInitAssertEquation, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuExitInitAssert.py FmuExitInitAssertEquation.fmu FmuExitInitAssertEquation_out.txt > FmuExitInitAssertEquation.log 2>&1"); getErrorString();
+readFile("FmuExitInitAssertEquation_out.txt"); getErrorString();
+
+buildModelFMU(FmuExitInitAssertFunction, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuExitInitAssert.py FmuExitInitAssertFunction.fmu FmuExitInitAssertFunction_out.txt > FmuExitInitAssertFunction.log 2>&1"); getErrorString();
+readFile("FmuExitInitAssertFunction_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuExitInitAssertEquation.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi2ExitInitializationMode: fmi2Error
+// fmi2DoStep: fmi2Error
+// "
+// ""
+// "FmuExitInitAssertFunction.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi2ExitInitializationMode: fmi2Error
+// fmi2DoStep: fmi2Error
+// "
+// ""
+// endResult

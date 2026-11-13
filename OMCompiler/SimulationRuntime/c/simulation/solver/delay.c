@@ -381,9 +381,10 @@ size_t delayStateWords(DATA* data, double* out)
  * @param data    Runtime data struct.
  * @param w       Words delayStateWords wrote.
  * @param len     Number of words available.
+ * @param apply   0 to only check the words.
  * @return        Number of words read, or -1 if they are not what delayStateWords wrote.
  */
-long setDelayStateWords(DATA* data, const double* w, size_t len)
+long setDelayStateWords(DATA* data, const double* w, size_t len, int apply)
 {
   size_t k = 0;
   long i;
@@ -394,17 +395,18 @@ long setDelayStateWords(DATA* data, const double* w, size_t len)
   }
   for (i = 0; i < data->modelData->nDelayExpressions; i++) {
     RINGBUFFER* rb = data->simulationInfo->delayStructure[i];
-    if (k >= len) return -1;
+    if (k >= len || !(w[k] >= 0 && w[k] <= (len - k - 1) / 2)) return -1;
     n = (int) w[k++];
-    if (n < 0 || k + 2 * (size_t) n > len) return -1;
-    removeLastRingData(rb, ringBufferLength(rb));
-    for (j = 0; j < n; j++) {
-      TIME_AND_VALUE e;
-      e.t = w[k];
-      e.value = w[k+1];
-      k += 2;
-      appendRingData(rb, &e);
+    if (apply) {
+      removeLastRingData(rb, ringBufferLength(rb));
+      for (j = 0; j < n; j++) {
+        TIME_AND_VALUE e;
+        e.t = w[k + 2 * j];
+        e.value = w[k + 2 * j + 1];
+        appendRingData(rb, &e);
+      }
     }
+    k += 2 * (size_t) n;
   }
   return (long) k;
 }

@@ -23,7 +23,7 @@ package SimplifyTest "Run ExpressionSimplify.simplify on some sample expressions
     constant Operator subr = SUB(T_REAL_DEFAULT);
     constant Operator mulr = MUL(T_REAL_DEFAULT);
     constant Operator divr = DIV(T_REAL_DEFAULT);
-    constant Operator powr = POW(T_REAL_DEFAULT);
+    constant Operator powr = POW(T_REAL_DEFAULT, false);
     Exp i1 = ICONST(1);
     Exp i2 = ICONST(2);
     Exp i3 = ICONST(3);

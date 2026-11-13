@@ -3,8 +3,6 @@
 // status: correct
 // teardown_command: rm -rf initialization.lua initialization.fmu initialization.log initialization_systemCall.log temp-initialization
 
-setCommandLineOptions("-g=MetaModelica");
-
 loadString("
 model initialization
 	output Real y = x;
@@ -43,9 +41,9 @@ oms_initialize("test");
 (v3,_):=oms_getReal("test.root.A.w");
 
 print("info:    Initialization\n");
-print("info:      A.x_start: " + realString(v1)+"\n");
-print("info:      A.x:       " + realString(v2)+"\n");
-print("info:      A.w:       " + realString(v3)+"\n");
+print("info:      A.x_start: " + String(v1)+"\n");
+print("info:      A.x:       " + String(v2)+"\n");
+print("info:      A.w:       " + String(v3)+"\n");
 
 oms_simulate("test");
 (v1,_):=oms_getReal("test.root.A.x_start");
@@ -53,9 +51,9 @@ oms_simulate("test");
 (v3,_):=oms_getReal("test.root.A.w");
 
 print("info:    Simulation\n");
-print("info:      A.x_start: " + realString(v1)+"\n");
-print("info:      A.x:       " + realString(v2)+"\n");
-print("info:      A.w:       " + realString(v3)+"\n");
+print("info:      A.x_start: " + String(v1)+"\n");
+print("info:      A.x:       " + String(v2)+"\n");
+print("info:      A.w:       " + String(v3)+"\n");
 
 oms_terminate("test");
 oms_delete("test");
@@ -63,7 +61,6 @@ unloadOMSimulator();
 
 
 // Result:
-// true
 // true
 // ""
 // "initialization.fmu"
@@ -78,8 +75,8 @@ unloadOMSimulator();
 // info:      A.w:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       2.0004999999999176
-// info:      A.w:       2.5009999999999915
+// info:      A.x:       2.0005
+// info:      A.w:       2.501
 // info:    Final Statistics for 'test.root':
 //          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
 //          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0

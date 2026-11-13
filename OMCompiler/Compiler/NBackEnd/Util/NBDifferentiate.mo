@@ -203,6 +203,9 @@ public
         Tearing strict;
         Option<Tearing> casual;
         Boolean linear;
+        list<StrongComponent> new_slices;
+        UnorderedMap<ComponentRef, EquationPointer> eqn_map;
+        list<tuple<Pointer<Equation>, Integer>> new_tpl_lst;
 
       case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
@@ -249,8 +252,16 @@ public
       then StrongComponent.ALGEBRAIC_LOOP(-1, strict, casual, linear, false, comp.homotopy, comp.status, comp.implicitlyCreated);
 
       case StrongComponent.ENTWINED_COMPONENT() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
-      then fail();
+        new_slices := list(differentiateStrongComponent(slice, diffArguments_ptr, idx, context, name) for slice in comp.entwined_slices);
+        // the call order refers to the differentiated equations
+        eqn_map := UnorderedMap.new<EquationPointer>(ComponentRef.hash, ComponentRef.isEqual);
+        for tpl in List.zip(comp.entwined_slices, new_slices) loop
+          for eqn_tpl in List.zip(StrongComponent.getEquations(Util.tuple21(tpl)), StrongComponent.getEquations(Util.tuple22(tpl))) loop
+            UnorderedMap.add(Equation.getEqnName(Util.tuple21(eqn_tpl)), Util.tuple22(eqn_tpl), eqn_map);
+          end for;
+        end for;
+        new_tpl_lst := list((UnorderedMap.getSafe(Equation.getEqnName(Util.tuple21(tpl)), eqn_map, sourceInfo()), Util.tuple22(tpl)) for tpl in comp.entwined_tpl_lst);
+      then StrongComponent.ENTWINED_COMPONENT(new_slices, new_tpl_lst, comp.periodic_order);
 
       case StrongComponent.ALIAS() then differentiateStrongComponent(comp.original, diffArguments_ptr, idx, context, name);
 
@@ -271,13 +282,17 @@ public
     list<Slice<VariablePointer>> ite_vars;
     list<Slice<EquationPointer>> res_eqns;
     array<StrongComponent> inner_eqns;
+    DifferentiationArguments diffArguments;
   algorithm
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
     // Only differentiate continuous inner equations; discrete ones contribute zero to the Jacobian.
     inner_eqns := Array.mapNoCopy(Array.filter(tearing.innerEquations, StrongComponent.isDiscrete), function differentiateStrongComponent(diffArguments_ptr = diffArguments_ptr, idx = idx, context = context, name = name));
 
-    diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns, NONE());
+    // the original Jacobian is the system matrix of the differentiated linear loop
+    diffArguments := Pointer.access(diffArguments_ptr);
+    diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns,
+    if diffArguments.diffType == DifferentiationType.JACOBIAN then tearing.jac else NONE());
   end differentiateTearing;
 
   function differentiateEquationPointerList
@@ -986,7 +1001,7 @@ public
       // (..., a_i,...)' = (..., a'_i, ...)
       case Expression.TUPLE_ELEMENT() algorithm
         (elem1, diffArguments) := differentiateExpression(exp.tupleExp, diffArguments);
-      then (Expression.TUPLE_ELEMENT(elem1, exp.index, exp.ty), diffArguments);
+      then (Expression.tupleElement(elem1, exp.index), diffArguments);
 
       // REC(i, ...)' = REC(i', ...)
       case Expression.RECORD_ELEMENT() algorithm
@@ -1056,6 +1071,8 @@ public
       case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      // iterators of array constructors and reductions are not lowered
+      case Expression.CREF() guard(isUnloweredIterator(exp.cref)) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(exp.cref, sourceInfo());
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -1086,6 +1103,13 @@ public
       // -------------------------------------
       case (Expression.CREF(cref = ComponentRef.EMPTY()), _, _) then (exp, diffArguments);
       case (Expression.CREF(cref = ComponentRef.WILD()), _, _)  then (exp, diffArguments);
+
+      // iterators, e.g. i in {f(i) for i in 1:n}, have a zero derivative,
+      // except for D(i)/di => 1 (handled by the SIMPLE rule below).
+      case (Expression.CREF(), _, _)
+        guard(ComponentRef.isIterator(exp.cref) and not (diffArguments.diffType == DifferentiationType.SIMPLE
+          and ComponentRef.isEqual(exp.cref, diffArguments.diffCref)))
+      then (makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: FUNCTION
@@ -1139,13 +1163,14 @@ public
       // differentiate time cref => 0
       case (Expression.CREF(), _, _)
         guard(ComponentRef.isTime(exp.cref))
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // differentiate start cref => 0
+      // start variables solved in an algebraic loop of the initial system are inner variables of its jacobian.
       case (Expression.CREF(), _, _)
-        guard(BVariable.isStart(var_ptr))
-      then (Expression.makeZero(exp.ty), diffArguments);
+        guard(BVariable.isStart(var_ptr) and not isJacobianUnknown(exp.cref, diffArguments))
+      then (makeZero(exp.ty), diffArguments);
 
       // ToDo: Records, Arrays, WILD (?)
 
@@ -1158,7 +1183,7 @@ public
       // Types: (SIMPLE)
       // D(y)/dx => 0
       case (Expression.CREF(), DifferentiationType.SIMPLE, _)
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // Known variables, except for top level inputs have a 0-derivative.
@@ -1168,7 +1193,7 @@ public
               not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr))
               and not BVariable.isOptimizable(var_ptr) /* TODO? */
               and not isJacobianUnknown(exp.cref, diffArguments))
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: TIME
@@ -1178,7 +1203,7 @@ public
       // D(discrete)/d(x) = 0
       case (Expression.CREF(), DifferentiationType.TIME, _)
         guard(BVariable.isDiscrete(var_ptr) or BVariable.isDiscreteState(var_ptr))
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // Types: (TIME)
       // known derivatives by state order
@@ -1465,22 +1490,23 @@ public
     list<Expression> fields = {};
   algorithm
     zero := match ty
-      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Class.hasOperator("'0'", InstNode.getClass(Type.complexNode(ty)))) algorithm
         node := Type.complexNode(ty);
         for comp in Class.getComponents(InstNode.getClass(node)) loop
           fields := makeZero(InstNode.getType(comp)) :: fields;
         end for;
       then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
-      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
-      then Expression.fillType(ty, makeZero(Type.arrayElementType(ty)));
-      // strings of a record have no derivative
+      case Type.ARRAY() then Expression.fillType(ty, makeZero(Type.arrayElementType(ty)));
+      case Type.TUPLE() then Expression.TUPLE(ty, list(makeZero(t) for t in ty.types));
+      // strings and enumerations of a record have no derivative
       case Type.STRING() then Expression.STRING("");
+      case Type.ENUMERATION() then Expression.makeEnumLiteral(ty, 1);
       else Expression.makeZero(ty);
     end match;
   end makeZero;
 
   function makeOne
-    "Expression.makeOne, but records without a '1' operator are one field by field"
+    "Expression.makeOne, but records that are not operator records are one field by field"
     input Type ty;
     output Expression one;
   protected
@@ -1494,10 +1520,10 @@ public
           fields := makeOne(InstNode.getType(comp)) :: fields;
         end for;
       then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
-      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
-      then Expression.fillType(ty, makeOne(Type.arrayElementType(ty)));
-      // strings of a record have no derivative
+      case Type.ARRAY() then Expression.fillType(ty, makeOne(Type.arrayElementType(ty)));
+      // strings and enumerations of a record have no derivative
       case Type.STRING() then Expression.STRING("");
+      case Type.ENUMERATION() then Expression.makeEnumLiteral(ty, 1);
       else Expression.makeOne(ty);
     end match;
   end makeOne;
@@ -1703,7 +1729,7 @@ public
       case Expression.CALL(call = call as Call.TYPED_CALL())
         guard(diffArguments.diffType == DifferentiationType.SIMPLE
           and not Expression.contains(exp, function isRelatedCref(name = ComponentRef.toString(ComponentRef.stripSubscriptsAll(diffArguments.diffCref)))))
-      then (Expression.makeZero(Expression.typeOf(exp)), diffArguments);
+      then (makeZero(Expression.typeOf(exp)), diffArguments);
 
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
@@ -3950,7 +3976,6 @@ public
     end if;
   end differentiateBinding;
 
-protected
   function sizeClassificationFromType
     input Type ty;
     output Operator.SizeClassification sc;
@@ -3963,6 +3988,7 @@ protected
     end match;
   end sizeClassificationFromType;
 
+protected
   function minusOne
     input output Expression exp;
     input Operator op;
@@ -4176,6 +4202,12 @@ protected
       print(s + "\n");
     end if;
   end dbg;
+
+  function isUnloweredIterator
+    "true for iterators that have no backend variable, e.g. of array constructors"
+    input ComponentRef cref;
+    output Boolean b = ComponentRef.isIterator(cref) and not InstNode.isVar(ComponentRef.node(cref));
+  end isUnloweredIterator;
 
   function expressionHasIteratorCref
     input Expression exp;

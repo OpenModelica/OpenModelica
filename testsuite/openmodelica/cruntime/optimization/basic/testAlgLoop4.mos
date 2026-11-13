@@ -1,6 +1,5 @@
 // name: testAlgLoop4
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynOpt +loop2con=all");
 //setCommandLineOptions("+gDynOpt");
@@ -37,7 +36,7 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testAlgLoop4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
 //     messages = "LOG_ASSERT        | warning | [<interactive>:5:3-5:18:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((y >= 5.0)) --> \"Variable violating min constraint: 5.0 <= y, has value: 0\"
+// |                 | |       | ((y >= 5.0), y=0) --> \"Variable violating min constraint: 5.0 <= y, has value: 0\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables

@@ -47,22 +47,12 @@ algorithm
   fn0 := h0(2,5,true);
   fn1 := h1(2,5,true,fn0);
   fn2 := h2(2,5,true,fn0,fn1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FuncDer;
 
 // insert expected flat file here. Can be done by issuing the command
 // ./omc XXX.mo >> XXX.mo and then comment the inserted class.
 //
 // Result:
-// function h0
-//   input Integer i1;
-//   input Real x;
-//   input Boolean linear;
-//   output Real y;
-// algorithm
-//   y := exp(x) + /*Real*/(i1);
-// end h0;
-//
 // function h1
 //   input Integer i1;
 //   input Real x;
@@ -81,7 +71,7 @@ end FuncDer;
 //   input Real der_2_x;
 //   output Real der_2_y;
 // algorithm
-//   der_2_y := exp(x) * (der_x ^ 2.0 + der_2_x);
+//   der_2_y := exp(x) * der_x * der_x + exp(x) * der_2_x;
 // end h2;
 //
 // class FuncDer

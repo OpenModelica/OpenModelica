@@ -48,7 +48,7 @@ diffSimulationResults("art_q.mat", "plainq_res.mat", "d_q", 1e-9, 1e-9);
 // ""
 // record SimulationResult
 //     resultFile = "plain_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -60,7 +60,7 @@ diffSimulationResults("art_q.mat", "plainq_res.mat", "d_q", 1e-9, 1e-9);
 // "
 // record SimulationResult
 //     resultFile = "art_cs.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrPkg.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -r=art_cs.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrPkg.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -r=art_cs.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | CoSimulation instantiated
 // LOG_STDOUT        | info    | CoSimulation run: 500 communication steps, 0 events, 0 early returns, 501 samples
@@ -71,7 +71,7 @@ diffSimulationResults("art_q.mat", "plainq_res.mat", "d_q", 1e-9, 1e-9);
 // (true, {})
 // record SimulationResult
 //     resultFile = "plainq_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'plainq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=q[2]=5'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'plainq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=q[2]=5'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -79,7 +79,7 @@ diffSimulationResults("art_q.mat", "plainq_res.mat", "d_q", 1e-9, 1e-9);
 // ""
 // record SimulationResult
 //     resultFile = "art_q.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrPkg.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -override=q[2]=5 -r=art_q.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrPkg.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -override=q[2]=5 -r=art_q.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | CoSimulation instantiated
 // LOG_STDOUT        | info    | CoSimulation run: 500 communication steps, 0 events, 0 early returns, 501 samples

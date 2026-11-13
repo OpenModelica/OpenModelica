@@ -17,7 +17,6 @@ model Function8
   String z;
 equation
   x = f(z);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Function8;
 // Result:
 // Error processing file: Function8.mo
@@ -25,7 +24,6 @@ end Function8;
 //   String
 // expected type:
 //   Real
-// Error: Error occurred while flattening model Function8
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

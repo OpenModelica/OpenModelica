@@ -30,7 +30,6 @@ model InStreamTwoInside
 equation
   instream_a_s1 = inStream(a.s1.s);
   instream_a_s2 = inStream(a.s2.s);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InStreamTwoInside;
 
 // Result:
@@ -46,15 +45,15 @@ end InStreamTwoInside;
 //   Real instream_a_s1;
 //   Real instream_a_s2;
 // equation
+//   a.s1.r = a.s2.r;
+//   -(a.s1.f + a.s2.f) = 0.0;
+//   a.s1.s = a.s2.s;
+//   a.s2.s = a.s1.s;
+//   a.s1.f = 0.0;
+//   a.s2.f = 0.0;
 //   a.instream_s1 = a.s1.s;
 //   a.instream_s2 = a.s2.s;
 //   instream_a_s1 = a.s1.s;
 //   instream_a_s2 = a.s2.s;
-//   a.s1.f = 0.0;
-//   a.s2.f = 0.0;
-//   (-a.s1.f) + (-a.s2.f) = 0.0;
-//   a.s1.r = a.s2.r;
-//   a.s1.s = a.s2.s;
-//   a.s2.s = a.s1.s;
 // end InStreamTwoInside;
 // endResult

@@ -13,7 +13,8 @@ end RedeclareInvalidVariability1;
 
 // Result:
 // Error processing file: RedeclareInvalidVariability1.mo
-// [flattening/modelica/scodeinst/RedeclareInvalidVariability1.mo:11:7-11:33:writable] Error: Invalid redeclaration 'parameter x', original element is declared 'constant'.
+// [flattening/modelica/scodeinst/RedeclareInvalidVariability1.mo:7:3-7:30:writable] Notification: From here:
+// [flattening/modelica/scodeinst/RedeclareInvalidVariability1.mo:11:7-11:33:writable] Error: Redeclaration of constant component x is not allowed.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

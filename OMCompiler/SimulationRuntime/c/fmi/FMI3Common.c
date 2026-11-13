@@ -75,6 +75,16 @@ fmi3_value_reference_t* real_to_fmi3_value_reference(int numberOfValueReferences
  * the same; when arrays arrive nValues becomes the sum of their sizes.
  */
 
+/* The call failed. After fmi3Error or fmi3Fatal, the FMU does not allow
+ * fmi3Terminate. Does not return. */
+void fmi3Failed(FMI3ModelExchange* FMI3ME, const char* function, fmi3_status_t status)
+{
+  if (status == fmi3_status_error || status == fmi3_status_fatal) {
+    FMI3ME->FMIFailed = 1;
+  }
+  ModelicaFormatError("%s failed with status : %s\n", function, fmi3_status_to_string(status));
+}
+
 /**
  * @brief Wrapper for fmi3GetFloat64.
  */
@@ -86,7 +96,7 @@ void fmi3GetReal_OMC(void* in_fmi3, int numberOfValueReferences, double* realVal
                                                  (fmi3_float64_t*)realValues, numberOfValueReferences);
   free(valuesReferences_int);
   if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3GetFloat64 failed with status : %s\n", fmi3_status_to_string(status));
+    fmi3Failed(FMI3ME, "fmi3GetFloat64", status);
   }
 }
 
@@ -104,7 +114,7 @@ void fmi3SetReal_OMC(void* in_fmi3, int numberOfValueReferences, double* realVal
                                                    (const fmi3_float64_t*)realValues, numberOfValueReferences);
     free(valuesReferences_int);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3SetFloat64 failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3SetFloat64", status);
     }
   }
 }
@@ -120,7 +130,7 @@ void fmi3GetInteger_OMC(void* in_fmi3, int numberOfValueReferences, double* inte
                                                (fmi3_int32_t*)integerValues, numberOfValueReferences);
   free(valuesReferences_int);
   if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3GetInt32 failed with status : %s\n", fmi3_status_to_string(status));
+    fmi3Failed(FMI3ME, "fmi3GetInt32", status);
   }
 }
 
@@ -130,13 +140,13 @@ void fmi3GetInteger_OMC(void* in_fmi3, int numberOfValueReferences, double* inte
 void fmi3SetInteger_OMC(void* in_fmi3, int numberOfValueReferences, double* integerValuesReferences, int* integerValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
-  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
     fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, integerValuesReferences);
     fmi3_status_t status = fmi3_import_set_int32(FMI3ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences,
                                                  (const fmi3_int32_t*)integerValues, numberOfValueReferences);
     free(valuesReferences_int);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3SetInt32 failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3SetInt32", status);
     }
   }
 }
@@ -161,7 +171,7 @@ void fmi3GetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* bool
   free(fmiBooleans);
   free(valuesReferences_int);
   if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3GetBoolean failed with status : %s\n", fmi3_status_to_string(status));
+    fmi3Failed(FMI3ME, "fmi3GetBoolean", status);
   }
 }
 
@@ -171,7 +181,7 @@ void fmi3GetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* bool
 void fmi3SetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
-  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
     fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, booleanValuesReferences);
     fmi3_boolean_t* fmiBooleans = malloc(sizeof(fmi3_boolean_t)*numberOfValueReferences);
     fmi3_status_t status;
@@ -184,7 +194,7 @@ void fmi3SetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* bool
     free(fmiBooleans);
     free(valuesReferences_int);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3SetBoolean failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3SetBoolean", status);
     }
   }
 }
@@ -200,7 +210,7 @@ void fmi3GetString_OMC(void* in_fmi3, int numberOfValueReferences, double* strin
                                                 (fmi3_string_t*)stringValues, numberOfValueReferences);
   free(valuesReferences_int);
   if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3GetString failed with status : %s\n", fmi3_status_to_string(status));
+    fmi3Failed(FMI3ME, "fmi3GetString", status);
   }
 }
 
@@ -210,13 +220,13 @@ void fmi3GetString_OMC(void* in_fmi3, int numberOfValueReferences, double* strin
 void fmi3SetString_OMC(void* in_fmi3, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
-  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
     fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, stringValuesReferences);
     fmi3_status_t status = fmi3_import_set_string(FMI3ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences,
                                                   (const fmi3_string_t*)stringValues, numberOfValueReferences);
     free(valuesReferences_int);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3SetString failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3SetString", status);
     }
   }
 }

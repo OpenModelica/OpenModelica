@@ -18,7 +18,6 @@ equation
   out1 = in1;
   out2 = in2;
   out3 = in3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumArray;
 
 // Result:

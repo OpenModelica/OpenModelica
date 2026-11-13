@@ -7,7 +7,6 @@
 model Array9
   Real x[2]={1,2};
 //  Real y[2,3]={{1,2,3},{4,5,6}};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array9;
 
 // Result:

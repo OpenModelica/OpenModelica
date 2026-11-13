@@ -1,7 +1,6 @@
 // name:     Extends Order
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Verifies that no error messages are printed based on the order
 // of the parameter (this used to fail and produce very long error
@@ -16,14 +15,14 @@ getErrorString();
 // Result:
 // true
 // "class Order1
-//   parameter Integer m.nXi = 2;
+//   final parameter Integer m.nXi = 2;
 //   Real m.Xi[1](start = 1.0);
 //   Real m.Xi[2](start = 2.0);
 // end Order1;
 // "
 // ""
 // "class Order2
-//   parameter Integer m.nXi = 2;
+//   final parameter Integer m.nXi = 2;
 //   Real m.Xi[1](start = 1.0);
 //   Real m.Xi[2](start = 2.0);
 // end Order2;

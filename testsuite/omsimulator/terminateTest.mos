@@ -39,7 +39,6 @@ readFile("terminateTest_systemCall.log");
 //      - stepSize  : 0.002
 // info:    maximum step size for 'terminateTest.root': 0.002000
 // info:    Result file: terminateTest_res.mat (bufferSize=10)
-// [<interactive>:6:7-6:31:writable]Modelica Terminate: Terminated.!
 // info:    Simulation terminated by FMU terminateTest.root.terminateTest at time 1.200000
 // info:    Final Statistics for 'terminateTest.root':
 //          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0

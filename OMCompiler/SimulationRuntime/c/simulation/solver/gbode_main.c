@@ -87,9 +87,7 @@ int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL
 {
   int ret = -1;
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   if (counter)
   {
@@ -104,9 +102,7 @@ int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL
 
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { ret = 0; }
 
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   return ret;
 }

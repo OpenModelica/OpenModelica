@@ -21,7 +21,6 @@ model Faculty2Model
   Integer y;
 equation
   y = Faculty2(x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Faculty2Model;
 
 // Result:

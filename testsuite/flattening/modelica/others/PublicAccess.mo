@@ -14,7 +14,6 @@ model PublicAccess
   TestModel tm;
 equation
   tm.x = 3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PublicAccess;
 
 // Result:

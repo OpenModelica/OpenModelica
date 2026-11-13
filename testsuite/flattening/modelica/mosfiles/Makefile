@@ -4,11 +4,14 @@ TESTFILES = \
 Array1.mos \
 BaseClass1.mos \
 cat.mos \
+catNF.mos \
 ComplexConnect.mos \
 DuplicateDefinition.mos \
+DuplicateDefinitionNF.mos \
 DuplicateFunctions.mos \
 EnzMM.mos \
 ErrorFunctionCallNumArgs.mos \
+ErrorFunctionCallNumArgsNF.mos \
 ErrorSimPackage.mos \
 ExtendsOrder.mos \
 ExternalFunctionResultOrder.mos\
@@ -16,12 +19,14 @@ ExternalLibraryFunction.mos\
 FinalTests.mos \
 FuncNamespace.mos \
 FunctionDefaultArg.mos \
+FunctionDefaultArgNF.mos \
 GroupImport.mos \
 IntMulOverflow.mos IntPowOverflow.mos IntDivOverflow.mos IntAddSubOverflow.mos \
 ISO-8859-1.mos \
 LeastSquares.mos \
 LoadResource1.mos \
 LookupBuiltin.mos \
+LookupBuiltinNF.mos \
 LookupPackageFail.mos \
 Model1.mos \
 Model2.mos \
@@ -33,16 +38,17 @@ QuotedIdentifier.mos \
 QuotedIdentifierCSV.mos \
 Return.mos \
 StringArrayReturn.mos \
+StringSignificantDigits.mos \
 TestLoadModel.mos \
+TestLoadModelMetadata.mos \
+TestLoadModelSolver.mos \
 UnpOpPrecedence.mos \
 UnusedVariable.mos \
 WhileStatement.mos WhileStatementIllegal.mos \
 ModifierProblem.mos \
-TransformerYY.mos \
-AIMC_DOL.mos \
 ZeroDims.mos \
 ZeroRange.mos \
-vaporizing.mos
+ZeroRangeNF.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -55,6 +61,8 @@ DEPENDENCIES = \
 *.mos \
 Makefile \
 TestLibrary \
+PackageMetadataLibs \
+PackageResolverLibs \
 ext_ExternalFunctionResultOrder.c \
 ISO-8859-1.mox
 

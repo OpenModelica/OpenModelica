@@ -64,7 +64,7 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   : QDialog(pBreakpointsTreeModel->getBreakpointsTreeView())
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("%1 Breakpoint").arg(pBreakpointTreeItem ? "Edit" : "Add")));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(pBreakpointTreeItem ? tr("Edit Breakpoint") : tr("Add Breakpoint")));
 
   mpBreakpointTreeItem = pBreakpointTreeItem;
   mpBreakpointsTreeModel = pBreakpointsTreeModel;
@@ -96,7 +96,7 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   // create the condition label and text box
   mpConditionLabel = new Label(Helper::condition);
   mpConditionTextBox = new QLineEdit;
-  mpConditionHintLabel = new Label(tr("* Use \"%1\" to set condition on simulation time.").arg("data->localData[0]->timeValue"));
+  mpConditionHintLabel = new Label(tr("* In a condition, \"%1\" is the simulation time.").arg("data->localData[0]->timeValue"));
   // if edit case then set the existing values
   if (mpBreakpointTreeItem) {
     mpLineNumberTextBox->setText(mpBreakpointTreeItem->getLineNumber());

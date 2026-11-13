@@ -28,9 +28,8 @@ model Cross
   Integer xi[3] = {1,5,3};
   Integer yi1[3] = {2,10,6};
   Integer yi2[3] = {5,3,1};
-  discrete Real[3] zi; // Should really be an Integer[3], but we have bugs when calling functions (in DAELow, it's Real[3], but the result isn't converted)
+  Real[3] zi;
 equation
   z = myCrossReal(x,if time > 0.1 then y2 else y1);
   zi = myCrossInt(xi,if time > 0.1 then yi2 else yi1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cross;

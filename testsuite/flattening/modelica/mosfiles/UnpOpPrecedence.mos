@@ -1,7 +1,6 @@
 // name:     Unparsing of operator precedence
 // keywords: unparser, operator, precedence
 // status:   correct
-// cflags: -d=-newInst
 // 
 //  Unparsing of operator precedence.
 //

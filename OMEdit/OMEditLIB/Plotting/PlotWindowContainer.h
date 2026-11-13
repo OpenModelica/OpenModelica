@@ -76,6 +76,7 @@ public:
 private:
   void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;
+  bool mLastPlotWindowMaximized;
 public slots:
   OMPlot::PlotWindow* addPlotWindow();
   void addParametricPlotWindow();

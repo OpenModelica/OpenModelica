@@ -12,6 +12,8 @@ diff_subs.mos \
 arrayDiff.mos \
 arrayScalar.mos \
 algebraicLoop.mos \
+AlgLinearSystem.mos \
+ArrayLinearSystem.mos \
 numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
 derSeedJacobian.mos \
@@ -19,6 +21,7 @@ tupleAssignmentDerivative.mos \
 functionInputDerivative.mos \
 iteratorElementDerivative.mos \
 recordArgumentDerivative.mos \
+loopJacobianIterators.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

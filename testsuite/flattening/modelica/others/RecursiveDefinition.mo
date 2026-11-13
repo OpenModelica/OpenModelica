@@ -12,13 +12,11 @@ class A
   end B;
 
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 // Result:
 // Error processing file: RecursiveDefinition.mo
-// [flattening/modelica/others/RecursiveDefinition.mo:11:5-11:8:writable] Error: Declaration of element x causes recursive definition of class A.
-// Error: Error occurred while flattening model A
+// [flattening/modelica/others/RecursiveDefinition.mo:11:5-11:8:writable] Error: Declaration of element x causes recursive definition of class B.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

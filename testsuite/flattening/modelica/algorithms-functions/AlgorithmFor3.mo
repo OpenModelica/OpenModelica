@@ -5,7 +5,7 @@
 // Test for loops in algorithms. The size is a parameter.
 //
 
-class AlgorithmFor3
+model AlgorithmFor3
   parameter Integer N = 4;
   Real a[N];
 algorithm
@@ -13,20 +13,19 @@ algorithm
   for i in 1:N-1 loop
     a[i+1] := a[i] + 1.0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor3;
 
 // Result:
 // class AlgorithmFor3
-//   parameter Integer N = 4;
+//   final parameter Integer N = 4;
 //   Real a[1];
 //   Real a[2];
 //   Real a[3];
 //   Real a[4];
 // algorithm
 //   a[1] := 1.0;
-//   for i in 1:-1 + N loop
-//     a[1 + i] := 1.0 + a[i];
+//   for i in 1:3 loop
+//     a[i + 1] := a[i] + 1.0;
 //   end for;
 // end AlgorithmFor3;
 // endResult

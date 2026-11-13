@@ -1,0 +1,62 @@
+// name:     fmi3_import_discrete_inputs
+// keywords: fmu export import integer boolean input
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml terminalsAndIcons DiscreteInputsFMU* DiscreteInputs* output.log resources
+//
+// FMI 3.0 lets an importer set an Integer or Boolean input in Event Mode only.
+// The import wrapper sets them there, and not in Continuous-Time Mode. The
+// messages are not printed: FMIL complains about terminalsAndIcons.xml.
+//
+
+loadString("
+model DiscreteInputsFMU
+  input Integer n;
+  input Boolean b;
+  input Real u;
+  output Real y;
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = u;
+  y = if b then n*x else -x;
+end DiscreteInputsFMU;
+"); getErrorString();
+
+buildModelFMU(DiscreteInputsFMU, version="3.0", fmuType="me"); getErrorString();
+echo(false);
+importFMU("DiscreteInputsFMU.fmu"); clearMessages();
+echo(true);
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+loadFile("DiscreteInputsFMU_me_FMU.mo"); getErrorString();
+
+loadString("
+model DiscreteInputs
+  DiscreteInputsFMU_me_FMU fmu(n = 2, b = true, u = 1);
+end DiscreteInputs;
+"); getErrorString();
+
+echo(false);
+res := simulate(DiscreteInputs, stopTime=1.0); clearMessages();
+echo(true);
+res.resultFile;
+
+// y = n*x = 2*1
+val(fmu.y, 1.0);
+
+// Result:
+// true
+// ""
+// "DiscreteInputsFMU.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// "DiscreteInputs_res.mat"
+// 2.0
+// endResult

@@ -299,3 +299,12 @@ impl<T: Clone> std::hash::Hash for MutableWeak<T> {
         std::hash::Hash::hash(&key(self), state);
     }
 }
+
+impl<T: Clone + metamodelica::reflect::ToMMField> metamodelica::reflect::ToMMField for MutableWeak<T> {
+    fn to_mm_field(&self) -> metamodelica::reflect::MMField {
+        match self.0.upgrade() {
+            Some(cell) => crate::Mutable::cell_get(&cell).to_mm_field(),
+            None => metamodelica::reflect::MMField::Opaque("dead MutableWeak"),
+        }
+    }
+}

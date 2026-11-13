@@ -2,6 +2,9 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 inactiveWhenBranch.mos \
+algebraicPartition.mos \
+algebraicPartitionArray.mos \
+algebraicPartitionElements.mos \
 arrayCascade.mos \
 enumWithIntegerConstants.mos \
 arrayReadElements.mos \
@@ -22,6 +25,7 @@ simpleNonlinearLoop.mos \
 solveSingleEquation.mos \
 underdetermined_init.mos \
 variability.mos \
+loadResource.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

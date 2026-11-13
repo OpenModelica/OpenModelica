@@ -37,14 +37,13 @@ end PackageParameter;
 
 model PackageParameterModel
  extends PackageParameter.m;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PackageParameterModel;
 
 // Result:
 // Error processing file: PackageParameter.mo
-// Error: Variable n.i in package PackageParameterModel.n is not constant.
-// [flattening/modelica/packages/PackageParameter.mo:31:3-31:27:writable] Error: Variable n.i not found in scope PackageParameterModel.
-// Error: Error occurred while flattening model PackageParameterModel
+// [flattening/modelica/packages/PackageParameter.mo:14:5-14:28:writable] Notification: From here:
+// [flattening/modelica/packages/PackageParameter.mo:27:18-27:23:writable] Error: Class n does not satisfy the requirements for a package. Lookup is therefore restricted to encapsulated elements, but i is not encapsulated.
+// [flattening/modelica/packages/PackageParameter.mo:28:3-28:39:writable] Error: Function P3.f not found in scope m.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

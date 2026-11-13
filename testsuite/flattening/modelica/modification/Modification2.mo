@@ -5,16 +5,15 @@
 // Modifying a parameter in a local class is allowed.
 
 
-class B
-  class A
+model B
+  model A
     parameter Real p=1.0;
   end A;
   A a;
 end B;
 
-class Modification2
+model Modification2
   B b(A(p=2.0));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification2;
 
 // Result:

@@ -55,6 +55,7 @@ import Testsuite;
 import System;
 import Settings;
 import Autoconf;
+import PackageManagement;
 
 public
 public function buildWithin
@@ -1286,9 +1287,8 @@ public function getBasePathFromUri "Handle modelica:// URIs"
 algorithm
   basePath := matchcontinue (scheme, iname, modelicaPath, printError)
     local
-      Boolean isDir;
-      list<String> mps,names;
-      String gd,mp,bp,str,name,fileName;
+      list<String> names;
+      String mp,bp,str,name,fileName;
     case ("modelica://", name, _, _)
       algorithm
         name::names := System.strtok(name,".");
@@ -1300,10 +1300,8 @@ algorithm
       algorithm
         name::names := System.strtok(name,".");
         failure(getPathedClassInProgram(Absyn.IDENT(name),program));
-        gd := Autoconf.groupDelimiter;
-        mps := System.strtok(mp, gd);
-        (mp,name,isDir) := System.getLoadModelPath(name, {"default"}, mps);
-        mp := if isDir then mp + name else mp;
+        mp := PackageManagement.libraryPath(name, "default", mp);
+        mp := if System.directoryExists(mp) then mp else System.dirname(mp);
         bp := findModelicaPath2(mp,names,"",true);
       then bp;
     case ("file://", _, _, _) then "";

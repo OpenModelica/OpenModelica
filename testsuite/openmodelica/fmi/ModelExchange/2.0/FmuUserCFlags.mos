@@ -1,0 +1,43 @@
+// name:     FmuUserCFlags
+// keywords: FMI 2.0 export setCFlags external C
+// status: correct
+// suite: cSources
+// teardown_command: rm -rf FmuUserCFlags.fmu FmuUserCFlags.log FmuUserCFlags_info.json FmuUserCFlags_flags.json FmuUserCFlags.fmutmp FmuUserCFlags-tmp FmuUserCFlags_res.mat FmuUserCFlags_systemCall.log
+//
+// An FMU is compiled with the flags of setCFlags, as a
+// simulation executable is.
+
+loadString("
+model FmuUserCFlags
+  function f
+    output Real y;
+    external \"C\" y = fmuUserCFlagsValue() annotation(Include = \"
+#ifndef FMU_USER_CFLAGS_VALUE
+#error FMU_USER_CFLAGS_VALUE is not defined
+#endif
+static double fmuUserCFlagsValue(void) { return FMU_USER_CFLAGS_VALUE; }\");
+  end f;
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = f();
+end FmuUserCFlags;
+"); getErrorString();
+setCFlags(getCFlags() + " \"-DFMU_USER_CFLAGS_VALUE=2.5\""); getErrorString();
+buildModelFMU(FmuUserCFlags, version = "2.0", fmuType = "me", platforms = {"static"}); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator FmuUserCFlags.fmu --mode=me --stopTime=1 --resultFile=\"FmuUserCFlags_res.mat\" --stripRoot --suppressPath --tempDir=\"FmuUserCFlags-tmp\"", "FmuUserCFlags_systemCall.log"); getErrorString();
+val(x, 1.0, "FmuUserCFlags_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuUserCFlags.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 2.5
+// ""
+// endResult

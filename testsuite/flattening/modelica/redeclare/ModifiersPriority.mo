@@ -6,18 +6,18 @@
 //
 
 package ModifiersPriority
-   class X
+   model X
      parameter Real x = 1;
    end X;
 
-   class Y
+   model Y
      parameter Real x = 2;
      parameter Real y = 3;
    end Y;
 
    package P
      constant Real u = 500;
-     replaceable class A = X(x = u);
+     replaceable model A = X(x = u);
    end P;
 
    package P2 = P(redeclare class A = Y, u = 10);
@@ -26,7 +26,6 @@ end ModifiersPriority;
 
 model M
   ModifiersPriority.P2.A a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:

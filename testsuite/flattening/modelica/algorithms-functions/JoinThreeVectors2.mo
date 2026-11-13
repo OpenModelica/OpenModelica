@@ -22,11 +22,10 @@ model joinThreeVectors
   Real x[9];
 algorithm
   x:=joinThreeVectors2(a,b,c);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end joinThreeVectors;
 
 // Result:
-// function joinThreeVectors2
+// impure function joinThreeVectors2
 //   input Real[:] v1;
 //   input Real[:] v2;
 //   input Real[:] v3;
@@ -59,6 +58,6 @@ end joinThreeVectors;
 //   b = {3.0, 4.0, 5.0};
 //   c = {6.0, 7.0, 8.0, 9.0};
 // algorithm
-//   x := joinThreeVectors2({a[1], a[2]}, {b[1], b[2], b[3]}, {c[1], c[2], c[3], c[4]});
+//   x := joinThreeVectors2(a, b, c);
 // end joinThreeVectors;
 // endResult

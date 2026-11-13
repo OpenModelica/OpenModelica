@@ -70,6 +70,7 @@ uniontype AttributeIterator
     String name;
     NFBinding.Source source;
     Integer confidence;
+    SourceInfo info;
     Mutable<ExpressionIterator> iterator;
   end ATTRIBUTE_ITERATOR;
 
@@ -82,7 +83,7 @@ uniontype AttributeIterator
   algorithm
     (name, binding) := attribute;
     iter := ATTRIBUTE_ITERATOR(name, Binding.source(binding), Binding.confidence(binding),
-      Mutable.create(ExpressionIterator.fromBinding(binding)));
+      Binding.getInfo(binding), Mutable.create(ExpressionIterator.fromBinding(binding)));
   end create;
 
   function nextBinding
@@ -94,7 +95,7 @@ uniontype AttributeIterator
   algorithm
     (it, exp) := ExpressionIterator.next(Mutable.access(iter.iterator));
     Mutable.update(iter.iterator, it);
-    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, iter.source, iter.confidence));
+    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, iter.source, iter.info, iter.confidence));
   end nextBinding;
 end AttributeIterator;
 
@@ -188,7 +189,7 @@ algorithm
       for cr in crefs loop
         if has_binding then
           (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-          binding := Binding.makeFlat(exp, bind_var, bind_src, confidence);
+          binding := Binding.makeFlat(exp, bind_var, bind_src, info, confidence);
         end if;
 
         ty_attr := list(AttributeIterator.nextBinding(i) for i in ty_attr_iters);
@@ -234,7 +235,7 @@ algorithm
         match cr
           case _ algorithm
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-            binding := Binding.makeFlat(exp, bind_var, bind_src, confidence);
+            binding := Binding.makeFlat(exp, bind_var, bind_src, var.info, confidence);
             binfo :: backend_attributes := backend_attributes;
           then Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo);
         end match for cr in crefs

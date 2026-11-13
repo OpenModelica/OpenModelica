@@ -1,7 +1,6 @@
 // name: SynchronousFeatures.ControlledMassBasic
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
 
@@ -26,13 +25,13 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //   parameter Real KInner = 20.0 \"Gain of speed P controller\";
 //   parameter Real Ti = 10.0 \"Integral time for pos. PI controller\";
 //   parameter Real xref = 10.0 \"Position reference\";
-//   discrete Real xd;
-//   discrete Real eOuter;
-//   discrete Real intE(start = 0.0);
-//   discrete Real uOuter;
-//   discrete Real vd;
-//   discrete Real vref;
-//   discrete Real uInner(start = 0.0);
+//   Real xd;
+//   Real eOuter;
+//   Real intE(start = 0.0);
+//   Real uOuter;
+//   Real vd;
+//   Real vref;
+//   Real uInner(start = 0.0);
 // equation
 //   xd = sample(x, Clock(0.01));
 //   eOuter = xref - xd;
@@ -43,7 +42,7 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //   uInner = KInner * (vref - vd);
 //   f = hold(uInner);
 //   der(x) = v;
-//   m * der(v) = f + (-k) * x - d * v;
+//   m * der(v) = f - k * x - d * v;
 // end SynchronousFeatures.ControlledMassBasic;
 // "
 // ""
@@ -60,9 +59,9 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE(unit = "N" )  "Force" type: Real 
-// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real 
-// 3: x:STATE(1)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real 
+// 1: f:VARIABLE(unit = "N" )  "Force" type: Real
+// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real
+// 3: x:STATE(1)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real
 //
 //
 // Equations (3, 3)
@@ -80,13 +79,13 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Variables (7)
 // ========================================
-// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
-// 2: vref:DISCRETE()  type: Real 
-// 3: vd:DISCRETE()  type: Real 
-// 4: uOuter:DISCRETE()  type: Real 
-// 5: intE:DISCRETE(start = 0.0 )  type: Real 
-// 6: eOuter:DISCRETE()  type: Real 
-// 7: xd:DISCRETE()  type: Real 
+// 1: uInner:VARIABLE(start = 0.0 )  type: Real
+// 2: vref:VARIABLE()  type: Real
+// 3: vd:VARIABLE()  type: Real
+// 4: uOuter:VARIABLE()  type: Real
+// 5: intE:VARIABLE(start = 0.0 )  type: Real
+// 6: eOuter:VARIABLE()  type: Real
+// 7: xd:VARIABLE()  type: Real
 //
 //
 // Equations (7, 7)
@@ -126,9 +125,9 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE(unit = "N" )  "Force" type: Real 
-// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real 
-// 3: x:STATE(1,v)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real 
+// 1: f:VARIABLE(unit = "N" )  "Force" type: Real
+// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real
+// 3: x:STATE(1,v)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real
 //
 //
 // Equations (3, 3)
@@ -158,13 +157,13 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Variables (7)
 // ========================================
-// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
-// 2: vref:DISCRETE()  type: Real 
-// 3: vd:DISCRETE()  type: Real 
-// 4: uOuter:DISCRETE()  type: Real 
-// 5: intE:CLOCKED_STATE(start = 0.0 fixed = true )  type: Real 
-// 6: eOuter:DISCRETE()  type: Real 
-// 7: xd:DISCRETE()  type: Real 
+// 1: uInner:VARIABLE(start = 0.0 )  type: Real
+// 2: vref:VARIABLE()  type: Real
+// 3: vd:VARIABLE()  type: Real
+// 4: uOuter:VARIABLE()  type: Real
+// 5: intE:CLOCKED_STATE(start = 0.0 fixed = true )  type: Real
+// 6: eOuter:VARIABLE()  type: Real
+// 7: xd:VARIABLE()  type: Real
 //
 //
 // Equations (7, 7)

@@ -1,0 +1,24 @@
+// name:     PartialFn3NF
+// keywords: PartialFn
+// status:   incorrect
+// suite: metamodelica
+// suite: nfScripting
+//
+// Partial Function Testing
+//
+loadFile("PartialFn3.mo");
+a:=PartialFn3.ApplyIntOp(PartialFn3.AddInt,4);
+
+// Result:
+// true
+// Error processing file: PartialFn3NF.mos
+// [metamodelica/meta/PartialFn3NF.mos:10:1-10:46:writable] Error: Type mismatch for positional argument 1 in PartialFn3.ApplyIntOp(inFunc=PartialFn3.AddInt). The argument has type:
+//   PartialFn3.AddInt<function>(Integer i) => Integer out
+// expected type:
+//   inFunc<function>(Integer in1) => Integer out1
+//
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
+// endResult

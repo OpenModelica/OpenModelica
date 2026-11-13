@@ -1,0 +1,66 @@
+// name:     FmuUnknownDependencies
+// keywords: FMI 2.0 export ModelStructure dependencies disableFMIDependency
+// status:   correct
+// teardown_command: rm -rf FmuUnknownDependencies.fmu FmuUnknownDependencies.fmutmp/ FmuUnknownDependencies.log FmuUnknownDependencies_FMU.* FmuUnknownDependencies_external_functions.json FmuUnknownDependencies_info.json FmuUnknownDependencies_tmp.xml FmuUnknownDependencies.xml
+//
+// With -d=disableFMIDependency there is no FMIDER Jacobian, so the dependencies
+// are not known.
+// FMI 2.0: dependencies="" means "depends on nothing", so the attributes must be
+// left out, which means "depends on all knowns". All outputs are listed, and
+// the InitialUnknowns are sorted by index.
+
+loadString("
+model FmuUnknownDependencies
+  Real x(start = 1, fixed = true);
+  Real z(start = 0, fixed = true);
+  parameter Real p = 1;
+  parameter Real q = 2*p;
+  output Real y = 2*x;
+  output Integer n = integer(z);
+  output Boolean b = x > 0.5;
+equation
+  der(x) = -p*x;
+  der(z) = x;
+end FmuUnknownDependencies;
+"); getErrorString();
+setCommandLineOptions("-d=disableFMIDependency"); getErrorString();
+buildModelFMU(FmuUnknownDependencies, version = "2.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+system("unzip -cqq FmuUnknownDependencies.fmu modelDescription.xml > FmuUnknownDependencies_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" FmuUnknownDependencies_tmp.xml > FmuUnknownDependencies.xml"); getErrorString();
+readFile("FmuUnknownDependencies.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuUnknownDependencies.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"7\" />
+//       <Unknown index=\"10\" />
+//       <Unknown index=\"11\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"3\" />
+//       <Unknown index=\"4\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"3\" />
+//       <Unknown index=\"4\" />
+//       <Unknown index=\"7\" />
+//       <Unknown index=\"9\" />
+//       <Unknown index=\"10\" />
+//       <Unknown index=\"11\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

@@ -194,7 +194,8 @@ pub struct TubeDiff {
 }
 
 /// `diffSimulationResults`: the variables of `vars` (every reference variable
-/// when empty) whose trajectory in `actual` leaves the tube around `reference`.
+/// when empty) that are missing in either file or whose trajectory in `actual`
+/// leaves the tube around `reference`.
 #[wasm_bindgen]
 pub fn diff_all(
     actual: &mut ResultFile,
@@ -212,8 +213,9 @@ pub fn diff_all(
 
 /// Every compared variable's verdict in one call, as JSON
 /// `[{"name":…,"errors":…,"delta_error":…}]`; `errors` is -1 for a variable that
-/// could not be compared. `diff_all` answers only *which* variables differ, and
-/// a page that shows counts would otherwise need a call per variable.
+/// is missing in either file or could not be compared. `diff_all` answers only
+/// *which* variables differ, and a page that shows counts would otherwise need
+/// a call per variable.
 #[wasm_bindgen]
 pub fn verdicts(
     actual: &mut ResultFile,

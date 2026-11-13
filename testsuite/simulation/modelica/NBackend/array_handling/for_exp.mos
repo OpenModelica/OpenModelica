@@ -30,7 +30,7 @@ simulate(binding_array); getErrorString();
 // true
 // Created Secondary Parameter Binding Equations (1):
 // ****************************************************
-// 	[ARRY] (5) Cu = ($FUN_1 + $FUN_2) .* 1e7; ($RES_BND_6)
+// 	[ARRY] (5) Cu = ($FUN_1 + $FUN_2).*1e7; ($RES_BND_6)
 //
 // Created Primary Parameter Binding Equations (0):
 // **************************************************
@@ -49,7 +49,7 @@ simulate(binding_array); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "binding_array_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'binding_array', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'binding_array', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

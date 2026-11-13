@@ -10,7 +10,6 @@ model Abs
 equation
   r1 = abs(100);
   r2 = abs(-100);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Abs;
 
 // Result:

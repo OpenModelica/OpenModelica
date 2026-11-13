@@ -11,12 +11,10 @@ OMSimulator
 
 .. include:: omsimulator/OMSimulatorLib.rst
 
-.. include:: omsimulator/OMSimulatorLua.rst
-
-.. include:: omsimulator/OMSimulatorPython.rst
+.. include:: omsimulator/OMSimulatorPython3.rst
 
 .. include:: omsimulator/OpenModelicaScripting.rst
 
 .. include:: omsimulator/OMEdit.rst
 
-.. include:: omsimulator/SSP.rst
+.. include:: omsimulator/OMSimulatorGui.rst

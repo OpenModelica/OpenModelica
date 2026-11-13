@@ -1,0 +1,53 @@
+// name:     CheckModelUnknownDim1
+// keywords: checkModel fill each start #17736
+// status:   correct
+//
+// checkModel of a model whose array dimensions depend on an unbound parameter.
+//
+
+loadString("
+  model M1
+    parameter Integer n annotation(Evaluate = true);
+    parameter Integer m = 0 annotation(Evaluate = true);
+    parameter Real x[n + m] = fill(0, n + m);
+  end M1;
+
+  model M2
+    parameter Integer n annotation(Evaluate = true);
+    parameter Integer m = 0 annotation(Evaluate = true);
+    parameter Real x[n + m](each start = 1);
+  end M2;
+
+  model M3
+    model A
+      parameter Integer p;
+    end A;
+
+    parameter Integer n annotation(Evaluate = true);
+    parameter Integer m = 0 annotation(Evaluate = true);
+    A a[n + m](p = cat(1, fill(1, n), fill(2, m)));
+  end M3;
+");
+
+checkModel(M1);
+getErrorString();
+checkModel(M2);
+getErrorString();
+checkModel(M3);
+getErrorString();
+
+// Result:
+// true
+// "Check of M1 completed successfully.
+// Class M1 has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// "Check of M2 completed successfully.
+// Class M2 has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// "Check of M3 completed successfully.
+// Class M3 has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// endResult

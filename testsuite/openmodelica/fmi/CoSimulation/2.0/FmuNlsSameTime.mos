@@ -1,0 +1,43 @@
+// name:     FmuNlsSameTime
+// keywords: FMI 2.0 export co-simulation nonlinear system extrapolation
+// status:   correct
+// teardown_command: rm -rf FmuNlsSameTime.fmu FmuNlsSameTime.fmutmp/ FmuNlsSameTime.log FmuNlsSameTime_out.txt
+//
+// The nonlinear system is solved at the end of one step and, after the input
+// changed, 3 ulps later at the start of the next. At t = 4097 that is more than
+// 1e-12, but the two solutions must not be extrapolated over (#17738).
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model FmuNlsSameTime
+  package Medium = Modelica.Media.Water.StandardWater;
+  input Real u(start = 0);
+  Real x(start = 0, fixed = true);
+  Real h(start = 1.0e6);
+equation
+  Medium.temperature(Medium.setState_ph(5e6, h)) = 450 + 50*u;
+  der(x) = 1e-6*h - x;
+end FmuNlsSameTime;
+"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+buildModelFMU(FmuNlsSameTime, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuNlsSameTime.py FmuNlsSameTime.fmu FmuNlsSameTime_out.txt > FmuNlsSameTime.log 2>&1"); getErrorString();
+readFile("FmuNlsSameTime_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "FmuNlsSameTime.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "all 12 steps fmi2OK
+// "
+// ""
+// endResult

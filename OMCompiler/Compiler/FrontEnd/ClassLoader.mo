@@ -51,13 +51,12 @@ import AbsynUtil;
 import Autoconf;
 import BaseHashTable;
 import Config;
-import Debug;
 import Error;
-import Flags;
 import HashTableStringToProgram;
 import List;
 import PackageManagement;
 import Parser;
+import StringUtil;
 import System;
 import Testsuite;
 import Util;
@@ -88,124 +87,55 @@ uniontype LoadFileStrategy
   end STRATEGY_ON_DEMAND;
 end LoadFileStrategy;
 
-public function loadClass
-"This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string
-  and tries to load the class from the path.
-  If the classname is qualified, the complete package is loaded.
-  E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded."
-  input Absyn.Path inPath;
-  input list<String> priorityList;
-  input String modelicaPath;
-  input Option<String> encoding;
-  input Boolean requireExactVersion = false;
-  input Boolean encrypted = false;
-  output Absyn.Program outProgram;
-algorithm
-  outProgram := matchcontinue (inPath, modelicaPath)
-    local
-      String gd,classname,mp,pack;
-      list<String> mps;
-      Absyn.Program p;
-    /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
-    case (Absyn.IDENT(name = classname), mp)
-      algorithm
-        gd := Autoconf.groupDelimiter;
-        mps := System.strtok(mp, gd);
-        p := loadClassFromMps(classname, priorityList, mps, encoding, requireExactVersion, encrypted);
-        checkOnLoadMessage(p);
-      then
-        p;
-    /* Qualified names: First check if it is defined in a file pack.mo */
-    case (Absyn.QUALIFIED(name = pack), mp)
-      algorithm
-        gd := Autoconf.groupDelimiter;
-        mps := System.strtok(mp, gd);
-        p := loadClassFromMps(pack, priorityList, mps, encoding, requireExactVersion, encrypted);
-        checkOnLoadMessage(p);
-      then
-        p;
-    /* failure */
-    else
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("ClassLoader.loadClass failed\n");
-      then
-        fail();
-  end matchcontinue;
-end loadClass;
-
-protected function loadClassFromMps
-"Loads a class or classes from a set of paths in OPENMODELICALIBRARY"
+public function notifyInstallable
+  "Tells how to install a library that is not found, if the package index
+   has it."
   input String id;
   input list<String> prios;
-  input list<String> mps;
-  input Option<String> encoding;
-  input Boolean requireExactVersion = false;
+protected
+  String version;
+  list<String> versions, commands;
+algorithm
+  version := match prios
+    case version::_ then version;
+    else "default";
+  end match;
+  versions := PackageManagement.versionsThatProvideTheWanted(id, version, printError=false);
+  if listEmpty(versions) then
+    return;
+  end if;
+  if version=="default" or version=="" then
+    commands := {"  installPackage("+id+")"};
+  else
+    commands := {};
+    if listMember(version, versions) then
+      commands := "  installPackage("+id+", \""+version+"\", exactMatch=true)" :: commands;
+    end if;
+    commands := "  installPackage("+id+", \""+version+"\", exactMatch=false)" :: commands;
+  end if;
+  if listHead(versions) <> version then
+    commands := "  installPackage("+id+", \""+listHead(versions)+"\", exactMatch=true)" :: commands;
+  end if;
+  Error.addMessage(Error.NOTIFY_PKG_FOUND, {stringDelimitList(commands, "\n")});
+end notifyInstallable;
+
+public function loadClassFromPath
+  "Loads the library id from a directory with a package.mo or from a .mo file,
+   given as a MODELICAPATH entry and a file name separated by /."
+  input String id;
+  input String path;
   input Boolean encrypted = false;
   output Absyn.Program outProgram;
 protected
-  String mp, name, version;
-  Boolean isDir;
+  Integer i = StringUtil.rfindChar(path, stringCharInt("/"));
+  String name = substring(path, i + 1, stringLength(path));
   Option<Absyn.Class> cl;
-  list<String> versionsThatProvideTheWanted, commands, versions;
 algorithm
-  if not requireExactVersion then
-    if listEmpty(prios) then
-      versions := PackageManagement.versionsThatProvideTheWanted(id, "default", printError = false);
-    else
-      versions := {};
-
-      for v in listReverse(prios) loop
-        versionsThatProvideTheWanted :=
-          PackageManagement.versionsThatProvideTheWanted(id, v, printError = false);
-
-        if listEmpty(versionsThatProvideTheWanted) then
-          versions := v :: versions;
-        else
-          versions := listAppend(versionsThatProvideTheWanted, versions);
-        end if;
-      end for;
-    end if;
-  else
-    versions := prios;
-  end if;
-
-  try
-    (mp,name,isDir) := System.getLoadModelPath(id,versions,mps,requireExactVersion);
-  else
-    version := match prios
-      case version::_ then version;
-      else "default";
-    end match;
-    versionsThatProvideTheWanted := PackageManagement.versionsThatProvideTheWanted(id, version, printError=false);
-    if not listEmpty(versionsThatProvideTheWanted) then
-      if version=="default" or version=="" then
-        commands := {"  installPackage("+id+")"};
-      else
-        commands := {};
-
-        if listMember(version, versionsThatProvideTheWanted) then
-          commands := "  installPackage("+id+", \""+version+"\", exactMatch=true)" :: commands;
-        end if;
-
-        commands := "  installPackage("+id+", \""+version+"\", exactMatch=false)" :: commands;
-      end if;
-      if listHead(versionsThatProvideTheWanted) <> version then
-        commands := "  installPackage("+id+", \""+listHead(versionsThatProvideTheWanted)+"\", exactMatch=true)" :: commands;
-      end if;
-      Error.addMessage(Error.NOTIFY_PKG_FOUND, {stringDelimitList(commands, "\n")});
-    end if;
-    fail();
-  end try;
-  // print("System.getLoadModelPath: " + id + " {" + stringDelimitList(prios,",") + "} " + stringDelimitList(mps,",") + " => " + mp + " " + name + " " + boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
-  cl := loadClassFromMp(id, mp, name, isDir, encoding, encrypted);
-  if (isSome(cl)) then
-    outProgram := Absyn.PROGRAM({Util.getOption(cl)},Absyn.TOP());
-  else
-    outProgram := Absyn.PROGRAM({},Absyn.TOP());
-  end if;
-end loadClassFromMps;
+  cl := loadClassFromMp(id, substring(path, 1, i - 1), name, System.directoryExists(path), NONE(), encrypted);
+  outProgram := Absyn.PROGRAM(if isSome(cl) then {Util.getOption(cl)} else {}, Absyn.TOP());
+  checkOnLoadMessage(outProgram);
+end loadClassFromPath;
 
 public function loadClassFromMp
   input String id "the actual class name";

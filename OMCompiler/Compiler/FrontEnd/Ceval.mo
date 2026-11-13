@@ -1858,7 +1858,8 @@ algorithm
         (cache,Values.BOOL(left_just)) := ceval(cache,env, justified_exp, impl, msg,numIter+1);
         (cache,Values.INTEGER(sig)) := ceval(cache,env, sig_dig, impl, msg,numIter+1);
         format := "%" + (if left_just then "-" else "") + intString(len) + "." + intString(sig) + "g";
-        str := System.snprintff(format,len+20,r);
+        // %.{sig}g is at most sig + 7 characters long; a negative precision means 6.
+        str := System.snprintff(format, max(len, max(sig, 6) + 7), r);
       then
         (cache,Values.STRING(str));
 

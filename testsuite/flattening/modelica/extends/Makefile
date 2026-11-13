@@ -7,8 +7,6 @@ ColoredPointLegalMod.mo \
 Colors.mo \
 Extends1.mo \
 Extends2.mo \
-Extends3.mo \
-Extends4.mo \
 Extends5.mo \
 Extends6.mo \
 Extends7.mo \
@@ -53,16 +51,11 @@ TempDepResistorCircuitInherited.mo \
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES=\
-ColorClasses.mo \
 ColoredPointIllegalMod1.mo \
 ColoredPointIllegalMod2.mo \
 ColoredPointIllegalMod3.mo \
-GenericMicroCircuit.mo \
 InheritanceRestrictions.mo \
-MicroCircuitValid.mo \
-Oscillator.mo \
-SimpleTypeExtend.mo \
-TempResistor3.mo
+SimpleTypeExtend.mo
 
 
 

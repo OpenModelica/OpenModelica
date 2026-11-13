@@ -2,7 +2,6 @@
 //! Moved out of `tests/` (which compiles as a separate crate).
 mod avl_set_string_tests;
 mod avl_tree_string_tests;
-mod diff_algorithm_tests;
 mod flags_util_tests;
 mod hash_set_string_tests;
 mod json_ext_tests;

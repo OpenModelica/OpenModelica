@@ -48,7 +48,7 @@ checkModel(PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear); ge
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.CounterSpin completed successfully.
 // Class PlanarMechanicsForTesting.Examples.CounterSpin has 124 equation(s) and 124 variable(s).
-// 79 of these are trivial equation(s)."
+// 85 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.CraneCrab completed successfully.
 // Class PlanarMechanicsForTesting.Examples.CraneCrab has 276 equation(s) and 276 variable(s).
@@ -64,7 +64,7 @@ checkModel(PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear); ge
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.WheelBasedCranCrab completed successfully.
 // Class PlanarMechanicsForTesting.Examples.WheelBasedCranCrab has 300 equation(s) and 300 variable(s).
-// 225 of these are trivial equation(s)."
+// 231 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.PistonEngine completed successfully.
 // Class PlanarMechanicsForTesting.Examples.PistonEngine has 408 equation(s) and 408 variable(s).
@@ -84,22 +84,22 @@ checkModel(PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear); ge
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.TestIdealWheel completed successfully.
 // Class PlanarMechanicsForTesting.Examples.TestIdealWheel has 287 equation(s) and 287 variable(s).
-// 198 of these are trivial equation(s)."
+// 204 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.TestDryFrictionWheel completed successfully.
 // Class PlanarMechanicsForTesting.Examples.TestDryFrictionWheel has 292 equation(s) and 292 variable(s).
-// 198 of these are trivial equation(s)."
+// 204 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.TestSlipBasedWheel completed successfully.
 // Class PlanarMechanicsForTesting.Examples.TestSlipBasedWheel has 297 equation(s) and 297 variable(s).
-// 200 of these are trivial equation(s)."
+// 206 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.SingleTrackWithEngine completed successfully.
 // Class PlanarMechanicsForTesting.Examples.SingleTrackWithEngine has 482 equation(s) and 482 variable(s).
-// 317 of these are trivial equation(s)."
+// 329 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear completed successfully.
 // Class PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear has 1132 equation(s) and 1132 variable(s).
-// 731 of these are trivial equation(s)."
+// 755 of these are trivial equation(s)."
 // ""
 // endResult

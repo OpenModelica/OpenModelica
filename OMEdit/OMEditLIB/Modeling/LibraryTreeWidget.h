@@ -358,6 +358,8 @@ private:
 #endif
   QAction *mpSimulationSetupAction;
   QAction *mpFindUsageAction;
+  QAction *mpClassDiagramAction;
+  QAction *mpCRMLDiagramAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
@@ -378,6 +380,8 @@ private:
   QAction *mpGenerateVerificationScenariosAction;
   QAction *mpOMSRenameAction;
   QAction *mpUnloadOMSModelAction;
+  QAction *mpOMSCalibrateAction;
+  QAction *mpOMUQActivitiesAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
   void libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem);
@@ -410,6 +414,8 @@ public slots:
   void translateAsCRML();
   void runScript();
   void findUsageOfClass();
+  void showClassDiagram();
+  void showCRMLDiagram();
   void duplicateClass();
   void unloadClass();
   void reloadClass();
@@ -430,6 +436,8 @@ public slots:
   void generateVerificationScenarios();
   void OMSRename();
   void unloadOMSModel();
+  void OMSCalibrate();
+  void runOMUQActivities();
 protected:
   virtual void startDrag(Qt::DropActions supportedActions) override;
   virtual void keyPressEvent(QKeyEvent *event) override;

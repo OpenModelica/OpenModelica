@@ -2,7 +2,6 @@
 // keywords: fmi import co-simulation
 // status:   correct
 // teardown_command: rm -rf vanDerPol_cs_st_FMU.mo binaries sources documentation resources model.png modelDescription.xml vanDerPol.log vanDerPol_info.json output.log
-// cflags:   -d=-newInst
 //
 // The four setters of an imported FMI 1.0 Co-Simulation FMU used to be called with the
 // function's own out_Values output as an extra argument, so the runtime's fmiType parameter
@@ -31,6 +30,7 @@ regex(readFile("vanDerPol_cs_st_FMU.mo"), "output Integer out_Values\\[size\\(in
 // "Warning: module = fmi1_xml_get_default_experiment_start: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
 // Warning: module = fmi1_xml_get_default_experiment_stop: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
 // Warning: module = fmi1_xml_get_default_experiment_tolerance: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// Warning: FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
 // "
 // (1, {"fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, 2)"})
 // (1, {"fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 2)"})

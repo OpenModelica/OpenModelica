@@ -851,25 +851,6 @@ the possibility to don't print the MathML code within the xml file, to
 make it more readable. Usage is trivial, just:
 addMathMLCode=\ *true/false* (default value is false).
 
-Dump Matlab Representation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The command export dumps an XML representation of a model, according to
-several optional parameters.
-
-exportDAEtoMatlab(\ *modelname*);
-
-This command dumps the mathematical representation of a model using a
-Matlab representation. Example:
-
-.. omc-mos ::
-
-  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
-  exportDAEtoMatlab(BouncingBall)
-
-.. literalinclude :: ../tmp/BouncingBall_imatrix.m
-  :language: matlab
-
 Summary of Commands for the Interactive Session Handler
 -------------------------------------------------------
 
@@ -887,8 +868,8 @@ it.
   intervals or steps for which the simulation results will be computed.
   More intervals will give higher time resolution, but occupy more space
   and take longer to compute. The default number of intervals is 500. It
-  is possible to choose solving method, default is “dassl”, “cvode”, gbode and
-  “euler” are also available. Output format “mat” is default. “plt”
+  is possible to choose solving method, default is “auto”, “dassl”, “ida”,
+  “cvode”, gbode and “euler” are also available. Output format “mat” is default. “plt”
   and “mat” (MATLAB) are the only ones that work with the val() command,
   “csv” (comma separated values) and “empty” (no output) are also
   available (see section :ref:`alternative-output-formats`).
@@ -909,8 +890,6 @@ clearVariables() Clear all defined variables.
 
 dumpXMLDAE(\ *modelname*, ...) Dumps an XML representation of a model,
 according to several optional parameters.
-
-exportDAEtoMatlab(\ *name*) Dumps a Matlab representation of a model.
 
 instantiateModel(\ *modelname*)Performs code instantiation of a
 model/class and return a string containing the flat class definition.
@@ -938,9 +917,6 @@ argument *str*.
 system(\ *str*) Execute *str* as a system(shell) command in the
 operating system; return integer success value. Output into stdout from
 a shell command is put into the console window.
-
-timing(\ *expr*) Evaluate expression *expr* and return the number of
-seconds (elapsed time) the evaluation took.
 
 typeOf(\ *variable*) Return the type of the *variable* as a string.
 

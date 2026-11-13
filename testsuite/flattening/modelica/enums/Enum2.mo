@@ -12,18 +12,17 @@ equation
    for e in Color loop
      x[e] = 1;
    end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration2;
 
 
 // Result:
 // class Enumeration2
-//   Real x[Enumeration2.Color.green];
-//   Real x[Enumeration2.Color.blue];
-//   Real x[Enumeration2.Color.yellow];
+//   Real x[Color.green];
+//   Real x[Color.blue];
+//   Real x[Color.yellow];
 // equation
-//   x[Enumeration2.Color.green] = 1.0;
-//   x[Enumeration2.Color.blue] = 1.0;
-//   x[Enumeration2.Color.yellow] = 1.0;
+//   x[Color.green] = 1.0;
+//   x[Color.blue] = 1.0;
+//   x[Color.yellow] = 1.0;
 // end Enumeration2;
 // endResult

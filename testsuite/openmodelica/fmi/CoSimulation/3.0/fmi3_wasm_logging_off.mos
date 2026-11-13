@@ -1,0 +1,45 @@
+// name:     fmi3_wasm_logging_off
+// keywords: FMI 3.0 export wasm Co-Simulation logMessage loggingOn
+// status:   correct
+// suite:    wasm
+// teardown_command: rm -rf WasmLoggingOff.fmu WasmLoggingOff.log WasmLoggingOff_* om-wasm-include-*
+//
+// FMI 3.0: with loggingOn = false the FMU must not call logMessage, also not for
+// an error. The reason of a failed step reaches the importer only through an
+// enabled category such as logStatusError.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model WasmLoggingOff
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+algorithm
+  when time > 0.5 then
+    Modelica.Utilities.Streams.error(\"stop\");
+  end when;
+end WasmLoggingOff;
+"); getErrorString();
+buildModelFMU(WasmLoggingOff, version = "3.0", fmuType = "cs", platforms = {"wasm", "native"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_wasm_logging_off.py WasmLoggingOff.fmu WasmLoggingOff_out.txt > WasmLoggingOff.log 2>&1"); getErrorString();
+readFile("WasmLoggingOff_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "WasmLoggingOff.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/2).
+// Notification: Finished FMU for platform 'wasm' (1/2).
+// Notification: Building FMU for platform 'native' (2/2).
+// Notification: Finished FMU for platform 'native' (2/2).
+// "
+// 0
+// ""
+// "loggingOn = false: 0
+// logStatusError only: 1
+// loggingOn = true: 1
+// "
+// ""
+// endResult

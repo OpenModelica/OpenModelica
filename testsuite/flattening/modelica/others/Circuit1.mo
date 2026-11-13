@@ -77,7 +77,6 @@ equation
   connect (R2.n, L.p);
   connect (L.n,  C.n);
   connect (AC.n, G.p);    // Ground
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Circuit1;
 
 // Result:
@@ -122,6 +121,17 @@ end Circuit1;
 //   Real G.p.v(unit = "V");
 //   Real G.p.i(unit = "A");
 // equation
+//   R1.p.v = R2.p.v;
+//   R1.p.v = AC.p.v;
+//   R1.n.v = C.p.v;
+//   R2.n.v = L.p.v;
+//   AC.n.v = G.p.v;
+//   AC.n.v = L.n.v;
+//   AC.n.v = C.n.v;
+//   C.p.i + R1.n.i = 0.0;
+//   L.p.i + R2.n.i = 0.0;
+//   G.p.i + AC.n.i + L.n.i + C.n.i = 0.0;
+//   AC.p.i + R2.p.i + R1.p.i = 0.0;
 //   R1.R * R1.i = R1.v;
 //   R1.v = R1.p.v - R1.n.v;
 //   0.0 = R1.p.i + R1.n.i;
@@ -143,16 +153,5 @@ end Circuit1;
 //   0.0 = AC.p.i + AC.n.i;
 //   AC.i = AC.p.i;
 //   G.p.v = 0.0;
-//   R1.p.i + R2.p.i + AC.p.i = 0.0;
-//   R1.n.i + C.p.i = 0.0;
-//   C.n.i + L.n.i + AC.n.i + G.p.i = 0.0;
-//   R2.n.i + L.p.i = 0.0;
-//   AC.p.v = R1.p.v;
-//   AC.p.v = R2.p.v;
-//   C.p.v = R1.n.v;
-//   AC.n.v = C.n.v;
-//   AC.n.v = G.p.v;
-//   AC.n.v = L.n.v;
-//   L.p.v = R2.n.v;
 // end Circuit1;
 // endResult

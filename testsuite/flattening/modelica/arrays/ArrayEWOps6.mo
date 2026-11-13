@@ -22,28 +22,11 @@ algorithm
   y := z / sum(z);
 end f;
 
-class ArrayEWOps6
+model ArrayEWOps6
   Real x[9] = f([1; 2]);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps6;
 
 // Result:
-// function f
-//   input Real[2, 1] x;
-//   output Real[9] y;
-//   protected Real[2, 1] c;
-//   protected Real[1, 2] s = {{1.0, 2.0}};
-//   protected Real[9] z;
-// algorithm
-//   for i in 1:3 loop
-//     for j in 1:3 loop
-//       c := {{/*Real*/(i)}, {/*Real*/(j)}};
-//       z[3 * (-1 + i) + j] := exp((-((x[1,1] - c[1,1]) / s[1,1]) ^ 2.0) - ((x[2,1] - c[2,1]) / s[1,2]) ^ 2.0);
-//     end for;
-//   end for;
-//   y := {z[1] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[2] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[3] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[4] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[5] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[6] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[7] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[8] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9]), z[9] / (z[1] + z[2] + z[3] + z[4] + z[5] + z[6] + z[7] + z[8] + z[9])};
-// end f;
-//
 // class ArrayEWOps6
 //   Real x[1];
 //   Real x[2];

@@ -1,0 +1,54 @@
+// name:     fmi3_import_exitinit_assert
+// keywords: FMI 3.0 import ModelExchange initialization assert
+// status:   correct
+// teardown_command: rm -rf fmi3_import_exitinit_assert.fmu fmi3_import_exitinit_assert_me_FMU* fmi3_import_exitinit_assert.fmutmp/ fmi3_import_exitinit_assert.log fmi3_import_exitinit_assert_info.json binaries sources documentation modelDescription.xml terminalsAndIcons resources
+//
+// fmi3ExitInitializationMode of the imported FMU fails. FMI 3.0 does not
+// allow fmi3Terminate after that, so the import must not call it (#17740).
+
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+
+loadString("
+model fmi3_import_exitinit_assert
+  parameter Real p = 1;
+  Real x(start = 0, fixed = true);
+initial algorithm
+  assert(p > 2, \"p must exceed 2\");
+equation
+  der(x) = 1;
+end fmi3_import_exitinit_assert;
+"); getErrorString();
+
+buildModelFMU(fmi3_import_exitinit_assert, version = "3.0", fmuType = "me"); getErrorString();
+importFMU("fmi3_import_exitinit_assert.fmu", debugLogging = true); getErrorString();
+loadFile("fmi3_import_exitinit_assert_me_FMU.mo"); getErrorString();
+// The FMU's own messages differ between the runtimes.
+echo(false);
+res := simulate(fmi3_import_exitinit_assert_me_FMU);
+messages := res.messages;
+echo(true);
+getErrorString();
+regexBool(messages, "fmi3ExitInitializationMode failed with status : Error"); getErrorString();
+regexBool(messages, "fmi3Terminate"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_import_exitinit_assert.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi3_import_exitinit_assert_me_FMU.mo"
+// "Warning: module = Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd' is ignored. Using standard fmiModelDescription.xsd., log level = WARNING: FMI3XML
+// "
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// ""
+// endResult

@@ -51,8 +51,18 @@ QStatusBar#ModelStatusBar QLabel {
   padding: 0px 0px 0px 1px;
 }
 
-QListWidget#RecentItemsList::item:hover, QListWidget#RecentModelItemsList::item:hover, QListWidget#LatestNewsList::item:hover {
+QListWidget#RecentModelItemsList::item:hover, QListWidget#LatestNewsList::item:hover {
   border: 1px solid gray;
+  color: blue;
+}
+
+QToolButton#RecentFileOpenButton {
+  color: gray;
+  text-align: left;
+}
+QToolButton#RecentFileOpenButton:hover {
+  border: 1px solid gray;
+  padding-left: 1px;
   color: blue;
 }
 

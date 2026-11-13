@@ -2,8 +2,6 @@
 // status: correct
 // teardown_command: rm -rf outputState.lua outputState.fmu outputState.log sink.fmu sink.log outputState_systemCall.log temp-outputState/
 
-setCommandLineOptions("-g=MetaModelica");
-
 loadString("
 model outputState
   output Real y(start=y_start, fixed=true);
@@ -41,16 +39,16 @@ oms_initialize("test");
 (v2,_):=oms_getReal("test.root.B.u");
 
 print("info:    Initialization\n");
-print("info:      A.y: " + realString(v1)+"\n");
-print("info:      B.u: " + realString(v1)+"\n");
+print("info:      A.y: " + String(v1)+"\n");
+print("info:      B.u: " + String(v1)+"\n");
 
 oms_simulate("test");
 (v1,_):=oms_getReal("test.root.A.y");
 (v2,_):=oms_getReal("test.root.B.u");
 
 print("info:    Simulation\n");
-print("info:      A.y: " + realString(v1)+"\n");
-print("info:      B.u: " + realString(v1)+"\n");
+print("info:      A.y: " + String(v1)+"\n");
+print("info:      B.u: " + String(v1)+"\n");
 
 oms_terminate("test");
 oms_delete("test");
@@ -58,7 +56,6 @@ unloadOMSimulator();
 
 
 // Result:
-// true
 // true
 // ""
 // "outputState.fmu"
@@ -75,8 +72,8 @@ unloadOMSimulator();
 // info:      A.y: 1.5
 // info:      B.u: 1.5
 // info:    Simulation
-// info:      A.y: 0.5000000000000554
-// info:      B.u: 0.5000000000000554
+// info:      A.y: 0.5
+// info:      B.u: 0.5
 // info:    Final Statistics for 'test.root':
 //          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
 //          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0

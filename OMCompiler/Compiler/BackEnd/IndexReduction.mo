@@ -1645,7 +1645,7 @@ algorithm
     expcrstates := List.map(stateCandidates, BackendVariable.varExp);
     crstates := List.map(stateCandidates, BackendVariable.varCref);
     expcrstatesstart := List.map(crstates, makeStartExp);
-    expcrdstates := List.map(expcrstates,makeder);
+    expcrdstates := List.map1(stateCandidates,makeStateCandidateDer,oVars);
     expcrset := List.map(crset,Expression.crefExp);
     expcrdset := List.map(expcrset,makeder);
     expcrA := Expression.crefExp(crA);
@@ -1865,7 +1865,9 @@ algorithm
         // force inline
         funcs := BackendDAEUtil.getFunctions(inShared);
         (eqnslst,_) := BackendEquation.traverseExpsOfEquationList(eqnslst, forceInlinEqn,funcs);
-        // try to make scalar
+        // try to make scalar, also the tuple equations (a, b) = (f(x), g(x)) the
+        // inlining produced, else no variable is solvable in them
+        eqnslst := List.flatten(list(BackendEquation.scalarComplexEquations(eq, funcs) for eq in eqnslst));
         (eqnslst,_) := InlineArrayEquations.getScalarArrayEqns(eqnslst);
         // convert x:STATE(n) if n>1 to DER.DER....x
         (hov,ht) := List.map1Fold(iHov,getLevelStates,level,HashTableCrIntToExp.emptyHashTable());
@@ -3622,6 +3624,18 @@ algorithm
         fail();
   end matchcontinue;
 end selectDummyDerivatives2new;
+
+protected function makeStateCandidateDer
+  "der(x), or $DER.x if it already exists: nothing replaces der($DER.x) afterwards."
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inVars;
+  output DAE.Exp outExp;
+protected
+  DAE.ComponentRef dcr = ComponentReference.crefPrefixDer(BackendVariable.varCref(inVar));
+algorithm
+  outExp := if BackendVariable.containsCref(dcr, inVars) then Expression.crefExp(dcr)
+                                                         else makeder(BackendVariable.varExp(inVar));
+end makeStateCandidateDer;
 
 public function makeder "Author: Frenkel TUD 2012-09"
   input DAE.Exp inExp;

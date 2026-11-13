@@ -18,7 +18,6 @@ equation
 der(H2) = k2*HI^2 - k1*H2*I2;
 der(I2) = k2*HI^2 - k1*H2*I2;
 der(HI) = 2*k1*H2*I2 - 2*k2*HI^2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HydrogenIodide;
 
 // class HydrogenIodide

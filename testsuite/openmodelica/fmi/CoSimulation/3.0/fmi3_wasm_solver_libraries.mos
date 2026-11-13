@@ -25,7 +25,7 @@ diffSimulationResults("M_kinsol_res.mat", "ref_res.mat", "diff_kinsol", 1e-6, 1e
 // ""
 // record SimulationResult
 //     resultFile = "ref_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -40,7 +40,7 @@ diffSimulationResults("M_kinsol_res.mat", "ref_res.mat", "diff_kinsol", 1e-6, 1e
 // "
 // record SimulationResult
 //     resultFile = "M_kinsol.fmu_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MixedSystems', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'MixedSystems', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | in-wasm simulation (dassl) wrote 502 rows
 // LOG_SUCCESS       | info    | The simulation finished successfully.

@@ -1,7 +1,6 @@
 // name: MoveClass2
 // keywords: moveClass
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the moveClass API.
 //

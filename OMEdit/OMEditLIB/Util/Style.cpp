@@ -99,6 +99,7 @@ QPalette Style::darkPalette()
   palette.setColor(QPalette::Dark, QColor(24, 24, 27));
   palette.setColor(QPalette::Shadow, Qt::black);
   palette.setColor(QPalette::Disabled, QPalette::WindowText, disabledText);
+  palette.setColor(QPalette::Disabled, QPalette::Base, alternateBase);
   palette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
   palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledText);
   palette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(55, 65, 81));
@@ -188,12 +189,59 @@ QColor Style::infoBarTextColor()
 }
 
 /*!
+ * \brief Style::messagesCommandColor
+ * Color of an echoed command in a messages/output window.\n
+ * The other message colors are user configurable via the Messages options page.
+ * \return
+ */
+QColor Style::messagesCommandColor()
+{
+  return pick(Qt::blue, QColor(96, 165, 250));
+}
+
+/*!
+ * \brief Style::readOnlyViewBackgroundColor
+ * Area around the extent of a system library class, an element mode or a visualization view.
+ */
+QColor Style::readOnlyViewBackgroundColor()
+{
+  return pick(Qt::white, QColor(220, 220, 220));
+}
+
+/*!
+ * \brief Style::iconViewBackgroundColor
+ * Area around the extent in the Icon View.
+ */
+QColor Style::iconViewBackgroundColor()
+{
+  return pick(QColor(229, 244, 255), QColor(194, 207, 217));
+}
+
+/*!
+ * \brief Style::diagramViewBackgroundColor
+ * Area around the extent in the Diagram View.
+ */
+QColor Style::diagramViewBackgroundColor()
+{
+  return pick(QColor(242, 242, 242), QColor(205, 205, 205));
+}
+
+/*!
  * \brief Style::documentationPageBackgroundColor
- * Painted behind the documentation page in dark mode; equals the palette Window color.
+ * Background of the documentation page in dark mode; equals the palette Base color.
  */
 QColor Style::documentationPageBackgroundColor()
 {
-  return QColor(32, 33, 36);
+  return QColor(31, 41, 55);
+}
+
+/*!
+ * \brief Style::documentationPageTextColor
+ * Text of the documentation page in dark mode; equals the palette Text color.
+ */
+QColor Style::documentationPageTextColor()
+{
+  return QColor(243, 244, 246);
 }
 
 /*!

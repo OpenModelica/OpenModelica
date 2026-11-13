@@ -49,6 +49,11 @@ static const double DASSL_STEP_EPS = 1e-13;
  * defines the minimal step size
  */
 static const double MINIMAL_STEP_SIZE = 1e-12;
+/*
+ * used in cvode_solver.c, ida_solver.c and dassl.c: how often one step
+ * continues after the solver's work quota for one call ran out
+ */
+static const int SOLVER_WORK_RETRIES = 10;
 static const double GB_MINIMAL_STEP_SIZE = 1e-20;
 
 /*

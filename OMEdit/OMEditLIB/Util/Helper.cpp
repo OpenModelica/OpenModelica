@@ -79,6 +79,7 @@ QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::jarFileTypes = "Jar Files (*.jar)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.arrow *.csv *.fmu);;Visualization MAT(*.mat *.arrow);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
+QString Helper::drawioFileTypes = "draw.io Files (*.drawio)";
 int Helper::treeIndentation = 20;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::tabWidth = 20;
@@ -113,11 +114,7 @@ QString Helper::utf8 = "UTF-8";
 const char * const Helper::fmuPlatformNamePropertyId = "fmu-platform-name";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
-#ifdef Q_OS_MAC
-QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
-#else
-QString Helper::toolsOptionsPath = tr("Tools->Options");
-#endif
+QString Helper::toolsOptionsPath;
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
 QStringList Helper::timeDisplayUnits = QStringList() << "min" << "h" << "d";
 /* Meta Modelica Types */
@@ -172,10 +169,6 @@ QString Helper::cancel;
 QString Helper::reset;
 QString Helper::close;
 QString Helper::error;
-QString Helper::percentageLabel;
-QString Helper::chooseTransparency;
-QString Helper::chooseSpecularity;
-QString Helper::chooseColor;
 QString Helper::chooseFile;
 QString Helper::chooseFiles;
 QString Helper::saveFile;
@@ -183,6 +176,7 @@ QString Helper::attributes;
 QString Helper::properties;
 QString Helper::add;
 QString Helper::edit;
+QString Helper::editArray;
 QString Helper::save;
 QString Helper::saveTip;
 QString Helper::saveAs;
@@ -191,8 +185,6 @@ QString Helper::saveTotal;
 QString Helper::saveTotalTip;
 QString Helper::apply;
 QString Helper::chooseDirectory;
-QString Helper::addPath;
-QString Helper::removePath;
 QString Helper::addItem;
 QString Helper::removeItem;
 QString Helper::general;
@@ -222,7 +214,7 @@ QString Helper::sensitivityOptimization;
 QString Helper::exportEncryptedPackage;
 QString Helper::exportEncryptedPackageTip;
 QString Helper::exportReadonlyPackage;
-QString Helper::exportRealonlyPackageTip;
+QString Helper::exportReadonlyPackageTip;
 QString Helper::importFMU;
 QString Helper::importFMUTip;
 QString Helper::exportXML;
@@ -251,6 +243,10 @@ QString Helper::question;
 QString Helper::search;
 QString Helper::findUsage;
 QString Helper::findUsageTip;
+QString Helper::classDiagram;
+QString Helper::classDiagramTip;
+QString Helper::crmlDiagram;
+QString Helper::crmlDiagramTip;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClass;
@@ -258,8 +254,6 @@ QString Helper::unloadClassTip;
 QString Helper::reloadClass;
 QString Helper::reloadClassTip;
 QString Helper::unloadTextFileTip;
-QString Helper::unloadCRMLTip;
-QString Helper::unloadMOSTip;
 QString Helper::unloadOMSModelTip;
 QString Helper::refresh;
 QString Helper::simulate;
@@ -296,7 +290,6 @@ QString Helper::grid;
 QString Helper::horizontal;
 QString Helper::vertical;
 QString Helper::component;
-QString Helper::element;
 QString Helper::scaleFactor;
 QString Helper::preserveAspectRatio;
 QString Helper::originX;
@@ -344,19 +337,11 @@ QString Helper::left;
 QString Helper::center;
 QString Helper::right;
 QString Helper::createConnection;
-QString Helper::connectionAttributes;
 QString Helper::createTransition;
 QString Helper::editTransition;
-QString Helper::findVariables;
 QString Helper::filterVariables;
 QString Helper::openClass;
 QString Helper::openClassTip;
-QString Helper::viewIcon;
-QString Helper::viewIconTip;
-QString Helper::viewDiagram;
-QString Helper::viewDiagramTip;
-QString Helper::viewText;
-QString Helper::viewTextTip;
 QString Helper::viewDocumentation;
 QString Helper::viewDocumentationTip;
 QString Helper::dontShowThisMessageAgain;
@@ -416,8 +401,6 @@ QString Helper::animationPause;
 QString Helper::animationPauseTip;
 QString Helper::animationRepeat;
 QString Helper::animationRepeatTip;
-QString Helper::simulationParams;
-QString Helper::simulationParamsTip;
 QString Helper::newOMSimulatorModel;
 QString Helper::newOMSimulatorModelTip;
 QString Helper::addSystem;
@@ -444,8 +427,6 @@ QString Helper::bold;
 QString Helper::italic;
 QString Helper::underline;
 QString Helper::condition;
-QString Helper::immediate;
-QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
 QString Helper::saveContentsInOneFile;
@@ -454,8 +435,6 @@ QString Helper::startTime;
 QString Helper::stopTime;
 QString Helper::status;
 QString Helper::speed;
-QString Helper::terminateInstantiation;
-QString Helper::terminateInstantiationTip;
 QString Helper::archivedSimulations;
 QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
@@ -472,6 +451,11 @@ QString Helper::switchModel;
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
+#ifdef Q_OS_MAC
+  Helper::toolsOptionsPath = tr("OMEdit->Preferences");
+#else
+  Helper::toolsOptionsPath = tr("Tools->Options");
+#endif
   Helper::newModelicaClass = tr("Modelica Class");
   Helper::newModelicaClassTip = tr("Create New Modelica Class");
   Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
@@ -497,10 +481,6 @@ void Helper::initHelperVariables()
   Helper::reset = tr("Reset");
   Helper::close = tr("Close");
   Helper::error = tr("Error");
-  Helper::percentageLabel = tr("Percentage:");
-  Helper::chooseTransparency = tr("Choose Transparency");
-  Helper::chooseSpecularity = tr("Choose Specularity");
-  Helper::chooseColor = tr("Choose Color");
   Helper::chooseFile = tr("Choose File");
   Helper::chooseFiles = tr("Choose File(s)");
   Helper::saveFile = tr("Save File");
@@ -508,6 +488,7 @@ void Helper::initHelperVariables()
   Helper::properties = tr("Properties");
   Helper::add = tr("Add");
   Helper::edit = tr("Edit");
+  Helper::editArray = tr("Edit Array");
   Helper::save = tr("Save");
   Helper::saveTip = tr("Save a file");
   Helper::saveAs = tr("Save As");
@@ -517,8 +498,6 @@ void Helper::initHelperVariables()
   Helper::apply = tr("Apply");
   Helper::importFMU = tr("Import FMU");
   Helper::chooseDirectory = tr("Choose Directory");
-  Helper::addPath = tr("Add Path");
-  Helper::removePath = tr("Remove Path");
   Helper::addItem = tr("Add");
   Helper::removeItem = tr("Remove");
   Helper::general = tr("General");
@@ -543,14 +522,14 @@ void Helper::initHelperVariables()
   Helper::instantiateModelTip = tr("Instantiate/Flatten the Modelica class");
   Helper::FMU = tr("FMU");
   Helper::exportt = tr("Export");
-  Helper::exportFMUTip = tr("Exports the model as Functional Mockup Unit (FMU)");
+  Helper::exportFMUTip = tr("Exports the model as Functional Mock-up Unit (FMU)");
   Helper::sensitivityOptimization = tr("Sensitivity Optimization");
   Helper::exportReadonlyPackage = tr("Read-only Package");
-  Helper::exportRealonlyPackageTip = tr("Exports the package as read-only package");
+  Helper::exportReadonlyPackageTip = tr("Exports the package as a read-only package");
   Helper::exportEncryptedPackage = tr("Encrypted Package");
-  Helper::exportEncryptedPackageTip = tr("Exports the package as Encrytped package");
+  Helper::exportEncryptedPackageTip = tr("Exports the package as an encrypted package");
   Helper::importFMU = tr("Import FMU");
-  Helper::importFMUTip = tr("Imports the model from Functional Mockup Interface (FMU)");
+  Helper::importFMUTip = tr("Imports the model from a Functional Mock-up Unit (FMU)");
   Helper::exportXML = tr("XML");
   Helper::exportXMLTip = tr("Exports the model as XML");
   Helper::exportToOMNotebook = tr("Export to OMNotebook");
@@ -577,6 +556,10 @@ void Helper::initHelperVariables()
   Helper::search = tr("Search");
   Helper::findUsage = tr("Find Usage");
   Helper::findUsageTip = tr("Finds the usage of class");
+  Helper::classDiagram = tr("Class Diagram");
+  Helper::classDiagramTip = tr("Shows the UML class diagram of the class");
+  Helper::crmlDiagram = tr("CRML Diagram");
+  Helper::crmlDiagramTip = tr("Shows the class-object diagram of the CRML model");
   Helper::duplicate = tr("Duplicate");
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
@@ -584,8 +567,6 @@ void Helper::initHelperVariables()
   Helper::reloadClass = tr("Reload");
   Helper::reloadClassTip = tr("Reload the Modelica class");
   Helper::unloadTextFileTip = tr("Unloads the file without deleting it from the file system");
-  Helper::unloadCRMLTip = tr("Unload the CRML file");
-  Helper::unloadMOSTip = tr("Unload the Modelica Script file");
   Helper::unloadOMSModelTip = tr("Unloads the model");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
@@ -611,7 +592,7 @@ void Helper::initHelperVariables()
   Helper::translateCRML = tr("Translate");
   Helper::translateCRMLTip = tr("Translates the CRML model to Modelica");
   Helper::translateAsCRML = tr("Translate As");
-  Helper::translateAsCRMLTip = tr("Translates As the CRML model to Modelica");
+  Helper::translateAsCRMLTip = tr("Translates the CRML model to Modelica with options");
   Helper::runScript = tr("Run");
   Helper::runScriptTip = tr("Runs the Modelica Script");
   Helper::options = tr("Options");
@@ -622,7 +603,6 @@ void Helper::initHelperVariables()
   Helper::horizontal = tr("Horizontal");
   Helper::vertical = tr("Vertical");
   Helper::component = tr("Component");
-  Helper::element = tr("Element");
   Helper::scaleFactor = tr("Scale factor:");
   Helper::preserveAspectRatio = tr("Preserve aspect ratio");
   Helper::originX = tr("OriginX:");
@@ -630,7 +610,7 @@ void Helper::initHelperVariables()
   Helper::rotation = tr("Rotation:");
   Helper::thickness = tr("Thickness:");
   Helper::smooth = tr("Smooth:");
-  Helper::bezier = tr("Bezier");
+  Helper::bezier = tr("Bézier");
   Helper::startArrow = tr("Start Arrow:");
   Helper::endArrow = tr("End Arrow:");
   Helper::arrowSize = tr("Arrow Size:");
@@ -670,19 +650,11 @@ void Helper::initHelperVariables()
   Helper::center = tr("Center");
   Helper::right = tr("Right");
   Helper::createConnection = tr("Create Connection");
-  Helper::connectionAttributes = tr("Connection Attributes");
   Helper::createTransition = tr("Create Transition");
   Helper::editTransition = tr("Edit Transition");
-  Helper::findVariables = tr("Find Variables");
   Helper::filterVariables = tr("Filter Variables");
   Helper::openClass = tr("Open Class");
   Helper::openClassTip = tr("Opens the class details");
-  Helper::viewIcon = tr("View Icon");
-  Helper::viewIconTip = tr("Opens the class icon");
-  Helper::viewDiagram = tr("View Diagram");
-  Helper::viewDiagramTip = tr("Opens the class diagram");
-  Helper::viewText = tr("View Text");
-  Helper::viewTextTip = tr("Opens the class text");
   Helper::viewDocumentation = tr("View Documentation");
   Helper::viewDocumentationTip = tr("Opens the class documentation");
   Helper::dontShowThisMessageAgain = tr("Don't show this message again");
@@ -713,7 +685,7 @@ void Helper::initHelperVariables()
   Helper::unstageCurrentFileFromCommit = tr("Unstage Current File");
   Helper::unstageCurrentFileFromCommitTip = tr("Unstaging current file from next commit");
   Helper::commitFiles = tr("Commit");
-  Helper::commitFilesTip = tr("Commiting modified files to the repository");
+  Helper::commitFilesTip = tr("Committing modified files to the repository");
   Helper::resume = tr("Resume");
   Helper::interrupt = tr("Interrupt");
   Helper::exit = tr("Exit");
@@ -742,14 +714,12 @@ void Helper::initHelperVariables()
   Helper::animationRepeatTip = tr("Repeat the animation");
   Helper::animationPause = tr("Pause");
   Helper::animationPauseTip = tr("Pause the animation");
-  Helper::simulationParams = tr("Simulation Parameters");
-  Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
   Helper::newOMSimulatorModel = tr("SSP Model");
   Helper::newOMSimulatorModelTip = tr("Creates a new SSP Model");
   Helper::addSystem = tr("Add System");
-  Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");
+  Helper::addSystemTip = tr("Adds the system, e.g. FMI or TLM");
   Helper::addSubModel = tr("Add SubModel");
-  Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
+  Helper::addSubModelTip = tr("Adds the submodel, e.g. FMU or table");
   Helper::addConnector = tr("Add Connector");
   Helper::addConnectorTip = tr("Adds the connector");
   Helper::running = tr("Running");
@@ -770,8 +740,6 @@ void Helper::initHelperVariables()
   Helper::italic = tr("Italic");
   Helper::underline = tr("Underline");
   Helper::condition = tr("Condition:");
-  Helper::immediate = tr("Immediate");
-  Helper::synchronize = tr("Synchronize");
   Helper::priority = tr("Priority:");
   Helper::secs = tr("s");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
@@ -780,8 +748,6 @@ void Helper::initHelperVariables()
   Helper::stopTime = tr("Stop Time");
   Helper::status = tr("Status");
   Helper::speed = tr("Speed:");
-  Helper::terminateInstantiation = tr("Terminate Instantiation");
-  Helper::terminateInstantiationTip = tr("Terminates the model instantiation");
   Helper::archivedSimulations = tr("Archived Simulations");
   Helper::systemSimulationInformation = tr("System Simulation Information");
   Helper::translationFlags = tr("Translation Flags");
@@ -845,7 +811,7 @@ QString GUIMessages::getMessage(int type)
     case UNABLE_TO_DELETE_FILE:
       return tr("Unable to delete <b>%1</b>.");
     case FILE_NOT_FOUND:
-      return tr("The file <b>%1</b> not found.");
+      return tr("The file <b>%1</b> was not found.");
     case ERROR_OPENING_FILE:
       return tr("Error opening the file <b>%1</b>. %2");
     case UNABLE_TO_LOAD_MODEL:
@@ -883,7 +849,7 @@ QString GUIMessages::getMessage(int type)
     case XML_GENERATED:
       return tr("The XML is generated at <b>%1</b>.");
     case FIGARO_GENERATED:
-      return tr("The FIGARO is generated.");
+      return tr("The Figaro file is generated.");
     case ENCRYPTED_PACKAGE_GENERATED:
       return tr("The encrypted package is generated at <b>%1</b>.");
     case READONLY_PACKAGE_GENERATED:
@@ -903,7 +869,7 @@ QString GUIMessages::getMessage(int type)
     case SET_INFO_XML_FLAG:
       return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the -d=infoXmlOperations flag via <b>Simulation Setup->Translation Flags->Additional Translation Flags</b> and simulate again.");
     case DEBUG_CONFIGURATION_EXISTS_MSG:
-      return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2<b>.");
+      return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2</b>.");
     case DEBUG_CONFIGURATION_SIZE_EXCEED:
       return tr("Maximum <b>%1</b> debug configurations are allowed.");
     case DELETE_DEBUG_CONFIGURATION_MSG:

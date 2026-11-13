@@ -48,6 +48,42 @@ encapsulated package NFClassDiagram
   import Absyn;
   import SCode;
 
+  constant Integer GENERALIZATION = 1;
+  constant Integer COMPOSITION = 2;
+  constant Integer DEPENDENCY = 3;
+  constant Integer NESTING = 4;
+  constant Integer ASSOCIATION = 5;
+
+  uniontype Member
+    "A line in a box, with the link it goes to, or an empty one."
+    record MEMBER
+      String text;
+      String link;
+    end MEMBER;
+  end Member;
+
+  uniontype Box
+    "A box of the diagram, as the generators draw it: a class or an instance."
+    record BOX
+      String id "The name of the box in the diagram text.";
+      String title;
+      String stereotype;
+      Boolean isAbstract "Drawn in italics.";
+      String link;
+      list<Member> members;
+    end BOX;
+  end Box;
+
+  uniontype Edge
+    record EDGE
+      Integer kind;
+      String source "The id of the box it's from.";
+      String target "The id of the box it points to.";
+      String label;
+      String multiplicity;
+    end EDGE;
+  end Edge;
+
 protected
   import AbsynUtil;
   import Dump;
@@ -60,11 +96,6 @@ protected
   import System;
   import UnorderedMap;
   import UnorderedSet;
-
-  constant Integer GENERALIZATION = 1;
-  constant Integer COMPOSITION = 2;
-  constant Integer DEPENDENCY = 3;
-  constant Integer NESTING = 4;
 
   constant Integer INHERITED = 0 "A base class or a nested class, same level.";
   constant Integer USED = 1 "A used class, one level more.";
@@ -152,8 +183,7 @@ public
       end for;
     end while;
 
-    diagram := if format == "drawio" then drawio(name, d)
-               elseif format == "mermaid" then mermaid(d) else plantuml(d);
+    diagram := render(format, name, classBoxes(d), classEdges(d));
   end generate;
 
 protected
@@ -754,38 +784,118 @@ protected
     res := listReverse(res);
   end edges;
 
-  function plantuml
+  function classBoxes
+    "The boxes of the classes in the diagram."
     input Diagram d;
-    output String str;
+    output list<Box> boxes = {};
   protected
-    list<String> strl = {"hide empty members", "skinparam classAttributeIconSize 0", "@startuml"};
     list<String> lines;
+    list<SCode.Element> elements;
+  algorithm
+    for n in nodes(d) loop
+      (lines, elements) := members(n, d);
+      boxes := BOX(n.id, n.name, stereotype(n.element), SCodeUtil.isPartial(n.element), classLink(n.name),
+        list(MEMBER(l, memberLink(n, e)) threaded for l in lines, e in elements)) :: boxes;
+    end for;
+
+    boxes := listReverse(boxes);
+  end classBoxes;
+
+  function classEdges
+    "The relations between the classes in the diagram."
+    input Diagram d;
+    output list<Edge> res = {};
+  protected
     Node source, target;
     Relation r;
   algorithm
-    for n in nodes(d) loop
-      lines := members(n, d);
-      strl := stringAppendList({if SCodeUtil.isPartial(n.element) then "abstract class \"" else "class \"",
-        n.name, "\" as ", n.id, " <<", stereotype(n.element), ">>", if listEmpty(lines) then "" else " {"}) :: strl;
+    for e in edges(d) loop
+      (source, target, r) := e;
+      res := EDGE(r.kind, source.id, target.id, r.label, r.multiplicity) :: res;
+    end for;
 
-      if not listEmpty(lines) then
-        for l in lines loop
-          strl := ("  {field} " + l) :: strl;
+    res := listReverse(res);
+  end classEdges;
+
+  function memberLink
+    "Returns the link of a line in the box of a class: the line in the file the
+     element it shows is declared on, if it's known, and for a component also
+     its name, so that a viewer can select it in a graphical view instead."
+    input Node node;
+    input SCode.Element element;
+    output String link = "";
+  protected
+    SourceInfo info = SCodeUtil.elementInfo(element);
+  algorithm
+    if info.lineNumberStart > 0 then
+      link := elementLink(node.name, info.lineNumberStart,
+        if SCodeUtil.isComponent(element) then SCodeUtil.elementName(element) else "");
+    end if;
+  end memberLink;
+
+public
+  function render
+    "Returns the boxes and edges as a PlantUML, Mermaid or draw.io diagram."
+    input String format "plantuml, mermaid or drawio.";
+    input String name "The name of the diagram, for draw.io.";
+    input list<Box> boxes;
+    input list<Edge> edges;
+    output String str;
+  algorithm
+    str := if format == "drawio" then drawio(name, boxes, edges)
+           elseif format == "mermaid" then mermaid(boxes, edges) else plantuml(boxes, edges);
+  end render;
+
+  function classLink
+    "modelica://<class>, the link Modelica documentation uses for a class."
+    input String name;
+    output String link = "modelica://" + urlEscape(name);
+  end classLink;
+
+  function elementLink
+    "modelica://<class>?lineNumber=<line in the file>, with &element=<name> if
+     the element is a component."
+    input String className;
+    input Integer lineNumber;
+    input String elementName = "";
+    output String link;
+  algorithm
+    link := classLink(className) + "?lineNumber=" + intString(lineNumber);
+
+    if not stringEmpty(elementName) then
+      link := link + "&element=" + urlEscape(elementName);
+    end if;
+  end elementLink;
+
+protected
+  function plantuml
+    input list<Box> boxes;
+    input list<Edge> edges;
+    output String str;
+  protected
+    list<String> strl = {"hide empty members", "skinparam classAttributeIconSize 0", "@startuml"};
+  algorithm
+    for b in boxes loop
+      strl := stringAppendList({if b.isAbstract then "abstract class \"" else "class \"",
+        b.title, "\" as ", b.id, " <<", b.stereotype, ">>", if listEmpty(b.members) then "" else " {"}) :: strl;
+
+      if not listEmpty(b.members) then
+        for m in b.members loop
+          strl := ("  {field} " + m.text) :: strl;
         end for;
 
         strl := "}" :: strl;
       end if;
     end for;
 
-    for e in edges(d) loop
-      (source, target, r) := e;
-
+    for e in edges loop
       strl := (stringAppendList(
-        if r.kind == GENERALIZATION then {target.id, " <|-- ", source.id}
-        elseif r.kind == COMPOSITION then {source.id, " *-- ",
-          if stringEmpty(r.multiplicity) then "" else "\"" + r.multiplicity + "\" ", target.id}
-        elseif r.kind == DEPENDENCY then {source.id, " ..> ", target.id}
-        else {source.id, " +-- ", target.id}) + (if stringEmpty(r.label) then "" else " : " + r.label)) :: strl;
+        if e.kind == GENERALIZATION then {e.target, " <|-- ", e.source}
+        elseif e.kind == COMPOSITION then {e.source, " *-- ",
+          if stringEmpty(e.multiplicity) then "" else "\"" + e.multiplicity + "\" ", e.target}
+        elseif e.kind == DEPENDENCY then {e.source, " ..> ", e.target}
+        elseif e.kind == ASSOCIATION then {e.source, " -- ", e.target}
+        else {e.source, " +-- ", e.target}) + (if stringEmpty(e.label) then "" else " : " + e.label)) :: strl;
     end for;
 
     strl := "@enduml\n" :: strl;
@@ -795,39 +905,33 @@ protected
   function mermaid
     "Returns the diagram as a Mermaid class diagram. Mermaid has no nested
      classes, so a nested class is linked to the class it's declared in."
-    input Diagram d;
+    input list<Box> boxes;
+    input list<Edge> edges;
     output String str;
   protected
     list<String> strl = {"classDiagram"};
-    list<String> lines;
-    Node source, target;
-    Relation r;
     String label;
   algorithm
-    for n in nodes(d) loop
-      strl := stringAppendList({"  class ", n.id, "[\"", n.name, "\"] {"}) :: strl;
-      strl := stringAppendList({"    <<", if SCodeUtil.isPartial(n.element) then "partial " else "",
-        stereotype(n.element), ">>"}) :: strl;
+    for b in boxes loop
+      strl := stringAppendList({"  class ", b.id, "[\"", b.title, "\"] {"}) :: strl;
+      strl := stringAppendList({"    <<", if b.isAbstract then "partial " else "", b.stereotype, ">>"}) :: strl;
 
-      lines := members(n, d);
-
-      for l in lines loop
-        strl := ("    " + mermaidEscape(l)) :: strl;
+      for m in b.members loop
+        strl := ("    " + mermaidEscape(m.text)) :: strl;
       end for;
 
       strl := "  }" :: strl;
     end for;
 
-    for e in edges(d) loop
-      (source, target, r) := e;
-      label := if r.kind == NESTING and stringEmpty(r.label) then "nested" else r.label;
+    for e in edges loop
+      label := if e.kind == NESTING and stringEmpty(e.label) then "nested" else e.label;
 
       strl := (stringAppendList(
-        if r.kind == GENERALIZATION then {"  ", target.id, " <|-- ", source.id}
-        elseif r.kind == COMPOSITION then {"  ", source.id, " *-- ",
-          if stringEmpty(r.multiplicity) then "" else "\"" + mermaidEscape(r.multiplicity) + "\" ", target.id}
-        elseif r.kind == DEPENDENCY then {"  ", source.id, " ..> ", target.id}
-        else {"  ", source.id, " -- ", target.id}) + (if stringEmpty(label) then "" else " : " + mermaidEscape(label))) :: strl;
+        if e.kind == GENERALIZATION then {"  ", e.target, " <|-- ", e.source}
+        elseif e.kind == COMPOSITION then {"  ", e.source, " *-- ",
+          if stringEmpty(e.multiplicity) then "" else "\"" + mermaidEscape(e.multiplicity) + "\" ", e.target}
+        elseif e.kind == DEPENDENCY then {"  ", e.source, " ..> ", e.target}
+        else {"  ", e.source, " -- ", e.target}) + (if stringEmpty(label) then "" else " : " + mermaidEscape(label))) :: strl;
     end for;
 
     str := stringDelimitList(listReverse("" :: strl), "\n");
@@ -851,44 +955,38 @@ protected
   end mermaidEscape;
 
   function drawio
-    "Returns the diagram as a draw.io (diagrams.net) file. The classes are laid
+    "Returns the diagram as a draw.io (diagrams.net) file. The boxes are laid
      out in rows, base classes above the classes that extend them; draw.io can
-     arrange them in other ways (Arrange > Layout). Every class links to
-     modelica://<class> and every line in it to the line of the element it shows,
-     modelica://<class>?lineNumber=<line in the file>, with &element=<name> for a
-     component."
+     arrange them in other ways (Arrange > Layout). Every box links to its link,
+     e.g. modelica://<class>, and every line in it to its own, e.g. the line of
+     the element it shows, modelica://<class>?lineNumber=<line in the file>,
+     with &element=<name> for a component."
     input String name;
-    input Diagram d;
+    input list<Box> boxes;
+    input list<Edge> edges;
     output String str;
   protected
-    list<Node> ns = nodes(d);
-    list<tuple<Node, Node, Relation>> es = edges(d);
     UnorderedMap<String, Integer> ranks = UnorderedMap.new<Integer>(stringHashDjb2, stringEq);
     Integer rank, max_rank = 0, x, y = 20, w, h, row_h, i = 0;
     list<String> strl, lines, links;
-    list<SCode.Element> elements;
-    Node source, target;
-    Relation r;
     String label;
     Boolean changed = true;
   algorithm
-    // The rank of a class is one more than the rank of its lowest base class.
-    for n in ns loop
-      UnorderedMap.add(n.name, 0, ranks);
+    // The rank of a box is one more than the rank of its lowest base class.
+    for b in boxes loop
+      UnorderedMap.add(b.id, 0, ranks);
     end for;
 
-    while changed and i < listLength(ns) loop
+    while changed and i < listLength(boxes) loop
       changed := false;
       i := i + 1;
 
-      for e in es loop
-        (source, target, r) := e;
+      for e in edges loop
+        if e.kind == GENERALIZATION then
+          rank := UnorderedMap.getOrFail(e.target, ranks) + 1;
 
-        if r.kind == GENERALIZATION then
-          rank := UnorderedMap.getOrFail(target.name, ranks) + 1;
-
-          if rank > UnorderedMap.getOrFail(source.name, ranks) then
-            UnorderedMap.add(source.name, rank, ranks);
+          if rank > UnorderedMap.getOrFail(e.source, ranks) then
+            UnorderedMap.add(e.source, rank, ranks);
             max_rank := max(max_rank, rank);
             changed := true;
           end if;
@@ -905,23 +1003,23 @@ protected
       x := 20;
       row_h := 0;
 
-      for n in ns loop
-        if UnorderedMap.getOrFail(n.name, ranks) == rk then
-          (lines, elements) := members(n, d);
-          w := 20 + 7 * max(stringLength(l) for l in stereotype(n.element) :: n.name :: lines);
+      for b in boxes loop
+        if UnorderedMap.getOrFail(b.id, ranks) == rk then
+          lines := list(m.text for m in b.members);
+          w := 20 + 7 * max(stringLength(l) for l in b.stereotype :: b.title :: lines);
           h := 44 + (if listEmpty(lines) then 0 else 8 + 16 * listLength(lines));
-          label := "<p style=\"margin:4px;text-align:center\"><i>&#171;" + htmlEscape(stereotype(n.element)) +
-            "&#187;</i><br/>" + (if SCodeUtil.isPartial(n.element) then "<b><i>" + htmlEscape(n.name) + "</i></b>"
-            else "<b>" + htmlEscape(n.name) + "</b>") + "</p>";
+          label := "<p style=\"margin:4px;text-align:center\"><i>&#171;" + htmlEscape(b.stereotype) +
+            "&#187;</i><br/>" + (if b.isAbstract then "<b><i>" + htmlEscape(b.title) + "</i></b>"
+            else "<b>" + htmlEscape(b.title) + "</b>") + "</p>";
 
           if not listEmpty(lines) then
-            links := list(memberLink(n, l, e) threaded for l in lines, e in elements);
+            links := list(memberHtml(m) for m in b.members);
             label := label + "<hr size=\"1\"/><p style=\"margin:0 4px\">" +
               stringDelimitList(links, "<br/>") + "</p>";
           end if;
 
-          strl := stringAppendList({"      <UserObject id=\"", n.id, "\" label=\"", xmlEscape(label),
-            "\" link=\"", xmlEscape(classLink(n.name)), "\">",
+          strl := stringAppendList({"      <UserObject id=\"", b.id, "\" label=\"", xmlEscape(label),
+            "\" link=\"", xmlEscape(b.link), "\">",
             "<mxCell style=\"verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=nowrap;\" vertex=\"1\" parent=\"1\">",
             "<mxGeometry x=\"", intString(x), "\" y=\"", intString(y), "\" width=\"", intString(w),
             "\" height=\"", intString(h), "\" as=\"geometry\"/></mxCell></UserObject>"}) :: strl;
@@ -934,50 +1032,28 @@ protected
     end for;
 
     i := 0;
-    for e in es loop
-      (source, target, r) := e;
+    for e in edges loop
       i := i + 1;
-      label := if stringEmpty(r.multiplicity) then r.label else r.label + " " + r.multiplicity;
+      label := if stringEmpty(e.multiplicity) then e.label else e.label + " " + e.multiplicity;
 
       strl := stringAppendList({"      <mxCell id=\"e", intString(i), "\" value=\"", xmlEscape(htmlEscape(label)),
-        "\" style=\"", edgeStyle(r.kind), "html=1;\" edge=\"1\" parent=\"1\" source=\"", source.id,
-        "\" target=\"", target.id, "\"><mxGeometry relative=\"1\" as=\"geometry\"/></mxCell>"}) :: strl;
+        "\" style=\"", edgeStyle(e.kind), "html=1;\" edge=\"1\" parent=\"1\" source=\"", e.source,
+        "\" target=\"", e.target, "\"><mxGeometry relative=\"1\" as=\"geometry\"/></mxCell>"}) :: strl;
     end for;
 
     strl := "</mxfile>\n" :: "  </diagram>" :: "   </mxGraphModel>" :: "    </root>" :: strl;
     str := stringDelimitList(listReverse(strl), "\n");
   end drawio;
 
-  function classLink
-    "modelica://<class>, the link Modelica documentation uses for a class."
-    input String name;
-    output String link = "modelica://" + urlEscape(name);
-  end classLink;
-
-  function memberLink
-    "Returns a line in the box of a class as a link to the line in the file the
-     element it shows is declared on, if it's known, and for a component also
-     its name, so that a viewer can select it in a graphical view instead."
-    input Node node;
-    input String line;
-    input SCode.Element element;
-    output String link;
-  protected
-    SourceInfo info = SCodeUtil.elementInfo(element);
-    String href;
+  function memberHtml
+    "Returns a line in a box as HTML, a link if it has one."
+    input Member member;
+    output String html = htmlEscape(member.text);
   algorithm
-    link := htmlEscape(line);
-
-    if info.lineNumberStart > 0 then
-      href := classLink(node.name) + "?lineNumber=" + intString(info.lineNumberStart);
-
-      if SCodeUtil.isComponent(element) then
-        href := href + "&element=" + urlEscape(SCodeUtil.elementName(element));
-      end if;
-
-      link := "<a href=\"" + htmlEscape(href) + "\" style=\"color:inherit;text-decoration:none\">" + link + "</a>";
+    if not stringEmpty(member.link) then
+      html := "<a href=\"" + htmlEscape(member.link) + "\" style=\"color:inherit;text-decoration:none\">" + html + "</a>";
     end if;
-  end memberLink;
+  end memberHtml;
 
   function urlEscape
     "Escapes what can't be in a URL path; only quoted names have these."
@@ -1001,6 +1077,7 @@ protected
     style := if kind == GENERALIZATION then "endArrow=block;endFill=0;endSize=12;"
       elseif kind == COMPOSITION then "startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;"
       elseif kind == DEPENDENCY then "dashed=1;endArrow=open;endSize=12;"
+      elseif kind == ASSOCIATION then "endArrow=none;"
       else "startArrow=circlePlus;startFill=0;endArrow=none;";
   end edgeStyle;
 

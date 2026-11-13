@@ -41,12 +41,12 @@
 
 #![allow(non_snake_case, non_upper_case_globals)]
 
-use std::cell::RefCell;
-use std::sync::Arc;
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 use metamodelica::SourceInfo;
 use openmodelica_util_datatypes_basic::DoubleEnded;
+use std::cell::RefCell;
+use std::sync::Arc;
 
 // ── Thread-local roots (index 0–8, C: threadData->localRoots) ────────────────
 
@@ -228,17 +228,6 @@ thread_local! {
 
     // Index 28 — MMToJLListIndex
     // Type: unknown — JuliaLink list. Not used in known generated code.
-
-    // Index 29 — packageIndexCacheIndex
-    // Type: Option<metamodelica::Ref<openmodelica_util::JSON::JSON>> — JSON is in
-    // openmodelica_util so there is no circular dep.  This is a nullable root:
-    // `PackageManagement`/`CevalScript` clear it via `setGlobalRoot(idx, 0)`,
-    // the MetaModelica "empty" sentinel.  mmtorust detects that 0-clear
-    // program-wide (see `compute_nullable_global_roots` in codegen.rs) and
-    // lowers the slot as `Option`: clear → `None`, store → `Some(..)`, read →
-    // unwrap-or-fail (so the surrounding `try` recomputes on a miss).
-    pub static packageIndexCacheIndex: RefCell<Option<metamodelica::Ref<crate::JSON::JSON>>> =
-        const { RefCell::new(None) };
 
     /// Index 30 — Shared-library lookup cache.
     ///

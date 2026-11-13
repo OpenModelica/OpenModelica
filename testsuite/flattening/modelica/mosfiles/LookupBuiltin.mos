@@ -1,6 +1,6 @@
 // name: LookupBuiltin
 // status: correct
-// cflags: -d=-newInst
+// suite: ofScripting
 
 loadFile("LookupBuiltin.mo");
 LookupBuiltin.identity("abc");

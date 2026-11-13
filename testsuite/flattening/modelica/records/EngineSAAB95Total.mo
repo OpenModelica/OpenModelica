@@ -29,22 +29,9 @@ end EngineModel;
 model EngineSAAB95
   EngineModel.Engine engine(data=EngineModel.SAAB95i());
   EngineModel.Engine engine2(data=EngineModel.SAAB95i(bore=3,stroke=5));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EngineSAAB95;
 
 // Result:
-// function EngineModel.EngineGeometry "Automatically generated record constructor for EngineModel.EngineGeometry"
-//   input Real bore;
-//   input Real stroke;
-//   output EngineGeometry res;
-// end EngineModel.EngineGeometry;
-//
-// function EngineModel.SAAB95i "Automatically generated record constructor for EngineModel.SAAB95i"
-//   input Real bore = 0.09;
-//   input Real stroke = 0.09;
-//   output SAAB95i res;
-// end EngineModel.SAAB95i;
-//
 // class EngineSAAB95
 //   parameter Real engine.data.bore = 0.09;
 //   parameter Real engine.data.stroke = 0.09;

@@ -3117,7 +3117,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # SYSTEM_CFLAGS comes from ModelicaConfig_msvc.inc, so the generated code and
   # the runtime libraries agree on the defines shaping their shared structs.
   OMC_CFLAGS_OPTIMIZATION=/O2
-  CFLAGS=/nologo /MD $(OMC_CFLAGS_OPTIMIZATION) /EHsc /fp:except /wd4068 /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY $(SYSTEM_CFLAGS) <%extraCflags%>/I"$(OMHOME)/include/omc/cpp/" /I. /I"$(UMFPACK_INCLUDE)" /I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%>
+  CFLAGS=/nologo /MD $(OMC_CFLAGS_OPTIMIZATION) /EHsc /fp:except /wd4068 /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY $(SYSTEM_CFLAGS) <%extraCflags%>/I"$(OMHOME)/include/omc/cpp/" /I. /I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%>
   !IF "$(USE_LOGGER)" == "ON"
   CFLAGS=$(CFLAGS) /DUSE_LOGGER
   !ENDIF
@@ -3149,7 +3149,7 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
-            let staticLibs = '-Wl,--start-group -lOMCppOMCFactory_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppSimulationSettings_static -lOMCppDataExchange_static -lOMCppDgesvSolver_static -lOMCppNewton_static -lOMCppLinearSolver_static -lOMCppEuler_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppIDA_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+            let staticLibs = '-Wl,--start-group -lOMCppOMCFactory_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppSimulationSettings_static -lOMCppDataExchange_static -lOMCppDgesvSolver_static -lOMCppNewton_static -lOMCppLinearSolver_static -lOMCppEuler_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppIDA_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -L$(SUNDIALS_LIBS) -L$(LAPACK_LIBS)'
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
@@ -3180,7 +3180,7 @@ case "gcc" then
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
 
-            CFLAGS_COMMON=$(OPENMP_FLAGS) <%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+            CFLAGS_COMMON=$(OPENMP_FLAGS) <%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
 
             ifeq ($(USE_SCOREP),ON)
             $(eval CC=scorep --user --nocompiler $(CC))
@@ -14439,20 +14439,38 @@ end algStmtAssignArr;
 template functionInitDelay(DelayedExpression delayed,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
+  match delayed
+  case DELAYED_EXPRESSIONS(__) then
   let &varDecls = buffer "" /*BUFD*/
-   let &preExp = buffer "" /*BUFD*/
-  let delay_id = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
-     '<%id%>';separator=" LIST_SEP "))
-  let delay_max = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+  let &preExp = buffer "" /*BUFD*/
+  let delay_id = (delayedExps |> (id, (e, d, delayMax)) =>
+     '<%id%>';separator=" LIST_SEP ")
+  let delay_max = (delayedExps |> (id, (e, d, delayMax)) =>
       let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     '<%delayExpMax%>';separator=" LIST_SEP "))
-  if delay_id then
+     '<%delayExpMax%>';separator=" LIST_SEP ")
+  let delay_loops = (delayedLoops |> (idx, (e, d, delayMax), iters) =>
+      let &iterExp = buffer ""
+      let &loopPreExp = buffer ""
+      let forHead = (iters |> it => forIteratorCpp(it, contextSimulationNonDiscrete, &iterExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      let id = daeExp(idx, contextSimulationNonDiscrete, &loopPreExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &loopPreExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      <<
+      <%iterExp%>
+      <%forHead%>
+      <%loopPreExp%>
+      delay_ids.push_back(<%id%>);
+      delay_max.push_back(<%delayExpMax%>);
+      <%iters |> it => "}" ;separator="\n"%>
+      >>
+    ;separator="\n")
+  if '<%delay_id%><%delay_loops%>' then
     <<
     //init delay expressions
     <%varDecls%>
     <%preExp%>
     vector<double> delay_max = LIST_OF <%delay_max%> LIST_END;
     vector<unsigned int> delay_ids = LIST_OF <%delay_id%> LIST_END;
+    <%delay_loops%>
     intDelay(delay_ids, delay_max);
     >>
   else " "
@@ -14462,8 +14480,10 @@ end functionInitDelay;
 template functionStoreDelay(DelayedExpression delayed,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
+  match delayed
+  case DELAYED_EXPRESSIONS(__) then
   let &varDecls = buffer "" /*BUFD*/
-   let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+  let storePart = (delayedExps |> (id, (e, d, delayMax)) =>
       let &preExp = buffer "" /*BUFD*/
       let eRes = daeExp(e, contextSimulationNonDiscrete,
                       &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -14472,12 +14492,27 @@ template functionStoreDelay(DelayedExpression delayed,SimCode simCode ,Text& ext
       <%preExp%>
        storeDelay(<%id%>, <%eRes%>,time);<%\n%>
       >>
-    ))
+    )
+  let storeLoops = (delayedLoops |> (idx, (e, d, delayMax), iters) =>
+      let &iterExp = buffer ""
+      let &preExp = buffer ""
+      let forHead = (iters |> it => forIteratorCpp(it, contextSimulationNonDiscrete, &iterExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      let id = daeExp(idx, contextSimulationNonDiscrete, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let eRes = daeExp(e, contextSimulationNonDiscrete, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      <<
+      <%iterExp%>
+      <%forHead%>
+      <%preExp%>
+      storeDelay(<%id%>, <%eRes%>, time);
+      <%iters |> it => "}" ;separator="\n"%>
+      >>
+    ;separator="\n")
   <<
 
     <%varDecls%>
     storeTime(time);
     <%storePart%>
+    <%storeLoops%>
   >>
 end functionStoreDelay;
 // generate Member Function get Real

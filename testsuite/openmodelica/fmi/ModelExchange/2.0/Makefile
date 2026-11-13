@@ -3,6 +3,14 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
+FmuFileNamePrefixDash.mos \
+Fmi2NoVariables.mos \
+FmuSparseSolvers.mos \
+FmuLinkLibraries.mos \
+FmuUserCFlags.mos \
+FmuUserTab.mos \
+FmuValueAccess.mos \
+StateDerivativeAliases.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
@@ -34,8 +42,11 @@ Issue13905.mos \
 Issue13905_pool_expand.mos \
 Issue16354.mos \
 fmi_import_boolean.mos \
+fmi_import_enum_names.mos \
 fmi2_array_nonscalarized.mos \
 fmi2_arrays_initial_unknowns.mos \
+fmi2_fmustate_bounds.mos \
+fmi2_fmustate_recover.mos \
 fmi2_string_variability.mos \
 fmi_export_derivative_annotation.mos \
 fmi_export_derivative_annotation_buildings.mos \
@@ -69,6 +80,7 @@ testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
+TestSourceCodeFMUImporter.mos \
 ticket5670.mos \
 ticket6262.mos \
 ZeroStates.mos \
@@ -87,6 +99,7 @@ BouncingBall.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.py \
 FMUResourceTest \
 Makefile \
 

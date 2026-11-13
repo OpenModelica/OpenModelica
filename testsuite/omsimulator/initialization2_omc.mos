@@ -3,8 +3,6 @@
 // status: correct
 // teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.lua input.csv temp-initialization2
 
-setCommandLineOptions("-g=MetaModelica");
-
 loadString("
 model initialization2
   input Real u;
@@ -45,10 +43,10 @@ oms_initialize("test");
 (v4,_):=oms_getReal("test.root.B.u");
 
 print("info:    Initialization\n");
-print("info:      A.y: " + realString(v1)+ "\n");
-print("info:      B.x: " + realString(v2)+ "\n");
-print("info:      B.y: " + realString(v1)+ "\n");
-print("info:      B.u: " + realString(v1)+ "\n");
+print("info:      A.y: " + String(v1)+ "\n");
+print("info:      B.x: " + String(v2)+ "\n");
+print("info:      B.y: " + String(v1)+ "\n");
+print("info:      B.u: " + String(v1)+ "\n");
 
 oms_terminate("test");
 oms_delete("test");
@@ -56,7 +54,6 @@ unloadOMSimulator();
 
 
 // Result:
-// true
 // true
 // ""
 // "initialization2.fmu"

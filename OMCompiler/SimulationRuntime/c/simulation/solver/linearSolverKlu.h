@@ -28,7 +28,9 @@
 /*! \file linearSolverKlu.h
  */
 
+#if !defined(OMC_FMI_RUNTIME)
 #include "omc_config.h"
+#endif
 
 #ifdef WITH_SUITESPARSE
 #ifndef _LINEARSOLVERKLU_H_

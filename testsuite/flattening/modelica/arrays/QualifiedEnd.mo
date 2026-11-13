@@ -17,7 +17,6 @@ model QualifiedEnd
   A a[2];
   Real x1[:] = a[end].x[1:end];
   Real x2[:] = .P.x[1:end];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end QualifiedEnd;
 
 // Result:
@@ -34,7 +33,7 @@ end QualifiedEnd;
 //   Real x2[1];
 //   Real x2[2];
 // equation
-//   x1 = {a[2].x[1], a[2].x[2], a[2].x[3]};
+//   x1 = a[2].x[:];
 //   x2 = {1.0, 2.0};
 // end QualifiedEnd;
 // endResult

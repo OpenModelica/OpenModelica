@@ -22,7 +22,7 @@ end Scalarize2;
 // package 'Scalarize2'
 //   function 'f'
 //     input Real 'x'[2, 2];
-//     output Real 'y'[2, 2] = {{'x'[1,1] * 2.0, 'x'[1,2] * 2.0}, {'x'[2,1] * 2.0, 'x'[2,2] * 2.0}};
+//     output Real 'y'[2, 2] = {{'x'[1,1]*2.0, 'x'[1,2]*2.0}, {'x'[2,1]*2.0, 'x'[2,2]*2.0}};
 //   end 'f';
 //
 //   model 'Scalarize2'

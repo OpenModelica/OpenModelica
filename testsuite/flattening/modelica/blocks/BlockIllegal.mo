@@ -1,6 +1,6 @@
 // name: BlockIllegal
 // keywords: block
-// status: correct
+// status: incorrect
 //
 // Tests block connections of non-directional components
 // THIS TEST SHOULD FAIL
@@ -15,15 +15,14 @@ model BlockIllegal
 equation
   tb1.i = 1;
   connect(tb1.i,tb2.i);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockIllegal;
 
 // Result:
-// class BlockIllegal
-//   Integer tb1.i;
-//   Integer tb2.i;
-// equation
-//   tb1.i = 1;
-//   tb1.i = tb2.i;
-// end BlockIllegal;
+// Error processing file: BlockIllegal.mo
+// [flattening/modelica/blocks/BlockIllegal.mo:17:3-17:23:writable] Error: tb1.i is not a valid connector.
+//
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
 // endResult

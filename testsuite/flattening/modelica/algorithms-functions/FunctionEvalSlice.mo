@@ -17,18 +17,9 @@ model FunctionEvalSlice
   Real r[10];
 equation
   r = fn();
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEvalSlice;
 
 // Result:
-// function fn
-//   output Real[10] r;
-// algorithm
-//   r[{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}] := {2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0};
-//   r[{1, 3, 5, 7, 9}] := {3.0, 3.0, 3.0, 3.0, 3.0};
-//   r[{2, 6}] := {4.0, 4.0};
-// end fn;
-//
 // class FunctionEvalSlice
 //   Real r[1];
 //   Real r[2];

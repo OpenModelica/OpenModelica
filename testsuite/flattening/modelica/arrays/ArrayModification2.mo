@@ -11,7 +11,6 @@ class ArrayModification2
   end A;
 
   extends A(x[2] = 1.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayModification2;
 
 // Result:

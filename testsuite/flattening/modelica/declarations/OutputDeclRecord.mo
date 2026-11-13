@@ -2,28 +2,23 @@
 // keywords: output
 // status: correct
 //
-// Tests the output prefix on a record type
+// Tests that the output prefix on a top-level record component is not
+// applied to its fields, see #17505.
 //
 
 record OutputRecord
   Real r;
 end OutputRecord;
 
-class OutputDeclRecord
+model OutputDeclRecord
   output OutputRecord orec;
 equation
   orec.r = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OutputDeclRecord;
 
 // Result:
-// function OutputRecord "Automatically generated record constructor for OutputRecord"
-//   input Real r;
-//   output OutputRecord res;
-// end OutputRecord;
-//
 // class OutputDeclRecord
-//   output Real orec.r;
+//   Real orec.r;
 // equation
 //   orec.r = 1.0;
 // end OutputDeclRecord;

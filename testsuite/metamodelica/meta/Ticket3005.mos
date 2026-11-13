@@ -1,8 +1,7 @@
 // status: correct
-// cflags: -d=-newInst
 // suite: metamodelica
+// cflags: -g=MetaModelica -d=gen
 
-setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("
 package P
   constant Integer n = 1;
@@ -40,8 +39,6 @@ end test;
 test(1) and not test(2);getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

@@ -123,6 +123,11 @@ impl DelayState {
         DelayState { buffers, start_time }
     }
 
+    /// The number of delay expressions.
+    pub fn count(&self) -> usize {
+        self.buffers.len()
+    }
+
     /// The buffers as flat words, for an FMU state.
     pub fn to_words(&self, out: &mut Vec<f64>) {
         out.push(self.start_time);
@@ -140,10 +145,10 @@ impl DelayState {
     pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
         let start_time = w.next()?;
         let n = w.next()? as usize;
-        let mut buffers = Vec::with_capacity(n);
+        let mut buffers = Vec::with_capacity(n.min(w.size_hint().0));
         for _ in 0..n {
             let len = w.next()? as usize;
-            let mut b = VecDeque::with_capacity(len);
+            let mut b = VecDeque::with_capacity(len.min(w.size_hint().0 / 2));
             for _ in 0..len {
                 b.push_back((w.next()?, w.next()?));
             }

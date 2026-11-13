@@ -4,6 +4,10 @@ TESTFILES = \
 unknownSizeInputDerivative.mos\
 externalFunctionDerivative.mos\
 builtin_functions.mos\
+delayOperator.mos\
+delayForLoop.mos\
+delayVectorized.mos\
+EmptyFunctionAliasStart.mos\
 inlineAttributes15947.mos\
 ifEquationFunctionCall.mos\
 tupleCallInForLoop.mos\

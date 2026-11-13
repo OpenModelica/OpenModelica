@@ -5,7 +5,7 @@
 // Testing `if' clauses in equations.
 //
 
-class EquationIf3
+model EquationIf3
   parameter Boolean b = false;
   Real x;
 equation
@@ -16,12 +16,11 @@ equation
   else
     x = 3.0;
   end if;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationIf3;
 
 // Result:
 // class EquationIf3
-//   parameter Boolean b = false;
+//   final parameter Boolean b = false;
 //   Real x;
 // equation
 //   x = 2.0;

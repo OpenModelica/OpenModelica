@@ -35,8 +35,6 @@
 #include <nvector/nvector_serial.h>
 
 
-#ifdef WITH_SUNDIALS
-
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
 /**
@@ -378,5 +376,3 @@ SUNErrCode _omc_SUNMatScaleIAdd_Sparse(sunrealtype c, SUNMatrix A)
   return SUN_SUCCESS;
 
 }
-
-#endif /* WITH_SUNDIALS */

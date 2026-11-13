@@ -3,7 +3,6 @@
 // status: correct
 // setup_command: $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -c -o libExternalFunc1_ext.o ExternalFunc1.c && $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -c -o libExternalFunc2.a ExternalFunc2.c
 // teardown_command: rm -rf ExternalFunc1_ext.o ExternalFunc2.a libExternalFunc1_ext.o libExternalFunc2.a ExternalLibraries1* output.log
-// cflags: -d=-newInst
 // depends: ExternalFunc1.c
 // depends: ExternalFunc1_ext.h
 // depends: ExternalFunc2.c
@@ -34,7 +33,7 @@ getErrorString();
 // true
 // record SimulationResult
 //     resultFile = "ExternalLibraries1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ExternalLibraries1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'auto', fileNamePrefix = 'ExternalLibraries1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

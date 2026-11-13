@@ -1,0 +1,68 @@
+// name:     FmuLinkLibraries
+// keywords: FMI 2.0 export Library annotation LAPACK
+// status:   correct
+// suite:    cSources
+// teardown_command: rm -rf FmuLinkLibraries.fmu FmuLinkLibraries_* FmuLinkLibraries.log FmuLinkLibraries3.fmu FmuLinkLibraries3_*
+//
+// An FMU links LAPACK and system libraries named in Library annotations,
+// as a simulation executable does. A source FMU names them in its build
+// description.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model FmuLinkLibraries
+  function f
+    input Real u;
+    output Real y;
+    external \"C\" y = fmuLinkLibrariesCos(u) annotation(Include = \"
+#include <math.h>
+static double fmuLinkLibrariesCos(double u) { return cos(u); }\", Library = {\"rt\", \"pthread\"});
+  end f;
+  parameter Real A[3,2] = [1, 2; 3, 4; 5, 7];
+  parameter Real b[3] = {1, 2, 4};
+  Real x[2] = Modelica.Math.Matrices.leastSquares(A, b);
+  Real y(start = 0, fixed = true);
+equation
+  der(y) = f(time);
+end FmuLinkLibraries;
+"); getErrorString();
+buildModelFMU(FmuLinkLibraries, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py FmuLinkLibraries.fmu FmuLinkLibraries_fmpy.csv 1.0 x[1] x[2] y > FmuLinkLibraries.log 2>&1"); getErrorString();
+system("tail -n 1 FmuLinkLibraries_fmpy.csv > FmuLinkLibraries_last.txt"); getErrorString();
+readFile("FmuLinkLibraries_last.txt"); getErrorString();
+
+setCommandLineOptions("--fmiSources=true"); getErrorString();
+buildModelFMU(FmuLinkLibraries, version = "3.0", fmuType = "me", fileNamePrefix = "FmuLinkLibraries3"); getErrorString();
+system("unzip -p FmuLinkLibraries3.fmu sources/buildDescription.xml | grep \"<Library\" > FmuLinkLibraries3_libraries.txt"); getErrorString();
+readFile("FmuLinkLibraries3_libraries.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuLinkLibraries.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "1.0,0.841468253064234,0.07142857142856869,0.500000000000002
+// "
+// ""
+// true
+// ""
+// "FmuLinkLibraries3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "    <Library name=\"lapack\" external=\"true\"/>
+//     <Library name=\"rt\" external=\"true\"/>
+//     <Library name=\"pthread\" external=\"true\"/>
+// "
+// ""
+// endResult

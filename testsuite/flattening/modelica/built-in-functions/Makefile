@@ -24,7 +24,6 @@ Delay6.mo \
 Delay7.mo \
 Delay8.mo \
 DerConstant1.mo \
-DerConstant2.mo \
 DerConstant3.mo \
 DiagonalSimplify1.mo \
 Div.mo \

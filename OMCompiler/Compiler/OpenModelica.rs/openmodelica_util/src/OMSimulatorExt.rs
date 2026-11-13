@@ -54,7 +54,12 @@ static OMSIMULATOR_DLL: Mutex<Option<usize>> = Mutex::new(None);
 /// Mirrors the C wrappers' behavior for a NULL function pointer: print the
 /// message (compared verbatim by scripts) and exit with status 0.
 fn missing_function(name: &str) -> ! {
-    println!("could not locate the function {name}");
+    exit_with(&format!("could not locate the function {name}"));
+}
+
+fn exit_with(msg: &str) -> ! {
+    metamodelica::host_print(&format!("{msg}\n"));
+    metamodelica::host_flush();
     std::process::exit(0);
 }
 
@@ -126,8 +131,9 @@ pub fn loadOMSimulator() -> i32 {
         let handle = dl::open(&full_file_name).unwrap_or(0);
         if handle == 0 {
             // Message and exit status mirror OMSimulator_loadDLL.
-            println!("Could not load the dynamic library {full_file_name} Exiting the program");
-            std::process::exit(0);
+            exit_with(&format!(
+                "Could not load the dynamic library {full_file_name} Exiting the program"
+            ));
         }
         *dll = Some(handle);
     }
@@ -143,8 +149,9 @@ pub fn unloadOMSimulator() -> i32 {
         }
         None => {
             // Message and exit status mirror OMSimulator_unloadDLL.
-            println!("OMSimulator instance is not found, Please load the OMSimulator instance using loadOMSimulator()");
-            std::process::exit(0);
+            exit_with(
+                "OMSimulator instance is not found, Please load the OMSimulator instance using loadOMSimulator()",
+            );
         }
     }
 }
@@ -156,10 +163,18 @@ pub fn oms_getVersion() -> ArcStr {
 
 /// MetaModelica parameter type → the Rust parameter type of the wrapper.
 macro_rules! mm_ty {
-    (String) => { ArcStr };
-    (Integer) => { i32 };
-    (Real) => { metamodelica::Real };
-    (Boolean) => { bool };
+    (String) => {
+        ArcStr
+    };
+    (Integer) => {
+        i32
+    };
+    (Real) => {
+        metamodelica::Real
+    };
+    (Boolean) => {
+        bool
+    };
 }
 
 /// MetaModelica parameter type → the C ABI type it is passed as.
@@ -173,15 +188,23 @@ macro_rules! oms_c_ty {
 /// Per-argument conversion before the call: `String` needs a CString
 /// temporary, `Real` unwraps `OrderedFloat` to the raw f64.
 macro_rules! oms_c_prep {
-    (String, $v:ident) => { let $v = c_string(&$v); };
-    (Real, $v:ident) => { let $v: c_double = $v.into_inner(); };
+    (String, $v:ident) => {
+        let $v = c_string(&$v);
+    };
+    (Real, $v:ident) => {
+        let $v: c_double = $v.into_inner();
+    };
     ($t:ident, $v:ident) => {};
 }
 
 /// Per-argument expression passed to the C call.
 macro_rules! oms_c_pass {
-    (String, $v:ident) => { $v.as_ptr() };
-    ($t:ident, $v:ident) => { $v };
+    (String, $v:ident) => {
+        $v.as_ptr()
+    };
+    ($t:ident, $v:ident) => {
+        $v
+    };
 }
 
 /// Define wrappers of the dominant shape: all-input arguments, `int` status
@@ -363,7 +386,11 @@ pub fn oms_getTolerance(cref: ArcStr) -> (metamodelica::Real, metamodelica::Real
     let mut absolute_tolerance: c_double = 0.0;
     let mut relative_tolerance: c_double = 0.0;
     let status = unsafe { f(cref.as_ptr(), &mut absolute_tolerance, &mut relative_tolerance) };
-    (metamodelica::Real::from(absolute_tolerance), metamodelica::Real::from(relative_tolerance), status)
+    (
+        metamodelica::Real::from(absolute_tolerance),
+        metamodelica::Real::from(relative_tolerance),
+        status,
+    )
 }
 
 pub fn oms_getVariableStepSize(cref: ArcStr) -> (metamodelica::Real, metamodelica::Real, metamodelica::Real, i32) {
@@ -372,8 +399,20 @@ pub fn oms_getVariableStepSize(cref: ArcStr) -> (metamodelica::Real, metamodelic
     let mut initial_step_size: c_double = 0.0;
     let mut minimum_step_size: c_double = 0.0;
     let mut maximum_step_size: c_double = 0.0;
-    let status = unsafe { f(cref.as_ptr(), &mut initial_step_size, &mut minimum_step_size, &mut maximum_step_size) };
-    (metamodelica::Real::from(initial_step_size), metamodelica::Real::from(minimum_step_size), metamodelica::Real::from(maximum_step_size), status)
+    let status = unsafe {
+        f(
+            cref.as_ptr(),
+            &mut initial_step_size,
+            &mut minimum_step_size,
+            &mut maximum_step_size,
+        )
+    };
+    (
+        metamodelica::Real::from(initial_step_size),
+        metamodelica::Real::from(minimum_step_size),
+        metamodelica::Real::from(maximum_step_size),
+        status,
+    )
 }
 
 pub fn oms_importFile(filename: ArcStr) -> (ArcStr, i32) {
@@ -394,7 +433,8 @@ pub fn oms_list(cref: ArcStr) -> (ArcStr, i32) {
 
 pub fn oms_listUnconnectedConnectors(cref: ArcStr) -> (ArcStr, i32) {
     let cref = c_string(&cref);
-    let f = oms_sym!("oms_listUnconnectedConnectors" => unsafe extern "C" fn(*const c_char, *mut *const c_char) -> c_int);
+    let f =
+        oms_sym!("oms_listUnconnectedConnectors" => unsafe extern "C" fn(*const c_char, *mut *const c_char) -> c_int);
     let mut contents: *const c_char = std::ptr::null();
     let status = unsafe { f(cref.as_ptr(), &mut contents) };
     (from_c_str(contents), status)
@@ -403,7 +443,8 @@ pub fn oms_listUnconnectedConnectors(cref: ArcStr) -> (ArcStr, i32) {
 pub fn oms_loadSnapshot(cref: ArcStr, snapshot: ArcStr) -> (ArcStr, i32) {
     let cref = c_string(&cref);
     let snapshot = c_string(&snapshot);
-    let f = oms_sym!("oms_loadSnapshot" => unsafe extern "C" fn(*const c_char, *const c_char, *mut *const c_char) -> c_int);
+    let f =
+        oms_sym!("oms_loadSnapshot" => unsafe extern "C" fn(*const c_char, *const c_char, *mut *const c_char) -> c_int);
     let mut new_cref: *const c_char = std::ptr::null();
     let status = unsafe { f(cref.as_ptr(), snapshot.as_ptr(), &mut new_cref) };
     (from_c_str(new_cref), status)

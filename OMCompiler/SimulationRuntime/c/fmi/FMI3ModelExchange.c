@@ -52,6 +52,7 @@ void* FMI3ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
 {
   FMI3ModelExchange* FMI3ME = malloc(sizeof(FMI3ModelExchange));
   jm_status_enu_t status, instantiateModelStatus;
+  FMI3ME->FMIFailed = 0;
   FMI3ME->FMILogLevel = fmi_log_level;
   /* JM callbacks */
   FMI3ME->JMCallbacks.malloc = malloc;
@@ -112,7 +113,9 @@ void* FMI3ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
 void FMI3ModelExchangeDestructor_OMC(void* in_fmi3me)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  fmi3_import_terminate(FMI3ME->FMIImportInstance);
+  if (!FMI3ME->FMIFailed && (FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode)) {
+    fmi3_import_terminate(FMI3ME->FMIImportInstance);
+  }
   fmi3_import_free_instance(FMI3ME->FMIImportInstance);
   fmi3_import_destroy_dllfmu(FMI3ME->FMIImportInstance);
   fmi3_import_free(FMI3ME->FMIImportInstance);
@@ -137,7 +140,7 @@ void fmi3EnterInitializationModel_OMC(void* in_fmi3me, int toleranceDefined, dou
       startTime,
       stopTimeDefined ? fmi3_true : fmi3_false, stopTime);
   if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3EnterInitializationMode failed with status : %s\n", fmi3_status_to_string(status));
+    fmi3Failed(FMI3ME, "fmi3EnterInitializationMode", status);
   }
   FMI3ME->FMISolvingMode = fmi3_initialization_mode;
 }
@@ -153,7 +156,7 @@ void fmi3ExitInitializationModel_OMC(void* in_fmi3me)
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
   fmi3_status_t status = fmi3_import_exit_initialization_mode(FMI3ME->FMIImportInstance);
   if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3ExitInitializationMode failed with status : %s\n", fmi3_status_to_string(status));
+    fmi3Failed(FMI3ME, "fmi3ExitInitializationMode", status);
   }
   FMI3ME->FMISolvingMode = fmi3_event_mode;
 }
@@ -164,10 +167,10 @@ void fmi3ExitInitializationModel_OMC(void* in_fmi3me)
 void fmi3SetTime_OMC(void* in_fmi3me, double time)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  if (FMI3ME->FMISolvingMode == fmi3_continuousTime_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
     fmi3_status_t status = fmi3_import_set_time(FMI3ME->FMIImportInstance, time);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3SetTime failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3SetTime", status);
     }
   }
 }
@@ -182,7 +185,7 @@ void fmi3GetContinuousStates_OMC(void* in_fmi3me, int numberOfContinuousStates, 
   if (numberOfContinuousStates > 0) {
     fmi3_status_t status = fmi3_import_get_continuous_states(FMI3ME->FMIImportInstance, (fmi3_float64_t*)states, numberOfContinuousStates);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3GetContinuousStates failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3GetContinuousStates", status);
     }
   }
 }
@@ -197,7 +200,7 @@ double fmi3SetContinuousStates_OMC(void* in_fmi3me, int numberOfContinuousStates
   if (numberOfContinuousStates > 0 && FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
     fmi3_status_t status = fmi3_import_set_continuous_states(FMI3ME->FMIImportInstance, (const fmi3_float64_t*)states, numberOfContinuousStates);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3SetContinuousStates failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3SetContinuousStates", status);
     }
   }
   return flowParams;
@@ -213,7 +216,7 @@ void fmi3GetEventIndicators_OMC(void* in_fmi3me, int numberOfEventIndicators, do
   if (numberOfEventIndicators > 0) {
     fmi3_status_t status = fmi3_import_get_event_indicators(FMI3ME->FMIImportInstance, (fmi3_float64_t*)events, numberOfEventIndicators);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3GetEventIndicators failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3GetEventIndicators", status);
     }
   }
 }
@@ -231,7 +234,7 @@ void fmi3GetDerivatives_OMC(void* in_fmi3me, int numberOfContinuousStates, doubl
   if (numberOfContinuousStates > 0) {
     fmi3_status_t status = fmi3_import_get_derivatives(FMI3ME->FMIImportInstance, (fmi3_float64_t*)states, numberOfContinuousStates);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3GetContinuousStateDerivatives failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3GetContinuousStateDerivatives", status);
     }
   }
 }
@@ -242,11 +245,14 @@ void fmi3GetDerivatives_OMC(void* in_fmi3me, int numberOfContinuousStates, doubl
 void fmi3StartEventUpdate_OMC(void* in_fmi3me)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  fmi3_status_t status = fmi3_import_enter_event_mode(FMI3ME->FMIImportInstance);
-  if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3EnterEventMode failed with status : %s\n", fmi3_status_to_string(status));
+  /* fmi3ExitInitializationMode already left the FMU in Event Mode for the first event. */
+  if (FMI3ME->FMISolvingMode != fmi3_event_mode) {
+    fmi3_status_t status = fmi3_import_enter_event_mode(FMI3ME->FMIImportInstance);
+    if (status != fmi3_status_ok && status != fmi3_status_warning) {
+      fmi3Failed(FMI3ME, "fmi3EnterEventMode", status);
+    }
+    FMI3ME->FMISolvingMode = fmi3_event_mode;
   }
-  FMI3ME->FMISolvingMode = fmi3_event_mode;
   FMI3ME->FMIEventInfo.discreteStatesNeedUpdate = fmi3_true;
   FMI3ME->FMIEventInfo.terminateSimulation = fmi3_false;
 }
@@ -279,7 +285,7 @@ int fmi3EndEventUpdate_OMC(void* in_fmi3me)
         &eventInfo->nextEventTimeDefined,
         &eventInfo->nextEventTime);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3UpdateDiscreteStates failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3UpdateDiscreteStates", status);
     }
     /* any pass that moved the states counts, not only the last one */
     if (eventInfo->valuesOfContinuousStatesChanged) {
@@ -289,7 +295,7 @@ int fmi3EndEventUpdate_OMC(void* in_fmi3me)
 
   status = fmi3_import_enter_continuous_time_mode(FMI3ME->FMIImportInstance);
   if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3EnterContinuousTimeMode failed with status : %s\n", fmi3_status_to_string(status));
+    fmi3Failed(FMI3ME, "fmi3EnterContinuousTimeMode", status);
   }
   FMI3ME->FMISolvingMode = fmi3_continuousTime_mode;
   return valuesOfContinuousStatesChanged;
@@ -320,7 +326,7 @@ int fmi3CompletedIntegratorStep_OMC(void* in_fmi3me, double flowStates)
     fmi3_boolean_t terminateSimulation = fmi3_false;
     fmi3_status_t status = fmi3_import_completed_integrator_step(FMI3ME->FMIImportInstance, fmi3_true, &callEventUpdate, &terminateSimulation);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      ModelicaFormatError("fmi3CompletedIntegratorStep failed with status : %s\n", fmi3_status_to_string(status));
+      fmi3Failed(FMI3ME, "fmi3CompletedIntegratorStep", status);
     }
     return callEventUpdate;
   }

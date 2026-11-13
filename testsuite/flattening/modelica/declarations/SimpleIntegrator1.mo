@@ -11,7 +11,6 @@ model SimpleIntegrator1
   Real x = 2.0;
 equation
   der(x) = u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimpleIntegrator1;
 
 

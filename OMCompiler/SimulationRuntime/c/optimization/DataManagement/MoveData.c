@@ -769,9 +769,7 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
 
     /* try */
   optData->scc = 0;
-#if !defined(OMC_EMCC)
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
     data->callback->input_function(data, optData->threadData);
     updateDiscreteSystem(data, optData->threadData);
 
@@ -779,9 +777,7 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
       diffSynColoredOptimizerSystem(optData, optData->J[i][j], i, j, m);
     }
     optData->scc = 1;
-#if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 }
 
 /*!

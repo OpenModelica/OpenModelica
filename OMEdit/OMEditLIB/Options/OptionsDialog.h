@@ -764,6 +764,9 @@ public:
   QCheckBox* getClearMessagesBrowserBeforeSimulationCheckBox() {return mpClearMessagesBrowserBeforeSimulationCheckBox;}
   QCheckBox* getEnlargeMessageBrowserCheckBox() {return mpEnlargeMessageBrowserCheckBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
+  QString getDefaultFontFamily() const {return mDefaultFontFamily;}
+  void setFontFamily(const QString &family);
+  QString getFontFamily() const;
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
   QColor getNotificationColor() const {return mNotificaitonColor;}
@@ -786,6 +789,7 @@ private:
   QGroupBox *mpFontColorsGroupBox;
   Label *mpFontFamilyLabel;
   QFontComboBox *mpFontFamilyComboBox;
+  QString mDefaultFontFamily;
   Label *mpFontSizeLabel;
   DoubleSpinBox *mpFontSizeSpinBox;
   Label *mpNotificationColorLabel;
@@ -1076,6 +1080,7 @@ public:
   OMSimulatorPage(OptionsDialog *pOptionsDialog);
   ComboBox* getLoggingLevelComboBox() {return mpLoggingLevelComboBox;}
   QLineEdit* getCommandLineOptionsTextBox() {return mpCommandLineOptionsTextBox;}
+  QLineEdit* getOMUQPythonTextBox() {return mpOMUQPythonTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
@@ -1083,6 +1088,12 @@ private:
   ComboBox *mpLoggingLevelComboBox;
   Label *mpCommandLineOptionsLabel;
   QLineEdit *mpCommandLineOptionsTextBox;
+  QGroupBox *mpOMUQGroupBox;
+  Label *mpOMUQPythonLabel;
+  QLineEdit *mpOMUQPythonTextBox;
+  QPushButton *mpOMUQPythonBrowseButton;
+private slots:
+  void browseOMUQPython();
 };
 
 class SensitivityOptimizationPage : public QWidget

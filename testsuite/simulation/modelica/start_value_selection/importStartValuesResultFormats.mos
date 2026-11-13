@@ -1,0 +1,51 @@
+// name:     importStartValuesResultFormats.mos [#14159]
+// keywords: start value selection, initialization file, -iif
+// status:   correct
+// teardown_command: rm -rf importStartValuesResultFormats_model* init_importStartValuesResultFormats.* out_importStartValuesResultFormats_*
+// cflags:
+//
+// -iif accepts result files in every format the simulation writes
+// (.mat, .csv, .plt, .arrow), selected by the file suffix.
+// The .csv results do not store parameters, so p keeps its binding there.
+
+loadString("
+model importStartValuesResultFormats_model
+  Real x(start = 1, fixed = true);
+  parameter Real p = 2;
+equation
+  der(x) = p;
+  annotation(experiment(StopTime = 1));
+end importStartValuesResultFormats_model;
+");getErrorString();
+
+for fmt in {"mat", "csv", "plt", "arrow"} loop
+  simulate(importStartValuesResultFormats_model,
+           simflags="-override=p=3 -outputFormat=" + fmt + " -r=init_importStartValuesResultFormats." + fmt);
+  simulate(importStartValuesResultFormats_model,
+           simflags="-iif=init_importStartValuesResultFormats." + fmt + " -iit=1 -r=out_importStartValuesResultFormats_" + fmt + ".mat");
+  print(fmt + ": x=" + String(val(x, 0, "out_importStartValuesResultFormats_" + fmt + ".mat"))
+            + ", p=" + String(val(p, 0, "out_importStartValuesResultFormats_" + fmt + ".mat")) + "\n");
+end for;
+getErrorString();
+
+writeFile("init_importStartValuesResultFormats.txt", "");
+echo(false);
+res := simulate(importStartValuesResultFormats_model, simflags="-iif=init_importStartValuesResultFormats.txt");
+msg := res.messages;
+err := getErrorString();
+echo(true);
+regexBool(msg + err, "Unknown result-file suffix of file 'init_importStartValuesResultFormats.txt'");
+
+// Result:
+// true
+// ""
+// mat: x=4, p=3
+// csv: x=4, p=2
+// plt: x=4, p=3
+// arrow: x=4, p=3
+//
+// ""
+// true
+// true
+// true
+// endResult

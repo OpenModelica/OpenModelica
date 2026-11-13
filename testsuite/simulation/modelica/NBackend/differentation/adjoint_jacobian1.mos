@@ -68,10 +68,10 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 // -------------------
 //   (6) V := $START.V
 //   (5) i_L := $START.i_L
-//   (4) i_R := V / R
+//   (4) i_R := V/R
 //   (3) i_C := i_L - i_R
-//   (2) $DER.V := i_C / C
-//   (1) $DER.i_L := (Vb - V) / L
+//   (2) $DER.V := i_C/C
+//   (1) $DER.i_L := (Vb - V)/L
 //
 // ODE Partition 1
 // -----------------
@@ -113,8 +113,8 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.i_L
-//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.V
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.V
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.i_L
 //
 // TmpVars (size = 2)
 // ********************
@@ -127,14 +127,14 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 // Column Equations (size = 4)
 // -----------------------------
 //   (14) Algorithm
-//   $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.V - $SEED_ODE_JAC_ADJ.$DER.i_L * (1/L);
+//   $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.V - $SEED_ODE_JAC_ADJ.$DER.i_L*(1/L);
 //   (13) Algorithm
-//   $pDER_ODE_JAC_ADJ.i_C := $pDER_ODE_JAC_ADJ.i_C + $SEED_ODE_JAC_ADJ.$DER.V * (1/C);
+//   $pDER_ODE_JAC_ADJ.i_C := $pDER_ODE_JAC_ADJ.i_C + $SEED_ODE_JAC_ADJ.$DER.V*(1/C);
 //   (12) Algorithm
 //   $pDER_ODE_JAC_ADJ.i_R := $pDER_ODE_JAC_ADJ.i_R - $pDER_ODE_JAC_ADJ.i_C;
 //   $pDER_ODE_JAC_ADJ.i_L := $pDER_ODE_JAC_ADJ.i_L + $pDER_ODE_JAC_ADJ.i_C;
 //   (11) Algorithm
-//   $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.V + $pDER_ODE_JAC_ADJ.i_R * (1/R);
+//   $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.V + $pDER_ODE_JAC_ADJ.i_R*(1/R);
 //
 // Resizable Sparsity Pattern
 // ----------------------------

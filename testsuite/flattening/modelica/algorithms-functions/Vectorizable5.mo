@@ -21,7 +21,6 @@ model Vectorizable5
   Real w[2];
 equation
   w=foo(x,y,z);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable5;
 
 
@@ -53,7 +52,6 @@ end Vectorizable5;
 //   Real w[1];
 //   Real w[2];
 // equation
-//   w[1] = foo(x[1], y[1], z);
-//   w[2] = foo(x[2], y[2], z);
+//   w = array(foo(x[$i0], y[$i0], z) for $i0 in 1:2);
 // end Vectorizable5;
 // endResult

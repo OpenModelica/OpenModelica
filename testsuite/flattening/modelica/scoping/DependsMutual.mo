@@ -12,7 +12,6 @@
 // since that leads to recursive models.
 
 package A
- Real x;
  model B
    DependsMutual b;
  end B;
@@ -21,13 +20,12 @@ package A
  end C;
 end A;
 
-class DependsMutual
+model DependsMutual
   Real x;
   A.C a;
 equation
   a.x=x;
   x=time;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DependsMutual;
 
 // Result:

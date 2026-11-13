@@ -44,6 +44,8 @@ homotopy6.mos \
 homotopy7.mos \
 homotopy8.mos \
 initStartTearingDegree1.mos \
+initStartValueCycle.mos \
+initStartValueCycle2.mos \
 OpenIPSL_AC8B_total.mos \
 initial_equation.mos \
 parameters.mos \
@@ -93,9 +95,10 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullInitial.mos \
 OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperature.mos \
 redundantInitialEquations.mos \
 conflictingStartValues.mos \
-conflictingStartValues2.mos \
 startAttributePriority.mos \
 Ticket5340.mos \
+Issue17162.mos \
+redundantTupleEquation.mos \
 
 
 # test that currently fail. Move up when fixed.

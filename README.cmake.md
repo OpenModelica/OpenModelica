@@ -106,7 +106,7 @@ OM_ENABLE_DOCS=OFF
 OM_ENABLE_TESTSUITE=ON             # OFF if there is no testsuite/
 OM_OMC_ENABLE_COMPILER=ON
 OM_OMC_ENABLE_CPP_RUNTIME=ON
-OM_OMC_ENABLE_C_OLD_RUNTIME=ON
+OM_OMC_ENABLE_C_RUNTIME=ON
 OM_OMC_ENABLE_PARMODELICA=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_OPTIMIZATION=ON
@@ -150,7 +150,7 @@ team if you need encryption support.
 
 The build needs `cargo` on the `PATH` (a stable toolchain of version 1.85 or newer): result
 files are read and written through `libomc_result`, the Rust result-file library, and
-`--simCodeTarget=C` links the Rust simulation runtime, `libSimulationRuntimeRust`.
+`--simCodeTarget=C+Rust` links the Rust simulation runtime, `libSimulationRuntimeRust`.
 
 The Rust port of the compiler itself (`OM_OMC_ENABLE_RUST`) is a separate option, off by
 default. It needs a pinned nightly toolchain; see
@@ -161,8 +161,8 @@ default. It needs a pinned nightly toolchain; see
 `OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based
 simulation runtime.
 
-`OM_OMC_ENABLE_C_OLD_RUNTIME` allows you to enable/disable the building of
-`libSimulationRuntimeC`, the C simulation runtime `--simCodeTarget=C.old` links.
+`OM_OMC_ENABLE_C_RUNTIME` allows you to enable/disable the building of
+`libSimulationRuntimeC`, the C simulation runtime `--simCodeTarget=C` links.
 
 `OM_OMC_ENABLE_PARMODELICA` allows you to enable/disable the ParModelica (`--parmodauto`)
 runtime.
@@ -567,10 +567,10 @@ where opening the file directly would not. Otherwise just open
   `ModelicaConfig_gcc.inc`). Simulations that link the runtime _dynamically_ would not need
   it - libgcov is inside the shared library - but source FMUs link the static runtime, and
   without it they fail with undefined references to `__gcov_*` / `llvm_gcda_*`.
-- Jenkins does all of this on every PR, from the `testsuite-gcc` shard; see
-  `coverageReportStage()` in [.CI/common.groovy](.CI/common.groovy). That shard runs half of
-  the testsuite - the other half runs in the clang shard, which is not instrumented - so
-  CI's numbers cover roughly half the tests a full local run would.
+- Jenkins does all of this on every PR, from the two `testsuite-gcc` shards, which run the
+  whole testsuite on `--simCodeTarget=C`; see `coverageReportStage()` in
+  [.CI/common.groovy](.CI/common.groovy). The clang shards run it again on
+  `--simCodeTarget=C+Rust` and are not instrumented.
 
 [gcov]: https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
 [gcovr]: https://gcovr.com/

@@ -1,0 +1,30 @@
+// name: RepeatedFlags
+// status: correct
+// teardown_command: rm -rf RepeatedFlags_* RepeatedFlags.c RepeatedFlags.h RepeatedFlags.o RepeatedFlags.makefile RepeatedFlags.libs RepeatedFlags.log RepeatedFlags.json RepeatedFlags.wasm RepeatedFlags output.log
+// suite: gbode
+//
+// A repeated -gb* option keeps its last value, like -s.
+
+loadString("
+model RepeatedFlags
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end RepeatedFlags;
+"); getErrorString();
+
+echo(false);
+res := simulate(RepeatedFlags, stopTime = 1, simflags = "-s=gbode -gbm=notAMethod -s gbode -gbm radauIIA3");
+echo(true);
+getErrorString();
+res.resultFile;
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "RepeatedFlags_res.mat"
+// 0.3678794496566875
+// endResult

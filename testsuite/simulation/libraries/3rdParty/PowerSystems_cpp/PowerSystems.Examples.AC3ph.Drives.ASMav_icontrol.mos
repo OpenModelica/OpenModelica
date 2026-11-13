@@ -33,7 +33,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Drives.ASMav_icontrol', options = '', outputFormat = 'mat', variableFilter = 'time|asm_ctrl.motor.tau_el|tabLoad.vVehicle', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1200, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Drives.ASMav_icontrol', options = '', outputFormat = 'mat', variableFilter = 'time|asm_ctrl.motor.tau_el|tabLoad.vVehicle', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Drives.ASMav_icontrol_res.mat
 // Messages: ... loading "height" from "/home/rfranke/Modelica/PowerSystems/PowerSystems/Resources/Tables/hNormProfile.tab"
 // Model terminate() at 56.2785

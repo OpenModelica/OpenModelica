@@ -9,22 +9,20 @@ record DiscreteRecord
   Real r;
 end DiscreteRecord;
 
-class DiscreteDeclRecord
+model DiscreteDeclRecord
   discrete DiscreteRecord dr;
 equation
-  dr.r = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  when initial() then
+    dr.r = 1.0;
+  end when;
 end DiscreteDeclRecord;
 
 // Result:
-// function DiscreteRecord "Automatically generated record constructor for DiscreteRecord"
-//   input Real r;
-//   output DiscreteRecord res;
-// end DiscreteRecord;
-//
 // class DiscreteDeclRecord
 //   discrete Real dr.r;
 // equation
-//   dr.r = 1.0;
+//   when initial() then
+//     dr.r = 1.0;
+//   end when;
 // end DiscreteDeclRecord;
 // endResult

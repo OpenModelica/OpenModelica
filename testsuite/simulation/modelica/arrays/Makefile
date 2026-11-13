@@ -19,7 +19,9 @@ ArrayReduce.mos \
 ArrayReturn.mos \
 ArraySlice.mos \
 ArraySlice2.mos \
+ArrayArgElementReplaced.mos \
 ArraySliceAssigmentFunction.mos \
+SlicedArrayEquationLhs.mos \
 ArrayWithImplicitSubscripts.mos \
 AsubCrefExpType.mos \
 BooleanArray.mos \
@@ -39,6 +41,7 @@ FunctionArraySlices.mos \
 gc.mos \
 gc2980.mos \
 Issue14470.mos \
+MatrixUnknownDims.mos \
 NPendulum.mos \
 PolynomialEvaluator1.mos \
 PolynomialEvaluator2.mos \
@@ -51,6 +54,7 @@ ticket_6099.mos \
 ticket2336.mos \
 ticket5114.mos \
 VariableRangeSubscript.mos \
+VectorizedCallArrayLhs.mos \
 VectorizeOneReturnValue.mos \
 Xpowers1.mos \
 Xpowers2.mos \

@@ -30,17 +30,9 @@ model InnerOuterArray2
   A a;
   B b;
   inner R r[3] = {R(0, 0, 0), R(0, 0, 0), R(0, 0, 0)};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterArray2;
 
 // Result:
-// function R "Automatically generated record constructor for R"
-//   input Real X;
-//   input Real Y;
-//   input Real Z;
-//   output R res;
-// end R;
-//
 // class InnerOuterArray2
 //   Real a.y;
 //   Real r[1].X = 0.0;

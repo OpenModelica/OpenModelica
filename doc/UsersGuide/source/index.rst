@@ -20,13 +20,17 @@ Generated on |date| at |time|
   introduction
   packagemanager
   omedit
+  webbrowser
   languageserver
+  umldiagrams
+  propertyprobes
   plotting
   compiler
   solving
   parmodauto
   debugger
   basemodelica
+  acausaldae
   porting
   backwardscompatibility
   graphs
@@ -41,7 +45,6 @@ Generated on |date| at |time|
   mdt
   mdtdebugger
   profiler
-  emscripten
   interop_c_python
   ompython
   ommatlab

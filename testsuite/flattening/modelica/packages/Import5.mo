@@ -19,7 +19,6 @@ model Import5
   Real x=3*PI;
   Real x2=my_e;
   Real x3=c;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import5;
 
 // Result:

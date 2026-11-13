@@ -1,5 +1,5 @@
 // name: ErrorNone
-// cflags: +g=MetaModelica -d=-newInst
+// cflags: +g=MetaModelica
 // status: correct
 // suite: metamodelica
 

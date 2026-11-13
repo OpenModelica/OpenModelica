@@ -34,7 +34,6 @@ partial model Base
 end Base;
 model Main
   extends Base(x=flange_b.phi);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Main;
 
 
@@ -48,10 +47,10 @@ end Main;
 //   Real flange_b.tau(quantity = "Torque", unit = "N.m") "Cut torque in the flange";
 //   Real x = flange_b.phi;
 // equation
+//   flange_a.tau = 0.0;
+//   flange_b.tau = 0.0;
 //   phi_rel = flange_b.phi - flange_a.phi;
 //   flange_b.tau = tau;
 //   flange_a.tau = -tau;
-//   flange_a.tau = 0.0;
-//   flange_b.tau = 0.0;
 // end Main;
 // endResult

@@ -85,6 +85,7 @@ static void convertProfileData(const char *outputPath, const char *prefix, int n
 
   memcpy(inBinaryInt,fullFileName,len);
   memcpy(inBinaryReal,fullFileName,len);
+  omc_rc_release((void*) fullFileName);
   strcpy(inBinaryInt + len, "_prof.intdata");
   strcpy(inBinaryReal + len, "_prof.realdata");
 
@@ -361,6 +362,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
     throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
   }
   FILE *fout = omc_fopen(fullFileName, "w");
+  omc_rc_release((void*) fullFileName);
   FILE *plotCommands;
   time_t t;
   int i;
@@ -370,6 +372,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
     throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
   }
   plotCommands = omc_fopen(fullPlotFile, "w");
+  omc_rc_release((void*) fullPlotFile);
 #else
   plotCommands = popen("gnuplot", "w");
 #endif
@@ -610,6 +613,7 @@ int printModelInfoJSON(DATA *data, threadData_t *threadData, const char *outputP
     throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
   }
   FILE *fout = omc_fopen(fullFileName, "wb");
+  omc_rc_release((void*) fullFileName);
   time_t t;
   long i;
   double totalTimeEqs = 0;

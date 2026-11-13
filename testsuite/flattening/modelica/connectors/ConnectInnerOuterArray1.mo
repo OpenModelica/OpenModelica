@@ -27,7 +27,6 @@ end LowerLevelModel;
 model ConnectInnerOuterArray1
   inner InnerOuterModel innerOuterModel;
   LowerLevelModel[2] lowerLevelModel;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectInnerOuterArray1;
 
 // Result:
@@ -41,13 +40,13 @@ end ConnectInnerOuterArray1;
 //   Real lowerLevelModel[2].c.e;
 //   Real lowerLevelModel[2].c.f;
 // equation
-//   innerOuterModel.c1.f + (-lowerLevelModel[2].c.f) + (-lowerLevelModel[1].c.f) = 0.0;
-//   innerOuterModel.c2.f = 0.0;
 //   innerOuterModel.c1.e = innerOuterModel.c2.e;
-//   (-innerOuterModel.c1.f) + (-innerOuterModel.c2.f) = 0.0;
-//   lowerLevelModel[2].c.f = 0.0;
+//   -(innerOuterModel.c1.f + innerOuterModel.c2.f) = 0.0;
+//   lowerLevelModel[2].c.e = innerOuterModel.c1.e;
+//   lowerLevelModel[2].c.e = lowerLevelModel[1].c.e;
+//   innerOuterModel.c1.f - lowerLevelModel[2].c.f - lowerLevelModel[1].c.f = 0.0;
+//   innerOuterModel.c2.f = 0.0;
 //   lowerLevelModel[1].c.f = 0.0;
-//   innerOuterModel.c1.e = lowerLevelModel[1].c.e;
-//   innerOuterModel.c1.e = lowerLevelModel[2].c.e;
+//   lowerLevelModel[2].c.f = 0.0;
 // end ConnectInnerOuterArray1;
 // endResult

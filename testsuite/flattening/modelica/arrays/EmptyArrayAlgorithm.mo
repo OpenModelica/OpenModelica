@@ -13,13 +13,11 @@ equation
   r1 = fill(1.0, N);
 algorithm
   r2 := r1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EmptyArrayAlgorithm;
 
 
 // Result:
 // class EmptyArrayAlgorithm
-//   parameter Integer N = 0;
-// algorithm
+//   final parameter Integer N = 0;
 // end EmptyArrayAlgorithm;
 // endResult

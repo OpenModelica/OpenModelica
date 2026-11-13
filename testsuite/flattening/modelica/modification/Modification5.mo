@@ -12,7 +12,6 @@ end A;
 
 class Modification5
   extends A;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification5;
 
 // Result:

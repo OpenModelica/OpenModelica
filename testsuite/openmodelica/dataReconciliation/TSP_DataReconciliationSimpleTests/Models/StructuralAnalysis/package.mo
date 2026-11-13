@@ -1,3 +1,0 @@
-within TSP_DataReconciliationSimpleTests.Models;
-package StructuralAnalysis
-end StructuralAnalysis;

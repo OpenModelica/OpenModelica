@@ -1,0 +1,31 @@
+// name: CheckModel3
+// keywords:
+// status: correct
+//
+
+loadString("
+  model M
+    parameter Integer n;
+    parameter Integer m;
+    Real x[n] = ones(n);
+    Real y[m] = zeros(m);
+    Real z[3];
+    Real w[n];
+    Real u[m];
+    Real v[m];
+  equation
+    w = ones(n);
+    u = zeros(m);
+  end M;
+");
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// "Check of M completed successfully.
+// Class M has 2*m + 2*n equation(s) and 3 + 3*m + 2*n variable(s).
+// 2*m + 2*n of these are trivial equation(s)."
+// ""
+// endResult

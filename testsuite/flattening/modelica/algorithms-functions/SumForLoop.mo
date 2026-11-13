@@ -15,7 +15,6 @@ algorithm
   for i in 1:n loop
     sum := sum + z[i];
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumZ;
 
 // Result:

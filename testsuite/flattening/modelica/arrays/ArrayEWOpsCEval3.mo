@@ -4,7 +4,7 @@
 //
 // Array elementwise operators' constant eveluation: multiplication
 
-class ArrayEWOpsCEval3
+model ArrayEWOpsCEval3
   Real[2] u1,u2,u3;
   Real t;
 equation
@@ -12,7 +12,6 @@ u1={2,3}.*{4,5};
 u2={2,3}.*5;
 u3=2 .*{4,5};
 t=2 .*4;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOpsCEval3;
 
 // Result:

@@ -12,7 +12,9 @@ if(NOT RUST_OMC_PREBUILT_CDYLIB)
 
   omc_add_subdirectory(ModelicaExternalC)
 
-  # omc_add_subdirectory(opc)
+  if(OM_OMC_ENABLE_C_RUNTIME)
+    omc_add_subdirectory(opc)
+  endif()
 
   # ParModelica
   # Not built with MSVC yet.

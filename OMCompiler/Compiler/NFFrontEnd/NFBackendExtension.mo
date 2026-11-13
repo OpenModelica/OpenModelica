@@ -285,12 +285,12 @@ public
     end OPT_LOOP_INPUT;
     // ToDo maybe deprecated:
     record ALG_STATE        "algebraic state used by inline solver" end ALG_STATE;
-    record ALG_STATE_OLD    "algebraic state old value used by inline solver" end ALG_STATE_OLD;
     record RESIDUAL_VAR end RESIDUAL_VAR;
     record DAE_AUX_VAR      "auxiliary variable used for DAEmode" end DAE_AUX_VAR;
     record LOOP_ITERATION   "used in SIMCODE, iteration variables in algebraic loops" end LOOP_ITERATION;
     record LOOP_SOLVED      "used in SIMCODE, inner variables of a torn algebraic loop" end LOOP_SOLVED;
     record FRONTEND_DUMMY   "Undefined variable type. Only to be used during frontend phase." end FRONTEND_DUMMY;
+    record ALGORITHM_LOCAL  "discrete variable that only one algorithm uses, not part of the system" end ALGORITHM_LOCAL;
 
     function toString
       input VariableKind varKind;
@@ -305,6 +305,7 @@ public
         case DUMMY_STATE()        then "[DSTA]";
         case DISCRETE()           then "[DISC]";
         case DISCRETE_STATE()     then "[DISS]";
+        case ALGORITHM_LOCAL()    then "[ALOC]";
         case PREVIOUS()           then "[PRE-]";
         case CLOCK()              then "[CLCK]";
         case CLOCKED()            then "[CLKD]";
@@ -621,7 +622,7 @@ public
         end for;
         fixedExp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(fixedExp), NFPrefixes.Purity.PURE, fixedExp, listReverse(iterators)));
       end if;
-      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED);
+      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED, Absyn.dummyInfo);
 
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.fixed)) algorithm
@@ -671,7 +672,7 @@ public
     protected
       Binding startBinding;
     algorithm
-      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED);
+      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED, Absyn.dummyInfo);
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(startBinding);
@@ -910,6 +911,17 @@ public
         else TearingSelect.DEFAULT;
       end match;
     end getTearingSelect;
+
+    function getUncertainty
+      input VariableAttributes attributes;
+      output Option<Uncertainty> uncertainty;
+    algorithm
+      uncertainty := match attributes
+        case VAR_ATTR_REAL() then attributes.uncertainty;
+        case VAR_ATTR_INT()  then attributes.uncertainty;
+        else NONE();
+      end match;
+    end getUncertainty;
 
     function getMin
       input VariableAttributes attr;
@@ -1349,6 +1361,7 @@ public
       Option<Binding> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
       Option<StateSelect> state_select = NONE();
       Option<TearingSelect> tearing_select = NONE();
+      Option<Uncertainty> uncertainty = NONE();
     algorithm
       for attr in attrs loop
         (name, b) := attr;
@@ -1364,6 +1377,7 @@ public
           // TODO: VAR_ATTR_REAL has no field for unbounded (which should be named unbound).
           case "unbounded"      then ();
           case "unit"           algorithm unit := createAttribute(b); then ();
+          case "uncertain"      algorithm uncertainty := createUncertainty(b); then ();
 
           // The attributes should already be type checked, so we shouldn't get any
           // unknown attributes here.
@@ -1378,7 +1392,7 @@ public
 
       attributes := VariableAttributes.VAR_ATTR_REAL(
         quantity, unit, displayUnit, min, max, start, fixed, nominal,
-        state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), SOME(isFinal));
+        state_select, tearing_select, uncertainty, NONE(), NONE(), NONE(), SOME(isFinal));
     end createReal;
 
     function createInt
@@ -1619,6 +1633,33 @@ public
       end match;
     end lookupStateSelectMember;
 
+    function createUncertainty
+      input Binding binding;
+      output Option<Uncertainty> uncertainty;
+    protected
+      Expression exp = Expression.arrayFirstScalar(Binding.getTypedExp(binding));
+      String name;
+    algorithm
+      name := match exp
+        case Expression.ENUM_LITERAL() then exp.name;
+        case Expression.CREF(cref = ComponentRef.CREF()) then ComponentRef.nodeName(exp.cref);
+        else algorithm
+          Error.terminate(getInstanceName() +
+            " got invalid Uncertainty expression " + Expression.toString(exp), sourceInfo());
+        then fail();
+      end match;
+
+      uncertainty := SOME(match name
+        case "given"      then Uncertainty.GIVEN;
+        case "sought"     then Uncertainty.SOUGHT;
+        case "refine"     then Uncertainty.REFINE;
+        case "propagate"  then Uncertainty.PROPAGATE;
+        else algorithm
+          Error.terminate(getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
+        then fail();
+      end match);
+    end createUncertainty;
+
     function createTearingSelect
       "__OpenModelica_tearingSelect is an annotation and has to be extracted from the comment."
       input SCode.Comment cmt;
@@ -1707,7 +1748,7 @@ public
 
     function expToGeneratedBinding
       input Expression exp;
-      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED);
+      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED, Absyn.dummyInfo);
     end expToGeneratedBinding;
   end VariableAttributes;
 

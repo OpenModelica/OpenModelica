@@ -19,15 +19,9 @@ end Controller;
 model RecordEnumBinding
   parameter StepData[:] stepdef = {StepData()};
   Controller controller(stepdef = stepdef);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordEnumBinding;
 
 // Result:
-// function StepData "Automatically generated record constructor for StepData"
-//   input enumeration(invalid, charge, discharge, rest) steptype = StepType.invalid;
-//   output StepData res;
-// end StepData;
-//
 // class RecordEnumBinding
 //   parameter enumeration(invalid, charge, discharge, rest) stepdef[1].steptype = StepType.invalid;
 //   parameter enumeration(invalid, charge, discharge, rest) controller.stepdef[1].steptype = stepdef[1].steptype;

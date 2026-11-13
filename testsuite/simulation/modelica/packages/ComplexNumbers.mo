@@ -41,14 +41,13 @@ encapsulated package ComplexNumbers
 end ComplexNumbers;
 
 
-class ComplexUser
+model ComplexUser
   ComplexNumbers.Complex a(re=1.0, im=2.0);
   ComplexNumbers.Complex b(re=1.0, im=2.0);
   ComplexNumbers.Complex z,w;
   equation
     z = ComplexNumbers.Multiply(a, b);
     w = ComplexNumbers.Add(a, b);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexUser;
 
 // class ComplexUser

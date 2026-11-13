@@ -9,11 +9,11 @@
 //   - realRangeSize: missing parentheses → `inStart/inStep` subtracted from `inStop`
 //                    instead of `(inStop-inStart)/inStep`
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::Util as U;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── boolInt ───────────────────────────────────────────────────────────────────
 
@@ -198,48 +198,48 @@ fn test_gcd_equal() {
 
 #[test]
 fn test_lcm_basic() {
-    assert_eq!(U::lcm(4, 6), 12);
-    assert_eq!(U::lcm(3, 7), 21);
-    assert_eq!(U::lcm(5, 5), 5);
+    assert_eq!(U::lcm(4, 6).unwrap(), 12);
+    assert_eq!(U::lcm(3, 7).unwrap(), 21);
+    assert_eq!(U::lcm(5, 5).unwrap(), 5);
 }
 
 #[test]
 fn test_lcm_negative_returns_minus_one() {
     // MetaModelica spec: lcm returns -1 when either argument is negative
-    assert_eq!(U::lcm(-4, 6), -1);
-    assert_eq!(U::lcm(4, -6), -1);
+    assert_eq!(U::lcm(-4, 6).unwrap(), -1);
+    assert_eq!(U::lcm(4, -6).unwrap(), -1);
 }
 
 // ── nextPrime ─────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_next_prime_one() {
-    assert_eq!(U::nextPrime(1), 2);
+    assert_eq!(U::nextPrime(1).unwrap(), 2);
 }
 
 #[test]
 fn test_next_prime_two() {
-    assert_eq!(U::nextPrime(2), 2);
+    assert_eq!(U::nextPrime(2).unwrap(), 2);
 }
 
 #[test]
 fn test_next_prime_three() {
-    assert_eq!(U::nextPrime(3), 3);
+    assert_eq!(U::nextPrime(3).unwrap(), 3);
 }
 
 #[test]
 fn test_next_prime_four() {
-    assert_eq!(U::nextPrime(4), 5);
+    assert_eq!(U::nextPrime(4).unwrap(), 5);
 }
 
 #[test]
 fn test_next_prime_nine() {
-    assert_eq!(U::nextPrime(9), 11);
+    assert_eq!(U::nextPrime(9).unwrap(), 11);
 }
 
 #[test]
 fn test_next_prime_ten() {
-    assert_eq!(U::nextPrime(10), 11);
+    assert_eq!(U::nextPrime(10).unwrap(), 11);
 }
 
 // ── nextPowerOf2 ──────────────────────────────────────────────────────────────
@@ -442,7 +442,10 @@ fn test_remove_last_n_char() -> Result<()> {
 fn test_remove_last_3_char_too_short_errors() {
     // substring(s, 1, len-3) with len < 3 → stop < start (or stop < 1) → error
     let result = U::removeLast3Char(literal!("ab"));
-    assert!(result.is_err(), "removeLast3Char('ab') should error: substring stop < 1");
+    assert!(
+        result.is_err(),
+        "removeLast3Char('ab') should error: substring stop < 1"
+    );
 }
 
 // ── swap ─────────────────────────────────────────────────────────────────────
@@ -495,31 +498,57 @@ fn test_get_option_or_default() {
 
 #[test]
 fn test_option_equal_both_none() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
-    assert!(U::optionEqual(None::<i32>, None::<i32>, &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
+    assert!(
+        U::optionEqual(None::<i32>, None::<i32>, &|a0, a1| (eq_fn)(
+            ::std::clone::Clone::clone(a0),
+            ::std::clone::Clone::clone(a1)
+        ))
+        .unwrap()
+    );
 }
 
 #[test]
 fn test_option_equal_both_some_equal() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
-    assert!(U::optionEqual(Some(5i32), Some(5i32), &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
+    assert!(
+        U::optionEqual(Some(5i32), Some(5i32), &|a0, a1| (eq_fn)(
+            ::std::clone::Clone::clone(a0),
+            ::std::clone::Clone::clone(a1)
+        ))
+        .unwrap()
+    );
 }
 
 #[test]
 fn test_option_equal_both_some_not_equal() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
-    assert!(!U::optionEqual(Some(5i32), Some(6i32), &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
+    assert!(
+        !U::optionEqual(Some(5i32), Some(6i32), &|a0, a1| (eq_fn)(
+            ::std::clone::Clone::clone(a0),
+            ::std::clone::Clone::clone(a1)
+        ))
+        .unwrap()
+    );
 }
 
 #[test]
 fn test_option_equal_one_none() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
-    assert!(!U::optionEqual(Some(5i32), None, &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
-    assert!(!U::optionEqual(None, Some(5i32), &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
+    assert!(
+        !U::optionEqual(Some(5i32), None, &|a0, a1| (eq_fn)(
+            ::std::clone::Clone::clone(a0),
+            ::std::clone::Clone::clone(a1)
+        ))
+        .unwrap()
+    );
+    assert!(
+        !U::optionEqual(None, Some(5i32), &|a0, a1| (eq_fn)(
+            ::std::clone::Clone::clone(a0),
+            ::std::clone::Clone::clone(a1)
+        ))
+        .unwrap()
+    );
 }
 
 // ── applyOption ───────────────────────────────────────────────────────────────
@@ -527,13 +556,19 @@ fn test_option_equal_one_none() {
 #[test]
 fn test_apply_option_some() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOption(Some(5i32), &|a0| (double)(::std::clone::Clone::clone(a0))).unwrap(), Some(10));
+    assert_eq!(
+        U::applyOption(Some(5i32), &|a0| (double)(::std::clone::Clone::clone(a0))).unwrap(),
+        Some(10)
+    );
 }
 
 #[test]
 fn test_apply_option_none() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOption(None::<i32>, &|a0| (double)(::std::clone::Clone::clone(a0))).unwrap(), None);
+    assert_eq!(
+        U::applyOption(None::<i32>, &|a0| (double)(::std::clone::Clone::clone(a0))).unwrap(),
+        None
+    );
 }
 
 // ── applyOptionOrDefault ──────────────────────────────────────────────────────
@@ -617,10 +652,7 @@ fn test_select_first_non_empty_nil() {
 
 #[test]
 fn test_flag_value_found() -> Result<()> {
-    let args = list![
-        literal!("-d"), literal!("debug"),
-        literal!("-s"), literal!("output.mo")
-    ];
+    let args = list![literal!("-d"), literal!("debug"), literal!("-s"), literal!("output.mo")];
     assert_eq!(U::flagValue(&literal!("-s"), args)?, literal!("output.mo"));
     Ok(())
 }
@@ -687,11 +719,7 @@ fn test_mul_list_integer_opt_empty() -> Result<()> {
 
 #[test]
 fn test_assoc_found() -> Result<()> {
-    let pairs = list![
-        (literal!("a"), 1i32),
-        (literal!("b"), 2i32),
-        (literal!("c"), 3i32)
-    ];
+    let pairs = list![(literal!("a"), 1i32), (literal!("b"), 2i32), (literal!("c"), 3i32)];
     assert_eq!(U::assoc(literal!("b"), pairs)?, 2);
     Ok(())
 }
@@ -706,7 +734,10 @@ fn test_assoc_first() -> Result<()> {
 #[test]
 fn test_assoc_not_found_errors() {
     let pairs = list![(literal!("a"), 1i32)];
-    assert!(U::assoc(literal!("z"), pairs).is_err(), "assoc should error when key not found");
+    assert!(
+        U::assoc(literal!("z"), pairs).is_err(),
+        "assoc should error when key not found"
+    );
 }
 
 // ── replace ───────────────────────────────────────────────────────────────────
@@ -782,8 +813,10 @@ fn test_string_contains_char_at_end_is_buggy() -> Result<()> {
     // delimiter is the last char. So stringSplitAtChar("hello", "o") = ["hell"] (1 element).
     // The pattern match requires >=2 elements (_::_::_), so returns false.
     // Expected: true ("o" IS in "hello"). Actual (buggy): false.
-    assert!(U::stringContainsChar(literal!("hello"), literal!("o"))?,
-        "BUG: 'o' is in 'hello' but stringContainsChar returns false when char is last");
+    assert!(
+        U::stringContainsChar(literal!("hello"), literal!("o"))?,
+        "BUG: 'o' is in 'hello' but stringContainsChar returns false when char is last"
+    );
     Ok(())
 }
 
@@ -805,7 +838,9 @@ fn test_string_contains_char_dot() -> Result<()> {
 
 fn list_to_vec(lst: metamodelica::List<ArcStr>) -> Vec<String> {
     let mut v = vec![];
-    for s in &*lst { v.push(s.to_string()); }
+    for s in &*lst {
+        v.push(s.to_string());
+    }
     v
 }
 

@@ -5,7 +5,7 @@
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
 //
 
-class Exp
+model Exp
   Real e1[2, 2];
   Real e2[2, 2];
 equation
@@ -15,7 +15,6 @@ equation
 
   e2 = [1, 2; 1, 2] ^ 2;
   // Result: {{3, 6}, {3, 6}}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Exp;
 
 // Result:

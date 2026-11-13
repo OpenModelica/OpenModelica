@@ -35,11 +35,6 @@
 extern "C" {
 #endif
 
-#ifndef OMC_FMI_RUNTIME
-  #include "omc_config.h"
-#endif
-
-#ifdef WITH_SUNDIALS
 #include <sundials/sundials_matrix.h>
 #include "../jacobian_util.h"
 
@@ -48,8 +43,6 @@ void setSundialsSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac);
 void setSundialsSparseColPtrs(const SPARSE_PATTERN* sp, SUNMatrix Jac);
 int _omc_SUNMatScaleIAdd_Sparse(sunrealtype c, SUNMatrix A);
 int _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale);
-
-#endif /* WITH_SUNDIALS */
 
 #ifdef __cplusplus
 };

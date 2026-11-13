@@ -7,7 +7,6 @@
 
 model BooleanDim
   Real x[Boolean] = {if b then 1.5 else 2.5 for b in Boolean};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BooleanDim;
 
 // Result:
@@ -15,6 +14,6 @@ end BooleanDim;
 //   Real x[false];
 //   Real x[true];
 // equation
-//   x = {2.5, 1.5};
+//   x = array(if b then 1.5 else 2.5 for b in {false, true});
 // end BooleanDim;
 // endResult

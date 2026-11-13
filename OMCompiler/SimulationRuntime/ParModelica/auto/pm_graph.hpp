@@ -28,12 +28,47 @@
 #ifndef PM_GRAPH_HPP
 #define PM_GRAPH_HPP
 
+#include <cstddef>
+#include <iterator>
 #include <list>
 #include <map>
 #include <set>
 #include <utility>
 
 namespace openmodelica { namespace parmodelica {
+
+/**
+ * Dereferences to a copy of the descriptor, as Boost's adjacency iterators do,
+ * so `const vertex_descriptor& v = *it` stays valid after the edge to v is
+ * removed.
+ */
+template <typename It>
+class DescriptorIterator {
+    It it;
+
+  public:
+    typedef std::forward_iterator_tag                      iterator_category;
+    typedef typename std::iterator_traits<It>::value_type value_type;
+    typedef std::ptrdiff_t                                 difference_type;
+    typedef const value_type*                              pointer;
+    typedef value_type                                     reference;
+
+    DescriptorIterator() {}
+    explicit DescriptorIterator(It i) : it(i) {}
+
+    value_type          operator*() const { return *it; }
+    DescriptorIterator& operator++() {
+        ++it;
+        return *this;
+    }
+    DescriptorIterator operator++(int) {
+        DescriptorIterator old(*this);
+        ++it;
+        return old;
+    }
+    bool operator==(const DescriptorIterator& o) const { return it == o.it; }
+    bool operator!=(const DescriptorIterator& o) const { return it != o.it; }
+};
 
 /**
  * Directed graph with a property per vertex, behaving like
@@ -47,10 +82,10 @@ class DiGraph {
     struct Vertex;
 
   public:
-    typedef Vertex*                                    vertex_descriptor;
-    typedef typename std::list<Vertex*>::iterator      vertex_iterator;
-    typedef typename std::set<Vertex*>::const_iterator adjacency_iterator;
-    typedef adjacency_iterator                         inv_adjacency_iterator;
+    typedef Vertex*                                                         vertex_descriptor;
+    typedef typename std::list<Vertex*>::iterator                           vertex_iterator;
+    typedef DescriptorIterator<typename std::set<Vertex*>::const_iterator> adjacency_iterator;
+    typedef adjacency_iterator                                              inv_adjacency_iterator;
 
   private:
     struct Vertex {
@@ -115,10 +150,10 @@ class DiGraph {
         return std::make_pair(vertex_list.begin(), vertex_list.end());
     }
     std::pair<adjacency_iterator, adjacency_iterator> adjacent_vertices(vertex_descriptor v) const {
-        return std::make_pair(v->out.begin(), v->out.end());
+        return std::make_pair(adjacency_iterator(v->out.begin()), adjacency_iterator(v->out.end()));
     }
     std::pair<inv_adjacency_iterator, inv_adjacency_iterator> inv_adjacent_vertices(vertex_descriptor v) const {
-        return std::make_pair(v->in.begin(), v->in.end());
+        return std::make_pair(inv_adjacency_iterator(v->in.begin()), inv_adjacency_iterator(v->in.end()));
     }
     size_t num_vertices() const { return vertex_list.size(); }
     size_t out_degree(vertex_descriptor v) const { return v->out.size(); }

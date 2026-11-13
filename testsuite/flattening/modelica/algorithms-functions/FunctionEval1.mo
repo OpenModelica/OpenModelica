@@ -17,7 +17,6 @@ model FunctionEval1
   Real x;
 equation
   x = f(1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEval1;
 
 // function f
@@ -28,13 +27,6 @@ end FunctionEval1;
 // end f;
 //
 // Result:
-// function f
-//   input Real x;
-//   output Real y;
-// algorithm
-//   y := 1.0 + x;
-// end f;
-//
 // class FunctionEval1
 //   Real x;
 // equation

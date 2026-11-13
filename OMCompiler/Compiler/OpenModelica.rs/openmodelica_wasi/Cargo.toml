@@ -14,6 +14,9 @@ edition = "2024"
 # the `wasm_js` feature added in the wasm32 target table below.
 getrandom = "0.4"
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+libc = "0.2"
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # Real SystemTime over the JS clock (`Date.now`) for store modification times;
 # std::time::SystemTime::now() panics on wasm32-unknown-unknown. Other targets

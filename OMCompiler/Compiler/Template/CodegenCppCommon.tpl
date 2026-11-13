@@ -2024,6 +2024,21 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     end match
     '<%tvar%>'
 
+  case CALL(path=IDENT(name="matrix"), expLst={exp}, attr=CALL_ATTR(ty=T_ARRAY(ty=elty))) then
+    let expVar = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arr = tempDecl1('const BaseArray<<%expTypeShort(elty)%>>&', expVar, &preExp)
+    let tvar = tempDecl('DynArrayDim2<<%expTypeShort(elty)%>>', &varDecls)
+    let &preExp +=
+      <<
+      for (size_t dim = 3; dim <= <%arr%>.getNumDims(); dim++) {
+        if (<%arr%>.getDim(dim) != 1)
+          throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Invalid dimension " + omcpp::to_string(dim) + " of argument to matrix, expected dimension size 1 but got " + omcpp::to_string(<%arr%>.getDim(dim)) + ".");
+      }
+      <%tvar%>.setDims(<%arr%>.getDim(1), <%arr%>.getDim(2));
+      <%tvar%>.assign(<%arr%>.getData());<%\n%>
+      >>
+    tvar
+
   case CALL(path=IDENT(name="fill"), expLst=val::dims, attr=attr as CALL_ATTR(__)) then
     let valExp = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let dimsExp = (dims |> dim =>    daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=",")
@@ -2154,8 +2169,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%tvar%>'
 
   case CALL(path=IDENT(name="delay"),
-            expLst={ICONST(integer=index), e, d, delayMax}) then
+            expLst={idx, e, d, delayMax}) then
     let tvar = tempDecl("double", &varDecls /*BUFD*/)
+    let index = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

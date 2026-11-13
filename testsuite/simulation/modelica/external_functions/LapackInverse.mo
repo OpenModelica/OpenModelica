@@ -13,7 +13,7 @@ algorithm
 end inv;
 
 package LAPACK
-  function dgetrf
+  pure function dgetrf
     input Real[:, :] A;
     output Real[size(A, 1), size(A, 2)] LU = A;
     output Integer[min(size(A, 1), size(A, 2))] pivots;
@@ -23,7 +23,7 @@ package LAPACK
     external "FORTRAN 77" dgetrf(size(A, 1), size(A, 2), LU, lda, pivots, info);
   end dgetrf;
 
-  function dgetri
+  pure function dgetri
     input Real[:, size(LU, 1)] LU;
     input Integer[size(LU, 1)] pivots;
     output Real[size(LU, 1), size(LU, 2)] inv = LU;

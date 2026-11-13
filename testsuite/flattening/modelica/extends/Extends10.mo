@@ -5,13 +5,13 @@
 // Testing that imports are handled properly when extending.
 //
 
-class M
+model M
 
-class Poly
+model Poly
   constant Real x = 1.0;
 end Poly;
 
-class A
+model A
 
 import P = M.Poly;
 
@@ -28,9 +28,8 @@ end A;
 
 end M;
 
-class Extends10
+model Extends10
   extends M.A;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends10;
 
 // Result:

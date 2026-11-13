@@ -5,13 +5,12 @@
 // Test for loops in algorithms.
 //
 
-class AlgorithmFor4
+model AlgorithmFor4
   Real a[4];
 algorithm
   for i in 1:2:3 loop
     a[i+1] := a[i] + 1.0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor4;
 
 // Result:
@@ -22,7 +21,7 @@ end AlgorithmFor4;
 //   Real a[4];
 // algorithm
 //   for i in 1:2:3 loop
-//     a[1 + i] := 1.0 + a[i];
+//     a[i + 1] := a[i] + 1.0;
 //   end for;
 // end AlgorithmFor4;
 // endResult

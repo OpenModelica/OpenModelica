@@ -54,6 +54,8 @@ protected
   import Function = NFFunction;
   import InstNode = NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
+  import Algorithm = NFAlgorithm;
+  import Statement = NFStatement;
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -541,9 +543,62 @@ protected
       case Equation.IF_EQUATION() algorithm
         collectDiscreteStatesFromWhenInIf(eqn.body, acc_discrete_states, acc_previous, scalarized);
       then ();
+      case Equation.ALGORITHM() algorithm
+        collectDiscreteStatesFromWhenStatements(eqn.alg.statements, acc_discrete_states, acc_previous, scalarized);
+      then ();
       else ();
     end match;
   end collectDiscreteStatesFromWhen;
+
+  function collectDiscreteStatesFromWhenStatements
+    "All variables assigned in a when-statement of an algorithm are considered discrete."
+    input list<Statement> statements;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input Boolean scalarized;
+  protected
+    UnorderedSet<ComponentRef> assigned = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    Pointer<Variable> state_var;
+  algorithm
+    collectWhenStatementOutputs(statements, assigned);
+    for cref in UnorderedSet.toList(assigned) loop
+      // the function getPreVar() does all necessary collecting of information
+      // but we don't need the actual pre cref it returns
+      state_var := BVariable.getVarPointer(cref, sourceInfo());
+      BVariable.makeDiscreteStateVar(state_var);
+      getPreVar(cref, state_var, acc_previous, scalarized);
+      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+    end for;
+  end collectDiscreteStatesFromWhenStatements;
+
+  function collectWhenStatementOutputs
+    "Collects the outputs of all when-statements, also of the ones inside of for-statements
+    (the frontend creates these for algorithms of array components)."
+    input list<Statement> statements;
+    input UnorderedSet<ComponentRef> assigned;
+  protected
+    list<ComponentRef> outputs;
+  algorithm
+    for stmt in statements loop
+      () := match stmt
+        case Statement.WHEN() algorithm
+          for branch in stmt.branches loop
+            (_, outputs) := Algorithm.getInputsOutputs(Util.tuple22(branch));
+            // variables only this algorithm uses keep their value without being discrete states
+            for cref in outputs loop
+              if not BVariable.isAlgorithmLocalCref(cref) then
+                UnorderedSet.add(cref, assigned);
+              end if;
+            end for;
+          end for;
+        then ();
+        case Statement.FOR() algorithm
+          collectWhenStatementOutputs(stmt.body, assigned);
+        then ();
+        else ();
+      end match;
+    end for;
+  end collectWhenStatementOutputs;
 
   function collectDiscreteStatesFromWhenBody
     "All variables on the LHS in a when equation are considered discrete."

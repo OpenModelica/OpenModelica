@@ -58,9 +58,15 @@ OPC_UA_EXPORT int omc_embedded_server_update(void*, double t, int*);
 #define MAX_VARS_KIND 100000000
 #define ALIAS_START_ID (MAX_VARS_KIND/2)
 
+/* The node id of a model variable in namespace 1 is kind*MAX_VARS_KIND plus
+ * the index of its value, or ALIAS_START_ID plus the index of the alias. */
 typedef enum {
   VARKIND_REAL = 1,
-  VARKIND_BOOL = 2
+  VARKIND_BOOL = 2,
+  VARKIND_INTEGER = 3,
+  VARKIND_REAL_PARAMETER = 4,
+  VARKIND_INTEGER_PARAMETER = 5,
+  VARKIND_BOOL_PARAMETER = 6
 } var_kind_t;
 
 #define OMC_OPC_NS_REAL_VARIABLES 3

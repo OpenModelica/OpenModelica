@@ -72,6 +72,14 @@ private slots:
    */
   void pathFunctions();
   void pathFunctions_data();
+  /*!
+   * \brief Checks that error kind names with either qualification are recognized.
+   */
+  void errorKind();
+  /*!
+   * \brief Checks that error type names with either qualification are recognized.
+   */
+  void errorType();
   void cleanupTestCase();
 };
 

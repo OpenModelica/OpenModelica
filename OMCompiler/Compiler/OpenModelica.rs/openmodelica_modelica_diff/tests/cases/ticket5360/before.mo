@@ -1,0 +1,3 @@
+model M
+
+end M;

@@ -5,7 +5,7 @@ package Modelica
 package Utilities
 package Streams
 
-function print
+impure function print
   input String str;
 algorithm
   .print(str);
@@ -17,13 +17,13 @@ end Modelica;
 
 package P
 
-class A
+model A
   import Modelica.Utilities.Streams;
 algorithm
   Streams.print(String(time) + "\n");
 end A;
 
-class B
+model B
 
   A a;
 
@@ -31,13 +31,12 @@ end B;
 
 end P;
 
-class AlgorithmNoRetCall
+model AlgorithmNoRetCall
   extends P.B;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmNoRetCall;
 
 // Result:
-// function Modelica.Utilities.Streams.print
+// impure function Modelica.Utilities.Streams.print
 //   input String str;
 // algorithm
 //   print(str);

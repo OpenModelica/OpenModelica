@@ -1,0 +1,39 @@
+// name: resizableNLSLogging
+// keywords: NewBackend resizable nonlinear system logging
+// status: correct
+// cflags: --newBackend --simCodeScalarize=false --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableNLSLogging_*.log
+//
+// The variables of a resizable nonlinear system have one name per array in
+// the model info. Logging the scalar variables and residuals crashed.
+
+loadString("
+model resizableNLSLogging
+  model Cell
+    Real a(start = 1);
+    Real y[3];
+  equation
+    y = a * {1, 2, 3};
+    a + sum(y[2:3])^3 = time;
+  end Cell;
+  parameter Integer n = 3;
+  Cell c[n];
+end resizableNLSLogging;
+"); getErrorString();
+
+buildModel(resizableNLSLogging, stopTime = 0.1, numberOfIntervals = 2); getErrorString();
+system("./resizableNLSLogging -override=n=5 -nls=kinsol -lv=LOG_NLS_V,LOG_NLS_JAC,LOG_NLS_JAC_SUMS,LOG_NLS_DERIVATIVE_TEST", "resizableNLSLogging_kinsol.log");
+system("./resizableNLSLogging -override=n=5 -nls=hybrid -lv=LOG_NLS_V,LOG_NLS_JAC", "resizableNLSLogging_hybrid.log");
+system("./resizableNLSLogging -override=n=5 -nls=newton -lv=LOG_NLS_V,LOG_NLS_NEWTON_DIAGNOSTICS", "resizableNLSLogging_newton.log");
+system("./resizableNLSLogging -override=n=5 -nls=homotopy -lv=LOG_NLS_V", "resizableNLSLogging_homotopy.log");
+// Result:
+// true
+// ""
+// {"resizableNLSLogging", "resizableNLSLogging_init.xml"}
+// ""
+// 0
+// 0
+// 0
+// 0
+// endResult

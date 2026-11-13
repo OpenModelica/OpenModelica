@@ -104,6 +104,7 @@ namespace IAEX
     void convertDrModelica();
     QTranslator translator;
     QTranslator qtTranslator;
+    QTranslator plotTranslator;
 
   private:
     QApplication *app_;

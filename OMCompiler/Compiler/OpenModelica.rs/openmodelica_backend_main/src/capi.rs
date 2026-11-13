@@ -22,8 +22,8 @@
 //! dedicated multi-MiB stack, because the port only lowers self-tail-calls and
 //! deep traversals can overflow the default 8 MiB).
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use crate::Main;
 
@@ -105,4 +105,67 @@ pub fn simulate(
         method,
         simflags,
     )
+}
+
+/// Instantiate `class_name` with the new frontend, as `instantiateModel`
+/// does, and return the flat model and its functions as reflected nodes.
+pub fn instantiate_flat(class_name: &str) -> Result<(metamodelica::reflect::Node, Vec<metamodelica::reflect::Node>)> {
+    use openmodelica_nf_frontend::NFFlatten::FunctionTreeImpl;
+    let path = openmodelica_frontend_dump::AbsynUtil::stringPath(ArcStr::from(class_name))?;
+    let (flat, functions, _) = crate::CevalScriptBackend::runFrontEndWorkNF(path, false, false)?;
+    let functions = FunctionTreeImpl::listValues(&functions, metamodelica::nil());
+    Ok((
+        flat,
+        functions
+            .iter()
+            .map(|f| f.clone() as metamodelica::reflect::Node)
+            .collect(),
+    ))
+}
+
+/// The frontend functions the Julia bridge calls on a reflected node.
+pub fn apply(function: &str, n: &metamodelica::reflect::Node) -> Result<metamodelica::reflect::MMField> {
+    use metamodelica::reflect::{MMField, downcast};
+    use openmodelica_ast::Absyn;
+    use openmodelica_frontend_dump::AbsynUtil;
+    use openmodelica_nf_frontend::{NFComponentRef, NFEquation, NFExpression, NFFunction, NFType};
+    fn path_string(p: metamodelica::Ref<Absyn::Path>) -> Result<ArcStr> {
+        AbsynUtil::pathString(p, ArcStr::from("."), false, false)
+    }
+    let wrong = || Err("capi::apply: the node has the wrong type");
+    Ok(match function {
+        "Expression.typeOf" => match downcast::<NFExpression::NFExpression>(n) {
+            Some(e) => MMField::Node(NFExpression::typeOf(e)),
+            None => return wrong(),
+        },
+        "Expression.toString" => match downcast::<NFExpression::NFExpression>(n) {
+            Some(e) => MMField::String(NFExpression::toString(e)?),
+            None => return wrong(),
+        },
+        "ComponentRef.getSubscriptedType" => match downcast::<NFComponentRef::NFComponentRef>(n) {
+            Some(c) => MMField::Node(NFComponentRef::getSubscriptedType(&c, false)?),
+            None => return wrong(),
+        },
+        "ComponentRef.toString" => match downcast::<NFComponentRef::NFComponentRef>(n) {
+            Some(c) => MMField::String(NFComponentRef::toString(&c)?),
+            None => return wrong(),
+        },
+        "Type.toString" => match downcast::<NFType::NFType>(n) {
+            Some(t) => MMField::String(NFType::toString(&t)?),
+            None => return wrong(),
+        },
+        "Equation.toString" => match downcast::<NFEquation::NFEquation>(n) {
+            Some(e) => MMField::String(NFEquation::toString(&e, ArcStr::from(""))?),
+            None => return wrong(),
+        },
+        "Function.name" => match downcast::<NFFunction::Function::Function>(n) {
+            Some(f) => MMField::String(path_string(NFFunction::Function::nameConsiderBuiltin(&f))?),
+            None => return wrong(),
+        },
+        "Path.toString" => match downcast::<Absyn::Path>(n) {
+            Some(p) => MMField::String(path_string(p)?),
+            None => return wrong(),
+        },
+        _ => return Err("capi::apply: unknown function"),
+    })
 }

@@ -13,6 +13,9 @@ equation
   r2 = r2 * r1;
   r3 = r1 * r3;
   r3 = r3 * r1;
+  r1 = {0, r1, 0} * {r1, 0, r1};
+  r1 = {0, 0} * r2;
+  r1 = r2 * {0, 0};
 end OperationMul1;
 
 // Result:
@@ -38,5 +41,8 @@ end OperationMul1;
 //   r3[1,2] = r3[1,2] * r1;
 //   r3[2,1] = r3[2,1] * r1;
 //   r3[2,2] = r3[2,2] * r1;
+//   r1 = 0.0;
+//   r1 = 0.0;
+//   r1 = 0.0;
 // end OperationMul1;
 // endResult

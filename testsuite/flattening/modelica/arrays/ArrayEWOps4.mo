@@ -4,7 +4,7 @@
 //
 // Array elementwise operators: division
 
-class ArrayEWOps4
+model ArrayEWOps4
   Real[2,2] x,x1,x2,y,z;
   Real t,u,v;
 equation
@@ -12,7 +12,6 @@ equation
   x1=y./t;
   x2=t./y;
   v=t./u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps4;
 
 // Result:

@@ -1,6 +1,6 @@
 // name: FunctionDefaultArg
 // status: correct
-// cflags: -d=-newInst
+// suite: ofScripting
 
 loadString("
 function g

@@ -68,6 +68,7 @@ testing = {
     "4.0.0+maint.om",
     "4.1.0+maint.om"
   },
+  "ModelicaDataReconciliationSimpleTests": {"4.0.0"},
   "ModelicaCompliance": {
     "3.2.0-master"
   },
@@ -82,7 +83,8 @@ testing = {
   },
   "ThermoSysPro": {
     "4.2.0"
-  }
+  },
+  "TSP_DataReconciliationSimpleTests": {"4.0.0"}
 }
 
 # Everything that is shipped with an installation is tested as well, except MSL 3.x which the

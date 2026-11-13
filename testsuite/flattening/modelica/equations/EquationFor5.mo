@@ -5,13 +5,12 @@
 // Test for loops in equations.
 //
 
-class EquationFor5
+model EquationFor5
   Real a[4];
 equation
   for i in 2:2:4 loop
     a[i] = a[i-1] + 1.0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor5;
 
 // Result:
@@ -21,7 +20,7 @@ end EquationFor5;
 //   Real a[3];
 //   Real a[4];
 // equation
-//   a[2] = 1.0 + a[1];
-//   a[4] = 1.0 + a[3];
+//   a[2] = a[1] + 1.0;
+//   a[4] = a[3] + 1.0;
 // end EquationFor5;
 // endResult

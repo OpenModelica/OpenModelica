@@ -1,9 +1,11 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+	nameClash.mos \
 	Delay.mos \
 	DelayBufferGrowth.mos \
 	DelayTooSmall.mos \
+	DelayVectorized.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

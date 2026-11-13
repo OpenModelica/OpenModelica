@@ -5,35 +5,24 @@ OMC := $(shell realpath $(OMC))
 
 FMPY_CALL = python3 -m fmpy
 
-# Simulated with the binaries OpenModelica built: their sources need the Rust
-# runtime, which FMPy cannot compile.
 FMU = FmuExportCrossCompile.fmu \
       RoomHeating_OM_RH.fmu \
       WaterTank_Control.fmu \
       WaterTank_TestSingleWaterTank.fmu \
-      BouncingBall.fmu
+      BouncingBall.fmu \
+      TableTest.fmu
 
-# Exported with --simCodeTarget=C.old, whose sources are plain C, and re-compiled
-# by FMPy.
-SOURCE_FMU = TableTest.fmu
-
-.PHONY: all test clean copy $(FMU) $(SOURCE_FMU)
+.PHONY: all test clean
 
 all: compile_FMUs
 	$(MAKE) test
 
-test: $(FMU) $(SOURCE_FMU)
+test: $(FMU)
 
 copy:
 	cp ../FmuExportCrossCompile/*.fmu .
 
-$(FMU): copy
-	@echo -----------------------------------------------------------------------
-	@echo $@
-	$(FMPY_CALL) simulate $@
-	@echo -----------------------------------------------------------------------
-
-$(SOURCE_FMU):
+%.fmu: copy
 	@echo -----------------------------------------------------------------------
 	@echo $@
   # Remove binaries
@@ -53,6 +42,6 @@ fmpy-fmus:
 	$(OMC) testCompileModelicaStandardTables.mos
 
 clean:
-	rm -f $(FMU) $(SOURCE_FMU) *.fmu
-	rm -rf $(addsuffix _FMU/,$(FMU) $(SOURCE_FMU))
+	rm -f $(FMU) *.fmu
+	rm -rf $(addsuffix _FMU/,$(FMU))
 	rm -rf TableTest/

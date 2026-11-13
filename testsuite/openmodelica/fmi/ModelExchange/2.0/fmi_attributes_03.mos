@@ -56,7 +56,7 @@ readFile("fmi_attributes_03.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"x_start\"
 //     valueReference=\"2\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\"/>

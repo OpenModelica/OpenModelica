@@ -5,23 +5,22 @@
 // Checks that repeated class extends are handled correctly.
 //
 
-class P1
-  replaceable class C Real r1; end C;
+model P1
+  replaceable model C Real r1; end C;
   C c1;
 end P1;
 
-class P2
+model P2
   extends P1;
-  redeclare replaceable class extends C Real r2; end C;
+  redeclare replaceable model extends C Real r2; end C;
   C c2;
 end P2;
 
-class P3
+model P3
   extends P2;
-  redeclare class extends C Real r3; end C;
+  redeclare model extends C Real r3; end C;
 
   C c3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end P3;
 
 // Result:

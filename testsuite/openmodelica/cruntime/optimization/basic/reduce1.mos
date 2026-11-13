@@ -1,6 +1,5 @@
 // name: reduce1
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynOpt");
 getErrorString();

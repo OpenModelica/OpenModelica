@@ -24,7 +24,6 @@ end MyPackage;
 
 class Extends8
   extends MyPackage.X;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends8;
 
 // Result:

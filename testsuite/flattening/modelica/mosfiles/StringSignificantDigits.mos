@@ -1,0 +1,24 @@
+// name:     StringSignificantDigits
+// keywords: String significantDigits
+// status:   correct
+//
+// The result of String(r, significantDigits = d) can be longer than
+// minimumLength + 20 characters (#17760).
+
+String(0.006693000497730991, significantDigits = 17); getErrorString();
+String(-1.0e-300/3, significantDigits = 17); getErrorString();
+String(-1.0e-300/3, significantDigits = 17, minimumLength = 30); getErrorString();
+x := String(0.006693000497730991, significantDigits = 17); getErrorString();
+x;
+
+// Result:
+// "0.0066930004977309911"
+// ""
+// "-3.3333333333333334e-301"
+// ""
+// "-3.3333333333333334e-301      "
+// ""
+// "0.0066930004977309911"
+// ""
+// "0.0066930004977309911"
+// endResult

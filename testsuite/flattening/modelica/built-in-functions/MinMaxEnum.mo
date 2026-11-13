@@ -17,22 +17,21 @@ model MinMaxEnum
   constant E e6 = max(e for e in earr);
   constant E e7 = min(e for e in {E.c, E.b, E.d});
   constant E e8 = max(e for e in {E.a, E.c, E.b});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MinMaxEnum;
 
 // Result:
 // class MinMaxEnum
-//   constant enumeration(a, b, c, d) earr[MinMaxEnum.E.a] = MinMaxEnum.E.a;
-//   constant enumeration(a, b, c, d) earr[MinMaxEnum.E.b] = MinMaxEnum.E.b;
-//   constant enumeration(a, b, c, d) earr[MinMaxEnum.E.c] = MinMaxEnum.E.c;
-//   constant enumeration(a, b, c, d) earr[MinMaxEnum.E.d] = MinMaxEnum.E.d;
-//   constant enumeration(a, b, c, d) e1 = MinMaxEnum.E.a;
-//   constant enumeration(a, b, c, d) e2 = MinMaxEnum.E.d;
-//   constant enumeration(a, b, c, d) e3 = MinMaxEnum.E.a;
-//   constant enumeration(a, b, c, d) e4 = MinMaxEnum.E.d;
-//   constant enumeration(a, b, c, d) e5 = MinMaxEnum.E.a;
-//   constant enumeration(a, b, c, d) e6 = MinMaxEnum.E.d;
-//   constant enumeration(a, b, c, d) e7 = MinMaxEnum.E.b;
-//   constant enumeration(a, b, c, d) e8 = MinMaxEnum.E.c;
+//   constant enumeration(a, b, c, d) earr[E.a] = E.a;
+//   constant enumeration(a, b, c, d) earr[E.b] = E.b;
+//   constant enumeration(a, b, c, d) earr[E.c] = E.c;
+//   constant enumeration(a, b, c, d) earr[E.d] = E.d;
+//   constant enumeration(a, b, c, d) e1 = E.a;
+//   constant enumeration(a, b, c, d) e2 = E.d;
+//   constant enumeration(a, b, c, d) e3 = E.a;
+//   constant enumeration(a, b, c, d) e4 = E.d;
+//   constant enumeration(a, b, c, d) e5 = E.a;
+//   constant enumeration(a, b, c, d) e6 = E.d;
+//   constant enumeration(a, b, c, d) e7 = E.b;
+//   constant enumeration(a, b, c, d) e8 = E.c;
 // end MinMaxEnum;
 // endResult

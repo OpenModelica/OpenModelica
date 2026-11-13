@@ -7,9 +7,12 @@
 //
 type TComponents = enumeration (AA, BB, CC);
 
+connector RealInput = input Real;
+connector RealOutput = output Real;
+
 block TBlock
-  input Real[TComponents] In;
-  output Real[TComponents] Out;
+  RealInput[TComponents] In;
+  RealOutput[TComponents] Out;
 end TBlock;
 
 block EnumConnectArray
@@ -17,7 +20,6 @@ block EnumConnectArray
   TBlock Block2;
 equation
   connect(Block2.In, Block1.Out);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumConnectArray;
 
 // Result:
@@ -35,8 +37,8 @@ end EnumConnectArray;
 //   Real Block2.Out[TComponents.BB];
 //   Real Block2.Out[TComponents.CC];
 // equation
-//   Block1.Out[TComponents.AA] = Block2.In[TComponents.AA];
-//   Block1.Out[TComponents.BB] = Block2.In[TComponents.BB];
-//   Block1.Out[TComponents.CC] = Block2.In[TComponents.CC];
+//   Block2.In[TComponents.AA] = Block1.Out[TComponents.AA];
+//   Block2.In[TComponents.BB] = Block1.Out[TComponents.BB];
+//   Block2.In[TComponents.CC] = Block1.Out[TComponents.CC];
 // end EnumConnectArray;
 // endResult

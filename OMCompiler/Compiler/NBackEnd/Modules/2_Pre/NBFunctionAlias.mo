@@ -912,7 +912,8 @@ protected
   protected
     Function fn = Call.typedFunction(call);
   algorithm
-    b := forceReplacement(fn) or not (Function.isSpecialBuiltin(fn) or replaceException(fn));
+    // an empty array result has no elements to solve for, the call stays where it is used
+    b := not Type.isEmptyArray(Call.typeOf(call)) and (forceReplacement(fn) or not (Function.isSpecialBuiltin(fn) or replaceException(fn)));
   end checkCallReplacement;
 
   function forceReplacement

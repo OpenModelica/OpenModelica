@@ -1,7 +1,6 @@
 // name:     For-statement 2
 // keywords: for
 // status:   correct
-// cflags: -d=-newInst
 // 
 //  Test the interactive for-statement
 //

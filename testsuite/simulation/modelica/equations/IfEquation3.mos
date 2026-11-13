@@ -6,7 +6,6 @@
 // Checks that if-equations which have another if-equation in one of the branches are transformed correctly
 // wbraun:
 // TODO: these "if equation" could rewrited is a better way without algebraic loop.
-// cflags: -d=-newInst
 //       but however the error message "singular system" doesn't affect the solution.
 //       As long as the algebraic loop is produced, we can apply the noEvent() operator
 //
@@ -44,7 +43,7 @@ val(y, {0.25, 0.75, 1.25, 1.75});
 // ""
 // record SimulationResult
 //     resultFile = "IfEquation3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 8, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'IfEquation3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 8, tolerance = 1e-05, method = 'auto', fileNamePrefix = 'IfEquation3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

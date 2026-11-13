@@ -271,12 +271,13 @@ public
   function pull
     "Pull container image."
     input ContainerImage image;
+    input String logFilePrefix;
   protected
     String pullLogFile;
     String imageName = toString(image);
     String cmd;
   algorithm
-    pullLogFile := image.repository + "_pull.log";
+    pullLogFile := logFilePrefix + "." + image.repository + "_pull.log";
 
     cmd := ContainerImage.containerTool + " pull " + quoteForShell(imageName);
     if System.systemCall(cmd, outFile=pullLogFile) <> 0 then
@@ -302,13 +303,14 @@ public
      that was checked by isTrustedOpenModelicaImage and not some other image
      that happens to have the same tag."
     input ContainerImage image;
+    input String logFilePrefix;
     output Boolean isAvailable;
   protected
     String inspectLogFile;
     String imageName = toString(image, useDigest = true);
     String cmd;
   algorithm
-    inspectLogFile := image.repository + "_inspect.log";
+    inspectLogFile := logFilePrefix + "." + image.repository + "_inspect.log";
     if System.regularFileExists(inspectLogFile) then
       System.removeFile(inspectLogFile);
     end if;
@@ -324,9 +326,10 @@ public
   function isCosignAvailable
     "Check if `cosign` from sigstore is available in PATH.
      Adds a compiler warning if it isn't."
+    input String logFilePrefix;
     output Boolean hasCosign;
   protected
-    String cosignLogFile = "cosign_version.log";
+    String cosignLogFile = logFilePrefix + ".cosign_version.log";
   algorithm
     if System.regularFileExists(cosignLogFile) then
       System.removeFile(cosignLogFile);
@@ -349,17 +352,18 @@ public
      image is downloaded. Fails if the signature can't be verified.
      Needs `cosign` from sigstore to be in PATH."
     input ContainerImage image;
+    input String logFilePrefix;
   protected
     String cosignLogFile;
     String cmd;
     String imageName = toString(image);
     String imageReference = toString(image, useDigest = true);
   algorithm
-    cosignLogFile := image.repository + "_signature.log";
+    cosignLogFile := logFilePrefix + "." + image.repository + "_signature.log";
     if System.regularFileExists(cosignLogFile) then
       System.removeFile(cosignLogFile);
     end if;
-    if not isCosignAvailable() then
+    if not isCosignAvailable(logFilePrefix) then
       Error.addCompilerError("Can't verify signature of container image '" + imageName + "' without `cosign` from sigstore.");
       fail();
     end if;

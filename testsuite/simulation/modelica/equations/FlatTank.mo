@@ -42,7 +42,6 @@ equation
   error    = ref - h;
   der(x)   = error/T;
   outCtr   = K*(error + x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlatTank;
 
 // insert expected flat file here. Can be done by issuing the command

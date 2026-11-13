@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 loadFile("FunctionTupleRecord.mo");getErrorString();
 buildModel(FunctionTupleRecord);getErrorString();

@@ -11,7 +11,6 @@ model TypeSimple
   MyType mt;
 equation
   mt = 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TypeSimple;
 
 // Result:

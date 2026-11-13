@@ -30,7 +30,6 @@ model ConnectInner3
   A a;
 equation
   global.c.e=10;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectInner3;
 
 // Result:
@@ -42,13 +41,13 @@ end ConnectInner3;
 //   Real a.my.e;
 //   Real a.my.f;
 // equation
+//   global.c.e = a.my.e;
+//   global.c.e = b.a.my.e;
+//   global.c.f - a.my.f - b.a.my.f = 0.0;
+//   b.a.my.f = 0.0;
+//   a.my.f = 0.0;
 //   b.a.my.f = 10.0 + b.a.my.e;
 //   a.my.f = 10.0 + a.my.e;
 //   global.c.e = 10.0;
-//   global.c.f + (-b.a.my.f) + (-a.my.f) = 0.0;
-//   b.a.my.f = 0.0;
-//   a.my.f = 0.0;
-//   a.my.e = b.a.my.e;
-//   a.my.e = global.c.e;
 // end ConnectInner3;
 // endResult

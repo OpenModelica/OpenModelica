@@ -1,7 +1,7 @@
 // name:     Polymorphic
 // keywords: Polymorphism
 // status:   correct
-// cflags:   +g=MetaModelica -d=-newInst
+// cflags:   +g=MetaModelica
 // suite: metamodelica
 //
 // Polymorphic functions

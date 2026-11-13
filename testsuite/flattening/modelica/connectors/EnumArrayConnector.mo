@@ -19,15 +19,14 @@ model EnumArrayConnector
   end B;
 
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumArrayConnector;
 
 // Result:
 // class EnumArrayConnector
 //   Real b.c.e;
 //   Real b.c.f;
-//   Real b.c.s[EnumArrayConnector.E.a];
-//   Real b.c.s[EnumArrayConnector.E.b];
+//   Real b.c.s[E.a];
+//   Real b.c.s[E.b];
 // equation
 //   b.c.f = 0.0;
 // end EnumArrayConnector;

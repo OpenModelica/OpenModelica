@@ -207,7 +207,9 @@ public:
                               QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality);
   bool setComponentComment(QString className, QString componentName, QString comment);
   bool setComponentDimensions(QString className, QString componentName, QString dimensions);
-  void addConnection(QString from, QString to, QString className, QString annotation);
+  QString getComponentCondition(QString className, QString componentName);
+  bool setComponentCondition(QString className, QString componentName, QString condition);
+  bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
   bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority, QString annotation);
   bool deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority);
@@ -221,6 +223,7 @@ public:
   QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
+  QString getClassDiagram(QString className, int depth, bool showModifiers);
   bool ngspicetoModelica(QString fileName);
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
@@ -281,6 +284,7 @@ public:
   bool inferBindings(QString className);
   bool generateVerificationScenarios(QString className);
   QList<QList<QString > > getUses(QString className);
+  QList<QString> getUsedClassNames(QString className);
   bool buildEncryptedPackage(QString className, bool encrypt = true);
   QList<QString> parseEncryptedPackage(QString fileName, QString workingDirectory);
   bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses = true, bool notify = true, bool requireExactVersion = false);
@@ -297,6 +301,7 @@ public:
   bool restoreAST(int id);
   QJsonArray reverseLookup(const QString &className, const QString &scope = QString("AllLoadedClasses"), bool exactMatch = true, bool prettyPrint = false);
   bool clear();
+  static int simulationProgress();
 signals:
   void commandFinished();
 public slots:

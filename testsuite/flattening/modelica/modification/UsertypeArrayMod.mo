@@ -6,7 +6,6 @@
 model UsertypeArrayMod
   type T = Real[3, 2](start = {{1, 2}, {3, 4}, {5, 6}});
   T x[4, 1];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end UsertypeArrayMod;
 
 // Result:

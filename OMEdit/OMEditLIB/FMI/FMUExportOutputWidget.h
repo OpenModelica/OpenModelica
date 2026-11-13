@@ -63,10 +63,6 @@ public:
   void setPostCompilationProcessKilled(bool killed) {mIsPostCompilationProcessKilled = killed;}
   bool isPostCompilationProcessKilled() {return mIsPostCompilationProcessKilled;}
   bool isPostCompilationProcessRunning() {return mIsPostCompilationProcessRunning;}
-  QProcess* getZipCompilationProcess() {return mpZipCompilationProcess;}
-  void setZipCompilationProcessKilled(bool killed) {mIsZipCompilationProcessKilled = killed;}
-  bool isZipCompilationProcessKilled() {return mIsZipCompilationProcessKilled;}
-  bool isZipCompilationProcessRunning() {return mIsZipCompilationProcessRunning;}
   QString getFMUPath() {return mFmuLocationPath;}
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
@@ -90,9 +86,6 @@ private:
   QProcess *mpPostCompilationProcess;
   bool mIsPostCompilationProcessKilled;
   bool mIsPostCompilationProcessRunning;
-  QProcess *mpZipCompilationProcess;
-  bool mIsZipCompilationProcessKilled;
-  bool mIsZipCompilationProcessRunning;
   void runPostCompilation();
   void writeCompilationOutput(QString output, QColor color);
   void writePostCompilationOutput(QString output, QColor color);
@@ -102,7 +95,6 @@ private:
 #if QT_CONFIG(process)
   void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
-  void ZipCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
 private slots:
   void compilationProcessStarted();
   void readCompilationStandardOutput();
@@ -114,11 +106,6 @@ private slots:
   void readPostCompilationStandardError();
   void postCompilationProcessError(QProcess::ProcessError error);
   void postCompilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void ZipCompilationProcessStarted();
-  void readZipCompilationStandardOutput();
-  void readZipCompilationStandardError();
-  void ZipCompilationProcessError(QProcess::ProcessError error);
-  void ZipCompilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 #endif
 public slots:
   void cancelCompilation();

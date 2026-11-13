@@ -35,7 +35,6 @@ end MoistAir;
 model BranchingDynamicPipes
   replaceable package Medium = MoistAir;
   PartialSource source(redeclare package Medium = Medium);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BranchingDynamicPipes;
 
 // Result:
@@ -44,7 +43,7 @@ end BranchingDynamicPipes;
 //   Real source.port.Xi_outflow[1];
 //   Real source.port.f[1];
 // equation
-//   source.port.Xi_outflow[1] = source.medium.Xi[1];
 //   source.port.f[1] = 0.0;
+//   source.port.Xi_outflow[1] = source.medium.Xi[1];
 // end BranchingDynamicPipes;
 // endResult

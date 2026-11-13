@@ -407,7 +407,71 @@ void PlotCurve::plotData(bool toggleSign)
       resetPrefixUnit(true);
     }
   }
-  setSamples(mXAxisVector, mYAxisVector);
+  applyStack();
+}
+
+/*!
+ * \brief PlotCurve::applyStack
+ * Hands the values to Qwt, moved into the curve's band when it is stacked.
+ */
+void PlotCurve::applyStack()
+{
+  if (mStacked) {
+    QwtArray<double> stacked(mYAxisVector.size());
+    for (int i = 0 ; i < mYAxisVector.size() ; i++) {
+      stacked[i] = stackedValue(mYAxisVector.at(i));
+    }
+    setSamples(mXAxisVector, stacked);
+  } else {
+    setSamples(mXAxisVector, mYAxisVector);
+  }
+}
+
+/*!
+ * \brief PlotCurve::valueText
+ * The name of a value of a Boolean or an enumeration, else the value itself.
+ * \param value
+ * \return
+ */
+QString PlotCurve::valueText(double value) const
+{
+  const int index = qRound(value) - mValueLabelBase;
+  if (qAbs(value - qRound(value)) < 1e-9 && index >= 0 && index < mValueLabels.size()) {
+    return mValueLabels.at(index);
+  }
+  return QLocale().toString(value, 'g', 4);
+}
+
+/*!
+ * \brief PlotCurve::setStack
+ * Draws the curve in its band of a stacked plot, [offset, offset + height]:
+ * value v at offset + (v - low) * scale.
+ * \param offset
+ * \param low
+ * \param scale
+ * \param height
+ */
+void PlotCurve::setStack(double offset, double low, double scale, double height)
+{
+  mStacked = true;
+  mStackOffset = offset;
+  mStackLow = low;
+  mStackScale = scale;
+  mStackHeight = height;
+}
+
+/*!
+ * \brief PlotCurve::unstackedValue
+ * The value a position of the stacked curve stands for.
+ * \param value
+ * \return
+ */
+double PlotCurve::unstackedValue(double value) const
+{
+  if (!mStacked || mStackScale == 0) {
+    return mStacked ? mStackLow : value;
+  }
+  return mStackLow + (value - mStackOffset) / mStackScale;
 }
 
 #if QWT_VERSION < 0x060000

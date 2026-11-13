@@ -1,0 +1,34 @@
+// name: ZeroRangeNF
+// status: correct
+// suite: nfScripting
+
+loadFile("ZeroRange.mo");
+
+ZeroRange.testRangeLoop(0,1,-1);getErrorString();
+ZeroRange.testRangeLoop(0,1,0);getErrorString();
+ZeroRange.testRangeLoop(0,1,1);getErrorString();
+
+ZeroRange.testRangeLoop(0,-1,-1);getErrorString();
+ZeroRange.testRangeLoop(0,-1,0);getErrorString();
+ZeroRange.testRangeLoop(0,-1,1);getErrorString();
+
+ZeroRange.testRangeLoop(0,0,1);getErrorString();
+
+// Result:
+// true
+// 0
+// ""
+// 1
+// ""
+// 2
+// ""
+// 2
+// ""
+// 1
+// ""
+// 0
+// ""
+//
+// "Error: Step size 0 in range is too small.
+// "
+// endResult

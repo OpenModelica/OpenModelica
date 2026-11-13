@@ -23,7 +23,6 @@ model VectorTest
   constant Real H[4,4] = diagonal(ones(4));
   constant Real ply[3,4] = [1.0, 0.0, 0.0, 1.0; 1.0, 0.0, 1.0, 0.0; 0.0, 0.0, 1.0, 1.0];
   constant Real plyprime[3,:] = PolyToRelCoord(H,ply);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorTest;
 
 // function VectorTest.PolyToRelCoord
@@ -39,18 +38,6 @@ end VectorTest;
 // end VectorTest.PolyToRelCoord;
 //
 // Result:
-// function VectorTest.PolyToRelCoord
-//   input Real[4, 4] T;
-//   input Real[3, :] s;
-//   output Real[3, size(s, 2)] r;
-//   protected Real[4] p;
-// algorithm
-//   for i in 1:size(s, 2) loop
-//     p := {T[1,1] * s[1,i] + T[1,2] * s[2,i] + T[1,3] * s[3,i] + T[1,4], T[2,1] * s[1,i] + T[2,2] * s[2,i] + T[2,3] * s[3,i] + T[2,4], T[3,1] * s[1,i] + T[3,2] * s[2,i] + T[3,3] * s[3,i] + T[3,4], T[4,1] * s[1,i] + T[4,2] * s[2,i] + T[4,3] * s[3,i] + T[4,4]};
-//     r[:,i] := {p[1], p[2], p[3]};
-//   end for;
-// end VectorTest.PolyToRelCoord;
-//
 // class VectorTest
 //   constant Real H[1,1] = 1.0;
 //   constant Real H[1,2] = 0.0;

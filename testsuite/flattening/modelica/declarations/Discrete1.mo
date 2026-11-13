@@ -4,13 +4,12 @@
 //
 // Test the `discrete' keyword
 
-class Discrete1
+model Discrete1
   discrete Real x;
 equation
   when time>0.5 then
     x=time;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Discrete1;
 
 // Result:
@@ -18,7 +17,7 @@ end Discrete1;
 //   discrete Real x;
 // equation
 //   when time > 0.5 then
-//   x = time;
+//     x = time;
 //   end when;
 // end Discrete1;
 // endResult

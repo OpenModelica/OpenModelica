@@ -50,6 +50,15 @@
  otherwise we get unresolved symbols and linking errors from ModelicaStandardTables.c
  The below function does not check anything and this function can be overridden.
 */
-int usertab(char* tableName, int nipo, int dim[], int* colWise, double** table) {
+/* Weak, as in the MSL's ModelicaStandardTablesUsertab.c, so that a usertab of
+   the model wins also when this file is compiled into the same library. */
+#if (defined(__clang__) || defined(__GNUC__)) && !(defined(__apple_build_version__) || defined(__APPLE__) || defined(__MINGW32__) || defined(__MINGW64__) || defined(__CYGWIN__))
+int usertab(char* tableName, int nipo, int dim[], int* colWise, double** table) __attribute__ ((weak, alias ("dummy_usertab")));
+#define USERTAB_NAME dummy_usertab
+#else
+#define USERTAB_NAME usertab
+#endif
+
+int USERTAB_NAME(char* tableName, int nipo, int dim[], int* colWise, double** table) {
   return 0;
 }

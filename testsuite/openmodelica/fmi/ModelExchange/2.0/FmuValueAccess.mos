@@ -1,0 +1,43 @@
+// name:     FmuValueAccess
+// keywords: FMI 2.0 export getBoolean setBoolean getString setString alias
+// status:   correct
+// teardown_command: rm -rf FmuValueAccess.fmu FmuValueAccess.fmutmp/ FmuValueAccess.log FmuValueAccess_*
+//
+// Boolean variables, parameters and aliases and a String parameter by value
+// reference.
+
+loadString("
+model FmuValueAccess
+  parameter Boolean p = true;
+  parameter Boolean q = not p;
+  parameter String s = \"abc\";
+  Real x(start = 1, fixed = true);
+  Boolean b = x > 0.5;
+  Boolean ab = b;
+  Boolean nb = not b;
+equation
+  der(x) = if p then -x else x;
+end FmuValueAccess;
+"); getErrorString();
+buildModelFMU(FmuValueAccess, version = "2.0", fmuType = "me", platforms = {"static"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuValueAccess.py FmuValueAccess.fmu FmuValueAccess_values.txt > FmuValueAccess.log 2>&1"); getErrorString();
+readFile("FmuValueAccess_values.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuValueAccess.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "p 0
+// q 1
+// b 1
+// ab 1
+// nb 0
+// s xyz
+// "
+// ""
+// endResult

@@ -1,6 +1,5 @@
 // name: pendel
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynopt +indexReductionMethod=dummyDerivatives --tearingStrictness=casual +loop2con=all");
 getErrorString();

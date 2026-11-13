@@ -38,7 +38,6 @@ model FunctionEvalBuiltin
      integer(2.45),
      size({1,2,3},1)
      };
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEvalBuiltin;
 
 // Result:

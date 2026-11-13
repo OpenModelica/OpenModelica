@@ -1,12 +1,11 @@
 // name:     Failure
 // keywords: Failure
 // status:   correct
-// cflags: -d=-newInst
 // suite: metamodelica
 //
 // Failure Testing
 //
-setCommandLineOptions("-g=MetaModelica -d=gen");
+// cflags: -g=MetaModelica -d=gen
 loadFile("Failure.mo");
 a:=Failure.myFailure(1);getErrorString();
 a:=Failure.myFailure(2);getErrorString();
@@ -16,7 +15,6 @@ a:=Failure.myFailure(5);getErrorString();
 a:=Failure.myFailure2();getErrorString();
 
 // Result:
-// true
 // true
 // 1
 // ""

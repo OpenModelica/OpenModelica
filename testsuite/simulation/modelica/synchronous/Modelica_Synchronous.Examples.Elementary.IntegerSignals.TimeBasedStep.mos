@@ -1,7 +1,6 @@
 // name: Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 //
 
 loadFile("Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mo"); getErrorString();
@@ -16,7 +15,7 @@ val(step.y,1.0);
 // ""
 // record SimulationResult
 //     resultFile = "Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

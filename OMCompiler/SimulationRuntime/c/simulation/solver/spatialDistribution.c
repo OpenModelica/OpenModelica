@@ -305,6 +305,45 @@ static void warnStepSizeTooBig(DATA* data, unsigned long* nDisplayed, const char
 
 
 /**
+ * @brief Set the inflowing boundary value while x stands still.
+ *
+ * A changed value becomes an event at the boundary. If the boundary already
+ * is an event its value is overwritten: the values in between occupy no
+ * length of the profile.
+ *
+ * @param threadData          Thread data for error handling
+ * @param spatialDistribution Spatial distribution.
+ * @param front               Boolean value if the boundary is the front (true) or the end (false).
+ * @param value               New boundary value.
+ */
+static void storeBoundarySpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int front, double value) {
+  DOUBLE_ENDED_LIST* transportedQuantityList = spatialDistribution->transportedQuantity;
+  DOUBLE_ENDED_LIST_NODE* edgeNode;
+  TRANSPORTED_QUANTITY_DATA* edgeNodeData;
+  TRANSPORTED_QUANTITY_DATA* neighborNodeData;
+
+  if (front) {
+    edgeNode = getFirstNodeDoubleEndedList(transportedQuantityList);
+    neighborNodeData = dataDoubleEndedList(getNextNodeDoubleEndedList(edgeNode));
+  } else {
+    edgeNode = getLastNodeDoubleEndedList(transportedQuantityList);
+    neighborNodeData = dataDoubleEndedList(getPreviousNodeDoubleEndedList(edgeNode));
+  }
+  edgeNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(edgeNode);
+
+  if (fabs(edgeNodeData->value - value) <= spatialValEps(edgeNodeData->value, value)) {
+    return;
+  }
+  if (fabs(edgeNodeData->position - neighborNodeData->position) < spatialPosEps(edgeNodeData->position, neighborNodeData->position)) {
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Overwriting %s event value with %e.", front?"front":"back", value);
+    edgeNodeData->value = value;
+  } else {
+    addNewNodeSpatialDistribution(threadData, spatialDistribution, front, edgeNodeData->position, value, 1 /* true */);
+  }
+}
+
+
+/**
  * @brief Store spatial distribution data for an accepted step.
  *
  * @param data                Data
@@ -353,6 +392,14 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
     deltaX = -deltaX;
   } else {
     realDirection = 0 /* standing still */;
+  }
+
+  /* Standing still: x did not move the profile, only the inflowing boundary
+   * value changes. oldPosX is kept, so small moves add up until they count. */
+  if (deltaX <= spatialZeroDeltaX(spatialDistribution->oldPosX, posX)) {
+    storeBoundarySpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, isPositiveVelocity ? in0 : in1);
+    messageClose(OMC_LOG_SPATIALDISTR);
+    return;
   }
 
   /* deltaX = oldPosX - posX, so realDirection > 0 means x decreased */
@@ -726,6 +773,37 @@ double extrapolateTransportedQuantity(threadData_t *threadData, const TRANSPORTE
 
 
 /**
+ * @brief Remove stored events that lie outside of a new edge position.
+ *
+ * pruneSpatialDistribution keeps events up to SPATIAL_ZERO_DELTA_X outside of
+ * the profile. When x reverses before they are removed, they would be on the
+ * wrong side of a new event added at that edge.
+ *
+ * @param spatialDistribution   Spatial distribution.
+ * @param front                 Boolean value if the edge is the front (true) or the end (false).
+ * @param position              Position of the new edge node.
+ */
+static void removeStaleEventsSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int front, double position) {
+  DOUBLE_ENDED_LIST* storedEventsList = spatialDistribution->storedEvents;
+  TRANSPORTED_EVENT_DATA* eventData;
+
+  while (doubleEndedListLen(storedEventsList) > 0) {
+    eventData = front ? firstDataDoubleEndedList(storedEventsList) : lastDataDoubleEndedList(storedEventsList);
+    if (front ? eventData->position >= position : eventData->position <= position) {
+      break;
+    }
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Removing stale event (%e,%e).", eventData->position, eventData->zeroCrossValue);
+    spatialDistribution->lastStoredEventValue = eventData->zeroCrossValue;
+    if (front) {
+      removeFirstDoubleEndedList(storedEventsList);
+    } else {
+      removeLastDoubleEndedList(storedEventsList);
+    }
+  }
+}
+
+
+/**
  * @brief Adding new pair (position, value) to front or back of spatial distribution.
  *
  * For positive velocity add at frond, else at back.
@@ -765,6 +843,7 @@ void addNewNodeSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTIO
 
   /* Add event to stored event list */
   if (isEvent == 1) {
+    removeStaleEventsSpatialDistribution(spatialDistribution, front, position);
     if (front) {
       if (doubleEndedListLen(storedEventsList) == 0) {
         if (spatialDistribution->lastStoredEventValue==0) {
@@ -1160,9 +1239,10 @@ size_t spatialDistributionStateWords(DATA* data, double* out)
  * @param data    Runtime data struct.
  * @param w       Words spatialDistributionStateWords wrote.
  * @param len     Number of words available.
+ * @param apply   0 to only check the words.
  * @return        Number of words read, or -1 if they are not what it wrote.
  */
-long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len)
+long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len, int apply)
 {
   size_t k = 0;
   unsigned int i;
@@ -1173,35 +1253,37 @@ long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len)
   }
   for (i = 0; i < data->modelData->nSpatialDistributions; i++) {
     SPATIAL_DISTRIBUTION_DATA* s = &data->simulationInfo->spatialDistributionData[i];
-    if (k + 8 > len) return -1;
-    s->isInitialized = w[k] != 0;
-    s->oldPosX = w[k+1];
-    s->startPosXSet = w[k+2] != 0;
-    s->startPosX = w[k+3];
-    s->lastStoredEventValue = (int) w[k+4];
-    s->nWarningsRemovedEvents = (unsigned long) w[k+5];
-    s->nWarningsOutputEvents = (unsigned long) w[k+6];
+    if (k + 9 > len || !(w[k+7] >= 0 && w[k+7] <= (len - k - 9) / 2)) return -1;
     n = (int) w[k+7];
-    k += 8;
-    if (n < 0 || k + 2 * (size_t) n + 1 > len) return -1;
-    clearDoubleEndedList(s->transportedQuantity);
-    for (j = 0; j < n; j++) {
-      TRANSPORTED_QUANTITY_DATA q;
-      q.position = w[k];
-      q.value = w[k+1];
-      k += 2;
-      pushBackDoubleEndedList(s->transportedQuantity, &q);
+    if (apply) {
+      s->isInitialized = w[k] != 0;
+      s->oldPosX = w[k+1];
+      s->startPosXSet = w[k+2] != 0;
+      s->startPosX = w[k+3];
+      s->lastStoredEventValue = (int) w[k+4];
+      s->nWarningsRemovedEvents = (unsigned long) w[k+5];
+      s->nWarningsOutputEvents = (unsigned long) w[k+6];
+      clearDoubleEndedList(s->transportedQuantity);
+      for (j = 0; j < n; j++) {
+        TRANSPORTED_QUANTITY_DATA q;
+        q.position = w[k + 8 + 2 * j];
+        q.value = w[k + 9 + 2 * j];
+        pushBackDoubleEndedList(s->transportedQuantity, &q);
+      }
     }
+    k += 8 + 2 * (size_t) n;
+    if (!(w[k] >= 0 && w[k] <= (len - k - 1) / 2)) return -1;
     n = (int) w[k++];
-    if (n < 0 || k + 2 * (size_t) n > len) return -1;
-    clearDoubleEndedList(s->storedEvents);
-    for (j = 0; j < n; j++) {
-      TRANSPORTED_EVENT_DATA e;
-      e.position = w[k];
-      e.zeroCrossValue = w[k+1];
-      k += 2;
-      pushBackDoubleEndedList(s->storedEvents, &e);
+    if (apply) {
+      clearDoubleEndedList(s->storedEvents);
+      for (j = 0; j < n; j++) {
+        TRANSPORTED_EVENT_DATA e;
+        e.position = w[k + 2 * j];
+        e.zeroCrossValue = w[k + 2 * j + 1];
+        pushBackDoubleEndedList(s->storedEvents, &e);
+      }
     }
+    k += 2 * (size_t) n;
   }
   return (long) k;
 }

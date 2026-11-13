@@ -375,8 +375,8 @@ record AxisScale
 end AxisScale;
 
 record Axis
-  Real[:] min = fill(0.0, 0) "Axis lower bound, in 'unit'";
-  Real[:] max = fill(0.0, 0) "Axis upper bound, in 'unit'";
+  Real min = 0.0 "Axis lower bound, in 'unit'";
+  Real max = 0.0 "Axis upper bound, in 'unit'";
   String unit = "" "Unit of axis tick labels";
   String label = "" "Axis label";
   AxisScale scale = AxisScale() "Mapping between axis values and position on axis";

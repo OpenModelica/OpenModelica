@@ -6,12 +6,11 @@
 //
 
 type enum1 = enumeration(one, two, three);
-type enum2 = enum1(start = two);
+type enum2 = enum1(start = enum1.two);
 
 model Enum10
   enum1 e1;
   enum2 e2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enum10;
 
 // Result:

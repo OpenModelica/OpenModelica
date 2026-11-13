@@ -1,0 +1,51 @@
+// name:     FmuUserTab
+// keywords: FMI 2.0 export ModelicaStandardTables usertab
+// status:   correct
+// suite:    cSources
+// teardown_command: rm -rf FmuUserTab.fmu FmuUserTab_* FmuUserTab.log
+//
+// The usertab of a model takes the place of the dummy one in an FMU.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model FmuUserTab
+  function f
+    input Real u;
+    output Real y;
+    external \"C\" y = fmuUserTabZero(u) annotation(Include = \"
+static double fmuUserTabZero(double u) { return 0.0 * u; }
+int usertab(char* tableName, int nipo, int dim[], int* colWise, double** table) {
+  static double tab[] = {0, 0, 1, 2};
+  dim[0] = 2;
+  dim[1] = 2;
+  *colWise = 0;
+  *table = tab;
+  return 0;
+}\");
+  end f;
+  Modelica.Blocks.Sources.CombiTimeTable t(tableOnFile = true, tableName = \"usertab\", fileName = \"NoName\");
+  Real y = t.y[1] + f(time);
+end FmuUserTab;
+"); getErrorString();
+buildModelFMU(FmuUserTab, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py FmuUserTab.fmu FmuUserTab_fmpy.csv 1.0 y > FmuUserTab.log 2>&1"); getErrorString();
+system("tail -n 1 FmuUserTab_fmpy.csv > FmuUserTab_last.txt"); getErrorString();
+readFile("FmuUserTab_last.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuUserTab.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "1.0,2.0
+// "
+// ""
+// endResult

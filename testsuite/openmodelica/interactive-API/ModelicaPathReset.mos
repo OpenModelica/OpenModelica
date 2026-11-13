@@ -1,0 +1,25 @@
+// name: ModelicaPathReset
+// keywords: setModelicaPath getModelicaPath
+// status: correct
+//
+// setModelicaPath("") resets the path to the one omc was started with.
+
+echo(false);
+path := getModelicaPath();
+echo(true);
+setModelicaPath("ModelicaPathReset");
+getModelicaPath();
+getEnvironmentVar("OPENMODELICALIBRARY");
+setModelicaPath("");
+getModelicaPath() == path;
+getEnvironmentVar("OPENMODELICALIBRARY") == path;
+
+// Result:
+// true
+// true
+// "ModelicaPathReset"
+// "ModelicaPathReset"
+// true
+// true
+// true
+// endResult

@@ -1,0 +1,27 @@
+// name: fmi3_wasm_fmi2_no_platform.mos
+// keywords: FMI 2.0 3.0 export wasm Co-Simulation platforms
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf M_fmi2.fmu M_fmi2.fmu.log om-wasm-include-*
+//
+// An FMI 2.0 wasm FMU is only loadable through a native driver. With no native
+// platform asked for, the export falls back to FMI 3.0 (fmi-ls-wasm) with a warning.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadString("model M Real x(start=1, fixed=true); equation der(x) = -x; end M;"); getErrorString();
+buildModelFMU(M, fileNamePrefix="M_fmi2", fmuType="cs", version="2.0", platforms={"wasm"}); getErrorString();
+system("unzip -cqq M_fmi2.fmu modelDescription.xml | grep -oE \"fmiVersion=\\\"[0-9.]*\\\"\""); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "M_fmi2.fmu"
+// "Warning: No native platform was selected for the wasm FMU, so it is exported as FMI 3.0 (fmi-ls-wasm) instead of FMI 2.0. An FMI 2.0 FMU needs a native platform to load the wasm binary.
+// Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// fmiVersion="3.0"
+// 0
+// ""
+// endResult

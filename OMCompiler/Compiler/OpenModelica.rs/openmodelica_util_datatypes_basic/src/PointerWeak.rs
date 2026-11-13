@@ -62,9 +62,7 @@ pub fn upgrade<T>(weak: PointerWeak<T>) -> metamodelica::Result<Pointer<T>> {
 /// equal: neither designates a cell any more.
 pub fn referenceEq<T>(a: &PointerWeak<T>, b: &PointerWeak<T>) -> bool {
     match (a, b) {
-        (PointerWeak::Mutable(x), PointerWeak::Mutable(y)) => {
-            Weak::ptr_eq(x, y) && x.strong_count() > 0
-        }
+        (PointerWeak::Mutable(x), PointerWeak::Mutable(y)) => Weak::ptr_eq(x, y) && x.strong_count() > 0,
         (PointerWeak::Immutable(x), PointerWeak::Immutable(y)) => Rc::ptr_eq(x, y),
         _ => false,
     }
@@ -126,5 +124,17 @@ impl<T> Ord for PointerWeak<T> {
 impl<T> std::hash::Hash for PointerWeak<T> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         std::hash::Hash::hash(&key(self), state);
+    }
+}
+
+impl<T: Clone + metamodelica::reflect::ToMMField> metamodelica::reflect::ToMMField for PointerWeak<T> {
+    fn to_mm_field(&self) -> metamodelica::reflect::MMField {
+        match self {
+            PointerWeak::Mutable(w) => match w.upgrade() {
+                Some(cell) => crate::Mutable::cell_get(&cell).to_mm_field(),
+                None => metamodelica::reflect::MMField::Opaque("dead PointerWeak"),
+            },
+            PointerWeak::Immutable(a) => a.to_mm_field(),
+        }
     }
 }

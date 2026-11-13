@@ -16,3 +16,6 @@
 [submodule "OMCompiler/Examples/ModelicaTutorial"]
 	path = OMCompiler/Examples/ModelicaTutorial
 	url = ../ModelicaTutorial.git
+[submodule "OMEdit/OMEditLIB/Resources/crml-diagram"]
+	path = OMEdit/OMEditLIB/Resources/crml-diagram
+	url = ../CRML-diagram.git

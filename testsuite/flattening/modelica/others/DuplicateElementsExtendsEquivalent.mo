@@ -16,7 +16,6 @@ model DuplicateElementsExtendsEquivalent
  extends Duplicate; // have another x
  import C=Crap;
  C.X x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DuplicateElementsExtendsEquivalent;
 
 // Result:

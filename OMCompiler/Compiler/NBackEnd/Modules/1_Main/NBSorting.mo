@@ -529,8 +529,8 @@ public
           phase2_adj.mT := Adjacency.IntMatrix.expandRows(phase2_adj.mT, shift);
           eqn_rows := listAppend(algebraic_loops, list(Value.getEquations(Util.tuple22(bucket)) for bucket in buckets));
           var_rows := list(list(phase2_matching.eqn_to_var[idx] for idx in row) for row in eqn_rows);
-          Adjacency.IntMatrix.reserveData(phase2_adj.mT, mergedSize(phase2_adj.mT, var_rows));
-          mx := maxMergedRow(phase2_adj.mT, var_rows);
+          Adjacency.IntMatrix.reserveData(phase2_adj.mT, mergedSize(phase2_adj.mT, var_rows, arrayLength(stamp)));
+          mx := maxMergedRow(phase2_adj.mT, var_rows, arrayLength(stamp));
           counts := arrayCreate(Util.nextPrime(mx), 0);
           uniq := arrayCreate(mx, 0);
           sorted := arrayCreate(mx, 0);
@@ -558,8 +558,8 @@ public
           // 5.1. transpose the transposed matrix and enlarge it by the maximum possible amount of new nodes
           index := Adjacency.IntMatrix.rows(phase2_adj.m) + 1;
           phase2_adj.m := Adjacency.IntMatrix.transpose(phase2_adj.mT, Adjacency.IntMatrix.rows(phase2_adj.m) + shift,
-                                                        mergedSize(phase2_adj.m, eqn_rows));
-          mx := maxMergedRow(phase2_adj.m, eqn_rows);
+                                                        mergedSize(phase2_adj.m, eqn_rows, arrayLength(stamp)));
+          mx := maxMergedRow(phase2_adj.m, eqn_rows, arrayLength(stamp));
           counts := arrayCreate(Util.nextPrime(mx), 0);
           uniq := arrayCreate(mx, 0);
           sorted := arrayCreate(mx, 0);
@@ -640,7 +640,7 @@ public
 
           // check for independence of the element equations
           // if locally each variable occurs in only one equation, then they are all independent
-          indep := Array.all(m_local.len, function intEq(i2 = 1));
+          indep := List.all(list(Adjacency.IntMatrix.rowLength(m_local, r) == 1 for r in 1:Adjacency.IntMatrix.rows(m_local)), Util.id);
 
           eqn_arr_idx := mapping.eqn_StA[listHead(node.eqn_indices)];
           var_arr_idx := mapping.var_StA[matching.eqn_to_var[listHead(node.eqn_indices)]];
@@ -694,22 +694,30 @@ public
 
     function mergedSize
       "how much buffer the merged rows need at most, so that merging them does
-      not have to grow it"
+      not have to grow it. A merged row has no duplicates, so it has at most
+      bound entries (the number of possible values)."
       input Adjacency.IntMatrix m;
       input list<list<Integer>> rows;
+      input Integer bound;
       output Integer total = 0;
+    protected
+      Integer row_total;
     algorithm
       for row in rows loop
+        row_total := 0;
         for idx in row loop
-          total := total + m.len[idx];
+          row_total := row_total + Adjacency.IntMatrix.rowLength(m, idx);
         end for;
+        total := total + intMin(row_total, bound);
       end for;
     end mergedSize;
 
     function maxMergedRow
-      "the largest row that merging any of rows can produce"
+      "the largest row that merging any of rows can produce, at most bound
+      entries (the number of possible values)"
       input Adjacency.IntMatrix m;
       input list<list<Integer>> rows;
+      input Integer bound;
       output Integer mx = 0;
     protected
       Integer total;
@@ -717,9 +725,9 @@ public
       for row in rows loop
         total := 0;
         for idx in row loop
-          total := total + m.len[idx];
+          total := total + Adjacency.IntMatrix.rowLength(m, idx);
         end for;
-        mx := intMax(mx, total);
+        mx := intMax(mx, intMin(total, bound));
       end for;
     end maxMergedRow;
 
@@ -734,49 +742,63 @@ public
       input list<Integer> rows_to_merge;
       input output Integer new_idx;
       input array<Integer> stamp   "indexed by entry, all zero on entry and exit";
-      input array<Integer> counts  "one slot per bucket";
+      input array<Integer> counts  "one slot per bucket, unless there are more buckets than possible entries";
       input array<Integer> uniq    "scratch of the merged size";
       input array<Integer> sorted  "scratch of the merged size";
     protected
       array<Integer> data = Adjacency.IntMatrix.entries(m);
-      Integer total = 0, first, n = 0, p, h, v, acc, c;
+      array<Integer> pstart = Adjacency.IntMatrix.pieceStarts(m);
+      array<Integer> plen = Adjacency.IntMatrix.pieceLengths(m);
+      Integer total = 0, n = 0, p, h, v, acc, c;
     algorithm
       for idx in rows_to_merge loop
-        total := total + m.len[idx];
+        total := total + Adjacency.IntMatrix.rowLength(m, idx);
       end for;
       p := Util.nextPrime(total);
       for idx in rows_to_merge loop
-        first := m.start[idx];
-        for k in first:first + m.len[idx] - 1 loop
-          v := data[k];
-          if stamp[v] == 0 then
-            arrayUpdate(stamp, v, 1);
-            n := n + 1;
-            arrayUpdate(uniq, n, v);
-          end if;
+        for q in m.first[idx]:m.first[idx] + m.pieces[idx] - 1 loop
+          for k in pstart[q]:pstart[q] + plen[q] - 1 loop
+            v := data[k];
+            if stamp[v] == 0 then
+              arrayUpdate(stamp, v, 1);
+              n := n + 1;
+              arrayUpdate(uniq, n, v);
+            end if;
+          end for;
         end for;
       end for;
-      // counting sort by bucket, descending
-      for i in 1:p loop
-        arrayUpdate(counts, i, 0);
-      end for;
-      for i in 1:n loop
-        h := intMod(uniq[i], p) + 1;
-        arrayUpdate(counts, h, counts[h] + 1);
-      end for;
-      acc := 0;
-      for i in p:-1:1 loop
-        c := counts[i];
-        arrayUpdate(counts, i, acc);
-        acc := acc + c;
-      end for;
-      for i in 1:n loop
-        v := uniq[i];
-        h := intMod(v, p) + 1;
-        arrayUpdate(sorted, counts[h] + 1, v);
-        arrayUpdate(counts, h, counts[h] + 1);
-        arrayUpdate(stamp, v, 0);
-      end for;
+      if p > arrayLength(counts) then
+        // more buckets than possible entries (shared sections): every entry is
+        // alone in its bucket, so the bucket order is the descending order
+        h := 1;
+        for v in List.sort(list(uniq[i] for i in 1:n), intLt) loop
+          arrayUpdate(sorted, h, v);
+          arrayUpdate(stamp, v, 0);
+          h := h + 1;
+        end for;
+      else
+        // counting sort by bucket, descending
+        for i in 1:p loop
+          arrayUpdate(counts, i, 0);
+        end for;
+        for i in 1:n loop
+          h := intMod(uniq[i], p) + 1;
+          arrayUpdate(counts, h, counts[h] + 1);
+        end for;
+        acc := 0;
+        for i in p:-1:1 loop
+          c := counts[i];
+          arrayUpdate(counts, i, acc);
+          acc := acc + c;
+        end for;
+        for i in 1:n loop
+          v := uniq[i];
+          h := intMod(v, p) + 1;
+          arrayUpdate(sorted, counts[h] + 1, v);
+          arrayUpdate(counts, h, counts[h] + 1);
+          arrayUpdate(stamp, v, 0);
+        end for;
+      end if;
       Adjacency.IntMatrix.setRowFromArray(m, new_idx, sorted, n);
       // remove the original rows
       for idx in rows_to_merge loop
@@ -837,8 +859,10 @@ protected
     array<Integer> var_to_eqn = arrayCreate(N, -1);
     array<Integer> eqn_to_var = arrayCreate(N, -1);
     array<Integer> data = Adjacency.IntMatrix.entries(m);
+    array<Integer> pstart = Adjacency.IntMatrix.pieceStarts(m);
+    array<Integer> plen = Adjacency.IntMatrix.pieceLengths(m);
     Adjacency.IntMatrix.Builder builder;
-    Integer j = 1, row, first, edges = 0, loc, var;
+    Integer j = 1, row, edges = 0, loc, var;
   algorithm
     // map matching from full system and save eqn map back
     map_back := arrayCreate(N, -1);
@@ -862,18 +886,19 @@ protected
 
     // filter only local edges of adjacency matrix
     for j in 1:N loop
-      edges := edges + m.len[map_back[j]];
+      edges := edges + Adjacency.IntMatrix.rowLength(m, map_back[j]);
     end for;
     builder := Adjacency.IntMatrix.newBuilder(edges);
     for j in 1:N loop
       row   := map_back[j];
-      first := m.start[row];
-      for k in first + m.len[row] - 1:-1:first loop
-        var := data[k];
-        loc := if var > 0 then var_loc[var] else 0;
-        if loc > 0 then
-          Adjacency.IntMatrix.builderAdd(builder, j, loc);
-        end if;
+      for q in m.first[row] + m.pieces[row] - 1:-1:m.first[row] loop
+        for k in pstart[q] + plen[q] - 1:-1:pstart[q] loop
+          var := data[k];
+          loc := if var > 0 then var_loc[var] else 0;
+          if loc > 0 then
+            Adjacency.IntMatrix.builderAdd(builder, j, loc);
+          end if;
+        end for;
       end for;
     end for;
     m_loc := Adjacency.IntMatrix.fromBuilder(builder, N);
@@ -901,11 +926,11 @@ protected
     input array<Integer> lowlink            "represents the component groups";
     input array<Boolean> onStack            "true if eqn index is on the stack";
     input array<Integer> call_eqn           "depth-first search stack: equation";
-    input array<Integer> call_pos           "depth-first search stack: next entry of m to visit";
+    input array<Integer> call_pos           "depth-first search stack: position of the next entry of the row to visit";
     input output list<list<Integer>> comps  "accumulator for components";
   protected
     list<Integer> SCC;
-    Integer depth, eqn, eqn2, k, cand;
+    Integer depth, eqn, eqn2, k, idx, cand;
   algorithm
     depth := 1;
     (stack, index) := strongConnectVisit(m, root, depth, stack, index, number, lowlink, onStack, call_eqn, call_pos);
@@ -913,9 +938,10 @@ protected
     while depth > 0 loop
       eqn := call_eqn[depth];
       k := call_pos[depth];
-      if k < m.start[eqn] + m.len[eqn] then
+      idx := Adjacency.IntMatrix.dataIndex(m, eqn, k);
+      if idx > 0 then
         arrayUpdate(call_pos, depth, k + 1);
-        cand := data[k];
+        cand := data[idx];
         if cand > 0 then
           eqn2 := var_to_eqn[cand];
           if eqn2 > 0 and eqn2 <> eqn then
@@ -971,7 +997,7 @@ protected
     index := index + 1;
     stack := eqn::stack;
     arrayUpdate(call_eqn, depth, eqn);
-    arrayUpdate(call_pos, depth, m.start[eqn]);
+    arrayUpdate(call_pos, depth, 1);
   end strongConnectVisit;
 
 

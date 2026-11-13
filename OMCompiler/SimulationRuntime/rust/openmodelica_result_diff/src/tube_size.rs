@@ -1,5 +1,6 @@
-//! Port of csv-compare's `TubeSize.cs`: how a relative tolerance becomes the
-//! half-width and half-height of the tube around the reference curve.
+//! Port of csv-compare's `TubeSize.cs` (BSD-3-Clause, see `LICENSE`): how a
+//! relative tolerance becomes the half-width and half-height of the tube around
+//! the reference curve.
 
 /// `x` is half the rectangle width, `y` half its height, `ratio` is `y/x` -- so
 /// a tolerance on one axis fixes the other.
@@ -25,7 +26,13 @@ impl TubeSize {
         let (ymin, ymax) = min_max(y);
         let base_x = (xmax - xmin).max(xmin.abs()).max(EPSILON);
         let base_y = (ymax - ymin).max(ymin.abs()).max(nominal_value);
-        TubeSize { x: 0.0, y: 0.0, base_x, base_y, ratio: base_y / base_x }
+        TubeSize {
+            x: 0.0,
+            y: 0.0,
+            base_x,
+            base_y,
+            ratio: base_y / base_x,
+        }
     }
 
     /// `SetStandardBaseAndRatio`.
@@ -41,7 +48,13 @@ impl TubeSize {
         }
         let base_y = (ymax - ymin).max(nominal_value);
         let ratio = if base_x != 0.0 { base_y / base_x } else { 0.0 };
-        TubeSize { x: 0.0, y: 0.0, base_x, base_y, ratio }
+        TubeSize {
+            x: 0.0,
+            y: 0.0,
+            base_x,
+            base_y,
+            ratio,
+        }
     }
 
     /// `Calculate(value, Axes.X, Relativity.Relative)`: the tolerance as a
@@ -60,5 +73,7 @@ impl TubeSize {
 }
 
 fn min_max(v: &[f64]) -> (f64, f64) {
-    v.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &e| (lo.min(e), hi.max(e)))
+    v.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &e| {
+        (lo.min(e), hi.max(e))
+    })
 }

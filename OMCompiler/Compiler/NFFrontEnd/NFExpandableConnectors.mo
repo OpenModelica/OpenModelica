@@ -394,7 +394,7 @@ algorithm
       // If the element doesn't already exist, add it to the list of elements to be
       // added to the connector.
       nodes := node :: nodes;
-      ty := c.ty;
+      ty := InstNode.getType(node);
       elem_name := ComponentRef.prefixCref(node, ty, {}, exp_name);
       vars := createVirtualVariables(elem_name, ty, ElementSource.getInfo(c.source), vars);
     else
@@ -415,8 +415,10 @@ algorithm
     cls := Class.setClassTree(cls_tree, cls);
   end if;
 
-  // Create a normal non-expandable complex type for the augmented expandable connector.
-  complex_ty := Typing.makeConnectorType(cls_tree, isExpandable = false);
+  // Create a normal non-expandable complex type for the augmented expandable
+  // connector. Elements that are still only potentially present are undefined,
+  // MLS 3.7 section 9.1.3.
+  complex_ty := Typing.makeConnectorType(cls_tree, isExpandable = false, onlyPresent = true);
   ty := Type.COMPLEX(InstNode.identityCell(cls_node), complex_ty);
   ty := Type.liftArrayLeftList(ty, Type.arrayDims(InstNode.getType(exp_node)));
   cls := Class.setType(ty, cls);

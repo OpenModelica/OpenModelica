@@ -1,0 +1,34 @@
+// name: ErrorMessageFileName
+// keywords: #17891
+// status: correct
+//
+// The file name of a message from getMessagesStringInternal is read with
+// .info.fileName, with and without -d=nfScripting.
+
+loadString("model M Real x = y; end M;"); getErrorString();
+checkModel(M);
+echo(false); errors := getMessagesStringInternal();
+e := errors[1]; echo(true);
+e.info.fileName; getErrorString();
+e.info.lineStart; getErrorString();
+setCommandLineOptions("-d=-nfScripting");
+checkModel(M);
+echo(false); errors2 := getMessagesStringInternal();
+e2 := errors2[1]; echo(true);
+e2.info.fileName; getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of M failed with 1 error(s)."
+// true
+// "<interactive>"
+// ""
+// 1
+// ""
+// true
+// "Check of M failed with 1 error(s)."
+// true
+// "<interactive>"
+// ""
+// endResult

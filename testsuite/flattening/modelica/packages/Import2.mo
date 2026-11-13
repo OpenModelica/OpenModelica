@@ -40,12 +40,10 @@ class Import2
   D d;
   E e;
   MyC myc;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import2;
 // Result:
 // Error processing file: Import2.mo
 // [flattening/modelica/packages/Import2.mo:39:3-39:6:writable] Error: Class C not found in scope Import2.
-// Error: Error occurred while flattening model Import2
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

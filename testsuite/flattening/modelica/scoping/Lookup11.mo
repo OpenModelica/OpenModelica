@@ -19,7 +19,6 @@ end P;
 
 model Lookup11
   P.P p;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup11;
 
 // Result:

@@ -1,0 +1,52 @@
+// name:     Fmi2NoVariables
+// keywords: FMI 2.0 export ModelVariables
+// status:   correct
+// teardown_command: rm -rf Fmi2NoVariables.fmu Fmi2NoVariables.fmutmp/ Fmi2NoVariables.log Fmi2NoVariables_tmp.xml Fmi2NoVariables.xml Fmi2NoVariables_out.txt
+//
+// The FMI 2.0 schema requires at least one ScalarVariable. A model without
+// variables lists the independent variable time, which fmi2GetReal must give
+// (#17884).
+
+loadString("
+model Fmi2NoVariables
+  annotation(experiment(StopTime = 1));
+end Fmi2NoVariables;
+"); getErrorString();
+buildModelFMU(Fmi2NoVariables, version = "2.0", fmuType = "me_cs", platforms = {"static"}); getErrorString();
+system("unzip -cqq Fmi2NoVariables.fmu modelDescription.xml > Fmi2NoVariables_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" Fmi2NoVariables_tmp.xml > Fmi2NoVariables.xml"); getErrorString();
+readFile("Fmi2NoVariables.xml"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" Fmi2NoVariables.py Fmi2NoVariables.fmu Fmi2NoVariables_out.txt > Fmi2NoVariables.log 2>&1"); getErrorString();
+readFile("Fmi2NoVariables_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "Fmi2NoVariables.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"time\"
+//     valueReference=\"0\"
+//     description=\"Simulation time\"
+//     causality=\"independent\"
+//     variability=\"continuous\">
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "problems = 0
+// time = 0.5
+// "
+// ""
+// endResult

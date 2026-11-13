@@ -43,6 +43,8 @@ extern "C" {
     fn omc_fmu_loader_js(platform: &str) -> Option<Vec<u8>>;
     #[wasm_bindgen(js_namespace = globalThis, js_name = __omcWasmBlob)]
     fn omc_wasm_blob_js(file: &str) -> Option<Vec<u8>>;
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcStoreRead)]
+    fn omc_store_read_js(seg: u32, off: f64, buf: &mut [u8]) -> bool;
 }
 
 fn wall_ms() -> f64 {
@@ -79,8 +81,7 @@ fn aot_preload() {
 }
 
 fn aot_compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
-    omc_aot_compile_js(component, triple)
-        .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
+    omc_aot_compile_js(component, triple).map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
 }
 
 /// Let a model's externals reach a library this omc does not embed, through
@@ -97,10 +98,7 @@ pub fn omc_enable_wasm_blobs() {
 #[wasm_bindgen]
 pub fn omc_enable_fmu_aot() {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_aot(aot_compile, aot_preload);
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_loaders(
-        omc_fmu_loader_js,
-        omc_fmu_platforms_js(),
-    );
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_loaders(omc_fmu_loader_js, omc_fmu_platforms_js());
 }
 
 // The compiler emits stdout/stderr in fragments (a `print` call need not end on
@@ -113,6 +111,14 @@ thread_local! {
     /// The last panic message the hook saw, so [`omc_eval`] can report the real
     /// reason (location + message) instead of a bare "evaluation panicked".
     static LAST_PANIC: RefCell<Option<String>> = const { RefCell::new(None) };
+    static LOADED_MODELS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+unsafe extern "C" fn load_model_callback(_class: *mut std::ffi::c_void, name: *const std::ffi::c_char) {
+    if !name.is_null() {
+        let name = unsafe { std::ffi::CStr::from_ptr(name) }.to_string_lossy().into_owned();
+        LOADED_MODELS.with(|l| l.borrow_mut().push(name));
+    }
 }
 
 fn buffer_lines(buf: &'static std::thread::LocalKey<RefCell<String>>, s: &str, emit: fn(&str)) {
@@ -167,6 +173,7 @@ pub fn omc_init() -> bool {
     // Route `plot(...)` through the in-page charton renderer instead of spawning
     // the external OMPlot process (which does not exist on wasm).
     crate::wasm_plot::register();
+    openmodelica_util::System::omc_set_loadmodel_callback(std::ptr::null_mut(), Some(load_model_callback));
 
     // wasm has no `Instant`; give the sim driver a wall-clock for the chunk budget.
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_clock(wall_ms);
@@ -230,7 +237,9 @@ pub fn wasi_fd_close(fd: u32) {
 /// absent (a JS number; sizes here are small config/result files).
 #[wasm_bindgen]
 pub fn wasi_path_filestat_get(path: &str) -> f64 {
-    openmodelica_wasi::wasi::stat_size(path).map(|n| n as f64).unwrap_or(-1.0)
+    openmodelica_wasi::wasi::stat_size(path)
+        .map(|n| n as f64)
+        .unwrap_or(-1.0)
 }
 
 /// List directory `path` (absolute; `"/"` is the root) as an array of
@@ -301,30 +310,100 @@ pub fn wasi_rename(from: &str, to: &str) -> bool {
     openmodelica_wasi::fs::rename(from, to).is_ok()
 }
 
+fn store_read(seg: u32, off: u64, buf: &mut [u8]) -> bool {
+    omc_store_read_js(seg, off as f64, buf)
+}
+
+fn set(obj: &js_sys::Object, key: &str, value: JsValue) {
+    let _ = js_sys::Reflect::set(obj, &JsValue::from_str(key), &value);
+}
+
+/// Persist `<home>/.openmodelica` in the host's segment files (`wasm/omc-store.js`),
+/// read through `globalThis.__omcStoreRead`, but not the package manager's
+/// downloads in its `cache/`. Returns that root.
+#[wasm_bindgen]
+pub fn omc_store_enable() -> String {
+    let root = format!("{}/.openmodelica", openmodelica_util::Settings::getHomeDir(false));
+    openmodelica_wasi::set_persistent_root(&root, &["cache"], store_read);
+    root
+}
+
+/// Mount stored files: NUL-separated `paths`, and `[segment, mtime seconds, mtime
+/// nanoseconds, offset, length]` for each in `nums`.
+#[wasm_bindgen]
+pub fn omc_store_mount(paths: &str, nums: &[f64]) -> usize {
+    let mut mounted = 0;
+    for (path, f) in paths.split('\0').zip(nums.chunks_exact(5)) {
+        let mtime = std::time::Duration::new(f[1] as u64, f[2] as u32);
+        openmodelica_wasi::mount(path, mtime, f[0] as u32, f[3] as u64, f[4] as u64);
+        mounted += 1;
+    }
+    mounted
+}
+
+/// What changed below the root since the last commit, or `undefined`:
+/// `{ paths, nums, data, removed }`, with NUL-separated `paths` and `removed`,
+/// `[mtime seconds, mtime nanoseconds, length]` for each file in `nums`, and the
+/// files' bytes one after the other in `data`.
+#[wasm_bindgen]
+pub fn omc_store_snapshot() -> JsValue {
+    let Some(snap) = openmodelica_wasi::take_snapshot() else {
+        return JsValue::UNDEFINED;
+    };
+    let paths: Vec<&str> = snap.files.iter().map(|f| f.0.as_str()).collect();
+    let nums: Vec<f64> = snap
+        .files
+        .iter()
+        .flat_map(|(_, t, len)| [t.as_secs() as f64, t.subsec_nanos() as f64, *len as f64])
+        .collect();
+    let obj = js_sys::Object::new();
+    set(&obj, "paths", JsValue::from_str(&paths.join("\0")));
+    set(&obj, "nums", js_sys::Float64Array::from(&nums[..]).into());
+    set(&obj, "data", js_sys::Uint8Array::from(&snap.data[..]).into());
+    set(&obj, "removed", JsValue::from_str(&snap.removed.join("\0")));
+    obj.into()
+}
+
+/// Stop recording changes below the root; the host could not save them.
+#[wasm_bindgen]
+pub fn omc_store_disable() {
+    openmodelica_wasi::stop_persisting();
+}
+
+/// The last snapshot is stored in segment `seg`, file `i` at `offsets[i]`.
+#[wasm_bindgen]
+pub fn omc_store_commit(seg: u32, offsets: &[f64]) {
+    let offsets: Vec<u64> = offsets.iter().map(|&o| o as u64).collect();
+    openmodelica_wasi::commit(seg, &offsets);
+}
+
 /// Drain the files the last command tried to download but did not find in the
 /// VFS, as an array of `{ urls: string[], filename: string }`. `omc_eval` is
 /// synchronous, so it cannot fetch over the network itself; instead the JS host
 /// fetches each pending file (the browser streams it for download progress),
 /// stages the bytes with [`wasi_write_file`], and re-runs the command, which then
-/// finds them in the VFS. See `openmodelica_script_util::Curl` (Curl_wasm).
+/// finds them in the VFS. See `openmodelica_download`.
 #[wasm_bindgen]
 pub fn omc_take_pending_downloads() -> JsValue {
     let arr = js_sys::Array::new();
-    for (urls, filename) in openmodelica_script_util::Curl::take_pending_downloads() {
+    for (urls, filename) in openmodelica_script_util::PackageManagerExt::take_pending_downloads() {
         let item = js_sys::Object::new();
         let mirrors = js_sys::Array::new();
         for u in &urls {
             mirrors.push(&JsValue::from_str(u));
         }
         let _ = js_sys::Reflect::set(&item, &JsValue::from_str("urls"), &mirrors);
-        let _ = js_sys::Reflect::set(
-            &item,
-            &JsValue::from_str("filename"),
-            &JsValue::from_str(&filename),
-        );
+        let _ = js_sys::Reflect::set(&item, &JsValue::from_str("filename"), &JsValue::from_str(&filename));
         arr.push(&item);
     }
     arr.into()
+}
+
+/// Drain the top-level classes that omc loaded on its own (a `uses` annotation, a
+/// name lookup) since the last call: the native host's loadModel callback.
+#[wasm_bindgen]
+pub fn omc_take_loaded_models() -> Vec<String> {
+    LOADED_MODELS.with(|l| std::mem::take(&mut *l.borrow_mut()))
 }
 
 /// Drain the plot commands the last `omc_eval` recorded, as an array of string
@@ -401,8 +480,16 @@ pub fn omc_sim_series() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&s.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&s.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&s.unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&s.display_unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(s.relative_quantity));
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("displayUnit"),
+                &JsValue::from_str(&s.display_unit),
+            );
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("relativeQuantity"),
+                &JsValue::from_bool(s.relative_quantity),
+            );
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("constant"), &JsValue::from_bool(s.constant));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("alias"), &JsValue::from_bool(s.alias));
             arr.push(&item);
@@ -424,8 +511,16 @@ pub fn omc_sim_parameters() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&p.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&p.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&p.unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&p.display_unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(p.relative_quantity));
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("displayUnit"),
+                &JsValue::from_str(&p.display_unit),
+            );
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("relativeQuantity"),
+                &JsValue::from_bool(p.relative_quantity),
+            );
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("value"), &JsValue::from_f64(p.value));
             if !p.enum_names.is_empty() {
                 let names = js_sys::Array::new();
@@ -481,9 +576,13 @@ pub fn omc_sim_info() -> JsValue {
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.n_rows() as f64));
         let st = &sim.stats;
         for (k, v) in [
-            ("steps", st.steps), ("resEvals", st.res_evals), ("jacEvals", st.jac_evals),
-            ("errTestFails", st.err_test_fails), ("convTestFails", st.conv_test_fails),
-            ("stateEvents", st.state_events), ("timeEvents", st.time_events),
+            ("steps", st.steps),
+            ("resEvals", st.res_evals),
+            ("jacEvals", st.jac_evals),
+            ("errTestFails", st.err_test_fails),
+            ("convTestFails", st.conv_test_fails),
+            ("stateEvents", st.state_events),
+            ("timeEvents", st.time_events),
         ] {
             let _ = js_sys::Reflect::set(&o, &JsValue::from_str(k), &JsValue::from_f64(v as f64));
         }
@@ -512,10 +611,7 @@ pub fn omc_sim_time() -> Option<Vec<f64>> {
 /// no run.
 #[wasm_bindgen]
 pub fn omc_sim_column(index: usize) -> Option<Vec<f64>> {
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
-        sim.values(index)
-    })
-    .flatten()
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| sim.values(index)).flatten()
 }
 
 /// Evaluate one interactive command and return its reply — the same string the
@@ -648,7 +744,9 @@ pub fn omc_sim_advance(budget_ms: f64) -> i32 {
 /// worker's Cancel path; safe with no active session.
 #[wasm_bindgen]
 pub fn omc_sim_free() {
-    let _ = catch_unwind(AssertUnwindSafe(openmodelica_codegen_wasm_jit::CodegenWasmJit::sim_free));
+    let _ = catch_unwind(AssertUnwindSafe(
+        openmodelica_codegen_wasm_jit::CodegenWasmJit::sim_free,
+    ));
 }
 
 /// Request cancellation of the running simulation (mirrors the native C ABI). The

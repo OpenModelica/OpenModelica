@@ -38,7 +38,6 @@
  */
 
 #include <stdlib.h>
-#include <iostream>
 #include <cstring>
 
 #include "OMCProxy.h"
@@ -147,6 +146,7 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
   Module.__omcCallId = 0;
   Module.__omcReplies = {};
   Module.__omcCallPromises = {};
+  Module.__omcLoadedModels = [];
   Module.__omcQueue = Promise.resolve();
   Module.__omcSend = (msg) => {
     const run = () => new Promise((resolve) => {
@@ -172,6 +172,7 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
     const id = ++Module.__omcCallId;
     Module.__omcCallPromises[id] = Module.__omcSend(msg).then((reply) => {
       Module.__omcReplies[id] = reply || {};
+      if (reply && reply.loaded) Module.__omcLoadedModels.push(...reply.loaded);
       Module.__omcWake();
     }).catch((e) => {
       Module.__omcReplies[id] = { __bridgeError: String(e) };
@@ -460,6 +461,21 @@ EM_JS(int, omedit_progress_phase, (), {
   return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 2) : 0;
 });
 
+EM_JS(char *, omedit_take_loaded_models, (), {
+  const names = Module.__omcLoadedModels || [];
+  Module.__omcLoadedModels = [];
+  return stringToNewUTF8(names.join("\n"));
+});
+
+// The worker replies carry what the native loadModel callback reports.
+static void omcDeliverLoadedModels() {
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->isLibraryWidgetReady()) return;
+  for (const QString &name : takeLines(omedit_take_loaded_models())) {
+    MainWindow::LoadModelCallbackFunction(w, name.toUtf8().constData());
+  }
+}
+
 static QVarLengthArray<QEventLoop *> g_omcWaitStack;
 static bool g_omcWakeInstalled = false;
 
@@ -517,7 +533,7 @@ static void omcClearProgressUi(bool ownsBar, bool ownsCancel) {
   }
 }
 
-void omcWorkerWaitReply(int id) {
+static void omcWaitForReply(int id) {
   if (omedit_call_ready(id)) return;
   if (!g_omcMainLoopRunning) {
     omedit_await_call(id);
@@ -554,6 +570,11 @@ void omcWorkerWaitReply(int id) {
   g_omcWaitStack.removeLast();
   if (ownsBar || ownsCancel) omcClearProgressUi(ownsBar, ownsCancel);
   if (!g_omcWaitStack.isEmpty()) omedit_wake_now();
+}
+
+void omcWorkerWaitReply(int id) {
+  omcWaitForReply(id);
+  omcDeliverLoadedModels();
 }
 
 // Spawn + initialise the worker (replaces the in-process GC + omc_Main_init).
@@ -884,6 +905,25 @@ OMCLongOperation::~OMCLongOperation()
 }
 
 /*!
+ * \brief OMCProxy::simulationProgress
+ * \return The in-process simulation's progress in permille, or -1 when no simulation reports it.
+ */
+int OMCProxy::simulationProgress()
+{
+#if defined(__EMSCRIPTEN__)
+  const int phase = omedit_progress_phase();
+  const int permille = omedit_progress_permille();
+#elif defined(OMC_RUST_ABI)
+  const int phase = omc_compiler_progress_phase();
+  const int permille = omc_compiler_progress_permille();
+#else
+  const int phase = System_progressPhase();
+  const int permille = System_progressPermille();
+#endif
+  return phase == 5 ? permille : -1;
+}
+
+/*!
  * \class OMCProxy
  * \brief Interface to send commands to OpenModelica Compiler.
  */
@@ -1074,8 +1114,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   settingsLocale = settingsLocale.name() == "C" ? QLocale::system() : settingsLocale;
 #if defined(__EMSCRIPTEN__)
   // omc runs in the Web Worker: spawn + initialise it instead of an in-process
-  // MMC runtime. The plot/loadModel callbacks are delivered as worker messages
-  // (TODO) rather than threadData function pointers. threadData is null here.
+  // MMC runtime. The loadModel callback comes with the worker replies (see
+  // omcWorkerWaitReply); the plot callback is a TODO. threadData is null here.
   (void) settingsLocale;
   {
     char *initErr = omedit_worker_init();
@@ -1542,8 +1582,11 @@ void OMCProxy::setCurrentError(int errorIndex)
   */
 QString OMCProxy::getErrorFileName()
 {
-  sendCommand("currentError.info.filename");
-  QString file = StringHandler::unparse(getResult());
+  // Older omc versions name the field filename, newer ones fileName.
+  // Reading the whole record avoids an error for the other name.
+  static const QRegularExpression fileNameField("\\bfile[nN]ame = (\"(?:[^\"\\\\]|\\\\.)*\")");
+  sendCommand("currentError.info");
+  QString file = StringHandler::unparse(fileNameField.match(getResult()).captured(1));
   if (file.compare("<interactive>") == 0)
     return "";
   else
@@ -3057,14 +3100,50 @@ bool OMCProxy::setComponentDimensions(QString className, QString componentName, 
 }
 
 /*!
+ * \brief OMCProxy::getComponentCondition
+ * Gets the condition of a component in a class.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \return the condition of the component as a string or the string "false" on failure.
+ */
+QString OMCProxy::getComponentCondition(QString className, QString componentName)
+{
+  return mpOMCInterface->getComponentCondition(className, componentName);
+  // sendCommand("getComponentCondition(" + className + "," + componentName + ")");
+  // return StringHandler::unparse(getResult());
+}
+
+/*!
+ * \brief OMCProxy::setComponentCondition
+ * Sets the condition of a component in a class. An empty string removes the condition.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \param condition - the condition of the component.
+ * \return true on success.
+ */
+bool OMCProxy::setComponentCondition(QString className, QString componentName, QString condition)
+{
+  return mpOMCInterface->setComponentCondition(className, componentName, condition);
+  // QString expression;
+  // if (condition.isEmpty()) {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"\")";
+  // } else {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"" + condition + "\")";
+  // }
+  // sendCommand(expression);
+  // return StringHandler::unparseBool(getResult());
+}
+
+/*!
  * \brief OMCProxy::addConnection
  * Adds a connection
  * \param from - the connection start component name.
  * \param to - the connection end component name.
  * \param className - the name of the class.
  * \param annotation - the connection annotation.
+ * \return
  */
-void OMCProxy::addConnection(QString from, QString to, QString className, QString annotation)
+bool OMCProxy::addConnection(QString from, QString to, QString className, QString annotation)
 {
   if (annotation.compare("annotate=Line()") == 0) {
     sendCommand("addConnection(" + from + "," + to + "," + className + ")");
@@ -3072,9 +3151,11 @@ void OMCProxy::addConnection(QString from, QString to, QString className, QStrin
     sendCommand("addConnection(" + from + "," + to + "," + className + "," + annotation + ")");
   }
 
-  if (!StringHandler::unparseBool(getResult())) {
+  bool result = StringHandler::unparseBool(getResult());
+  if (!result) {
     printMessagesStringInternal();
   }
+  return result;
 }
 
 /*!
@@ -3310,6 +3391,21 @@ QString OMCProxy::checkModel(QString className)
 }
 
 /*!
+ * \brief OMCProxy::getClassDiagram
+ * Returns the UML class diagram of a class as a draw.io file, see getClassDiagram.
+ * \param className
+ * \param depth - how many levels of used classes to include.
+ * \param showModifiers
+ * \return the diagram, or an empty string if there is none.
+ */
+QString OMCProxy::getClassDiagram(QString className, int depth, bool showModifiers)
+{
+  QString result = mpOMCInterface->getClassDiagram(className, "", "drawio", depth, QList<QString>() << "Modelica.Icons", showModifiers);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   Converts a given ngspice netlist to equivalent Modelica code.
   Filename is the name of the ngspice netlist. Subcircuit and device model (.lib) files
   are to be present in the same directory. The Modelica model is created in the same directory
@@ -3330,7 +3426,7 @@ bool OMCProxy::ngspicetoModelica(QString fileName)
  */
 QString OMCProxy::checkAllModelsRecursive(QString className)
 {
-  QString result = mpOMCInterface->checkAllModelsRecursive(className, false);
+  QString result = mpOMCInterface->checkAllModelsRecursive(className, false, true);
   printMessagesStringInternal();
   return result;
 }
@@ -4198,6 +4294,19 @@ bool OMCProxy::generateVerificationScenarios(QString className)
 QList<QList<QString > > OMCProxy::getUses(QString className)
 {
   QList<QList<QString > > result = mpOMCInterface->getUses(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getUsedClassNames
+ * Returns the classes used by the total program of the class.
+ * \param className
+ * \return
+ */
+QList<QString> OMCProxy::getUsedClassNames(QString className)
+{
+  QList<QString> result = mpOMCInterface->getUsedClassNames(className);
   printMessagesStringInternal();
   return result;
 }

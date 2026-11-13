@@ -13,21 +13,11 @@ model RecordDefaultArgMod
   end MyRecord;
 
   MyRecord r = MyRecord(time, -time);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordDefaultArgMod;
 
 // Result:
-// function RecordDefaultArgMod.MyRecord "Automatically generated record constructor for RecordDefaultArgMod.MyRecord"
-//   input Real a;
-//   input Real b = 24.0;
-//   output MyRecord res;
-// end RecordDefaultArgMod.MyRecord;
-//
 // class RecordDefaultArgMod
-//   Real r.a;
-//   Real r.b;
-// equation
-//   r.a = time;
-//   r.b = -time;
+//   Real r.a = time;
+//   Real r.b = -time;
 // end RecordDefaultArgMod;
 // endResult

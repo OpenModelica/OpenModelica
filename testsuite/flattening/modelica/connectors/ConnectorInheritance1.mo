@@ -7,7 +7,6 @@
 
 record A
   Real x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 connector ConnectorInheritance1 = A;

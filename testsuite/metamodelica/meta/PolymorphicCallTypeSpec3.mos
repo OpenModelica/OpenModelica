@@ -1,9 +1,8 @@
 // name: PolymorphicCallTypeSpec3
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -d=gen
 // suite: metamodelica
 
-setCommandLineOptions("-g=MetaModelica -d=gen");
 loadString("
   uniontype U<T1, T2>
     record R
@@ -26,7 +25,6 @@ test();
 getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // record U.R

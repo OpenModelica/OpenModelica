@@ -78,7 +78,7 @@ Install the following programs:
 ### 1.4 Rust toolchain
 
 Result files are read and written through the Rust `libomc_result`, and
-`--simCodeTarget=C` links the Rust simulation runtime.
+`--simCodeTarget=C+Rust` links the Rust simulation runtime.
 
 The crates use the 2024 edition, so `cargo`/`rustc` 1.85 or newer. Install
 [rustup](https://rustup.rs) from Windows (not through pacman), with

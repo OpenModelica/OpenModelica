@@ -1,6 +1,5 @@
 // name: testFinalCon_8
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+g=Optimica");
 getErrorString();

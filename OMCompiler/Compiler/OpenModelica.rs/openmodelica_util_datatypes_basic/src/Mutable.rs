@@ -34,7 +34,9 @@ impl<T: MMTrace> TraceableCell for CellInner<T> {
 /// `Default`-synthesized — must go through here: an unregistered cell is never
 /// a collection candidate, so cycles through it would silently leak.
 pub(crate) fn new_cell<T: Clone + MMTrace + 'static>(data: T) -> Rc<CellInner<T>> {
-    let inner = Rc::new(CellInner { content: RefCell::new(Some(data)) });
+    let inner = Rc::new(CellInner {
+        content: RefCell::new(Some(data)),
+    });
     #[cfg(any(test, feature = "cycle-collect"))]
     {
         let weak: std::rc::Weak<dyn TraceableCell> = Rc::downgrade(&inner) as _;
@@ -253,8 +255,7 @@ pub mod sample {
         HITS.with(|h| *h.borrow_mut().entry(key).or_insert(0) += 1);
     }
     pub fn report() -> (u64, Vec<(String, usize)>) {
-        let mut v: Vec<(String, usize)> =
-            HITS.with(|h| h.borrow().iter().map(|(k, n)| (k.clone(), *n)).collect());
+        let mut v: Vec<(String, usize)> = HITS.with(|h| h.borrow().iter().map(|(k, n)| (k.clone(), *n)).collect());
         v.sort_by(|a, b| b.1.cmp(&a.1));
         (SEEN.with(|c| c.get()), v)
     }
@@ -314,5 +315,11 @@ impl<T: Clone + MMTrace> MMTrace for Mutable<T> {
         } else {
             Ok(())
         }
+    }
+}
+
+impl<T: Clone + metamodelica::reflect::ToMMField> metamodelica::reflect::ToMMField for Mutable<T> {
+    fn to_mm_field(&self) -> metamodelica::reflect::MMField {
+        cell_get(&self.0).to_mm_field()
     }
 }

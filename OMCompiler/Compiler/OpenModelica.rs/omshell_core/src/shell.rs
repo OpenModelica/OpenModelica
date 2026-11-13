@@ -1,5 +1,5 @@
-//! UI-agnostic REPL state. The egui and dioxus front-ends own a `Shell`, drive
-//! it with `poll()`/`submit()`, and render `scrollback` + `input`.
+//! UI-agnostic REPL state. The egui front-end owns a `Shell`, drives
+//! it with `poll()`/`submit()`, and renders `scrollback` + `input`.
 
 use crate::backend::OmcBackend;
 use crate::completion::Completion;
@@ -52,10 +52,7 @@ impl Shell {
     /// Start with a caller-supplied backend (e.g. `omshell_omc::backend()`).
     /// `repaint` is called from the worker thread (native) to wake the UI; on
     /// wasm it is unused (the UI polls on a timer).
-    pub fn with_backend(
-        backend: Box<dyn OmcBackend + Send>,
-        repaint: impl Fn() + Send + 'static,
-    ) -> Self {
+    pub fn with_backend(backend: Box<dyn OmcBackend + Send>, repaint: impl Fn() + Send + 'static) -> Self {
         Self {
             driver: Driver::spawn(backend, repaint),
             scrollback: Vec::new(),
@@ -185,7 +182,7 @@ impl Shell {
 
     fn push_banner(&mut self) {
         let text = format!(
-            "OMShell (egui/dioxus) — Copyright Open Source Modelica Consortium (OSMC) 2002-2026\n\
+            "OMShell (egui) — Copyright Open Source Modelica Consortium (OSMC) 2002-2026\n\
              Distributed under OSMC-PL and AGPL3, see www.openmodelica.org\n\n\
              Connected to {}\n\n\
              To get help on using OMShell and OpenModelica, type \"help()\" and press enter.",

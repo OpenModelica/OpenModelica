@@ -2,7 +2,6 @@
 // keywords: array equations, for loops
 // status: correct
 // teardown_command: rm -rf ArrayEquationsTest.fmu ticket6296.log ArrayEquationsTest.xml ArrayEquationsTest_tmp.xml
-// cflags: -d=-newInst
 
 setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize,disableFMIDependency"); getErrorString();

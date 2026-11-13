@@ -855,64 +855,6 @@ void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeVal
   }
 }
 
-/**
- * @brief Info message for GBODE replacement.
- *
- * Dumps simulation flags to use to OMC_LOG_STDOUT.
- *
- * @param gbMethod  GBODE method to use.
- * @param constant  If true use constant step size.
- */
-void replacementString(enum GB_METHOD gbMethod, modelica_boolean constant)
-{
-  if (constant) {
-    infoStreamPrint(OMC_LOG_STDOUT, 1, "Use integration method GBODE with method '%s' and constant step size instead:", GB_METHOD_NAME[gbMethod]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s -%s=%s' in Simulation Setup->Simulation Flags.",
-                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod], FLAG_NAME[FLAG_SR_CTRL], GB_CTRL_METHOD_NAME[GB_CTRL_CNST]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "or");
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s -%s=%s'.",
-                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod], FLAG_NAME[FLAG_SR_CTRL], GB_CTRL_METHOD_NAME[GB_CTRL_CNST]);
-  } else {
-    infoStreamPrint(OMC_LOG_STDOUT, 1, "Use integration method GBODE with method '%s' instead:", GB_METHOD_NAME[gbMethod]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s' in Simulation Setup->Simulation Flags.",
-                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "or");
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s'.",
-                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod]);
-  }
-  messageClose(OMC_LOG_STDOUT);
-}
-
-/**
- * @brief Display deprecation warning for integration methods replaced by GBODE.
- *
- * Deprecated methods: None
- *
- * @param solverMethod  Integration method.
- */
-void deprecationWarningGBODE(enum SOLVER_METHOD method)
-{
-  switch (method) {
-    case S_RUNGEKUTTA:
-      break;
-    default:
-      return;
-  }
-
-  warningStreamPrint(OMC_LOG_STDOUT, 1, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.", SOLVER_METHOD_NAME[method]);
-  switch (method) {
-    case S_RUNGEKUTTA:
-      replacementString(RK_RUNGEKUTTA, TRUE);
-      break;
-    default:
-      throwStreamPrint(NULL, "Not reachable state");
-  }
-
-  infoStreamPrint(OMC_LOG_STDOUT, 0 , "See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode");
-  messageCloseWarning(OMC_LOG_STDOUT);
-  return;
-}
-
 SLOW_STATE_CACHE *slowStateCache_alloc(int n_stages, int n_states, double *c)
 {
   SLOW_STATE_CACHE *cache = (SLOW_STATE_CACHE*) malloc(sizeof(SLOW_STATE_CACHE));

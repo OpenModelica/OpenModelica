@@ -5,9 +5,8 @@
 // This is a really simple tests.
 //
 
-class Class2
+model Class2
   Real x = 17.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Class2;
 
 // Result:

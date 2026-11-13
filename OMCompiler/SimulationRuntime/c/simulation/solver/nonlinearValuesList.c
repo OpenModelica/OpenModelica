@@ -40,6 +40,7 @@
 #include "../../util/list.h"
 #include "../../util/omc_error.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -50,6 +51,14 @@ double extrapolateValues(const double, const double, const double, const double,
 void* valueListAlloc(const void* data);
 void valueListFree(void* data);
 void valueListCopy(void* dest, const void* src);
+
+/* Times closer than MINIMAL_STEP_SIZE relative to their size are the same time,
+ * so that two solutions a few ulps apart at a large time never form an
+ * extrapolation pair. */
+static int sameTime(double a, double b)
+{
+  return fabs(a - b) <= MINIMAL_STEP_SIZE * fmax(1.0, fmax(fabs(a), fabs(b)));
+}
 
 /**
  * @brief Allocate value lists.
@@ -199,7 +208,7 @@ void addListElement(LIST* valuesList, VALUE* newElem)
    *  push the element just in front and if the end element
    *  is later than current push it just back.*/
   node = listFirstNode(valuesList);
-  if ( fabs( ((VALUE*)listNodeData(node))->time - newElem->time ) > MINIMAL_STEP_SIZE )
+  if (!sameTime(((VALUE*)listNodeData(node))->time, newElem->time))
   {
     infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "First Value list element is:");
     printValueElement(((VALUE*)listNodeData(node)));
@@ -229,7 +238,7 @@ void addListElement(LIST* valuesList, VALUE* newElem)
     printValueElement(elem);
 
 
-    if (fabs(elem->time - newElem->time)<=MINIMAL_STEP_SIZE)
+    if (sameTime(elem->time, newElem->time))
     {
       replace = 1;
       break;
@@ -293,7 +302,7 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
     printValueElement(elem);
 
     old = it;
-    if(fabs(elem->time - time) <= MINIMAL_STEP_SIZE)
+    if(sameTime(elem->time, time))
     {
       infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "take element with the same time.");
       break;
@@ -393,7 +402,7 @@ double extrapolateValues(const double time, const double old1, const double time
 {
   double retValue;
 
-  if (time1 == time2 || old1 == old2)
+  if (sameTime(time1, time2) || old1 == old2)
   {
     retValue = old1;
   }

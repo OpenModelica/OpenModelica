@@ -35,7 +35,7 @@ filterSimulationResults("ResultFileArrowTimeAlias_a_res.arrow", "ResultFileArrow
 // ""
 // record SimulationResult
 //     resultFile = "ResultFileArrowTimeAlias_a_res.arrow",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrowTimeAlias_a', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ResultFileArrowTimeAlias_a', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -43,7 +43,7 @@ filterSimulationResults("ResultFileArrowTimeAlias_a_res.arrow", "ResultFileArrow
 // ""
 // record SimulationResult
 //     resultFile = "ResultFileArrowTimeAlias_m_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrowTimeAlias_m', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ResultFileArrowTimeAlias_m', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

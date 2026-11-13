@@ -22,7 +22,7 @@ for i in 1:p loop
 end for;
 end initialState;
 
-redeclare function extends random
+redeclare pure function extends random
 external "C" ModelicaRandom_xorshift64star(stateIn, stateOut, result) annotation(Include = "
 #include <stdint.h>
 #define ModelicaRandom_INVM64 5.42101086242752217004e-20 /* = 2^(-64) */
@@ -91,8 +91,7 @@ algorithm
 end f;
 
 model M
-  constant Real r = f({1,2});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  parameter Real r = f({1,2});
 end M;
 
 // Result:
@@ -109,10 +108,10 @@ end M;
 //   output Real r;
 //   protected Integer[:] io;
 // algorithm
-//   (r, io) := Modelica_Noise.Math.Random.Generators.Xorshift64star.random({i[1], i[2]});
+//   (r, io) := Modelica_Noise.Math.Random.Generators.Xorshift64star.random(i);
 // end f;
 //
 // class M
-//   constant Real r = f({1, 2});
+//   parameter Real r = f({1, 2});
 // end M;
 // endResult

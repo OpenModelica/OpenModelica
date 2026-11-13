@@ -6,6 +6,7 @@ testMSD.mos \
 SimpleTriggeredTrapezoid.mos \
 BB.mos \
 Bug3857.mos \
+translateModelXML.mos \
 
 
 FAILINGTESTFILES= \

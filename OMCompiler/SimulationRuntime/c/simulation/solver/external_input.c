@@ -67,6 +67,9 @@ int externalInputallocate(DATA* data)
   }
 
   externalInputallocate2(data, csv_input_file);
+  if (csv_input_file != csv_input_file_opt) {
+    omc_rc_release((void*) csv_input_file);
+  }
 
   if(OMC_ACTIVE_STREAM(OMC_LOG_SIMULATION))
   {

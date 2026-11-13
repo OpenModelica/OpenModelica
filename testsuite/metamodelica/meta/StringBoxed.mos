@@ -1,9 +1,8 @@
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -d=gen
 // suite: metamodelica
 // Based on ticket #3653
 
-setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("function stringRealTest
   input list<String> args;
   output Boolean res;
@@ -18,8 +17,6 @@ end stringRealTest;");getErrorString();
 stringRealTest({"1","2","3","4","5","6","7","8"});getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

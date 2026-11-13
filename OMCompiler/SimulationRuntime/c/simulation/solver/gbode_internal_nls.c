@@ -299,9 +299,7 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
   int ret = -1;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   rt_tick(SIM_TIMER_JACOBIAN);
   /* The multi-rate path drives a sub-set of the columns with its own coloring, so it
@@ -327,9 +325,7 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
 
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { ret = 0; }
 
-  #if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-  #endif
 
   if (nls->multirate)
   {

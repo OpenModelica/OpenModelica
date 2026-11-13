@@ -7,7 +7,6 @@
 //! shared lowering primitives (`FnCtx`, `compile_exp`, `coerce`, `mem_arg`, …)
 //! through `super::*` without widening their visibility.
 
-
 use metamodelica::Result;
 
 use openmodelica_backend_types::BackendDAE;
@@ -16,6 +15,7 @@ use wasm_encoder as we;
 
 use super::*;
 use openmodelica_sim_meta::Sz;
+use openmodelica_sim_meta::simflags::SparseThresholds;
 
 /// Emit one residual evaluation for a torn linear system: run the inner
 /// constraint equations (`lower_inner`), then store each residual `r_k` as an f64
@@ -31,7 +31,8 @@ fn emit_residual_eval(
     // As in `emit_nls_residual_body`: sequential rows while every residual is a
     // scalar, `res_index` rows once an array-valued one makes the two differ.
     let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
-    let store = |c: &mut FnCtx, base: u32, i: usize| emit_residual_store(c, base, &residuals[i], i, all_scalar, dest_off);
+    let store =
+        |c: &mut FnCtx, base: u32, i: usize| emit_residual_store(c, base, &residuals[i], i, all_scalar, dest_off);
     if residuals.len() >= OUTLINE_MIN_UNITS && ctx.emit_outlined(residuals.len(), Some(base), |c, i| store(c, 1, i))? {
         return Ok(());
     }
@@ -76,23 +77,51 @@ fn emit_residual_store(
             }
             release_temp_array(ctx, arr)?;
         }
-        _ => return Err("CodegenWasmJit: SES_LINEAR for/generic residual"),
+        NlsResidual::For {
+            iterators,
+            exp,
+            res_index,
+        } => emit_for_residual_at(ctx, iterators, exp, RowBase::Const(*res_index), &[], base, dest_off)?,
+        NlsResidual::Generic {
+            iterators,
+            scal_indices,
+            exp,
+            res_index,
+        } => emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index, base, dest_off)?,
     }
     Ok(())
 }
 
-/// Rows of the residual vector, `None` if a for-residual makes it a run-time count.
+/// rows of the residual vector, or `None` for runtime-sized ranges
 pub(crate) fn residual_rows(residuals: &[NlsResidual]) -> Option<usize> {
-    residuals.iter().map(|r| r.rows()).sum()
+    residuals
+        .iter()
+        .map(|r| match r {
+            NlsResidual::For { iterators, .. } => iterators.iter().try_fold(1usize, |rows, it| {
+                let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { size, .. } = it else {
+                    return None;
+                };
+                rows.checked_mul(usize::try_from(const_index_value(size)?).ok()?)
+            }),
+            _ => r.rows(),
+        })
+        .sum()
 }
 
 /// A nonlinear system residual: a scalar `SES_RESIDUAL`, a `SES_FOR_RESIDUAL`
 /// (a run `r[res_index + shift]` from iterating `exp` over integer ranges), or a
 /// `SES_GENERIC_RESIDUAL` (the same over a list of flat indices).
 pub(crate) enum NlsResidual {
-    Scalar { exp: metamodelica::Ref<DAE::Exp>, res_index: i32 },
+    Scalar {
+        exp: metamodelica::Ref<DAE::Exp>,
+        res_index: i32,
+    },
     /// An array-valued `SES_RESIDUAL`: `rows` entries from `res_index`.
-    Array { exp: metamodelica::Ref<DAE::Exp>, res_index: i32, rows: usize },
+    Array {
+        exp: metamodelica::Ref<DAE::Exp>,
+        res_index: i32,
+        rows: usize,
+    },
     For {
         iterators: Vec<BackendDAE::SimIterator>,
         exp: metamodelica::Ref<DAE::Exp>,
@@ -130,7 +159,7 @@ pub(crate) enum NlsResiduals {
 /// way in and widened on the way out, as C's implicit conversions do.
 #[derive(Clone, Copy)]
 pub(crate) struct IterSlot {
-    pub(crate) off: u32,
+    pub(crate) off: SimOff,
     pub(crate) wty: WTy,
 }
 
@@ -138,7 +167,7 @@ pub(crate) struct IterSlot {
 /// They follow the scalar unknowns in `x`, in order.
 #[derive(Clone)]
 pub(crate) struct IterBlock {
-    pub(crate) off: u32,
+    pub(crate) off: SimOff,
     pub(crate) len: Sz,
 }
 
@@ -172,29 +201,31 @@ fn emit_blocks(ctx: &mut FnCtx, x_local: u32, n_scalar: usize, blocks: &[IterBlo
 }
 
 /// `slot = x[j]` (wasm locals: 0 = `SimData`, `x_local` = the `x` pointer).
-fn emit_x_to_slot(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) {
+fn emit_x_to_slot(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) -> Result<()> {
     use we::Instruction as I;
-    ctx.emit(I::LocalGet(0));
+    let rel = ctx.emit_sim_base(slot.off)?;
     ctx.emit(I::LocalGet(x_local));
     ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
     coerce(ctx, WTy::F64, slot.wty);
     match slot.wty {
-        WTy::F64 => ctx.emit(I::F64Store(mem_arg(slot.off, 3))),
-        _ => ctx.emit(I::I32Store(mem_arg(slot.off, 2))),
+        WTy::F64 => ctx.emit(I::F64Store(mem_arg(rel, 3))),
+        _ => ctx.emit(I::I32Store(mem_arg(rel, 2))),
     }
+    Ok(())
 }
 
 /// `x[j] = slot`.
-fn emit_slot_to_x(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) {
+fn emit_slot_to_x(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) -> Result<()> {
     use we::Instruction as I;
     ctx.emit(I::LocalGet(x_local));
-    ctx.emit(I::LocalGet(0));
+    let rel = ctx.emit_sim_base(slot.off)?;
     match slot.wty {
-        WTy::F64 => ctx.emit(I::F64Load(mem_arg(slot.off, 3))),
-        _ => ctx.emit(I::I32Load(mem_arg(slot.off, 2))),
+        WTy::F64 => ctx.emit(I::F64Load(mem_arg(rel, 3))),
+        _ => ctx.emit(I::I32Load(mem_arg(rel, 2))),
     }
     coerce(ctx, slot.wty, WTy::F64);
     ctx.emit(I::F64Store(mem_arg((j as u32) * 8, 3)));
+    Ok(())
 }
 
 /// Emit the body of a nonlinear system's `residual(sim_data, x, r)` callback
@@ -214,7 +245,7 @@ pub(crate) fn emit_nls_residual_body(
     let residuals = match residuals {
         NlsResiduals::Explicit(r) => r,
         NlsResiduals::InverseAlgorithm(known) => {
-            return emit_inverse_algorithm_residual(ctx, slots.len(), known, lower_inner)
+            return emit_inverse_algorithm_residual(ctx, slots.len(), known, lower_inner);
         }
     };
     lower_inner(ctx)?;
@@ -256,7 +287,7 @@ fn emit_counted_residual_stores(ctx: &mut FnCtx, eq_index: i32, residuals: &[Nls
                 bump(ctx, 1);
             }
             NlsResidual::For { iterators, exp, .. } => {
-                emit_for_residual_at(ctx, iterators, exp, RowBase::Local(row), &[])?;
+                emit_for_residual_at(ctx, iterators, exp, RowBase::Local(row), &[], 2, 0)?;
                 ctx.emit(I::LocalGet(row));
                 ctx.emit(I::I32Const(1));
                 for it in iterators {
@@ -298,7 +329,7 @@ pub(crate) fn emit_nls_residual_prologue(
         }
     }
     for (j, &slot) in slots.iter().enumerate() {
-        emit_x_to_slot(ctx, 1, j, slot);
+        emit_x_to_slot(ctx, 1, j, slot)?;
     }
     emit_blocks(ctx, 1, slots.len(), blocks, false)
 }
@@ -326,41 +357,7 @@ pub(crate) fn emit_nls_residual_store(
     all_scalar: bool,
     i: usize,
 ) -> Result<()> {
-    use we::Instruction as I;
-    match &residuals[i] {
-        NlsResidual::Scalar { exp, res_index } => {
-            let dest = if all_scalar { i as u32 } else { *res_index as u32 };
-            ctx.emit(I::LocalGet(2)); // r
-            let w = compile_exp(ctx, exp)?;
-            coerce(ctx, w, WTy::F64);
-            ctx.emit(I::F64Store(mem_arg(dest * 8, 3)));
-        }
-        NlsResidual::Array { exp, res_index, rows } => {
-            let w = compile_exp(ctx, exp)?;
-            if w != WTy::I32 {
-                return Err("CodegenWasmJit: array residual did not evaluate to an array");
-            }
-            let arr = ctx.alloc_temp(WTy::I32);
-            ctx.emit(I::LocalTee(arr));
-            ctx.emit(I::Call(rt_index("rt_array_data")?));
-            let data = ctx.alloc_temp(WTy::I32);
-            ctx.emit(I::LocalSet(data));
-            for k in 0..*rows as u32 {
-                ctx.emit(I::LocalGet(2)); // r
-                ctx.emit(I::LocalGet(data));
-                ctx.emit(I::F64Load(mem_arg(k * 8, 3)));
-                ctx.emit(I::F64Store(mem_arg((*res_index as u32 + k) * 8, 3)));
-            }
-            release_temp_array(ctx, arr)?;
-        }
-        NlsResidual::For { iterators, exp, res_index } => {
-            emit_for_residual_at(ctx, iterators, exp, RowBase::Const(*res_index), &[])?;
-        }
-        NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
-            emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
-        }
-    }
-    Ok(())
+    emit_residual_store(ctx, 2, &residuals[i], i, all_scalar, 0)
 }
 
 /// Emit a `SES_GENERIC_RESIDUAL`: `r[res_index + i] = exp` for the `i`-th flat
@@ -371,11 +368,13 @@ fn emit_generic_residual(
     scal_indices: &[i32],
     exp: &metamodelica::Ref<DAE::Exp>,
     res_index: i32,
+    base: u32,
+    dest_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
     emit_index_list_loop(ctx, iterators, scal_indices, &mut |ctx, k| {
         // addr = r + (res_index + k) * 8
-        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(res_index));
         ctx.emit(I::LocalGet(k));
         ctx.emit(I::I32Add);
@@ -384,7 +383,7 @@ fn emit_generic_residual(
         ctx.emit(I::I32Add);
         let w = compile_exp(ctx, exp)?;
         coerce(ctx, w, WTy::F64);
-        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        ctx.emit(I::F64Store(mem_arg(dest_off, 3)));
         Ok(())
     })
 }
@@ -482,12 +481,14 @@ fn emit_for_residual_at(
     exp: &metamodelica::Ref<DAE::Exp>,
     res_index: RowBase,
     outer: &[(u32, u32)],
+    base: u32,
+    dest_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
     let Some((sim_it, rest)) = iterators.split_first() else {
         // addr = r + (res_index + flatten(outer)) * 8, outer[k] = (offset_k, size_k),
         // flatten = off_0 + size_0*(off_1 + size_1*(... + size_{n-2}*off_{n-1}))
-        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::LocalGet(base));
         match res_index {
             RowBase::Const(k) => ctx.emit(I::I32Const(k)),
             RowBase::Local(l) => ctx.emit(I::LocalGet(l)),
@@ -507,10 +508,18 @@ fn emit_for_residual_at(
         ctx.emit(I::I32Add); // element address
         let w = compile_exp(ctx, exp)?;
         coerce(ctx, w, WTy::F64);
-        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        ctx.emit(I::F64Store(mem_arg(dest_off, 3)));
         return Ok(());
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, size, .. } = sim_it else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
+        name: cref,
+        start,
+        step,
+        stop,
+        size,
+        ..
+    } = sim_it
+    else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
@@ -553,7 +562,7 @@ fn emit_for_residual_at(
     ctx.emit(I::LocalSet(off_l));
     let mut inner = outer.to_vec();
     inner.push((off_l, size_l));
-    emit_for_residual_at(ctx, rest, exp, res_index, &inner)?;
+    emit_for_residual_at(ctx, rest, exp, res_index, &inner, base, dest_off)?;
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(step_l));
     ctx.emit(I::I32Add);
@@ -570,7 +579,7 @@ fn emit_for_residual_at(
 pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[IterSlot], blocks: &[IterBlock]) -> Result<()> {
     emit_blocks(ctx, 1, slots.len(), blocks, true)?;
     for (j, &slot) in slots.iter().enumerate() {
-        emit_slot_to_x(ctx, 1, j, slot);
+        emit_slot_to_x(ctx, 1, j, slot)?;
     }
     Ok(())
 }
@@ -598,7 +607,7 @@ pub(crate) fn emit_nls_jac_body(
     let n_cols = iter_slots.len();
     let n_rows = result_offs.len();
     for (j, &slot) in iter_slots.iter().enumerate() {
-        emit_x_to_slot(ctx, 1, j, slot);
+        emit_x_to_slot(ctx, 1, j, slot)?;
     }
     lower_inner(ctx)?;
     lower_constant(ctx)?;
@@ -623,6 +632,133 @@ pub(crate) fn emit_nls_jac_body(
         }
     }
     Ok(())
+}
+
+/// The analytic Jacobian of a runtime-sized system into the CSC values (local 2)
+/// of the pattern the runtime expanded ([`DynPattern`]): one pass of the column
+/// equations per colour, as C's `evalJacobian`.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn emit_nls_jac_dyn_body(
+    ctx: &mut FnCtx,
+    iter_slots: &[IterSlot],
+    blocks: &[IterBlock],
+    seeds: SimOff,
+    results: SimOff,
+    pat: DynPattern,
+    n_entry: u32,
+    lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+    lower_constant: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+    lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    for (j, &slot) in iter_slots.iter().enumerate() {
+        emit_x_to_slot(ctx, 1, j, slot)?;
+    }
+    emit_blocks(ctx, 1, iter_slots.len(), blocks, false)?;
+    lower_inner(ctx)?;
+    lower_constant(ctx)?;
+
+    let [n, colptr, rowidx, color_of, ncolors, seed, res, c, j, k, kend] = [(); 11].map(|_| ctx.alloc_temp(WTy::I32));
+    ctx.emit_size_entry(n_entry);
+    ctx.emit(I::LocalSet(n));
+    ctx.emit_sim_addr(pat.slot)?;
+    ctx.emit(I::I32Load(mem_arg(4, 2)));
+    ctx.emit(I::LocalTee(colptr));
+    ctx.emit(I::LocalGet(n));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalTee(rowidx));
+    ctx.emit_sim_addr(pat.slot)?;
+    ctx.emit(I::I32Load(mem_arg(8, 2)));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(color_of));
+    ctx.emit_sim_addr(pat.slot)?;
+    ctx.emit(I::I32Load(mem_arg(12, 2)));
+    ctx.emit(I::LocalSet(ncolors));
+    ctx.emit_sim_addr(seeds)?;
+    ctx.emit(I::LocalSet(seed));
+    ctx.emit_sim_addr(results)?;
+    ctx.emit(I::LocalSet(res));
+    let elem = |ctx: &mut FnCtx, base: u32, idx: u32, size: i32| {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(idx));
+        ctx.emit(I::I32Const(size));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+    };
+    let color_is_c = |ctx: &mut FnCtx| {
+        elem(ctx, color_of, j, 4);
+        ctx.emit(I::I32Load(mem_arg(0, 2)));
+        ctx.emit(I::LocalGet(c));
+        ctx.emit(I::I32Eq);
+    };
+
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(c));
+    loop_head(ctx, c, ncolors);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(j));
+    loop_head(ctx, j, n);
+    elem(ctx, seed, j, 8);
+    color_is_c(ctx);
+    ctx.emit(I::F64ConvertI32U);
+    ctx.emit(I::F64Store(mem_arg(0, 3)));
+    loop_tail(ctx, j);
+    lower_column(ctx)?;
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(j));
+    loop_head(ctx, j, n);
+    color_is_c(ctx);
+    ctx.emit(I::If(we::BlockType::Empty));
+    elem(ctx, colptr, j, 4);
+    ctx.emit(I::I32Load(mem_arg(0, 2)));
+    ctx.emit(I::LocalSet(k));
+    elem(ctx, colptr, j, 4);
+    ctx.emit(I::I32Load(mem_arg(4, 2)));
+    ctx.emit(I::LocalSet(kend));
+    loop_head(ctx, k, kend);
+    elem(ctx, 2, k, 8);
+    ctx.emit(I::LocalGet(res));
+    elem(ctx, rowidx, k, 4);
+    ctx.emit(I::I32Load(mem_arg(0, 2)));
+    ctx.emit(I::I32Const(8));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::F64Load(mem_arg(0, 3)));
+    ctx.emit(I::F64Store(mem_arg(0, 3)));
+    loop_tail(ctx, k);
+    ctx.emit(I::End);
+    loop_tail(ctx, j);
+    loop_tail(ctx, c);
+    Ok(())
+}
+
+/// `while i < end {`, closed by [`loop_tail`].
+fn loop_head(ctx: &mut FnCtx, i: u32, end: u32) {
+    use we::Instruction as I;
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::LocalGet(end));
+    ctx.emit(I::I32GeU);
+    ctx.emit(I::BrIf(1));
+}
+
+/// `i += 1 }`.
+fn loop_tail(ctx: &mut FnCtx, i: u32) {
+    use we::Instruction as I;
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(i));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
 }
 
 /// Emit the body of a nonlinear system's colored `jac(sim_data, x, out)` callback,
@@ -663,7 +799,7 @@ pub(crate) fn emit_nls_jac_csc_body(
     }
 
     for (j, &slot) in iter_slots.iter().enumerate() {
-        emit_x_to_slot(ctx, 1, j, slot);
+        emit_x_to_slot(ctx, 1, j, slot)?;
     }
     lower_inner(ctx)?;
     lower_constant(ctx)?;
@@ -910,13 +1046,16 @@ pub(crate) fn emit_nls_jac_csc_body(
 /// last accepted step's values; method 0 probes at 0 and writes the solve's result.
 /// The column probes share one emitted residual body run in a wasm loop (`n`
 /// unrolled copies would explode the code). `use_sparse` picks
-/// `rt_solve_lin_dense_sparse` over `rt_linsolve`, matching C's per-system choice.
+/// `rt_solve_lin_dense_sparse` over `rt_linsolve`, matching C's per-system choice;
+/// `nnz` lets the runtime revise it.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn compile_linear_system(
     ctx: &mut FnCtx,
     iter_vars: &[metamodelica::Ref<DAE::ComponentRef>],
     residuals: &[NlsResidual],
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     use_sparse: bool,
+    nnz: usize,
     method1: bool,
     index: i32,
 ) -> Result<()> {
@@ -928,7 +1067,7 @@ pub(crate) fn compile_linear_system(
         return Err("CodegenWasmJit: linear system unknown/residual count mismatch");
     }
     // The probe loop indexes the unknowns at run time, so they must all be f64.
-    let mut slots: Vec<u32> = Vec::with_capacity(n);
+    let mut slots: Vec<SimOff> = Vec::with_capacity(n);
     for cr in iter_vars {
         let sim = ctx.sim()?;
         let slot = crate::CodegenWasmJit::iteration_var_slot(&sim.vars, &sim.start_slots, cr)?
@@ -960,7 +1099,7 @@ pub(crate) fn compile_linear_system(
     // Record each unknown's slot offset in the `offs` array for run-time indexing.
     for (j, &off) in slots.iter().enumerate() {
         ctx.emit(we::Instruction::LocalGet(base));
-        ctx.emit(we::Instruction::I32Const(off as i32));
+        ctx.emit_sim_rel(off)?;
         ctx.emit(we::Instruction::I32Store(mem_arg(offs_off + (j as u32) * 4, 2)));
     }
 
@@ -1048,8 +1187,25 @@ pub(crate) fn compile_linear_system(
 
     // --- solve, scatter, recover the torn variables, free the scratch. `res0` is
     // spent by now, so the step check reuses it. ---
-    let m1 = method1.then_some(Method1 { res_off: res0_off, residuals, slot_tab_off: None });
-    emit_lin_solve_scatter(ctx, base, b_off, aux_off, n, &slots, use_sparse, m1, index, lower_inner, None)
+    let m1 = method1.then_some(Method1 {
+        res_off: res0_off,
+        residuals,
+        slot_tab_off: None,
+    });
+    emit_lin_solve_scatter(
+        ctx,
+        base,
+        b_off,
+        aux_off,
+        n,
+        &slots,
+        use_sparse,
+        nnz,
+        m1,
+        index,
+        lower_inner,
+        None,
+    )
 }
 
 /// The `(index, time)` a solver's warnings need.
@@ -1104,30 +1260,29 @@ fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32, base: u32) -> Result<()> {
 /// Method 1 probes at `aux_x`, C's `data->localData[1]` — reading the live slots
 /// instead makes the step self-referential, latching the unknown once `dx` rounds
 /// to zero. Method 0 probes at zero, making the recovered `A`/`b` `setA`/`setb`.
-fn emit_init_x0(ctx: &mut FnCtx, base: u32, x0_off: u32, slots: &[u32], method1: bool) -> Result<()> {
+fn emit_init_x0(ctx: &mut FnCtx, base: u32, x0_off: u32, slots: &[SimOff], method1: bool) -> Result<()> {
     use we::Instruction as I;
     let sim = ctx.sim()?;
-    let data = sim.data_local;
     let old_real = sim.old_real;
     for (j, &off) in slots.iter().enumerate() {
         // The probe point in its slot, as C's `residualFunc` writes `xloc`.
         match (method1, old_slot(old_real, off)) {
             (true, Some(old)) => {
-                ctx.emit(I::LocalGet(data));
-                ctx.emit(I::LocalGet(data));
-                ctx.emit(I::F64Load(mem_arg(old, 3)));
-                ctx.emit(I::F64Store(mem_arg(off, 3)));
+                let rel = ctx.emit_sim_base(off)?;
+                let old_rel = ctx.emit_sim_base(old)?;
+                ctx.emit(I::F64Load(mem_arg(old_rel, 3)));
+                ctx.emit(I::F64Store(mem_arg(rel, 3)));
             }
             (true, None) => {} // no mirror: the live value is the probe point
             (false, _) => {
-                ctx.emit(I::LocalGet(data));
+                let rel = ctx.emit_sim_base(off)?;
                 ctx.emit(I::F64Const(0.0f64.into()));
-                ctx.emit(I::F64Store(mem_arg(off, 3)));
+                ctx.emit(I::F64Store(mem_arg(rel, 3)));
             }
         }
         ctx.emit(I::LocalGet(base));
-        ctx.emit(I::LocalGet(data));
-        ctx.emit(I::F64Load(mem_arg(off, 3)));
+        let rel = ctx.emit_sim_base(off)?;
+        ctx.emit(I::F64Load(mem_arg(rel, 3)));
         ctx.emit(I::F64Store(mem_arg(x0_off + (j as u32) * 8, 3)));
     }
     Ok(())
@@ -1136,24 +1291,25 @@ fn emit_init_x0(ctx: &mut FnCtx, base: u32, x0_off: u32, slots: &[u32], method1:
 /// C's `aux_x`, filled from `localData[1]` before `solve_linear_system`: the
 /// previous solution, read only by the iterative `-ls lis` / `-lss lis`. Emit
 /// before anything overwrites the unknowns.
-fn emit_aux_x(ctx: &mut FnCtx, base: u32, aux_off: u32, slots: &[u32]) -> Result<()> {
+fn emit_aux_x(ctx: &mut FnCtx, base: u32, aux_off: u32, slots: &[SimOff]) -> Result<()> {
     use we::Instruction as I;
     let sim = ctx.sim()?;
-    let data = sim.data_local;
     let old_real = sim.old_real;
     for (j, &off) in slots.iter().enumerate() {
         ctx.emit(I::LocalGet(base));
-        ctx.emit(I::LocalGet(data));
-        ctx.emit(I::F64Load(mem_arg(old_slot(old_real, off).unwrap_or(off), 3)));
+        let rel = ctx.emit_sim_base(old_slot(old_real, off).unwrap_or(off))?;
+        ctx.emit(I::F64Load(mem_arg(rel, 3)));
         ctx.emit(I::F64Store(mem_arg(aux_off + (j as u32) * 8, 3)));
     }
     Ok(())
 }
 
 /// The `localData[1]` mirror of the live real slot at `off`.
-fn old_slot(old_real: Option<(u32, u32, u32)>, off: u32) -> Option<u32> {
+fn old_slot(old_real: Option<(SimOff, SimOff, SimOff)>, off: SimOff) -> Option<SimOff> {
     let (real_off, real_end, base) = old_real?;
-    (off >= real_off && off < real_end).then(|| base + (off - real_off))
+    sizes::off_in(off, real_off, real_end)
+        .then(|| sizes::off_rebase(off, real_off, base).ok())
+        .flatten()
 }
 
 /// Scatter the solve's result (at `base+b_off`) into `slots`, recover the torn
@@ -1164,16 +1320,15 @@ fn emit_scatter_recover_free(
     base: u32,
     b_off: u32,
     n: usize,
-    slots: &[u32],
+    slots: &[SimOff],
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
-    let data = ctx.sim()?.data_local;
     for j in 0..n {
-        ctx.emit(I::LocalGet(data));
+        let rel = ctx.emit_sim_base(slots[j])?;
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
-        ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
+        ctx.emit(I::F64Store(mem_arg(rel, 3)));
     }
     lower_inner(ctx)?;
     ctx.emit(I::LocalGet(base));
@@ -1196,14 +1351,16 @@ struct Method1<'a> {
 /// with total pivoting — `solve_linear_system`'s `LS_DEFAULT` fallback, whose
 /// `solveTotalPivot` re-assembles `A` and `b` at the stepped unknowns, which is what
 /// `reassemble` emits. The retry is a second pass of this same body.
+/// `dense_a_sparse`: `None` for the CSC layout, which has no dense `A` to retry
+/// with; else whether the codegen solves the dense `A` sparse.
 #[allow(clippy::too_many_arguments)]
 fn emit_lin_step(
     ctx: &mut FnCtx,
     base: u32,
     b_off: u32,
     n: usize,
-    slots: &[u32],
-    use_sparse: bool,
+    slots: &[SimOff],
+    dense_a_sparse: Option<bool>,
     index: i32,
     m1: &Method1,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
@@ -1212,7 +1369,7 @@ fn emit_lin_step(
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
     // `retry` guards the second pass: C never checks the total-pivot step.
-    let retry = (!use_sparse).then(|| {
+    let retry = dense_a_sparse.is_some().then(|| {
         let l = ctx.alloc_temp(WTy::I32);
         ctx.emit(I::I32Const(0));
         ctx.emit(I::LocalSet(l));
@@ -1236,13 +1393,13 @@ fn emit_lin_step(
         }
         None => {
             for j in 0..n {
-                ctx.emit(I::LocalGet(data));
-                ctx.emit(I::LocalGet(data));
-                ctx.emit(I::F64Load(mem_arg(slots[j], 3)));
+                let rel = ctx.emit_sim_base(slots[j])?;
+                ctx.emit_sim_base(slots[j])?;
+                ctx.emit(I::F64Load(mem_arg(rel, 3)));
                 ctx.emit(I::LocalGet(base));
                 ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
                 ctx.emit(I::F64Add);
-                ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
+                ctx.emit(I::F64Store(mem_arg(rel, 3)));
             }
         }
     }
@@ -1261,7 +1418,8 @@ fn emit_lin_step(
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n as i32));
     emit_linsolve_context(ctx, index)?;
-    ctx.emit(I::I32Const(!use_sparse as i32)); // `dense`: a rejected step can retry
+    // `dense`: 0 no dense `A`, 1 solved dense, 2 solved sparse; see `rt_ls_check_step`.
+    ctx.emit(I::I32Const(dense_a_sparse.map_or(0, |sparse| 1 + sparse as i32)));
     ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index("rt_ls_check_step")?));
     match retry {
@@ -1311,8 +1469,9 @@ fn emit_lin_solve_scatter(
     b_off: u32,
     aux_off: u32,
     n: usize,
-    slots: &[u32],
+    slots: &[SimOff],
     use_sparse: bool,
+    nnz: usize,
     m1: Option<Method1>,
     index: i32,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
@@ -1327,16 +1486,30 @@ fn emit_lin_solve_scatter(
     ctx.emit(I::I32Const(aux_off as i32));
     ctx.emit(I::I32Add); // x_ptr
     ctx.emit(I::I32Const(n as i32));
+    ctx.emit(I::I32Const(nnz as i32));
     emit_linsolve_context(ctx, index)?;
-    let solver = if use_sparse { "rt_solve_lin_dense_sparse" } else { "rt_linsolve" };
-    if !use_sparse {
-        ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
-        ctx.emit(I::I32Const(ctx.dt_casual() as i32));
-    }
+    let solver = if use_sparse {
+        "rt_solve_lin_dense_sparse"
+    } else {
+        "rt_linsolve"
+    };
+    ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
+    ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index(solver)?));
     emit_lin_unsolved(ctx, index, base)?;
     match &m1 {
-        Some(m1) => emit_lin_step(ctx, base, b_off, n, slots, use_sparse, index, m1, lower_inner, reassemble),
+        Some(m1) => emit_lin_step(
+            ctx,
+            base,
+            b_off,
+            n,
+            slots,
+            Some(use_sparse),
+            index,
+            m1,
+            lower_inner,
+            reassemble,
+        ),
         None => emit_scatter_recover_free(ctx, base, b_off, n, slots, lower_inner),
     }
 }
@@ -1358,6 +1531,7 @@ pub(crate) fn compile_linear_system_analytic(
     lower_constant: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     use_sparse: bool,
+    nnz: usize,
     index: i32,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -1368,10 +1542,13 @@ pub(crate) fn compile_linear_system_analytic(
     if residual_rows(residuals) != Some(n) || seed_offs.len() != n || result_offs.len() != n {
         return Err("CodegenWasmJit: analytic linear system size/Jacobian mismatch");
     }
-    let mut slots: Vec<u32> = Vec::with_capacity(n);
+    let mut slots: Vec<SimOff> = Vec::with_capacity(n);
     for cr in iter_vars {
         let key = sim_var_key(ctx.sim()?, cr)?;
-        let slot = ctx.sim()?.vars.get(&key)
+        let slot = ctx
+            .sim()?
+            .vars
+            .get(&key)
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1426,12 +1603,26 @@ pub(crate) fn compile_linear_system_analytic(
         ctx.emit(I::F64Store(mem_arg(b_off + i * 8, 3)));
     }
 
-    let m1 = Method1 { res_off, residuals, slot_tab_off: None };
+    let m1 = Method1 {
+        res_off,
+        residuals,
+        slot_tab_off: None,
+    };
     let mut reassemble =
         |c: &mut FnCtx| emit_lin_jac(c, base, n, seed_tab_off, res_tab_off, lower_constant, lower_column);
     // A method-1 system probes at the previous solution, so `xold` is C's `aux_x`.
     emit_lin_solve_scatter(
-        ctx, base, b_off, xold_off, n, &slots, use_sparse, Some(m1), index, lower_inner,
+        ctx,
+        base,
+        b_off,
+        xold_off,
+        n,
+        &slots,
+        use_sparse,
+        nnz,
+        Some(m1),
+        index,
+        lower_inner,
         Some(&mut reassemble),
     )
 }
@@ -1669,18 +1860,19 @@ pub(crate) fn compile_linear_system_analytic_csc(
     if n == 0 {
         return Ok(());
     }
-    if residual_rows(residuals) != Some(n) || seed_offs.len() != n || result_offs.len() != n
-        || colptr.len() != n + 1
-    {
+    if residual_rows(residuals) != Some(n) || seed_offs.len() != n || result_offs.len() != n || colptr.len() != n + 1 {
         return Err("CodegenWasmJit: analytic-CSC linear system size mismatch");
     }
     let nnz = rowidx.len();
     let (color_ptr, color_cols) = lin_jac_coloring(colptr, rowidx, n);
     let ncolors = color_ptr.len() - 1;
-    let mut slots: Vec<u32> = Vec::with_capacity(n);
+    let mut slots: Vec<SimOff> = Vec::with_capacity(n);
     for cr in iter_vars {
         let key = sim_var_key(ctx.sim()?, cr)?;
-        let slot = ctx.sim()?.vars.get(&key)
+        let slot = ctx
+            .sim()?
+            .vars
+            .get(&key)
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1689,7 +1881,10 @@ pub(crate) fn compile_linear_system_analytic_csc(
     }
     let data = ctx.sim()?.data_local;
     let old_real = ctx.sim()?.old_real;
-    let old_offs: Vec<i32> = slots.iter().map(|&o| old_slot(old_real, o).map_or(-1, |o| o as i32)).collect();
+    let old_slots: Vec<Option<SimOff>> = slots.iter().map(|&o| old_slot(old_real, o)).collect();
+    // A runtime-sized offset is written after the table is copied in.
+    let table_off = |o: SimOff| plain_off(o).map_or(0, |o| o as i32);
+    let old_offs: Vec<i32> = old_slots.iter().map(|o| o.map_or(-1, table_off)).collect();
 
     // Scratch (f64 regions first for 8-alignment): values (nnz) | b (n) | xold (n)
     // | res (n) | colptr (n+1 i32) | rowidx (nnz i32) | seed_tab (n i32) |
@@ -1712,10 +1907,13 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::Call(rt_index("rt_alloc")?));
     ctx.emit(I::LocalSet(base));
 
-    let tables: Vec<u8> = colptr.iter().chain(rowidx).copied()
+    let tables: Vec<u8> = colptr
+        .iter()
+        .chain(rowidx)
+        .copied()
         .chain(seed_offs.iter().chain(result_offs).map(|&o| o as i32))
         .chain(color_ptr.iter().chain(&color_cols).copied())
-        .chain(slots.iter().map(|&o| o as i32))
+        .chain(slots.iter().map(|&o| table_off(o)))
         .chain(old_offs.iter().copied())
         .flat_map(|v| v.to_le_bytes())
         .collect();
@@ -1726,6 +1924,15 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::I32Const(src as i32));
     ctx.emit(I::I32Const(tables.len() as i32));
     ctx.emit(I::MemoryInit { mem: 0, data_index: 0 });
+    for (j, (&off, &old)) in slots.iter().zip(&old_slots).enumerate() {
+        for (tab, off) in [(slot_tab_off, Some(off)), (old_tab_off, old)] {
+            if let Some(off) = off.filter(|&o| is_dyn(o)) {
+                ctx.emit(I::LocalGet(base));
+                ctx.emit_sim_rel(off)?;
+                ctx.emit(I::I32Store(mem_arg(tab + (j as u32) * 4, 2)));
+            }
+        }
+    }
 
     // Address `data + seed_tab[idx]` for run-time index `idx`.
     let push_seed_addr = |ctx: &mut FnCtx, idx: u32| {
@@ -1930,7 +2137,8 @@ pub(crate) fn compile_linear_system_analytic_csc(
         ctx.emit(I::F64Store(mem_arg(b_off, 3)));
     });
 
-    // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz, time).
+    // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz, time,
+    // method1, casual).
     ctx.emit(I::I32Const(handle));
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::I32Const(colptr_off as i32));
@@ -1948,28 +2156,28 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::I32Const(n as i32));
     ctx.emit(I::I32Const(nnz as i32));
     emit_sim_time(ctx)?;
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     emit_lin_unsolved(ctx, handle, base)?;
-    let m1 = Method1 { res_off, residuals, slot_tab_off: Some(slot_tab_off) };
-    emit_lin_step(ctx, base, b_off, n, &slots, true, handle, &m1, lower_inner, None)
+    let m1 = Method1 {
+        res_off,
+        residuals,
+        slot_tab_off: Some(slot_tab_off),
+    };
+    emit_lin_step(ctx, base, b_off, n, &slots, None, handle, &m1, lower_inner, None)
 }
 
-/// C's linear sparse-solver selection: density below `lssMaxDensity` (default
-/// 0.2) OR size above `lssMinSize` (default 1000). See
-/// `SimulationRuntime/c/simulation/solver/linearSystem.c`.
-pub(crate) const LSS_MAX_DENSITY: f64 = 0.2;
-pub(crate) const LSS_MIN_SIZE: usize = 1000;
+/// The compiler's linear sparse-solver choice (`SimCodeCodegenUtil.useSparseSolver`).
 pub(crate) fn lin_use_sparse(size: usize, nnz: usize) -> bool {
-    (nnz as f64) < LSS_MAX_DENSITY * (size * size) as f64 || size > LSS_MIN_SIZE
+    let t = SparseThresholds::DEFAULT;
+    SparseThresholds::sparse(size, nnz, t.lss_max_density, t.lss_min_size)
 }
 
-/// C's nonlinear sparse-solver selection (`nonlinearSystem.c`
-/// `initializeNonlinearSystemData`): kinsol+KLU when the density is below
-/// `nlssMaxDensity` (default 0.1) or the size exceeds `nlssMinSize` (default 1000).
-pub(crate) const NLSS_MAX_DENSITY: f64 = 0.1;
-pub(crate) const NLSS_MIN_SIZE: usize = 1000;
+/// The compiler's nonlinear sparse-solver choice: kinsol+KLU.
 pub(crate) fn nls_use_sparse(size: usize, nnz: usize) -> bool {
-    (nnz as f64) / ((size * size) as f64) < NLSS_MAX_DENSITY || size > NLSS_MIN_SIZE
+    let t = SparseThresholds::DEFAULT;
+    SparseThresholds::sparse(size, nnz, t.nlss_max_density, t.nlss_min_size)
 }
 
 /// Cache key for a sparse nonlinear system's reused symbolic factorization. Torn
@@ -2009,7 +2217,7 @@ pub(crate) fn compile_linear_system_symbolic(
             return Err("CodegenWasmJit: SES_LINEAR simJac entry out of range for size");
         }
     }
-    let mut slots: Vec<u32> = Vec::with_capacity(n);
+    let mut slots: Vec<SimOff> = Vec::with_capacity(n);
     for cr in vars {
         let key = sim_var_key(ctx.sim()?, cr)?;
         let slot = ctx
@@ -2022,7 +2230,6 @@ pub(crate) fn compile_linear_system_symbolic(
         }
         slots.push(slot.off);
     }
-    let data = ctx.sim()?.data_local;
     let use_sparse = lin_use_sparse(n, a_entries.len());
 
     let base = ctx.alloc_temp(WTy::I32);
@@ -2075,7 +2282,7 @@ pub(crate) fn compile_linear_system_symbolic(
         emit_b_exps(ctx, base, b_off, b_exps)?;
         emit_aux_x(ctx, base, aux_off, &slots)?;
         // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz,
-        // time). The pattern is a compile-time constant, so the system index keys
+        // time, method1, casual). The pattern is a compile-time constant, so the system index keys
         // the runtime's cache and the symbolic factorization is computed once per
         // run, as in C.
         ctx.emit(I::I32Const(index));
@@ -2095,6 +2302,8 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Const(n as i32));
         ctx.emit(I::I32Const(nnz as i32));
         emit_sim_time(ctx)?;
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::I32Const(ctx.dt_casual() as i32));
         ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     } else {
         // Dense layout: A (n*n column-major) | b (n) | aux (n).
@@ -2121,7 +2330,7 @@ pub(crate) fn compile_linear_system_symbolic(
         }
         emit_b_exps(ctx, base, b_off, b_exps)?;
         emit_aux_x(ctx, base, aux_off, &slots)?;
-        // rt_linsolve(a_ptr, b_ptr, x_ptr, n, index, time, method1).
+        // rt_linsolve(a_ptr, b_ptr, x_ptr, n, nnz, index, time, method1, casual).
         ctx.emit(I::LocalGet(base)); // a_ptr (a_off == 0)
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(b_off as i32));
@@ -2130,6 +2339,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Const(aux_off as i32));
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
+        ctx.emit(I::I32Const(a_entries.len() as i32));
         emit_linsolve_context(ctx, index)?;
         ctx.emit(I::I32Const(0)); // method 0: the solution is the unknowns
         ctx.emit(I::I32Const(ctx.dt_casual() as i32));
@@ -2140,10 +2350,10 @@ pub(crate) fn compile_linear_system_symbolic(
 
     // Scatter the solution into the unknown slots.
     for j in 0..n {
-        ctx.emit(I::LocalGet(data));
+        let rel = ctx.emit_sim_base(slots[j])?;
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
-        ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
+        ctx.emit(I::F64Store(mem_arg(rel, 3)));
     }
 
     // Recover the non-iteration torn variables at the solution (no-op for the
@@ -2156,12 +2366,7 @@ pub(crate) fn compile_linear_system_symbolic(
 }
 
 /// Emit `b[i] = exp` into the solve scratch at `base + b_off + i*8`.
-fn emit_b_exps(
-    ctx: &mut FnCtx,
-    base: u32,
-    b_off: u32,
-    b_exps: &[&metamodelica::Ref<DAE::Exp>],
-) -> Result<()> {
+fn emit_b_exps(ctx: &mut FnCtx, base: u32, b_off: u32, b_exps: &[&metamodelica::Ref<DAE::Exp>]) -> Result<()> {
     for (i, exp) in b_exps.iter().enumerate() {
         ctx.emit(we::Instruction::LocalGet(base));
         let w = compile_exp(ctx, exp)?;
@@ -2196,6 +2401,9 @@ pub(crate) fn emit_ls_bracket(ctx: &mut FnCtx, index: i32, n: i32, nnz: i32, beg
 /// `IRES = -1`; init / Euler / output callers report it as a hard error).
 pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     use we::Instruction as I;
+    if let Some(pat) = job.dyn_pat {
+        emit_dyn_pattern_init(ctx, job, pat)?;
+    }
     let data = ctx.sim()?.data_local;
     let nls_fail_off = ctx.sim()?.nls_fail_off;
     let rel_fresh_off = ctx.sim()?.rel_fresh_off;
@@ -2211,16 +2419,14 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
         Some(k) => ctx.emit_size_entry(k),
         None => ctx.emit(I::I32Const(job.n as i32)),
     }
-    ctx.emit(I::LocalGet(data));
-    ctx.emit(I::I32Const(nls_fail_off as i32));
-    ctx.emit(I::I32Add); // nls_fail flag address
+    ctx.emit_sim_addr(nls_fail_off)?; // nls_fail flag address
     // history block address for this system, and the current time (SimData+0),
     // for the extrapolated initial guess.
     match job.dyn_n {
         Some(_) => ctx.emit_sim_addr(job.hist_off)?,
         None => {
             ctx.emit(I::GlobalGet(NLS_HIST_GLOBAL));
-            ctx.emit(I::I32Const(job.hist_off as i32));
+            ctx.emit(I::I32Const(plain_off(job.hist_off)? as i32));
             ctx.emit(I::I32Add);
         }
     }
@@ -2228,9 +2434,7 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::F64Load(mem_arg(0, 3))); // time at SimData offset 0
     // relation-mode flag address: the solver holds relations around the Newton
     // solve so the residual stays smooth.
-    ctx.emit(I::LocalGet(data));
-    ctx.emit(I::I32Const(rel_fresh_off as i32));
-    ctx.emit(I::I32Add);
+    ctx.emit_sim_addr(rel_fresh_off)?;
     // nominal block address (x-scaling), and the matching min/max pairs.
     match job.dyn_n {
         Some(_) => {
@@ -2239,10 +2443,10 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
         }
         None => {
             ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
-            ctx.emit(I::I32Const(job.nominal_off as i32));
+            ctx.emit(I::I32Const(plain_off(job.nominal_off)? as i32));
             ctx.emit(I::I32Add);
             ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
-            ctx.emit(I::I32Const(2 * job.nominal_off as i32));
+            ctx.emit(I::I32Const(2 * plain_off(job.nominal_off)? as i32));
             ctx.emit(I::I32Add);
         }
     }
@@ -2251,37 +2455,50 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
         ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
         ctx.emit(I::I32Const((4 * job.k + 2) as i32));
         ctx.emit(I::I32Add);
+        // A runtime-sized system's Jacobian needs the pattern it is built over.
+        if let Some(pat) = job.dyn_pat {
+            ctx.emit(I::I32Const(-1));
+            ctx.emit_sim_addr(pat.slot)?;
+            ctx.emit(I::I32Load(mem_arg(8, 2)));
+            ctx.emit(I::Select);
+        }
     } else {
         ctx.emit(I::I32Const(-1)); // u32::MAX sentinel
     }
     // `relations[]` base + count and the mixed-system flag (`rt_solve_nls`).
     let (rel_off, n_rel) = (ctx.sim()?.relations_off, ctx.sim()?.n_relations);
-    ctx.emit(I::LocalGet(data));
-    ctx.emit(I::I32Const(rel_off as i32));
-    ctx.emit(I::I32Add);
+    ctx.emit_sim_addr(rel_off)?;
     ctx.emit(I::I32Const(n_rel as i32));
     ctx.emit(I::I32Const(job.mixed as i32));
     // A system with a symbolic pattern: its `colptr`/`rowidx` in the pattern block,
     // the nonzero count, whether the pattern is also the default solver choice (else
     // only `-nls=kinsol` uses it), and the symbolic-factorization cache key. With
     // `nnz == 0` the dense ladder runs over an `n×n` `jac`.
-    if job.nnz != 0 {
-        ctx.emit(I::GlobalGet(NLS_PAT_GLOBAL));
-        ctx.emit(I::I32Const(job.pat_off as i32));
-        ctx.emit(I::I32Add);
-    } else {
-        ctx.emit(I::I32Const(0));
+    match job.dyn_pat {
+        Some(pat) => {
+            ctx.emit_sim_addr(pat.slot)?;
+            ctx.emit(I::I32Load(mem_arg(4, 2)));
+            ctx.emit_sim_addr(pat.slot)?;
+            ctx.emit(I::I32Load(mem_arg(8, 2)));
+        }
+        None => {
+            if job.nnz != 0 {
+                ctx.emit(I::GlobalGet(NLS_PAT_GLOBAL));
+                ctx.emit(I::I32Const(job.pat_off as i32));
+                ctx.emit(I::I32Add);
+            } else {
+                ctx.emit(I::I32Const(0));
+            }
+            ctx.emit(I::I32Const(job.nnz as i32));
+        }
     }
-    ctx.emit(I::I32Const(job.nnz as i32));
     ctx.emit(I::I32Const(job.sparse_default as i32));
     ctx.emit(I::I32Const(nls_lss_handle(job.k) as i32));
     ctx.emit(I::I32Const(job.eq_index as i32));
     // C's `homotopySupport`/`homotopyMethod` and the `lambda` slot they drive.
     ctx.emit(I::I32Const(job.homotopy_support as i32));
     ctx.emit(I::I32Const(ctx.sim()?.homotopy_method as i32));
-    ctx.emit(I::LocalGet(data));
-    ctx.emit(I::I32Const(lambda_off as i32));
-    ctx.emit(I::I32Add);
+    ctx.emit_sim_addr(lambda_off)?;
     // Dynamic tearing: the strict set's `solve(sim_data) -> solved` function, which
     // `rt_solve_nls` calls where C's `solveNLS` calls `strictTearingFunctionCall`.
     if job.casual {
@@ -2292,6 +2509,37 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
         ctx.emit(I::I32Const(-1)); // u32::MAX sentinel
     }
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
+    Ok(())
+}
+
+/// Expand the system's sparsity for the sizes of this run, once.
+fn emit_dyn_pattern_init(ctx: &mut FnCtx, job: NlsJob, pat: DynPattern) -> Result<()> {
+    use we::Instruction as I;
+    let n = job
+        .dyn_n
+        .ok_or("CodegenWasmJit: a runtime-sized pattern of a constant-size system")?;
+    let slot = ctx.alloc_temp(WTy::I32);
+    ctx.emit_sim_addr(pat.slot)?;
+    ctx.emit(I::LocalTee(slot));
+    ctx.emit(I::I32Load(mem_arg(0, 2)));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    for i in 0..pat.n_params {
+        let entry = super::sizes::size_entry(&Sz::param(i))?;
+        ctx.emit(I::LocalGet(slot));
+        ctx.emit_size_entry(entry);
+        ctx.emit(I::I64ExtendI32S);
+        ctx.emit(I::I64Store(mem_arg(16 + 8 * i, 3)));
+    }
+    ctx.emit(I::LocalGet(slot));
+    ctx.emit(I::GlobalGet(NLS_PAT_GLOBAL));
+    ctx.emit(I::I32Const(pat.sym_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(pat.sym_len as i32));
+    ctx.emit(I::I32Const(pat.n_params as i32));
+    ctx.emit_size_entry(n);
+    ctx.emit(I::Call(rt_index("rt_nls_sym_pattern")?));
+    ctx.emit(I::End);
     Ok(())
 }
 
@@ -2438,12 +2686,7 @@ fn jac_slot_addr(ctx: &mut FnCtx, base: u32, tab: u32, idx: u32) {
 }
 
 /// Emit `for loc in 0..end { body }`.
-fn jac_count_loop(
-    ctx: &mut FnCtx,
-    loc: u32,
-    end: i32,
-    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
-) -> Result<()> {
+fn jac_count_loop(ctx: &mut FnCtx, loc: u32, end: i32, body: &mut dyn FnMut(&mut FnCtx) -> Result<()>) -> Result<()> {
     use we::Instruction as I;
     ctx.emit(I::I32Const(0));
     ctx.emit(I::LocalSet(loc));

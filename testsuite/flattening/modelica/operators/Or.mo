@@ -10,7 +10,6 @@ model Or
   constant Boolean b2 = true or false;
   constant Boolean b3 = false or true;
   constant Boolean b4 = false or false;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Or;
 
 // Result:

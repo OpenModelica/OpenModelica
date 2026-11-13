@@ -1,6 +1,5 @@
 // name: DotName
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests parsing for the Modelica 3.2 .A.B.C = (Fully-Qualified) A.B.C
 //

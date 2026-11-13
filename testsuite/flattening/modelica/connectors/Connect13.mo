@@ -19,7 +19,6 @@ model test2
 equation
 connect(t1.n,t2.p);
 connect(t2.n,t1.p);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test2;
 // Result:
 // class test2
@@ -48,17 +47,17 @@ end test2;
 //   Real t2.n.i_dq0[2];
 //   Real t2.n.i_dq0[3];
 // equation
-//   t1.p.i_dq0[1] + t2.n.i_dq0[1] = 0.0;
-//   t1.p.i_dq0[2] + t2.n.i_dq0[2] = 0.0;
-//   t1.p.i_dq0[3] + t2.n.i_dq0[3] = 0.0;
-//   t1.n.i_dq0[1] + t2.p.i_dq0[1] = 0.0;
-//   t1.n.i_dq0[2] + t2.p.i_dq0[2] = 0.0;
-//   t1.n.i_dq0[3] + t2.p.i_dq0[3] = 0.0;
 //   t1.n.u_dq0[1] = t2.p.u_dq0[1];
 //   t1.n.u_dq0[2] = t2.p.u_dq0[2];
 //   t1.n.u_dq0[3] = t2.p.u_dq0[3];
-//   t1.p.u_dq0[1] = t2.n.u_dq0[1];
-//   t1.p.u_dq0[2] = t2.n.u_dq0[2];
-//   t1.p.u_dq0[3] = t2.n.u_dq0[3];
+//   t2.n.u_dq0[1] = t1.p.u_dq0[1];
+//   t2.n.u_dq0[2] = t1.p.u_dq0[2];
+//   t2.n.u_dq0[3] = t1.p.u_dq0[3];
+//   t2.p.i_dq0[1] + t1.n.i_dq0[1] = 0.0;
+//   t2.p.i_dq0[2] + t1.n.i_dq0[2] = 0.0;
+//   t2.p.i_dq0[3] + t1.n.i_dq0[3] = 0.0;
+//   t2.n.i_dq0[1] + t1.p.i_dq0[1] = 0.0;
+//   t2.n.i_dq0[2] + t1.p.i_dq0[2] = 0.0;
+//   t2.n.i_dq0[3] + t1.p.i_dq0[3] = 0.0;
 // end test2;
 // endResult

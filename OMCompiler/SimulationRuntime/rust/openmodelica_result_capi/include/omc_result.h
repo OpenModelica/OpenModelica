@@ -96,6 +96,9 @@ char *omc_result_description(const omc_result *r, const char *var);
 char *omc_result_unit(const omc_result *r, const char *var);
 char *omc_result_display_unit(const omc_result *r, const char *var);
 char *omc_result_type(const omc_result *r, const char *var); /* Real, Integer, Boolean, String, enumeration */
+/* The literals of enumeration var (*len of them; value k names the k-th), for
+ * omc_result_free_strings(result, *len); NULL unless the file has them. */
+char **omc_result_enumeration(const omc_result *r, const char *var, size_t *len);
 
 size_t omc_result_num_rows(const omc_result *r);
 const char *omc_result_time_name(const omc_result *r);
@@ -120,14 +123,50 @@ int omc_result_write(omc_result *r, const char *path, const char *const *vars, s
                      unsigned intervals, int single, char **error);
 
 omc_result_tolerances omc_result_default_tolerances(void);
-/* diffSimulationResults: the differing variables among n vars (the reference's
- * compared variables when 0). tol NULL selects the defaults. Free the result
+/* diffSimulationResults: the variables among n vars (the reference's compared
+ * variables when 0) that differ or are missing in either file. tol NULL
+ * selects the defaults. Free the result
  * with omc_result_free_strings(result, *n_out). */
 char **omc_result_diff(omc_result *actual, omc_result *reference, const char *const *vars, size_t n,
                        const omc_result_tolerances *tol, size_t *n_out, char **error);
 omc_result_tube *omc_result_diff_variable(omc_result *actual, omc_result *reference, const char *var,
                                           const omc_result_tolerances *tol, char **error);
 void omc_result_tube_free(omc_result_tube *t);
+
+/* ---- The scripting API's result-file functions, for omc. ---- */
+
+/* Receives the messages: format has a %s per token, filled in order;
+ * severity is 0 error, 1 warning, 2 notification. */
+typedef struct omc_result_messages {
+  void (*add)(void *data, int severity, const char *format, const char *const *tokens, size_t n);
+  void *data;
+} omc_result_messages;
+
+void omc_result_script_close(void);
+double omc_result_script_val(const omc_result_messages *m, const char *filename, const char *var, double time);
+char **omc_result_script_variables(const omc_result_messages *m, const char *filename, int parameters,
+                                   int omc_style, size_t *n_out);
+int omc_result_script_size(const omc_result_messages *m, const char *filename);
+/* n rows of *n_rows values, for omc_result_free_doubles; NULL on failure. */
+double *omc_result_script_dataset(const omc_result_messages *m, const char *filename, const char *const *vars,
+                                  size_t n, int dimsize, size_t *n_rows);
+/* NULL when the files cannot be compared. */
+char **omc_result_script_compare(const omc_result_messages *m, int running_testsuite, const char *filename,
+                                 const char *reffilename, const char *logfile, double reltol, double abstol,
+                                 const char *const *vars, size_t n, size_t *n_out);
+double omc_result_script_delta(const omc_result_messages *m, const char *filename, const char *reffilename,
+                               const char *method, const char *const *vars, size_t n);
+char **omc_result_script_diff(const omc_result_messages *m, int running_testsuite, const char *filename,
+                              const char *reffilename, const char *prefix, double reltol,
+                              double reltol_diff_max_min, double range_delta, const char *const *vars, size_t n,
+                              int keep_equal_results, int *success, size_t *n_out);
+/* NULL when the files cannot be compared. */
+char *omc_result_script_diff_html(const omc_result_messages *m, int running_testsuite, const char *var,
+                                  const char *filename, const char *reffilename, double reltol,
+                                  double reltol_diff_max_min, double range_delta);
+int omc_result_script_filter(const omc_result_messages *m, const char *in_file, const char *out_file,
+                             const char *const *vars, size_t n, int intervals, int remove_description);
+void omc_result_free_doubles(double *p);
 
 /* ---- Writers, for the C simulation runtime (simulation_result_rust.cpp). ---- */
 
@@ -153,6 +192,11 @@ typedef struct omc_result_signal {
   /* FMI's relativeQuantity (Modelica absoluteValue=false): the value is a
    * difference in its unit, so a conversion scales it but adds no offset. */
   int relative_quantity;
+  /* An INTEGER signal of an enumeration type: its name and n_literals literals,
+   * value k naming literals[k-1]. NULL otherwise. */
+  const char *declared_type;
+  const char *const *literals;
+  unsigned n_literals;
 } omc_result_signal;
 
 typedef struct omc_result_writer omc_result_writer;
@@ -249,6 +293,15 @@ public:
   std::string unit(const std::string &v) const { return detail::take(omc_result_unit(r_, v.c_str())); }
   std::string displayUnit(const std::string &v) const { return detail::take(omc_result_display_unit(r_, v.c_str())); }
   std::string type(const std::string &v) const { return detail::take(omc_result_type(r_, v.c_str())); }
+  /* The literals of an enumeration; empty unless the file has them. */
+  std::vector<std::string> enumeration(const std::string &v) const {
+    size_t n = 0;
+    char **p = omc_result_enumeration(r_, v.c_str(), &n);
+    if (!p) return {};
+    std::vector<std::string> out(p, p + n);
+    omc_result_free_strings(p, n);
+    return out;
+  }
 
   size_t rows() const { return omc_result_num_rows(r_); }
   std::string timeName() const { return omc_result_time_name(r_); }

@@ -47,10 +47,10 @@ getErrorString();
 //   Real T_heatPort(nominal = 300.0, start = 288.15, min = 0.0, displayUnit = "degC", unit = "K", quantity = "ThermodynamicTemperature");
 //   Real R_actual(unit = "Ohm", quantity = "Resistance");
 // equation
-//   assert(1.0 + alpha * (T_heatPort - T_ref) >= 1e-15, "Temperature outside scope of model!", AssertionLevel.error);
-//   R_actual = R * (1.0 + alpha * (T_heatPort - T_ref));
-//   v = R_actual * i;
-//   LossPower = v * i;
+//   assert(1.0 + alpha*(T_heatPort - T_ref) >= 1e-15, "Temperature outside scope of model!", AssertionLevel.error);
+//   R_actual = R*(1.0 + alpha*(T_heatPort - T_ref));
+//   v = R_actual*i;
+//   LossPower = v*i;
 //   T_heatPort = T;
 //   0.0 = p.i + n.i;
 //   i = p.i;

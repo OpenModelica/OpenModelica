@@ -47,6 +47,7 @@ int checkForStateEvent(DATA* data, LIST *eventList);
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
 int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
 void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
 
 double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList);

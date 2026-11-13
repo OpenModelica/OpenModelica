@@ -43,7 +43,8 @@ sudo apt-get install \
   lsb-release
 
 echo Linux name: `lsb_release --short --codename`
-curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc | sudo gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg
+curl -fsSL https://build.openmodelica.org/apt/openmodelica.asc | sudo gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg
+sudo chmod a+r /usr/share/keyrings/openmodelica-keyring.gpg
 
 echo \
  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt \
@@ -91,7 +92,7 @@ Install the following dependencies with your package manager:
 
 Parts of OpenModelica are written in Rust, so `cargo` and `rustc` are needed to
 build it: result files are read and written through `libomc_result`, and
-`--simCodeTarget=C` links the Rust simulation runtime.
+`--simCodeTarget=C+Rust` links the Rust simulation runtime.
 
 Any reasonably recent stable toolchain will do. The crates use the 2024 edition,
 so `rustc`/`cargo` 1.85 or newer:

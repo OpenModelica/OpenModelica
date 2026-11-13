@@ -19,6 +19,10 @@ encapsulated package Autoconf
   // this; the Rust port's hand-written Autoconf.rs sets it from the target arch.
   constant Boolean isWasm = dllExt == ".wasm";
 
+  // Whether a MetaModelica function compiled to C can be loaded: this omc links
+  // their runtime. The Rust port's Autoconf.rs sets it to false.
+  constant Boolean haveMetaModelicaRuntime = true;
+
   constant Boolean haveBStatic = @BSTATIC@;
   constant String bstatic = if haveBStatic then "-Wl,-Bstatic" else "";
   constant String bdynamic = if haveBStatic then "-Wl,-Bdynamic" else "";

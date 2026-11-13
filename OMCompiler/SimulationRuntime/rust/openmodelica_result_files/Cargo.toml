@@ -14,6 +14,7 @@ openmodelica_mat_reader = { path = "../openmodelica_mat_reader", default-feature
 openmodelica_arrow_writer = { path = "../openmodelica_arrow_writer" }
 openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
 openmodelica_hdf5_result = { path = "../openmodelica_hdf5_result", optional = true }
+openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi", optional = true }
 arrow-array = { version = "60", default-features = false }
 arrow-schema = { version = "60", default-features = false }
 arrow-ipc = { version = "60", default-features = false }
@@ -21,7 +22,7 @@ serde_json = "1"
 
 [features]
 # See openmodelica_mat_reader.
-vfs = ["openmodelica_mat_reader/vfs"]
+vfs = ["openmodelica_mat_reader/vfs", "dep:openmodelica_wasi"]
 # SDF and MTSF, i.e. the readers that need the HDF5 C library.
 hdf5 = ["dep:openmodelica_hdf5_result", "openmodelica_hdf5_result/library"]
 static-hdf5 = ["hdf5", "openmodelica_hdf5_result/static-hdf5"]

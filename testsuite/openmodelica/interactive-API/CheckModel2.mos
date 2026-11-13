@@ -1,0 +1,28 @@
+// name: CheckModel2
+// keywords:
+// status: correct
+//
+
+loadString("
+  model M
+    outer Real y;
+    Real x = \"error\";
+  end M;
+");
+
+checkModel(M);
+checkModel(M); // Check again to make sure earlier errors aren't counted.
+getErrorString();
+
+// Result:
+// true
+// "Check of M failed with 2 warning(s) and 1 error(s)."
+// "Check of M failed with 2 warning(s) and 1 error(s)."
+// "[<interactive>:3:5-3:17:writable] Warning: The model can't be instantiated due to top-level outer element 'y', it may only be used as part of a simulation model.
+// [<interactive>:3:5-3:17:writable] Warning: An inner declaration for outer component y could not be found and was automatically generated.
+// [<interactive>:4:5-4:21:writable] Error: Type mismatch in binding x = \"error\", expected subtype of Real, got type String.
+// [<interactive>:3:5-3:17:writable] Warning: The model can't be instantiated due to top-level outer element 'y', it may only be used as part of a simulation model.
+// [<interactive>:3:5-3:17:writable] Warning: An inner declaration for outer component y could not be found and was automatically generated.
+// [<interactive>:4:5-4:21:writable] Error: Type mismatch in binding x = \"error\", expected subtype of Real, got type String.
+// "
+// endResult

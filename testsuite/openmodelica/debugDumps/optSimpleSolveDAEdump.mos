@@ -1,7 +1,6 @@
 // name: optSimpleSolveDAEdump
 // keywords: omc debug dump
 // status: correct
-// cflags: -d=-newInst
 //
 // omc debug dump: +d=optdaedump
 //
@@ -48,9 +47,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 1/1 (1): tanh(x) = 0.9 * sin(time * 10.0)   [dynamic |0|0|0|0|]
 // 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+// 3/3 (1): if noEvent(x > 0.0) then 3.0 * z + 1.0 else 5.0 * z + 2.0 = y   [dynamic |0|0|0|0|]
 //
 //
 // no matching
@@ -78,9 +77,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 1/1 (1): tanh(x) = 0.9 * sin(time * 10.0)   [dynamic |0|0|0|0|]
 // 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+// 3/3 (1): if noEvent(x > 0.0) then 3.0 * z + 1.0 else 5.0 * z + 2.0 = y   [dynamic |0|0|0|0|]
 //
 //
 // no matching
@@ -109,9 +108,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 1/1 (1): tanh(x) = 0.9 * sin(time * 10.0)   [dynamic |0|0|0|0|]
 // 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+// 3/3 (1): if noEvent(x > 0.0) then 3.0 * z + 1.0 else 5.0 * z + 2.0 = y   [dynamic |0|0|0|0|]
 //
 //
 // Matching
@@ -151,9 +150,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+// 1/1 (1): if noEvent(x > 0.0) then 3.0 * z + 1.0 else 5.0 * z + 2.0 = y   [dynamic |0|0|0|0|]
 // 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 3/3 (1): tanh(x) = 0.9 * sin(time * 10.0)   [dynamic |0|0|0|0|]
 //
 //
 // no matching
@@ -181,9 +180,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+// 1/1 (1): if noEvent(x > 0.0) then 3.0 * z + 1.0 else 5.0 * z + 2.0 = y   [dynamic |0|0|0|0|]
 // 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 3/3 (1): tanh(x) = 0.9 * sin(time * 10.0)   [dynamic |0|0|0|0|]
 //
 //
 // Adjacency Matrix (row: equation)
@@ -225,9 +224,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+// 1/1 (1): if noEvent(x > 0.0) then 3.0 * z + 1.0 else 5.0 * z + 2.0 = y   [dynamic |0|0|0|0|]
 // 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 3/3 (1): tanh(x) = 0.9 * sin(time * 10.0)   [dynamic |0|0|0|0|]
 //
 //
 // Matching
@@ -267,9 +266,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+// 1/1 (1): if noEvent(x > 0.0) then 3.0 * z + 1.0 else 5.0 * z + 2.0 = y   [dynamic |0|0|0|0|]
 // 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 3/3 (1): tanh(x) = 0.9 * sin(time * 10.0)   [dynamic |0|0|0|0|]
 //
 //
 // Matching
@@ -311,7 +310,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic |0|0|0|0|]
 // 2/2 (1): y = (-x ^ 3.0) ^ 0.3333333333333333   [dynamic |0|0|0|0|]
-// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
+// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(time * 10.0)) / (1.0 - 0.9 * sin(time * 10.0)))   [dynamic |0|0|0|0|]
 //
 //
 // Matching
@@ -353,7 +352,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic |0|0|0|0|]
 // 2/2 (1): y = (-x ^ 3.0) ^ 0.3333333333333333   [dynamic |0|0|0|0|]
-// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
+// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(time * 10.0)) / (1.0 - 0.9 * sin(time * 10.0)))   [dynamic |0|0|0|0|]
 //
 //
 // Matching
@@ -395,7 +394,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic |0|0|0|0|]
 // 2/2 (1): y = (-x ^ 3.0) ^ 0.3333333333333333   [dynamic |0|0|0|0|]
-// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
+// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(time * 10.0)) / (1.0 - 0.9 * sin(time * 10.0)))   [dynamic |0|0|0|0|]
 //
 //
 // Matching
@@ -437,7 +436,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic |0|0|0|0|]
 // 2/2 (1): y = (-x ^ 3.0) ^ 0.3333333333333333   [dynamic |0|0|0|0|]
-// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
+// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(time * 10.0)) / (1.0 - 0.9 * sin(time * 10.0)))   [dynamic |0|0|0|0|]
 //
 //
 // Matching
@@ -478,7 +477,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
+// 1/1 (1): x = 0.5 * log((1.0 + 0.9 * sin(time * 10.0)) / (1.0 - 0.9 * sin(time * 10.0)))   [dynamic |0|0|0|0|]
 // 2/2 (1): y = (-x ^ 3.0) ^ 0.3333333333333333   [dynamic |0|0|0|0|]
 // 3/3 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic |0|0|0|0|]
 //

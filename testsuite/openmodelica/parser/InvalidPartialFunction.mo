@@ -3,7 +3,6 @@
 
 model InvalidPartialFunction
   Real x(start = function f1(x = 1));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InvalidPartialFunction;
 
 // Result:

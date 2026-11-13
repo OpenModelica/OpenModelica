@@ -4,13 +4,13 @@
 //
 //
 
-class Y
+model Y
   replaceable model X
     Integer x;
   end X;
 end Y;
 
-class ClassExtends1
+model ClassExtends1
  extends Y;
 
  redeclare replaceable model extends X(x=y)
@@ -20,7 +20,6 @@ class ClassExtends1
  X component;
 initial equation
  component.y = 5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClassExtends1;
 
 // Result:

@@ -37,28 +37,9 @@ model PassesRecordArrayAsParameter
   Integer variable;
 equation
   variable = parameterReceiver[1].variable;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PassesRecordArrayAsParameter;
 
 // Result:
-// function DataSetOne "Automatically generated record constructor for DataSetOne"
-//   input Integer dataOne = 5;
-//   input Integer dataTwo = 10;
-//   output DataSetOne res;
-// end DataSetOne;
-//
-// function DataSetTwo "Automatically generated record constructor for DataSetTwo"
-//   input Integer dataOne = 15;
-//   input Integer dataTwo = 20;
-//   output DataSetTwo res;
-// end DataSetTwo;
-//
-// function GenericData "Automatically generated record constructor for GenericData"
-//   input Integer dataOne = 1;
-//   input Integer dataTwo = 1;
-//   output GenericData res;
-// end GenericData;
-//
 // class PassesRecordArrayAsParameter
 //   parameter Integer data1.dataOne = 5;
 //   parameter Integer data1.dataTwo = 10;

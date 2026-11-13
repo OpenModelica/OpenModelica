@@ -180,8 +180,19 @@ QString StringHandler::getViewType(int type)
   }
 }
 
+/*!
+ * \brief StringHandler::getErrorKind
+ * Maps an OpenModelica error kind to OMEdit enum.
+ * Accepts qualified names with or without a leading dot.
+ * \param errorKind
+ * \return
+ */
 StringHandler::OpenModelicaErrorKinds StringHandler::getErrorKind(QString errorKind)
 {
+  if (!errorKind.startsWith('.')) {
+    errorKind.prepend('.');
+  }
+
   if (errorKind.compare(Helper::syntaxKind) == 0) {
     return StringHandler::Syntax;
   } else if (errorKind.compare(Helper::grammarKind) == 0) {
@@ -221,8 +232,19 @@ QString StringHandler::getErrorKindString(OpenModelicaErrorKinds errorKind)
   }
 }
 
+/*!
+ * \brief StringHandler::getErrorType
+ * Maps an OpenModelica error type to OMEdit enum.
+ * Accepts qualified names with or without a leading dot.
+ * \param errorType
+ * \return
+ */
 StringHandler::OpenModelicaErrors StringHandler::getErrorType(QString errorType)
 {
+  if (!errorType.startsWith('.')) {
+    errorType.prepend('.');
+  }
+
   if (errorType.compare(Helper::internalLevel) == 0) {
     return StringHandler::Internal;
   } else if (errorType.compare(Helper::notificationLevel) == 0) {
@@ -1403,7 +1425,22 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
     dir_str = StringHandler::getLastOpenDirectory();
   }
 
-  QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
+  QString dirName;
+#if defined(__EMSCRIPTEN__)
+  // The browser's picker only hands over files of the local disk, never a directory
+  // to write into, so choose one of the page file system instead.
+  QFileDialog dialog(parent, caption, dir_str);
+  dialog.setOptions(QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
+  dialog.setFileMode(QFileDialog::Directory);
+  QList<QUrl> urls = dialog.sidebarUrls();
+  urls << QUrl::fromLocalFile("/uploads") << QUrl::fromLocalFile(Utilities::tempDirectory());
+  dialog.setSidebarUrls(urls);
+  if (dialog.exec()) {
+    dirName = dialog.selectedFiles().value(0);
+  }
+#else
+  dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
+#endif
   if (!dirName.isEmpty()) {
     StringHandler::setLastOpenDirectory(dirName);
   }

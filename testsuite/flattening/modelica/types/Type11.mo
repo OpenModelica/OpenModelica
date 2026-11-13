@@ -6,14 +6,13 @@
 //
 //
 
-class Type11
+model Type11
   Real[3] x[2]=[[11.,12.,13.];[21.,22.,23.]];
   Real y[2,3]=[[11.,12.,13.];[21.,22.,23.]];
 
   Real ok[3];
 equation
   ok[1]=3.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type11;
 
 // Result:

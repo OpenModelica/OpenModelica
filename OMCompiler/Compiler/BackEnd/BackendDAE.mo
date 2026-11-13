@@ -144,13 +144,6 @@ uniontype Shared "Data shared for all equation-systems"
   end SHARED;
 end Shared;
 
-uniontype InlineData
-  record INLINE_DATA
-    EqSystems inlineSystems;
-    Variables knownVariables;
-  end INLINE_DATA;
-end InlineData;
-
 uniontype BasePartition
   record BASE_PARTITION
     .DAE.ClockKind clock;
@@ -190,7 +183,6 @@ uniontype BackendDAEType "BackendDAEType to indicate different types of BackendD
   record ARRAYSYSTEM     "Type for multi dim equation arrays BackendDAE.DAE" end ARRAYSYSTEM;
   record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"          end PARAMETERSYSTEM;
   record INITIALSYSTEM   "Type for initial system BackendDAE.DAE"            end INITIALSYSTEM;
-  record INLINESYSTEM    "Type for inline system BackendDAE.DAE"             end INLINESYSTEM;
   record DAEMODESYSTEM   "Type for DAEmode system BackendDAE.DAE"            end DAEMODESYSTEM;
 end BackendDAEType;
 
@@ -310,8 +302,6 @@ uniontype VarKind "variable kind"
   end OPT_LOOP_INPUT;
   record ALG_STATE        "algebraic state used by inline solver"
   end ALG_STATE;
-  record ALG_STATE_OLD    "algebraic state old value used by inline solver"
-  end ALG_STATE_OLD;
   record DAE_RESIDUAL_VAR "variable kind used for DAEmode"
   end DAE_RESIDUAL_VAR;
   record DAE_AUX_VAR      "auxiliary variable used for DAEmode"
@@ -820,7 +810,6 @@ public constant String outputAliasPrefix = "$outputAlias_";
 
 public constant String optimizationMayerTermName = "$OMC$objectMayerTerm";
 public constant String optimizationLagrangeTermName = "$OMC$objectLagrangeTerm";
-public constant String symSolverDT = "__OMC_DT";
 public constant String homotopyLambda = "__HOM_LAMBDA";
 
 type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;

@@ -13,7 +13,6 @@ equation
   a = 1.0;
   x = sin(time);
   y = delay(x, a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Delay;
 
 // Result:

@@ -1,0 +1,30 @@
+// name:      resultFileFlagRealTime
+// keywords:  simflags resultFile #17817
+// status:    correct
+// suite:     realTime
+// teardown_command: rm -rf ResultFileFlagRT ResultFileFlagRT.* ResultFileFlagRT_* ResultFileFlagRT1.mat
+//
+// -rt is not -r: simulate keeps the default result file name.
+
+loadString("model ResultFileFlagRT
+  Real x(start=1, fixed=true);
+equation
+  der(x) = -x;
+end ResultFileFlagRT;"); getErrorString();
+
+echo(false);
+r1 := simulate(ResultFileFlagRT, simflags="-rt=0");
+r2 := simulate(ResultFileFlagRT, simflags="-rt=0 -r ResultFileFlagRT1.mat");
+echo(true);
+r1.resultFile;
+r2.resultFile;
+{regularFileExists(f) for f in {"ResultFileFlagRT_res.mat", "ResultFileFlagRT1.mat"}};
+
+// Result:
+// true
+// ""
+// true
+// "ResultFileFlagRT_res.mat"
+// "ResultFileFlagRT1.mat"
+// {true, true}
+// endResult

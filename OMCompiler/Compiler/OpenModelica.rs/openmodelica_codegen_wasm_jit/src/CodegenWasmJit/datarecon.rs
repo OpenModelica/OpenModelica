@@ -11,11 +11,11 @@ use std::sync::Arc;
 
 use metamodelica::{List, Result};
 use openmodelica_backend_types::BackendDAE;
-use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::{Neg, ReconInfo, ReconJac, ReconVar};
+use openmodelica_simcode_types::{SimCode, SimCodeVar};
 
-use crate::CodegenWasmJit::{SimVarMap, count, jac_column_vars, jac_result_row, lst};
-use crate::CodegenWasmJitFunctions::{FnCtx, FnInfo, Literals, SimSlot, WTy, sim_cref_key};
+use crate::CodegenWasmJit::{SimVarMap, count, jac_column_vars, jac_result_row, lst, with_jac_calls};
+use crate::CodegenWasmJitFunctions::{FnCtx, FnInfo, Literals, SimOff, SimSlot, WTy, plain_off, sim_cref_key};
 
 /// The two matrices, in the order they occupy the scratch region.
 pub(crate) const JAC_FNS: [&str; 2] = ["reconJacF", "reconJacH"];
@@ -61,14 +61,17 @@ pub(crate) fn build_plan(sim_code: &SimCode::SimCode, vars: &SimCodeVar::SimVars
         if !present {
             return None;
         }
-        let jm = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == names[k])?.clone();
+        let jm = lst(&sim_code.jacobianMatrices)
+            .find(|j| &*j.matrixName == names[k])?
+            .clone();
         let cols = count(&jm.seedVars) as u32;
         let rows = matrix_rows(&jm);
         if rows == 0 || cols == 0 {
             return None;
         }
-        let has_equations =
-            lst(&jm.columns).next().is_some_and(|c| lst(&c.columnEqns).next().is_some());
+        let has_equations = lst(&jm.columns)
+            .next()
+            .is_some_and(|c| lst(&c.columnEqns).next().is_some());
         (has_equations && crate::CodegenWasmJit::jac_lowerable(&jm)).then_some((jm, rows, cols))
     });
     ReconPlan { jacs, present }
@@ -84,7 +87,11 @@ fn matrix_rows(jm: &Arc<SimCode::JacobianMatrix>) -> u32 {
         .map(|r| r as u32 + 1)
         .max()
         .unwrap_or(0);
-    let sparse = lst(&jm.sparsity).flat_map(|(_, nz)| lst(nz)).map(|r| *r as u32 + 1).max().unwrap_or(0);
+    let sparse = lst(&jm.sparsity)
+        .flat_map(|(_, nz)| lst(nz))
+        .map(|r| *r as u32 + 1)
+        .max()
+        .unwrap_or(0);
     results.max(sparse)
 }
 
@@ -116,7 +123,13 @@ pub(crate) fn build_jac_infos(
         for sv in lst(&jm.seedVars) {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
-                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 },
+                SimSlot {
+                    off: SimOff::from(cursor),
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                    pre: 0,
+                },
             );
             listed.push(cursor);
             cursor += 8;
@@ -125,7 +138,13 @@ pub(crate) fn build_jac_infos(
         for sv in jac_column_vars(jm).iter() {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
-                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 },
+                SimSlot {
+                    off: SimOff::from(cursor),
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                    pre: 0,
+                },
             );
             if matches!(sv.varKind, VarKind::JAC_VAR)
                 && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)
@@ -198,7 +217,7 @@ fn build_jac_fn(
         col.map(|c| lst(&c.constantEqns).cloned().collect()).unwrap_or_default();
     let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.columnEqns).cloned().collect()).unwrap_or_default();
-    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let mut ctx = FnCtx::new_sim(sim_ctx(&with_jac_calls(var_map, jm)), by_name, literals);
     let lower = |c: &mut FnCtx, eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]| -> Result<()> {
         for eq in eqs {
             lower_equation(c, eq, eq_index)?;
@@ -243,7 +262,7 @@ pub(crate) fn build_recon_info(
                 .get(&key)
                 .ok_or("CodegenWasmJit: data-reconciliation variable has no SimData slot")?;
             out.push(ReconVar {
-                off: slot.off,
+                off: plain_off(slot.off)?,
                 negate: slot.negate,
                 name: crate::CodegenWasmJit::cref_display(&sv.name)?,
                 unit: sv.displayUnit.to_string(),
@@ -254,7 +273,11 @@ pub(crate) fn build_recon_info(
     };
     let jac = |k: usize| -> Option<ReconJac> {
         let info = infos.get(k)?.as_ref()?;
-        Some(ReconJac { rows: info.rows, cols: info.cols, off: info.out_off })
+        Some(ReconJac {
+            rows: info.rows,
+            cols: info.cols,
+            off: info.out_off,
+        })
     };
     Ok(Some(ReconInfo {
         input_vars: list(&vars.dataReconinputVars)?,

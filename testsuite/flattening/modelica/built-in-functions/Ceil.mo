@@ -9,7 +9,6 @@ model Ceil
   Real r;
 equation
   r = ceil(4.5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Ceil;
 
 // Result:

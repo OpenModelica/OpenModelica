@@ -87,6 +87,8 @@ class LocalsWidget;
 class TargetOutputWidget;
 class GDBLoggerWidget;
 class DocumentationWidget;
+class ClassDiagramWidget;
+class ClassDiagramWindow;
 class PlotWindowContainer;
 class VariablesWidget;
 class BreakpointsWidget;
@@ -285,6 +287,7 @@ public:
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists);
+  ClassDiagramWidget* showClassDiagramWidget(const QString &className, bool crml = false);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
@@ -395,6 +398,8 @@ private:
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpInstallLibraryAction;
+  QAction *mpInstallLibraryFromFileAction;
+  QAction *mpInstallLibraryFromDirectoryAction;
   QAction *mpUpgradeInstalledLibrariesAction;
   QAction *mpUpdateLibraryIndexAction;
   QAction *mpClearRecentFilesAction;
@@ -417,6 +422,8 @@ private:
   QAction *mpCascadeWindowsAction;
   QAction *mpTileWindowsHorizontallyAction;
   QAction *mpTileWindowsVerticallyAction;
+  QAction *mpTileWindowsMatrixAction;
+  QAction *mpEquateAndTileWindowsMatrixAction;
   QAction *mpToggleTabOrSubWindowView;
   // Simulation Menu
   QAction *mpCheckModelAction;
@@ -522,6 +529,7 @@ private:
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+  ClassDiagramWindow *mpClassDiagramWindow = nullptr;
   QMdiSubWindow *mpLastModelingSubWindow = nullptr;
   //! Mounts with a synchronisation already running; a second one would race it.
   QSet<QString> mSyncingMounts;
@@ -579,6 +587,8 @@ public slots:
   void cascadeSubWindows();
   void tileSubWindowsHorizontally();
   void tileSubWindowsVertically();
+  void tileSubWindowsMatrix();
+  void equateAndTileSubWindowsMatrix();
   void toggleTabOrSubWindowView();
   void checkModel();
   void checkAllModels();
@@ -603,6 +613,8 @@ public slots:
   void runOMSensPlugin();
   void exportModelToOMNotebook();
   bool openInstallLibraryDialog();
+  void installLibraryFromFile();
+  void installLibraryFromDirectory();
   void upgradeInstalledLibraries();
   void updateLibraryIndex();
   void updateLibraryIndex(bool forceUpdate);
@@ -673,6 +685,8 @@ private:
   void switchToAlgorithmicDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
+  void tileSubWindowsMatrix(QMdiArea *pMdiArea, bool resize);
+  void equateSubWindowSizes(QMdiArea *pMdiArea);
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
   MessageTab* createMessageTab(const QString &name, bool fixedTab);
   void reSimulate(bool showSetup);

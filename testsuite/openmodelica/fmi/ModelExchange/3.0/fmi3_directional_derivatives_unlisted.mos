@@ -1,0 +1,50 @@
+// name: fmi3_directional_derivatives_unlisted
+// keywords: FMI 3.0 export directional derivatives jacobian
+// status: correct
+// teardown_command: rm -rf fmi3_directional_derivatives_unlisted.fmu fmi3_directional_derivatives_unlisted.fmutmp/ fmi3_directional_derivatives_unlisted_info.json fmi3_directional_derivatives_unlisted_FMU.libs fmi3_directional_derivatives_unlisted_FMU.makefile fmi3_directional_derivatives_unlisted_external_functions.json fmi3_directional_derivatives_unlisted.txt
+//
+// fmi3GetDirectionalDerivative for a variable without a column or row in the
+// Jacobian. A seed on time or on a parameter that the dependencies do not list
+// has no effect, and other variables give an error. Such a seed or unknown used
+// to be taken for the last state.
+// This is the runtime of --simCodeTarget=C.
+
+setCommandLineOptions("--simCodeTarget=C -d=-disableDirectionalDerivatives"); getErrorString();
+
+loadString("
+model fmi3_directional_derivatives_unlisted
+  Real a(start = 1, fixed = true);
+  Real b(start = 1, fixed = true);
+  parameter Real p = 7;
+  Real w = p * a;
+equation
+  der(a) = 2 * b;
+  der(b) = 3 * a + 5 * b;
+end fmi3_directional_derivatives_unlisted;
+"); getErrorString();
+
+buildModelFMU(fmi3_directional_derivatives_unlisted, version="3.0", fmuType="me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_directional_derivatives_unlisted.py fmi3_directional_derivatives_unlisted fmi3_directional_derivatives_unlisted.txt"); getErrorString();
+readFile("fmi3_directional_derivatives_unlisted.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_directional_derivatives_unlisted.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "der(a), der(b) / a: [0.0, 3.0]
+// der(a), der(b) / b: [2.0, 5.0]
+// der(a), der(b) / time: [0.0, 0.0]
+// der(a), der(b) / a, time: [0.0, 3.0]
+// der(a), der(b) / p: [0.0, 0.0]
+// der(a), der(b) / w: error
+// w / a: error
+// "
+// ""
+// endResult

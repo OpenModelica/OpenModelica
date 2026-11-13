@@ -11,7 +11,6 @@ model ModelBalance1
 equation
   x = 2;
   y = x + 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModelBalance1;
 
 // class ModelBalance1

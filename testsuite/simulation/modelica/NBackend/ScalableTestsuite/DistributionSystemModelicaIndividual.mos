@@ -20,11 +20,13 @@ res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Electr
 // ""
 // record SimulationResult
 //     resultFile = "ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Notification: Tearing is skipped for strong component 1 because system size of 419 exceeds maximum system size for tearing of linear systems (200).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size>.
+// "
 // {"Files Equal!"}
 // endResult

@@ -7,8 +7,7 @@
 // Model Exchange integrates nothing, but its initialisation and residuals run the
 // same nonlinear and linear solvers, and an importer has no channel to pass
 // simulation flags -- so the export hard-codes the selection into the model
-// metadata and links exactly the libraries it reaches. `nls:kinsol` therefore costs
-// an ME FMU KINSOL and the shared base; default flags cost it neither.
+// metadata and links the libraries it reaches. KINSOL and KLU are always linked.
 
 setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
 loadFile("fmi3_wasm_solver_libraries.mo"); getErrorString();

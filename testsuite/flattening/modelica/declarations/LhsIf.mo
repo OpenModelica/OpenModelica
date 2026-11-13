@@ -10,7 +10,6 @@ model LhsIf
   Real x, y, z;
 equation
   (if x > 1 then y else z) = x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end LhsIf;
 
 // Result:

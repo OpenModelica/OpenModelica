@@ -47,6 +47,9 @@ protected
 import BackendInterface;
 import BackendCevalInterface;
 import CevalScript;
+import FGraph;
+import NFApi;
+import NFInteractive;
 import RewriteRules;
 import StaticScript;
 import SymbolTable;
@@ -58,7 +61,9 @@ algorithm
     noRewriteRulesFrontEnd,
     rewriteFrontEnd,
     appendLibrary,
-    InstHashTable.init));
+    InstHashTable.init,
+    evalScriptingFunction,
+    NFInteractive.lookupVariable));
   BackendCevalInterface.initializeBackendInterface(BackendCevalInterface.BACKEND_INTERFACE_FUNCTIONS(
     cevalInteractiveFunctions,
     cevalCallFunction,
@@ -109,6 +114,36 @@ algorithm
   (outCache, outExp, outProperties) :=
     StaticScript.elabCallInteractive(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
 end elabCallInteractive;
+
+function evalScriptingFunction
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+protected
+  FCore.Graph env;
+algorithm
+  // The script loop releases the nodes of the scope it evaluates in once the
+  // statement is done, see NFInteractive.evaluate.
+  if name == "clear" then
+    SymbolTable.reset();
+    NFApi.clearCache(releaseNodes = false);
+    result := Values.BOOL(true);
+    return;
+  elseif name == "clearProgram" then
+    SymbolTable.clearProgram();
+    NFApi.clearCache(releaseNodes = false);
+    result := Values.BOOL(true);
+    return;
+  end if;
+
+  // Only these look classes up in the old frontend's environment.
+  env := if listMember(name, {"getExternalFunctions", "generateCode", "generateHeader",
+                              "generateSeparateCode", "generateSeparateCodeDependencies"})
+    then SymbolTable.buildEnv() else FGraph.empty();
+  (_, result) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), env,
+    name, args, Absyn.MSG(info));
+end evalScriptingFunction;
 
 function noRewriteRulesFrontEnd
   output Boolean noRules;

@@ -54,6 +54,17 @@ encapsulated package NFDefUseChains
   import NFUsedElements.Site;
   import NFUsedElements.Use;
 
+  uniontype Position
+    record POSITION
+      String fileName;
+      Integer lineStart;
+      Integer columnStart;
+      Integer lineEnd;
+      Integer columnEnd;
+      Boolean exact "False if the name wasn't found, then it's the span the name is used in.";
+    end POSITION;
+  end Position;
+
 protected
   import AbsynUtil;
   import JSON;
@@ -86,17 +97,6 @@ protected
       array<Boolean> taken;
     end SOURCE_FILE;
   end SourceFile;
-
-  uniontype Position
-    record POSITION
-      String fileName;
-      Integer lineStart;
-      Integer columnStart;
-      Integer lineEnd;
-      Integer columnEnd;
-      Boolean exact;
-    end POSITION;
-  end Position;
 
   type OptSourceFile = Option<SourceFile>;
   type Files = UnorderedMap<String, OptSourceFile>;
@@ -394,6 +394,57 @@ public
       namePosition(c, names, files)) for c in listReverse(candidates))), obj);
     json := JSON.toString(obj, prettyPrint);
   end definitionAtJSON;
+
+  function placeNames
+    "Returns the positions of the declared names of the definitions declared in a
+     file, and of the uses and unresolved names in it, as toJSON finds them. The
+     name after end of a class is a use of the class, with the role end."
+    input String fileName;
+    input list<Definition> definitions;
+    input list<Use> uses;
+    input list<Use> unresolved;
+    output list<tuple<Definition, Position>> declared = {};
+    output list<tuple<Use, Position>> placed;
+    output list<tuple<Use, Position>> placedUnresolved;
+  protected
+    UnorderedMap<String, Definition> defs = UnorderedMap.new<Definition>(stringHashDjb2, stringEq);
+    Files files = UnorderedMap.new<OptSourceFile>(stringHashDjb2, stringEq);
+    Definition d;
+    Position pos;
+  algorithm
+    for def in definitions loop
+      UnorderedMap.add(def.key, def, defs);
+    end for;
+
+    // The declared names are placed first, so a use can't be given one of them.
+    for def in uniqueDefinitions(definitions) loop
+      if def.declared and def.info.fileName == fileName then
+        declared := (def, placeDefinition(def, files)) :: declared;
+      end if;
+    end for;
+    declared := listReverse(declared);
+
+    placed := placeUses(list(u for u guard u.site.info.fileName == fileName in uses), defs, files);
+
+    for dp in declared loop
+      (d, _) := dp;
+      if d.kind == "class" then
+        pos := placeEnd(d, files);
+        if pos.exact then
+          placed := (NFUsedElements.USE(d.key, Absyn.IDENT(lastIdent(d.name)), 1,
+            NFUsedElements.SITE(d.info, "end", d.name), false), pos) :: placed;
+        end if;
+      end if;
+    end for;
+
+    placedUnresolved := placeUses(list(u for u guard u.site.info.fileName == fileName in unresolved), defs, files);
+  end placeNames;
+
+  function useText
+    "The name of a use as it's written, without subscripts."
+    input Use u;
+    output String str = writtenString(u.written);
+  end useText;
 
 protected
   function definitionJSON

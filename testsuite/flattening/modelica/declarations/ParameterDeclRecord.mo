@@ -9,22 +9,16 @@ record ParameterRecord
   Real r;
 end ParameterRecord;
 
-class ParameterDeclRecord
-  parameter ParameterRecord pr;
-equation
+model ParameterDeclRecord
+  parameter ParameterRecord pr(r(fixed = false));
+initial equation
   pr.r = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParameterDeclRecord;
 
 // Result:
-// function ParameterRecord "Automatically generated record constructor for ParameterRecord"
-//   input Real r;
-//   output ParameterRecord res;
-// end ParameterRecord;
-//
 // class ParameterDeclRecord
-//   parameter Real pr.r;
-// equation
+//   parameter Real pr.r(fixed = false);
+// initial equation
 //   pr.r = 1.0;
 // end ParameterDeclRecord;
 // endResult

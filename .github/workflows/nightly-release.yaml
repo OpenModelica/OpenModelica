@@ -15,7 +15,7 @@ jobs:
     env:
       OMVERSION : ''
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -48,11 +48,13 @@ jobs:
           done
 
       - name: Upload the new assets
-        uses: pyTooling/Actions/releaser@r0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: nightly
-          files: ${{ github.event.repository.name }}-*nightly.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release upload nightly ${{ github.event.repository.name }}-*nightly.zip --clobber
+          # Move the nightly tag to the commit the assets were built from
+          gh api --method PATCH "repos/$GH_REPO/git/refs/tags/nightly" -f sha="$GITHUB_SHA" -F force=true
 
       - name: Check that the release has the new assets
         env:

@@ -1,0 +1,36 @@
+// name: infoJsonEquationOrder
+// keywords: NewBackend
+// status: correct
+// The removed initial equations are numbered before the regular ones, and a
+// when-equation with several calls is one entry of the _info.json.
+// -lv LOG_SOLVER makes the C runtime read the _info.json.
+
+loadString("
+model InfoJsonEquationOrder
+  parameter Real p = 2;
+  Real x(start = 1, fixed = true);
+initial equation
+  assert(p > 0, \"p must be positive\");
+equation
+  der(x) = -x;
+  when x < 0.5 then
+    assert(p > 1, \"p must be greater than 1\");
+    assert(p < 3, \"p must be less than 3\");
+  end when;
+end InfoJsonEquationOrder;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+echo(false);
+res := simulate(InfoJsonEquationOrder, simflags="-lv LOG_SOLVER");
+echo(true);
+res.resultFile; getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "InfoJsonEquationOrder_res.mat"
+// ""
+// endResult

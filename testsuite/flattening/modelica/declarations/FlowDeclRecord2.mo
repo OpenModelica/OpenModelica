@@ -19,16 +19,9 @@ model FlowDeclRecord2
   C c1, c2;
 equation
   connect(c1, c2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlowDeclRecord2;
 
 // Result:
-// function R "Automatically generated record constructor for R"
-//   input Real x;
-//   input Real y;
-//   output R res;
-// end R;
-//
 // class FlowDeclRecord2
 //   Real c1.r.x;
 //   Real c1.r.y;
@@ -39,13 +32,13 @@ end FlowDeclRecord2;
 //   Real c2.x[1];
 //   Real c2.x[2];
 // equation
+//   c1.x[1] = c2.x[1];
+//   c1.x[2] = c2.x[2];
+//   -(c1.r.x + c2.r.x) = 0.0;
+//   -(c1.r.y + c2.r.y) = 0.0;
 //   c1.r.x = 0.0;
 //   c1.r.y = 0.0;
 //   c2.r.x = 0.0;
 //   c2.r.y = 0.0;
-//   (-c1.r.x) + (-c2.r.x) = 0.0;
-//   (-c1.r.y) + (-c2.r.y) = 0.0;
-//   c1.x[1] = c2.x[1];
-//   c1.x[2] = c2.x[2];
 // end FlowDeclRecord2;
 // endResult

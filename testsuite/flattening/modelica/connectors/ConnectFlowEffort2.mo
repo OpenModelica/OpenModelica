@@ -13,28 +13,19 @@ connector Connector2
   flow Real e;
 end Connector2;
 
-class ConnectFlowEffort2
+model ConnectFlowEffort2
   Connector1 c1;
   Connector2 c2;
 equation
   connect(c2, c1);
-  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+std=2.x");
 end ConnectFlowEffort2;
 
 // Result:
 // Error processing file: ConnectFlowEffort2.mo
-// [flattening/modelica/connectors/ConnectFlowEffort2.mo:20:3-20:18:writable] Error: Cannot connect flow component c2.e to non-flow component c1.e.
-// [flattening/modelica/connectors/ConnectFlowEffort2.mo:20:3-20:18:writable] Error: The type of variables
-// c2 type:
-// connector Connector2
-//   flow Real e;
-// end Connector2; and
-// c1 type:
-// connector Connector1
-//   Real e;
-// end Connector1;
-// are inconsistent in connect equations.
-// Error: Error occurred while flattening model ConnectFlowEffort2
+// [flattening/modelica/connectors/ConnectFlowEffort2.mo:17:3-17:16:writable] Warning: Connector c1 is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/ConnectFlowEffort2.mo:18:3-18:16:writable] Warning: Connector c2 is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
+// [flattening/modelica/connectors/ConnectFlowEffort2.mo:20:3-20:18:writable] Error: The connectors in connect(c2, c1) are not type compatible.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

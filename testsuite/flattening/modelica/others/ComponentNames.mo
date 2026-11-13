@@ -14,13 +14,11 @@ end TestClass;
 model ComponentNames
   TestClass TestClass(x = 2);
   Integer Integer;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComponentNames;
 
 // Result:
 // Error processing file: ComponentNames.mo
-// [flattening/modelica/others/ComponentNames.mo:15:3-15:29:writable] Error: Found a component with same name when looking for type TestClass.
-// Error: Error occurred while flattening model ComponentNames
+// [flattening/modelica/others/ComponentNames.mo:15:3-15:29:writable] Error: Expected TestClass to be a class, but found component instead.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

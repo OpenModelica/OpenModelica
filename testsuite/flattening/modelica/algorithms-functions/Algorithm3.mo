@@ -5,17 +5,16 @@
 // Type checks in algorithms.
 //
 
-class Algorithm3
+model Algorithm3
   Integer i=integer(time*10);
   Real x;
 algorithm
   x := i;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Algorithm3;
 
 // Result:
 // class Algorithm3
-//   Integer i = integer(10.0 * time);
+//   Integer i = integer(time * 10.0);
 //   Real x;
 // algorithm
 //   x := /*Real*/(i);

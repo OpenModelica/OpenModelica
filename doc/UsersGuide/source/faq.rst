@@ -19,8 +19,10 @@ OpenModelica General
        extend or override it. Like MODELICAPATH, it is a list of
        directories, separated by colon (:) on all operating systems
        except Windows, which uses semicolon (;). If it is not set,
-       OpenModelica defaults to OPENMODELICAHOME/lib/omlibrary/ and
-       ~/.openmodelica/libraries/ (on Windows '~' is %APPDATA%).
+       OpenModelica uses ~/.openmodelica/libraries/ (on Windows '~'
+       is %APPDATA%). The package manager installs libraries into this
+       directory and only works if it is in OPENMODELICALIBRARY, see
+       :ref:`packagemanagement`.
        In the future, we might switch to a solution with a settings
        file, that also allows the user to turn on the MODELICAPATH
        functionality if desired.

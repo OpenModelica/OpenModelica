@@ -16,7 +16,6 @@ model ConnectorComponents
 equation
   tc1.r = 3.0;
   r = tc1.r;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectorComponents;
 
 // Result:
@@ -25,8 +24,8 @@ end ConnectorComponents;
 //   Real tc1.f;
 //   Real r;
 // equation
+//   tc1.f = 0.0;
 //   tc1.r = 3.0;
 //   r = tc1.r;
-//   tc1.f = 0.0;
 // end ConnectorComponents;
 // endResult

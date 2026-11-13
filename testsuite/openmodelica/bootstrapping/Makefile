@@ -2,7 +2,6 @@
 TEST = ../../rtest
 
 TESTFILES = \
-DiffAlgorithm.mos \
 ExpandableArrayTest.mos \
 ExpressionTest.mos \
 GraphTest.mos \

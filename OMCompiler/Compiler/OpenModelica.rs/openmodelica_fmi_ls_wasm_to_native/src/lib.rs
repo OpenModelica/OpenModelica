@@ -22,11 +22,14 @@
 //! caller owning the pointers it passes, exactly as the standard specifies.
 #![allow(clippy::missing_safety_doc)]
 
-use std::ffi::{c_char, c_void, CStr, CString};
+use std::ffi::{CStr, CString, c_char, c_void};
 use std::path::{Path, PathBuf};
 
 use wasmtime::component::{Component, Linker, ResourceAny};
 use wasmtime::{Config, Engine, Store};
+
+use openmodelica_fmi_state_machine as sm;
+use sm::fmi3::{Interface, st};
 
 mod bindings {
     //! The WIT is shared with the wasm-side adapter rather than copied.
@@ -36,23 +39,23 @@ mod bindings {
     //! co-simulation, so both halves are reachable without a third set of types.
     pub mod me {
         wasmtime::component::bindgen!({
-            path: "../openmodelica_fmi3_wasm/wit",
-            world: "model-exchange-fmu",
-       });
+             path: "../openmodelica_fmi3_wasm/wit",
+             world: "model-exchange-fmu",
+        });
     }
     pub mod cs {
         wasmtime::component::bindgen!({
-            path: "../openmodelica_fmi3_wasm/wit",
-            world: "co-simulation-fmu",
-       });
+             path: "../openmodelica_fmi3_wasm/wit",
+             world: "co-simulation-fmu",
+        });
     }
     /// The OpenModelica extension an me_cs component imports beside the FMI
     /// callbacks: `external "C"` served from the FMU's platform libraries.
     pub mod ext {
         wasmtime::component::bindgen!({
-            path: "../openmodelica_fmi3_wasm/wit",
-            world: "openmodelica-extension-host",
-       });
+             path: "../openmodelica_fmi3_wasm/wit",
+             world: "openmodelica-extension-host",
+        });
     }
 }
 
@@ -88,9 +91,7 @@ status_conv!(st_cs, bindings::cs::fmi::fmi3::types::Status);
 // ── Host state ──────────────────────────────────────────────────────────────
 
 type LogCb = Option<extern "C" fn(*mut c_void, i32, *const c_char, *const c_char)>;
-type IntermediateUpdateCb = Option<
-    extern "C" fn(*mut c_void, f64, bool, bool, bool, bool, *mut bool, *mut f64),
->;
+type IntermediateUpdateCb = Option<extern "C" fn(*mut c_void, f64, bool, bool, bool, bool, *mut bool, *mut f64)>;
 
 /// The importer's log callback, whose shape is the one per-call difference
 /// between the two APIs (see [`fmi2::LogCb`]).
@@ -98,12 +99,18 @@ pub(crate) enum Log {
     Fmi3(LogCb),
     /// `call_log` is C's `logCategories[LOG_FMI2CALL]`, the one category this
     /// layer logs on itself; the rest belong to the component.
-    Fmi2 { cb: fmi2::LogCb, name: CString, call_log: bool },
+    Fmi2 {
+        cb: fmi2::LogCb,
+        name: CString,
+        call_log: bool,
+    },
 }
 
 impl Log {
     fn emit(&self, env: *mut c_void, status: i32, category: &str, message: &str) {
-        let (Ok(cat), Ok(msg)) = (CString::new(category), CString::new(message)) else { return };
+        let (Ok(cat), Ok(msg)) = (CString::new(category), CString::new(message)) else {
+            return;
+        };
         match self {
             Log::Fmi3(Some(cb)) => cb(env, status, cat.as_ptr(), msg.as_ptr()),
             Log::Fmi2 { cb: Some(cb), name, .. } => unsafe {
@@ -171,7 +178,10 @@ unsafe impl Send for Host {}
 
 impl wasmtime_wasi::WasiView for Host {
     fn ctx(&mut self) -> wasmtime_wasi::WasiCtxView<'_> {
-        wasmtime_wasi::WasiCtxView { ctx: &mut self.wasi, table: &mut self.table }
+        wasmtime_wasi::WasiCtxView {
+            ctx: &mut self.wasi,
+            table: &mut self.table,
+        }
     }
 }
 
@@ -220,9 +230,20 @@ impl bindings::cs::fmi::fmi3::intermediate_update_callbacks::Host for Host {
         step_finished: bool,
         can_return_early: bool,
     ) -> (bool, f64) {
-        let Some(cb) = self.intermediate_update else { return (false, 0.0) };
+        let Some(cb) = self.intermediate_update else {
+            return (false, 0.0);
+        };
         let (mut early, mut at) = (false, 0.0f64);
-        cb(self.env, time, set_requested, get_allowed, step_finished, can_return_early, &mut early, &mut at);
+        cb(
+            self.env,
+            time,
+            set_requested,
+            get_allowed,
+            step_finished,
+            can_return_early,
+            &mut early,
+            &mut at,
+        );
         (early, at)
     }
 }
@@ -230,8 +251,14 @@ impl bindings::cs::fmi::fmi3::intermediate_update_callbacks::Host for Host {
 // ── Instance ────────────────────────────────────────────────────────────────
 
 enum Kind {
-    Me { world: bindings::me::ModelExchangeFmu, handle: ResourceAny },
-    Cs { world: bindings::cs::CoSimulationFmu, handle: ResourceAny },
+    Me {
+        world: bindings::me::ModelExchangeFmu,
+        handle: ResourceAny,
+    },
+    Cs {
+        world: bindings::cs::CoSimulationFmu,
+        handle: ResourceAny,
+    },
 }
 
 struct Instance {
@@ -243,15 +270,70 @@ struct Instance {
     binaries: Vec<Vec<u8>>,
     /// FMI 2.0 only: what the 3.0 interface has no place to keep.
     fmi2: Option<fmi2::State>,
+    machine: Machine,
+}
+
+/// The state machine of the API the instance was created through.
+pub(crate) enum Machine {
+    Fmi2(sm::fmi2::Machine),
+    Fmi3(sm::fmi3::Machine),
+}
+
+impl Machine {
+    fn save(&self, bytes: &[u8]) -> Vec<u8> {
+        match self {
+            Machine::Fmi2(m) => m.save(bytes),
+            Machine::Fmi3(m) => m.save(bytes),
+        }
+    }
+
+    fn split<'a>(&self, bytes: &'a [u8]) -> Option<(u32, &'a [u8])> {
+        match self {
+            Machine::Fmi2(_) => sm::fmi2::Machine::split(bytes),
+            Machine::Fmi3(_) => sm::fmi3::Machine::split(bytes),
+        }
+    }
+
+    fn restored(&mut self, r: i32, mode: u32) -> bool {
+        match self {
+            Machine::Fmi2(m) => m.restored(r, mode),
+            Machine::Fmi3(m) => m.restored(r, mode),
+        }
+    }
 }
 
 impl Instance {
+    /// Logs a refused call, as C's `invalidState` does.
+    fn allowed(&mut self, check: Result<(), String>) -> bool {
+        match check {
+            Ok(()) => true,
+            Err(msg) => {
+                self.store.data_mut().log(ERROR, "logStatusError", &msg);
+                false
+            }
+        }
+    }
+
+    /// The FMI 3.0 state machine; the FMI 2.0 entry points check an FMI 2.0 instance.
+    fn fmi3(&mut self) -> Option<&mut sm::fmi3::Machine> {
+        match &mut self.machine {
+            Machine::Fmi3(m) => Some(m),
+            Machine::Fmi2(_) => None,
+        }
+    }
+
+    fn moved(&mut self, r: i32, next: u32) -> i32 {
+        self.fmi3().map_or(r, |m| m.moved(r, next))
+    }
+
     fn me(&mut self) -> Option<(&mut Store<Host>, GuestModelExchangeInstance<'_>, ResourceAny)> {
         let Instance { store, kind, .. } = self;
         match kind {
-            Kind::Me { world, handle } => {
-                Some((store, world.fmi_fmi3_model_exchange().model_exchange_instance(), *handle))
-            }
+            Kind::Me { world, handle } => Some((
+                store,
+                world.fmi_fmi3_model_exchange().model_exchange_instance(),
+                *handle,
+            )),
             Kind::Cs { .. } => None,
         }
     }
@@ -272,7 +354,9 @@ impl Instance {
 macro_rules! on_instance {
     ($c:expr, |$store:ident, $g:ident, $h:ident, $st:ident| $body:expr) => {{
         let Some(inst) = $c else { return ERROR };
-        let Instance { store: $store, kind, .. } = inst;
+        let Instance {
+            store: $store, kind, ..
+        } = inst;
         match kind {
             Kind::Me { world, handle } => {
                 let $g = world.fmi_fmi3_model_exchange().model_exchange_instance();
@@ -294,8 +378,34 @@ fn inst_mut<'a>(c: *mut c_void) -> Option<&'a mut Instance> {
     unsafe { (c as *mut Instance).as_mut() }
 }
 
+fn checked_by<'a>(
+    c: *mut c_void,
+    check: impl FnOnce(&mut sm::fmi3::Machine) -> Result<(), String>,
+) -> Option<&'a mut Instance> {
+    let inst = inst_mut(c)?;
+    let r = inst.fmi3().map_or(Ok(()), check);
+    inst.allowed(r).then_some(inst)
+}
+
+/// The instance, if the FMI 3.0 state machine allows `func` now.
+fn checked<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<&'a mut Instance> {
+    checked_by(c, |m| m.check(func, allowed))
+}
+
+fn checked_me<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<&'a mut Instance> {
+    checked_by(c, |m| m.check_me(func, allowed))
+}
+
+fn checked_cs<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<&'a mut Instance> {
+    checked_by(c, |m| m.check_cs(func, allowed))
+}
+
 unsafe fn cstr(p: *const c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p).to_string_lossy().into_owned() } }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(p).to_string_lossy().into_owned() }
+    }
 }
 
 // After `on_instance!`: a `macro_rules!` is in scope only for what follows it.
@@ -314,12 +424,16 @@ unsafe fn requests(vr: *const u32, n: usize, orders: *const i32) -> Option<Vec<(
         .map(|i| unsafe {
             let order = *orders.add(i);
             (order >= 0).then(|| (*vr.add(i), order as u32))
-       })
+        })
         .collect()
 }
 
 unsafe fn vrs<'a>(p: *const u32, n: usize) -> &'a [u32] {
-    if p.is_null() || n == 0 { &[] } else { unsafe { std::slice::from_raw_parts(p, n) } }
+    if p.is_null() || n == 0 {
+        &[]
+    } else {
+        unsafe { std::slice::from_raw_parts(p, n) }
+    }
 }
 
 // ── Loading the component ───────────────────────────────────────────────────
@@ -327,21 +441,37 @@ unsafe fn vrs<'a>(p: *const u32, n: usize) -> &'a [u32] {
 /// The FMI platform tuple this build serves, which is also the `.cwasm`'s name.
 const PLATFORM: &str = {
     #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
-    { "x86_64-linux" }
+    {
+        "x86_64-linux"
+    }
     #[cfg(all(target_arch = "x86", target_os = "linux"))]
-    { "x86-linux" }
+    {
+        "x86-linux"
+    }
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
-    { "aarch64-linux" }
+    {
+        "aarch64-linux"
+    }
     #[cfg(all(target_arch = "x86_64", target_os = "windows"))]
-    { "x86_64-windows" }
+    {
+        "x86_64-windows"
+    }
     #[cfg(all(target_arch = "x86", target_os = "windows"))]
-    { "x86-windows" }
+    {
+        "x86-windows"
+    }
     #[cfg(all(target_arch = "aarch64", target_os = "windows"))]
-    { "aarch64-windows" }
+    {
+        "aarch64-windows"
+    }
     #[cfg(all(target_arch = "x86_64", target_os = "macos"))]
-    { "x86_64-darwin" }
+    {
+        "x86_64-darwin"
+    }
     #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
-    { "aarch64-darwin" }
+    {
+        "aarch64-darwin"
+    }
 };
 
 fn engine() -> wasmtime::Result<Engine> {
@@ -410,7 +540,13 @@ fn load_component(engine: &Engine, res: &Path) -> wasmtime::Result<Component> {
     )
 }
 
-fn new_store(engine: &Engine, res: &str, env: *mut c_void, log: Log, iu: IntermediateUpdateCb) -> wasmtime::Result<Store<Host>> {
+fn new_store(
+    engine: &Engine,
+    res: &str,
+    env: *mut c_void,
+    log: Log,
+    iu: IntermediateUpdateCb,
+) -> wasmtime::Result<Store<Host>> {
     let mut builder = wasmtime_wasi::WasiCtxBuilder::new();
     // C's `messageText` puts the simulation log on the importer's stdout with
     // `printf`; the component's stdout is WASI's, so it has to be this library's.
@@ -464,7 +600,10 @@ pub(crate) fn instantiate_me(
     bindings::me::ModelExchangeFmu::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(&mut linker, |s| s)?;
     // An me_cs component reaches this path too, and its world imports the
     // intermediate-update callbacks even in ME mode.
-    bindings::cs::fmi::fmi3::intermediate_update_callbacks::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(&mut linker, |s| s)?;
+    bindings::cs::fmi::fmi3::intermediate_update_callbacks::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(
+        &mut linker,
+        |s| s,
+    )?;
     bindings::ext::om::ext::native::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(&mut linker, |s| s)?;
     let mut store = new_store(&engine, res, env, log, None)?;
     let world = bindings::me::ModelExchangeFmu::instantiate(&mut store, &component, &linker)?;
@@ -479,7 +618,8 @@ pub(crate) fn instantiate_me(
         strings: Vec::new(),
         binaries: Vec::new(),
         fmi2: None,
-   }))
+        machine: Machine::Fmi3(sm::fmi3::Machine::new(Interface::ModelExchange)),
+    }))
 }
 
 /// The Co-Simulation counterpart of [`instantiate_me`].
@@ -509,8 +649,15 @@ pub(crate) fn instantiate_cs(
         .fmi_fmi3_co_simulation()
         .co_simulation_instance()
         .call_instantiate_co_simulation(
-            &mut store, name, token, res, visible, logging_on, event_mode_used,
-            early_return_allowed, required,
+            &mut store,
+            name,
+            token,
+            res,
+            visible,
+            logging_on,
+            event_mode_used,
+            early_return_allowed,
+            required,
         )?
         .ok_or_else(|| wasmtime::Error::msg("the FMU refused to instantiate for Co-Simulation"))?;
     Ok(Box::new(Instance {
@@ -519,7 +666,8 @@ pub(crate) fn instantiate_cs(
         strings: Vec::new(),
         binaries: Vec::new(),
         fmi2: None,
-   }))
+        machine: Machine::Fmi3(sm::fmi3::Machine::new(Interface::CoSimulation { event_mode_used })),
+    }))
 }
 
 #[unsafe(no_mangle)]
@@ -534,7 +682,15 @@ pub unsafe extern "C" fn fmi3InstantiateModelExchange(
 ) -> *mut c_void {
     let name = unsafe { cstr(instance_name) };
     let (token, res) = unsafe { (cstr(instantiation_token), cstr(resource_path)) };
-    match instantiate_me(&name, &token, &res, visible, logging_on, instance_environment, Log::Fmi3(log_message)) {
+    match instantiate_me(
+        &name,
+        &token,
+        &res,
+        visible,
+        logging_on,
+        instance_environment,
+        Log::Fmi3(log_message),
+    ) {
         Ok(b) => Box::into_raw(b) as *mut c_void,
         Err(e) => report(&name, instance_environment, &Log::Fmi3(log_message), e),
     }
@@ -559,8 +715,17 @@ pub unsafe extern "C" fn fmi3InstantiateCoSimulation(
     let (token, res) = unsafe { (cstr(instantiation_token), cstr(resource_path)) };
     let required = unsafe { vrs(required_intermediate_variables, n_required_intermediate_variables) }.to_vec();
     let built = instantiate_cs(
-        &name, &token, &res, visible, logging_on, event_mode_used, early_return_allowed, &required,
-        instance_environment, Log::Fmi3(log_message), intermediate_update,
+        &name,
+        &token,
+        &res,
+        visible,
+        logging_on,
+        event_mode_used,
+        early_return_allowed,
+        &required,
+        instance_environment,
+        Log::Fmi3(log_message),
+        intermediate_update,
     );
     match built {
         Ok(b) => Box::into_raw(b) as *mut c_void,
@@ -583,7 +748,12 @@ pub unsafe extern "C" fn fmi3InstantiateScheduledExecution(
     _unlock_preemption: *mut c_void,
 ) -> *mut c_void {
     let name = unsafe { cstr(instance_name) };
-    report(&name, instance_environment, &Log::Fmi3(log_message), "Scheduled Execution is not supported by this FMU")
+    report(
+        &name,
+        instance_environment,
+        &Log::Fmi3(log_message),
+        "Scheduled Execution is not supported by this FMU",
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -596,24 +766,77 @@ pub unsafe extern "C" fn fmi3FreeInstance(c: *mut c_void) {
 // ── Mode transitions and other nullary calls ────────────────────────────────
 
 macro_rules! nullary {
-    ($cfn:ident, $wfn:ident) => {
+    ($cfn:ident, $wfn:ident, $check:ident, $mask:expr, $next:expr) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void) -> i32 {
-            on_instance!(inst_mut(c), |store, g, h, st| match g.$wfn(store, h) {
+            let Some(inst) = $check(c, stringify!($cfn), $mask) else {
+                return ERROR;
+            };
+            let r = on_instance!(Some(&mut *inst), |store, g, h, st| match g.$wfn(store, h) {
                 Ok(s) => st(s),
                 Err(_) => ERROR,
-           })
+            });
+            inst.moved(r, $next)
         }
     };
 }
-nullary!(fmi3ExitInitializationMode, call_exit_initialization_mode);
-nullary!(fmi3EnterEventMode, call_enter_event_mode);
-nullary!(fmi3Terminate, call_terminate);
-nullary!(fmi3Reset, call_reset);
-nullary!(fmi3EnterConfigurationMode, call_enter_configuration_mode);
-nullary!(fmi3ExitConfigurationMode, call_exit_configuration_mode);
-nullary!(fmi3EvaluateDiscreteStates, call_evaluate_discrete_states);
-nullary!(fmi3EnterStepMode, call_enter_step_mode);
+nullary!(fmi3Terminate, call_terminate, checked, st::TERMINATE, st::TERMINATED);
+nullary!(fmi3Reset, call_reset, checked, st::ANY, st::INSTANTIATED);
+nullary!(
+    fmi3EnterConfigurationMode,
+    call_enter_configuration_mode,
+    checked,
+    st::INSTANTIATED,
+    st::CONFIGURATION
+);
+nullary!(
+    fmi3ExitConfigurationMode,
+    call_exit_configuration_mode,
+    checked,
+    st::CONFIGURATION,
+    st::INSTANTIATED
+);
+nullary!(
+    fmi3EvaluateDiscreteStates,
+    call_evaluate_discrete_states,
+    checked,
+    st::EVENT,
+    st::KEEP
+);
+nullary!(fmi3EnterStepMode, call_enter_step_mode, checked_cs, st::EVENT, st::STEP);
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fmi3ExitInitializationMode(c: *mut c_void) -> i32 {
+    let Some(inst) = checked(c, "fmi3ExitInitializationMode", st::INIT) else {
+        return ERROR;
+    };
+    let r = on_instance!(
+        Some(&mut *inst),
+        |store, g, h, st| match g.call_exit_initialization_mode(store, h) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    );
+    inst.fmi3().map_or(r, |m| m.exit_initialization_mode(r))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fmi3EnterEventMode(c: *mut c_void) -> i32 {
+    let allowed = inst_mut(c)
+        .and_then(|i| i.fmi3())
+        .map_or(0, |m| m.enter_event_mode_states());
+    let Some(inst) = checked(c, "fmi3EnterEventMode", allowed) else {
+        return ERROR;
+    };
+    let r = on_instance!(
+        Some(&mut *inst),
+        |store, g, h, st| match g.call_enter_event_mode(store, h) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    );
+    inst.moved(r, st::EVENT)
+}
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi3EnterInitializationMode(
@@ -624,12 +847,18 @@ pub unsafe extern "C" fn fmi3EnterInitializationMode(
     stop_time_defined: bool,
     stop_time: f64,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3EnterInitializationMode", st::INSTANTIATED) else {
+        return ERROR;
+    };
     let tol = tolerance_defined.then_some(tolerance);
     let stop = stop_time_defined.then_some(stop_time);
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_enter_initialization_mode(store, h, tol, start_time, stop) {
+    let r = on_instance!(Some(&mut *inst), |store, g, h, st| match g
+        .call_enter_initialization_mode(store, h, tol, start_time, stop)
+    {
         Ok(s) => st(s),
         Err(_) => ERROR,
-   })
+    });
+    inst.moved(r, st::INIT)
 }
 
 #[unsafe(no_mangle)]
@@ -639,15 +868,21 @@ pub unsafe extern "C" fn fmi3SetDebugLogging(
     n_categories: usize,
     categories: *const *const c_char,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3SetDebugLogging", st::ANY) else {
+        return ERROR;
+    };
     let cats: Vec<String> = if categories.is_null() {
         Vec::new()
     } else {
         (0..n_categories).map(|i| unsafe { cstr(*categories.add(i)) }).collect()
     };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_set_debug_logging(store, h, logging_on, &cats) {
-        Ok(s) => st(s),
-        Err(_) => ERROR,
-   })
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_set_debug_logging(store, h, logging_on, &cats) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -660,25 +895,43 @@ pub unsafe extern "C" fn fmi3UpdateDiscreteStates(
     next_event_time_defined: *mut bool,
     next_event_time: *mut f64,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3UpdateDiscreteStates", st::EVENT) else {
+        return ERROR;
+    };
     macro_rules! out {
         ($info:expr) => {{
             let i = $info;
             unsafe {
-                if !discrete_states_need_update.is_null() { *discrete_states_need_update = i.new_discrete_states_needed; }
-                if !terminate_simulation.is_null() { *terminate_simulation = i.terminate_simulation; }
-                if !nominals_changed.is_null() { *nominals_changed = i.nominals_of_continuous_states_changed; }
-                if !values_changed.is_null() { *values_changed = i.values_of_continuous_states_changed; }
-                if !next_event_time_defined.is_null() { *next_event_time_defined = i.next_event_time_defined; }
-                if !next_event_time.is_null() { *next_event_time = i.next_event_time; }
+                if !discrete_states_need_update.is_null() {
+                    *discrete_states_need_update = i.new_discrete_states_needed;
+                }
+                if !terminate_simulation.is_null() {
+                    *terminate_simulation = i.terminate_simulation;
+                }
+                if !nominals_changed.is_null() {
+                    *nominals_changed = i.nominals_of_continuous_states_changed;
+                }
+                if !values_changed.is_null() {
+                    *values_changed = i.values_of_continuous_states_changed;
+                }
+                if !next_event_time_defined.is_null() {
+                    *next_event_time_defined = i.next_event_time_defined;
+                }
+                if !next_event_time.is_null() {
+                    *next_event_time = i.next_event_time;
+                }
             }
             OK
         }};
     }
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_update_discrete_states(store, h) {
-        Ok(Ok(info)) => out!(info),
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_update_discrete_states(store, h) {
+            Ok(Ok(info)) => out!(info),
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 // ── Variable access ─────────────────────────────────────────────────────────
@@ -693,18 +946,23 @@ macro_rules! getter {
             values: *mut $ty,
             n_values: usize,
         ) -> i32 {
+            let Some(inst) = checked(c, stringify!($cfn), st::GET) else {
+                return ERROR;
+            };
             let refs = unsafe { vrs(value_references, n_value_references) };
-            on_instance!(inst_mut(c), |store, g, h, st| match g.$wfn(store, h, refs) {
+            on_instance!(Some(inst), |store, g, h, st| match g.$wfn(store, h, refs) {
                 Ok(Ok(v)) => {
                     if v.len() != n_values || values.is_null() {
                         return ERROR;
                     }
-                    unsafe { std::slice::from_raw_parts_mut(values, n_values).copy_from_slice(&v); }
+                    unsafe {
+                        std::slice::from_raw_parts_mut(values, n_values).copy_from_slice(&v);
+                    }
                     OK
                 }
                 Ok(Err(s)) => st(s),
                 Err(_) => ERROR,
-           })
+            })
         }
     };
 }
@@ -721,7 +979,7 @@ getter!(fmi3GetUInt64, call_get_uint64, u64);
 getter!(fmi3GetBoolean, call_get_boolean, bool);
 
 macro_rules! setter {
-    ($cfn:ident, $wfn:ident, $ty:ty) => {
+    ($cfn:ident, $wfn:ident, $ty:ty, $mask:expr) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(
             c: *mut c_void,
@@ -730,29 +988,36 @@ macro_rules! setter {
             values: *const $ty,
             n_values: usize,
         ) -> i32 {
+            let Some(inst) = checked(c, stringify!($cfn), $mask) else {
+                return ERROR;
+            };
             let refs = unsafe { vrs(value_references, n_value_references) };
             if values.is_null() && n_values != 0 {
                 return ERROR;
             }
-            let vals = if n_values == 0 { &[][..] } else { unsafe { std::slice::from_raw_parts(values, n_values) } };
-            on_instance!(inst_mut(c), |store, g, h, st| match g.$wfn(store, h, refs, vals) {
+            let vals = if n_values == 0 {
+                &[][..]
+            } else {
+                unsafe { std::slice::from_raw_parts(values, n_values) }
+            };
+            on_instance!(Some(inst), |store, g, h, st| match g.$wfn(store, h, refs, vals) {
                 Ok(s) => st(s),
                 Err(_) => ERROR,
-           })
+            })
         }
     };
 }
-setter!(fmi3SetFloat32, call_set_float32, f32);
-setter!(fmi3SetFloat64, call_set_float64, f64);
-setter!(fmi3SetInt8, call_set_int8, i8);
-setter!(fmi3SetUInt8, call_set_uint8, u8);
-setter!(fmi3SetInt16, call_set_int16, i16);
-setter!(fmi3SetUInt16, call_set_uint16, u16);
-setter!(fmi3SetInt32, call_set_int32, i32);
-setter!(fmi3SetUInt32, call_set_uint32, u32);
-setter!(fmi3SetInt64, call_set_int64, i64);
-setter!(fmi3SetUInt64, call_set_uint64, u64);
-setter!(fmi3SetBoolean, call_set_boolean, bool);
+setter!(fmi3SetFloat32, call_set_float32, f32, st::SET_REAL);
+setter!(fmi3SetFloat64, call_set_float64, f64, st::SET_REAL);
+setter!(fmi3SetInt8, call_set_int8, i8, st::SET_OTHER);
+setter!(fmi3SetUInt8, call_set_uint8, u8, st::SET_OTHER);
+setter!(fmi3SetInt16, call_set_int16, i16, st::SET_OTHER);
+setter!(fmi3SetUInt16, call_set_uint16, u16, st::SET_OTHER);
+setter!(fmi3SetInt32, call_set_int32, i32, st::SET_OTHER);
+setter!(fmi3SetUInt32, call_set_uint32, u32, st::SET_OTHER);
+setter!(fmi3SetInt64, call_set_int64, i64, st::SET_OTHER);
+setter!(fmi3SetUInt64, call_set_uint64, u64, st::SET_OTHER);
+setter!(fmi3SetBoolean, call_set_boolean, bool, st::SET_OTHER);
 
 /// `fmi3Clock` has no `nValues`: one value per reference.
 #[unsafe(no_mangle)]
@@ -762,18 +1027,23 @@ pub unsafe extern "C" fn fmi3GetClock(
     n_value_references: usize,
     values: *mut bool,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetClock", st::EVENT) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_clock(store, h, refs) {
+    on_instance!(Some(inst), |store, g, h, st| match g.call_get_clock(store, h, refs) {
         Ok(Ok(v)) => {
             if v.len() != n_value_references || values.is_null() {
                 return ERROR;
             }
-            unsafe { std::slice::from_raw_parts_mut(values, n_value_references).copy_from_slice(&v); }
+            unsafe {
+                std::slice::from_raw_parts_mut(values, n_value_references).copy_from_slice(&v);
+            }
             OK
         }
         Ok(Err(s)) => st(s),
         Err(_) => ERROR,
-   })
+    })
 }
 
 #[unsafe(no_mangle)]
@@ -783,15 +1053,25 @@ pub unsafe extern "C" fn fmi3SetClock(
     n_value_references: usize,
     values: *const bool,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3SetClock", st::EVENT) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
     if values.is_null() && n_value_references != 0 {
         return ERROR;
     }
-    let vals = if n_value_references == 0 { &[][..] } else { unsafe { std::slice::from_raw_parts(values, n_value_references) } };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_set_clock(store, h, refs, vals) {
-        Ok(s) => st(s),
-        Err(_) => ERROR,
-   })
+    let vals = if n_value_references == 0 {
+        &[][..]
+    } else {
+        unsafe { std::slice::from_raw_parts(values, n_value_references) }
+    };
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_set_clock(store, h, refs, vals) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 /// The returned pointers borrow from the instance until the next `fmi3GetString`.
@@ -803,8 +1083,10 @@ pub unsafe extern "C" fn fmi3GetString(
     values: *mut *const c_char,
     n_values: usize,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetString", st::GET) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
-    let Some(inst) = inst_mut(c) else { return ERROR };
     let got = {
         let Instance { store, kind, .. } = inst;
         match kind {
@@ -848,15 +1130,21 @@ pub unsafe extern "C" fn fmi3SetString(
     values: *const *const c_char,
     n_values: usize,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3SetString", st::SET_OTHER) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
     if values.is_null() && n_values != 0 {
         return ERROR;
     }
     let vals: Vec<String> = (0..n_values).map(|i| unsafe { cstr(*values.add(i)) }).collect();
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_set_string(store, h, refs, &vals) {
-        Ok(s) => st(s),
-        Err(_) => ERROR,
-   })
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_set_string(store, h, refs, &vals) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 /// The returned pointers borrow from the instance until the next `fmi3GetBinary`.
@@ -869,8 +1157,10 @@ pub unsafe extern "C" fn fmi3GetBinary(
     values: *mut *const u8,
     n_values: usize,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetBinary", st::GET) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
-    let Some(inst) = inst_mut(c) else { return ERROR };
     let got = {
         let Instance { store, kind, .. } = inst;
         match kind {
@@ -913,6 +1203,9 @@ pub unsafe extern "C" fn fmi3SetBinary(
     values: *const *const u8,
     n_values: usize,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3SetBinary", st::SET_OTHER) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
     if (values.is_null() || value_sizes.is_null()) && n_values != 0 {
         return ERROR;
@@ -921,68 +1214,109 @@ pub unsafe extern "C" fn fmi3SetBinary(
         .map(|i| unsafe {
             let p = *values.add(i);
             let n = *value_sizes.add(i);
-            if p.is_null() { Vec::new() } else { std::slice::from_raw_parts(p, n).to_vec() }
-       })
+            if p.is_null() {
+                Vec::new()
+            } else {
+                std::slice::from_raw_parts(p, n).to_vec()
+            }
+        })
         .collect();
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_set_binary(store, h, refs, &vals) {
-        Ok(s) => st(s),
-        Err(_) => ERROR,
-   })
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_set_binary(store, h, refs, &vals) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 // ── FMU state ───────────────────────────────────────────────────────────────
 //
 // The WIT models a state as its serialized bytes, so `fmi3FMUState` is a boxed
-// `Vec<u8>`.
+// `Vec<u8>`: the mode it was taken in, then the component's bytes. The
+// component checks them in `set-fmu-state`.
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi3GetFMUState(c: *mut c_void, state: *mut *mut c_void) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetFMUState", st::FMU_STATE) else {
+        return ERROR;
+    };
     if state.is_null() {
         return ERROR;
     }
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_fmu_state(store, h) {
-        Ok(Ok(bytes)) => {
-            // A non-null incoming state is a buffer to reuse.
-            unsafe {
-                if !(*state).is_null() {
-                    drop(Box::from_raw(*state as *mut Vec<u8>));
-                }
-                *state = Box::into_raw(Box::new(bytes)) as *mut c_void;
-            }
-            OK
+    let got = on_instance!(
+        Some(&mut *inst),
+        |store, g, h, st| match g.call_get_fmu_state(store, h) {
+            Ok(Ok(bytes)) => Ok(bytes),
+            Ok(Err(s)) => Err(st(s)),
+            Err(_) => Err(ERROR),
         }
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    );
+    let bytes = match got {
+        Ok(bytes) => inst.machine.save(&bytes),
+        Err(r) => return r,
+    };
+    // A non-null incoming state is a buffer to reuse.
+    unsafe {
+        if !(*state).is_null() {
+            drop(Box::from_raw(*state as *mut Vec<u8>));
+        }
+        *state = Box::into_raw(Box::new(bytes)) as *mut c_void;
+    }
+    OK
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi3SetFMUState(c: *mut c_void, state: *mut c_void) -> i32 {
-    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else { return ERROR };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_set_fmu_state(store, h, bytes) {
-        Ok(s) => st(s),
-        Err(_) => ERROR,
-   })
+    let Some(inst) = checked(c, "fmi3SetFMUState", st::FMU_STATE) else {
+        return ERROR;
+    };
+    let Some(saved) = (unsafe { (state as *const Vec<u8>).as_ref() }) else {
+        return ERROR;
+    };
+    let Some((mode, bytes)) = inst.machine.split(saved) else {
+        return ERROR;
+    };
+    let bytes = bytes.to_vec();
+    let r = on_instance!(
+        Some(&mut *inst),
+        |store, g, h, st| match g.call_set_fmu_state(store, h, &bytes) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    );
+    if inst.machine.restored(r, mode)
+        && let Some(st) = inst.fmi2.as_mut()
+    {
+        st.terminated = false;
+    }
+    r
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn fmi3FreeFMUState(_c: *mut c_void, state: *mut *mut c_void) -> i32 {
-    if state.is_null() {
+pub unsafe extern "C" fn fmi3FreeFMUState(c: *mut c_void, state: *mut *mut c_void) -> i32 {
+    // Freeing nothing is a no-op, in any state.
+    if state.is_null() || unsafe { *state }.is_null() {
+        return OK;
+    }
+    if checked(c, "fmi3FreeFMUState", st::FMU_STATE).is_none() {
         return ERROR;
     }
     unsafe {
-        if !(*state).is_null() {
-            drop(Box::from_raw(*state as *mut Vec<u8>));
-            *state = std::ptr::null_mut();
-        }
+        drop(Box::from_raw(*state as *mut Vec<u8>));
+        *state = std::ptr::null_mut();
     }
     OK
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi3SerializedFMUStateSize(_c: *mut c_void, state: *mut c_void, size: *mut usize) -> i32 {
-    let (Some(bytes), false) = (unsafe { (state as *const Vec<u8>).as_ref() }, size.is_null()) else { return ERROR };
-    unsafe { *size = bytes.len(); }
+    let (Some(bytes), false) = (unsafe { (state as *const Vec<u8>).as_ref() }, size.is_null()) else {
+        return ERROR;
+    };
+    unsafe {
+        *size = bytes.len();
+    }
     OK
 }
 
@@ -993,11 +1327,15 @@ pub unsafe extern "C" fn fmi3SerializeFMUState(
     serialized: *mut u8,
     size: usize,
 ) -> i32 {
-    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else { return ERROR };
+    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else {
+        return ERROR;
+    };
     if serialized.is_null() || size != bytes.len() {
         return ERROR;
     }
-    unsafe { std::slice::from_raw_parts_mut(serialized, size).copy_from_slice(bytes); }
+    unsafe {
+        std::slice::from_raw_parts_mut(serialized, size).copy_from_slice(bytes);
+    }
     OK
 }
 
@@ -1011,8 +1349,14 @@ pub unsafe extern "C" fn fmi3DeserializeFMUState(
     if state.is_null() || (serialized.is_null() && size != 0) {
         return ERROR;
     }
-    let bytes = if size == 0 { Vec::new() } else { unsafe { std::slice::from_raw_parts(serialized, size).to_vec() } };
-    unsafe { *state = Box::into_raw(Box::new(bytes)) as *mut c_void; }
+    let bytes = if size == 0 {
+        Vec::new()
+    } else {
+        unsafe { std::slice::from_raw_parts(serialized, size).to_vec() }
+    };
+    unsafe {
+        *state = Box::into_raw(Box::new(bytes)) as *mut c_void;
+    }
     OK
 }
 
@@ -1032,22 +1376,31 @@ macro_rules! derivative {
             sensitivity: *mut f64,
             n_sensitivity: usize,
         ) -> i32 {
+            let Some(inst) = checked(c, stringify!($cfn), st::DERIVATIVE) else {
+                return ERROR;
+            };
             let (u, k) = unsafe { (vrs(unknowns, n_unknowns), vrs(knowns, n_knowns)) };
             if seed.is_null() && n_seed != 0 {
                 return ERROR;
             }
-            let s = if n_seed == 0 { &[][..] } else { unsafe { std::slice::from_raw_parts(seed, n_seed) } };
-            on_instance!(inst_mut(c), |store, g, h, st| match g.$wfn(store, h, u, k, s) {
+            let s = if n_seed == 0 {
+                &[][..]
+            } else {
+                unsafe { std::slice::from_raw_parts(seed, n_seed) }
+            };
+            on_instance!(Some(inst), |store, g, h, st| match g.$wfn(store, h, u, k, s) {
                 Ok(Ok(v)) => {
                     if v.len() != n_sensitivity || sensitivity.is_null() {
                         return ERROR;
                     }
-                    unsafe { std::slice::from_raw_parts_mut(sensitivity, n_sensitivity).copy_from_slice(&v); }
+                    unsafe {
+                        std::slice::from_raw_parts_mut(sensitivity, n_sensitivity).copy_from_slice(&v);
+                    }
                     OK
                 }
                 Ok(Err(s)) => st(s),
                 Err(_) => ERROR,
-           })
+            })
         }
     };
 }
@@ -1060,17 +1413,25 @@ pub unsafe extern "C" fn fmi3GetNumberOfVariableDependencies(
     value_reference: u32,
     n_dependencies: *mut usize,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetNumberOfVariableDependencies", st::GET) else {
+        return ERROR;
+    };
     if n_dependencies.is_null() {
         return ERROR;
     }
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_number_of_variable_dependencies(store, h, value_reference) {
-        Ok(Ok(n)) => {
-            unsafe { *n_dependencies = n as usize; }
-            OK
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_get_number_of_variable_dependencies(store, h, value_reference) {
+            Ok(Ok(n)) => {
+                unsafe {
+                    *n_dependencies = n as usize;
+                }
+                OK
+            }
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
         }
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1083,6 +1444,9 @@ pub unsafe extern "C" fn fmi3GetVariableDependencies(
     dependency_kinds: *mut i32,
     n_dependencies: usize,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetVariableDependencies", st::GET) else {
+        return ERROR;
+    };
     macro_rules! out {
         ($deps:expr) => {{
             let deps = $deps;
@@ -1108,11 +1472,14 @@ pub unsafe extern "C" fn fmi3GetVariableDependencies(
             OK
         }};
     }
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_variable_dependencies(store, h, dependent) {
-        Ok(Ok(deps)) => out!(deps),
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_get_variable_dependencies(store, h, dependent) {
+            Ok(Ok(deps)) => out!(deps),
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 // ── Clocks ──────────────────────────────────────────────────────────────────
@@ -1125,23 +1492,33 @@ pub unsafe extern "C" fn fmi3GetIntervalDecimal(
     intervals: *mut f64,
     qualifiers: *mut i32,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetIntervalDecimal", st::GET_INTERVAL) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_interval_decimal(store, h, refs) {
-        Ok(Ok(v)) => {
-            if v.len() != n_value_references {
-                return ERROR;
-            }
-            unsafe {
-                for (i, (interval, q)) in v.iter().enumerate() {
-                    if !intervals.is_null() { *intervals.add(i) = *interval; }
-                    if !qualifiers.is_null() { *qualifiers.add(i) = *q as i32; }
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_get_interval_decimal(store, h, refs) {
+            Ok(Ok(v)) => {
+                if v.len() != n_value_references {
+                    return ERROR;
                 }
+                unsafe {
+                    for (i, (interval, q)) in v.iter().enumerate() {
+                        if !intervals.is_null() {
+                            *intervals.add(i) = *interval;
+                        }
+                        if !qualifiers.is_null() {
+                            *qualifiers.add(i) = *q as i32;
+                        }
+                    }
+                }
+                OK
             }
-            OK
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
         }
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1153,24 +1530,36 @@ pub unsafe extern "C" fn fmi3GetIntervalFraction(
     resolutions: *mut u64,
     qualifiers: *mut i32,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetIntervalFraction", st::GET_INTERVAL) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_interval_fraction(store, h, refs) {
-        Ok(Ok(v)) => {
-            if v.len() != n_value_references {
-                return ERROR;
-            }
-            unsafe {
-                for (i, (f, q)) in v.iter().enumerate() {
-                    if !counters.is_null() { *counters.add(i) = f.counter; }
-                    if !resolutions.is_null() { *resolutions.add(i) = f.resolution; }
-                    if !qualifiers.is_null() { *qualifiers.add(i) = *q as i32; }
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_get_interval_fraction(store, h, refs) {
+            Ok(Ok(v)) => {
+                if v.len() != n_value_references {
+                    return ERROR;
                 }
+                unsafe {
+                    for (i, (f, q)) in v.iter().enumerate() {
+                        if !counters.is_null() {
+                            *counters.add(i) = f.counter;
+                        }
+                        if !resolutions.is_null() {
+                            *resolutions.add(i) = f.resolution;
+                        }
+                        if !qualifiers.is_null() {
+                            *qualifiers.add(i) = *q as i32;
+                        }
+                    }
+                }
+                OK
             }
-            OK
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
         }
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1180,18 +1569,26 @@ pub unsafe extern "C" fn fmi3GetShiftDecimal(
     n_value_references: usize,
     shifts: *mut f64,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetShiftDecimal", st::INIT) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_shift_decimal(store, h, refs) {
-        Ok(Ok(v)) => {
-            if v.len() != n_value_references || shifts.is_null() {
-                return ERROR;
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_get_shift_decimal(store, h, refs) {
+            Ok(Ok(v)) => {
+                if v.len() != n_value_references || shifts.is_null() {
+                    return ERROR;
+                }
+                unsafe {
+                    std::slice::from_raw_parts_mut(shifts, n_value_references).copy_from_slice(&v);
+                }
+                OK
             }
-            unsafe { std::slice::from_raw_parts_mut(shifts, n_value_references).copy_from_slice(&v); }
-            OK
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
         }
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1202,23 +1599,33 @@ pub unsafe extern "C" fn fmi3GetShiftFraction(
     counters: *mut u64,
     resolutions: *mut u64,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3GetShiftFraction", st::INIT) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_shift_fraction(store, h, refs) {
-        Ok(Ok(v)) => {
-            if v.len() != n_value_references {
-                return ERROR;
-            }
-            unsafe {
-                for (i, f) in v.iter().enumerate() {
-                    if !counters.is_null() { *counters.add(i) = f.counter; }
-                    if !resolutions.is_null() { *resolutions.add(i) = f.resolution; }
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_get_shift_fraction(store, h, refs) {
+            Ok(Ok(v)) => {
+                if v.len() != n_value_references {
+                    return ERROR;
                 }
+                unsafe {
+                    for (i, f) in v.iter().enumerate() {
+                        if !counters.is_null() {
+                            *counters.add(i) = f.counter;
+                        }
+                        if !resolutions.is_null() {
+                            *resolutions.add(i) = f.resolution;
+                        }
+                    }
+                }
+                OK
             }
-            OK
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
         }
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1228,15 +1635,25 @@ pub unsafe extern "C" fn fmi3SetIntervalDecimal(
     n_value_references: usize,
     intervals: *const f64,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3SetIntervalDecimal", st::INIT) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
     if intervals.is_null() && n_value_references != 0 {
         return ERROR;
     }
-    let v = if n_value_references == 0 { &[][..] } else { unsafe { std::slice::from_raw_parts(intervals, n_value_references) } };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_set_interval_decimal(store, h, refs, v) {
-        Ok(s) => st(s),
-        Err(_) => ERROR,
-   })
+    let v = if n_value_references == 0 {
+        &[][..]
+    } else {
+        unsafe { std::slice::from_raw_parts(intervals, n_value_references) }
+    };
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_set_interval_decimal(store, h, refs, v) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1246,15 +1663,25 @@ pub unsafe extern "C" fn fmi3SetShiftDecimal(
     n_value_references: usize,
     shifts: *const f64,
 ) -> i32 {
+    let Some(inst) = checked(c, "fmi3SetShiftDecimal", st::INIT) else {
+        return ERROR;
+    };
     let refs = unsafe { vrs(value_references, n_value_references) };
     if shifts.is_null() && n_value_references != 0 {
         return ERROR;
     }
-    let v = if n_value_references == 0 { &[][..] } else { unsafe { std::slice::from_raw_parts(shifts, n_value_references) } };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_set_shift_decimal(store, h, refs, v) {
-        Ok(s) => st(s),
-        Err(_) => ERROR,
-   })
+    let v = if n_value_references == 0 {
+        &[][..]
+    } else {
+        unsafe { std::slice::from_raw_parts(shifts, n_value_references) }
+    };
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_set_shift_decimal(store, h, refs, v) {
+            Ok(s) => st(s),
+            Err(_) => ERROR,
+        }
+    )
 }
 
 macro_rules! set_fraction {
@@ -1267,19 +1694,30 @@ macro_rules! set_fraction {
             counters: *const u64,
             resolutions: *const u64,
         ) -> i32 {
+            let Some(inst) = checked(c, stringify!($cfn), st::INIT) else {
+                return ERROR;
+            };
             let refs = unsafe { vrs(value_references, n_value_references) };
             if (counters.is_null() || resolutions.is_null()) && n_value_references != 0 {
                 return ERROR;
             }
-            let Some(inst) = inst_mut(c) else { return ERROR };
             let Instance { store, kind, .. } = inst;
             match kind {
                 Kind::Me { world, handle } => {
                     type Frac = $rec_me;
                     let v: Vec<_> = (0..n_value_references)
-                        .map(|i| unsafe { Frac { counter: *counters.add(i), resolution: *resolutions.add(i) } })
+                        .map(|i| unsafe {
+                            Frac {
+                                counter: *counters.add(i),
+                                resolution: *resolutions.add(i),
+                            }
+                        })
                         .collect();
-                    match world.fmi_fmi3_model_exchange().model_exchange_instance().$wfn(store, *handle, refs, &v) {
+                    match world
+                        .fmi_fmi3_model_exchange()
+                        .model_exchange_instance()
+                        .$wfn(store, *handle, refs, &v)
+                    {
                         Ok(s) => st_me(s),
                         Err(_) => ERROR,
                     }
@@ -1287,9 +1725,18 @@ macro_rules! set_fraction {
                 Kind::Cs { world, handle } => {
                     type Frac = $rec_cs;
                     let v: Vec<_> = (0..n_value_references)
-                        .map(|i| unsafe { Frac { counter: *counters.add(i), resolution: *resolutions.add(i) } })
+                        .map(|i| unsafe {
+                            Frac {
+                                counter: *counters.add(i),
+                                resolution: *resolutions.add(i),
+                            }
+                        })
                         .collect();
-                    match world.fmi_fmi3_co_simulation().co_simulation_instance().$wfn(store, *handle, refs, &v) {
+                    match world
+                        .fmi_fmi3_co_simulation()
+                        .co_simulation_instance()
+                        .$wfn(store, *handle, refs, &v)
+                    {
                         Ok(s) => st_cs(s),
                         Err(_) => ERROR,
                     }
@@ -1315,17 +1762,22 @@ set_fraction!(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi3EnterContinuousTimeMode(c: *mut c_void) -> i32 {
-    let Some(inst) = inst_mut(c) else { return ERROR };
+    let Some(inst) = checked_me(c, "fmi3EnterContinuousTimeMode", st::EVENT) else {
+        return ERROR;
+    };
     let Some((store, g, h)) = inst.me() else { return ERROR };
-    match g.call_enter_continuous_time_mode(store, h) {
+    let r = match g.call_enter_continuous_time_mode(store, h) {
         Ok(s) => st_me(s),
         Err(_) => ERROR,
-    }
+    };
+    inst.moved(r, st::CONTINUOUS)
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi3SetTime(c: *mut c_void, time: f64) -> i32 {
-    let Some(inst) = inst_mut(c) else { return ERROR };
+    let Some(inst) = checked_me(c, "fmi3SetTime", st::CONTINUOUS) else {
+        return ERROR;
+    };
     let Some((store, g, h)) = inst.me() else { return ERROR };
     match g.call_set_time(store, h, time) {
         Ok(s) => st_me(s),
@@ -1335,11 +1787,17 @@ pub unsafe extern "C" fn fmi3SetTime(c: *mut c_void, time: f64) -> i32 {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi3SetContinuousStates(c: *mut c_void, states: *const f64, n: usize) -> i32 {
+    let Some(inst) = checked_me(c, "fmi3SetContinuousStates", st::CONTINUOUS) else {
+        return ERROR;
+    };
     if states.is_null() && n != 0 {
         return ERROR;
     }
-    let v = if n == 0 { &[][..] } else { unsafe { std::slice::from_raw_parts(states, n) } };
-    let Some(inst) = inst_mut(c) else { return ERROR };
+    let v = if n == 0 {
+        &[][..]
+    } else {
+        unsafe { std::slice::from_raw_parts(states, n) }
+    };
     let Some((store, g, h)) = inst.me() else { return ERROR };
     match g.call_set_continuous_states(store, h, v) {
         Ok(s) => st_me(s),
@@ -1351,14 +1809,20 @@ macro_rules! me_vector {
     ($cfn:ident, $wfn:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, values: *mut f64, n: usize) -> i32 {
-            let Some(inst) = inst_mut(c) else { return ERROR };
-            let Some((store, g, h)) = inst.me() else { return ERROR };
+            let Some(inst) = checked_me(c, stringify!($cfn), st::ME_INSPECT) else {
+                return ERROR;
+            };
+            let Some((store, g, h)) = inst.me() else {
+                return ERROR;
+            };
             match g.$wfn(store, h) {
                 Ok(Ok(v)) => {
                     if v.len() != n || values.is_null() {
                         return ERROR;
                     }
-                    unsafe { std::slice::from_raw_parts_mut(values, n).copy_from_slice(&v); }
+                    unsafe {
+                        std::slice::from_raw_parts_mut(values, n).copy_from_slice(&v);
+                    }
                     OK
                 }
                 Ok(Err(s)) => st_me(s),
@@ -1370,20 +1834,29 @@ macro_rules! me_vector {
 me_vector!(fmi3GetContinuousStateDerivatives, call_get_continuous_state_derivatives);
 me_vector!(fmi3GetEventIndicators, call_get_event_indicators);
 me_vector!(fmi3GetContinuousStates, call_get_continuous_states);
-me_vector!(fmi3GetNominalsOfContinuousStates, call_get_nominals_of_continuous_states);
+me_vector!(
+    fmi3GetNominalsOfContinuousStates,
+    call_get_nominals_of_continuous_states
+);
 
 macro_rules! me_count {
     ($cfn:ident, $wfn:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, n: *mut usize) -> i32 {
+            let Some(inst) = checked_me(c, stringify!($cfn), st::ME_COUNT) else {
+                return ERROR;
+            };
             if n.is_null() {
                 return ERROR;
             }
-            let Some(inst) = inst_mut(c) else { return ERROR };
-            let Some((store, g, h)) = inst.me() else { return ERROR };
+            let Some((store, g, h)) = inst.me() else {
+                return ERROR;
+            };
             match g.$wfn(store, h) {
                 Ok(Ok(v)) => {
-                    unsafe { *n = v as usize; }
+                    unsafe {
+                        *n = v as usize;
+                    }
                     OK
                 }
                 Ok(Err(s)) => st_me(s),
@@ -1402,7 +1875,9 @@ pub unsafe extern "C" fn fmi3CompletedIntegratorStep(
     enter_event_mode: *mut bool,
     terminate_simulation: *mut bool,
 ) -> i32 {
-    let Some(inst) = inst_mut(c) else { return ERROR };
+    let Some(inst) = checked_me(c, "fmi3CompletedIntegratorStep", st::CONTINUOUS) else {
+        return ERROR;
+    };
     let Some((store, g, h)) = inst.me() else { return ERROR };
     match g.call_completed_integrator_step(store, h, no_set_fmu_state_prior) {
         Ok(Ok(r)) => {
@@ -1434,9 +1909,17 @@ pub unsafe extern "C" fn fmi3DoStep(
     early_return: *mut bool,
     last_successful_time: *mut f64,
 ) -> i32 {
-    let Some(inst) = inst_mut(c) else { return ERROR };
+    let Some(inst) = checked_cs(c, "fmi3DoStep", st::STEP) else {
+        return ERROR;
+    };
     let Some((store, g, h)) = inst.cs() else { return ERROR };
-    match g.call_do_step(store, h, current_communication_point, communication_step_size, no_set_fmu_state_prior) {
+    match g.call_do_step(
+        store,
+        h,
+        current_communication_point,
+        communication_step_size,
+        no_set_fmu_state_prior,
+    ) {
         Ok(Ok(r)) => {
             unsafe {
                 if !event_handling_needed.is_null() {
@@ -1468,11 +1951,17 @@ pub unsafe extern "C" fn fmi3SetInputDerivatives(
     values: *const f64,
     n_values: usize,
 ) -> i32 {
-    let Some(requests) = (unsafe { requests(value_references, n_value_references, orders) }) else { return ERROR };
+    let Some(requests) = (unsafe { requests(value_references, n_value_references, orders) }) else {
+        return ERROR;
+    };
     if values.is_null() && n_values != 0 {
         return ERROR;
     }
-    let v = if n_values == 0 { &[][..] } else { unsafe { std::slice::from_raw_parts(values, n_values) } };
+    let v = if n_values == 0 {
+        &[][..]
+    } else {
+        unsafe { std::slice::from_raw_parts(values, n_values) }
+    };
     let Some(inst) = inst_mut(c) else { return ERROR };
     let Some((store, g, h)) = inst.cs() else { return ERROR };
     match g.call_set_input_derivatives(store, h, &requests, v) {
@@ -1490,18 +1979,28 @@ pub unsafe extern "C" fn fmi3GetOutputDerivatives(
     values: *mut f64,
     n_values: usize,
 ) -> i32 {
-    let Some(requests) = (unsafe { requests(value_references, n_value_references, orders) }) else { return ERROR };
-    on_instance!(inst_mut(c), |store, g, h, st| match g.call_get_output_derivatives(store, h, &requests) {
-        Ok(Ok(v)) => {
-            if v.len() != n_values || values.is_null() {
-                return ERROR;
+    let Some(inst) = checked_cs(c, "fmi3GetOutputDerivatives", st::GET_OUTPUT_DERIVATIVES) else {
+        return ERROR;
+    };
+    let Some(requests) = (unsafe { requests(value_references, n_value_references, orders) }) else {
+        return ERROR;
+    };
+    on_instance!(
+        Some(inst),
+        |store, g, h, st| match g.call_get_output_derivatives(store, h, &requests) {
+            Ok(Ok(v)) => {
+                if v.len() != n_values || values.is_null() {
+                    return ERROR;
+                }
+                unsafe {
+                    std::slice::from_raw_parts_mut(values, n_values).copy_from_slice(&v);
+                }
+                OK
             }
-            unsafe { std::slice::from_raw_parts_mut(values, n_values).copy_from_slice(&v); }
-            OK
+            Ok(Err(s)) => st(s),
+            Err(_) => ERROR,
         }
-        Ok(Err(s)) => st(s),
-        Err(_) => ERROR,
-   })
+    )
 }
 
 /// Scheduled Execution only; no world exports it yet.

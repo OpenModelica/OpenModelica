@@ -25,6 +25,8 @@ UnitCheck21.mos \
 UnitCheck22.mos \
 UnitCheck23.mos \
 UnitCheck24.mos \
+UnitCheck25.mos \
+UnparsableDisplayUnit.mos \
 ticket3631.mos \
 
 
@@ -39,7 +41,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-OFunitcheck \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

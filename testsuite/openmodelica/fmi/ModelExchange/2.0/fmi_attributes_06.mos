@@ -142,7 +142,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"L\"
 //     valueReference=\"13\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\"/>
@@ -151,7 +151,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"g\"
 //     valueReference=\"14\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"9.82\"/>
@@ -160,7 +160,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"m\"
 //     valueReference=\"15\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.5\"/>

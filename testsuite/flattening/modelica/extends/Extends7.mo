@@ -27,11 +27,14 @@ package Utilities "Utility classes usually not directly utilized by the user"
       annotation(Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}, grid={1,1}), graphics={Rectangle(extent={{-60,100},{100,-60}}, lineColor={0,0,255}, fillColor={255,255,255}, fillPattern=FillPattern.Solid),Polygon(points={{-100,60},{-60,100},{-60,60},{-100,60}}, lineColor={0,0,255}, fillColor={255,255,255}, fillPattern=FillPattern.Solid),Polygon(points={{60,-60},{100,-60},{60,-100},{60,-60}}, lineColor={0,0,255}, fillColor={255,255,255}, fillPattern=FillPattern.Solid),Rectangle(extent={{-100,60},{60,-100}}, lineColor={0,0,255}, fillColor={215,215,215}, fillPattern=FillPattern.Solid)}));
     end Package;
   end Icons;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Utilities;
 
+model Extends7
+  constant String rootDir = Utilities.RootDir;
+end Extends7;
+
 // Result:
-// class Utilities "Utility classes usually not directly utilized by the user"
-//   constant String RootDir = ".";
-// end Utilities;
+// class Extends7
+//   constant String rootDir = ".";
+// end Extends7;
 // endResult

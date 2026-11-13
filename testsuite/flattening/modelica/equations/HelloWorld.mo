@@ -11,7 +11,6 @@ model HelloWorld
   parameter Real a = 1;
 equation
   der(x) = - a * x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HelloWorld;
 
 // Result:
@@ -19,6 +18,6 @@ end HelloWorld;
 //   Real x(start = 1.0);
 //   parameter Real a = 1.0;
 // equation
-//   der(x) = (-a) * x;
+//   der(x) = -a * x;
 // end HelloWorld;
 // endResult

@@ -2356,6 +2356,8 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, syst as 
       (lhs1, _) := ExpressionSolve.solve(lhs2, rhs2, varExp);
 
       (_,lhs1,rhs1) := cancelExpressions(lhs1,rhs1);
+      lhs1 := ExpressionSimplify.simplify(lhs1);
+      rhs1 := ExpressionSimplify.simplify(rhs1);
       n := listLength(Expression.getAllCrefs(Expression.expSub(lhs1,rhs1)));
         //print("n1 "+intString(n1)+"\n");
         //print("n2 "+intString(n2)+"\n");

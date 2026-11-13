@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 partialForIfBody.mos \
 duplicatePattern.mos \
+linearSystemForResiduals.mos \
 slicedLinearSystem.mos \
 minimalTearing.mos \
 partialForArrayBody.mos \
@@ -11,10 +12,16 @@ partialNestedFor.mos \
 minimalTearing_simple.mos \
 loopSizeOne.mos \
 guruTearing1.mos \
+guruTearing2.mos \
 impliedInner.mos \
 nonlinearContinuousLoop.mos \
 torn2DForResidualIndex.mos \
 cellierArray.mos \
+cellierZeroElement.mos \
+cellierZeroElementSubscript.mos \
+cellierEntwined.mos \
+cellierParameterCoefficient.mos \
+linearSystemResidualIndex.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

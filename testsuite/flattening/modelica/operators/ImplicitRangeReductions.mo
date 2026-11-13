@@ -41,20 +41,9 @@ equation
   k = {j[i] for i};
   l = {P.x[i] for i};
   m = {.P.x[i] for i};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ImplicitRangeReductions;
 
 // Result:
-// function ImplicitRangeReductions.R1 "Automatically generated record constructor for ImplicitRangeReductions.R1"
-//   input Real x;
-//   output R1 res;
-// end ImplicitRangeReductions.R1;
-//
-// function ImplicitRangeReductions.R2 "Automatically generated record constructor for ImplicitRangeReductions.R2"
-//   input Real[3] x;
-//   output R2 res;
-// end ImplicitRangeReductions.R2;
-//
 // class ImplicitRangeReductions
 //   Real a[1];
 //   Real a[2];
@@ -93,12 +82,12 @@ end ImplicitRangeReductions;
 //   Real r2.x[1];
 //   Real r2.x[2];
 //   Real r2.x[3];
-//   Real h[ImplicitRangeReductions.E.one];
-//   Real h[ImplicitRangeReductions.E.two];
-//   Real h[ImplicitRangeReductions.E.three];
-//   Real i[ImplicitRangeReductions.E.one];
-//   Real i[ImplicitRangeReductions.E.two];
-//   Real i[ImplicitRangeReductions.E.three];
+//   Real h[E.one];
+//   Real h[E.two];
+//   Real h[E.three];
+//   Real i[E.one];
+//   Real i[E.two];
+//   Real i[E.three];
 //   Real j[false];
 //   Real j[true];
 //   Real k[false];
@@ -107,40 +96,17 @@ end ImplicitRangeReductions;
 //   a = {1.0, 2.0, 3.0};
 //   h = {1.0, 2.0, 3.0};
 //   j = {1.0, 2.0};
-//   b[1] = a[1];
-//   b[2] = a[2];
-//   b[3] = a[3];
-//   c[1] = a[1] ^ 2.0;
-//   c[2] = a[2] ^ 2.0;
-//   c[3] = a[3] ^ 2.0;
-//   d[1] = b[1] + c[1];
-//   d[2] = b[2] + c[2];
-//   d[3] = b[3] + c[3];
-//   e[1,1] = b[1] + c[1];
-//   e[1,2] = b[2] + c[1];
-//   e[1,3] = b[3] + c[1];
-//   e[2,1] = b[1] + c[2];
-//   e[2,2] = b[2] + c[2];
-//   e[2,3] = b[3] + c[2];
-//   e[3,1] = b[1] + c[3];
-//   e[3,2] = b[2] + c[3];
-//   e[3,3] = b[3] + c[3];
-//   f[1] = r1[1].x;
-//   f[2] = r1[2].x;
-//   f[3] = r1[3].x;
-//   g[1] = r2.x[1];
-//   g[2] = r2.x[2];
-//   g[3] = r2.x[3];
-//   i[ImplicitRangeReductions.E.one] = h[ImplicitRangeReductions.E.one];
-//   i[ImplicitRangeReductions.E.two] = h[ImplicitRangeReductions.E.two];
-//   i[ImplicitRangeReductions.E.three] = h[ImplicitRangeReductions.E.three];
-//   k[false] = j[false];
-//   k[true] = j[true];
+//   b = array(a[i] for i in 1:3);
+//   c = array(a[i] * a[i] for i in 1:3);
+//   d = array(b[i] + c[i] for i in 1:3);
+//   e = array(array(b[i] + c[j] for i in 1:3) for j in 1:3);
+//   f = array(r1[i].x for i in 1:3);
+//   g = array(r2.x[i] for i in 1:3);
+//   i = array(h[i] for i in E.one:E.three);
+//   k = array(j[i] for i in false:true);
 //   l[1] = 1.0;
 //   l[2] = 2.0;
 //   m[1] = 1.0;
 //   m[2] = 2.0;
 // end ImplicitRangeReductions;
-// [flattening/modelica/operators/ImplicitRangeReductions.mo:43:3-43:22:writable] Error: Variable i not found in scope <global scope>.
-//
 // endResult

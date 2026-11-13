@@ -9,7 +9,6 @@ model ArrayCurlyBrackets
   Integer intArray[7];
 equation
   intArray = { 1, 2, 3, 4, 5, 6, 7 };
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayCurlyBrackets;
 
 // Result:

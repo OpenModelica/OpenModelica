@@ -65,6 +65,7 @@ encapsulated package NFUsedElements
 protected
   import AbsynUtil;
   import Class = NFClass;
+  import ComponentRef = NFComponentRef;
   import NFClassTree.ClassTree;
   import Inst = NFInst;
   import InstContext = NFInstContext;
@@ -75,9 +76,11 @@ protected
   import Type = NFType;
   import ComplexType = NFComplexType;
   import Dump;
+  import Flags;
   import SCodeDump;
   import UnorderedMap;
   import StringUtil;
+  import System;
   import Util;
 
   constant InstContext.Type CONTEXT =
@@ -139,8 +142,19 @@ protected
       Pointer<list<tuple<String, String>>> iterators "The names and keys of the iterators in scope.";
       UnorderedMap<String, list<Pending>> pending "By the key of the replaceable class.";
       UnorderedSet<String> pendingKeys;
+      Pointer<list<LookupCheck>> checks "The classes found for names, see Flags.CHECK_USED_ELEMENTS_LOOKUP.";
     end RECORDER;
   end Recorder;
+
+  uniontype LookupCheck
+    "A name found to be a class, to look up again with NFLookup."
+    record LOOKUP_CHECK
+      Absyn.Path name;
+      InstNode scope;
+      InstNode found;
+      SourceInfo info;
+    end LOOKUP_CHECK;
+  end LookupCheck;
 
 public
   function collect
@@ -237,6 +251,8 @@ public
     output list<Definition> definitions;
     output list<Use> uses;
     output list<Use> unresolved;
+    output list<String> lookupDifferences
+      "With Flags.CHECK_USED_ELEMENTS_LOOKUP, the names NFLookup finds something else for.";
   protected
     InstNode top, cls;
     Walk walk;
@@ -249,7 +265,7 @@ public
                     Pointer.create(""), Pointer.create(false), Pointer.create(NOT_FOUND()),
                     Pointer.create({}),
                     UnorderedMap.new<PendingList>(stringHashDjb2, stringEq),
-                    UnorderedSet.new<String>(stringHashDjb2, stringEq));
+                    UnorderedSet.new<String>(stringHashDjb2, stringEq), Pointer.create({}));
     walk := WALK(UnorderedSet.new<String>(stringHashDjb2, stringEq),
                  UnorderedSet.new<String>(stringHashDjb2, stringEq),
                  UnorderedSet.new<String>(stringHashDjb2, stringEq),
@@ -275,6 +291,7 @@ public
     definitions := UnorderedMap.valueList(rec.definitions);
     uses := listReverse(Pointer.access(rec.uses));
     unresolved := listReverse(Pointer.access(rec.unresolved));
+    lookupDifferences := checkLookups(listReverse(Pointer.access(rec.checks)));
     Inst.clearCaches();
   end collectUses;
 
@@ -959,12 +976,15 @@ protected
 
   function redeclaredClass
     "Returns the class extends or redeclared class with the given name declared
-     in a class, or an empty node. The lookup finds the class it replaces."
+     in a class, or redeclared in the modifier of one of its extends, or an
+     empty node. The lookup finds the class it replaces."
     input String name;
     input InstNode cls "An expanded class.";
     output InstNode node = InstNode.EMPTY_NODE();
+  protected
+    list<SCode.Element> elements = SCodeUtil.getClassElements(InstNode.definition(cls));
   algorithm
-    for e in SCodeUtil.getClassElements(InstNode.definition(cls)) loop
+    for e in elements loop
       if SCodeUtil.elementIsClass(e) and isReplacingClass(e) and
          SCodeUtil.elementName(e) == name then
         node := localClass(e, cls);
@@ -975,6 +995,34 @@ protected
 
         return;
       end if;
+    end for;
+
+    // extends Base(redeclare record R = ...) replaces the inherited R, and the
+    // redeclared class is looked up where the modifier is written.
+    for e in elements loop
+      () := match e
+        local
+          SCode.Element elem;
+          list<SCode.SubMod> submods;
+
+        case SCode.EXTENDS(modifications = SCode.MOD(subModLst = submods))
+          algorithm
+            for sm in submods loop
+              () := match sm.mod
+                case SCode.REDECL(element = elem as SCode.CLASS())
+                  guard sm.ident == name
+                  algorithm
+                    node := InstNode.newClass(elem, cls);
+                    return;
+                  then
+                    ();
+                else ();
+              end match;
+            end for;
+          then
+            ();
+        else ();
+      end match;
     end for;
   end redeclaredClass;
 
@@ -2252,10 +2300,125 @@ protected
           else
             node := n;
           end if;
+
+          if index == 1 then
+            addLookupCheck(path, scope, node, walk);
+          end if;
         then
           ();
     end match;
   end walkPath;
+
+  function addLookupCheck
+    "With Flags.CHECK_USED_ELEMENTS_LOOKUP, keeps a name found to be a class to
+     look it up again with NFLookup after the walk, see checkLookups."
+    input Absyn.Path name;
+    input InstNode scope;
+    input InstNode found;
+    input Walk walk;
+  algorithm
+    () := match walk.recorder
+      local
+        Recorder rec;
+        Site site;
+      case SOME(rec)
+        guard Flags.isSet(Flags.CHECK_USED_ELEMENTS_LOOKUP) and InstNode.isClass(found) and
+              not Pointer.access(rec.candidate) and isSome(Pointer.access(rec.site))
+        algorithm
+          SOME(site) := Pointer.access(rec.site);
+          Pointer.update(rec.checks, LOOKUP_CHECK(name, scope, found, site.info) :: Pointer.access(rec.checks));
+        then
+          ();
+      else ();
+    end match;
+  end addLookupCheck;
+
+  function checkLookups
+    "Looks the names found to be classes up again with NFLookup, from the same
+     scope instantiated like the instantiation does before it looks names up in
+     it, and returns a message for each one it finds another class for. The
+     walker has its own lookup, since it records every step of it, so this finds
+     where the two differ. Names NFLookup can't look up in a class on its own,
+     e.g. in a partial class, and names looked up through a replaceable class,
+     which the walker looks up in the class it's constrained by, are skipped."
+    input list<LookupCheck> checks;
+    output list<String> differences = {};
+  protected
+    UnorderedSet<String> checked = UnorderedSet.new<String>(stringHashDjb2, stringEq);
+    UnorderedMap<String, InstNode> scopes = UnorderedMap.new<InstNode>(stringHashDjb2, stringEq);
+    InstNode node, scope;
+    list<InstNode> prefixes;
+    String id, walker_key, key, scope_name;
+    Integer compared = 0, through_replaceable = 0, not_found = 0;
+  algorithm
+    if not Flags.isSet(Flags.CHECK_USED_ELEMENTS_LOOKUP) then
+      return;
+    end if;
+
+    for c in checks loop
+      walker_key := "";
+      try
+        walker_key := elementKey(InstNode.definition(c.found));
+      else
+      end try;
+
+      scope_name := AbsynUtil.pathString(InstNode.fullPath(c.scope, true));
+      id := AbsynUtil.pathString(c.name) + " " + scope_name + " " + walker_key;
+      if stringEmpty(walker_key) or UnorderedSet.contains(id, checked) then
+        continue;
+      end if;
+      UnorderedSet.add(id, checked);
+
+      key := "";
+      node := InstNode.EMPTY_NODE();
+      try
+        // The walker may have several nodes for the same class, instantiate it once.
+        scope := UnorderedMap.getOrDefault(scope_name, scopes, InstNode.EMPTY_NODE());
+
+        if InstNode.isEmpty(scope) then
+          scope := expandNode(c.scope);
+          expandScopes(InstNode.parent(scope));
+          scope := Inst.instPackage(scope, CONTEXT);
+          UnorderedMap.add(scope_name, scope, scopes);
+        end if;
+
+        if InstNode.isFunction(c.found) then
+          // A function can also be called through a component, e.g. world.gravityAcceleration.
+          node := ComponentRef.node(Lookup.lookupFunctionName(AbsynUtil.pathToCref(c.name), scope, CONTEXT, c.info));
+          prefixes := {};
+        else
+          (node, _, prefixes) := Lookup.lookupName(c.name, scope, CONTEXT, false);
+        end if;
+
+        if List.any(prefixes, InstNode.isReplaceable) then
+          through_replaceable := through_replaceable + 1;
+        else
+          key := elementKey(InstNode.definition(node));
+        end if;
+      else
+      end try;
+
+      if not stringEmpty(key) then
+        compared := compared + 1;
+      elseif InstNode.isEmpty(node) then
+        not_found := not_found + 1;
+      end if;
+
+      if not stringEmpty(key) and key <> walker_key then
+        differences := stringAppendList({AbsynUtil.pathString(c.name), " in ",
+          AbsynUtil.pathString(InstNode.fullPath(c.scope, true)),
+          " (", System.basename(c.info.fileName), ":", intString(c.info.lineNumberStart), ") is ",
+          AbsynUtil.pathString(InstNode.fullPath(c.found, true)),
+          ", but the new frontend's lookup finds ", AbsynUtil.pathString(InstNode.fullPath(node, true))}) :: differences;
+      end if;
+    end for;
+
+    // How many were compared, so that a change that makes NFLookup fail for more
+    // names, which are then skipped, shows too.
+    differences := listReverse(stringAppendList({"compared ", intString(compared), " names, skipped ",
+      intString(through_replaceable), " looked up through a replaceable class and ", intString(not_found),
+      " the new frontend can't look up in the class on its own"}) :: differences);
+  end checkLookups;
 
   function walkRest
     "Looks up the rest of a name in the class the first part was found in."

@@ -1,0 +1,118 @@
+// name: resizableStreamMixing
+// keywords: NewBackend resizable connect stream inStream
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableStreamMixing*.log resizableStreamMixing*.mat resizableStreamMixing*_ref*
+//
+// inStream of an element of a resizable connector array in a connection set of
+// three inside connectors: the mixing of the other two.
+
+loadString("
+package resizableStreamMixing
+  connector Port
+    Real p;
+    flow Real m_flow;
+    stream Real h;
+  end Port;
+
+  model Source
+    parameter Real h0;
+    parameter Real m0 = 1;
+    Port port;
+  equation
+    port.m_flow = -m0;
+    port.h = h0;
+  end Source;
+
+  model Sink
+    parameter Real R = 1;
+    Port port;
+    Real hIn = inStream(port.h);
+  equation
+    port.p = R*port.m_flow;
+    port.h = 0;
+  end Sink;
+
+  model Load
+    parameter Real R = 1;
+    Port port;
+    Sink sink(R = R);
+  equation
+    connect(port, sink.port);
+  end Load;
+
+  model Pipe
+    parameter Integer n = 4;
+    Port a, b;
+    Real h[n](each start = 0, each fixed = true);
+  equation
+    a.m_flow + b.m_flow = 0;
+    a.p - b.p = a.m_flow;
+    der(h[1]) = a.m_flow*(inStream(a.h) - h[1]);
+    for i in 2:n loop
+      der(h[i]) = a.m_flow*(h[i - 1] - h[i]);
+    end for;
+    a.h = h[1];
+    b.h = h[n];
+  end Pipe;
+
+  model Bundle
+    parameter Integer npipes = 2;
+    parameter Integer n = 4;
+    parameter Real w[n] = fill(1, n) \"cell weights, makes n a size\";
+    Pipe pipe[npipes](each n = n);
+    Port a[npipes], b[npipes];
+    Real hOut[npipes] = {inStream(b[j].h) for j in 1:npipes};
+  equation
+    for j in 1:npipes loop
+      connect(a[j], pipe[j].a);
+      connect(pipe[j].b, b[j]);
+    end for;
+  end Bundle;
+
+  model Test
+    Source s1(h0 = 10), s2(h0 = 20);
+    Bundle bundle(n = 5);
+    Load l1, l2(R = 1), l3(R = 2);
+  equation
+    connect(s1.port, bundle.a[1]);
+    connect(s2.port, bundle.a[2]);
+    connect(bundle.b[1], l1.port);
+    connect(bundle.b[2], l2.port);
+    connect(bundle.b[2], l3.port);
+  end Test;
+
+  model Test7 = Test(bundle(n = 7));
+end resizableStreamMixing;
+"); getErrorString();
+
+buildModel(resizableStreamMixing.Test, stopTime = 3, fileNamePrefix = "resizableStreamMixing"); getErrorString();
+system("./resizableStreamMixing -override=bundle.n=7 -r=resizableStreamMixing_7.mat", "resizableStreamMixing_7.log");
+
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+buildModel(resizableStreamMixing.Test7, stopTime = 3, fileNamePrefix = "resizableStreamMixing_ref"); getErrorString();
+system("./resizableStreamMixing_ref", "resizableStreamMixing_ref.log");
+
+abs(val(bundle.hOut[1], 3, "resizableStreamMixing_7.mat") - val(bundle.hOut[1], 3, "resizableStreamMixing_ref_res.mat")) < 1e-6;
+abs(val(bundle.hOut[2], 3, "resizableStreamMixing_7.mat") - val(bundle.hOut[2], 3, "resizableStreamMixing_ref_res.mat")) < 1e-6;
+abs(val(l2.sink.hIn, 3, "resizableStreamMixing_7.mat") - val(l2.sink.hIn, 3, "resizableStreamMixing_ref_res.mat")) < 1e-6;
+abs(val(l3.sink.hIn, 3, "resizableStreamMixing_7.mat") - val(l3.sink.hIn, 3, "resizableStreamMixing_ref_res.mat")) < 1e-6;
+val(l3.sink.hIn, 3, "resizableStreamMixing_7.mat");
+// Result:
+// true
+// ""
+// {"resizableStreamMixing", "resizableStreamMixing_init.xml"}
+// ""
+// 0
+// true
+// ""
+// {"resizableStreamMixing_ref", "resizableStreamMixing_ref_init.xml"}
+// ""
+// 0
+// true
+// true
+// true
+// true
+// 0.670171897777321
+// endResult

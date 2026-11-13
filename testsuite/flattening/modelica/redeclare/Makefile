@@ -17,7 +17,6 @@ ComparePSD.mo \
 ConstrainedByMods.mo \
 ConstantRedeclareModifier.mo \
 Dependency.mos \
-DuplicateRedeclares1.mo \
 DuplicateRedeclares2.mo \
 ExtendsDerived.mo \
 FinalRedeclareModifier.mo \

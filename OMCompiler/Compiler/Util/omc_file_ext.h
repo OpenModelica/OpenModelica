@@ -39,6 +39,8 @@
 #include <stdio.h>
 #include <gc.h>
 #include <errno.h>
+#include <stdint.h>
+#include <string.h>
 #include "ModelicaUtilities.h"
 
 #include "util/omc_file.h"
@@ -153,6 +155,37 @@ static inline void om_file_write_real(__OMC_FILE *file, double data, const char 
   if (EOF == fprintf(file->file, format, data)) {
     ModelicaFormatError("File.writeReal: Failed to write to file: %s error: %s\n", file->name, strerror(errno));
   }
+}
+
+static inline void om_file_write_binary_bytes(__OMC_FILE *file, const unsigned char *bytes, int n, const char *what)
+{
+  if (!file->file) {
+    ModelicaFormatError("File.%s: Failed to write to file: %s (not open)", what, file->name);
+  }
+  if (n != (int) fwrite(bytes, 1, n, file->file)) {
+    ModelicaFormatError("File.%s: Failed to write to file: %s error: %s\n", what, file->name, strerror(errno));
+  }
+}
+
+static inline void om_file_write_binary_integer(__OMC_FILE *file, int64_t data, int bytes)
+{
+  unsigned char buf[8];
+  uint64_t u = (uint64_t) data;
+  int i;
+  if (bytes != 1 && bytes != 2 && bytes != 4 && bytes != 8) {
+    ModelicaFormatError("File.writeBinaryInteger: Invalid number of bytes: %d", bytes);
+  }
+  for (i = 0; i < bytes; i++) {
+    buf[i] = (unsigned char) (u >> (8*i));
+  }
+  om_file_write_binary_bytes(file, buf, bytes, "writeBinaryInteger");
+}
+
+static inline void om_file_write_binary_real(__OMC_FILE *file, double data)
+{
+  uint64_t u;
+  memcpy(&u, &data, sizeof(u));
+  om_file_write_binary_integer(file, (int64_t) u, 8);
 }
 
 #define OMC_ERROR_WRITE() ModelicaFormatError("File.writeEscape: Failed to write to file %s: %s error: %s\n", file->name, (char *)file->file, strerror(errno))

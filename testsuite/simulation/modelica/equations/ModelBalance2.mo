@@ -10,7 +10,6 @@ model ModelBalance2
   Integer y;
 equation
   y = x + 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModelBalance2;
 
 // class ModelBalance2

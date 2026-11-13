@@ -10,8 +10,8 @@ partial model BaseController
   parameter Real Ts(unit = "s") = 0.1  "Time period between discrete samples";
   parameter Real K = 2          "Gain";
   parameter Real T(unit = "s") = 10    "Time constant";
-  ReadSignal cIn            "Input sensor level, connector";
-  ActSignal  cOut            "Control to actuator, connector";
+  input ReadSignal cIn  "Input sensor level, connector";
+  output ActSignal cOut "Control to actuator, connector";
   parameter Real ref          "Reference level";
   Real error              "Deviation from reference level";
   Real outCtr              "Output control signal";
@@ -29,7 +29,7 @@ equation
 end PIcontinuousController;
 
 model LiquidSource
-  LiquidFlow qOut;
+  output LiquidFlow qOut;
   parameter Real flowLevel = 0.02;
 equation
   qOut.lflow = if time > 150 then 3*flowLevel else flowLevel;
@@ -59,10 +59,10 @@ function limitValue
 end limitValue;
 
 model Tank
-  ReadSignal     tSensor     "Connector, sensor reading tank level (m)";
-  ActSignal      tActuator   "Connector, actuator controlling input flow";
-  LiquidFlow     qIn         "Connector, flow (m3/s) through input valve";
-  LiquidFlow     qOut        "Connector, flow (m3/s) through output valve";
+  output ReadSignal tSensor   "Connector, sensor reading tank level (m)";
+  input ActSignal   tActuator "Connector, actuator controlling input flow";
+  input LiquidFlow  qIn       "Connector, flow (m3/s) through input valve";
+  output LiquidFlow qOut      "Connector, flow (m3/s) through output valve";
   parameter Real area(unit = "m2")       =  0.5;
   parameter Real flowGain(unit = "m2/s") = 0.05;
   parameter Real minV= 0, maxV = 10;    // Limits for output valve flow
@@ -87,7 +87,6 @@ model TanksConnectedPI
   connect(tank1.qOut,tank2.qIn);
   connect(tank2.tActuator,piContinuous2.cOut);
   connect(tank2.tSensor,piContinuous2.cIn);
-  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end TanksConnectedPI;
 
 // insert expected flat file here. Can be done by issuing the command
@@ -143,14 +142,20 @@ end TanksConnectedPI;
 //   Real piContinuous2.outCtr "Output control signal";
 //   Real piContinuous2.x "State variable of continuous PI controller";
 // equation
+//   source.qOut.lflow = tank1.qIn.lflow;
+//   tank1.tActuator.act = piContinuous1.cOut.act;
+//   tank1.tSensor.val = piContinuous1.cIn.val;
+//   tank1.qOut.lflow = tank2.qIn.lflow;
+//   tank2.tActuator.act = piContinuous2.cOut.act;
+//   tank2.tSensor.val = piContinuous2.cIn.val;
 //   source.qOut.lflow = if time > 150.0 then 3.0 * source.flowLevel else source.flowLevel;
 //   assert(tank1.minV >= 0.0, "minV - minimum Valve level must be >= 0 ");
 //   der(tank1.h) = (tank1.qIn.lflow - tank1.qOut.lflow) / tank1.area;
-//   tank1.qOut.lflow = limitValue(tank1.minV, tank1.maxV, (-tank1.flowGain) * tank1.tActuator.act);
+//   tank1.qOut.lflow = limitValue(tank1.minV, tank1.maxV, -tank1.flowGain * tank1.tActuator.act);
 //   tank1.tSensor.val = tank1.h;
 //   assert(tank2.minV >= 0.0, "minV - minimum Valve level must be >= 0 ");
 //   der(tank2.h) = (tank2.qIn.lflow - tank2.qOut.lflow) / tank2.area;
-//   tank2.qOut.lflow = limitValue(tank2.minV, tank2.maxV, (-tank2.flowGain) * tank2.tActuator.act);
+//   tank2.qOut.lflow = limitValue(tank2.minV, tank2.maxV, -tank2.flowGain * tank2.tActuator.act);
 //   tank2.tSensor.val = tank2.h;
 //   der(piContinuous1.x) = piContinuous1.error / piContinuous1.T;
 //   piContinuous1.outCtr = piContinuous1.K * (piContinuous1.error + piContinuous1.x);
@@ -160,11 +165,5 @@ end TanksConnectedPI;
 //   piContinuous2.outCtr = piContinuous2.K * (piContinuous2.error + piContinuous2.x);
 //   piContinuous2.error = piContinuous2.ref - piContinuous2.cIn.val;
 //   piContinuous2.cOut.act = piContinuous2.outCtr;
-//   source.qOut.lflow = tank1.qIn.lflow;
-//   piContinuous1.cOut.act = tank1.tActuator.act;
-//   piContinuous1.cIn.val = tank1.tSensor.val;
-//   tank1.qOut.lflow = tank2.qIn.lflow;
-//   piContinuous2.cOut.act = tank2.tActuator.act;
-//   piContinuous2.cIn.val = tank2.tSensor.val;
 // end TanksConnectedPI;
 // endResult

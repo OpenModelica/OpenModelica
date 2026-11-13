@@ -8,7 +8,6 @@
 model CondDeclaration
   Real r1 if true;
   Real r2 if false;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CondDeclaration;
 
 // Result:

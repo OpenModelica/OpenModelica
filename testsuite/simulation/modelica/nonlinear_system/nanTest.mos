@@ -2,7 +2,6 @@
 // keywords: non-linear solver, nan, inf
 // status: correct
 // teardown_command: rm -f nonlinear_system.nanTest* _nonlinear_system.nanTest* output.log
-// cflags: -d=-newInst
 //
 
 loadFile("nanTest.mo"); getErrorString();
@@ -17,7 +16,7 @@ val(z, 1);  // sin(1.0)
 // ""
 // record SimulationResult
 //     resultFile = "nonlinear_system.nanTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.nanTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'nonlinear_system.nanTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

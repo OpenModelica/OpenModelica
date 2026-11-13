@@ -190,6 +190,26 @@ void StringHandlerTest::pathFunctions_data()
     << QStringList({"'BM_Idempotent_lowered'", "'BM_Idempotent'"});
 }
 
+void StringHandlerTest::errorKind()
+{
+  QCOMPARE(StringHandler::getErrorKind(".OpenModelica.Scripting.ErrorKind.syntax"), StringHandler::Syntax);
+  QCOMPARE(StringHandler::getErrorKind("OpenModelica.Scripting.ErrorKind.syntax"), StringHandler::Syntax);
+  QCOMPARE(StringHandler::getErrorKind("OpenModelica.Scripting.ErrorKind.unknown"), StringHandler::NoOMErrorKind);
+}
+
+void StringHandlerTest::errorType()
+{
+  QCOMPARE(StringHandler::getErrorType(".OpenModelica.Scripting.ErrorLevel.internal"), StringHandler::Internal);
+  QCOMPARE(StringHandler::getErrorType("OpenModelica.Scripting.ErrorLevel.internal"), StringHandler::Internal);
+  QCOMPARE(StringHandler::getErrorType(".OpenModelica.Scripting.ErrorLevel.notification"), StringHandler::Notification);
+  QCOMPARE(StringHandler::getErrorType("OpenModelica.Scripting.ErrorLevel.notification"), StringHandler::Notification);
+  QCOMPARE(StringHandler::getErrorType(".OpenModelica.Scripting.ErrorLevel.warning"), StringHandler::Warning);
+  QCOMPARE(StringHandler::getErrorType("OpenModelica.Scripting.ErrorLevel.warning"), StringHandler::Warning);
+  QCOMPARE(StringHandler::getErrorType(".OpenModelica.Scripting.ErrorLevel.error"), StringHandler::OMError);
+  QCOMPARE(StringHandler::getErrorType("OpenModelica.Scripting.ErrorLevel.error"), StringHandler::OMError);
+  QCOMPARE(StringHandler::getErrorType("OpenModelica.Scripting.ErrorLevel.unknown"), StringHandler::NoOMError);
+}
+
 void StringHandlerTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

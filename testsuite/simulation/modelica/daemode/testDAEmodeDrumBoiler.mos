@@ -1,7 +1,6 @@
 // name: testDAEDrumBoiler
 // status: correct
 // teardown_command: rm -f testDAEDrumBoiler output.log
-// cflags: -d=-newInst
 
 
 loadModel(Modelica,{"4.1.0"});

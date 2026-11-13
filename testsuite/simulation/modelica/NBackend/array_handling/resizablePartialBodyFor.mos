@@ -1,0 +1,38 @@
+// name: resizablePartialBodyFor
+// keywords: NewBackend resizable tearing residual
+// status: correct
+// cflags: --newBackend --simCodeScalarize=false --resizableArrays
+// suite: cSources
+// teardown_command: rm -f PartialBodyFor PartialBodyFor_* PartialBodyFor.log
+//
+// Only y[2:3] of each cell is torn, so the residual is a part of the array
+// body for-equation y = a * {1, 2, 3}. It has to stay a for-equation per body
+// element, otherwise the cells added at runtime have no residual.
+
+loadString("
+model PartialBodyFor
+  model Cell
+    Real a(start = 1);
+    Real y[3](each start = 1) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  equation
+    y = a * {1, 2, 3};
+    a + sum(y[2:3])^3 = time;
+  end Cell;
+  parameter Integer n = 10;
+  Cell c[n];
+end PartialBodyFor;
+"); getErrorString();
+
+buildModel(PartialBodyFor, stopTime = 1); getErrorString();
+system("./PartialBodyFor -override=n=20", "PartialBodyFor.log");
+a := val(c.a[17], 1, "PartialBodyFor_res.mat");
+abs(a + (5 * a)^3 - 1) < 1e-6;
+// Result:
+// true
+// ""
+// {"PartialBodyFor", "PartialBodyFor_init.xml"}
+// ""
+// 0
+// 0.18668772817690527
+// true
+// endResult

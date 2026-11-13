@@ -4,13 +4,13 @@
 //
 // The modification does not overwrite the equation
 
-partial class A
+model A
   Real x, u;
 equation
   x = 2.0 * u;
 end A;
 
-class Overwriting1 = A(x = 5.0) annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+model Overwriting1 = A(x = 5.0);
 
 // Result:
 // class Overwriting1

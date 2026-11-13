@@ -49,6 +49,7 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import Operator = NFOperator;
+  import Record = NFRecord;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -1304,6 +1305,9 @@ protected
         list<ComponentRef> crefs;
         ComponentRef field;
         list<list<Subscript>> subs;
+        list<String> fields;
+        String name;
+        Boolean found;
 
       // 0 skips are full dependencies
       case (Type.TUPLE(), 0::_) then (index, ty);
@@ -1325,21 +1329,25 @@ protected
         field := match BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()))
           case SOME(parent) algorithm
             subs := ComponentRef.subscriptsAll(cref);
-            // the skip counts all fields, but only the relevant ones (e.g. not removed aliases) have an index
             crefs :=  list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(parent));
-            if skip <= listLength(crefs) then
-              for i in 1:skip-1 loop
-                field :: crefs := crefs;
-                if UnorderedMap.contains(field, fullmap) then
-                  field := ComponentRef.setSubscriptsList(subs, field);
-                  index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
-                end if;
-              end for;
-              field :: crefs := crefs;
-              field := ComponentRef.setSubscriptsList(subs, field);
-            else
+            // the skip counts all fields of the type, but a record can have fewer children (e.g. $START records)
+            // and only the relevant ones (e.g. not removed aliases) have an index
+            fields := list(Record.Field.name(f) for f in Type.recordFields(ty));
+            name := if skip <= listLength(fields) then listGet(fields, skip) else "";
+            found := false;
+            field := ComponentRef.EMPTY();
+            for child in crefs loop
+              if ComponentRef.firstName(child) == name then
+                field := ComponentRef.setSubscriptsList(subs, child);
+                found := true;
+                break;
+              elseif UnorderedMap.contains(child, fullmap) then
+                index := index + Type.sizeOf(ComponentRef.getSubscriptedType(ComponentRef.setSubscriptsList(subs, child)));
+              end if;
+            end for;
+            if not found then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
-                + " is too large for record elements " + List.toString(crefs, ComponentRef.toString) + "."});
+                + " has no field in record elements " + List.toString(crefs, ComponentRef.toString) + "."});
               fail();
             end if;
           then field;

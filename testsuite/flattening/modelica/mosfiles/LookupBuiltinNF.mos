@@ -1,0 +1,16 @@
+// name: LookupBuiltinNF
+// status: correct
+// suite: nfScripting
+
+loadFile("LookupBuiltin.mo");
+LookupBuiltin.identity("abc");
+getErrorString();
+LookupBuiltin.id("abc");
+getErrorString();
+// Result:
+// true
+// "abc"
+// ""
+// "abc"
+// ""
+// endResult

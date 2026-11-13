@@ -17,8 +17,8 @@ use std::sync::{LazyLock, Mutex};
 use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, FileMeta, Resolve, VarTy};
 use openmodelica_mat_writer::{Mat4Stream, MatKind, MatVar, Neg, Precision};
 use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar, write_plt};
-use openmodelica_result_files::threads;
 use openmodelica_result_files::cmp::format_g_prec;
+use openmodelica_result_files::threads;
 
 use crate::set_error;
 
@@ -50,6 +50,10 @@ pub struct omc_result_signal {
     pub unvarying: c_int,
     /// FMI's `relativeQuantity` (Modelica's `absoluteValue = false`).
     pub relative_quantity: c_int,
+    /// An enumeration's type name and `n_literals` literals; null otherwise.
+    pub declared_type: *const c_char,
+    pub literals: *const *const c_char,
+    pub n_literals: c_uint,
 }
 
 struct Signal {
@@ -64,10 +68,16 @@ struct Signal {
     column: u32,
     negate: c_int,
     unvarying: bool,
+    /// The enumeration type's name and literals.
+    enumeration: Option<(String, Vec<String>)>,
 }
 
 fn cstr(p: *const c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
+    }
 }
 
 /// The String values the rows carry as ids (like `sim_meta::strings` in the
@@ -94,7 +104,15 @@ fn intern(s: &str) -> u32 {
 }
 
 fn resolve() -> Resolve {
-    Box::new(|id| STRINGS.lock().unwrap_or_else(|e| e.into_inner()).by_id.get(id as usize).cloned().unwrap_or_default())
+    Box::new(|id| {
+        STRINGS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .by_id
+            .get(id as usize)
+            .cloned()
+            .unwrap_or_default()
+    })
 }
 
 /// The id of `s` for a String row column or parameter value.
@@ -134,10 +152,24 @@ impl Signal {
                 _ => VarTy::Real,
             },
             discrete: s.discrete != 0,
-            kind: if s.kind == OMC_RESULT_KIND_TIME && s.negate != OMC_RESULT_NEGATE_NONE { OMC_RESULT_KIND_COLUMN } else { s.kind },
+            kind: if s.kind == OMC_RESULT_KIND_TIME && s.negate != OMC_RESULT_NEGATE_NONE {
+                OMC_RESULT_KIND_COLUMN
+            } else {
+                s.kind
+            },
             column: if s.kind == OMC_RESULT_KIND_TIME { 0 } else { s.column },
             negate: s.negate,
             unvarying: s.unvarying != 0,
+            enumeration: if s.declared_type.is_null() {
+                None
+            } else {
+                let literals = if s.literals.is_null() {
+                    &[][..]
+                } else {
+                    unsafe { std::slice::from_raw_parts(s.literals, s.n_literals as usize) }
+                };
+                Some((cstr(s.declared_type), literals.iter().map(|&l| cstr(l)).collect()))
+            },
         }
     }
 
@@ -157,9 +189,20 @@ impl Signal {
         }
     }
 
-    /// C's `.mat` description: `comment [unit]`.
+    /// C's `.mat` description: `comment [unit]`, with the type of a Boolean,
+    /// Integer or enumeration.
     fn mat_comment(&self) -> String {
-        if self.unit.is_empty() { self.description.clone() } else { format!("{} [{}]", self.description, self.unit) }
+        let ty = match (self.ty, &self.enumeration) {
+            (VarTy::Integer, Some((name, _))) => name.as_str(),
+            (VarTy::Integer, None) => "Integer",
+            (VarTy::Boolean, _) => "Boolean",
+            _ => "",
+        };
+        openmodelica_mat_writer::description(&self.description, &self.unit, &self.display_unit, ty)
+    }
+
+    fn literals(&self) -> Option<&[String]> {
+        self.enumeration.as_ref().map(|(_, l)| l.as_slice())
     }
 }
 
@@ -195,7 +238,10 @@ enum Kind {
     Arrow(ArrowStream),
     /// `(column, negation, integer-valued)` per written column, time first.
     Csv(Vec<(usize, Neg, bool)>),
-    Plt { rows: Vec<f64>, params: Vec<f64> },
+    Plt {
+        rows: Vec<f64>,
+        params: Vec<f64>,
+    },
 }
 
 pub struct omc_result_writer {
@@ -319,7 +365,11 @@ fn csv_columns(signals: &[Signal], col_types: &[ColTy]) -> Vec<(usize, Neg, bool
         .iter()
         .filter(|s| s.kind != OMC_RESULT_KIND_PARAMETER && s.ty != VarTy::String)
         .map(|s| {
-            let col = if s.kind == OMC_RESULT_KIND_TIME { 0 } else { s.column as usize };
+            let col = if s.kind == OMC_RESULT_KIND_TIME {
+                0
+            } else {
+                s.column as usize
+            };
             let int = matches!(col_types.get(col), Some(ColTy::I32 | ColTy::Bool));
             (col, s.neg(), int)
         })
@@ -328,7 +378,11 @@ fn csv_columns(signals: &[Signal], col_types: &[ColTy]) -> Vec<(usize, Neg, bool
 
 fn csv_header(signals: &[Signal]) -> String {
     let mut line = String::new();
-    for (i, s) in signals.iter().filter(|s| s.kind != OMC_RESULT_KIND_PARAMETER && s.ty != VarTy::String).enumerate() {
+    for (i, s) in signals
+        .iter()
+        .filter(|s| s.kind != OMC_RESULT_KIND_PARAMETER && s.ty != VarTy::String)
+        .enumerate()
+    {
         if i > 0 {
             line.push(',');
         }
@@ -384,7 +438,19 @@ fn open(
     single: bool,
     sync: usize,
 ) -> Result<omc_result_writer, String> {
-    open_where(path, format, signals, col_types, params, first_row, start, stop, single, sync, threads::write())
+    open_where(
+        path,
+        format,
+        signals,
+        col_types,
+        params,
+        first_row,
+        start,
+        stop,
+        single,
+        sync,
+        threads::write(),
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -418,13 +484,30 @@ fn open_where(
                     kind: match s.kind {
                         OMC_RESULT_KIND_TIME => MatKind::Time,
                         OMC_RESULT_KIND_PARAMETER => MatKind::Param { negate: s.neg() },
-                        _ => MatKind::Column { col: s.column, negate: s.neg() },
+                        _ => MatKind::Column {
+                            col: s.column,
+                            negate: s.neg(),
+                        },
                     },
                     unvarying: s.unvarying,
                 })
                 .collect();
-            let mut s = Mat4Stream::begin(&mut out, &vars, start, stop, first_row, n_cols as u32, &params, precision);
+            let mut s = Mat4Stream::begin(
+                &mut out,
+                &vars,
+                start,
+                stop,
+                first_row,
+                n_cols as u32,
+                &params,
+                precision,
+            );
             s.set_sync(sync);
+            s.set_enumerations(openmodelica_mat_writer::enumeration_entries(
+                signals
+                    .iter()
+                    .filter_map(|s| s.enumeration.as_ref().map(|(n, l)| (n.as_str(), l.as_slice()))),
+            ));
             Kind::Mat(s)
         }
         "arrow" => {
@@ -441,13 +524,19 @@ fn open_where(
                     kind: match s.kind {
                         OMC_RESULT_KIND_TIME => ArrowKind::Time,
                         OMC_RESULT_KIND_PARAMETER => ArrowKind::Param { affine: s.affine() },
-                        _ => ArrowKind::Column { col: s.column, affine: s.affine() },
+                        _ => ArrowKind::Column {
+                            col: s.column,
+                            affine: s.affine(),
+                        },
                     },
                     unvarying: s.unvarying,
-                    enumeration: None,
+                    enumeration: s.literals(),
                 })
                 .collect();
-            let types: Vec<ColTy> = col_types.iter().map(|&t| if t == ColTy::F64 && single { ColTy::F32 } else { t }).collect();
+            let types: Vec<ColTy> = col_types
+                .iter()
+                .map(|&t| if t == ColTy::F64 && single { ColTy::F32 } else { t })
+                .collect();
             let mut s = ArrowStream::begin(
                 &mut out,
                 &vars,
@@ -460,7 +549,11 @@ fn open_where(
                 // The C runtime reads its variable attributes from `_init.xml`,
                 // which carries no unit definitions: a file it writes leans on
                 // the predefined units alone.
-                &FileMeta { span: Some((start, stop)), units: &[], zstd: None },
+                &FileMeta {
+                    span: Some((start, stop)),
+                    units: &[],
+                    zstd: None,
+                },
             );
             s.set_sync(sync > 0);
             Kind::Arrow(s)
@@ -469,10 +562,19 @@ fn open_where(
             let _ = out.0.write_all(csv_header(&signals).as_bytes());
             Kind::Csv(csv_columns(&signals, col_types))
         }
-        "plt" => Kind::Plt { rows: Vec::new(), params: numeric(&signals, params).1 },
+        "plt" => Kind::Plt {
+            rows: Vec::new(),
+            params: numeric(&signals, params).1,
+        },
         other => return Err(format!("Unknown output format: {other}")),
     };
-    let writer = Writer { signals, out, kind, n_cols, ok: true };
+    let writer = Writer {
+        signals,
+        out,
+        kind,
+        n_cols,
+        ok: true,
+    };
     let sink = if threaded {
         Sink::Threaded(Threaded::spawn(writer, n_cols))
     } else {
@@ -513,7 +615,7 @@ impl Writer {
 
     fn finish(&mut self) -> bool {
         match &mut self.kind {
-            Kind::Mat(s) => s.finish(&mut self.out),
+            Kind::Mat(s) => s.close(&mut self.out),
             Kind::Arrow(s) => s.finish(&mut self.out),
             Kind::Csv(_) => {}
             Kind::Plt { rows, params } => {
@@ -530,8 +632,13 @@ impl Writer {
                         name: &s.name,
                         kind: match s.kind {
                             OMC_RESULT_KIND_TIME => PltKind::Time,
-                            OMC_RESULT_KIND_PARAMETER => PltKind::Param { negate: plt_neg(s.neg()) },
-                            _ => PltKind::Column { col: s.column, negate: plt_neg(s.neg()) },
+                            OMC_RESULT_KIND_PARAMETER => PltKind::Param {
+                                negate: plt_neg(s.neg()),
+                            },
+                            _ => PltKind::Column {
+                                col: s.column,
+                                negate: plt_neg(s.neg()),
+                            },
                         },
                     })
                     .collect();
@@ -567,7 +674,14 @@ pub extern "C" fn omc_result_writer_open(
     error: *mut *mut c_char,
 ) -> *mut omc_result_writer {
     catch_unwind(AssertUnwindSafe(|| {
-        let signals: Vec<Signal> = if signals.is_null() { Vec::new() } else { unsafe { std::slice::from_raw_parts(signals, n_signals) }.iter().map(Signal::from_c).collect() };
+        let signals: Vec<Signal> = if signals.is_null() {
+            Vec::new()
+        } else {
+            unsafe { std::slice::from_raw_parts(signals, n_signals) }
+                .iter()
+                .map(Signal::from_c)
+                .collect()
+        };
         let types: Vec<ColTy> = if column_types.is_null() {
             Vec::new()
         } else {
@@ -581,9 +695,28 @@ pub extern "C" fn omc_result_writer_open(
                 })
                 .collect()
         };
-        let params: &[f64] = if params.is_null() { &[] } else { unsafe { std::slice::from_raw_parts(params, n_params) } };
-        let first: &[f64] = if first_row.is_null() { &[] } else { unsafe { std::slice::from_raw_parts(first_row, n_columns) } };
-        match open(&cstr(path), &cstr(format), signals, &types, params, first, start_time, stop_time, single != 0, mat_sync.max(0) as usize) {
+        let params: &[f64] = if params.is_null() {
+            &[]
+        } else {
+            unsafe { std::slice::from_raw_parts(params, n_params) }
+        };
+        let first: &[f64] = if first_row.is_null() {
+            &[]
+        } else {
+            unsafe { std::slice::from_raw_parts(first_row, n_columns) }
+        };
+        match open(
+            &cstr(path),
+            &cstr(format),
+            signals,
+            &types,
+            params,
+            first,
+            start_time,
+            stop_time,
+            single != 0,
+            mat_sync.max(0) as usize,
+        ) {
             Ok(w) => {
                 OPEN_WRITERS.fetch_add(1, Ordering::AcqRel);
                 Box::into_raw(Box::new(w))
@@ -642,12 +775,69 @@ mod tests {
                 relative_quantity: false,
                 ty: VarTy::Real,
                 discrete: false,
-                kind: if i == 0 { OMC_RESULT_KIND_TIME } else { OMC_RESULT_KIND_COLUMN },
+                kind: if i == 0 {
+                    OMC_RESULT_KIND_TIME
+                } else {
+                    OMC_RESULT_KIND_COLUMN
+                },
                 column: i as u32,
                 negate: 0,
                 unvarying: false,
+                enumeration: None,
             })
             .collect()
+    }
+
+    fn contains(hay: &[u8], needle: &[u8]) -> Option<usize> {
+        hay.windows(needle.len()).position(|w| w == needle)
+    }
+
+    /// A Boolean, an Integer and an enumeration are typed in their description,
+    /// and the enumeration's literals follow `data_2`.
+    #[test]
+    fn mat_types_its_signals() {
+        let mut sigs = signals();
+        let typed = |name: &str, desc: &str, ty, column, enumeration| Signal {
+            name: name.to_owned(),
+            description: desc.to_owned(),
+            ty,
+            column,
+            discrete: true,
+            enumeration,
+            ..signals().remove(1)
+        };
+        let mode = Some((
+            "P.Mode".to_owned(),
+            vec!["Off".to_owned(), "Heat".to_owned(), "Cool".to_owned()],
+        ));
+        sigs.push(typed("b", "a flag", VarTy::Boolean, 2, None));
+        sigs.push(typed("i", "", VarTy::Integer, 3, None));
+        sigs.push(typed("m", "a mode", VarTy::Integer, 4, mode.clone()));
+        sigs.push(typed("ma", "alias of m", VarTy::Integer, 4, mode));
+        let types = [ColTy::F64, ColTy::F64, ColTy::Bool, ColTy::I32, ColTy::I32];
+        let path = std::env::temp_dir()
+            .join("omc_capi_mat_types.mat")
+            .to_string_lossy()
+            .into_owned();
+        let row = [0.0, 1.0, 1.0, 7.0, 2.0];
+        let mut w = open_where(&path, "mat", sigs, &types, &[], &row, 0.0, 1.0, false, 0, false).expect("open");
+        w.emit(&row);
+        assert!(w.finish());
+        let bytes = std::fs::read(&path).expect("read back");
+        let _ = std::fs::remove_file(&path);
+        for d in [
+            "a flag [:#(type=Boolean)]",
+            "[:#(type=Integer)]",
+            "a mode [:#(type=P.Mode)]",
+        ] {
+            assert!(contains(&bytes, d.as_bytes()).is_some(), "{d}");
+        }
+        let entry = contains(&bytes, b"P.Mode(Off, Heat, Cool)").expect("enumerations entry");
+        assert!(contains(&bytes, b"data_2").unwrap() < contains(&bytes, b"enumerations").unwrap());
+        assert!(
+            contains(&bytes[entry + 1..], b"P.Mode(").is_none(),
+            "one entry per type"
+        );
     }
 
     /// The writer thread must leave byte for byte the file the direct path
@@ -655,8 +845,7 @@ mod tests {
     /// the threaded path is never taken.
     #[test]
     fn a_writer_thread_writes_the_same_file() {
-        let rows: Vec<f64> =
-            (0..500).flat_map(|i| [f64::from(i) * 0.01, f64::from(i * i)]).collect();
+        let rows: Vec<f64> = (0..500).flat_map(|i| [f64::from(i) * 0.01, f64::from(i * i)]).collect();
         let types = [ColTy::F64, ColTy::F64];
         for format in ["mat", "arrow", "csv", "plt"] {
             let mut written = Vec::new();
@@ -666,7 +855,17 @@ mod tests {
                     .to_string_lossy()
                     .into_owned();
                 let mut w = open_where(
-                    &path, format, signals(), &types, &[], &rows[..2], 0.0, 4.99, false, 0, threaded,
+                    &path,
+                    format,
+                    signals(),
+                    &types,
+                    &[],
+                    &rows[..2],
+                    0.0,
+                    4.99,
+                    false,
+                    0,
+                    threaded,
                 )
                 .expect("open");
                 for row in rows.chunks_exact(2) {

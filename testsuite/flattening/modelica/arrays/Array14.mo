@@ -12,7 +12,6 @@ model Array14
   parameter Integer m1 = size(a,1);
   parameter Integer n2 = size(b,1);
   parameter Integer m2 = size(b,2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array14;
 // Result:
 // class Array14
@@ -20,7 +19,5 @@ end Array14;
 //   parameter Integer m1 = 0;
 //   parameter Integer n2 = 2;
 //   parameter Integer m2 = 0;
-// equation
-//   b = {{}, {}};
 // end Array14;
 // endResult

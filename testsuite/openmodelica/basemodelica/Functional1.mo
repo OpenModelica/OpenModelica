@@ -37,7 +37,7 @@ end Functional1;
 //
 //   function 'f2'
 //     input Real 'x';
-//     output Real 'y' = 2.0 * 'x';
+//     output Real 'y' = 2.0*'x';
 //   end 'f2';
 //
 //   partial function 'PF'

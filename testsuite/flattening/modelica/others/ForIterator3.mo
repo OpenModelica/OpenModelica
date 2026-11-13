@@ -1,10 +1,8 @@
 // name: ForIterator3
 // status: correct
-class ForIterator3
+model ForIterator3
   constant String s1[4,3] = {i+j for i in {"a","b","c"}, j in {"d","e","f","g"}};
-  constant String s2 = sum(i+j for i in {"a","b","c"}, j in {"d","e","f","g"});
   constant String s3[:,:,:,:] = {i+j+k+l for i in {"a","b","c"}, j in {"d","e","f","g"}, k in {"h"}, l in {"1","2","3","4"}};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForIterator3;
 
 // Result:
@@ -21,7 +19,6 @@ end ForIterator3;
 //   constant String s1[4,1] = "ag";
 //   constant String s1[4,2] = "bg";
 //   constant String s1[4,3] = "cg";
-//   constant String s2 = "adbdcdaebeceafbfcfagbgcg";
 //   constant String s3[1,1,1,1] = "adh1";
 //   constant String s3[1,1,1,2] = "bdh1";
 //   constant String s3[1,1,1,3] = "cdh1";

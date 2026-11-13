@@ -15,6 +15,8 @@ model FuncBuiltinMatrix
   Real c[3,1] = matrix(v);
   Real s = 1;
   Real d[1,1] = matrix(s);
+  Real e[2,2,1];
+  Real f[2,2] = matrix(e);
 end FuncBuiltinMatrix;
 
 // Result:
@@ -52,6 +54,14 @@ end FuncBuiltinMatrix;
 //   Real c[3,1];
 //   Real s = 1.0;
 //   Real d[1,1];
+//   Real e[1,1,1];
+//   Real e[1,2,1];
+//   Real e[2,1,1];
+//   Real e[2,2,1];
+//   Real f[1,1];
+//   Real f[1,2];
+//   Real f[2,1];
+//   Real f[2,2];
 // equation
 //   x = {{1.0}};
 //   y = {{1.0}, {2.0}, {3.0}};
@@ -61,5 +71,6 @@ end FuncBuiltinMatrix;
 //   v = {1.0, 2.0, 3.0};
 //   c = {{v[1]}, {v[2]}, {v[3]}};
 //   d = {{s}};
+//   f = e[:,:,1];
 // end FuncBuiltinMatrix;
 // endResult

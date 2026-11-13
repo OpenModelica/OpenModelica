@@ -1,7 +1,6 @@
 // name: test_subSample
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 
 // base-clock partitions #1 (clocked partition): {vd, u, u2, u3}
@@ -22,9 +21,9 @@ model test_subSample
   Real f;
   parameter Real K = 20.0;
   parameter Real vref = 100.0;
-  discrete Real vd;
-  discrete Real u(start = 0.0);
-  discrete Real u2, u3;
+  Real vd;
+  Real u(start = 0.0);
+  Real u2, u3;
 equation
   vd = sample(v, Clock(0.01));
   u = K * (vref - vd);
@@ -58,9 +57,9 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE()  type: Real 
-// 2: v:STATE(1)(start = 0.0 fixed = true )  type: Real 
-// 3: x:STATE(1)(start = 1.0 fixed = true )  type: Real 
+// 1: f:VARIABLE()  type: Real
+// 2: v:STATE(1)(start = 0.0 fixed = true )  type: Real
+// 3: x:STATE(1)(start = 1.0 fixed = true )  type: Real
 //
 //
 // Equations (3, 3)
@@ -78,8 +77,8 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: u:DISCRETE(start = 0.0 )  type: Real 
-// 2: vd:DISCRETE()  type: Real 
+// 1: u:VARIABLE(start = 0.0 )  type: Real
+// 2: vd:VARIABLE()  type: Real
 //
 //
 // Equations (2, 2)
@@ -96,7 +95,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u2:DISCRETE()  type: Real 
+// 1: u2:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -112,7 +111,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u3:DISCRETE()  type: Real 
+// 1: u3:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -148,9 +147,9 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE()  type: Real 
-// 2: v:STATE(1)(start = 0.0 fixed = true )  type: Real 
-// 3: x:STATE(1,v)(start = 1.0 fixed = true )  type: Real 
+// 1: f:VARIABLE()  type: Real
+// 2: v:STATE(1)(start = 0.0 fixed = true )  type: Real
+// 3: x:STATE(1,v)(start = 1.0 fixed = true )  type: Real
 //
 //
 // Equations (3, 3)
@@ -180,8 +179,8 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: u:DISCRETE(start = 0.0 )  type: Real 
-// 2: vd:DISCRETE()  type: Real 
+// 1: u:VARIABLE(start = 0.0 )  type: Real
+// 2: vd:VARIABLE()  type: Real
 //
 //
 // Equations (2, 2)
@@ -198,7 +197,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u2:DISCRETE()  type: Real 
+// 1: u2:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -214,7 +213,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u3:DISCRETE()  type: Real 
+// 1: u3:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)

@@ -15,7 +15,6 @@ model RedeclareClass4
   package P = PP;
   model M = A(redeclare package P = P);
   M m;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareClass4;
 
 // Result:

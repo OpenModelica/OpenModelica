@@ -9,7 +9,7 @@ use super::*;
 /// `wasm-merge` is an external tool, absent in the omc wasm build.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn emit_standalone_module(sim_code: &SimCode::SimCode) -> Result<Vec<u8>> {
-    let model = build_sim_model(sim_code, false, ExtHost::Wasm, "", "")?;
+    let model = build_sim_model(sim_code, false, ExtHost::Wasm, Eh::Exnref, "", "")?;
     merge_standalone(&model.wasm)
 }
 

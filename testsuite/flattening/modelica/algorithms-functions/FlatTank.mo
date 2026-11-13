@@ -42,7 +42,6 @@ equation
   error    = ref - h;
   der(x)   = error/T;
   outCtr   = K*(error + x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlatTank;
 
 // insert expected flat file here. Can be done by issuing the command
@@ -101,7 +100,7 @@ end FlatTank;
 //   assert(minV >= 0.0, "minV must be greater or equal to zero");
 //   der(h) = (qInflow - qOutflow) / area;
 //   qInflow = if time > 150.0 then 3.0 * flowLevel else flowLevel;
-//   qOutflow = limitValue(minV, maxV, (-flowGain) * outCtr);
+//   qOutflow = limitValue(minV, maxV, -flowGain * outCtr);
 //   error = ref - h;
 //   der(x) = error / T;
 //   outCtr = K * (error + x);

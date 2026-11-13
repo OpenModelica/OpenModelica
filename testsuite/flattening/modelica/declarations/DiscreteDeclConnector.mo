@@ -6,23 +6,23 @@
 //
 
 connector DiscreteConnector
-  Real r;
-  flow Real f;
+  output Real r;
 end DiscreteConnector;
 
-class DiscreteDeclConnector
+model DiscreteDeclConnector
   discrete DiscreteConnector dc;
 equation
-  dc.r = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  when initial() then
+    dc.r = 1.0;
+  end when;
 end DiscreteDeclConnector;
 
 // Result:
 // class DiscreteDeclConnector
-//   discrete Real dc.r;
-//   discrete Real dc.f;
+//   discrete output Real dc.r;
 // equation
-//   dc.r = 1.0;
-//   dc.f = 0.0;
+//   when initial() then
+//     dc.r = 1.0;
+//   end when;
 // end DiscreteDeclConnector;
 // endResult

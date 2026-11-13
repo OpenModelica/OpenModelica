@@ -15,7 +15,6 @@ model AssignmentToInput
 algorithm
   x := 2;
   m.x := x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentToInput;
 
 // Result:

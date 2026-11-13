@@ -6,12 +6,11 @@
 // gives integer output with integer input.
 //
 
-class Real2Integer3
+model Real2Integer3
   Integer n1, n2;
 algorithm
   n1 := integer(6.6);
   n2 := div(n1,2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Real2Integer3;
 
 // Result:

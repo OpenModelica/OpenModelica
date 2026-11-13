@@ -1,0 +1,31 @@
+// name: CheckModel5
+// keywords:
+// status: correct
+//
+
+loadString("
+  block B
+    input Real u1;
+    input Real u2;
+    output Real y;
+    parameter Real k1 = 1.0;
+    parameter Real k2 = 1.0;
+  equation
+    y = k1*u1 + k2*u2;
+  end B;
+
+  model M
+    B b;
+  end M;
+");
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// "Check of M completed successfully.
+// Class M has 1 equation(s) and 3 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// endResult

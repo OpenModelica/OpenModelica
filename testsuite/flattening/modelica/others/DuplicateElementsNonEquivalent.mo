@@ -10,16 +10,12 @@ end Crap;
 model DuplicateElementsNonEquivalent
  Crap.Y x;
  Crap.X x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DuplicateElementsNonEquivalent;
 
 // Result:
 // Error processing file: DuplicateElementsNonEquivalent.mo
-// [flattening/modelica/others/DuplicateElementsNonEquivalent.mo:12:2-12:10:writable] Notification: From here:
-// [flattening/modelica/others/DuplicateElementsNonEquivalent.mo:11:2-11:10:writable] Error: Duplicate elements (due to inherited elements) not identical:
-//   first element is:  Crap.X x
-//   second element is: Crap.Y x
-// Error: Error occurred while flattening model DuplicateElementsNonEquivalent
+// [flattening/modelica/others/DuplicateElementsNonEquivalent.mo:11:2-11:10:writable] Notification: From here:
+// [flattening/modelica/others/DuplicateElementsNonEquivalent.mo:12:2-12:10:writable] Error: An element with name x is already declared in this scope.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

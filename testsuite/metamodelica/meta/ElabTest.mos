@@ -1,4 +1,4 @@
-setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+// cflags: +g=MetaModelica +d=rml
 
 runScript("LoadCompilerSources.mos");
 getErrorString();

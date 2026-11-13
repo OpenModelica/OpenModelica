@@ -2,7 +2,6 @@
 // keywords: jacobian differentiation linearization
 // status:   correct
 // teardown_command: rm -rf SortTest* output.log
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"4.1.0"});getErrorString();
@@ -32,7 +31,7 @@ list(linearized_model);
 // true
 // record SimulationResult
 //     resultFile = "SortTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SortTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SortTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 1.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -50,8 +49,8 @@ list(linearized_model);
 //   parameter Real u0[m] = {0};
 //   parameter Real A[n, n] = [-0.9425769139614785];
 //   parameter Real B[n, m] = [1];
-//   parameter Real C[p, n] = [0; 0; 0; -1.878100615247845];
-//   parameter Real D[p, m] = [1; 0; 0; 0];
+//   parameter Real C[p, n] = [0; -1.878100615247845; 0; 0];
+//   parameter Real D[p, m] = [0; 0; 1; 0];
 //   Real x[n](start = x0);
 //   input Real u[m](start = u0);
 //   output Real y[p];

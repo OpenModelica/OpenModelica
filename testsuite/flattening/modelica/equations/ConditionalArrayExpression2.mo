@@ -14,12 +14,11 @@ equation
      c[1] = 2;
      c[2] = 4;
   end if;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConditionalArrayExpression2;
 
 // Result:
 // class ConditionalArrayExpression2
-//   Real a = 4.0 * time;
+//   Real a = time * 4.0;
 //   Real b = 2.0;
 //   Real c[1];
 //   Real c[2];
@@ -27,13 +26,13 @@ end ConditionalArrayExpression2;
 //   Real e;
 // equation
 //   d = if a > b then c[1] else e;
-//   e = if a > b then c[2] else 1.0 + 2.0 * d;
+//   e = if a > b then c[2] else d * 2.0 + 1.0;
 //   if time < 0.5 then
-//   c[1] = 1.0;
-//   c[2] = 0.0;
+//     c[1] = 1.0;
+//     c[2] = 0.0;
 //   else
-//   c[1] = 2.0;
-//   c[2] = 4.0;
+//     c[1] = 2.0;
+//     c[2] = 4.0;
 //   end if;
 // end ConditionalArrayExpression2;
 // endResult

@@ -8,7 +8,6 @@ model M
 end M;
 
 model M
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:
@@ -16,7 +15,7 @@ end M;
 // Failed to parse file: DoubleClassDeclaration1.mo!
 //
 // [flattening/modelica/declarations/DoubleClassDeclaration1.mo:7:1-8:6:writable] Notification: From here:
-// [flattening/modelica/declarations/DoubleClassDeclaration1.mo:10:1-12:6:writable] Error: An element with name M is already declared in this scope.
+// [flattening/modelica/declarations/DoubleClassDeclaration1.mo:10:1-11:6:writable] Error: An element with name M is already declared in this scope.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

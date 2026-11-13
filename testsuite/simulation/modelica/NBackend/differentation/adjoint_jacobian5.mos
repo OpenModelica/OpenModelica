@@ -54,9 +54,9 @@ buildModel(AlgorithmSSATest); getErrorString();
 //   (5) a := $START.a
 //   (4) b := $START.b
 //   (3) Algorithm
-//   v := x * x;
+//   v := x*x;
 //   x := sin(v);
-//   x := 3.0 * x;
+//   x := 3.0*x;
 //   (2) $DER.a := x - a
 //   (1) $DER.b := v - b
 //
@@ -122,9 +122,9 @@ buildModel(AlgorithmSSATest); getErrorString();
 //   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
 //   (9) Algorithm
 //   $pDER_ODE_JAC_ADJ.x_2 := $pDER_ODE_JAC_ADJ.x;
-//   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0 * $pDER_ODE_JAC_ADJ.x_2;
-//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $pDER_ODE_JAC_ADJ.x_1 * cos(v);
-//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + ($pDER_ODE_JAC_ADJ.v * x + $pDER_ODE_JAC_ADJ.v * x);
+//   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0*$pDER_ODE_JAC_ADJ.x_2;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $pDER_ODE_JAC_ADJ.x_1*cos(v);
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + ($pDER_ODE_JAC_ADJ.v*x + $pDER_ODE_JAC_ADJ.v*x);
 //
 // Resizable Sparsity Pattern
 // ----------------------------

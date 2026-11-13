@@ -57,6 +57,7 @@ public
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import Variable = NFVariable;
+  import DataReconciliation = NBDataReconciliation;
   import Jacobian = NBJacobian;
   import Partition = NBPartition;
 
@@ -300,6 +301,7 @@ public
   uniontype Sparsity
     record SPARSITY
       list<SparsityRow> rows;
+      Boolean resizable "the model has variables with resizable dimensions";
     end SPARSITY;
 
     record EMPTY
@@ -309,6 +311,7 @@ public
       input Adjacency.Matrix mat;
       input list<SimVar> resVars;
       input Boolean isAdjoint;
+      input Boolean resizable;
       output Sparsity sparsity;
     protected
       list<SparsityRow> rows;
@@ -322,7 +325,7 @@ public
           if not isAdjoint then
             rows := SparsityRow.sortByResultVars(rows, resVars);
           end if;
-        then SPARSITY(rows);
+        then SPARSITY(rows, resizable);
         case Adjacency.EMPTY() then EMPTY();
 
         else algorithm
@@ -336,7 +339,7 @@ public
       output OldSimCode.Sparsity oldsparsity;
     algorithm
       oldsparsity := match sparsity
-        case SPARSITY() then OldSimCode.SPARSITY(list(SparsityRow.convert(row) for row in sparsity.rows));
+        case SPARSITY() then OldSimCode.SPARSITY(list(SparsityRow.convert(row) for row in sparsity.rows), sparsity.resizable);
         case EMPTY() then OldSimCode.EMPTY();
       end match;
     end convert;
@@ -478,7 +481,6 @@ public
       simJacobian := match jacobian
         local
           // dummy map for strong component creation (no alias possible here)
-          UnorderedMap<ComponentRef, SimVar> dummy_sim_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, SimStrongComponent.Block> dummy_eqn_map = UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
@@ -493,19 +495,6 @@ public
           UnorderedMap<ComponentRef, SimVar> min_sv_map;
 
         case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
-          // temporarily save the generic call map from simcode to recover it afterwards
-          // we use a local map to have seperated generic call lists for each jacobian
-          sim_map := indices.generic_call_map;
-          indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
-          for i in arrayLength(jacobian.comps):-1:1 loop
-            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBPartition.Kind.JAC, dummy_sim_map, dummy_eqn_map);
-            columnEqns := columnEqn :: columnEqns;
-          end for;
-
-          // extract generic loop calls and put the old generic call map back
-          generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
-          indices.generic_call_map := sim_map;
-
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
             seed_lst := VariablePointers.toList(VariablePointers.scalarize(varData.seedVars));
             res_lst  := VariablePointers.toList(VariablePointers.scalarize(varData.resultVars));
@@ -516,8 +505,9 @@ public
             tmp_lst  := VariablePointers.toList(varData.tmpVars);
           end if;
 
-          // the runtime reads column and row i of the ODE Jacobian as state i
-          if jacobian.jacType == NBJacobian.JacobianType.ODE and not jacobian.isAdjoint then
+          // the runtime reads column and row i of the ODE Jacobian as state i, also for the
+          // adjoint one (seeds der(x), results x) whose pattern is mapped onto the forward one
+          if jacobian.jacType == NBJacobian.JacobianType.ODE then
             seed_lst := sortByStateIndex(seed_lst, simcode_map);
             res_lst  := sortByStateIndex(res_lst, simcode_map);
           end if;
@@ -531,9 +521,10 @@ public
           tmpVars  := SimVar.createList(tmp_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars) + listLength(tmpVars));
-          SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
-          SimCodeUtil.addListSimCodeMap(resVars, jac_map);
-          SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
+          for var in List.flatten({seedVars, resVars, tmpVars}) loop
+            var.matrixName := SOME(jacobian.name);
+            UnorderedMap.add(var.name, var, jac_map);
+          end for;
 
           // For per-element seed groups that start above index [1] (partial-slice
           // NLS iter vars), add a virtual SimVar keyed on the base cref (no
@@ -593,6 +584,19 @@ public
             end match;
           end for;
 
+          // temporarily save the generic call map from simcode to recover it afterwards
+          // we use a local map to have seperated generic call lists for each jacobian
+          sim_map := indices.generic_call_map;
+          indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
+          for i in arrayLength(jacobian.comps):-1:1 loop
+            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBPartition.Kind.JAC, jac_map, dummy_eqn_map);
+            columnEqns := columnEqn :: columnEqns;
+          end for;
+
+          // extract generic loop calls and put the old generic call map back
+          generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
+          indices.generic_call_map := sim_map;
+
           jac := SIM_JAC(
             name                = jacobian.name,
             jacobianIndex       = indices.jacobianIndex,
@@ -602,7 +606,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint, indices.resizable),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,
@@ -754,6 +758,29 @@ public
       end if;
     end createOptimizationJacobian;
 
+    function createDataReconciliationJacobian
+      input Option<DataReconciliation.ReconciliationData> data_opt;
+      output SimJacobian simJac;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    protected
+      Option<SimJacobian> simJac_opt = NONE();
+    algorithm
+      (simJac_opt, simCodeIndices) := match data_opt
+        local
+          BackendDAE jacobian;
+        case SOME(DataReconciliation.RECONCILIATION_DATA(jacobian = SOME(jacobian)))
+        then SimJacobian.create(jacobian, simCodeIndices, simcode_map);
+        else (NONE(), simCodeIndices);
+      end match;
+
+      if isSome(simJac_opt) then
+        SOME(simJac) := simJac_opt;
+      else
+        (simJac, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
+      end if;
+    end createDataReconciliationJacobian;
+
     function empty
       input String name = "";
       output SimJacobian emptyJac = EMPTY_SIM_JAC;
@@ -803,6 +830,38 @@ public
         then fail();
       end match;
     end getJacobianHT;
+
+    function mapExp
+      input output SimJacobian jacobian;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      jacobian := match jacobian
+        case SIM_JAC() algorithm
+          jacobian.columnEqns := list(SimStrongComponent.Block.mapShallow(blck, func) for blck in jacobian.columnEqns);
+          jacobian.constantEqns := list(SimStrongComponent.Block.mapShallow(blck, func) for blck in jacobian.constantEqns);
+          jacobian.generic_loop_calls := list(SimGenericCall.mapShallow(call, func) for call in jacobian.generic_loop_calls);
+        then jacobian;
+        else jacobian;
+      end match;
+    end mapExp;
+
+    function mapGenericCalls
+      input output SimJacobian jacobian;
+      input callFunc func;
+      partial function callFunc
+        input output SimGenericCall call;
+      end callFunc;
+    algorithm
+      jacobian := match jacobian
+        case SIM_JAC() algorithm
+          jacobian.generic_loop_calls := list(func(call) for call in jacobian.generic_loop_calls);
+        then jacobian;
+        else jacobian;
+      end match;
+    end mapGenericCalls;
 
     function convert
       input SimJacobian simJac;
@@ -984,7 +1043,7 @@ public
     end match;
   end stripRootNode;
 
-  protected function crefFlatOffset
+  public function crefFlatOffset
     "Compute the 0-based flat array index encoded by all integer subscripts in
      the cref chain, using row-major (C-style) layout. For example, x[2][1] in
      a 10×10 array returns (2-1)*10 + (1-1) = 10. Used to compute the virtual

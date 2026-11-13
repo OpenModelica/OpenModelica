@@ -3,7 +3,6 @@
 //! calls it from the loops (`CodegenC.tpl:equationGenericAssign`); here it is
 //! inlined, the way `SES_IFEQUATION` inlines its branches.
 
-
 use metamodelica::Result;
 
 use openmodelica_backend_types::BackendDAE;
@@ -25,11 +24,7 @@ pub(crate) fn emit_resizable_assign(
 }
 
 /// `SES_GENERIC_ASSIGN`: run call `call_index` for each index in `scal_indices`.
-pub(crate) fn emit_generic_assign(
-    ctx: &mut FnCtx,
-    call_index: i32,
-    scal_indices: &List<i32>,
-) -> Result<()> {
+pub(crate) fn emit_generic_assign(ctx: &mut FnCtx, call_index: i32, scal_indices: &List<i32>) -> Result<()> {
     let call = lookup_call(ctx, call_index)?;
     let indices: Vec<i32> = (&**scal_indices).into_iter().copied().collect();
     let iters: Vec<BackendDAE::SimIterator> = (&**call_iters(&call)).into_iter().cloned().collect();
@@ -52,7 +47,11 @@ pub(crate) fn emit_entwined_assign(
             .get(usize::try_from(*slot).map_err(|_| "CodegenWasmJit: negative entwined call index")?)
             .ok_or("CodegenWasmJit: entwined call order names a missing call")?;
         match &**eq {
-            E::SES_GENERIC_ASSIGN { call_index, scal_indices, .. } => {
+            E::SES_GENERIC_ASSIGN {
+                call_index,
+                scal_indices,
+                ..
+            } => {
                 let n = &mut consumed[*slot as usize];
                 let idx = (&**scal_indices)
                     .into_iter()
@@ -69,6 +68,196 @@ pub(crate) fn emit_entwined_assign(
             other => crate::CodegenWasmJit::lower_equation(ctx, other, eq_index)?,
         }
     }
+    Ok(())
+}
+
+/// `SES_ENTWINED_ASSIGN` with a `direction`: `call_order` is one period `k` and
+/// each call runs its equation's body for `i = direction * k + offset` if `i` is
+/// within its bounds, like `CodegenC.tpl:equationEntwinedAssign`. A scalar call
+/// runs before or after the call of its period entry for one iteration value,
+/// relative to the start (`position >= 0`) or stop of that entry's range.
+pub(crate) fn emit_resizable_entwined_assign(
+    ctx: &mut FnCtx,
+    call_order: &List<i32>,
+    single_calls: &List<metamodelica::Ref<SimCode::SimEqSystem>>,
+    direction: i32,
+    offsets: &List<i32>,
+    shifts: (&List<i32>, &List<i32>),
+    scalars: (&List<i32>, &List<i32>, &List<i32>, &List<bool>),
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
+) -> Result<()> {
+    use SimCode::SimEqSystem as E;
+    use we::Instruction as I;
+    let start_shifts: Vec<i32> = (&**shifts.0).into_iter().copied().collect();
+    let stop_shifts: Vec<i32> = (&**shifts.1).into_iter().copied().collect();
+    let single_calls: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = (&**single_calls).into_iter().cloned().collect();
+    // per scalar call: single call, period entry, position and whether it runs after the entry
+    let scalars: Vec<(usize, i32, i32, bool)> = (&**scalars.0)
+        .into_iter()
+        .zip((&**scalars.1).into_iter())
+        .zip((&**scalars.2).into_iter().zip((&**scalars.3).into_iter()))
+        .map(|((c, e), (p, a))| usize::try_from(*c).map(|c| (c, *e, *p, *a)))
+        .collect::<std::result::Result<_, _>>()
+        .map_err(|_| "CodegenWasmJit: negative entwined scalar call index")?;
+    if scalars.iter().any(|(c, ..)| *c >= single_calls.len()) {
+        return Err("CodegenWasmJit: entwined scalar call names a missing call");
+    }
+    // per loop call: its body, iterator name and the locals of its range and bounds
+    let mut calls = Vec::new();
+    for (c, eq) in single_calls.iter().enumerate() {
+        if scalars.iter().any(|(sc, ..)| *sc == c) {
+            calls.push(None);
+            continue;
+        }
+        let E::SES_RESIZABLE_ASSIGN { call_index, iters, .. } = &**eq else {
+            return Err("CodegenWasmJit: resizable entwined call is no resizable assignment");
+        };
+        let iters: Vec<&BackendDAE::SimIterator> = (&**iters).into_iter().collect();
+        let [BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, stop, .. }] = iters.as_slice() else {
+            return Err("CodegenWasmJit: resizable entwined call needs a single range iterator");
+        };
+        let s = ctx.alloc_temp(WTy::I32);
+        let e = ctx.alloc_temp(WTy::I32);
+        let lo = ctx.alloc_temp(WTy::I32);
+        let hi = ctx.alloc_temp(WTy::I32);
+        let w = compile_exp(ctx, start)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(I::LocalTee(s));
+        ctx.emit(I::I32Const(
+            *start_shifts
+                .get(c)
+                .ok_or("CodegenWasmJit: missing entwined start shift")?,
+        ));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalSet(lo));
+        let w = compile_exp(ctx, stop)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(I::LocalTee(e));
+        ctx.emit(I::I32Const(
+            *stop_shifts
+                .get(c)
+                .ok_or("CodegenWasmJit: missing entwined stop shift")?,
+        ));
+        ctx.emit(I::I32Sub);
+        ctx.emit(I::LocalSet(hi));
+        calls.push(Some((lookup_call(ctx, *call_index)?, (*name).clone(), (s, e), lo, hi)));
+    }
+    let period: Vec<(usize, i32)> = (&**call_order)
+        .into_iter()
+        .zip((&**offsets).into_iter())
+        .map(|(c, o)| usize::try_from(*c).map(|c| (c, *o)))
+        .collect::<std::result::Result<_, _>>()
+        .map_err(|_| "CodegenWasmJit: negative entwined call index")?;
+    if period.iter().any(|(c, _)| calls.get(*c).map_or(true, Option::is_none)) {
+        return Err("CodegenWasmJit: entwined call order names a missing call");
+    }
+    let loop_call = |c: usize| calls[c].as_ref().expect("checked above");
+
+    // the periods k_lo..k_hi cover every iteration, the calls check their bounds
+    let k_lo = ctx.alloc_temp(WTy::I32);
+    let k_hi = ctx.alloc_temp(WTy::I32);
+    let a = ctx.alloc_temp(WTy::I32);
+    let b = ctx.alloc_temp(WTy::I32);
+    let m = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(i32::MAX));
+    ctx.emit(I::LocalSet(k_lo));
+    ctx.emit(I::I32Const(i32::MIN));
+    ctx.emit(I::LocalSet(k_hi));
+    for (c, o) in &period {
+        let (_, _, _, lo, hi) = loop_call(*c);
+        ctx.emit(I::LocalGet(*lo));
+        ctx.emit(I::LocalGet(*hi));
+        ctx.emit(I::I32LeS);
+        ctx.emit(I::If(we::BlockType::Empty));
+        for (bound, local) in [(*lo, a), (*hi, b)] {
+            ctx.emit(I::LocalGet(bound));
+            ctx.emit(I::I32Const(*o));
+            ctx.emit(I::I32Sub);
+            ctx.emit(I::I32Const(direction));
+            ctx.emit(I::I32DivS);
+            ctx.emit(I::LocalSet(local));
+        }
+        // k_lo = min(k_lo, min(a, b) - 1), k_hi = max(k_hi, max(a, b) + 1)
+        for (target, less, delta) in [(k_lo, true, -1), (k_hi, false, 1)] {
+            let cmp = || if less { I::I32LtS } else { I::I32GtS };
+            ctx.emit(I::LocalGet(a));
+            ctx.emit(I::LocalGet(b));
+            ctx.emit(I::LocalGet(a));
+            ctx.emit(I::LocalGet(b));
+            ctx.emit(cmp());
+            ctx.emit(I::Select);
+            ctx.emit(I::I32Const(delta));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::LocalSet(m));
+            ctx.emit(I::LocalGet(m));
+            ctx.emit(I::LocalGet(target));
+            ctx.emit(I::LocalGet(m));
+            ctx.emit(I::LocalGet(target));
+            ctx.emit(cmp());
+            ctx.emit(I::Select);
+            ctx.emit(I::LocalSet(target));
+        }
+        ctx.emit(I::End);
+    }
+
+    let k = k_lo;
+    let it = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(k));
+    ctx.emit(I::LocalGet(k_hi));
+    ctx.emit(I::I32GtS);
+    ctx.emit(I::BrIf(1));
+    for (r, (c, o)) in period.iter().enumerate() {
+        let (call, name, (s, e), lo, hi) = loop_call(*c);
+        ctx.emit(I::LocalGet(k));
+        ctx.emit(I::I32Const(direction));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Const(*o));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalTee(it));
+        ctx.emit(I::LocalGet(*lo));
+        ctx.emit(I::I32GeS);
+        ctx.emit(I::LocalGet(it));
+        ctx.emit(I::LocalGet(*hi));
+        ctx.emit(I::I32LeS);
+        ctx.emit(I::I32And);
+        ctx.emit(I::If(we::BlockType::Empty));
+        for after in [false, true] {
+            if after {
+                let bound = bind_iter(ctx, name, it, SigTy::Int)?;
+                emit_call_body(ctx, call)?;
+                unbind_iter(ctx, bound);
+            }
+            for (sc, entry, position, sc_after) in &scalars {
+                if *entry != r as i32 || *sc_after != after {
+                    continue;
+                }
+                // i_ == s + position or i_ == e + position + 1
+                ctx.emit(I::LocalGet(it));
+                if *position < 0 {
+                    ctx.emit(I::LocalGet(*e));
+                    ctx.emit(I::I32Const(*position + 1));
+                } else {
+                    ctx.emit(I::LocalGet(*s));
+                    ctx.emit(I::I32Const(*position));
+                }
+                ctx.emit(I::I32Add);
+                ctx.emit(I::I32Eq);
+                ctx.emit(I::If(we::BlockType::Empty));
+                crate::CodegenWasmJit::lower_equation(ctx, &single_calls[*sc], eq_index)?;
+                ctx.emit(I::End);
+            }
+        }
+        ctx.emit(I::End);
+    }
+    ctx.emit(I::LocalGet(k));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(k));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End); // loop
+    ctx.emit(I::End); // block
     Ok(())
 }
 
@@ -101,7 +290,13 @@ pub(crate) fn emit_decoded_iters(
     for iter in iters {
         let it = ctx.alloc_temp(WTy::I32);
         let (name, size) = match iter {
-            BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, step, size, .. } => {
+            BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
+                name,
+                start,
+                step,
+                size,
+                ..
+            } => {
                 // it = step * (tmp % size) + start
                 let w = compile_exp(ctx, step)?;
                 coerce(ctx, w, WTy::I32);
@@ -116,7 +311,12 @@ pub(crate) fn emit_decoded_iters(
                 ctx.emit(I::LocalSet(it));
                 (name, size.clone())
             }
-            BackendDAE::SimIterator::SIM_ITERATOR_LIST { name, lst: values, size, .. } => {
+            BackendDAE::SimIterator::SIM_ITERATOR_LIST {
+                name,
+                lst: values,
+                size,
+                ..
+            } => {
                 let table = emit_const_int_table(ctx, &int_list(values))?;
                 ctx.emit(I::LocalGet(table));
                 ctx.emit(I::LocalGet(tmp));
@@ -189,15 +389,23 @@ pub(crate) fn emit_index_list_loop(
 /// A constant `Integer[:]` table as a module-wide object; leaves its element-data
 /// address in a fresh local.
 fn emit_const_int_table(ctx: &mut FnCtx, values: &[i32]) -> Result<u32> {
-    let array: List<metamodelica::Ref<DAE::Exp>> =
-        values.iter().map(|&v| metamodelica::Ref::new(DAE::Exp::ICONST { integer: v })).collect();
+    let array: List<metamodelica::Ref<DAE::Exp>> = values
+        .iter()
+        .map(|&v| metamodelica::Ref::new(DAE::Exp::ICONST { integer: v }))
+        .collect();
     let ty = metamodelica::Ref::new(DAE::Type::T_ARRAY {
-        ty: metamodelica::Ref::new(DAE::Type::T_INTEGER { varLst: metamodelica::nil() }),
+        ty: metamodelica::Ref::new(DAE::Type::T_INTEGER {
+            varLst: metamodelica::nil(),
+        }),
         dims: metamodelica::list![metamodelica::Ref::new(DAE::Dimension::DIM_INTEGER {
             integer: values.len() as i32
         })],
     });
-    let exp = DAE::Exp::ARRAY { ty, scalar: true, array };
+    let exp = DAE::Exp::ARRAY {
+        ty,
+        scalar: true,
+        array,
+    };
     let g = shared_lits::intern_const(&exp);
     let ptr = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::GlobalGet(g));
@@ -219,7 +427,10 @@ fn call_iters(call: &SimCode::SimGenericCall) -> &List<BackendDAE::SimIterator> 
     }
 }
 
-type SubIters = List<(metamodelica::Ref<DAE::ComponentRef>, metamodelica::Array<metamodelica::Ref<DAE::Exp>>)>;
+type SubIters = List<(
+    metamodelica::Ref<DAE::ComponentRef>,
+    metamodelica::Array<metamodelica::Ref<DAE::Exp>>,
+)>;
 
 fn iter_sub_iter(iter: &BackendDAE::SimIterator) -> &SubIters {
     use BackendDAE::SimIterator as S;
@@ -238,7 +449,14 @@ fn emit_loops(
     let Some((iter, rest)) = iters.split_first() else {
         return body(ctx);
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, step, stop, sub_iter, .. } = iter
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
+        name,
+        start,
+        step,
+        stop,
+        sub_iter,
+        ..
+    } = iter
     else {
         return emit_list_loop(ctx, iter, rest, body);
     };
@@ -287,7 +505,12 @@ fn emit_list_loop(
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
-    let BackendDAE::SimIterator::SIM_ITERATOR_LIST { name, lst: values, size, sub_iter } = iter
+    let BackendDAE::SimIterator::SIM_ITERATOR_LIST {
+        name,
+        lst: values,
+        size,
+        sub_iter,
+    } = iter
     else {
         return Err("CodegenWasmJit: for-equation iterator is neither a range nor a list");
     };
@@ -350,7 +573,10 @@ fn emit_in_range(ctx: &mut FnCtx, it: u32, start_l: u32, stop_l: u32) {
 /// C's `subIterator`: `name = name_arr[parent - 1]`.
 fn emit_sub_iters(
     ctx: &mut FnCtx,
-    sub_iter: &List<(metamodelica::Ref<DAE::ComponentRef>, metamodelica::Array<metamodelica::Ref<DAE::Exp>>)>,
+    sub_iter: &List<(
+        metamodelica::Ref<DAE::ComponentRef>,
+        metamodelica::Array<metamodelica::Ref<DAE::Exp>>,
+    )>,
     parent: u32,
 ) -> Result<Vec<IterBinding>> {
     use we::Instruction as I;
@@ -414,9 +640,7 @@ fn emit_call_body(ctx: &mut FnCtx, call: &SimCode::SimGenericCall) -> Result<()>
     use SimCode::SimGenericCall as G;
     match call {
         G::SINGLE_GENERIC_CALL { lhs, rhs, .. } => ctx.sim_assign(lhs, rhs),
-        G::IF_GENERIC_CALL { branches, .. } | G::WHEN_GENERIC_CALL { branches, .. } => {
-            emit_branches(ctx, branches)
-        }
+        G::IF_GENERIC_CALL { branches, .. } | G::WHEN_GENERIC_CALL { branches, .. } => emit_branches(ctx, branches),
     }
 }
 

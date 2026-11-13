@@ -61,6 +61,7 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
 #include "Modeling/DocumentationWidget.h"
+#include "Modeling/ClassDiagramWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #include "Util/Helper.h"
@@ -69,6 +70,7 @@
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
+#include "OMUQ/OMUQOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
 #include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
@@ -368,7 +370,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 #ifdef Q_OS_WIN
     _wfreopen((wchar_t*)errorFileName.utf16(), L"w", stderr);
 #else
-    freopen(outputFileName.toUtf8().constData(), "w", stderr);
+    freopen(errorFileName.toUtf8().constData(), "w", stderr);
 #endif
     setbuf(stderr, NULL); // used non-buffered stderr
   }
@@ -1165,6 +1167,9 @@ void MainWindow::beforeClosingMainWindow()
     }
   }
   mTransformationsWidgetHash.clear();
+  /* delete the ClassDiagramWindow, its web pages must go before the web engine profile does, at exit. */
+  delete mpClassDiagramWindow;
+  mpClassDiagramWindow = nullptr;
 #if !defined(__EMSCRIPTEN__)
   /* save stackframes list and locals columns width */
   pSettings->beginGroup("algorithmicDebugger");
@@ -1680,7 +1685,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   const bool wasmTarget = targetLanguage.compare("wasm") == 0 || targetLanguage.compare("wasm-jit") == 0;
   if (!wasmTarget && targetLanguage.compare("C") != 0 && targetLanguage.compare("Cpp") != 0) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b>, <b>Cpp</b>, <b>wasm</b> and <b>wasm-jit</b> are supported").arg(targetLanguage),
-                                                                  tr("FMU_EXPORT Failed"), Helper::errorLevel));
+                                                                  Helper::scriptingKind, Helper::errorLevel));
     return;
   }
 
@@ -2123,6 +2128,21 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   pTransformationsWidget->activateWindow();
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
+}
+
+/*!
+ * \brief MainWindow::showClassDiagramWidget
+ * Shows the class diagram of a class, or the diagram of a CRML file, in a tab of the Class Diagram window.
+ * \param className - the class, or the file name of the CRML file.
+ * \param crml
+ * \return
+ */
+ClassDiagramWidget *MainWindow::showClassDiagramWidget(const QString &className, bool crml)
+{
+  if (!mpClassDiagramWindow) {
+    mpClassDiagramWindow = new ClassDiagramWindow;
+  }
+  return mpClassDiagramWindow->showClassDiagram(className, crml);
 }
 
 /*!
@@ -3217,6 +3237,45 @@ void MainWindow::tileSubWindowsVertically()
 }
 
 /*!
+ * \brief MainWindow::tileSubWindowsMatrix
+ * Slot activated when mpTileWindowsMatrixAction triggered signal is raised.\n
+ * Arranges all child windows in a matrix pattern.
+ */
+void MainWindow::tileSubWindowsMatrix()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      tileSubWindowsMatrix(mpModelWidgetContainer, true);
+      break;
+    case 2:
+      tileSubWindowsMatrix(mpPlotWindowContainer, true);
+    default:
+      break;
+  }
+}
+
+/*!
+ * \brief MainWindow::equateAndTileSubWindowsMatrix
+ * Slot activated when mpEquateAndTileWindowsMatrixAction triggered signal is raised.\n
+ * Sets the size of all child windows to the size of the active window and then
+ * arranges them in a matrix pattern without changing the equated sizes.
+ */
+void MainWindow::equateAndTileSubWindowsMatrix()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      equateSubWindowSizes(mpModelWidgetContainer);
+      tileSubWindowsMatrix(mpModelWidgetContainer, false);
+      break;
+    case 2:
+      equateSubWindowSizes(mpPlotWindowContainer);
+      tileSubWindowsMatrix(mpPlotWindowContainer, false);
+    default:
+      break;
+  }
+}
+
+/*!
  * \brief MainWindow::toggleTabOrSubWindowView
  * Slot activated when mpToggleTabOrSubWindowView triggered signal is raised.\n
  * Toggles between tab or sub-window view mode.
@@ -3517,6 +3576,52 @@ bool MainWindow::openInstallLibraryDialog()
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
   return returnValue;
+}
+
+/*!
+ * \brief installLibraryFromPath
+ * Asks which packages of a .mo file, a .zip file or a directory to install, and installs them.
+ */
+static void installLibraryFromPath(QWidget *pParent, const QString &path)
+{
+  const QString librariesDirectory = QFileInfo(MainWindow::instance()->getLibraryIndexFilePath()).absolutePath();
+  InstallLibraryFromPathDialog *pDialog = new InstallLibraryFromPathDialog(path, librariesDirectory, pParent);
+  if (pDialog->hasPackages()) {
+    pDialog->exec();
+  } else {
+    delete pDialog;
+    QMessageBox::information(pParent, QString("%1 - %2").arg(Helper::applicationName, Helper::installLibrary),
+                             MainWindow::tr("There is no package to install in <b>%1</b>.").arg(path.toHtmlEscaped()), QMessageBox::Ok);
+  }
+}
+
+/*!
+ * \brief MainWindow::installLibraryFromFile
+ * Installs the packages of a .mo or .zip file.
+ */
+void MainWindow::installLibraryFromFile()
+{
+  const QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL,
+                                                          tr("Modelica Packages (*.mo *.zip)"), NULL);
+  if (!fileName.isEmpty()) {
+    installLibraryFromPath(this, fileName);
+  }
+}
+
+/*!
+ * \brief MainWindow::installLibraryFromDirectory
+ * Installs the packages of a directory.
+ */
+void MainWindow::installLibraryFromDirectory()
+{
+#if defined(__EMSCRIPTEN__)
+  const QString dir = WasmLocalFiles::openFolder();
+#else
+  const QString dir = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseDirectory), NULL);
+#endif
+  if (!dir.isEmpty()) {
+    installLibraryFromPath(this, dir);
+  }
 }
 
 /*!
@@ -3833,7 +3938,7 @@ void MainWindow::runOMSensPlugin()
   if (!mpOMSensPlugin) {
     // load OMSens plugin
 #ifdef Q_OS_MAC
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on MacOS"), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on macOS"), Helper::scriptingKind, Helper::errorLevel));
     return;
   }
 #else
@@ -4381,18 +4486,24 @@ void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &n
   MessageTab *pMessageTab = createMessageTab(name, false);
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(pSimulationOutputTab);
   if (pSimulationOutputWidget) {
-    connect(pSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
-    connect(pSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+    connect(pSimulationOutputWidget, &SimulationOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+    connect(pSimulationOutputWidget, &SimulationOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
   } else {
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(pSimulationOutputTab);
     if (pOMSSimulationOutputWidget) {
-      connect(pOMSSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
-      connect(pOMSSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+      connect(pOMSSimulationOutputWidget, &OMSSimulationOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+      connect(pOMSSimulationOutputWidget, &OMSSimulationOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
     } else {
       CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(pSimulationOutputTab);
       if (pCRMLTranslatorOutputWidget) {
-        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
-        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+        connect(pCRMLTranslatorOutputWidget, &CRMLTranslatorOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+        connect(pCRMLTranslatorOutputWidget, &CRMLTranslatorOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
+      } else {
+        OMUQOutputWidget *pOMUQOutputWidget = qobject_cast<OMUQOutputWidget*>(pSimulationOutputTab);
+        if (pOMUQOutputWidget) {
+          connect(pOMUQOutputWidget, &OMUQOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+          connect(pOMUQOutputWidget, &OMUQOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
+        }
       }
     }
   }
@@ -4706,7 +4817,7 @@ void MainWindow::createActions()
   connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
   // import FMU model description action
   mpImportFMUModelDescriptionAction = new QAction(tr("FMU Model Description"), this);
-  mpImportFMUModelDescriptionAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMU) model description"));
+  mpImportFMUModelDescriptionAction->setStatusTip(tr("Imports the model from the model description of a Functional Mock-up Unit (FMU)"));
   connect(mpImportFMUModelDescriptionAction, SIGNAL(triggered()), SLOT(importFMUModelDescription()));
   // import from OMNotebook action
   mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), tr("From OMNotebook"), this);
@@ -4731,7 +4842,7 @@ void MainWindow::createActions()
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
   // export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
-  mpExportReadonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
   connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
   // export encrypted package action
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
@@ -4756,6 +4867,12 @@ void MainWindow::createActions()
   mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
+  mpInstallLibraryFromFileAction = new QAction(tr("Install Library From File..."), this);
+  mpInstallLibraryFromFileAction->setStatusTip(tr("Installs the libraries of a .mo or .zip file"));
+  connect(mpInstallLibraryFromFileAction, SIGNAL(triggered()), SLOT(installLibraryFromFile()));
+  mpInstallLibraryFromDirectoryAction = new QAction(tr("Install Library From Directory..."), this);
+  mpInstallLibraryFromDirectoryAction->setStatusTip(tr("Installs the libraries of a directory"));
+  connect(mpInstallLibraryFromDirectoryAction, SIGNAL(triggered()), SLOT(installLibraryFromDirectory()));
   // upgrade installed libraries action
   mpUpgradeInstalledLibrariesAction = new QAction(Helper::upgradeInstalledLibraries, this);
   mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
@@ -4849,6 +4966,16 @@ void MainWindow::createActions()
   mpTileWindowsVerticallyAction = new QAction(tr("Tile Windows Vertically"), this);
   mpTileWindowsVerticallyAction->setStatusTip(tr("Arranges all child windows in a vertically tiled pattern"));
   connect(mpTileWindowsVerticallyAction, SIGNAL(triggered()), SLOT(tileSubWindowsVertically()));
+  // Tile windows Matrix action
+  mpTileWindowsMatrixAction = new QAction(tr("Tile Windows Matrix"), this);
+  mpTileWindowsMatrixAction->setStatusTip(tr("Arranges all child windows in a matrix pattern"));
+  mpTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Shift+M"));
+  connect(mpTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(tileSubWindowsMatrix()));
+  // Equate windows and tile them in a matrix action
+  mpEquateAndTileWindowsMatrixAction = new QAction(tr("Equate && Tile Windows Matrix"), this);
+  mpEquateAndTileWindowsMatrixAction->setStatusTip(tr("Equates the size of all child windows to the size of active window and arranges them in a matrix pattern"));
+  mpEquateAndTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Shift+E"));
+  connect(mpEquateAndTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(equateAndTileSubWindowsMatrix()));
   // Toggle between tab or sub-window view
   mpToggleTabOrSubWindowView = new QAction(tr("Toggle Tab/Sub-window View"), this);
   mpToggleTabOrSubWindowView->setStatusTip(tr("Toggle between tab or sub-window view mode"));
@@ -4866,7 +4993,7 @@ void MainWindow::createActions()
   connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
-  mpInstantiateModelAction->setStatusTip(tr("Instantiates the modelica model"));
+  mpInstantiateModelAction->setStatusTip(tr("Instantiates the Modelica model"));
   mpInstantiateModelAction->setEnabled(false);
   connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
   // simulation setup action
@@ -5208,6 +5335,8 @@ void MainWindow::createMenus()
   pManageLibrariesMenu->setTitle(tr("&Manage Libraries"));
   // add actions to manage libraries
   pManageLibrariesMenu->addAction(mpInstallLibraryAction);
+  pManageLibrariesMenu->addAction(mpInstallLibraryFromFileAction);
+  pManageLibrariesMenu->addAction(mpInstallLibraryFromDirectoryAction);
   pManageLibrariesMenu->addAction(mpUpgradeInstalledLibrariesAction);
   pManageLibrariesMenu->addAction(mpUpdateLibraryIndexAction);
   mpFileMenu->addMenu(pManageLibrariesMenu);
@@ -5290,6 +5419,8 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpCascadeWindowsAction);
   pViewWindowsMenu->addAction(mpTileWindowsHorizontallyAction);
   pViewWindowsMenu->addAction(mpTileWindowsVerticallyAction);
+  pViewWindowsMenu->addAction(mpTileWindowsMatrixAction);
+  pViewWindowsMenu->addAction(mpEquateAndTileWindowsMatrixAction);
   pViewMenu->addAction(pViewToolbarsMenu->menuAction());
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
   pViewMenu->addSeparator();
@@ -5367,7 +5498,7 @@ void MainWindow::createMenus()
   pGitMenu->setTitle(tr("&Git"));
   // Traceability actions
   QMenu *pTraceabilityMenu = new QMenu(menuBar());
-  pTraceabilityMenu->setObjectName(tr("TraceabilityMenu"));
+  pTraceabilityMenu->setObjectName("TraceabilityMenu");
   pTraceabilityMenu->setTitle(tr("Traceability"));
   // add actions to Git menu
   pGitMenu->addAction(mpCreateGitRepositoryAction);
@@ -5663,6 +5794,97 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
   }
 }
 
+/*!
+ * \brief MainWindow::tileSubWindowsMatrix
+ * Arranges all child windows in a matrix pattern. When resize is true the tiles are resized to fill the matrix,
+ * otherwise the windows keep their sizes and are positioned using their dimensions.
+ * \param pMdiArea - the subwindows parent mdi area.
+ * \param resize
+ */
+void MainWindow::tileSubWindowsMatrix(QMdiArea *pMdiArea, bool resize)
+{
+  QList<QMdiSubWindow*> subWindowsList = pMdiArea->subWindowList(QMdiArea::ActivationHistoryOrder);
+  if (subWindowsList.count() < 2) {
+    pMdiArea->tileSubWindows();
+    return;
+  }
+  // Only the visible windows are tiled.
+  QList<QMdiSubWindow*> tilesList;
+  foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
+    if (pSubWindow->isVisible() && (!pSubWindow->isMinimized() || pSubWindow->isShaded())) {
+      tilesList.append(pSubWindow);
+    }
+  }
+  if (tilesList.count() < 2) {
+    pMdiArea->tileSubWindows();
+    return;
+  }
+  // Use as many columns as fit in a square grid: 4 tiles make 2x2, 6 make 2x3, 9 make 3x3 and 12 make 3x4.
+  int columns = 1;
+  while (columns * columns < tilesList.count()) {
+    ++columns;
+  }
+  const int rows = (tilesList.count() + columns - 1) / columns;
+  const int tileWidth = pMdiArea->width() / columns;
+  const int tileHeight = pMdiArea->height() / rows;
+  QPoint position(0, 0);
+  int tile = 0;
+  for (int i = tilesList.size() - 1 ; i >= 0 ; i--) {
+    QMdiSubWindow *pSubWindow = tilesList[i];
+    if (pSubWindow->isMaximized() || pSubWindow->isShaded()) {
+      pSubWindow->showNormal();
+    }
+    const int row = tile / columns;
+    const int column = tile % columns;
+    if (resize) {
+      // The tiles of the last column and row take up the space lost to the integer division.
+      const int width = qMax(pSubWindow->minimumSizeHint().width(), column == columns - 1 ? pMdiArea->width() - column * tileWidth : tileWidth);
+      const int height = qMax(pSubWindow->minimumSizeHint().height(), row == rows - 1 ? pMdiArea->height() - row * tileHeight : tileHeight);
+      pSubWindow->setGeometry(position.x(), position.y(), width, height);
+      if (column == columns - 1) {
+        position.setX(0);
+        position.setY(position.y() + height);
+      } else {
+        position.setX(position.x() + width);
+      }
+    } else {
+      pSubWindow->move(column * pSubWindow->width(), row * pSubWindow->height());
+    }
+    tile++;
+  }
+}
+
+/*!
+ * \brief MainWindow::equateSubWindowSizes
+ * Sets the size of all child windows to the size of the active window.
+ * \param pMdiArea - the subwindows parent mdi area.
+ */
+void MainWindow::equateSubWindowSizes(QMdiArea *pMdiArea)
+{
+  QMdiSubWindow *pActiveSubWindow = pMdiArea->activeSubWindow();
+  if (!pActiveSubWindow) {
+    return;
+  }
+  // A maximized active window equates by the size it would have when restored.
+  // normalGeometry() returns an empty size for maximized subwindows, so restore
+  // it first to read the real size; otherwise every window would be resized to
+  // 0x0 and the MDI area would turn blank.
+  QSize size = pActiveSubWindow->size();
+  if (pActiveSubWindow->isMaximized() && !pActiveSubWindow->isShaded()) {
+    pActiveSubWindow->showNormal();
+    size = pActiveSubWindow->size();
+  }
+  QList<QMdiSubWindow*> subWindowsList = pMdiArea->subWindowList(QMdiArea::ActivationHistoryOrder);
+  foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
+    if (pSubWindow->isVisible() && (!pSubWindow->isMinimized() || pSubWindow->isShaded())) {
+      if (pSubWindow->isMaximized() || pSubWindow->isShaded()) {
+        pSubWindow->showNormal();
+      }
+      pSubWindow->resize(size);
+    }
+  }
+}
+
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
@@ -5920,7 +6142,7 @@ void MainWindow::reSimulate(bool showSetup)
     pSimulationOutputWidget->reSimulate(showSetup);
   } else {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("No active simulation output window. Please select a simulation output window for re-simulate."), QMessageBox::Ok);
+                          tr("No active simulation output window. Please select a simulation output window for the re-simulation."), QMessageBox::Ok);
   }
 }
 
@@ -5976,33 +6198,34 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   setAttribute(Qt::WA_DeleteOnClose);
 
   const QString omsVersionLine = OMSProxy::isCreated()
-      ? QString("<b>Connected to %1</b><br />").arg(OMSProxy::instance()->getVersion())
+      ? QString("<b>%1</b><br />").arg(tr("Connected to %1").arg(OMSProxy::instance()->getVersion()))
       : QString();
+#ifdef OM_ENABLE_ENCRYPTION
+  const QString omcVersionLine = tr("Connected to %1 with encryption support").arg(Helper::OpenModelicaVersion);
+#else
+  const QString omcVersionLine = tr("Connected to %1 without encryption support").arg(Helper::OpenModelicaVersion);
+#endif
+#if defined(WITHOUT_ANIMATION)
+  const QString animationLine = QString("<br /><em>%1</em>.").arg(tr("Compiled without 3D animation support"));
+#else
+  const QString animationLine;
+#endif
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
-     "<b>Connected to %3 %4 encryption support</b><br />"
-     "%5"
+     "<b>%3</b><br />"
+     "%4"
      "<br />"
-     "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
-     "Installation path <b>%6</b><br /><br />"
+     "Compiled with <b>Qt %5</b>, running with <b>Qt %6</b>.<br /><br />"
+     "Installation path <b>%7</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-     "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
-#if defined(WITHOUT_ANIMATION)
-     "<br /><em>Compiled without 3D animation support</em>."
-#endif
-     "")
+     "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.")
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
-          Helper::OpenModelicaVersion,
-#ifdef OM_ENABLE_ENCRYPTION
-          "with",
-#else
-          "without",
-#endif
+          omcVersionLine,
           omsVersionLine,
-          Helper::OpenModelicaHome,
           QStringLiteral(QT_VERSION_STR),
-          QString::fromLatin1(qVersion()));
+          QString::fromLatin1(qVersion()),
+          Helper::OpenModelicaHome) + animationLine;
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

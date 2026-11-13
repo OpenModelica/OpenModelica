@@ -64,7 +64,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // #################################################
@@ -84,7 +84,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // #########################################
@@ -104,7 +104,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // ################################
@@ -125,7 +125,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // #####################################
@@ -145,12 +145,12 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // record SimulationResult
 //     resultFile = "simple_for1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_for1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'simple_for1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -188,7 +188,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -232,7 +232,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -276,7 +276,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -323,7 +323,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // --- Alias of INI[1 | 4] ---
@@ -368,7 +368,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 10)
@@ -383,7 +383,7 @@ val(x[3],1);
 //
 // record SimulationResult
 //     resultFile = "simple_for2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_for2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'simple_for2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -421,7 +421,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -465,7 +465,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -509,7 +509,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -556,7 +556,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // --- Alias of INI[1 | 4] ---
@@ -601,7 +601,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 10)
@@ -616,7 +616,7 @@ val(x[3],1);
 //
 // record SimulationResult
 //     resultFile = "simple_for3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_for3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'simple_for3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

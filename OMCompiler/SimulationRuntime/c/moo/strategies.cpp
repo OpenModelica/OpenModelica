@@ -138,6 +138,7 @@ int MatEmitter::operator()(const PrimalDualTrajectory& trajectory) {
         throwStreamPrint(NULL, "simulation_runtime.c: Error: can not allocate memory.");
         }
         data->modelData->resultFileName = GC_strdup(result_file);
+        omc_rc_release((void*) result_file);
     } else {
         result_file_cstr = std::string(data->modelData->modelFilePrefix) + std::string("_res.") + data->simulationInfo->outputFormat;
         data->modelData->resultFileName = GC_strdup(result_file_cstr.c_str());

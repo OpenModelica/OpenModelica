@@ -28,7 +28,7 @@ equation
   connect(CauvN, Nizss);
   connect(SsIbl, iCWhD);
   connect(hAhvy, xPLdp);
-  annotation(__OpenModelica_commandLineOptions="+orderConnections=false -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+orderConnections=false");
 end ConnectionOrder2;
 
 // Result:
@@ -54,6 +54,16 @@ end ConnectionOrder2;
 //   Real hAhvy.f;
 //   Real hAhvy.e;
 // equation
+//   JJczR.e = xvCSn.e;
+//   -(JJczR.f + xvCSn.f) = 0.0;
+//   APNzi.e = wWAqt.e;
+//   -(APNzi.f + wWAqt.f) = 0.0;
+//   CauvN.e = Nizss.e;
+//   -(CauvN.f + Nizss.f) = 0.0;
+//   SsIbl.e = iCWhD.e;
+//   -(SsIbl.f + iCWhD.f) = 0.0;
+//   hAhvy.e = xPLdp.e;
+//   -(hAhvy.f + xPLdp.f) = 0.0;
 //   JJczR.f = 0.0;
 //   xvCSn.f = 0.0;
 //   APNzi.f = 0.0;
@@ -64,15 +74,5 @@ end ConnectionOrder2;
 //   SsIbl.f = 0.0;
 //   xPLdp.f = 0.0;
 //   hAhvy.f = 0.0;
-//   JJczR.e = xvCSn.e;
-//   (-JJczR.f) + (-xvCSn.f) = 0.0;
-//   APNzi.e = wWAqt.e;
-//   (-APNzi.f) + (-wWAqt.f) = 0.0;
-//   CauvN.e = Nizss.e;
-//   (-CauvN.f) + (-Nizss.f) = 0.0;
-//   SsIbl.e = iCWhD.e;
-//   (-iCWhD.f) + (-SsIbl.f) = 0.0;
-//   hAhvy.e = xPLdp.e;
-//   (-xPLdp.f) + (-hAhvy.f) = 0.0;
 // end ConnectionOrder2;
 // endResult

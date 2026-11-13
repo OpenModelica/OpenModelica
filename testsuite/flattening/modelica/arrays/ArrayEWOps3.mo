@@ -4,7 +4,7 @@
 //
 // Array elementwise operators: subtraction
 
-class ArrayEWOps3
+model ArrayEWOps3
   Real[2,2] x,x1,x2,y,z;
   Real t,u,v;
 equation
@@ -12,7 +12,6 @@ equation
   x1=y.-t;
   x2=t.-y;
   v=t.-u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps3;
 
 // Result:

@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // Saving an edit made inside a nested class re-loads that class with its own name as
 // the file name. The class must not be relocated to that file, otherwise listFile on
 // the enclosing class silently drops it and the next round trip through loadString

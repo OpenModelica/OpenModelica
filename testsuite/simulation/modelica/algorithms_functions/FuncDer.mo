@@ -47,7 +47,6 @@ algorithm
   fn0 := h0(2,5,true);
   fn1 := h1(2,5,true,fn0);
   fn2 := h2(2,5,true,fn0,fn1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FuncDer;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -27,15 +27,14 @@ model DVSSTest
   DiscreteVectorStateSpace dvss;
 equation
   dvss.u= fill(time,dvss.m);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DVSSTest;
 
 
 // Result:
 // class DVSSTest
-//   parameter Integer dvss.n = 5;
-//   parameter Integer dvss.m = 4;
-//   parameter Integer dvss.p = 2;
+//   final parameter Integer dvss.n = 5;
+//   final parameter Integer dvss.m = 4;
+//   final parameter Integer dvss.p = 2;
 //   parameter Real dvss.A[1,1] = 1.0;
 //   parameter Real dvss.A[1,2] = 1.0;
 //   parameter Real dvss.A[1,3] = 1.0;

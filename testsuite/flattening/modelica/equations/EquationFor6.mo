@@ -5,13 +5,12 @@
 // Test for loops with implicit range in equations.
 //
 
-class EquationFor6
+model EquationFor6
   Real a[3];
 equation
   for i loop
     a[i] = i;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor6;
 
 // Result:

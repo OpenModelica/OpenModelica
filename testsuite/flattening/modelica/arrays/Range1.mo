@@ -5,7 +5,7 @@
 // Some tests of range expressions.
 //
 
-class Range1
+model Range1
   Integer x[5] = 1:5;
   Integer y[5], z[5];
 equation
@@ -18,7 +18,6 @@ equation
   end for;
   z[2]=1;
   z[4]=2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Range1;
 
 // Result:
@@ -39,15 +38,15 @@ end Range1;
 //   Integer z[4];
 //   Integer z[5];
 // equation
-//   x = {1, 2, 3, 4, 5};
-//   y[1] = 1 + x[1];
-//   y[2] = 1 + x[2];
-//   y[3] = 1 + x[3];
-//   y[4] = 1 + x[4];
-//   y[5] = 1 + x[5];
-//   z[1] = 2 + x[1];
-//   z[3] = 2 + x[3];
-//   z[5] = 2 + x[5];
+//   x = 1:5;
+//   y[1] = x[1] + 1;
+//   y[2] = x[2] + 1;
+//   y[3] = x[3] + 1;
+//   y[4] = x[4] + 1;
+//   y[5] = x[5] + 1;
+//   z[1] = x[1] + 2;
+//   z[3] = x[3] + 2;
+//   z[5] = x[5] + 2;
 //   z[2] = 1;
 //   z[4] = 2;
 // end Range1;

@@ -11,16 +11,15 @@ model test
   parameter Real Em=1;
   parameter Real A=0.1;
   parameter Real L=4;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 // Result:
 // class test
 //   parameter Real K[1,1] = Em;
-//   parameter Real K[1,2] = -Em;
-//   parameter Real K[2,1] = -Em;
+//   parameter Real K[1,2] = Em * (-1.0);
+//   parameter Real K[2,1] = Em * (-1.0);
 //   parameter Real K[2,2] = Em;
 //   parameter Real X[1] = Em;
-//   parameter Real X[2] = 2.0 * Em;
+//   parameter Real X[2] = Em * 2.0;
 //   parameter Real Em = 1.0;
 //   parameter Real A = 0.1;
 //   parameter Real L = 4.0;

@@ -8,36 +8,30 @@
 // extends from A.R).
 //
 
-class A
+model A
   replaceable record R
     Real x;
   end R;
 end A;
 
-class B
+model B
   extends A;
 end B;
 
-class C
+model C
   extends A;
 
   redeclare record extends R end R;
 end C;
 
-class RedeclareBaseClass1
+model RedeclareBaseClass1
   extends B(redeclare record R = C.R);
 
   constant R r = R(4.0);
   Real x = r.x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareBaseClass1;
 
 // Result:
-// function RedeclareBaseClass1.R "Automatically generated record constructor for RedeclareBaseClass1.R"
-//   input Real x;
-//   output R res;
-// end RedeclareBaseClass1.R;
-//
 // class RedeclareBaseClass1
 //   constant Real r.x = 4.0;
 //   Real x = 4.0;

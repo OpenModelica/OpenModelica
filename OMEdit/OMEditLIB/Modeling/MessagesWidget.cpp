@@ -48,6 +48,7 @@
 #include "OMS/OMSSimulationOutputWidget.h"
 #include "FMI/FMUExportOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
+#include "OMUQ/OMUQOutputWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
@@ -168,10 +169,10 @@ MessageWidget::MessageWidget(QWidget *pParent)
   mpCopyAction->setStatusTip(tr("Copy the Message"));
   connect(mpCopyAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(copy()));
   mpClearThisTabAction = new QAction(tr("Clear This Tab"), this);
-  mpClearThisTabAction->setStatusTip(tr("clears the messages from this tab"));
+  mpClearThisTabAction->setStatusTip(tr("Clears the messages from this tab"));
   connect(mpClearThisTabAction, SIGNAL(triggered()), SLOT(clearThisTabMessages()));
   mpClearAllTabsAction = new QAction(tr("Clear All Tabs"), this);
-  mpClearAllTabsAction->setStatusTip(tr("clears the messages from all tabs"));
+  mpClearAllTabsAction->setStatusTip(tr("Clears the messages from all tabs"));
   connect(mpClearAllTabsAction, SIGNAL(triggered()), SLOT(clearAllTabsMessages()));
   // Main Layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
@@ -190,7 +191,7 @@ void MessageWidget::applyMessagesSettings()
   // set the output size
   mpMessagesTextBrowser->document()->setMaximumBlockCount(pMessagesPage->getOutputSizeSpinBox()->value());
   // set the font
-  QString fontFamily = pMessagesPage->getFontFamilyComboBox()->currentFont().family();
+  QString fontFamily = pMessagesPage->getFontFamily();
   double fontSize = pMessagesPage->getFontSizeSpinBox()->value();
   QFont font(fontFamily);
   font.setPointSizeF(fontSize);
@@ -639,6 +640,13 @@ bool MessagesWidget::closeTab(int index)
   // Close CRMLTranslatorOutputWidget
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isTranslationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
+    return true;
+  }
+  // Close OMUQOutputWidget
+  OMUQOutputWidget *pOMUQOutputWidget = qobject_cast<OMUQOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pOMUQOutputWidget && !pOMUQOutputWidget->isProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
     emit messageTabClosed(index);
     return true;

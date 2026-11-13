@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 convertUnits("MW/s","kg");getErrorString();
 convertUnits("degC","K");getErrorString();

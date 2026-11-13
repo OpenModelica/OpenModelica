@@ -15,18 +15,9 @@ end f;
 
 model RealAddEw
   Real x[:] = f(3, {4, 5, 6});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RealAddEw;
 
 // Result:
-// function f
-//   input Real r1;
-//   input Real[:] r2;
-//   output Real[size(r2, 1)] o;
-// algorithm
-//   o := r2 .+ r1;
-// end f;
-//
 // class RealAddEw
 //   Real x[1];
 //   Real x[2];

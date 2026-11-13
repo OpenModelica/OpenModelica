@@ -16,13 +16,12 @@ equation
       der(Xtilde[i,j]) = 1;
     end for;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayRecursiveDim;
 
 // Result:
 // class ArrayRecursiveDim
-//   parameter Integer N = 4;
-//   parameter Integer nX = 3;
+//   final parameter Integer N = 4;
+//   final parameter Integer nX = 3;
 //   parameter Real Xstart[1] = 0.1;
 //   parameter Real Xstart[2] = 0.8;
 //   parameter Real Xstart[3] = 0.1;

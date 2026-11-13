@@ -1566,9 +1566,31 @@ algorithm
       outUsedFunctions := AvlTreePathFunction.add(outUsedFunctions, inPath, f);
       (_, outUsedFunctions) := DAEUtil.traverseDAEElementList(body,
         function checkUnusedFunctions(inFunctions = inFunctions), outUsedFunctions);
+      // the inverses may be used when solving equations in the code generation
+      for inv in getFunctionInverses(Util.getOption(f)) loop
+        (_, outUsedFunctions) := checkUnusedFunctions(inv, inFunctions, outUsedFunctions);
+      end for;
     end if;
   end try;
 end addUnusedFunction;
+
+protected function getFunctionInverses
+  input DAE.Function fn;
+  output list<DAE.Exp> inverses = {};
+algorithm
+  inverses := match fn
+    case DAE.FUNCTION()
+      algorithm
+        for d in fn.functions loop
+          inverses := match d
+            case DAE.FUNCTION_INVERSE() then d.inverseCall :: inverses;
+            else inverses;
+          end match;
+        end for;
+      then inverses;
+    else {};
+  end match;
+end getFunctionInverses;
 
 protected function getFunctionAndBody
 "returns the body of a function"

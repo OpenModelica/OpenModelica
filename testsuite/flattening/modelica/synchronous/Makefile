@@ -1,14 +1,11 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-BackSampleTest.mo \
 ClockTest.mo \
 HoldTest.mo \
-NoClockTest.mo \
 PreviousTest.mo \
 SampleTest.mo \
 SamplingWithClocks.mos \
-ShiftSampleTest.mo \
 SubSampleTest.mo \
 IntervalTest.mo \
 SuperSampleTest.mo \

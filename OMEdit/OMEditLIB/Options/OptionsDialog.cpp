@@ -1072,14 +1072,7 @@ void OptionsDialog::readMessagesSettings()
   }
   // read font family
   QTextBrowser textBrowser;
-  if (mpSettings->contains("messages/fontFamily")) {
-    // select font family item
-    int currentIndex = mpMessagesPage->getFontFamilyComboBox()->findText(mpSettings->value("messages/fontFamily").toString(), Qt::MatchExactly);
-    mpMessagesPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
-  } else {
-    int currentIndex = mpMessagesPage->getFontFamilyComboBox()->findText(textBrowser.font().family(), Qt::MatchExactly);
-    mpMessagesPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
-  }
+  mpMessagesPage->setFontFamily(mpSettings->value("messages/fontFamily").toString());
   // read font size
   if (mpSettings->contains("messages/fontSize")) {
     mpMessagesPage->getFontSizeSpinBox()->setValue(mpSettings->value("messages/fontSize").toDouble());
@@ -1554,6 +1547,12 @@ void OptionsDialog::readOMSimulatorSettings()
   if (index > -1) {
     mpOMSimulatorPage->getLoggingLevelComboBox()->setCurrentIndex(index);
   }
+  // read the omuq python
+  if (mpSettings->contains("OMSimulator/omuqPython") && !mpSettings->value("OMSimulator/omuqPython").toString().isEmpty()) {
+    mpOMSimulatorPage->getOMUQPythonTextBox()->setText(mpSettings->value("OMSimulator/omuqPython").toString());
+  } else {
+    mpOMSimulatorPage->getOMUQPythonTextBox()->setText(OptionsDefaults::OMSimulator::omuqPython);
+  }
 }
 
 /*!
@@ -1777,9 +1776,11 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("welcomePage/view", welcomePageView);
   }
   bool showLatestNews = mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked();
-  int recentFilesSize = mpSettings->value("welcomePage/recentFilesSize").toInt();
+  int recentFilesSize = mpSettings->contains("welcomePage/recentFilesSize")
+      ? mpSettings->value("welcomePage/recentFilesSize").toInt()
+      : OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize;
   int recentFilesAndLatestNewsSize = mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->value();
-  if ((MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) || recentFilesSize != recentFilesAndLatestNewsSize) {
+  if (showLatestNews && (MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() || recentFilesSize != recentFilesAndLatestNewsSize)) {
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->show();
     MainWindow::instance()->getWelcomePageWidget()->addLatestNewsListItems();
   } else if (!showLatestNews) {
@@ -2630,8 +2631,8 @@ void OptionsDialog::saveMessagesSettings()
   }
   // save font
   QTextBrowser textBrowser;
-  QString fontFamily = mpMessagesPage->getFontFamilyComboBox()->currentFont().family();
-  if (fontFamily.compare(textBrowser.font().family()) == 0) {
+  QString fontFamily = mpMessagesPage->getFontFamily();
+  if (fontFamily.compare(mpMessagesPage->getDefaultFontFamily()) == 0) {
     mpSettings->remove("messages/fontFamily");
   } else {
     mpSettings->setValue("messages/fontFamily", fontFamily);
@@ -3145,6 +3146,13 @@ void OptionsDialog::saveOMSimulatorSettings()
     mpSettings->remove("OMSimulator/loggingLevel");
   } else {
     mpSettings->setValue("OMSimulator/loggingLevel", loggingLevel);
+  }
+  // set the omuq python
+  QString omuqPython = mpOMSimulatorPage->getOMUQPythonTextBox()->text().trimmed();
+  if (omuqPython.isEmpty() || omuqPython.compare(OptionsDefaults::OMSimulator::omuqPython) == 0) {
+    mpSettings->remove("OMSimulator/omuqPython");
+  } else {
+    mpSettings->setValue("OMSimulator/omuqPython", omuqPython);
   }
   // commandLineOptions, loggingLevel, workingDirectory, logFile, tempDirectory are
   // passed as CLI args to OMSimulatorSimulationServer.py at simulation launch — not sent to GuiServer.
@@ -5253,7 +5261,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   pModelingViewModeGroupBox->setLayout(modelingViewModeLayout);
   // Default View
   QGroupBox *pDefaultViewGroupBox = new QGroupBox(tr("Default View"));
-  pDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
+  pDefaultViewGroupBox->setToolTip(tr("This setting is used when no preferredView annotation is defined."));
   mpIconViewRadioButton = new QRadioButton(Helper::iconView);
   mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
   mpDiagramViewRadioButton->setChecked(true);
@@ -5443,7 +5451,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpIgnoreSimulationFlagsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_simulationFlags annotation"));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
-  mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
+  mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will affect the debugger functionality."));
   mpSaveClassBeforeSimulationCheckBox->setChecked(OptionsDefaults::Simulation::saveClassBeforeSimulation);
   /* switch to plotting perspective after simulation checkbox */
   mpSwitchToPlottingPerspectiveCheckBox = new QCheckBox(tr("Switch to plotting perspective after simulation"));
@@ -5610,9 +5618,8 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
   QTextBrowser textBrowser;
-  int currentIndex;
-  currentIndex = mpFontFamilyComboBox->findText(textBrowser.font().family(), Qt::MatchExactly);
-  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
+  mDefaultFontFamily = textBrowser.font().family();
+  setFontFamily(mDefaultFontFamily);
   // font size combobox
   mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
@@ -5663,6 +5670,35 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief MessagesPage::setFontFamily
+ * Selects the font family, or the default one if empty.
+ * Hidden system fonts, e.g., .AppleSystemUIFont on macOS, are not listed by QFontComboBox so they are set as edit text.
+ * \param family
+ */
+void MessagesPage::setFontFamily(const QString &family)
+{
+  const QString fontFamily = family.isEmpty() ? mDefaultFontFamily : family;
+  int currentIndex = mpFontFamilyComboBox->findText(fontFamily, Qt::MatchExactly);
+  if (currentIndex >= 0) {
+    mpFontFamilyComboBox->setCurrentIndex(currentIndex);
+  } else {
+    mpFontFamilyComboBox->setEditText(fontFamily);
+  }
+}
+
+/*!
+ * \brief MessagesPage::getFontFamily
+ * Returns the selected font family, or the default one if empty.
+ * Uses currentText() since Qt 5 does not update QFontComboBox::currentFont() for edit text.
+ * \return
+ */
+QString MessagesPage::getFontFamily() const
+{
+  const QString family = mpFontFamilyComboBox->currentText().trimmed();
+  return family.isEmpty() ? mDefaultFontFamily : family;
+}
+
 void MessagesPage::setNotificationPickColorButtonIcon()
 {
   QPixmap pixmap(Helper::iconSize);
@@ -5694,7 +5730,7 @@ QColor MessagesPage::getColor(const StringHandler::SimulationMessageType type) c
 {
   switch (type) {
     case StringHandler::OMEditInfo:
-      return Qt::blue;
+      return Style::messagesCommandColor();
     case StringHandler::SMWarning:
       return getWarningColor();
     case StringHandler::Error:
@@ -6513,9 +6549,11 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
 #if defined(__EMSCRIPTEN__)
   const QStringList fmuPlatforms = omcWorkerFmuPlatforms();
   pPlatformsLayout->addWidget(new Label(fmuPlatforms.isEmpty()
-                                        ? tr("Note: No native platform is available here, the FMU only contains the WebAssembly binary.")
+                                        ? tr("Note: No native platform is available here, the FMU only contains the WebAssembly binary\n"
+                                             "and is exported as FMI 3.0 (fmi-ls-wasm).")
                                         : tr("Note: The FMU always contains the WebAssembly binary.\n"
-                                             "The listed platforms have a precompiled FMU driver and are added as native binaries.")));
+                                             "The listed platforms have a precompiled FMU driver and are added as native binaries.\n"
+                                             "With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).")));
   foreach (QString platform, fmuPlatforms) {
     QCheckBox *pCheckBox = new QCheckBox(platform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, platform);
@@ -6778,10 +6816,44 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 1, 0);
   pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 1, 1);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
+  // omuq, the uncertainty quantification of SSP models
+  mpOMUQGroupBox = new QGroupBox(tr("Uncertainty Quantification (omuq)"));
+  Label *pOMUQInfoLabel = new Label(tr("UQ activities run the omuq Python package, see the "
+                                       "<a href=\"https://github.com/adrpo/omuq\">omuq GitHub page</a>. "
+                                       "Specify a Python executable that has omuq and OMSimulator installed."));
+  pOMUQInfoLabel->setWordWrap(true);
+  pOMUQInfoLabel->setOpenExternalLinks(true);
+  pOMUQInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  pOMUQInfoLabel->setToolTip("");
+  mpOMUQPythonLabel = new Label(tr("Python:"));
+  mpOMUQPythonTextBox = new QLineEdit(OptionsDefaults::OMSimulator::omuqPython);
+  mpOMUQPythonBrowseButton = new QPushButton(Helper::browse);
+  mpOMUQPythonBrowseButton->setAutoDefault(false);
+  connect(mpOMUQPythonBrowseButton, SIGNAL(clicked()), SLOT(browseOMUQPython()));
+  QGridLayout *pOMUQGroupBoxLayout = new QGridLayout;
+  pOMUQGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pOMUQGroupBoxLayout->addWidget(pOMUQInfoLabel, 0, 0, 1, 3);
+  pOMUQGroupBoxLayout->addWidget(mpOMUQPythonLabel, 1, 0);
+  pOMUQGroupBoxLayout->addWidget(mpOMUQPythonTextBox, 1, 1);
+  pOMUQGroupBoxLayout->addWidget(mpOMUQPythonBrowseButton, 1, 2);
+  mpOMUQGroupBox->setLayout(pOMUQGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->addWidget(mpGeneralGroupBox);
+  pMainLayout->addWidget(mpOMUQGroupBox);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief OMSimulatorPage::browseOMUQPython
+ * Selects the Python executable used to run omuq.
+ */
+void OMSimulatorPage::browseOMUQPython()
+{
+  QString python = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile));
+  if (!python.isEmpty()) {
+    mpOMUQPythonTextBox->setText(python);
+  }
 }
 
 /*!
@@ -6876,7 +6948,7 @@ TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
   mpBrowseGitRepositoryButton->setAutoDefault(false);
   connect(mpBrowseGitRepositoryButton, SIGNAL(clicked()), SLOT(browseGitRepository()));
   // Traceability Daemon Ip Adress
-  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Adress:"));
+  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Address:"));
   mpTraceabilityDaemonIpAdressTextBox = new QLineEdit;
   // Traceability Daemon Port
   mpTraceabilityDaemonPortLabel = new Label(tr("Traceability Daemon Port:"));
@@ -7086,13 +7158,13 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   mpCompilerCommandLineOptionsLabel = new Label(tr("Compiler Arguments:"));
   mpCompilerCommandLineOptionsTextBox = new QLineEdit;
   // CRML Process
-  mpCompilerProcessLabel = new Label(tr("Processor:"));
+  mpCompilerProcessLabel = new Label(tr("Java Executable:"));
   mpCompilerProcessTextBox = new QLineEdit(OptionsDefaults::CRML::process);
   mpBrowseCompilerProcessButton = new QPushButton(Helper::browse);
   mpBrowseCompilerProcessButton->setAutoDefault(false);
   connect(mpBrowseCompilerProcessButton, SIGNAL(clicked()), SLOT(browseCompilerProcessFile()));
   mpResetCompilerProcessButton = new QPushButton(Helper::reset);
-  mpResetCompilerProcessButton->setToolTip(tr("Resets to default Processor path"));
+  mpResetCompilerProcessButton->setToolTip(tr("Resets to the default Java executable"));
   mpResetCompilerProcessButton->setAutoDefault(false);
   connect(mpResetCompilerProcessButton, SIGNAL(clicked()), SLOT(resetCompilerProcessPath()));
   mpModelicaLibraries = new DirectoryOrFileSelector(false, tr("Modelica Library Paths:"), pOptionsDialog);
@@ -7278,7 +7350,7 @@ QString LanguageServerPage::installedServerVersion()
 #else
   // The qmake build does not install a server and so does not define it. Keep it
   // in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt.
-  return QStringLiteral("v0.3.3");
+  return QStringLiteral("v0.3.8");
 #endif
 }
 

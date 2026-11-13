@@ -2,6 +2,7 @@ add_subdirectory(simulation/arrayIndex/unit)
 add_subdirectory(simulation/inputXML/read_input_xml)
 add_subdirectory(simulation/inputXML/unit)
 add_subdirectory(simulation/solver/model_help)
+add_subdirectory(simulation/solver/nonlinearValuesList)
 add_subdirectory(util/real_array)
 add_subdirectory(util/integer_array)
 add_subdirectory(util/boolean_array)
@@ -15,6 +16,7 @@ add_custom_target(ctestsuite-depends DEPENDS
   ctestsuite-simulation-inputXML-read_input_xml
   ctestsuite-simulation-inputXML-unit
   ctestsuite-simulation-solver-model_help
+  ctestsuite-simulation-solver-nonlinearValuesList
   ctestsuite-util-real_array
   ctestsuite-util-integer_array
   ctestsuite-util-boolean_array

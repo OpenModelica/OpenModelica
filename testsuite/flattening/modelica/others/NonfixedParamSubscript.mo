@@ -12,12 +12,11 @@ initial equation
   p = 1;
 equation
   r[p] = 2.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:
 // class M
-//   parameter Integer p(min = 1, max = 1, fixed = false);
+//   final parameter Integer p(min = 1, max = 1, fixed = false);
 //   Real r[1];
 // initial equation
 //   p = 1;

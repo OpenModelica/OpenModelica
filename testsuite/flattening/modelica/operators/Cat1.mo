@@ -20,8 +20,8 @@ equation
 end myPartialModel;
 
 model Cat1
-  parameter Real a;
-  parameter Real b;
+  parameter Real a(fixed = false);
+  parameter Real b(fixed = false);
 
   final parameter Real[n] aDivisions = if n == 1 then {a} else fill(a/n, n);
   final parameter Real[n] bDivisions =
@@ -31,25 +31,24 @@ model Cat1
   extends myPartialModel(final x = aDivisions,
                          final y = bDivisions);
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cat1;
 
 // Result:
 // class Cat1
-//   parameter Integer n(min = 1) = 2;
+//   parameter Real a(fixed = false);
+//   parameter Real b(fixed = false);
+//   final parameter Real aDivisions[1] = a / 2.0;
+//   final parameter Real aDivisions[2] = a / 2.0;
+//   final parameter Real bDivisions[1] = b / 2.0;
+//   final parameter Real bDivisions[2] = b / 2.0;
+//   final parameter Integer n(min = 1) = 2;
 //   parameter enumeration(divisionType1, divisionType2) myDivision = MyType.divisionType1;
-//   parameter Real x[1] = aDivisions[1];
-//   parameter Real x[2] = aDivisions[2];
-//   parameter Real y[1] = bDivisions[1];
-//   parameter Real y[2] = bDivisions[2];
+//   final parameter Real x[1] = aDivisions[1];
+//   final parameter Real x[2] = aDivisions[2];
+//   final parameter Real y[1] = bDivisions[1];
+//   final parameter Real y[2] = bDivisions[2];
 //   Real z[1];
 //   Real z[2];
-//   parameter Real a;
-//   parameter Real b;
-//   final parameter Real aDivisions[1] = a / /*Real*/(n);
-//   final parameter Real aDivisions[2] = a / /*Real*/(n);
-//   final parameter Real bDivisions[1] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(-1 + n) else b / /*Real*/(n);
-//   final parameter Real bDivisions[2] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(-1 + n) else b / /*Real*/(n);
 // equation
 //   z[1] = x[1] * y[1];
 //   z[2] = x[2] * y[2];

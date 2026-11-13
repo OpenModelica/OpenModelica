@@ -17,19 +17,9 @@ end f;
 
 model FunctionDefaultArgs2
   Real x = f(4);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionDefaultArgs2;
 
 // Result:
-// function f
-//   input Real x;
-//   input Real y = 2.0 * x;
-//   input Real z = x / y;
-//   output Real o;
-// algorithm
-//   o := x + y + z;
-// end f;
-//
 // class FunctionDefaultArgs2
 //   Real x = 12.5;
 // end FunctionDefaultArgs2;

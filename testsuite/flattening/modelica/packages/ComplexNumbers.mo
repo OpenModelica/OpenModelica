@@ -40,14 +40,13 @@ encapsulated package ComplexNumbers
 end ComplexNumbers;
 
 
-class ComplexUser
+model ComplexUser
   ComplexNumbers.Complex a(re=1.0, im=2.0);
   ComplexNumbers.Complex b(re=1.0, im=2.0);
   ComplexNumbers.Complex z, w;
   equation
     z = ComplexNumbers.Multiply(a, b);
     z = ComplexNumbers.Add(a, b);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexUser;
 
 // Result:
@@ -65,18 +64,6 @@ end ComplexUser;
 //   input Real im;
 //   output Complex res;
 // end ComplexNumbers.Complex;
-//
-// function ComplexNumbers.Complex$a "Automatically generated record constructor for ComplexNumbers.Complex$a"
-//   input Real re;
-//   input Real im;
-//   output Complex$a res;
-// end ComplexNumbers.Complex$a;
-//
-// function ComplexNumbers.Complex$b "Automatically generated record constructor for ComplexNumbers.Complex$b"
-//   input Real re;
-//   input Real im;
-//   output Complex$b res;
-// end ComplexNumbers.Complex$b;
 //
 // function ComplexNumbers.Multiply
 //   input ComplexNumbers.Complex x;
@@ -97,7 +84,7 @@ end ComplexUser;
 //   Real w.re;
 //   Real w.im;
 // equation
-//   z = ComplexNumbers.Multiply(/*.ComplexNumbers.Complex*/(a), /*.ComplexNumbers.Complex*/(b));
-//   z = ComplexNumbers.Add(/*.ComplexNumbers.Complex*/(a), /*.ComplexNumbers.Complex*/(b));
+//   z = ComplexNumbers.Multiply(a, b);
+//   z = ComplexNumbers.Add(a, b);
 // end ComplexUser;
 // endResult

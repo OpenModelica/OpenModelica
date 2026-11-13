@@ -174,7 +174,6 @@ const CLIENTS = [
     variants: [
       { id: 'terminal', name: 'Terminal', src: 'omc-terminal/index.html' },
       { id: 'egui',     name: 'egui',     src: 'OMShell-egui.html' },
-      { id: 'dioxus',   name: 'dioxus',   src: 'OMShell-dioxus.html' },
       { id: 'qt',       name: 'Qt',       src: 'OMShell-qt/OMShell-qt.html' },
     ] },
   { id: 'simulator', name: 'Simulator', icon: 'icons/simulator.svg',
@@ -187,6 +186,8 @@ const CLIENTS = [
     src: 'OMNotebook-qt/OMNotebook-qt.html' },
   { id: 'omedit', name: 'OMEdit', icon: 'icons/omedit.png',
     src: 'OMEdit-qt/OMEdit-qt.html' },
+  { id: 'storage', name: 'Storage', icon: 'icons/storage.svg',
+    src: 'storage/index.html' },
 ];
 
 const variantsOf = (c) => c.variants || [{ id: '', name: c.name, src: c.src }];

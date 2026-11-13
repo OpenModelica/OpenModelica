@@ -2,7 +2,6 @@
 // keywords: fmu export fmi 1.0 model exchange fmpy
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_fmpy.csv *_diff.*.csv *_info.json ExpDecay* SampleCount* Oscillator* StateEvent* DirectFeedthrough*
-// cflags: -d=-newInst
 //
 // Exports a few FMI 1.0 Model-Exchange FMUs and validates them with an
 // *independent* FMI importer (FMPy): each model is simulated both by
@@ -96,13 +95,14 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // true
 // ""
 // "ExpDecay.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "ExpDecay_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExpDecay', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ExpDecay', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -114,13 +114,14 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "SampleCount.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "SampleCount_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SampleCount', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SampleCount', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -132,13 +133,14 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "Oscillator.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "Oscillator_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.141592653589793, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Oscillator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.141592653589793, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Oscillator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -150,13 +152,14 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "StateEvent.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "StateEvent_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'StateEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -168,12 +171,13 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "DirectFeedthrough.fmu"
-// "Notification: Building FMU for platform 'static' (1/1).
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "DirectFeedthrough_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DirectFeedthrough', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'DirectFeedthrough', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

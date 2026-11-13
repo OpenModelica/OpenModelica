@@ -69,6 +69,7 @@ function runSimulation
   input String fileNamePrefix;
   input String resultFile;
   input String simflags;
+  input String logFile;
   output Integer status;
 algorithm
   status := 0;

@@ -1,0 +1,29 @@
+// name:     CvodeStepTooClose
+// keywords: FMI 2.0 export CVODE co-simulation
+// status: correct
+// teardown_command: rm -rf CvodeStepTooClose.fmu CvodeStepTooClose.log CvodeStepTooClose_info.json CvodeStepTooClose_flags.json CvodeStepTooClose.fmutmp CvodeStepTooClose-tmp CvodeStepTooClose_res.mat CvodeStepTooClose_systemCall.log
+//
+// A time event that falls within roundoff of a communication point leaves a
+// sub-step that CVODE rejects with CV_TOO_CLOSE.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+buildModelFMU(Modelica.Blocks.Examples.DemonstrateSignalExtrema, version = "2.0", fmuType = "cs", fileNamePrefix = "CvodeStepTooClose", platforms = {"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator CvodeStepTooClose.fmu --mode=cs --tolerance=1e-6 --stopTime=0.001 --stepSize=1e-5 --resultFile=\"CvodeStepTooClose_res.mat\" --stripRoot --suppressPath --tempDir=\"CvodeStepTooClose-tmp\"", "CvodeStepTooClose_systemCall.log"); getErrorString();
+val(sine.y, 0.001, "CvodeStepTooClose_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "CvodeStepTooClose.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 2.1832264719102867
+// ""
+// endResult

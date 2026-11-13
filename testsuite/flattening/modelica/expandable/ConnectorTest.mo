@@ -1,4 +1,7 @@
 package ConnectorTest
+  connector RealInput = input Real;
+  connector RealOutput = output Real;
+
   expandable connector A
     Real ax;
   end A;
@@ -9,7 +12,7 @@ package ConnectorTest
 
   model Bsource
     output B bout;
-    Real genx[2](each start = 1.0);
+    RealOutput genx[2](each start = 1.0);
   equation
     connect(genx,bout.bx);
     genx[1] = sin(time);
@@ -18,7 +21,8 @@ package ConnectorTest
 
   model Busage
     input B bin;
-    Real bx[2],bx2[2];
+    RealInput bx[2];
+    Real bx2[2];
   equation
     connect(bx,bin.bx);
     bx2[1] = 2.0 * bx[1];
@@ -27,7 +31,7 @@ package ConnectorTest
 
   model Asource
     output A aout;
-    Real ax;
+    RealOutput ax;
   equation
     connect(ax,aout.ax);
     ax = cos(time);
@@ -35,7 +39,8 @@ package ConnectorTest
 
   model Ausage
     input A ain;
-    Real ax,ax2;
+    RealInput ax;
+    Real ax2;
   equation
     connect(ain.ax,ax);
     ax2 = 2.0 * ax;

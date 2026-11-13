@@ -15,7 +15,6 @@ model Connect5
 equation
   connect(c1,c2);
   c1.b=time<0.5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect5;
 
 // Result:
@@ -25,10 +24,10 @@ end Connect5;
 //   Boolean c2.b;
 //   Real c2.f;
 // equation
-//   c1.b = time < 0.5;
+//   c1.b = c2.b;
+//   -(c1.f + c2.f) = 0.0;
 //   c1.f = 0.0;
 //   c2.f = 0.0;
-//   c1.b = c2.b;
-//   (-c1.f) + (-c2.f) = 0.0;
+//   c1.b = time < 0.5;
 // end Connect5;
 // endResult

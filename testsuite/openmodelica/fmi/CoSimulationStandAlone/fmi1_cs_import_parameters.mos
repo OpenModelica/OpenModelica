@@ -2,7 +2,6 @@
 // keywords: fmi import co-simulation parameter
 // status:   correct
 // teardown_command: rm -rf vanDerPol_cs_st_FMU.mo binaries sources documentation resources model.png modelDescription.xml vanDerPol.log vanDerPol_info.json output.log
-// cflags:   -d=-newInst
 //
 // importFMU1CoSimulationStandAlone computed all sixteen parameter bindings and then never
 // referenced a single one of them, so an imported FMI 1.0 Co-Simulation FMU was never told
@@ -44,6 +43,7 @@ checkModel(vanDerPol_cs_st_FMU); getErrorString();
 // "Warning: module = fmi1_xml_get_default_experiment_start: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
 // Warning: module = fmi1_xml_get_default_experiment_stop: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
 // Warning: module = fmi1_xml_get_default_experiment_tolerance: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// Warning: FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
 // "
 // (1, {"flowParamsStart := fmi1Functions.fmi1SetRealParameter(fmi1cs, {4.0}, {mu});"})
 // true

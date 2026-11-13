@@ -44,7 +44,7 @@ double spatialDistributionZeroCrossing (DATA* data, threadData_t *threadData, un
 
 void printTransportedQuantity(void* data, int stream, void* nodePointer);
 size_t spatialDistributionStateWords(DATA* data, double* out);
-long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len);
+long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len, int apply);
 
 #ifdef __cplusplus
   }

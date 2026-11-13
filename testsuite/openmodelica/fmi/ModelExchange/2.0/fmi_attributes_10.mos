@@ -55,6 +55,13 @@ readFile("fmi_attributes_10.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
+//     name=\"der(y)\"
+//     valueReference=\"1\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"0\"
 //     >

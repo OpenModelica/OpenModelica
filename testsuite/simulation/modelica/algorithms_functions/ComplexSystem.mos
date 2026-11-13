@@ -2,7 +2,6 @@
 // keywords: complex equation record system
 // status: correct
 // teardown_command: rm -rf ComplexSystem_*  ComplexSystem ComplexSystem.exe ComplexSystem.cpp ComplexSystem.makefile ComplexSystem.libs ComplexSystem.log output.log
-// cflags: -d=-newInst
 //
 // Tests complex equations in strong components.
 //
@@ -19,7 +18,7 @@ val(y,1);
 // true
 // record SimulationResult
 //     resultFile = "ComplexSystem_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ComplexSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'ComplexSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

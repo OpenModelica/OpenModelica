@@ -7,6 +7,7 @@ WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
 arrayCatTest.mos \
+arrayMatrixTest.mos \
 arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
@@ -15,7 +16,9 @@ clockedInitTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
+delayTest.mos \
 externalArrayInputTest.mos \
+externalIncludeDirectoryTest.mos \
 externalRecordTest.mos \
 mathFunctionsTest.mos \
 mslDistributionsTest.mos \
@@ -26,6 +29,7 @@ mslMathFFT1Test.mos \
 mslMechanicsTestProtectedVector \
 mslThermalMassesTestNB.mos \
 nameClashTest.mos \
+recordSizesTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
 RefArrayDim2.mos \

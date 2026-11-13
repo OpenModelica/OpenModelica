@@ -21,6 +21,7 @@ ConvertModifiers4.mos \
 ConvertModifiersMissingValue1.mos \
 ConvertPackage1.mos \
 ConvertPackage2.mos \
+ConvertPackage3.mos \
 ConvertPackageMissingUses.mos \
 
 # test that currently fail. Move up when fixed.

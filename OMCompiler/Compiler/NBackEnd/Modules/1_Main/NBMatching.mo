@@ -206,8 +206,8 @@ public
   protected
     Matching seed_matching;
     Adjacency.Mapping seed_map, map;
-    array<Integer> var_to_eqn, eqn_to_var, data, var_index;
-    Integer e, v, eqn, var, eqn_start, eqn_len, seed_start, seed_len, seed_var_start, var_start, var_len, offset, first;
+    array<Integer> var_to_eqn, eqn_to_var, var_index;
+    Integer e, v, eqn, var, eqn_start, eqn_len, seed_start, seed_len, seed_var_start, var_start, var_len, offset;
   algorithm
     if isNone(seed.matching) or isNone(seed.adjacencyMatrix) then return; end if;
     seed_matching := Util.getOption(seed.matching);
@@ -217,7 +217,6 @@ public
         for i in 1:arrayLength(var_index) loop
           var_index[i] := VariablePointers.getVarIndex(vars, BVariable.getVarName(VariablePointers.getVarAt(seed.unknowns, i)));
         end for;
-        data := Adjacency.IntMatrix.entries(adj.m);
         var_to_eqn := arrayCreate(arrayLength(map.var_StA), -1);
         eqn_to_var := arrayCreate(arrayLength(map.eqn_StA), -1);
         for i in 1:arrayLength(seed_map.eqn_AtS) loop
@@ -236,14 +235,10 @@ public
             if offset >= var_len then continue; end if;
             var := var_start + offset;
             eqn := eqn_start + k;
-            first := adj.m.start[eqn];
-            for p in first:first + adj.m.len[eqn] - 1 loop
-              if data[p] == var then
-                eqn_to_var[eqn] := var;
-                var_to_eqn[var] := eqn;
-                break;
-              end if;
-            end for;
+            if Adjacency.IntMatrix.rowContains(adj.m, eqn, var) then
+              eqn_to_var[eqn] := var;
+              var_to_eqn[var] := eqn;
+            end if;
           end for;
         end for;
         matching := MATCHING(var_to_eqn, eqn_to_var);
@@ -529,11 +524,12 @@ protected
     // this needs partially = true to get computed. Otherwise it fails on singular partitions
     output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
-    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = Adjacency.IntMatrix.nonZeroCount(m);
+    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2);
     Integer cheap = 0, algIndx = 5 "PFPlusExternal index";
   algorithm
     BackendDAEEXT.setAssignment(n2, n1, ass2, ass1);
-    BackendDAEEXT.setAdjacencyMatrixFlat(n1, n2, nonZero, m.start, m.len, Vector.rawArray(m.data));
+    BackendDAEEXT.setAdjacencyMatrixPieces(n1, n2, m.first, m.pieces, Adjacency.IntMatrix.pieceStarts(m),
+      Adjacency.IntMatrix.pieceLengths(m), Adjacency.IntMatrix.entries(m));
     BackendDAEEXT.matching(n1, n2, algIndx, cheap, 1.0, if clear then 1 else 0);
     BackendDAEEXT.getAssignment(ass2, ass1);
   end PFPlusExternal;

@@ -66,8 +66,9 @@ protected
 
   // Backend imports
   import BVariable = NBVariable;
+  import DataReconciliation = NBDataReconciliation;
   import NBEquation.Equation;
-  import NBEvents.{EventInfo, Condition, MathEvent};
+  import NBEvents.{EventInfo, TimeEvent};
   import NBPartition.Partition;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -631,6 +632,7 @@ public
         case VariableKind.PARAMETER()      then OldSimCodeVar.FIXED();
         case VariableKind.DISCRETE()       then OldSimCodeVar.DISCRETE();
         case VariableKind.DISCRETE_STATE() then OldSimCodeVar.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL() then OldSimCodeVar.DISCRETE();
         case VariableKind.CLOCKED()        then OldSimCodeVar.DISCRETE();
         case VariableKind.PREVIOUS()       then OldSimCodeVar.DISCRETE();
         else OldSimCodeVar.CONTINUOUS();
@@ -745,6 +747,7 @@ public
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
+              case VariableKind.ALGORITHM_LOCAL() then true;
               case VariableKind.PREVIOUS()        then true;
               case VariableKind.PARAMETER()       then true;
               case VariableKind.CONSTANT()        then true;
@@ -880,6 +883,7 @@ public
         case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL()         then OldBackendDAE.DISCRETE();
         case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();
@@ -899,7 +903,6 @@ public
         case VariableKind.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
         // ToDo maybe deprecated:
         case VariableKind.ALG_STATE()               then OldBackendDAE.ALG_STATE();
-        case VariableKind.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
         case VariableKind.RESIDUAL_VAR()            then OldBackendDAE.DAE_RESIDUAL_VAR();
         case VariableKind.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
         case VariableKind.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
@@ -1149,12 +1152,13 @@ public
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
+      list<SimVar> intNonTrivialAlias = {}, boolNonTrivialAlias = {}, stringNonTrivialAlias = {}, enumNonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {}, enumAlgVars = {};
       list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {}, enumAlgVars2 = {};
       list<SimVar> discreteAlgVars3 = {}, intAlgVars3 = {}, boolAlgVars3 = {}, stringAlgVars3 = {}, enumAlgVars3 = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
-      list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {}, enumAliasVars = {};
+      list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {}, enumAliasVars = {}, derAliasVars = {};
       list<SimVar> paramVars = {}, intParamVars = {}, boolParamVars = {}, stringParamVars = {}, enumParamVars = {};
       list<SimVar> paramVarsR = {}, intParamVarsR = {}, boolParamVarsR = {}, stringParamVarsR = {}, enumParamVarsR = {};
       list<SimVar> constVars = {}, intConstVars = {}, boolConstVars = {}, stringConstVars = {}, enumConstVars = {};
@@ -1176,11 +1180,13 @@ public
           ({derivativeVars}, simCodeIndices)                                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({algVars}, simCodeIndices)                                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({inputVars}, simCodeIndices)                                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({nonTrivialAlias}, simCodeIndices)                                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({nonTrivialAlias, intNonTrivialAlias, boolNonTrivialAlias, stringNonTrivialAlias, enumNonTrivialAlias}, simCodeIndices)
+                                                                                                          := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)        := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars, enumAliasVars}, simCodeIndices)      := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
+          (derAliasVars, simCodeIndices)                                                                  := createStateDerivativeAliases(aliasVars, derivativeVars, simCodeIndices);
           // enums are appended to the integer variables, constants do not take part in the shift
           enum_shift := simCodeIndices.integerVarIndex;
           ({paramVars, intParamVars, boolParamVars, stringParamVars, enumParamVars}, simCodeIndices)      := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
@@ -1214,13 +1220,13 @@ public
         derivativeVars                    = derivativeVars,
         algVars                           = List.flatten({algVars, inputVars, nonTrivialAlias}),
         discreteAlgVars                   = List.flatten({discreteAlgVars, discreteAlgVars2, discreteAlgVars3}),
-        intAlgVars                        = List.flatten({intAlgVars, intAlgVars2, intAlgVars3}),
-        boolAlgVars                       = List.flatten({boolAlgVars, boolAlgVars2, boolAlgVars3}),
-        stringAlgVars                     = List.flatten({stringAlgVars, stringAlgVars2, stringAlgVars3}),
-        enumAlgVars                       = List.flatten({enumAlgVars, enumAlgVars2, enumAlgVars3}),
+        intAlgVars                        = List.flatten({intNonTrivialAlias, intAlgVars, intAlgVars2, intAlgVars3}),
+        boolAlgVars                       = List.flatten({boolNonTrivialAlias, boolAlgVars, boolAlgVars2, boolAlgVars3}),
+        stringAlgVars                     = List.flatten({stringNonTrivialAlias, stringAlgVars, stringAlgVars2, stringAlgVars3}),
+        enumAlgVars                       = List.flatten({enumNonTrivialAlias, enumAlgVars, enumAlgVars2, enumAlgVars3}),
         inputVars                         = inputVars,
         outputVars                        = outputVars,
-        aliasVars                         = aliasVars,
+        aliasVars                         = listAppend(aliasVars, derAliasVars),
         intAliasVars                      = intAliasVars,
         boolAliasVars                     = boolAliasVars,
         stringAliasVars                   = stringAliasVars,
@@ -1254,6 +1260,45 @@ public
       simVars.intParamVars  := listAppend(simVars.intParamVars, list(SimVar.shiftIndex(v, simCodeIndices.integerParamIndex) for v in simVars.enumParamVars));
       simVars.intConstVars  := listAppend(simVars.intConstVars, list(SimVar.shiftIndex(v, simCodeIndices.integerVarIndex) for v in simVars.enumConstVars));
     end create;
+
+    function addDataReconciliation
+      "The data reconciliation lists refer to the simulation variables already created,
+      the generated code only uses their position in the list and their name."
+      input output SimVars vars;
+      input Option<DataReconciliation.ReconciliationData> data_opt;
+    protected
+      DataReconciliation.ReconciliationData data;
+      UnorderedMap<ComponentRef, SimVar> map;
+    algorithm
+      if isNone(data_opt) then
+        return;
+      end if;
+      SOME(data) := data_opt;
+      map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+      for var in vars.algVars loop
+        UnorderedMap.add(SimVar.getName(var), var, map);
+      end for;
+      // the runtime reads setcVars in reverse order, the rows of the jacobian F are in the order of the residuals
+      vars.dataReconSetcVars  := list(getDataReconciliationVar(v, map) for v in listReverse(data.residualVars));
+      vars.dataReconinputVars := list(getDataReconciliationVar(v, map) for v in data.inputVars);
+      vars.dataReconSetBVars  := list(getDataReconciliationVar(v, map) for v in data.unmeasuredVars);
+    end addDataReconciliation;
+
+    function getDataReconciliationVar
+      input Pointer<Variable> var_ptr;
+      input UnorderedMap<ComponentRef, SimVar> map;
+      output SimVar var;
+    protected
+      ComponentRef name = BVariable.getVarName(var_ptr);
+    algorithm
+      var := match UnorderedMap.get(name, map)
+        case SOME(var) then var;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed, data reconciliation variable "
+            + ComponentRef.toString(name) + " is not a variable of the reconciled system."});
+        then fail();
+      end match;
+    end getDataReconciliationVar;
 
     function addSeedAndJacobianVars
       input output SimVars vars;
@@ -1348,6 +1393,61 @@ public
         dataReconinputVars                = SimVar.convertListMemo(simVars.dataReconinputVars, memo),
         dataReconSetBVars                 = SimVar.convertListMemo(simVars.dataReconSetBVars, memo));
     end convert;
+
+    function createStateDerivativeAliases
+      "der(v) as an alias of der(x) for each scalar alias v = x or v = -x of a state x."
+      input list<SimVar> aliasVars;
+      input list<SimVar> derivativeVars;
+      output list<SimVar> simVars = {};
+      input output SimCode.SimCodeIndices indices;
+    protected
+      UnorderedMap<ComponentRef, SimVar> ders;
+      Option<SimVar> state_der;
+      SimVar der_var;
+      ComponentRef state;
+      Real gain, offset;
+    algorithm
+      if Config.simCodeTarget() == "Cpp" then
+        return;
+      end if;
+      ders := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+      for var in derivativeVars loop
+        if listEmpty(var.numArrayElement) then
+          UnorderedMap.add(var.name, var, ders);
+        end if;
+      end for;
+      for alias_var in aliasVars loop
+        () := match alias_var.aliasvar
+          case Alias.ALIAS(alias = state, gain = gain, offset = offset)
+            guard listEmpty(alias_var.numArrayElement) and realEq(offset, 0.0) and (realEq(gain, 1.0) or realEq(gain, -1.0))
+              and not StringUtil.startsWith(ComponentRef.toString(alias_var.name), "$")
+            algorithm
+              state_der := UnorderedMap.get(BVariable.makeDerCref(state), ders);
+              if isSome(state_der) then
+                SOME(der_var) := state_der;
+                der_var.aliasvar := Alias.ALIAS(der_var.name, gain, 0.0);
+                der_var.name := BVariable.makeDerCref(alias_var.name);
+                der_var.comment := if alias_var.comment == "" then "" else "der(" + alias_var.comment + ")";
+                der_var.varKind := VariableKind.ALGEBRAIC();
+                der_var.info := alias_var.info;
+                der_var.index := indices.realAliasIndex;
+                der_var.variable_index := SOME(indices.uniqueIndex);
+                der_var.fmi_index := SOME(indices.realAliasIndex);
+                der_var.arrayCref := NONE();
+                der_var.isProtected := alias_var.isProtected;
+                der_var.hideResult := alias_var.hideResult;
+                der_var.isEncrypted := alias_var.isEncrypted;
+                der_var.exportVar := if isSome(alias_var.exportVar) then SOME(der_var.name) else NONE();
+                indices.uniqueIndex := indices.uniqueIndex + 1;
+                indices.realAliasIndex := indices.realAliasIndex + 1;
+                simVars := der_var :: simVars;
+              end if;
+            then ();
+          else ();
+        end match;
+      end for;
+      simVars := listReverseInPlace(simVars);
+    end createStateDerivativeAliases;
 
     function createSimVarLists
       "creates a list of simvar lists. SplitType.NONE always returns a list with only
@@ -1511,9 +1611,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst),
-        numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
-        numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numZeroCrossings             = EventInfo.numZeroCrossings(eventInfo),
+        numTimeEvents                = TimeEvent.nextIndex(eventInfo.time_set),
+        numRelations                 = EventInfo.numRelations(eventInfo),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listScalarSize(vars.stateVars),
         numAlgVars                   = listScalarSize(vars.algVars),
@@ -1538,14 +1638,16 @@ public
         numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
         numMixedSystems              = 0,
         numStateSets                 = 0,
-        numJacobians                 = simCodeIndices.nonlinearSystemIndex + simCodeIndices.linearSystemIndex + 5, // #nonlinSystems + #linSystems (torn linear systems with a symbolic Jacobian consume a jacobianIndex slot from the same analyticJacobians array too) + 5 simulation jacs (add state sets later!)
+        // every created jacobian (simulation, linear and nonlinear systems) consumes one jacobianIndex,
+        // the runtime allocates the analyticJacobians array with this size
+        numJacobians                 = intMax(simCodeIndices.jacobianIndex, simCodeIndices.nonlinearSystemIndex + simCodeIndices.linearSystemIndex + 5), // (add state sets later!)
         numOptimizeConstraints       = 0,
         numOptimizeFinalConstraints  = 0,
         numSensitivityParameters     = 0,
-        numSetcVars                  = 0,
-        numDataReconVars             = 0,
+        numSetcVars                  = listLength(vars.dataReconSetcVars),
+        numDataReconVars             = listLength(vars.dataReconinputVars),
         numRealIntputVars            = 0,
-        numSetbVars                  = 0,
+        numSetbVars                  = listLength(vars.dataReconSetBVars),
         numRelatedBoundaryConditions = 0);
     end create;
 

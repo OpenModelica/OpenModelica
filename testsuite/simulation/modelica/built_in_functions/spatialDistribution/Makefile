@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+	nameClash.mos \
 	initSpatialDistribution.mos \
 	helloSpatialDistribution.mos \
 	singleOutputSpatialDistribution.mos \
@@ -16,6 +17,8 @@ TESTFILES = \
 	doubleReversal.mos \
 	largePositionReversal.mos \
 	rampInput.mos \
+	standingStill.mos \
+	duplicateSpatialDistribution.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

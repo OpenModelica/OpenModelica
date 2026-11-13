@@ -3664,21 +3664,6 @@ algorithm
       then
         (DAE.TUPLE(elist_1),DAE.T_TUPLE(tys_1,expected.names));
 
-    // Implicit conversion from Integer literal to an enumeration
-    // This is not a valid Modelica conversion, but was widely used in the past,
-    // by, for instance, Modelica.Electrical.Digital.
-    // Enable with --intEnumConversion.
-    case (exp as DAE.ICONST(oi), DAE.T_INTEGER(), t2 as DAE.T_ENUMERATION(path = tp, names = l))
-       algorithm
-        true := Config.intEnumConversion();
-        // It would be good to have the source location of exp here, so that we could pass it to typeConvertIntToEnumCheck.
-        true := typeConvertIntToEnumCheck(exp, t2); // Will warn or report error depending on whether oi is out of range.
-        // select from enum list:
-        name := listGet(l, oi);
-        tp := AbsynUtil.joinPaths(tp, Absyn.IDENT(name));
-      then
-        (DAE.ENUM_LITERAL(tp, oi),expected);
-
     // Implicit conversion from Integer to Real
     case (e, DAE.T_INTEGER(), DAE.T_REAL())
       then
@@ -6868,51 +6853,6 @@ algorithm
     else false;
   end match;
 end isEmptyOrNoRetcall;
-
-protected function typeConvertIntToEnumCheck "
-  Deal with the invalid conversions from Integer to enumeration.
-  If the Integer corresponds to the Integer(ENUM) value of some enumeration constant ENUM,
-  just give a warning, otherwise report an error.
-  Returns false if an error was reported, otherwise true.
-"
-  input DAE.Exp exp;
-  input DAE.Type expected;
-  output Boolean conversionOK;
-algorithm
-  conversionOK := matchcontinue (exp, expected)
-    local
-      Integer oi;
-      Absyn.Path tp;
-      list<String> l;
-      String pathStr, intStr, enumConst, lengthStr;
-    case (DAE.ICONST(oi),
-          DAE.T_ENUMERATION(path = tp, names = l))
-      algorithm
-        true := (1 <= oi and oi <= listLength(l));
-        pathStr := AbsynUtil.pathString(tp);
-        intStr := intString(oi);
-        enumConst := listGet(l, oi);
-        Error.addMessage(Error.INTEGER_ENUMERATION_CONVERSION_WARNING, {intStr, pathStr, enumConst});
-      then true;
-    case (DAE.ICONST(oi),
-          DAE.T_ENUMERATION(path = tp, names = l))
-      algorithm
-        pathStr := AbsynUtil.pathString(tp);
-        false := stringEq(pathStr, "");
-        intStr := intString(oi);
-        lengthStr := intString(listLength(l));
-        Error.addMessage(Error.INTEGER_ENUMERATION_OUT_OF_RANGE, {pathStr, intStr, lengthStr});
-      then false;
-    case (DAE.ICONST(oi),
-          DAE.T_ENUMERATION(path = tp))
-      algorithm
-        pathStr := AbsynUtil.pathString(tp);
-        true := stringEq(pathStr, "");
-        intStr := intString(oi);
-        Error.addMessage(Error.INTEGER_TO_UNKNOWN_ENUMERATION, {intStr});
-      then false;
-  end matchcontinue;
-end typeConvertIntToEnumCheck;
 
 public function findVarIndex
   input String id;

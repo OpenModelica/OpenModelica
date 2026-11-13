@@ -9180,7 +9180,7 @@ getDocumentationAnnotation(Modelica.UsersGuide.Contact); getErrorString();
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(Modelica.StateGraph.Examples.Utilities.Tank)
-// {-100.0,-100.0,100.0,100.0,true,-,-,,{Text(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-122.0, -82.0}, {88.0, -42.0}}, "%name", 0.0, {0, 0, 255}, "", {}, TextAlignment.Center), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.5, BorderPattern.None, {{-60.0, 60.0}, {80.0, -40.0}}, 0.0), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {191, 0, 95}, LinePattern.Solid, FillPattern.HorizontalCylinder, 0.5, BorderPattern.None, DynamicSelect({{-60.0, -40.0}, {-60.0, -40.0}}, {{-60.0, -40.0}, {80.0, level * 100.0 - 40.0}}), 0.0)}}
+// {-100.0,-100.0,100.0,100.0,true,-,-,,{Text(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-122.0, -82.0}, {88.0, -42.0}}, "%name", 0.0, {0, 0, 255}, "", {}, TextAlignment.Center), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.5, BorderPattern.None, {{-60.0, 60.0}, {80.0, -40.0}}, 0.0), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {191, 0, 95}, LinePattern.Solid, FillPattern.HorizontalCylinder, 0.5, BorderPattern.None, DynamicSelect({{-60.0, -40.0}, {-60.0, -40.0}}, {{-60.0, -40.0}, {80.0, level*100.0 - 40.0}}), 0.0)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDiagramAnnotation(Modelica.StateGraph.Examples.Utilities.Tank)

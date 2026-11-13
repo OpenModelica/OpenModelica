@@ -42,7 +42,17 @@ fn main() {
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_DIR");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_INDEX_SIZE");
+    println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_LIBS");
     sundials();
+}
+
+/// [`NATIVE_LIBS`], or the archives that `OMC_SUNDIALS_NATIVE_LIBS` names
+/// (comma-separated, in link order): a source FMU builds them all into one.
+fn native_libs() -> Vec<String> {
+    match std::env::var("OMC_SUNDIALS_NATIVE_LIBS") {
+        Ok(v) if !v.is_empty() => v.split(',').map(String::from).collect(),
+        _ => NATIVE_LIBS.iter().map(|l| l.to_string()).collect(),
+    }
 }
 
 fn sundials() {
@@ -62,23 +72,33 @@ fn sundials() {
         }
         return;
     }
-    let Some(dir) = std::env::var_os("OMC_SUNDIALS_NATIVE_DIR") else { return };
+    let Some(dir) = std::env::var_os("OMC_SUNDIALS_NATIVE_DIR") else {
+        return;
+    };
     let lib = Path::new(&dir).join("lib");
     // MSVC keeps the CMake target's `_static` suffix (sundials_cvode_static.lib)
     // where the unix builds set an OUTPUT_NAME (libsundials_cvode.a).
-    let resolved: Vec<Option<String>> = NATIVE_LIBS
+    let libs = native_libs();
+    let resolved: Vec<Option<String>> = libs
         .iter()
         .map(|l| {
-            [l.to_string(), format!("{l}_static")].into_iter().find(|n| {
-                lib.join(format!("lib{n}.a")).exists() || lib.join(format!("{n}.lib")).exists()
-            })
+            [l.to_string(), format!("{l}_static")]
+                .into_iter()
+                .find(|n| lib.join(format!("lib{n}.a")).exists() || lib.join(format!("{n}.lib")).exists())
         })
         .collect();
-    let missing: Vec<_> =
-        NATIVE_LIBS.iter().zip(&resolved).filter(|(_, r)| r.is_none()).map(|(l, _)| l).collect();
+    let missing: Vec<_> = libs
+        .iter()
+        .zip(&resolved)
+        .filter(|(_, r)| r.is_none())
+        .map(|(l, _)| l)
+        .collect();
     if !missing.is_empty() {
-        panic!("OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \
-                build failed (check the rust_sundials_native_collect CMake target)", lib.display());
+        panic!(
+            "OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \
+                build failed (check the rust_sundials_native_collect CMake target)",
+            lib.display()
+        );
     }
     println!("cargo:rustc-link-search=native={}", lib.display());
     for name in resolved.iter().flatten() {

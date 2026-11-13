@@ -360,7 +360,6 @@ algorithm
     case BackendDAE.ARRAYSYSTEM() then "multidim equation arrays";
     case BackendDAE.PARAMETERSYSTEM() then "parameter system";
     case BackendDAE.INITIALSYSTEM() then "initialization";
-    case BackendDAE.INLINESYSTEM() then "inline system";
   end match;
 end printBackendDAEType2String;
 
@@ -2545,7 +2544,6 @@ algorithm
     case BackendDAE.OPT_TGRID()  then "OPT_TGRID";
     case BackendDAE.OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT";
     case BackendDAE.ALG_STATE()  then "ALG_STATE";
-    case BackendDAE.ALG_STATE_OLD()  then "ALG_STATE_OLD";
     case BackendDAE.DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR";
     case BackendDAE.DAE_AUX_VAR() then "DAE_AUX_VAR";
     case BackendDAE.LOOP_ITERATION() then "LOOP_ITERATION";

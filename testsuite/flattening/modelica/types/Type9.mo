@@ -14,14 +14,13 @@ type T3 = Integer(final quantity = "pcs");
 type T4 = String(final quantity="name");
 type T5 = Boolean(final quantity="foo");
 
-class A
+model A
   Real a(unit = "m/s");
   T b;
   T2 b2;
   T3 b3;
   T4 b4;
   T5 b5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 // Result:
 // class A

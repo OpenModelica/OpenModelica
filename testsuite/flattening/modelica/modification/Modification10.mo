@@ -4,23 +4,22 @@
 //
 //
 
-class B
+model B
   Real x = 1.0;
 end B;
 
-class C
+model C
   B b;
 end C;
 
-class A
-  replaceable class B2=B;
+model A
+  replaceable model B2=B;
   C c;
   B2 b;
 end A;
 
-class Modification10
-  A a(redeclare class B2=B(x = 17.0));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+model Modification10
+  A a(redeclare model B2=B(x = 17.0));
 end Modification10;
 
 

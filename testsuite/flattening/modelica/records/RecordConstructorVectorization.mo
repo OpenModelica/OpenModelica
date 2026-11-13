@@ -41,18 +41,9 @@ model RecordConstructorVectorization
   Crap.Whatever w = Crap.Whatever("Shipot", 5.5);
  equation
   w = Crap.Whatever("Nothing", 4.7);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstructorVectorization;
 
 // Result:
-// function Crap.FluidConstants "Automatically generated record constructor for Crap.FluidConstants"
-//   input String iupacName;
-//   input String casRegistryNumber;
-//   input String chemicalFormula;
-//   input String structureFormula;
-//   output FluidConstants res;
-// end Crap.FluidConstants;
-//
 // function Crap.Whatever "Automatically generated record constructor for Crap.Whatever"
 //   input String x;
 //   input Real y;
@@ -71,7 +62,6 @@ end RecordConstructorVectorization;
 //   String w.x = "Shipot";
 //   Real w.y = 5.5;
 // equation
-//   w.x = "Nothing";
-//   w.y = 4.7;
+//   w = Crap.Whatever("Nothing", 4.7);
 // end RecordConstructorVectorization;
 // endResult

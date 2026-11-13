@@ -1,7 +1,6 @@
 // name: Ticket5571.mos
 // keywords: test fix for but 5571
 // status: correct
-// cflags: -d=-newInst
 //
 //
 

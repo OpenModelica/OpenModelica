@@ -1,0 +1,41 @@
+// name:     fmi3_cs_event_mode_reinit
+// keywords: FMI 3.0 export CoSimulation CVODE Event Mode reinit
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_event_mode_reinit.fmu fmi3_cs_event_mode_reinit.fmutmp/ fmi3_cs_event_mode_reinit_info.json fmi3_cs_event_mode_reinit.log fmi3_cs_event_mode_reinit_out.txt
+//
+// After the importer handles an event in Event Mode, CVODE restarts from the
+// state that reinit set (#17801).
+
+loadString("
+model fmi3_cs_event_mode_reinit
+  Real h(start = 1, fixed = true);
+  Real v(start = 0, fixed = true);
+equation
+  der(h) = v;
+  der(v) = -9.81;
+  when h < 0 then
+    reinit(v, -0.8*pre(v));
+  end when;
+end fmi3_cs_event_mode_reinit;
+"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+buildModelFMU(fmi3_cs_event_mode_reinit, version="3.0", fmuType="cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_event_mode_reinit.py fmi3_cs_event_mode_reinit.fmu fmi3_cs_event_mode_reinit_out.txt > fmi3_cs_event_mode_reinit.log 2>&1"); getErrorString();
+readFile("fmi3_cs_event_mode_reinit_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_event_mode_reinit.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "bounced: True
+// min(h) > -0.05: True
+// "
+// ""
+// endResult

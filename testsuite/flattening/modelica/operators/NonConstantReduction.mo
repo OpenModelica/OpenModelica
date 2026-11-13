@@ -5,9 +5,8 @@
 // Tests elaboration of non-constant reductions.
 //
 
-class NonConstantReduction
+model NonConstantReduction
   Integer i = min(i for i in {1 + integer(time)});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NonConstantReduction;
 
 // Result:

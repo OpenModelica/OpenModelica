@@ -1279,6 +1279,13 @@ algorithm
   end match;
 end isParam;
 
+public function isParamWithoutFixedValue
+"Return true if variable is a parameter with fixed = false, i.e. its value is
+  computed during initialization."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean = isParam(inVar) and not varFixed(inVar);
+end isParamWithoutFixedValue;
+
 public function makeParam
   "Change variable to parameter"
   input output BackendDAE.Var var;
@@ -1440,17 +1447,6 @@ algorithm
     else false;
   end match;
 end isRealOptimizeDerInput;
-
-public function isAlgebraicOldState
-"Return true if variable is old algebraic variable for inline integration."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match inVar
-    case BackendDAE.VAR(varKind =  BackendDAE.ALG_STATE_OLD()) then true;
-    else false;
-  end match;
-end isAlgebraicOldState;
 
 public function isCSEVar
 "Return true if variable is introduced by wrapFunctionCall and prefixed with '$cse'"
@@ -3803,14 +3799,14 @@ algorithm
     case {} then (inSubscript,iPerformed);
     case DAE.WHOLEDIM()::rest
       algorithm
-        (_,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
-      then (DAE.WHOLEDIM()::rest, b);
+        (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
+      then (DAE.WHOLEDIM()::res, b);
 
     case (sub as DAE.SLICE(exp = sub_exp))::rest
       algorithm
         (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
         const := Expression.isConst(sub_exp);
-        res := if const then sub::rest else (DAE.WHOLEDIM()::rest);
+        res := if const then sub::res else (DAE.WHOLEDIM()::res);
       then
         (res, b or not const);
 
@@ -3819,14 +3815,14 @@ algorithm
         (sub_exp_,calcRange) := computeRangeExps(sub_exp); // the fact that if it can be calculated, we can take the wholedim is a bit weird, anyway, the whole function is weird
         (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
         const := Expression.isConst(sub_exp_);
-        res := (if const then if referenceEq(sub_exp,sub_exp_) then sub else DAE.INDEX(sub_exp_) else DAE.WHOLEDIM())::rest;
+        res := (if const then if referenceEq(sub_exp,sub_exp_) then sub else DAE.INDEX(sub_exp_) else DAE.WHOLEDIM())::res;
       then
         (res, b or not const or calcRange);
     case (sub as DAE.WHOLE_NONEXP(exp = sub_exp))::rest
       algorithm
         (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
         const := Expression.isConst(sub_exp);
-        res := if const then sub::rest else (DAE.WHOLEDIM()::rest);
+        res := if const then sub::res else (DAE.WHOLEDIM()::res);
       then
         (res, b or not const);
   end match;

@@ -18,9 +18,7 @@ pub(super) fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result
         }
     }
     match sim_array_base_subs(cref)? {
-        Some((base, _)) => {
-            Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base))
-        }
+        Some((base, _)) => Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base)),
         None => Ok(false),
     }
 }
@@ -42,7 +40,7 @@ pub(super) fn clkpre_cref(cr: &DAE::ComponentRef) -> metamodelica::Ref<DAE::Comp
 }
 
 /// Address of the sub-clock block `interval()`/`firstTick()` read.
-pub(super) fn sub_clock_off(sim: &SimCtx, name: &str) -> Result<u32> {
+pub(super) fn sub_clock_off(sim: &SimCtx, name: &str) -> Result<SimOff> {
     sim.sub_clock_off.ok_or_else(|| {
         crate::CodegenWasmJit::record_error(format!(
             "CodegenWasmJit: `{name}()` reads the active sub-clock, but the equation is not in a \
@@ -78,11 +76,18 @@ pub(crate) fn sim_cref_key(cr: &DAE::ComponentRef) -> Result<String> {
 fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
     use DAE::ComponentRef as C;
     match cr {
-        C::CREF_IDENT { ident, subscriptLst, .. } => {
+        C::CREF_IDENT {
+            ident, subscriptLst, ..
+        } => {
             s.push_str(ident);
             sim_subs_into(subscriptLst, s)?;
         }
-        C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+        C::CREF_QUAL {
+            ident,
+            subscriptLst,
+            componentRef,
+            ..
+        } => {
             s.push_str(ident);
             sim_subs_into(subscriptLst, s)?;
             s.push('.');
@@ -118,8 +123,15 @@ pub(crate) fn flat_sim_key(cr: &DAE::ComponentRef) -> Option<String> {
     let mut node = cr;
     loop {
         let (ident, subscriptLst, next) = match node {
-            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
-            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            C::CREF_IDENT {
+                ident, subscriptLst, ..
+            } => (ident, subscriptLst, None),
+            C::CREF_QUAL {
+                ident,
+                subscriptLst,
+                componentRef,
+                ..
+            } => {
                 outer_subs |= !subscriptLst.is_empty();
                 (ident, subscriptLst, Some(componentRef))
             }
@@ -144,10 +156,14 @@ pub(crate) fn flat_sim_key(cr: &DAE::ComponentRef) -> Option<String> {
 /// a recorded message. The callers that recover must not record one.
 pub(super) fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
     sim_cref_key(cr).map_err(|e| {
-        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(&metamodelica::Ref::new(cr.clone()))
-            .map(|s| s.to_string())
-            .unwrap_or_default();
-        crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: cannot resolve `{shown}` to a simulation variable"));
+        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(
+            &metamodelica::Ref::new(cr.clone()),
+        )
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: cannot resolve `{shown}` to a simulation variable"
+        ));
         e
     })
 }
@@ -204,7 +220,11 @@ pub(super) fn cref_subs(cr: &DAE::ComponentRef) -> CrefSubs {
     loop {
         let (subscriptLst, next) = match node {
             C::CREF_IDENT { subscriptLst, .. } => (subscriptLst, None),
-            C::CREF_QUAL { subscriptLst, componentRef, .. } => (subscriptLst, Some(componentRef)),
+            C::CREF_QUAL {
+                subscriptLst,
+                componentRef,
+                ..
+            } => (subscriptLst, Some(componentRef)),
             _ => return CrefSubs::Other,
         };
         for sub in &**subscriptLst {
@@ -242,8 +262,12 @@ pub(crate) fn push_qual_subs(subs: &List<metamodelica::Ref<DAE::Subscript>>, s: 
 /// emits that access too, so it lowers to the run-time error instead of failing the
 /// translation. Leaves a value of the element type on the stack.
 pub(super) fn emit_sim_const_index_error(ctx: &mut FnCtx, cref: &DAE::ComponentRef, key: &str) -> Result<Option<WTy>> {
-    let Some((base, subs)) = array_ref_of(cref)? else { return Ok(None) };
-    let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() else { return Ok(None) };
+    let Some((base, subs)) = array_ref_of(cref)? else {
+        return Ok(None);
+    };
+    let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() else {
+        return Ok(None);
+    };
     if subs.len() != group.dims.len() {
         return Ok(None);
     }
@@ -254,7 +278,12 @@ pub(super) fn emit_sim_const_index_error(ctx: &mut FnCtx, cref: &DAE::ComponentR
     if !outside {
         return Ok(None);
     }
-    let dims = group.dims.iter().map(|d| d.as_const().unwrap_or(0).to_string()).collect::<Vec<_>>().join(",");
+    let dims = group
+        .dims
+        .iter()
+        .map(|d| d.as_const().unwrap_or(0).to_string())
+        .collect::<Vec<_>>()
+        .join(",");
     emit_runtime_error(ctx, &format!("Index out of bounds: `{key}` of array of size [{dims}]"))?;
     match group.wty {
         WTy::F64 => ctx.emit(we::Instruction::F64Const(0.0.into())),
@@ -267,9 +296,15 @@ pub(super) fn emit_sim_const_index_error(ctx: &mut FnCtx, cref: &DAE::ComponentR
 /// equation defines: the backend kept only the elements that depend on the seeds,
 /// so the rest are structurally zero.
 pub(super) fn is_jac_column_elem_key(key: &str) -> bool {
-    let Some(stem) = key.strip_suffix(']') else { return false };
-    let Some((base, _)) = stem.rsplit_once('[') else { return false };
-    let Some((qual, last)) = base.rsplit_once('.') else { return false };
+    let Some(stem) = key.strip_suffix(']') else {
+        return false;
+    };
+    let Some((base, _)) = stem.rsplit_once('[') else {
+        return false;
+    };
+    let Some((qual, last)) = base.rsplit_once('.') else {
+        return false;
+    };
     last.starts_with("dummyVar") && qual.rsplit('.').next().is_some_and(|m| m.starts_with("$pDER"))
 }
 
@@ -297,10 +332,15 @@ pub(super) fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec
     let mut node = cr;
     loop {
         let (ident, subscriptLst, next) = match node {
-            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
-            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
-                (ident, subscriptLst, Some(componentRef))
-            }
+            C::CREF_IDENT {
+                ident, subscriptLst, ..
+            } => (ident, subscriptLst, None),
+            C::CREF_QUAL {
+                ident,
+                subscriptLst,
+                componentRef,
+                ..
+            } => (ident, subscriptLst, Some(componentRef)),
             _ => return Ok(None),
         };
         base.push_str(ident);
@@ -330,7 +370,9 @@ pub(super) fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec
     let mut node = cr;
     loop {
         match node {
-            C::CREF_IDENT { ident, subscriptLst, .. } => {
+            C::CREF_IDENT {
+                ident, subscriptLst, ..
+            } => {
                 base.push_str(ident);
                 let mut leading = Vec::new();
                 let mut seen_whole = false;
@@ -346,7 +388,12 @@ pub(super) fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec
                 }
                 return Ok(Some((base, leading)));
             }
-            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            C::CREF_QUAL {
+                ident,
+                subscriptLst,
+                componentRef,
+                ..
+            } => {
                 base.push_str(ident);
                 if !push_qual_subs(subscriptLst, &mut base) {
                     return Ok(None);
@@ -370,8 +417,15 @@ pub(super) fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String
     let mut node = cr;
     loop {
         let (ident, subscriptLst, next) = match node {
-            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
-            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            C::CREF_IDENT {
+                ident, subscriptLst, ..
+            } => (ident, subscriptLst, None),
+            C::CREF_QUAL {
+                ident,
+                subscriptLst,
+                componentRef,
+                ..
+            } => {
                 qualified_subs |= !subscriptLst.is_empty();
                 (ident, subscriptLst, Some(componentRef))
             }
@@ -397,20 +451,29 @@ pub(super) fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String
 
 /// `base[subs]` (subscripts on the final component) -> `(base key, raw subscript
 /// list)`. Unlike [`sim_slice_of`], any `INDEX`/`SLICE`/whole mix.
-pub(super) fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<metamodelica::Ref<DAE::Subscript>>)>> {
+pub(super) fn sim_array_base_subs(
+    cr: &DAE::ComponentRef,
+) -> Result<Option<(String, List<metamodelica::Ref<DAE::Subscript>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut node = cr;
     loop {
         match node {
-            C::CREF_IDENT { ident, subscriptLst, .. } => {
+            C::CREF_IDENT {
+                ident, subscriptLst, ..
+            } => {
                 base.push_str(ident);
                 if subscriptLst.is_empty() {
                     return Ok(None);
                 }
                 return Ok(Some((base, subscriptLst.clone())));
             }
-            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            C::CREF_QUAL {
+                ident,
+                subscriptLst,
+                componentRef,
+                ..
+            } => {
                 base.push_str(ident);
                 if !push_qual_subs(subscriptLst, &mut base) {
                     return Ok(None);
@@ -425,7 +488,9 @@ pub(super) fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(Stri
 
 /// [`sim_array_base_subs`] over a flattened group: `module[$i].x[2:3]` selects from
 /// `module.x`. `None` unless an outer component is subscripted.
-pub(super) fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<metamodelica::Ref<DAE::Subscript>>)>> {
+pub(super) fn flat_sim_array_base_subs(
+    cr: &DAE::ComponentRef,
+) -> Result<Option<(String, List<metamodelica::Ref<DAE::Subscript>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut subs: Vec<metamodelica::Ref<DAE::Subscript>> = Vec::new();
@@ -433,8 +498,15 @@ pub(super) fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<
     let mut node = cr;
     loop {
         let (ident, subscriptLst, next) = match node {
-            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
-            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            C::CREF_IDENT {
+                ident, subscriptLst, ..
+            } => (ident, subscriptLst, None),
+            C::CREF_QUAL {
+                ident,
+                subscriptLst,
+                componentRef,
+                ..
+            } => {
                 qualified_subs |= !subscriptLst.is_empty();
                 (ident, subscriptLst, Some(componentRef))
             }
@@ -462,7 +534,11 @@ pub(super) fn subs_select_array(subs: &List<metamodelica::Ref<DAE::Subscript>>, 
 /// Push the byte address of element `group[leading, 1, …]` and return
 /// `(trailing_element_count, element_stride)`; the block spans
 /// `trailing_count * stride` contiguous bytes from there.
-pub(super) fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
+pub(super) fn emit_sim_slice_addr(
+    ctx: &mut FnCtx,
+    group: &ArrayGroup,
+    leading: &[metamodelica::Ref<DAE::Exp>],
+) -> Result<()> {
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let k = leading.len();
     if k >= group.dims.len() {

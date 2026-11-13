@@ -1,0 +1,41 @@
+// name: resizableAliasStart
+// keywords: NewBackend resizable alias start value
+// status: correct
+// cflags: --newBackend --simCodeScalarize=false --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableAliasStart_5.mat resizableAliasStart_5.log
+//
+// The start value of an element at a parameter subscript (T[n] of a resizable
+// array) comes from its alias (y = T[n], y.start = 5), like the one of a
+// literal subscript (z = T[1], z.start = 2); all other elements start at 0.
+
+loadString("
+model resizableAliasStart
+  parameter Integer n = 3;
+  Real T[n](each fixed = true);
+  Real y(start = 5);
+  Real z(start = 2);
+equation
+  y = T[n];
+  z = T[1];
+  for i in 1:n loop
+    der(T[i]) = -T[i];
+  end for;
+end resizableAliasStart;
+"); getErrorString();
+
+buildModel(resizableAliasStart, stopTime = 1); getErrorString();
+system("./resizableAliasStart -override=n=5 -r=resizableAliasStart_5.mat", "resizableAliasStart_5.log");
+val(T[5], 0, "resizableAliasStart_5.mat");
+val(T[1], 0, "resizableAliasStart_5.mat");
+val(T[3], 0, "resizableAliasStart_5.mat");
+// Result:
+// true
+// ""
+// {"resizableAliasStart", "resizableAliasStart_init.xml"}
+// ""
+// 0
+// 5.0
+// 2.0
+// 0.0
+// endResult

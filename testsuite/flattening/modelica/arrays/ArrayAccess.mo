@@ -13,7 +13,6 @@ equation
   intArray2[1] = intArray1[1];
   intArray2[2] = intArray1[2];
   intArray2[3] = intArray1[3];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAccess;
 
 // Result:
