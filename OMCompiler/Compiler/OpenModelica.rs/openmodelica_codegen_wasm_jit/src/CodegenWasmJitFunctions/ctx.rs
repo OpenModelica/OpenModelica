@@ -1142,23 +1142,25 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Emit `functionUpdateBoundVariableAttributes`: the constant `defaults`
-    /// (ascending by offset), then each attribute equation, into the slots the
+    /// (ascending by offset), then the attribute equations, into the slots the
     /// solvers read (C's `updateBoundVariableAttributes` +
-    /// `updateStaticDataOfNonlinearSystems`).
+    /// `updateStaticDataOfNonlinearSystems`). Stops after the first equation that
+    /// takes the body past `budget` instructions; returns how many it emitted.
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
         defaults: &[(SimOff, ConstSlot)],
         dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
         attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)],
         masks: &[Option<u32>],
-    ) -> Result<()> {
+        budget: usize,
+    ) -> Result<usize> {
         let data = self.sim()?.data_local;
         emit_const_slots(self, defaults)?;
         for (off, n, v, stride) in dyn_defaults {
             emit_fill_slots(self, *off, n, *v, *stride)?;
         }
         if attrs.is_empty() {
-            return Ok(());
+            return Ok(0);
         }
         let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
         for (i, (attr, exp, targets, log_off, var)) in attrs.iter().enumerate() {
@@ -1170,8 +1172,11 @@ impl<'a> FnCtx<'a> {
             if mask.is_some() {
                 self.sim_end_block();
             }
+            if self.instr_len() >= budget {
+                return Ok(i + 1);
+            }
         }
-        Ok(())
+        Ok(attrs.len())
     }
 
     #[allow(clippy::too_many_arguments)]
