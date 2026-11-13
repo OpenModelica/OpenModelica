@@ -1347,11 +1347,8 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   if (!functions->logger) {
     return NULL;
   }
-#else
-  if (!logMessage) {
-    return NULL;
-  }
 #endif
+  /* FMI 3.0 allows logMessage = NULL; the FMI 3.0 log helpers then log nothing. */
   mmc_init_nogc();
   omc_alloc_interface.init();
 
