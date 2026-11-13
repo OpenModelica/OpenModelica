@@ -1899,6 +1899,39 @@ modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nomi
   return !LessZC(a, b, a_nominal, b_nominal, !direction);
 }
 
+/* Almost continuous zero-crossing functions for a < b, a <= b (Less) and a > b,
+ * a >= b (Greater). Their sign is the value of LessZC/LessEqZC resp.
+ * GreaterZC/GreaterEqZC, so after an event they start the hysteresis width
+ * away from zero instead of at zero. They are never 0, also not for a band of
+ * width zero.
+ */
+static modelica_real hysteresisZCValue(double d, double nominal, double eps, modelica_boolean direction)
+{
+  // shift zc in direction (hysteresis?)
+  double zc = direction ? d/nominal + eps : d/nominal - eps;
+
+  // move away from zero
+  if (zc == 0.0) return direction ? eps : -eps;
+  if (zc > 0 && zc < eps) return eps;
+  if (zc < 0 && zc > -eps) return -eps;
+
+  return zc;
+}
+
+modelica_real LessZCValue(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
+{
+  const double nominal = (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
+  const double eps = 2 * tolZC;
+  return hysteresisZCValue(b - a, nominal, eps, direction) > 0 ? 1 : -1;
+}
+
+modelica_real GreaterZCValue(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
+{
+  const double nominal = (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
+  const double eps = 2 * tolZC;
+  return hysteresisZCValue(a - b, nominal, eps, direction) > 0 ? 1 : -1;
+}
+
 
 /*! \fn _event_integer
  *

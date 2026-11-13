@@ -5714,7 +5714,10 @@ template zeroCrossingValue(Integer index1, Exp relation, Text &preExp, Text &var
 ::=
   match relation
   case exp as RELATION(__) then
-    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
+    if isContinuousZeroCrossing(exp) then
+      zeroCrossingRelationValue(exp, &preExp, &varDecls, &varFrees, &auxFunction)
+    else
+      '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
   case exp as LBINARY(__) then
     '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
@@ -5758,6 +5761,30 @@ template zeroCrossingValue(Integer index1, Exp relation, Text &preExp, Text &var
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end zeroCrossingValue;
+
+template zeroCrossingRelationValue(Exp relation, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Generates a continuous zero crossing for a Real relation that is positive
+  exactly when its hysteresis relation (LessZC, ...) is true."
+::=
+  match relation
+  case rel as RELATION(__) then
+    let rel_f = match rel.operator
+      case LESS(__) then 'Less'
+      case LESSEQ(__) then 'Less'
+      case GREATER(__) then 'Greater'
+      case GREATEREQ(__) then 'Greater'
+    let e1 = daeExp(rel.exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let e2 = daeExp(rel.exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let tmp1 = tempDecl("modelica_real", &varDecls, &varFrees)
+    let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
+    let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let &preExp += '<%nominalTmp%><%\n%>'
+    let index = match rel.optionExpisASUB
+      case SOME((iterExp, start, step)) then
+        '<%rel.index%> + (<%daeExp(iterExp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%> - <%start%>)/<%step%>'
+      else rel.index
+    '<%rel_f%>ZCValue(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%index%>])'
+end zeroCrossingRelationValue;
 
 template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix) "template functionRelations
   Generates function in simulation file.
