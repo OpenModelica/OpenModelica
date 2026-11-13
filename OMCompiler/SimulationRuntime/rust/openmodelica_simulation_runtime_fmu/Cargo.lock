@@ -69,6 +69,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_fmi_state_machine"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_lapack"
 version = "0.1.0"
 
@@ -103,6 +107,7 @@ dependencies = [
  "cc",
  "libc",
  "openmodelica_fmi3_wasm",
+ "openmodelica_fmi_state_machine",
  "openmodelica_lapack",
  "openmodelica_nls",
  "openmodelica_sim_meta",

@@ -813,9 +813,14 @@ name = "openmodelica_fmi_ls_wasm_to_native"
 version = "0.1.0"
 dependencies = [
  "openmodelica_ext_native",
+ "openmodelica_fmi_state_machine",
  "wasmtime",
  "wasmtime-wasi",
 ]
+
+[[package]]
+name = "openmodelica_fmi_state_machine"
+version = "0.1.0"
 
 [[package]]
 name = "percent-encoding"
