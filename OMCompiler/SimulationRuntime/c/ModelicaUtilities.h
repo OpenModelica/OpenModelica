@@ -192,11 +192,27 @@ function does not return, but calls "ModelicaError".
 The argument is the length of the string to allocate.
 */
 
-char* ModelicaDuplicateString(const char *str);
-
 char* ModelicaAllocateStringWithErrorReturn(size_t len);
 /*
 Same as ModelicaAllocateString, except that in case of error, the
+function returns 0. This allows the external function to close files
+and free other open resources in case of error. After cleaning up
+resources use ModelicaError or ModelicaFormatError to signal
+the error.
+*/
+
+char* ModelicaDuplicateString(const char *str);
+/*
+Duplicate (= allocate memory and deep copy) a Modelica string which
+is used as return argument of an external Modelica function. Note,
+that the storage for string arrays (= pointer to string array) is still
+provided by the calling program, as for any other array. If an error
+occurs, this function does not return, but calls "ModelicaError".
+*/
+
+char* ModelicaDuplicateStringWithErrorReturn(const char *str);
+/*
+Same as ModelicaDuplicateString, except that in case of error, the
 function returns 0. This allows the external function to close files
 and free other open resources in case of error. After cleaning up
 resources use ModelicaError or ModelicaFormatError to signal
