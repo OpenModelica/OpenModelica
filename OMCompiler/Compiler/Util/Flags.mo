@@ -1487,6 +1487,9 @@ constant ConfigFlag TUNABLE_PARAMETERS = CONFIG_FLAG(173, "tunableParameters",
 constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "buildModelFMU(version=\"2.0+3.0\"): the FMI 3.0 FMU also serves FMI 2.0, for OpenModelicaLibraryTesting only.");
+constant ConfigFlag INSTALL_MISSING_PACKAGES = CONFIG_FLAG(175, "installMissingPackages",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Installs the libraries to load that are not installed, using the package manager.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

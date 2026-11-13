@@ -39,6 +39,7 @@ QuotedIdentifierCSV.mos \
 Return.mos \
 StringArrayReturn.mos \
 StringSignificantDigits.mos \
+TestInstallMissingPackages.mos \
 TestLoadModel.mos \
 TestLoadModelMetadata.mos \
 TestLoadModelSolver.mos \
