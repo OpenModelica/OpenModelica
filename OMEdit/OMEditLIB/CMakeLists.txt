@@ -160,6 +160,8 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       FlatModelica/ExpressionFuncs.cpp
                       FlatModelica/Parser.cpp
                       MCP/MCPServer.cpp
+                      Layout/AutoLayout.cpp
+                      Layout/AutoLayoutDialog.cpp
                       MCP/MCPToolsSimulation.cpp
                       MCP/MCPToolsDiagram.cpp
                       Search/FindUsageWidget.cpp
@@ -329,6 +331,8 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       FlatModelica/ExpressionFuncs.h
                       FlatModelica/Parser.h
                       MCP/MCPServer.h
+                      Layout/AutoLayout.h
+                      Layout/AutoLayoutDialog.h
                       MCP/MCPServerPrivate.h
                       Search/FindUsageWidget.h)
 
@@ -715,4 +719,86 @@ if(MODELICA_LS_DIR OR OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
       endforeach()
     endif()
   ")
+endif()
+
+# mocoal, the program behind File > Format > Auto Layout.
+#
+# The build downloads the program for the target platform from the mocoal-rs
+# release named by MOCOAL_VERSION and installs it in <prefix>/bin, where
+# AutoLayout::findProgram() looks (OPENMODELICAHOME/bin). OMEdit needs mocoal
+# 0.1.1 or later (--stdin, --stack). The release has Linux x86_64, macOS arm64
+# and Windows x86_64 builds; elsewhere OMEdit is installed without mocoal and the
+# user can set MOCOAL or choose the program in the dialog.
+#
+#   MOCOAL_PROGRAM               install this program instead of downloading one
+#                                (no network access, an unreleased mocoal).
+#   OM_OMEDIT_BUNDLE_MOCOAL=OFF  ship no mocoal.
+#
+# The hashes are those in SHA256SUMS of the release.
+option(OM_OMEDIT_BUNDLE_MOCOAL "Install mocoal (auto layout) with OMEdit" ON)
+set(MOCOAL_VERSION "0.1.1" CACHE STRING "mocoal-rs release to install")
+set(MOCOAL_PROGRAM "" CACHE FILEPATH "An already-built mocoal program, installed instead of downloading a release")
+
+if(WIN32)
+  set(_mocoal_exe_name "mocoal.exe")
+else()
+  set(_mocoal_exe_name "mocoal")
+endif()
+
+set(_mocoal_exe "")
+if(MOCOAL_PROGRAM)
+  if(EXISTS "${MOCOAL_PROGRAM}")
+    set(_mocoal_exe "${MOCOAL_PROGRAM}")
+  else()
+    message(WARNING "MOCOAL_PROGRAM=${MOCOAL_PROGRAM} does not exist - OMEdit will be installed without mocoal")
+  endif()
+elseif(OM_OMEDIT_BUNDLE_MOCOAL)
+  set(_mocoal_asset "")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
+     AND (NOT CMAKE_SIZEOF_VOID_P OR CMAKE_SIZEOF_VOID_P EQUAL 8))
+    set(_mocoal_asset "mocoal-linux-x86_64.tar.gz")
+    set(_mocoal_sha256 "e5bcb9b04851dba2110b599a0c7ae755b1cdc7cb03d740e95ca60742eb32fd73")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+    set(_mocoal_asset "mocoal-macos-aarch64.tar.gz")
+    set(_mocoal_sha256 "47c1b8a43adbc89a402e462e36f8d83148909ed6b8f5461c06838abd5cc96311")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
+         AND (NOT CMAKE_SIZEOF_VOID_P OR CMAKE_SIZEOF_VOID_P EQUAL 8))
+    set(_mocoal_asset "mocoal-windows-x86_64.zip")
+    set(_mocoal_sha256 "e5df422e81782f098222e2e82b5b8cf0a81a4f9efc1eb22de690d37a8503e462")
+  endif()
+  # The hashes belong to 0.1.1; another version is downloaded unverified.
+  if(NOT MOCOAL_VERSION STREQUAL "0.1.1")
+    set(_mocoal_sha256 "")
+  endif()
+
+  if(NOT _mocoal_asset)
+    message(STATUS "mocoal: no build published for ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} - "
+                   "OMEdit will be installed without it (set MOCOAL or choose the program in the dialog)")
+  else()
+    set(_mocoal_cache "${OM_DOWNLOADS_DIR}/mocoal/${MOCOAL_VERSION}")
+    omc_download("https://github.com/OpenModelica/mocoal-rs/releases/download/v${MOCOAL_VERSION}/${_mocoal_asset}"
+                 "${_mocoal_cache}/${_mocoal_asset}" "${_mocoal_sha256}" _mocoal_dl TIMEOUT 300)
+    if(_mocoal_dl)
+      message(WARNING "Failed to download ${_mocoal_asset} (${_mocoal_dl}) - OMEdit will be installed without mocoal. "
+                      "Set OM_OMEDIT_BUNDLE_MOCOAL=OFF to skip this, or MOCOAL_PROGRAM to install a local build.")
+    else()
+      # The archive holds mocoal/bin/<program> and the licence files.
+      set(_mocoal_dir "${_mocoal_cache}/${_mocoal_asset}.d")
+      if(NOT EXISTS "${_mocoal_dir}/mocoal/bin/${_mocoal_exe_name}")
+        file(REMOVE_RECURSE "${_mocoal_dir}")
+        file(ARCHIVE_EXTRACT INPUT "${_mocoal_cache}/${_mocoal_asset}" DESTINATION "${_mocoal_dir}")
+      endif()
+      set(_mocoal_exe "${_mocoal_dir}/mocoal/bin/${_mocoal_exe_name}")
+      install(FILES "${_mocoal_dir}/mocoal/LICENSE.md" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/mocoal)
+    endif()
+  endif()
+endif()
+
+if(_mocoal_exe)
+  install(PROGRAMS "${_mocoal_exe}" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME ${_mocoal_exe_name})
+  # Also handed to OMEditGUI, which puts it beside the built executable: a
+  # build-tree OMEdit has no OPENMODELICAHOME/bin of its own.
+  set(MOCOAL_STAGE_EXE "${_mocoal_exe}" PARENT_SCOPE)
+  set(MOCOAL_STAGE_EXE_NAME "${_mocoal_exe_name}" PARENT_SCOPE)
+  message(STATUS "mocoal: installing ${_mocoal_exe} into ${CMAKE_INSTALL_BINDIR}")
 endif()

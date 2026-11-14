@@ -33,6 +33,7 @@
  *
  */
 
+#include "Layout/AutoLayoutDialog.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "MCPServer.h"
 #include <QtGlobal>
@@ -535,6 +536,10 @@ if (method == "tools/call") {
   if (!error.isEmpty()) {
     return makeMCPError(id, error);
   }
+  // The progress dialog of an auto layout runs an event loop: no tool may change a class meanwhile.
+  if (AutoLayout::isRunning()) {
+    return makeMCPError(id, "OMEdit is running an auto layout. Try again when it is done.");
+  }
 
   MessagesWidget::instance()->startMCPMessageCollection();
 
@@ -597,6 +602,43 @@ if (method == "tools/call") {
     }
     pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
     return makeMCPToolResponse(id, makeContent(QString("Source code updated for class: %1").arg(className)));
+  }
+  if (toolName == "autoLayout") {
+    QString className = arguments.value("className").toString(); // required
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+    if (!m_proxy->existClass(className) || pLibraryTreeItem == nullptr) {
+      return makeMCPError(id, QString("Class not found: %1").arg(className));
+    }
+    AutoLayout::Options options;
+    options.layout = arguments.value("layout").toString("layered");
+    options.route = arguments.value("route").toString("orthogonal");
+    options.direction = arguments.value("direction").toString("right");
+    options.dx = arguments.value("dx").toDouble(30.0);
+    options.dy = arguments.value("dy").toDouble(20.0);
+    options.scale = arguments.value("scale").toDouble(1.0);
+    options.keep = arguments.value("keep").toBool(false);
+    options.rotate = arguments.value("rotate").toBool(true);
+    options.graphics = arguments.value("graphics").toString("move");
+    options.stackMB = arguments.value("stackMB").toInt(256);
+    // no progress dialog: its event loop would run inside this request
+    options.showProgress = false;
+    QString message;
+    if (!AutoLayoutDialog::apply(pLibraryTreeItem, options, &message)) {
+      return makeMCPError(id, message);
+    }
+    return makeMCPToolResponse(id, makeContent(message));
+  }
+  if (toolName == "undoAutoLayout") {
+    QString className = arguments.value("className").toString(); // required
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+    if (!m_proxy->existClass(className) || pLibraryTreeItem == nullptr) {
+      return makeMCPError(id, QString("Class not found: %1").arg(className));
+    }
+    QString message;
+    if (!AutoLayoutDialog::undo(pLibraryTreeItem, arguments.value("force").toBool(false), &message)) {
+      return makeMCPError(id, message);
+    }
+    return makeMCPToolResponse(id, makeContent(message));
   }
   if (toolName == "createClass") {
     QString className = arguments.value("className").toString(); // required
