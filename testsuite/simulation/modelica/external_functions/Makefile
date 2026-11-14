@@ -25,6 +25,7 @@ QualifiedCrefArg.mos \
 RecordMemberArguments.mos \
 TestRoots.mos \
 ts.mos \
+UserDllCompilerDirectory.mos \
 UserDllModelicaError.mos
 
 # test that currently fail. Move up when fixed.
@@ -63,6 +64,7 @@ ModelicaUtilities.myExtFunction.c \
 PrebuiltWasmExternals \
 QualifiedCrefArg-f.c \
 testTables.txt \
+UserDllCompilerDirectory-lib.c \
 UserDllModelicaError-lib.c \
 
 

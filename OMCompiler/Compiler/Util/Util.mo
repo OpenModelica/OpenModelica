@@ -98,6 +98,14 @@ algorithm
   str := if str == "linux" or str == "darwin" then "./" else "";
 end linuxDotSlash;
 
+public function msvcLibraryDirectories
+  "The compiler directories below a platform directory of a LibraryDirectory,
+   e.g. win64/vs2022, that MSVC can use, preferred first. MLS 12.9.4 uses them
+   instead of the platform directory. Visual Studio 2015 to 2022 are binary
+   compatible."
+  output list<String> dirs = {"vs2022", "vs2019", "vs2017", "vs2015"};
+end msvcLibraryDirectories;
+
 public function flagValue "author: x02lucpo
   Extracts the flagvalue from an argument list:
   flagValue('-s',{'-d','hej','-s','file'}) => 'file'"
