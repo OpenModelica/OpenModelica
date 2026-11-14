@@ -25,6 +25,10 @@ function(omc_result_reader_library)
     endif()
   elseif(APPLE OR RUST_OMC_TARGET MATCHES "apple-darwin$")
     set(_lib ${_out}/libomc_result.dylib)
+    # The install name build.rs gives it. CMake cannot read it from a dylib that
+    # does not exist yet at configure time, and without it the build tree rpath of
+    # bomc and omc misses the directory of the dylib.
+    set(_soname @rpath/libomc_result.dylib)
   else()
     set(_lib ${_out}/libomc_result.so)
   endif()
@@ -49,8 +53,12 @@ function(omc_result_reader_library)
   add_library(omc::result SHARED IMPORTED GLOBAL)
   set_target_properties(omc::result PROPERTIES
     IMPORTED_LOCATION ${_lib}
-    IMPORTED_NO_SONAME TRUE
     INTERFACE_INCLUDE_DIRECTORIES ${_crate}/include)
+  if(_soname)
+    set_target_properties(omc::result PROPERTIES IMPORTED_SONAME ${_soname})
+  else()
+    set_target_properties(omc::result PROPERTIES IMPORTED_NO_SONAME TRUE)
+  endif()
   # Component omc: omcruntime links this PUBLIC, so omc itself does not run without it. That
   # also puts it below OMPlot, OMEdit and the simulation runtime, which link it too -- they all
   # depend on the omc component already. This function is called from the top-level
