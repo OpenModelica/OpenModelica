@@ -138,16 +138,11 @@ val(evaporator_qm_S, 100);
 //       <BaseUnit K=\"1\" />
 //       <DisplayUnit name=\"degC\" factor=\"1.0\" offset=\"-273.15\"/>
 //     </Unit>
+//     <Unit name=\"Pa/s\">
+//       <BaseUnit m=\"-1\" s=\"-3\" kg=\"1\" />
+//     </Unit>
 //     <Unit name=\"m3/s\">
 //       <BaseUnit m=\"3\" s=\"-1\" />
-//       <DisplayUnit name=\"m3.s-1\" factor=\"1.0\" offset=\"0.0\"/>
-//     </Unit>
-//     <Unit name=\"km-1.s-3.g\">
-//       <BaseUnit m=\"-1\" s=\"-3\" kg=\"1\" factor=\"1e-6\" />
-//     </Unit>
-//     <Unit name=\"m3.s-1\">
-//       <BaseUnit m=\"3\" s=\"-1\" />
-//       <DisplayUnit name=\"m3/s\" factor=\"1.0\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"bar\">
 //       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e5\" />
@@ -249,7 +244,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"4\"
 //     description=\"der(Volumes of liquid phase)\"
 //     initial=\"approx\">
-//     <Real start=\"0.0\" derivative=\"2\" nominal=\"0.09259259259259259\" unit=\"m3.s-1\"/>
+//     <Real start=\"0.0\" derivative=\"2\" nominal=\"0.09259259259259259\" unit=\"m3/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
@@ -257,7 +252,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"5\"
 //     description=\"der(Pressure inside drum boiler)\"
 //     initial=\"approx\">
-//     <Real start=\"0.0\" derivative=\"3\" nominal=\"92592.59259259258\" unit=\"km-1.s-3.g\"/>
+//     <Real start=\"0.0\" derivative=\"3\" nominal=\"92592.59259259258\" unit=\"Pa/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable

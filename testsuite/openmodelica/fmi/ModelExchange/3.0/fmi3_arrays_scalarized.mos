@@ -66,9 +66,9 @@ diffSimulationResults("fmi3_arrays_scalarized_fmpy.csv", "fmi3_arrays_scalarized
 //     <Float64 name=\"x[2]\" valueReference=\"3\" initial=\"exact\"  start=\"2.0\" unit=\"m\"/>
 //     <Float64 name=\"x[3]\" valueReference=\"4\" initial=\"exact\"  start=\"3.0\" unit=\"m\"/>
 //     <Float64 name=\"der(w)\" valueReference=\"5\"  derivative=\"0\"><Dimension start=\"2\"/></Float64>
-//     <Float64 name=\"der(x[1])\" valueReference=\"7\"  derivative=\"2\" unit=\"m.s-1\"/>
-//     <Float64 name=\"der(x[2])\" valueReference=\"8\"  derivative=\"3\" unit=\"m.s-1\"/>
-//     <Float64 name=\"der(x[3])\" valueReference=\"9\"  derivative=\"4\" unit=\"m.s-1\"/>
+//     <Float64 name=\"der(x[1])\" valueReference=\"7\"  derivative=\"2\" unit=\"m/s\"/>
+//     <Float64 name=\"der(x[2])\" valueReference=\"8\"  derivative=\"3\" unit=\"m/s\"/>
+//     <Float64 name=\"der(x[3])\" valueReference=\"9\"  derivative=\"4\" unit=\"m/s\"/>
 //     <Float64 name=\"y\" valueReference=\"10\" causality=\"output\" ><Dimension start=\"3\"/></Float64>
 //     <Float64 name=\"z[1]\" valueReference=\"13\"  min=\"-1.0\"/>
 //     <Float64 name=\"z[2]\" valueReference=\"14\"  min=\"-2.0\"/>
