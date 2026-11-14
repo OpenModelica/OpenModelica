@@ -1,0 +1,38 @@
+// name:     FmuDelayOutputDerivative
+// keywords: FMI 2.0 export co-simulation delay output derivatives
+// status:   correct
+// teardown_command: rm -rf FmuDelayOutputDerivative.fmu FmuDelayOutputDerivative.fmutmp/ FmuDelayOutputDerivative_info.json FmuDelayOutputDerivative.log FmuDelayOutputDerivative_out.txt
+//
+// The output derivative der(y) of a CS FMU is delay(der(x), 0.1). This
+// delay() call is made by differentiation and must get its own delay index.
+// With the placeholder index -1 the FMU crashed (#15532). The output
+// derivative must be der(y) = -x(t - 0.1) = -y.
+
+loadString("
+model FmuDelayOutputDerivative
+  Real x(start = 1, fixed = true);
+  output Real y;
+equation
+  der(x) = -x;
+  y = delay(x, 0.1);
+end FmuDelayOutputDerivative;
+"); getErrorString();
+buildModelFMU(FmuDelayOutputDerivative, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuDelayOutputDerivative.py FmuDelayOutputDerivative.fmu FmuDelayOutputDerivative_out.txt > FmuDelayOutputDerivative.log 2>&1"); getErrorString();
+readFile("FmuDelayOutputDerivative_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuDelayOutputDerivative.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "maxOutputDerivativeOrder = 1
+// y(0.5) = 0.669
+// der(y)(0.5) = -0.669
+// "
+// ""
+// endResult

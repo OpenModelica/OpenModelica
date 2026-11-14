@@ -5,6 +5,7 @@ fmi3_cs_01.mos \
 fmi3_cs_start_event_error.mos \
 fmi3_cs_assert_solver_retry.mos \
 fmi3_cs_cvode.mos \
+fmi3_cs_delay_output_derivative.mos \
 fmi3_cs_state_event.mos \
 fmi3_cs_event_mode_reinit.mos \
 fmi3_cs_exitinit_assert.mos \
@@ -34,6 +35,7 @@ DEPENDENCIES = \
 *.mos \
 fmi3_cs_start_event_error.py \
 fmi3_cs_assert_solver_retry.py \
+fmi3_cs_delay_output_derivative.py \
 fmi3_cs_state_event.py \
 fmi3_cs_event_mode_reinit.py \
 fmi3_cs_exitinit_assert.py \
