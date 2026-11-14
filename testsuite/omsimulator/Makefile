@@ -23,6 +23,7 @@ outputState.mos \
 recompileFMU.mos \
 reset_omc.mos \
 reset.mos \
+resetWithLoops.mos \
 setStartTime.mos \
 sinus.mos \
 terminateTest.mos \
@@ -33,7 +34,6 @@ testSynchronousFMU_02.mos \
 whenTest.mos \
 
 FAILINGTESTFILES = \
-resetWithLoops.mos \
 test03.mos \
 
 # Dependency files that are not .mo .mos or Makefile
