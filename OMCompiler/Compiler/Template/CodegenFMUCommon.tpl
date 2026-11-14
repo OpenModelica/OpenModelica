@@ -221,7 +221,7 @@ case SIMVAR(__) then
       <!-- Index of variable = "<%getVariableFMIIndex(simVar)%>" -->
       <ScalarVariable
         <%ScalarVariableAttribute2(simVar, simCode)%>>
-        <%ScalarVariableType2(simVar, stateVars)%>
+        <%ScalarVariableType2(simVar, simCode, stateVars)%>
       </ScalarVariable>
       >>
     else
@@ -629,27 +629,27 @@ match simCode
   else ""
 end getNumberOfEventIndicators;
 
-template ScalarVariableType2(SimVar simvar, list<SimVar> stateVars)
+template ScalarVariableType2(SimVar simvar, SimCode simCode, list<SimVar> stateVars)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match simvar
 case SIMVAR(__) then
   match type_
-    case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
-    case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
-    case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
-    case T_STRING(__) then '<String<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
-    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute2(simvar, simCode, stateVars)%>/>'
+    case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(simvar, simCode, stateVars)%>/>'
+    case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(simvar, simCode, stateVars)%>/>'
+    case T_STRING(__) then '<String<%ScalarVariableTypeCommonAttribute2(simvar, simCode, stateVars)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, simCode, stateVars)%>/>'
     else 'UNKOWN_TYPE'
 end ScalarVariableType2;
 
-template ScalarVariableTypeCommonAttribute2(SimVar simvar, list<SimVar> stateVars)
+template ScalarVariableTypeCommonAttribute2(SimVar simvar, SimCode simCode, list<SimVar> stateVars)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match simvar
 case SIMVAR(__) then
   let startString = StartString2(simvar)
-  let extraAttributes = '<%DerivativeVarIndex(simvar,stateVars)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%><%relativeQuantity(simvar)%>'
+  let extraAttributes = '<%DerivativeVarIndex(simvar,stateVars)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar, simCode)%><%relativeQuantity(simvar)%>'
   <<
   <%startString%><%extraAttributes%>
   >>
@@ -744,20 +744,9 @@ case SIMVAR(nominalValue = nominalValue) then
     else ''
 end NominalString2;
 
-template UnitString2(SimVar simvar)
-::=
-match simvar
-case SIMVAR(unit = unit, displayUnit = displayUnit) then
-  let unitString = if unit then ' unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
-  let displayUnitString = if displayUnit then ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
-  //'<%unitString%><%displayUnitString%>' skip displayUnit because FMI2XML fails for e.g. bar
-  '<%unitString%>'
-end UnitString2;
-
-template UnitString3(SimVar simvar, SimCode simCode)
- "UnitString2 with the display unit, which FMI 3.0 may name now that the unit
-  definitions declare it. Left off where it resolved to no <DisplayUnit>, which a
-  variable may not name."
+template UnitString2(SimVar simvar, SimCode simCode)
+ "The display unit is left out unless UnitDefinitions declare it as a <DisplayUnit>
+  of the unit; FMI 2.0 and 3.0 do not allow a variable to name any other."
 ::=
 match simvar
 case SIMVAR(unit = unit, displayUnit = displayUnit) then
@@ -765,7 +754,7 @@ case SIMVAR(unit = unit, displayUnit = displayUnit) then
   let displayUnitString = if declaredDisplayUnit(unit, displayUnit, simCode) then
         ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
   '<%unitString%><%displayUnitString%>'
-end UnitString3;
+end UnitString2;
 
 template declaredDisplayUnit(String unit, String displayUnit, SimCode simCode)
  "Non-empty when `displayUnit` is another unit of `unit`\'s dimensions, which is exactly
