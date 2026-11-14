@@ -1,0 +1,42 @@
+// name:     fmi2_import_call_modes
+// keywords: FMI 2.0 import call sequence fmi2SetTime fmi2SetContinuousStates Event Mode #9918
+// status:   correct
+// teardown_command: rm -rf CallModes2* output.log
+//
+// The FMU returns fmi2Error for a call that the FMI 2.0 call table does not
+// allow, as the Reference FMUs and FMUs from other tools do. After
+// fmi2ExitInitializationMode the FMU is in Event Mode. There the import must
+// not call fmi2SetTime and fmi2SetContinuousStates, which are allowed only in
+// Continuous-Time Mode for an FMU with states. der(x) = -1, x(0) = 1, and the
+// FMU sets x back to 1 at x = 0.5.
+//
+
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_import_call_modes.py"); getErrorString();
+importFMU("CallModes2.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+loadFile("CallModes2_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(CallModes2_me_FMU, stopTime=1.2); clearMessages();
+echo(true);
+res.resultFile;
+// x goes from 1 down to 0.5 and starts again at 1 at time 0.5 and 1.0
+abs(val(y, 0.25) - 0.75) < 1e-4;
+abs(val(y, 0.75) - 0.75) < 1e-4;
+abs(val(y, 1.2) - 0.8) < 1e-4;
+val(n, 1.2);
+// Result:
+// 0
+// ""
+// "CallModes2_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// "CallModes2_me_FMU_res.mat"
+// true
+// true
+// true
+// 2.0
+// endResult
