@@ -55,14 +55,14 @@ readFile("fmi_attributes_26.xml"); getErrorString();
 //       <BaseUnit s=\"-1\" />
 //       <DisplayUnit name=\"Hz\" factor=\"1.0\" offset=\"0.0\"/>
 //     </Unit>
+//     <Unit name=\"Hz\">
+//       <BaseUnit s=\"-1\" />
+//       <DisplayUnit name=\"1/s\" factor=\"1.0\" offset=\"0.0\"/>
+//     </Unit>
 //     <Unit name=\"rad/s\">
 //       <BaseUnit s=\"-1\" rad=\"1\" />
 //       <DisplayUnit name=\"rpm\" factor=\"9.54929658551372\" offset=\"0.0\"/>
 //       <DisplayUnit name=\"Hz\" factor=\"0.15915494309189535\" offset=\"0.0\"/>
-//     </Unit>
-//     <Unit name=\"Hz\">
-//       <BaseUnit s=\"-1\" />
-//       <DisplayUnit name=\"1/s\" factor=\"1.0\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"deg\">
 //       <BaseUnit rad=\"1\" factor=\"0.017453292519943295\" />
@@ -78,7 +78,7 @@ readFile("fmi_attributes_26.xml"); getErrorString();
 // 0
 // ""
 // "    <Real start=\"0.0\" unit=\"rad\" displayUnit=\"deg\"/>
-//     <Real derivative=\"1\" unit=\"Hz\"/>
+//     <Real derivative=\"1\" unit=\"rad/s\"/>
 //     <Real start=\"0.0\" unit=\"Hz\"/>
 //     <Real start=\"0.0\" unit=\"rad/s\" displayUnit=\"Hz\"/>
 //     <Real unit=\"1/s\" displayUnit=\"Hz\"/>
