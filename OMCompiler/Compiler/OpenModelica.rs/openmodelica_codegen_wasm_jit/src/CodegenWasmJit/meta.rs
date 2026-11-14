@@ -24,10 +24,11 @@ pub(super) fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVa
                     K,
                     mol,
                     cd,
+                    rad,
                     factor,
                     offset,
                 } => Some(BaseUnit {
-                    exponents: [kg, m, s, A, K, mol, cd, 0],
+                    exponents: [kg, m, s, A, K, mol, cd, rad],
                     factor: factor.into_inner(),
                     offset: offset.into_inner(),
                 }),

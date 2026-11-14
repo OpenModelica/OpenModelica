@@ -215,6 +215,10 @@ UnitRes Unit::paramutil(Unit u1, Unit u2, Unit& ur, bool mulop) {
       : Rational::sub(u1.prefixExpo, u2.prefixExpo);
   ur.scaleFactor = mulop ? Rational::mul(u1.scaleFactor, u2.scaleFactor)
       : Rational::div(u1.scaleFactor, u2.scaleFactor);
+  ur.radExpo = mulop ? Rational::add(u1.radExpo, u2.radExpo)
+      : Rational::sub(u1.radExpo, u2.radExpo);
+  ur.hzExpo = mulop ? Rational::add(u1.hzExpo, u2.hzExpo)
+      : Rational::sub(u1.hzExpo, u2.hzExpo);
   ur.unitVec.clear();
   for (unsigned int i = 0; i < max(u1.unitVec.size(), u2.unitVec.size()); i++) {
     Rational q1(0), q2(0);
@@ -268,6 +272,8 @@ UnitRes Unit::pow(Unit u, const Rational e, Unit& ur) {
   ur = u;
   ur.prefixExpo = Rational::mul(u.prefixExpo, e);
   ur.scaleFactor = Rational::pow(u.scaleFactor, e);
+  ur.radExpo = Rational::mul(u.radExpo, e);
+  ur.hzExpo = Rational::mul(u.hzExpo, e);
   ur.unitVec.clear();
   for (unsigned int i = 0; i < u.unitVec.size(); i++) {
     ur.unitVec.push_back(Rational::mul(u.unitVec[i], e));
@@ -365,20 +371,23 @@ void UnitParser::addBase(const string quantityName, const string unitName,
 void UnitParser::addDerived(const string quantityName, const string unitName,
     const string unitSymbol, const string unitStrExp, Rational prefixExpo,
     Rational scaleFactor, Rational offset, bool prefixAllowed,
-    double weight) {
+    double weight, Rational radExpo, Rational hzExpo) {
   DerivedInfo di(quantityName, unitName, unitSymbol, unitStrExp, prefixExpo,
-      scaleFactor, offset, prefixAllowed, weight);
+      scaleFactor, offset, prefixAllowed, weight, radExpo, hzExpo);
   _tempDerived.push_back(di);
 }
 
 UnitRes UnitParser::addDerivedInternal(const string quantityName,
     const string unitName, const string unitSymbol,
     const string unitStrExp, Rational prefixExpo, Rational scaleFactor,
-    Rational offset, bool prefixAllowed, double weight = 1.0) {
+    Rational offset, bool prefixAllowed, double weight,
+    Rational radExpo, Rational hzExpo) {
   Unit u;
   UnitRes res = str2unit(unitStrExp, u);
   if (!res.Ok())
     return res;
+  u.radExpo = Rational::add(u.radExpo, radExpo);
+  u.hzExpo = Rational::add(u.hzExpo, hzExpo);
   u.quantityName = quantityName;
   u.unitName = unitName;
   u.unitSymbol = unitSymbol;
@@ -422,7 +431,7 @@ UnitRes UnitParser::commit() {
       DerivedInfo d = _tempDerived.front();
       UnitRes res = addDerivedInternal(d.quantityName, d.unitName,
           d.unitSymbol, d.unitStrExp, d.prefixExpo, d.scaleFactor,
-          d.offset, d.prefixAllowed, d.weight);
+          d.offset, d.prefixAllowed, d.weight, d.radExpo, d.hzExpo);
       _tempDerived.pop_front();
       if (!res.Ok())
         tmp.push_back(d);
@@ -815,11 +824,11 @@ void UnitParser::initSIUnits() {
 
   //Standard derived units (SI brochure 8th ed., page 118)
   addDerived("plane angle", "radian", "rad", "m/m", Rational(0), Rational(1),
-      Rational(0), true);
+      Rational(0), true, 1.0, Rational(1));
   addDerived("solid angle", "steradian", "sr", "m2/m2", Rational(0),
       Rational(1), Rational(0), true);
   addDerived("frequency", "hertz", "Hz", "s-1", Rational(0), Rational(1),
-      Rational(0), true, 0.8);
+      Rational(0), true, 0.8, Rational(0), Rational(1));
   addDerived("force", "newton", "N", "m.kg.s-2", Rational(0), Rational(1),
       Rational(0), true);
   addDerived("pressure, stress", "pascal", "Pa", "N/m2", Rational(0),

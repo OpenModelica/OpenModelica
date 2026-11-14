@@ -8938,12 +8938,14 @@ protected function getFmiUnitDefinitions
   output list<SimCode.UnitDefinition> unitDefinitions = {};
 protected
   HashSetString.HashSet unitNameKeys;
+  list<tuple<String, SimCode.DisplayUnit>> nested = {};
 algorithm
   //special order for fmi: real => intger => boolean => string => external
   unitNameKeys := HashSetString.emptyHashSet();
   for i in SimVarsIndex.state : SimVarsIndex.stringConst loop
-    (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys);
+    (unitDefinitions, unitNameKeys, nested) := getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys, nested);
   end for;
+  unitDefinitions := list(nestDisplayUnits(u, nested) for u in unitDefinitions);
   //print("\n Final Units List :" + anyString(unitDefinitions));
 end getFmiUnitDefinitions;
 
@@ -8952,8 +8954,11 @@ protected function getFmiUnitDefinitionsHelper
   input list<SimCodeVar.SimVar> inVars;
   input output list<SimCode.UnitDefinition> unitDefinitions;
   input output HashSetString.HashSet unitNameKeys;
+  input output list<tuple<String, SimCode.DisplayUnit>> nested "display units of one unit only";
 protected
   Unit.Unit unit;
+  Boolean converts;
+  Real factor, offset;
 algorithm
   for var in inVars loop
     if isSome(var.exportVar) then
@@ -8962,21 +8967,58 @@ algorithm
         unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
         try
           unit := Unit.parseUnitString(var.unit); // get the SI- units information
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit, SimCodeCodegenUtil.radExponent(var.unit)), {}) :: unitDefinitions;
         else
           // catch the units which are not calculated
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT(), {}) :: unitDefinitions;
         end try;
       end if;
-      // A variable may only name a display unit that is itself declared.
-      if not stringEq(var.displayUnit, "") and not stringEq(var.displayUnit, var.unit)
-         and not BaseHashSet.has(var.displayUnit, unitNameKeys) then
-        unitNameKeys := BaseHashSet.add(var.displayUnit, unitNameKeys);
-        unitDefinitions := displayUnitDefinition(var.unit, var.displayUnit) :: unitDefinitions;
+      if not stringEq(var.displayUnit, "") and not stringEq(var.displayUnit, var.unit) then
+        if SimCodeCodegenUtil.radExponent(var.displayUnit) <> SimCodeCodegenUtil.radExponent(var.unit) then
+          // Hz of an angular unit: a unit of its own would clash with Hz as frequency.
+          if not List.isMemberOnTrue((var.unit, var.displayUnit), nested, isNestedDisplayUnit) then
+            (converts, factor, offset) := SimCodeCodegenUtil.unitConversion(var.displayUnit, var.unit);
+            if converts then
+              nested := (var.unit, SimCode.DISPLAYUNIT(var.displayUnit, factor, offset)) :: nested;
+            end if;
+          end if;
+        elseif not BaseHashSet.has(var.displayUnit, unitNameKeys) then
+          // A variable may only name a display unit that is itself declared.
+          unitNameKeys := BaseHashSet.add(var.displayUnit, unitNameKeys);
+          unitDefinitions := displayUnitDefinition(var.unit, var.displayUnit) :: unitDefinitions;
+        end if;
       end if;
     end if;
   end for;
 end getFmiUnitDefinitionsHelper;
+
+protected function isNestedDisplayUnit
+  input tuple<String, String> unitAndDisplayUnit;
+  input tuple<String, SimCode.DisplayUnit> nested;
+  output Boolean b;
+protected
+  String unit, displayUnit, nestedUnit;
+  SimCode.DisplayUnit nestedDisplayUnit;
+algorithm
+  (unit, displayUnit) := unitAndDisplayUnit;
+  (nestedUnit, nestedDisplayUnit) := nested;
+  b := stringEq(unit, nestedUnit) and stringEq(displayUnit, nestedDisplayUnit.name);
+end isNestedDisplayUnit;
+
+protected function nestDisplayUnits
+  input output SimCode.UnitDefinition definition;
+  input list<tuple<String, SimCode.DisplayUnit>> nested;
+protected
+  String unit;
+  SimCode.DisplayUnit displayUnit;
+algorithm
+  for n in nested loop
+    (unit, displayUnit) := n;
+    if stringEq(unit, definition.name) then
+      definition.displayUnits := displayUnit :: definition.displayUnits;
+    end if;
+  end for;
+end nestDisplayUnits;
 
 protected function displayUnitDefinition
   "The display unit as a unit in its own right: the dimensions of the unit it
@@ -8985,36 +9027,38 @@ protected function displayUnitDefinition
   input String displayUnit;
   output SimCode.UnitDefinition definition;
 protected
-  Integer s, m, kg, A, K, mol, cd;
+  Integer s, m, kg, A, K, mol, cd, rad;
   Real factor, offset, toUnit, toUnitOffset;
   Boolean converts;
 algorithm
   try
-    SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor, offset) :=
-      transformUnitToBaseUnit(Unit.parseUnitString(unit));
+    SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, rad, factor, offset) :=
+      transformUnitToBaseUnit(Unit.parseUnitString(unit), SimCodeCodegenUtil.radExponent(unit));
     // Compose value_unit = toUnit*value_display + toUnitOffset with the unit's
     // own value_SI = factor*value_unit + offset.
     (converts, toUnit, toUnitOffset) := SimCodeCodegenUtil.unitConversion(unit, displayUnit);
     true := converts;
     definition := SimCode.UNITDEFINITION(displayUnit,
-      SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*toUnit, factor*toUnitOffset + offset));
+      SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, rad, factor*toUnit, factor*toUnitOffset + offset), {});
   else
     // No dimensions, so nothing nests it and no variable may name it.
-    definition := SimCode.UNITDEFINITION(displayUnit, SimCode.NOBASEUNIT());
+    definition := SimCode.UNITDEFINITION(displayUnit, SimCode.NOBASEUNIT(), {});
   end try;
 end displayUnitDefinition;
 
 public function transformUnitToBaseUnit
   "translate Unit.UNIT to SimCode.BASEUNIT. NFUnit counts mass in grams, so the
-   factor picks up 10^-3 per kg; the offset is already in SI."
+   factor picks up 10^-3 per kg; the offset is already in SI. NFUnit counts rad
+   as 1, so its exponent comes from the unit parser."
   input Unit.Unit unit;
+  input Integer rad;
   output SimCode.BaseUnit baseUnit;
 protected
   Integer mol, cd, m, s, A, K, kg;
   Real factor, offset;
 algorithm
   Unit.UNIT(s, m, kg, A, K, mol, cd, factor, offset) := unit;
-  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), offset);
+  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, rad, factor*10^(-3*kg), offset);
 end transformUnitToBaseUnit;
 
 protected function getAliasVar

@@ -757,16 +757,26 @@ case SIMVAR(unit = unit, displayUnit = displayUnit) then
 end UnitString2;
 
 template declaredDisplayUnit(String unit, String displayUnit, SimCode simCode)
- "Non-empty when `displayUnit` is another unit of `unit`\'s dimensions, which is exactly
-  when UnitDefinitions nested it as a <DisplayUnit> of it."
+ "Non-empty when `displayUnit` is another unit of `unit`\'s dimensions, or one of its
+  own display units, which is exactly when UnitDefinitions nested it as a <DisplayUnit> of it."
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(unitDefinitions=unitDefinitions)) then
   let dims = (unitDefinitions |> u => unitDimensionsNamed(u, unit))
   let displayDims = (unitDefinitions |> u => unitDimensionsNamed(u, displayUnit))
-  if boolAnd(boolNot(stringEq(dims, "")),
+  let nested = (unitDefinitions |> u => nestedDisplayUnitNamed(u, unit, displayUnit))
+  if nested then "declared"
+  else if boolAnd(boolNot(stringEq(dims, "")),
              boolAnd(stringEq(dims, displayDims), boolNot(stringEq(unit, displayUnit)))) then "declared"
 end declaredDisplayUnit;
+
+template nestedDisplayUnitNamed(UnitDefinition unitDefinition, String wantedUnit, String wantedDisplayUnit)
+::=
+match unitDefinition
+case UNITDEFINITION(name=unitName, displayUnits=nested) then
+  if stringEq(unitName, wantedUnit) then
+    (nested |> DISPLAYUNIT(name=displayName) => if stringEq(displayName, wantedDisplayUnit) then "nested")
+end nestedDisplayUnitNamed;
 
 template unitDimensionsNamed(UnitDefinition unitDefinition, String wanted)
  "This unit\'s dimensions when it is the one named, so a fold over the list picks it out.
@@ -826,10 +836,10 @@ template UnitDefinitionsHelper1(UnitDefinition unitDefinition, list<UnitDefiniti
  "helper function to generates code for UnitDefinition for FMU target."
 ::=
 match unitDefinition
-case UNITDEFINITION(name=name, baseUnit=baseUnit) then
+case UNITDEFINITION(name=name, baseUnit=baseUnit, displayUnits=nested) then
   <<
   <Unit <%unitDefinitionAttribute(name)%>>
-    <%baseUnitAttributes(baseUnit)%><%displayUnits(name, baseUnit, allUnits)%>
+    <%baseUnitAttributes(baseUnit)%><%displayUnits(name, baseUnit, allUnits)%><%nested |> d => nestedDisplayUnit(d)%>
   </Unit>
   >>
 end UnitDefinitionsHelper1;
@@ -857,12 +867,19 @@ case UNITDEFINITION(name=otherName, baseUnit=(otherBase as BASEUNIT(factor=displ
   '<%\n%><DisplayUnit name="<%Util.escapeModelicaStringToXmlString(otherName)%>" factor="<%realDiv(unitFactor, displayFactor)%>" offset="<%realDiv(realSub(unitOffset, displayOffset), displayFactor)%>"/>'
 end displayUnit;
 
+template nestedDisplayUnit(DisplayUnit displayUnit)
+::=
+match displayUnit
+case DISPLAYUNIT(name=displayName, factor=displayFactor, offset=displayOffset) then
+  '<%\n%><DisplayUnit name="<%Util.escapeModelicaStringToXmlString(displayName)%>" factor="<%displayFactor%>" offset="<%displayOffset%>"/>'
+end nestedDisplayUnit;
+
 template baseUnitDimensions(BaseUnit baseUnit)
- "The seven exponents as a key, so two units are compared as one string. Empty where
+ "The eight exponents as a key, so two units are compared as one string. Empty where
   there is no base unit to compare."
 ::=
 match baseUnit
-case BASEUNIT(__) then '<%s%>.<%m%>.<%kg%>.<%A%>.<%K%>.<%mol%>.<%cd%>'
+case BASEUNIT(__) then '<%s%>.<%m%>.<%kg%>.<%A%>.<%K%>.<%mol%>.<%cd%>.<%rad%>'
 end baseUnitDimensions;
 
 template unitDefinitionAttribute(String unitName)
@@ -886,10 +903,11 @@ case (BASEUNIT(__)) then
   let K_Value = if not intEq(K, 0) then 'K="<% K %>" ' else ""
   let mol_Value = if not intEq(mol, 0) then 'mol="<% mol %>" ' else ""
   let cd_Value = if not intEq(cd, 0) then 'cd="<% cd %>" ' else ""
+  let rad_Value = if not intEq(rad, 0) then 'rad="<% rad %>" ' else ""
   let factor_Value = if not realAlmostEq(factor, 1.0, 1e-6) then 'factor="<% factor %>" ' else ""
   let offset_Value = if not realAlmostEq(offset, 0.0, 1e-6) then 'offset="<% offset %>" ' else ""
   <<
-  <BaseUnit <%mol_Value%><%cd_Value%><%m_Value%><%s_Value%><%A_Value%><%K_Value%><%kg_Value%><%factor_Value%><%offset_Value%>/>
+  <BaseUnit <%mol_Value%><%cd_Value%><%m_Value%><%s_Value%><%A_Value%><%K_Value%><%kg_Value%><%rad_Value%><%factor_Value%><%offset_Value%>/>
   >>
 case (NOBASEUNIT()) then ""
 end baseUnitAttributes;
