@@ -383,7 +383,12 @@ pub fn format_g(v: f64, p: i32) -> String {
 /// rather than the other way round — otherwise `1e-06` prints as `10e-07`.
 pub(crate) fn decimal_exp(v: f64) -> (i32, f64) {
     let mut exp = fmath::floor(fmath::log10(fmath::fabs(v))) as i32;
-    let mut m = v / fmath::pow(10.0, exp as f64);
+    // 10^exp underflows for a subnormal v.
+    let mut m = if exp < -300 {
+        v * 1e300 / fmath::pow(10.0, (exp + 300) as f64)
+    } else {
+        v / fmath::pow(10.0, exp as f64)
+    };
     if fmath::fabs(m) >= 10.0 {
         m /= 10.0;
         exp += 1;

@@ -1071,7 +1071,12 @@ void updateNextSampleEvent(DATA *data, threadData_t *threadData)
     next = fmin(next, data->simulationInfo->nextSampleTimes[i]);
   }
   if (data->callback->function_nextTimeEvent) {
-    next = fmin(next, data->callback->function_nextTimeEvent(data, threadData));
+    double t = data->callback->function_nextTimeEvent(data, threadData);
+    /* As in the Rust driver, a simulation schedules no relation event at or
+       after stopTime: `time > stopTime` switches after the run. */
+    if (!data->simulationInfo->useStopTime || t < data->simulationInfo->stopTime) {
+      next = fmin(next, t);
+    }
   }
   data->simulationInfo->nextSampleEvent = next;
 }

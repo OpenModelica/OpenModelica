@@ -452,7 +452,7 @@ pub(super) fn build_update_relations_fn(
 
 /// Build `functionNextTimeEvent(SimData*)` (C's `function_nextTimeEvent`).
 pub(super) fn build_next_time_event_fn(
-    triggers: &[metamodelica::Ref<DAE::Exp>],
+    triggers: &[(metamodelica::Ref<DAE::Exp>, bool)],
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,

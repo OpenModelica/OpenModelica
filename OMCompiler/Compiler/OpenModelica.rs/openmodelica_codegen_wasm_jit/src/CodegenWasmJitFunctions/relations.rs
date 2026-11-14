@@ -11,6 +11,11 @@ pub(super) fn compile_relation(
     asub: &Option<(metamodelica::Ref<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
     use DAE::Operator as O;
+    let timed = time_event_relation(e1, op, e2, index, asub);
+    let (e1, op, e2) = match &timed {
+        Some((a, o, b)) => (a, o, b),
+        None => (e1, op, e2),
+    };
     // String comparisons go through the runtime: equality via `rt_streq`,
     // ordering via `rt_strcmp` (which returns -1/0/1) compared against 0. As for
     // the arithmetic operators, an untyped relation takes its operands' type.
@@ -263,14 +268,15 @@ fn emit_relation_nominal(
 }
 
 /// C's `timeEventTrigger`: the `e` of a relation `time >= e` / `time < e` that
-/// only switches when time reaches it, so it needs no hysteresis band.
+/// only switches when time reaches it (or just after it, `true` for `time > e`
+/// / `time <= e`), so it needs no hysteresis band.
 pub(crate) fn time_event_trigger(
     e1: &metamodelica::Ref<DAE::Exp>,
     op: &DAE::Operator,
     e2: &metamodelica::Ref<DAE::Exp>,
     index: i32,
     asub: &Option<(metamodelica::Ref<DAE::Exp>, i32, i32)>,
-) -> Option<metamodelica::Ref<DAE::Exp>> {
+) -> Option<(metamodelica::Ref<DAE::Exp>, bool)> {
     let rel = metamodelica::Ref::new(DAE::Exp::RELATION {
         exp1: e1.clone(),
         operator: op.clone(),
@@ -281,6 +287,33 @@ pub(crate) fn time_event_trigger(
     openmodelica_codegen_util::SimCodeCodegenUtil::timeEventTrigger(&rel)
         .ok()
         .flatten()
+}
+
+/// C's `timeEventRelation`: the operands of a relation scheduled as a time
+/// event in the form `time op e` its exact comparison takes.
+pub(crate) fn time_event_relation(
+    e1: &metamodelica::Ref<DAE::Exp>,
+    op: &DAE::Operator,
+    e2: &metamodelica::Ref<DAE::Exp>,
+    index: i32,
+    asub: &Option<(metamodelica::Ref<DAE::Exp>, i32, i32)>,
+) -> Option<(metamodelica::Ref<DAE::Exp>, DAE::Operator, metamodelica::Ref<DAE::Exp>)> {
+    if index < 0 {
+        return None;
+    }
+    let rel = metamodelica::Ref::new(DAE::Exp::RELATION {
+        exp1: e1.clone(),
+        operator: op.clone(),
+        exp2: e2.clone(),
+        index,
+        optionExpisASUB: asub.clone(),
+    });
+    match &*openmodelica_codegen_util::SimCodeCodegenUtil::timeEventRelation(rel).ok()? {
+        DAE::Exp::RELATION {
+            exp1, operator, exp2, ..
+        } => Some((exp1.clone(), operator.clone(), exp2.clone())),
+        _ => None,
+    }
 }
 
 fn nominal_exp(e: &metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {

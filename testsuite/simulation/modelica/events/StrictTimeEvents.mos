@@ -1,0 +1,63 @@
+// name:     StrictTimeEvents
+// keywords: EventHandling, time events
+// status: correct
+// teardown_command: rm -rf strictTimeEvents* output.log
+//
+// `time > e` switches at the first time after e, so it is a time event at
+// nextafter(e), as is a variable that an equation `v = time` defines (#9844).
+// `u > 0.5` with u = time + 0.125 is `time > 0.375`. The switch of
+// `t > pre(tNext)` after tNext = stopTime is not scheduled.
+
+loadString("
+model strictTimeEvents
+  Real t = time;
+  Real u = time + 0.125;
+  discrete Real tNext(start = 0.25, fixed = true);
+  Integer k(start = 0, fixed = true);
+  Boolean b = time > 0;
+  Boolean c = u > 0.5;
+equation
+  when t > pre(tNext) then
+    k = pre(k) + 1;
+    tNext = pre(tNext) + 0.25;
+  end when;
+end strictTimeEvents;
+"); getErrorString();
+
+simulate(strictTimeEvents, stopTime = 1, numberOfIntervals = 4, simflags = "-lv=LOG_EVENTS"); getErrorString();
+val(k, 1.0);
+val(b, 0.0);
+val(b, 0.25);
+val(c, 0.375);
+val(c, 0.5);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "strictTimeEvents_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 4, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'strictTimeEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = t > pre(tNext)
+// |                 | |       | | [2] (pre: false) false = u > 0.5
+// |                 | |       | | [3] (pre: false) false = time > 0.0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre: false) false = t > pre(tNext)
+// |                 | |       | | [2] (pre: false) false = u > 0.5
+// |                 | |       | | [3] (pre: false) false = time > 0.0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | time event at time=4.94065645841e-324
+// LOG_EVENTS        | info    | time event at time=0.25
+// LOG_EVENTS        | info    | time event at time=0.375
+// LOG_EVENTS        | info    | time event at time=0.5
+// LOG_EVENTS        | info    | time event at time=0.75
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// endResult

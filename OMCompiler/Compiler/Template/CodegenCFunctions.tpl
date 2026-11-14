@@ -6865,7 +6865,7 @@ template daeExpRelation(Exp exp, Context context, Text &preExp,
                         Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a relation expression."
 ::=
-match exp
+match timeEventRelation(exp)
 case rel as RELATION(__) then
   let &varDecls2 = buffer ""
   let &varFrees2 = buffer ""

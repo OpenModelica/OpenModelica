@@ -423,6 +423,7 @@ algorithm
     end if;
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.timeAliasVars, NONE());
     setGlobalRoot(Global.jacobianOffsets, {});
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
@@ -2546,6 +2547,7 @@ algorithm
     end if;
 
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.timeAliasVars, NONE());
     setGlobalRoot(Global.jacobianOffsets, {});
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,

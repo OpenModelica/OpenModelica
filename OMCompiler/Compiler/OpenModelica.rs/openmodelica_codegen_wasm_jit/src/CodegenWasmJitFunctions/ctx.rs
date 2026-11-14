@@ -1362,10 +1362,19 @@ impl<'a> FnCtx<'a> {
         for (i, rel) in relations.iter().enumerate() {
             let Some(rel) = rel else { continue };
             let DAE::Exp::RELATION {
-                exp1, operator, exp2, ..
+                exp1,
+                operator,
+                exp2,
+                index,
+                optionExpisASUB,
             } = &**rel
             else {
                 return Err("CodegenWasmJit: non-relation in the relations list");
+            };
+            let timed = time_event_relation(exp1, operator, exp2, *index, optionExpisASUB);
+            let (exp1, operator, exp2) = match &timed {
+                Some((a, o, b)) => (a, o, b),
+                None => (exp1, operator, exp2),
             };
             self.emit(we::Instruction::LocalGet(data));
             let w = compile_relation_fresh(self, exp1, operator, exp2)?;
@@ -1379,8 +1388,9 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Emit `functionNextTimeEvent`: replace the time in `SimData` by the earliest
-    /// later `trigger`, or `f64::MAX`.
-    pub(crate) fn emit_next_time_event(&mut self, triggers: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
+    /// later `trigger` (C's `nextafter(trigger, DBL_MAX)` when flagged), or
+    /// `f64::MAX`.
+    pub(crate) fn emit_next_time_event(&mut self, triggers: &[(metamodelica::Ref<DAE::Exp>, bool)]) -> Result<()> {
         use we::Instruction as I;
         let data = self.sim()?.data_local;
         let now = self.alloc_temp(WTy::F64);
@@ -1391,10 +1401,28 @@ impl<'a> FnCtx<'a> {
         self.emit(I::LocalSet(now));
         self.emit(I::F64Const(f64::MAX.into()));
         self.emit(I::LocalSet(next));
-        for e in triggers {
+        for (e, after) in triggers {
             let w = compile_exp(self, e)?;
             coerce(self, w, WTy::F64);
             self.emit(I::LocalSet(te));
+            if *after {
+                self.emit(I::F64Const(f64::from_bits(1).into()));
+                self.emit(I::LocalGet(te));
+                self.emit(I::I64ReinterpretF64);
+                self.emit(I::I64Const(1));
+                self.emit(I::I64Const(-1));
+                self.emit(I::LocalGet(te));
+                self.emit(I::F64Const(0.0.into()));
+                self.emit(I::F64Gt);
+                self.emit(I::Select);
+                self.emit(I::I64Add);
+                self.emit(I::F64ReinterpretI64);
+                self.emit(I::LocalGet(te));
+                self.emit(I::F64Const(0.0.into()));
+                self.emit(I::F64Eq);
+                self.emit(I::Select);
+                self.emit(I::LocalSet(te));
+            }
             self.emit(I::LocalGet(te));
             self.emit(I::LocalGet(now));
             self.emit(I::F64Gt);

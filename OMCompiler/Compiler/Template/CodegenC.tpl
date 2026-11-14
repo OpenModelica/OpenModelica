@@ -5836,12 +5836,12 @@ template functionNextTimeEvent(list<ZeroCrossing> relations, String modelNamePre
   let &varFrees = buffer ""
   let triggers = (relations |> ZERO_CROSSING(iter = NONE()) =>
     match timeEventTrigger(relation_)
-    case SOME(trigger) then
+    case SOME((trigger, after)) then
       let &preExp = buffer ""
       let e = daeExp(trigger, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
-      tEvent = <%e%>;
+      tEvent = <%if after then 'nextafter(<%e%>, DBL_MAX)' else e%>;
       if (tEvent > tNow && tEvent < tNext) tNext = tEvent;
       >>
     ;separator="\n")
