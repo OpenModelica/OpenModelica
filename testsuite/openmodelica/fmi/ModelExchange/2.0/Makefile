@@ -4,6 +4,7 @@ TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
 FmuFileNamePrefixDash.mos \
+Fmi2ImportIndependent.mos \
 Fmi2NoVariables.mos \
 FmuSparseSolvers.mos \
 FmuLinkLibraries.mos \
