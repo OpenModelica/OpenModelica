@@ -543,7 +543,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 {
   int i;
   /* Read after a longjmp into the catch below. */
-  volatile int retVal = 1, initSolverInfo = 0;
+  volatile int retVal = 1, initSolverInfo = 0, finished = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = data->simulationInfo;
@@ -680,8 +680,13 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   embedded_server_unload_functions(dllHandle);
 #endif
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
+  finished = 1;
 
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
+
+  if (!finished) {
+    retVal = -1;
+  }
 
   /*  free external input data */
   externalInputFree(data);
