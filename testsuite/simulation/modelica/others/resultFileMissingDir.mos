@@ -1,0 +1,32 @@
+// name:      resultFileMissingDir
+// keywords:  simflags resultFile fileNamePrefix #7451
+// status:    correct
+// teardown_command: rm -rf ResultFileMissingDir ResultFileMissingDir.* ResultFileMissingDir_*
+//
+// A result file or a fileNamePrefix in a directory that does not exist is an
+// error, not a successful simulation or a crash.
+
+loadString("model ResultFileMissingDir
+  Real x(start=1, fixed=true);
+equation
+  der(x) = -x;
+end ResultFileMissingDir;"); getErrorString();
+
+echo(false);
+r := simulate(ResultFileMissingDir, outputFormat="csv", simflags="-r=missingDir/ResultFileMissingDir_res.csv");
+echo(true);
+r.resultFile;
+regexBool(r.messages, "^Simulation execution failed");
+
+buildModel(ResultFileMissingDir, fileNamePrefix="missingDir/ResultFileMissingDir");
+regexBool(getErrorString(), "missingDir/ResultFileMissingDir");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// {"", ""}
+// true
+// endResult
