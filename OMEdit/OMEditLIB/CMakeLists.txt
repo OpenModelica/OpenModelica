@@ -110,6 +110,8 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       FMI/FMIGuideTexts.cpp
                       FMI/FMUExportDialog.cpp
                       FMI/ImportFMUDialog.cpp
+                      XMILE/XMILETranslator.cpp
+                      XMILE/ImportXMILEDialog.cpp
                       FMI/ImportFMUModelDescriptionDialog.cpp
                       FMI/FMUExportOutputWidget.cpp
                       Plotting/VariablesWidget.cpp
@@ -276,6 +278,8 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       FMI/FMIGuideDialog.h
                       FMI/FMUExportDialog.h
                       FMI/ImportFMUDialog.h
+                      XMILE/XMILETranslator.h
+                      XMILE/ImportXMILEDialog.h
                       FMI/ImportFMUModelDescriptionDialog.h
                       FMI/FMUExportOutputWidget.h
                       Plotting/VariablesWidget.h

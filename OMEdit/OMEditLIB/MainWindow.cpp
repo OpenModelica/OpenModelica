@@ -81,6 +81,7 @@
 #include "FMI/FMUExportDialog.h"
 #include "FMI/ImportFMUDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
+#include "XMILE/ImportXMILEDialog.h"
 #include "Git/CommitChangesDialog.h"
 #include "Git/RevertCommitsDialog.h"
 #include "Git/CleanDialog.h"
@@ -3762,6 +3763,13 @@ void MainWindow::importNgspiceNetlist()
   hideProgressBar();
 }
 
+//! Imports a System Dynamics model (XMILE) as a Modelica model.
+void MainWindow::importXMILE()
+{
+  ImportXMILEDialog *pImportXMILEDialog = new ImportXMILEDialog(this);
+  pImportXMILEDialog->exec();
+}
+
 bool MainWindow::checkModelActiveExportModelAsImage()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -4841,6 +4849,10 @@ void MainWindow::createActions()
   mpImportNgspiceNetlistAction = new QAction(tr("Ngspice netlist"), this);
   mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
   connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
+  // import XMILE (System Dynamics) action
+  mpImportXMILEAction = new QAction(tr("XMILE (System Dynamics)"), this);
+  mpImportXMILEAction->setStatusTip(tr("Imports a System Dynamics model (XMILE: Stella, Vensim through xmutil) as a Modelica model"));
+  connect(mpImportXMILEAction, SIGNAL(triggered()), SLOT(importXMILE()));
   // export to clipboard action
   mpExportToClipboardAction = new QAction(tr("To Clipboard"), this);
   mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
@@ -5327,6 +5339,7 @@ void MainWindow::createMenus()
   pImportMenu->addAction(mpImportFMUModelDescriptionAction);
   pImportMenu->addAction(mpImportFromOMNotebookAction);
   pImportMenu->addAction(mpImportNgspiceNetlistAction);
+  pImportMenu->addAction(mpImportXMILEAction);
   mpFileMenu->addMenu(pImportMenu);
   // Export menu
   QMenu *pExportMenu = new QMenu(menuBar());
