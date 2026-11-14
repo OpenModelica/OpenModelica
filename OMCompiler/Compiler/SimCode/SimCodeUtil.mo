@@ -14265,6 +14265,16 @@ algorithm
   end if;
 end aliasSimEq;
 
+protected function isInstallationDirectory
+  "Whether dir is one of the OpenModelica directories that
+   SimCodeFunctionUtil.getLinkerLibraryPaths adds."
+  input String installDir;
+  input String dir;
+  output Boolean b = dir == installDir + "/lib/" or
+                     StringUtil.startsWith(dir, installDir + "/bin") or
+                     StringUtil.startsWith(dir, installDir + "/lib/" + Autoconf.triple + "/omc");
+end isInstallationDirectory;
+
 public function generateRunnerBatScript
   "Always succeeds in order to clean-up external objects.
 
@@ -14280,7 +14290,7 @@ algorithm
     local
       String str, omdevPath, msysPath, mingwDir, installDir;
       Boolean isMSVC;
-      list<String> locations_lst;
+      list<String> locations_lst, omDirs, libDirs;
     case SimCode.SIMCODE()
       algorithm
         fileName := code.fileNamePrefix + ".bat";
@@ -14289,6 +14299,10 @@ algorithm
         (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
 
         installDir := Settings.getInstallationDirectoryPath();
+        // After listReverse below, the directories of the libraries come first, in
+        // the order the linker searched them, and then those of OpenModelica.
+        (omDirs, libDirs) := List.splitOnTrue(locations_lst, function isInstallationDirectory(installDir = installDir));
+        locations_lst := listAppend(omDirs, listReverse(libDirs));
         locations_lst := (installDir + "/bin") :: locations_lst;
         locations_lst := (installDir + "/lib/" + Config.targetTriple() + "/omc") :: locations_lst;
 
