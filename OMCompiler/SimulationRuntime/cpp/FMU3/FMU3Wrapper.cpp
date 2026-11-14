@@ -123,13 +123,12 @@ FMU3Wrapper::FMU3Wrapper(fmi3String instanceName, fmi3String instantiationToken,
   _instanceName = instanceName;
   _GUID = instantiationToken;
 
-  // setup logger
-  LogSettings logSettings = _globalSettings.getLogSettings();
-  _logger = new FMU3Logger(this, logSettings, loggingOn);
-  _logger->activate();
+  // setup logger; only if logging is on, see setDebugLogging
+  _logger = NULL;
   _logCategories = 0x0000;
   if (loggingOn)
     setDebugLogging(loggingOn, 0, NULL);
+  activateLogger();
 
   // setup model
   try {
@@ -138,8 +137,10 @@ FMU3Wrapper::FMU3Wrapper(fmi3String instanceName, fmi3String instantiationToken,
     _model->initializeFreeVariables();
   }
   catch (...) {
-    _logger->deactivate();
-    delete _logger;
+    if (_logger != NULL) {
+      _logger->deactivate();
+      delete _logger;
+    }
     throw;
   }
   _needUpdate = true;
@@ -153,12 +154,14 @@ FMU3Wrapper::FMU3Wrapper(fmi3String instanceName, fmi3String instantiationToken,
 
 FMU3Wrapper::~FMU3Wrapper()
 {
-  _logger->activate();
+  activateLogger();
   delete [] _clockSubactive;
   delete [] _clockTick;
   delete _model;
-  _logger->deactivate();
-  delete _logger;
+  if (_logger != NULL) {
+    _logger->deactivate();
+    delete _logger;
+  }
 }
 
 fmi3Status FMU3Wrapper::setDebugLogging(fmi3Boolean loggingOn,
@@ -167,17 +170,27 @@ fmi3Status FMU3Wrapper::setDebugLogging(fmi3Boolean loggingOn,
 {
   fmi3Status ret = fmi3OK;
 
-  _logger->setEnabled(loggingOn);
+  // Each call makes the logger the process-global one, which other threads
+  // see. Thus make it only when logging is turned on the first time.
+  if (_logger == NULL && loggingOn) {
+    LogSettings logSettings = _globalSettings.getLogSettings();
+    _logger = new FMU3Logger(this, logSettings, loggingOn);
+    _logger->activate();
+  }
+  if (_logger != NULL)
+    _logger->setEnabled(loggingOn);
   if (nCategories == 0) {
     _logCategories = loggingOn? 0xFFFF: 0x0000;
-    _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
+    if (_logger != NULL)
+      _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
   }
   else {
     int i, j, nSupported = sizeof(_LogCategoryFMUNames) / sizeof(fmi3String);
     for (i = 0; i < nCategories; i++) {
       if (strcmp(categories[i], "logAll") == 0) {
         _logCategories = loggingOn? 0xFFFF: 0x0000;
-        _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
+        if (_logger != NULL)
+          _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
         continue;
       }
       for (j = 0; j < nSupported; j++) {
@@ -188,10 +201,12 @@ fmi3Status FMU3Wrapper::setDebugLogging(fmi3Boolean loggingOn,
             _logCategories &= ~(1 << j);
           switch (j) {
           case logEvents:
-            _logger->set(LC_EVENTS, loggingOn? LL_DEBUG: LL_ERROR);
+            if (_logger != NULL)
+              _logger->set(LC_EVENTS, loggingOn? LL_DEBUG: LL_ERROR);
             break;
           case logNonlinearSystems:
-            _logger->set(LC_NLS, loggingOn? LL_DEBUG: LL_ERROR);
+            if (_logger != NULL)
+              _logger->set(LC_NLS, loggingOn? LL_DEBUG: LL_ERROR);
             break;
           }
           break;

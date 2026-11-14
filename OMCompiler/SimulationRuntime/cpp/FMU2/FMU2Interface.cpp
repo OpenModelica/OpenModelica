@@ -56,9 +56,10 @@ extern "C"
 
 /* Common definitions */
 // each function starts with LOG_CALL: activate the logger of w, log the call
-#define LOG_CALL(w, ...) \
+#define LOG_CALL(w, ...) do { \
   (w)->activateLogger(); \
-  FMU2_LOG(w, fmi2OK, logFmi2Call, __VA_ARGS__)
+  FMU2_LOG(w, fmi2OK, logFmi2Call, __VA_ARGS__); \
+} while (0)
 
 #define CATCH_EXCEPTION(w) \
   catch (std::exception &e) { \

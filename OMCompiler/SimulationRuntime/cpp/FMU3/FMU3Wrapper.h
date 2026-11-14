@@ -106,6 +106,8 @@ class FMU3Logger: public Logger
   // logger and makes it the active one when it is called.
   void activate() { _instance = this; }
   void deactivate() { if (_instance == this) _instance = NULL; }
+  // for an instance without a logger; does not write the global if it is NULL
+  static void activateNone() { if (_instance != NULL) _instance = NULL; }
 
  protected:
   virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
@@ -127,7 +129,10 @@ class FMU3Wrapper
 
   // make the logger of this instance receive the model messages
   void activateLogger() {
-    _logger->activate();
+    if (_logger != NULL)
+      _logger->activate();
+    else
+      FMU3Logger::activateNone();
   }
 
   // Debug logging
