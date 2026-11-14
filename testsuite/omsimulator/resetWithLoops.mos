@@ -1,7 +1,6 @@
 // keywords: fmu export import reset
 // status: correct
-// teardown_command: rm -rf model_res.mat resetWithLoops.py resetWithLoops.fmu resetWithLoops.log resetWithLoops_systemCall.log
-// suite: disabled
+// teardown_command: rm -rf model_res.mat resetWithLoops.py resetWithLoops-fmu resetWithLoops.log resetWithLoops_systemCall.log
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
 
@@ -48,7 +47,9 @@ readFile("resetWithLoops_systemCall.log");
 // 0
 // true
 // "Modelica.Electrical.Analog.Examples.Rectifier.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // true
 // true
 // ""

@@ -575,13 +575,14 @@ fn parse_fmi2(
             // FMI2 defaults: causality "local", variability "continuous".
             let causality_attr = sv.attribute("causality").unwrap_or("local");
             let variability_attr = sv.attribute("variability").unwrap_or("continuous");
-            // getFMI2ModelVariableCausality: input/output/parameter pass
-            // through, everything else (local, calculatedParameter,
-            // independent, unknown) maps to "".
+            // getFMI2ModelVariableCausality: input/output/parameter/independent
+            // pass through, everything else (local, calculatedParameter,
+            // unknown) maps to "".
             let causality = match causality_attr {
                 "input" => arcstr::literal!("input"),
                 "output" => arcstr::literal!("output"),
                 "parameter" => arcstr::literal!("parameter"),
+                "independent" => arcstr::literal!("independent"),
                 _ => arcstr::literal!(""),
             };
             // getFMI2ModelVariableVariability: only "constant" passes

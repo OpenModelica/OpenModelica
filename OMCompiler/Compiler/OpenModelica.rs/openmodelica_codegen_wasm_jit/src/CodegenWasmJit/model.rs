@@ -1829,7 +1829,7 @@ pub(super) fn build_sim_model(
             with_opt.sort_by_key(|&(off, _)| off);
             &with_opt
         };
-        bodies.push(build_update_bound_attrs_fn(
+        splits.push(build_update_bound_attrs_fn(
             sim_code,
             &layout,
             slots,
@@ -1838,6 +1838,9 @@ pub(super) fn build_sim_model(
             &var_map,
             &by_name,
             &mut literals,
+            eqfn_type,
+            &mut bodies,
+            &mut pool,
         )?);
         idx
     };
@@ -1848,7 +1851,7 @@ pub(super) fn build_sim_model(
             _ => None,
         })
         .collect();
-    if let Some(f) = build_tunable_attrs_fn(
+    let tunable_attrs = build_tunable_attrs_fn(
         sim_code,
         &layout,
         &attr_targets,
@@ -1856,10 +1859,10 @@ pub(super) fn build_sim_model(
         &by_name,
         &mut literals,
         &tunable_masks,
-    )? {
-        splits[tunable_split].chunks.push(pool.len());
-        pool.push(f, dae_fn_type, "functionUpdateTunableParameters$attrs".to_string());
-    }
+        dae_fn_type,
+        &mut pool,
+    )?;
+    splits[tunable_split].chunks.extend(tunable_attrs);
     // C's `setupDataStruc` half: the constant defaults, written before the solver is
     // allocated. The expression-bound ones stay in the update function.
     let attr_defaults_idx = {

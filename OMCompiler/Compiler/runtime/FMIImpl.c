@@ -200,6 +200,8 @@ const char* getFMI2ModelVariableCausality(fmi2_import_variable_t* variable)
       return "output";
     case fmi2_causality_enu_parameter:
       return "parameter";
+    case fmi2_causality_enu_independent:
+      return "independent";
     case fmi2_causality_enu_local:
     case fmi2_causality_enu_unknown:
     default:

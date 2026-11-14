@@ -736,6 +736,7 @@ unsafe extern "C" {
     fn omc_rc_release(obj: *mut c_void);
     fn omc_array_release(a: *mut base_array_t);
     fn omc_string_array_release(a: *mut base_array_t);
+    fn freeVarInfo(info: *mut VAR_INFO);
 }
 
 #[cfg(feature = "fmi")]
@@ -761,6 +762,30 @@ fn each<T>(p: *mut T, n: c_long, mut f: impl FnMut(&mut T)) {
             f(unsafe { &mut *p.add(i) });
         }
     }
+}
+
+#[cfg(feature = "fmi")]
+/// C's `freeModelDataVars`: the names, comments and file names of the variables,
+/// which `omc_fmu_init.c` allocates when it reads `_init.bin`.
+pub(crate) fn free_var_infos(md: &mut MODEL_DATA) {
+    let info = |i: &mut VAR_INFO| unsafe { freeVarInfo(i) };
+    each(md.realVarsData, md.nVariablesRealArray, |v| info(&mut v.info));
+    each(md.integerVarsData, md.nVariablesIntegerArray, |v| info(&mut v.info));
+    each(md.booleanVarsData, md.nVariablesBooleanArray, |v| info(&mut v.info));
+    each(md.stringVarsData, md.nVariablesStringArray, |v| info(&mut v.info));
+    each(md.realParameterData, md.nParametersRealArray, |v| info(&mut v.info));
+    each(md.integerParameterData, md.nParametersIntegerArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.booleanParameterData, md.nParametersBooleanArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.stringParameterData, md.nParametersStringArray, |v| info(&mut v.info));
+    each(md.realSensitivityData, md.nSensitivityVars, |v| info(&mut v.info));
+    each(md.realAlias, md.nAliasRealArray, |a| info(&mut a.info));
+    each(md.integerAlias, md.nAliasIntegerArray, |a| info(&mut a.info));
+    each(md.booleanAlias, md.nAliasBooleanArray, |a| info(&mut a.info));
+    each(md.stringAlias, md.nAliasStringArray, |a| info(&mut a.info));
 }
 
 #[cfg(feature = "fmi")]

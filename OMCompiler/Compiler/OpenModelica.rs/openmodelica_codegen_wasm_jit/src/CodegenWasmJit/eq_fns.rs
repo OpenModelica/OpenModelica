@@ -92,7 +92,7 @@ pub(super) fn lower_unit(
 /// every declared local is zero-initialized at entry, and per-function parallel
 /// compilation has nothing to spread. `OMC_WASM_CHUNK_INSTRS` overrides it; 0 never
 /// splits.
-fn chunk_instrs() -> usize {
+pub(super) fn chunk_instrs() -> usize {
     static N: OnceLock<usize> = OnceLock::new();
     *N.get_or_init(
         || match std::env::var("OMC_WASM_CHUNK_INSTRS").ok().and_then(|v| v.parse().ok()) {

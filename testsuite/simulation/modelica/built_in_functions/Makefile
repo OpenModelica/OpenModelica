@@ -14,6 +14,7 @@ HydrogenIodide.mos \
 Identity.mos \
 LotkaVolterra.mos \
 MeasureTime.mos \
+MessageFormat.mos \
 NthRoot1.mos \
 NthRoot2.mos \
 NthRoot3.mos \

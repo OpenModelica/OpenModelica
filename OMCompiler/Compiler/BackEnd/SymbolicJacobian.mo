@@ -3356,7 +3356,14 @@ algorithm
         BackendDAE.StateSet stateSet;
       case stateSet
         algorithm
-          (stateSet, outShared) := calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, outShared);
+          try
+            (stateSet, outShared) := calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, outShared);
+          else
+            Error.addInternalError("Could not calculate the Jacobian of the state set with the candidates " +
+              stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(v)) for v in stateSet.statescandidates), ", "),
+              sourceInfo());
+            fail();
+          end try;
         then stateSet;
     end match for s in inStateSets);
 end calculateStateSetsJacobian;
@@ -3379,7 +3386,7 @@ algorithm
       DAE.ComponentRef crA, crJ;
       list<BackendDAE.Var> varA, varJ, statescandidates, ovars;
 
-      list<DAE.ComponentRef> crstates;
+      list<DAE.ComponentRef> crstates, crvars;
       array<Boolean> marked;
       HashSet.HashSet hs;
 
@@ -3397,16 +3404,17 @@ algorithm
       algorithm
         // get state names
         crstates := List.map(statescandidates, BackendVariable.varCref);
+        crvars := list(stateSetCandidateVar(cr, inVars) for cr in crstates);
         marked := arrayCreate(BackendVariable.varsSize(inVars), false);
         // get Equations for Jac from the strong component
-        marked := List.fold1(crstates, markSetStates, inVars, marked);
+        marked := List.fold1(crvars, markSetStates, inVars, marked);
         (compeqns, compvars) := getStateSetCompVarEqns(inComps, marked, inEqns, inVars);
         // remove the state set equation
         compeqns := List.select(compeqns, removeStateSetEqn);
         // the residuals are scalar, split the tuple equations
         compeqns := List.flatten(list(splitTupleEquation(eq) for eq in compeqns));
         // remove the state candidates to geht the other vars
-        hs := List.fold(crstates, BaseHashSet.add, HashSet.emptyHashSet());
+        hs := List.fold(crvars, BaseHashSet.add, HashSet.emptyHashSet());
         compvars := List.select1(compvars, removeStateSetStates, hs);
         // match the equations to get the residual equations
         (ceqns, oeqns) := IndexReduction.splitEqnsinConstraintAndOther(compvars, compeqns, inShared);
@@ -3439,6 +3447,19 @@ algorithm
       then (BackendDAE.STATESET(index, rang, state, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jacobian), shared);
   end match;
 end calculateStateSetJacobian;
+
+protected function stateSetCandidateVar
+  "The variable that the matching solves for a state set candidate. For the
+   candidate der(x) of a state x, this is x."
+  input DAE.ComponentRef inCr;
+  input BackendDAE.Variables inVars;
+  output DAE.ComponentRef outCr = inCr;
+algorithm
+  if not BackendVariable.containsCref(inCr, inVars) then
+    DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix, componentRef = outCr) := inCr;
+    true := BackendVariable.isState(outCr, inVars);
+  end if;
+end stateSetCandidateVar;
 
 protected function markSetStates
   input DAE.ComponentRef inCr;
