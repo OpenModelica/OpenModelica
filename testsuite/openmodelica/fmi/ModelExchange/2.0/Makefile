@@ -49,6 +49,7 @@ fmi2_array_nonscalarized.mos \
 fmi2_arrays_initial_unknowns.mos \
 fmi2_fmustate_bounds.mos \
 fmi2_fmustate_recover.mos \
+fmi2_reset_after_terminate.mos \
 fmi2_reset_heap.mos \
 fmi2_string_variability.mos \
 fmi_export_derivative_annotation.mos \
