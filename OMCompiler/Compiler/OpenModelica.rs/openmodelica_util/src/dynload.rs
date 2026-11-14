@@ -504,8 +504,18 @@ pub fn free_function(func: i32, _debug: bool) -> Result<()> {
 /// pinned (see [`ensure_runtime`]), so closing a function library never unloads
 /// the shared GC/`threadData` state.
 pub fn free_library(lib: i32, _debug: bool) -> Result<()> {
-    let handle = REGISTRY.lock().unwrap().libs.remove(&lib);
+    let (handle, td) = {
+        let mut reg = REGISTRY.lock().unwrap();
+        (reg.libs.remove(&lib), if reg.inited { reg.thread_data } else { 0 })
+    };
     if let Some(h) = handle {
+        // A library loaded later can put a warning assert at the same address.
+        if td != 0 {
+            if let Some(f) = dlsym_addr(h, "omc_assert_warnings_free") {
+                let f: extern "C" fn(*mut c_void) = unsafe { std::mem::transmute(f) };
+                f(td as *mut c_void);
+            }
+        }
         dl::close(h);
     }
     Ok(())

@@ -736,6 +736,7 @@ unsafe extern "C" {
     fn omc_rc_release(obj: *mut c_void);
     fn omc_array_release(a: *mut base_array_t);
     fn omc_string_array_release(a: *mut base_array_t);
+    fn omc_assert_warnings_free(threadData: *mut threadData_t);
     fn freeVarInfo(info: *mut VAR_INFO);
 }
 
@@ -990,6 +991,7 @@ pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
     }
     let mut d = data;
     free(&mut d);
+    unsafe { omc_assert_warnings_free(thread_data) };
     let mut td = thread_data;
     free(&mut td);
 }

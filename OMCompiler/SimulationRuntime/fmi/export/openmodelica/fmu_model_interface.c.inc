@@ -1700,6 +1700,7 @@ void FMIX(FreeInstance)(fmiXComponent c)
   free(comp->fmuData->simulationInfo);
 
   /* free fmuData */
+  omc_assert_warnings_free(comp->threadData);
   free(comp->threadData);
   free(comp->fmuData);
   /* free instanceName & GUID */
@@ -1894,6 +1895,9 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
     deInitializeDataStruc(comp->fmuData);
     modelDataVarsFreed = TRUE;
   }
+
+  /* The warning asserts warn again, as after Instantiate. */
+  omc_assert_warnings_free(comp->threadData);
 
   /* Initialize modelData */
   omc_useStream[OMC_LOG_STDOUT] = 1;
