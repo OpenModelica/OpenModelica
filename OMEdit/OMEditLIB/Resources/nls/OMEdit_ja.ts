@@ -6240,6 +6240,14 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>順序</translation>
     </message>
     <message>
+        <source>New Verification Configuration...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Binds the CRML requirement model to architecture and behaviour models</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>New File</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7036,6 +7044,14 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>Shows OpenModelica Compiler Diff</source>
         <translation>OpenModelicaコンパイラ Diffを表示</translation>
+    </message>
+    <message>
+        <source>CRML Verification Configuration...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Binds a CRML requirement model to architecture and behaviour models and generates the verification model</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open Temporary Directory</source>
@@ -10301,6 +10317,226 @@ Variability: %4</source>
     </message>
     <message>
         <source>%1 not found in result file. Protected variables are only stored with &lt;b&gt;Simulation Setup-&gt;Output-&gt;Protected Variables if not encrypted&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VerificationConfigurationEditor</name>
+    <message>
+        <source>CRML Verification Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Models</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>External Set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Element Class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Targets (class collections or instances)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation type="unfinished">状態</translation>
+    </message>
+    <message>
+        <source>Confidence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set Bindings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>External Variable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observers, in order (prefix - to disable)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Role</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Variable Bindings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation type="unfinished">タイプ</translation>
+    </message>
+    <message>
+        <source>Bound To (Class.variable)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input Bindings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bound Instances (instance or instance:role)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance Bindings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Requirement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Result</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CRML Line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Results</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto Discover Bindings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Validate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate Verification Model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Simulate</source>
+        <translation type="unfinished">シミュレート</translation>
+    </message>
+    <message>
+        <source>Plot Results</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Optional architecture.json; without it the sets bind to behaviour instances</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modelica class name of the behaviour model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modelica packages that contain the observers, separated by commas</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Models</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">名前:</translation>
+    </message>
+    <message>
+        <source>Requirement model (CRML):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Architecture model:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Behaviour model:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observer libraries:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> (has default)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All bindings are valid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Diagnostics (%1 errors)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML compiler failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML compiler wrote no %1. It needs the --externals-json option.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML compiler could not translate %1 to Modelica: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML bindings need the CRML compiler, which cannot run here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loaded %1 (%2 external sets, %3 classes), %4 behaviour instances and %5 observers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The verification model is generated only when all bindings are valid. See the diagnostics.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot write %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generated %1 in %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The simulation of %1 failed.
+%2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -135,6 +135,11 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       CrashReport/CrashReportDialog.cpp
                       CRML/CRMLTranslateAsDialog.cpp
                       CRML/CRMLTranslatorOutputWidget.cpp
+                      CRML/Bindings/BindingModel.cpp
+                      CRML/Bindings/BindingEngine.cpp
+                      CRML/Bindings/VerificationGenerator.cpp
+                      CRML/Bindings/ModelIndexBuilder.cpp
+                      CRML/Bindings/VerificationConfigurationEditor.cpp
                       OMUQ/OMUQDialog.cpp
                       OMUQ/OMUQOutputWidget.cpp
                       Git/GitCommands.cpp
@@ -302,6 +307,11 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       CRML/CRMLTranslateAsDialog.h
                       CRML/CRMLTranslatorOptions.h
                       CRML/CRMLTranslatorOutputWidget.h
+                      CRML/Bindings/BindingModel.h
+                      CRML/Bindings/BindingEngine.h
+                      CRML/Bindings/VerificationGenerator.h
+                      CRML/Bindings/ModelIndexBuilder.h
+                      CRML/Bindings/VerificationConfigurationEditor.h
                       OMUQ/OMUQDialog.h
                       OMUQ/OMUQOutputWidget.h
                       Git/GitCommands.h

@@ -2816,6 +2816,9 @@ void LibraryTreeView::createActions()
     mpTranslateCRMLAction = new QAction(QIcon(":/Resources/icons/translate.svg"), Helper::translateCRML, this);
     mpTranslateCRMLAction->setStatusTip(Helper::translateCRMLTip);
     connect(mpTranslateCRMLAction, SIGNAL(triggered()), SLOT(translateCRML()));
+    mpCRMLVerificationConfigurationAction = new QAction(tr("New Verification Configuration..."), this);
+    mpCRMLVerificationConfigurationAction->setStatusTip(tr("Binds the CRML requirement model to architecture and behaviour models"));
+    connect(mpCRMLVerificationConfigurationAction, SIGNAL(triggered()), SLOT(newCRMLVerificationConfiguration()));
     // translateAs CRML Action
     mpTranslateAsCRMLAction = new QAction(QIcon(":/Resources/icons/translateAs.svg"), Helper::translateAsCRML, this);
     mpTranslateAsCRMLAction->setStatusTip(Helper::translateAsCRMLTip);
@@ -3212,6 +3215,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isCRMLFile()) {
             menu.addAction(mpTranslateCRMLAction);
             menu.addAction(mpTranslateAsCRMLAction);
+            menu.addAction(mpCRMLVerificationConfigurationAction);
 #if !defined(OM_OMEDIT_NO_WEBENGINE)
             // The draw.io viewer needs QtWebEngine, or the browser of the web build, see ClassDiagramWidget.
             menu.addAction(mpCRMLDiagramAction);
@@ -3563,6 +3567,18 @@ void LibraryTreeView::translateCRML()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->translateCRML(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::newCRMLVerificationConfiguration
+ * Opens the CRML verification configuration editor for the selected CRML file.
+ */
+void LibraryTreeView::newCRMLVerificationConfiguration()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->showCRMLVerificationConfigurationEditor(pLibraryTreeItem->getFileName());
   }
 }
 
