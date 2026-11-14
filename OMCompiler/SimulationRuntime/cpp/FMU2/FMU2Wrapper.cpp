@@ -58,11 +58,6 @@ FMU2Logger::FMU2Logger(FMU2Wrapper *wrapper,
 {
 }
 
-void FMU2Logger::initialize(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled)
-{
-  _instance = new FMU2Logger(wrapper, logSettings, enabled);
-}
-
 void FMU2Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
                                LogStructure ls)
 {
@@ -111,18 +106,26 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _instanceName = instanceName;
   _GUID = GUID;
 
-  // setup logger
+  // setup logger; only if logging is on, see setDebugLogging
   _logger = NULL;
   _logCategories = 0x0000;
-  if (loggingOn) {
-    // only instantiate logger if requested as it is not thread save
+  if (loggingOn)
     setDebugLogging(loggingOn, 0, NULL);
-  }
+  activateLogger();
 
   // setup model
-  _model = createSystemFMU(&_globalSettings);
-  _model->initializeMemory();
-  _model->initializeFreeVariables();
+  try {
+    _model = createSystemFMU(&_globalSettings);
+    _model->initializeMemory();
+    _model->initializeFreeVariables();
+  }
+  catch (...) {
+    if (_logger != NULL) {
+      _logger->deactivate();
+      delete _logger;
+    }
+    throw;
+  }
   _needUpdate = true;
   _stringBuffer.resize(_model->getDimString());
   _clockTick = new bool[_model->getDimClock()];
@@ -134,9 +137,14 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
 
 FMU2Wrapper::~FMU2Wrapper()
 {
+  activateLogger();
   delete [] _clockSubactive;
   delete [] _clockTick;
   delete _model;
+  if (_logger != NULL) {
+    _logger->deactivate();
+    delete _logger;
+  }
 }
 
 fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
@@ -145,24 +153,27 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
 {
   fmi2Status ret = fmi2OK;
 
-  if (_logger == NULL) {
+  // Each call makes the logger the process-global one, which other threads
+  // see. Thus make it only when logging is turned on the first time.
+  if (_logger == NULL && loggingOn) {
     LogSettings logSettings = _globalSettings.getLogSettings();
-    FMU2Logger::initialize(this, logSettings, loggingOn);
-    _logger = Logger::getInstance();
+    _logger = new FMU2Logger(this, logSettings, loggingOn);
+    _logger->activate();
   }
-  else {
+  if (_logger != NULL)
     _logger->setEnabled(loggingOn);
-  }
   if (nCategories == 0) {
     _logCategories = loggingOn? 0xFFFF: 0x0000;
-    _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
+    if (_logger != NULL)
+      _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
   }
   else {
     int i, j, nSupported = sizeof(_LogCategoryFMUNames) / sizeof(fmi2String);
     for (i = 0; i < nCategories; i++) {
       if (strcmp(categories[i], "logAll") == 0) {
         _logCategories = loggingOn? 0xFFFF: 0x0000;
-        _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
+        if (_logger != NULL)
+          _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
         continue;
       }
       for (j = 0; j < nSupported; j++) {
@@ -173,10 +184,12 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
             _logCategories &= ~(1 << j);
           switch (j) {
           case logEvents:
-            _logger->set(LC_EVENTS, loggingOn? LL_DEBUG: LL_ERROR);
+            if (_logger != NULL)
+              _logger->set(LC_EVENTS, loggingOn? LL_DEBUG: LL_ERROR);
             break;
           case logNonlinearSystems:
-            _logger->set(LC_NLS, loggingOn? LL_DEBUG: LL_ERROR);
+            if (_logger != NULL)
+              _logger->set(LC_NLS, loggingOn? LL_DEBUG: LL_ERROR);
             break;
           }
           break;
