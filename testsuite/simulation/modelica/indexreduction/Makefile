@@ -9,7 +9,8 @@ DiscreteTupleOutput.mos \
 TupleConstraintEquation.mos \
 TupleConstraintStateSet.mos \
 TupleAssignInIf.mos \
-StateSetArrayEq.mos
+StateSetArrayEq.mos \
+StateSetDerivativeCandidate.mos
 
 
 # test that currently fail. Move up when fixed. 

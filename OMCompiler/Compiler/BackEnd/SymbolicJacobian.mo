@@ -3356,7 +3356,14 @@ algorithm
         BackendDAE.StateSet stateSet;
       case stateSet
         algorithm
-          (stateSet, outShared) := calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, outShared);
+          try
+            (stateSet, outShared) := calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, outShared);
+          else
+            Error.addInternalError("Could not calculate the Jacobian of the state set with the candidates " +
+              stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(v)) for v in stateSet.statescandidates), ", "),
+              sourceInfo());
+            fail();
+          end try;
         then stateSet;
     end match for s in inStateSets);
 end calculateStateSetsJacobian;
