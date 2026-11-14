@@ -843,12 +843,7 @@ algorithm
         (derivedLHS, functions) := differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         (derivedRHS, functions) := differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         (derivedRHS,_) := ExpressionSimplify.simplify(derivedRHS);
-        /* if assigment is empty remove derived assignment */
-        if (Expression.isZero(derivedLHS)) then
-          derivedStatements1 := {currStatement};
-        else
-          derivedStatements1 := {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, source), currStatement};
-        end if;
+        derivedStatements1 := listAppend(makeDerivedAssignment(type_, derivedLHS, derivedRHS, source), {currStatement});
         derivedStatements2 := listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
       then (derivedStatements2, functions);
@@ -1015,6 +1010,34 @@ algorithm
   end match;
 end isDiscreteAssignStatment;
 
+
+protected function makeDerivedAssignment
+  "An assignment to the derivative of a cref with a variable index, which is an
+   if-expression, becomes an if-statement. The index has a known value in each
+   branch, which simplifies the right-hand side. Assignments to zero are removed."
+  input DAE.Type ty;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  output list<DAE.Statement> stmts;
+protected
+  DAE.Exp then_rhs, else_rhs;
+algorithm
+  stmts := match lhs
+    local
+      DAE.Exp cond, index, value;
+    case DAE.IFEXP(expCond = cond as DAE.RELATION(exp1 = index, operator = DAE.EQUAL(), exp2 = value))
+      algorithm
+        (then_rhs, _) := Expression.replaceExp(rhs, index, value);
+        (then_rhs, _) := ExpressionSimplify.simplify(then_rhs);
+        (else_rhs, _) := Expression.replaceExp(rhs, cond, DAE.BCONST(false));
+        (else_rhs, _) := ExpressionSimplify.simplify(else_rhs);
+      then {DAE.STMT_IF(cond, makeDerivedAssignment(ty, lhs.expThen, then_rhs, source),
+                        DAE.ELSE(makeDerivedAssignment(ty, lhs.expElse, else_rhs, source)), source)};
+    case _ guard Expression.isZero(lhs) then {};
+    else {DAE.STMT_ASSIGN(ty, lhs, rhs, source)};
+  end match;
+end makeDerivedAssignment;
 
 protected function makeAssignmentfromTuple
 "Help function for differentiateStatements"
@@ -1267,6 +1290,26 @@ algorithm
       then
         (res, inFunctionTree);
 
+    // d(u[k])/d(x) => if k == 1 then d(u[1])/d(x) elseif ... else d(u[n])/d(x)
+    case (DAE.CREF(componentRef = cr, ty = tp), _, _, BackendDAE.GENERIC_GRADIENT())
+      guard hasVariableIndex(cr)
+      algorithm
+        (e, expl, scalarCrefs) := expandFirstVariableIndex(cr);
+        outFunctionTree := inFunctionTree;
+        diffed_exps := {};
+        for cref in scalarCrefs loop
+          (res1, outFunctionTree) := differentiateCrefs(Expression.makeCrefExp(cref, tp), inDiffwrtCref, inInputData, inDiffType, outFunctionTree, maxIter);
+          diffed_exps := res1 :: diffed_exps;
+        end for;
+        res :: diffed_exps := diffed_exps;
+        _ :: expl := listReverse(expl);
+        for i in expl loop
+          res1 :: diffed_exps := diffed_exps;
+          res := DAE.IFEXP(DAE.RELATION(e, DAE.EQUAL(Expression.typeof(e)), i, -1, NONE()), res1, res);
+        end for;
+      then
+        (res, outFunctionTree);
+
     // d(x)/d(x) => generate seed variables
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT())
       algorithm
@@ -1385,6 +1428,69 @@ algorithm
   outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
   if debug then print("outCref: " + ComponentReferenceBasics.printComponentRefStr(outCref) +"\n"); end if;
 end createSeedCrefName;
+
+protected function isVariableIndex
+  input DAE.Subscript sub;
+  output Boolean b;
+algorithm
+  b := match sub
+    case DAE.INDEX() then not Expression.subscriptConstant(sub);
+    else false;
+  end match;
+end isVariableIndex;
+
+protected function hasVariableIndex
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    case DAE.CREF_IDENT() then List.any(cr.subscriptLst, isVariableIndex);
+    case DAE.CREF_QUAL() then List.any(cr.subscriptLst, isVariableIndex) or hasVariableIndex(cr.componentRef);
+    else false;
+  end match;
+end hasVariableIndex;
+
+protected function expandFirstVariableIndex
+  "Returns the first index of the cref that is not a literal, the values of its
+   dimension, and the cref with the index replaced by each of the values."
+  input DAE.ComponentRef inCref;
+  output DAE.Exp index;
+  output list<DAE.Exp> values;
+  output list<DAE.ComponentRef> crefs;
+protected
+  list<list<DAE.Subscript>> subsl;
+algorithm
+  (index, values, crefs) := match inCref
+    case DAE.CREF_IDENT() guard List.any(inCref.subscriptLst, isVariableIndex)
+      algorithm
+        (index, values, subsl) := expandFirstVariableIndexSubs(inCref.subscriptLst, inCref.identType);
+      then (index, values, list(DAE.CREF_IDENT(inCref.ident, inCref.identType, s) for s in subsl));
+    case DAE.CREF_QUAL() guard List.any(inCref.subscriptLst, isVariableIndex)
+      algorithm
+        (index, values, subsl) := expandFirstVariableIndexSubs(inCref.subscriptLst, inCref.identType);
+      then (index, values, list(DAE.CREF_QUAL(inCref.ident, inCref.identType, s, inCref.componentRef) for s in subsl));
+    case DAE.CREF_QUAL()
+      algorithm
+        (index, values, crefs) := expandFirstVariableIndex(inCref.componentRef);
+      then (index, values, list(DAE.CREF_QUAL(inCref.ident, inCref.identType, inCref.subscriptLst, cr) for cr in crefs));
+  end match;
+end expandFirstVariableIndex;
+
+protected function expandFirstVariableIndexSubs
+  input list<DAE.Subscript> inSubs;
+  input DAE.Type inType;
+  output DAE.Exp index;
+  output list<DAE.Exp> values;
+  output list<list<DAE.Subscript>> outSubs;
+protected
+  Integer pos;
+algorithm
+  pos := List.positionOnTrue(inSubs, isVariableIndex);
+  DAE.INDEX(exp = index) := listGet(inSubs, pos);
+  values := list(Expression.getSubscriptExp(s) for s in Expression.expandDimension(listGet(TypesDump.getDimensions(inType), pos)));
+  false := listEmpty(values);
+  outSubs := list(List.replaceAt(DAE.INDEX(v), pos, inSubs) for v in values);
+end expandFirstVariableIndexSubs;
 
 public function isSeedCref
 "Returns true if the last cref part is prefixed with 'Seed', i.e. x.y.z.SeedLSJac0"
