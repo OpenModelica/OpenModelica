@@ -124,6 +124,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _model->initializeMemory();
   _model->initializeFreeVariables();
   _needUpdate = true;
+  _timeEventsHandled = false;
   _stringBuffer.resize(_model->getDimString());
   _clockTick = new bool[_model->getDimClock()];
   _clockSubactive = new bool[_model->getDimClock()];
@@ -210,6 +211,7 @@ fmi2Status FMU2Wrapper::enterInitializationMode()
 {
   _model->setInitial(true);
   _needUpdate = true;
+  _timeEventsHandled = false;
   return fmi2OK;
 }
 
@@ -232,6 +234,7 @@ fmi2Status FMU2Wrapper::reset()
 {
   _model->initializeFreeVariables();
   _needUpdate = true;
+  _timeEventsHandled = false;
   return fmi2OK;
 }
 
@@ -253,6 +256,8 @@ fmi2Status FMU2Wrapper::setTime(fmi2Real time)
     std::fill(_clockSubactive, _clockSubactive + _model->getDimClock(), false);
     _nclockTick = 0;
   }
+  if (time != _model->getTime())
+    _timeEventsHandled = false;
   _model->setTime(time);
   _needUpdate = true;
   return fmi2OK;
@@ -275,7 +280,6 @@ fmi2Status FMU2Wrapper::getDerivatives(fmi2Real derivatives[], size_t nx)
 {
   if (_needUpdate)
     updateModel();
-  _model->computeTimeEventConditions(_model->getTime());
   _model->getRHS(derivatives);
   return fmi2OK;
 }
@@ -437,6 +441,15 @@ fmi2Status FMU2Wrapper::getInterval(const fmi2Integer clockIndex[],
 
 fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
 {
+  // Activate the time events (sample, periodic clocks) of the current time.
+  // Do it once for each time instant, so that a second call does not handle
+  // them again. Getters may have evaluated the model at this time already.
+  bool timeEvents = !_timeEventsHandled;
+  if (timeEvents) {
+    _model->computeNextTimeEvents(_model->getTime());
+    _model->computeTimeEventConditions(_model->getTime());
+    _timeEventsHandled = true;
+  }
   if (_needUpdate || _nclockTick > 0) {
     if (_nclockTick > 0)
       _model->setClock(_clockTick, _clockSubactive);
@@ -456,6 +469,13 @@ fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
     events[i] = f[i] >= 0;
   // Handle Zero Crossings if nessesary
   bool state_vars_reinitialized = _model->handleSystemEvents(events);
+  if (timeEvents) {
+    // deactivate the time events until the next time event and update the
+    // model and the pre values of the conditions with the inactive events
+    _model->resetTimeConditions();
+    updateModel();
+    _model->saveAll();
+  }
   //time events
   eventInfo->nextEventTime = _model->computeNextTimeEvents(_model->getTime());
   if ((eventInfo->nextEventTime != 0.0) && (eventInfo->nextEventTime != std::numeric_limits<double>::max()))

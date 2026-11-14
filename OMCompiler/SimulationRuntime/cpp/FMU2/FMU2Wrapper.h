@@ -180,6 +180,7 @@ class FMU2Wrapper
   int _nclockTick;
   bool _needUpdate;
   bool _needJacUpdate;
+  bool _timeEventsHandled; // time events of the current time are handled
   void updateModel();
 
   typedef enum {
