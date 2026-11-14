@@ -3277,6 +3277,7 @@ case "1.0" then
   end match
 case "2.0" then
   match fmiModelVariable
+  case REALVARIABLE(causality="independent") then ""
   case REALVARIABLE(__) then
     <<
     <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIRealModelVariableStartValue(FMUVersion, causality, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;

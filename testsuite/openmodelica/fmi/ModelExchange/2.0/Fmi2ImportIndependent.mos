@@ -1,0 +1,37 @@
+// name:     Fmi2ImportIndependent
+// keywords: FMI 2.0 import independent time
+// status:   correct
+// teardown_command: rm -rf binaries sources resources modelDescription.xml IndependentTime*
+//
+// The FMU of a model without variables lists time as its independent variable.
+// The import declared it as a variable of the wrapper, which then hid the
+// built-in time (#13014).
+
+loadString("
+model IndependentTime
+end IndependentTime;
+"); getErrorString();
+buildModelFMU(IndependentTime, version = "2.0", fmuType = "me"); getErrorString();
+importFMU("IndependentTime.fmu"); getErrorString();
+loadFile("IndependentTime_me_FMU.mo"); getErrorString();
+simulate(IndependentTime_me_FMU, stopTime = 1.0); getErrorString();
+// Result:
+// true
+// ""
+// "IndependentTime.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "IndependentTime_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IndependentTime_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'IndependentTime_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
