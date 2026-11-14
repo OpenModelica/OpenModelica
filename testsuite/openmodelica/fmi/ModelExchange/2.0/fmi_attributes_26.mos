@@ -1,0 +1,89 @@
+// name: fmi_attributes_26.mos
+// status: correct
+// teardown_command: rm -rf fmi_attributes_26.fmu fmi_attributes_26.log fmi_attributes_26.xml fmi_attributes_26_tmp.xml fmi_attributes_26.fmutmp/ fmi_attributes_26_info.json
+//
+// rad in <BaseUnit>, and Hz as display unit of rad/s (#13298)
+
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+getErrorString();
+
+loadString("
+model fmi_attributes_26
+  Real phi(unit = \"rad\", displayUnit = \"deg\", start = 0, fixed = true);
+  Real omega(unit = \"rad/s\", displayUnit = \"Hz\");
+  Real speed(unit = \"rad/s\", displayUnit = \"rpm\");
+  Real w(unit = \"rad/s\", displayUnit = \"1/s\");
+  Real f(unit = \"Hz\");
+  Real k(unit = \"1/s\", displayUnit = \"Hz\");
+equation
+  der(phi) = omega;
+  omega = 6.283185307179586;
+  speed = omega;
+  w = omega;
+  f = 1;
+  k = f;
+end fmi_attributes_26;
+"); getErrorString();
+
+buildModelFMU(fmi_attributes_26); getErrorString();
+
+system("unzip -cqq fmi_attributes_26.fmu modelDescription.xml > fmi_attributes_26_tmp.xml"); getErrorString();
+system("sed -n \"/<UnitDefinitions>/,/<\\/UnitDefinitions>/p\" fmi_attributes_26_tmp.xml > fmi_attributes_26.xml"); getErrorString();
+readFile("fmi_attributes_26.xml"); getErrorString();
+system("grep \"<Real\" fmi_attributes_26_tmp.xml > fmi_attributes_26.xml"); getErrorString();
+readFile("fmi_attributes_26.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_26.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <UnitDefinitions>
+//     <Unit name=\"rpm\">
+//       <BaseUnit s=\"-1\" rad=\"1\" factor=\"0.10471975511965978\" />
+//       <DisplayUnit name=\"rad/s\" factor=\"0.10471975511965978\" offset=\"0.0\"/>
+//     </Unit>
+//     <Unit name=\"1/s\">
+//       <BaseUnit s=\"-1\" />
+//       <DisplayUnit name=\"Hz\" factor=\"1.0\" offset=\"0.0\"/>
+//     </Unit>
+//     <Unit name=\"rad/s\">
+//       <BaseUnit s=\"-1\" rad=\"1\" />
+//       <DisplayUnit name=\"rpm\" factor=\"9.54929658551372\" offset=\"0.0\"/>
+//       <DisplayUnit name=\"Hz\" factor=\"0.15915494309189535\" offset=\"0.0\"/>
+//     </Unit>
+//     <Unit name=\"Hz\">
+//       <BaseUnit s=\"-1\" />
+//       <DisplayUnit name=\"1/s\" factor=\"1.0\" offset=\"0.0\"/>
+//     </Unit>
+//     <Unit name=\"deg\">
+//       <BaseUnit rad=\"1\" factor=\"0.017453292519943295\" />
+//       <DisplayUnit name=\"rad\" factor=\"0.017453292519943295\" offset=\"0.0\"/>
+//     </Unit>
+//     <Unit name=\"rad\">
+//       <BaseUnit rad=\"1\" />
+//       <DisplayUnit name=\"deg\" factor=\"57.29577951308232\" offset=\"0.0\"/>
+//     </Unit>
+//   </UnitDefinitions>
+// "
+// ""
+// 0
+// ""
+// "    <Real start=\"0.0\" unit=\"rad\" displayUnit=\"deg\"/>
+//     <Real derivative=\"1\" unit=\"Hz\"/>
+//     <Real start=\"0.0\" unit=\"Hz\"/>
+//     <Real start=\"0.0\" unit=\"rad/s\" displayUnit=\"Hz\"/>
+//     <Real unit=\"1/s\" displayUnit=\"Hz\"/>
+//     <Real unit=\"rad/s\" displayUnit=\"rpm\"/>
+//     <Real unit=\"rad/s\"/>
+// "
+// ""
+// endResult

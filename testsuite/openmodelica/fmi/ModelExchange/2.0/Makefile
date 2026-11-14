@@ -36,6 +36,7 @@ fmi_attributes_22.mos \
 fmi_attributes_23.mos \
 fmi_attributes_24.mos \
 fmi_attributes_25.mos \
+fmi_attributes_26.mos \
 fmi2_array_attributes_nb.mos \
 fmi2_array_attributes.mos \
 Issue13905.mos \
