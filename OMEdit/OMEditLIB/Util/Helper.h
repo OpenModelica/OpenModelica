@@ -214,6 +214,8 @@ public:
   static QString FMU;
   static QString exportt;
   static QString exportFMUTip;
+  static QString FMUWithSetup;
+  static QString exportFMUWithSetupTip;
   static QString sensitivityOptimization;
   static QString exportReadonlyPackage;
   static QString exportReadonlyPackageTip;

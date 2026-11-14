@@ -124,17 +124,14 @@ int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* ida
 
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i < data->modelData->nStates; ++i) {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    idaData->nominal[i] = fmax(fabs(nominal), 1e-32);
+    const modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    idaData->nominal[i] = nominal;
     infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[data->simulationInfo->realVarsReverseIndex[i].array_idx].info.name, idaData->nominal[i]);
   }
 
   /* daeMode: set nominal values for algebraic variables */
   if (idaData->daeMode) {
     getAlgebraicDAEVarNominals(data, idaData->nominal + data->modelData->nStates);
-    for(i=data->modelData->nStates; i < idaData->N; ++i) {
-      idaData->nominal[i] = fmax(fabs(idaData->nominal[i]), 1e-32);
-    }
   }
   /* multiply by tolerance to obtain a relative tolerace */
   for(i=0; i < idaData->N; ++i) {
@@ -771,7 +768,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
 {
   double tout = 0;
   int i = 0, flag;
-  int retVal = 0, finished = 0 /* FALSE */;
+  int retVal = 0, finished = 0 /* FALSE */, rootFailed = 0 /* FALSE */;
   int saveJumpState;
   long int tmp;
   static unsigned int stepsOutputCounter = 1;
@@ -964,6 +961,12 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
     }
+    else if (flag == IDA_RTFUNC_FAIL)
+    {
+      /* the root function raised an error, which fails the step */
+      rootFailed = 1 /* TRUE */;
+      finished = 1 /* TRUE */;
+    }
     else if (flag == IDA_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
       warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
@@ -1012,7 +1015,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
 
   } while(!finished && !OMC_ERROR_RAISED());
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !rootFailed) { OMC_ERROR_CLEAR(); }
 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;
@@ -1328,7 +1331,7 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
   messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);   // TODO: Why do we have two rt_tick calls? Keep only this one?
 
-  return 0;
+  return OMC_ERROR_RAISED() ? -1 : 0;
 }
 
 /**

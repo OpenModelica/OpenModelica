@@ -1347,11 +1347,8 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   if (!functions->logger) {
     return NULL;
   }
-#else
-  if (!logMessage) {
-    return NULL;
-  }
 #endif
+  /* FMI 3.0 allows logMessage = NULL; the FMI 3.0 log helpers then log nothing. */
   mmc_init_nogc();
   omc_alloc_interface.init();
 
@@ -3194,9 +3191,7 @@ fmiXStatus internalGetNominalsOfContinuousStates(fmiXComponent c, fmiXReal x_nom
   DATA* fmudata = (DATA *) comp->fmuData;
   for (i = 0; i < nx; i++)
   {
-    /* Floored as ida_solver_setNominals floors it. */
-    modelica_real nominal = getNominalFromScalarIdx(fmudata->simulationInfo, fmudata->modelData, VAR_KIND_STATE, i);
-    x_nominal[i] = fmax(fabs(nominal), 1e-32);
+    x_nominal[i] = getPositiveNominalFromScalarIdx(fmudata->simulationInfo, fmudata->modelData, VAR_KIND_STATE, i);
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetNominalsOfContinuousStates: x_nominal[%d] = %.16g", i, x_nominal[i])
   }
 #endif

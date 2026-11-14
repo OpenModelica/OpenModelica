@@ -911,52 +911,16 @@ pub fn pwd() -> ArcStr {
     }
 }
 
-// The wasm build has no OS environment — `std::env::set_var` *panics* on
-// wasm32-unknown-unknown — so `setEnv`/`readEnv` keep an in-process map instead
-// (wasm is single-threaded, hence a `thread_local`). The JS host seeds it (e.g.
-// OPENMODELICAHOME) before init.
-#[cfg(target_arch = "wasm32")]
-thread_local! {
-    static WASM_ENV: std::cell::RefCell<std::collections::HashMap<String, String>> =
-        std::cell::RefCell::new(std::collections::HashMap::new());
-}
-
 pub fn readEnv(inString: ArcStr) -> Result<ArcStr> {
-    #[cfg(target_arch = "wasm32")]
-    if let Some(v) = WASM_ENV.with(|e| e.borrow().get(inString.as_str()).cloned()) {
-        return Ok(ArcStr::from(v));
-    }
-    match std::env::var(inString.as_str()) {
-        Ok(v) => Ok(ArcStr::from(v)),
-        Err(_) => return Err("System.readEnv: variable {inString} not set"),
+    match openmodelica_wasi::env::var(inString.as_str()) {
+        Some(v) => Ok(ArcStr::from(v)),
+        None => return Err("System.readEnv: variable {inString} not set"),
     }
 }
 
 pub fn setEnv(varName: ArcStr, value: ArcStr, overwrite: bool) -> i32 {
-    #[cfg(target_arch = "wasm32")]
-    {
-        WASM_ENV.with(|e| {
-            let mut m = e.borrow_mut();
-            if overwrite || !m.contains_key(varName.as_str()) {
-                m.insert(varName.to_string(), value.to_string());
-            }
-        });
-        return 0;
-    }
-    // SAFETY: std::env::set_var is `unsafe` under edition 2024 because it
-    // races with concurrent getenv calls in other threads. The C runtime
-    // accepts the same hazard; we mirror the behavior here and rely on
-    // callers using this only during startup configuration.
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        if !overwrite && std::env::var_os(varName.as_str()).is_some() {
-            return 0;
-        }
-        unsafe {
-            std::env::set_var(varName.as_str(), value.as_str());
-        }
-        0
-    }
+    openmodelica_wasi::env::set_var(varName.as_str(), value.as_str(), overwrite);
+    0
 }
 
 pub fn subDirectories(inString: ArcStr) -> List<ArcStr> {

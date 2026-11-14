@@ -1871,6 +1871,64 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
+// post-optimization module removeConstants (jacobian)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
+// 2: uL.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
+// 3: $res_LSJac0_1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): uL.$pDERLSJac0.dummyVarLSJac0 = R2 * i2.SeedLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): u1.$pDERLSJac0.dummyVarLSJac0 = R1 * i2.SeedLSJac0   [dynamic |0|0|0|0|]
+// 3/3 (1): $res_LSJac0_1.$pDERLSJac0.dummyVarLSJac0 = (-uL.$pDERLSJac0.dummyVarLSJac0) - u1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {2:1}
+// {1:2}
+// {3:3}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (7)
+// ========================================
+// 1: input i2.SeedLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: u1:VARIABLE()  type: Real
+// 3: i1:VARIABLE()  type: Real
+// 4: uL:VARIABLE()  type: Real
+// 5: $res_LSJac0_1:VARIABLE()  type: Real
+// 6: R1:PARAM()  = 1.0  type: Real
+// 7: R2:PARAM()  = 2.0  type: Real
+//
+//
+// Alias Variables (1)
+// ========================================
+// 1: i1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = i2.SeedLSJac0  type: Real
+//
+//
+//
+// ########################################
 // post-optimization module tearingSystem (jacobian)
 // ########################################
 //
@@ -1930,64 +1988,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 // ########################################
 // post-optimization module calculateStrongComponentJacobians (jacobian)
-// ########################################
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
-// 2: uL.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
-// 3: $res_LSJac0_1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real unreplaceable
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): uL.$pDERLSJac0.dummyVarLSJac0 = R2 * i2.SeedLSJac0   [dynamic |0|0|0|0|]
-// 2/2 (1): u1.$pDERLSJac0.dummyVarLSJac0 = R1 * i2.SeedLSJac0   [dynamic |0|0|0|0|]
-// 3/3 (1): $res_LSJac0_1.$pDERLSJac0.dummyVarLSJac0 = (-uL.$pDERLSJac0.dummyVarLSJac0) - u1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {2:1}
-// {1:2}
-// {3:3}
-//
-//
-//
-// BackendDAEType: jacobian
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (7)
-// ========================================
-// 1: input i2.SeedLSJac0:STATE_DER()  type: Real unreplaceable
-// 2: u1:VARIABLE()  type: Real
-// 3: i1:VARIABLE()  type: Real
-// 4: uL:VARIABLE()  type: Real
-// 5: $res_LSJac0_1:VARIABLE()  type: Real
-// 6: R1:PARAM()  = 1.0  type: Real
-// 7: R2:PARAM()  = 2.0  type: Real
-//
-//
-// Alias Variables (1)
-// ========================================
-// 1: i1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = i2.SeedLSJac0  type: Real
-//
-//
-//
-// ########################################
-// post-optimization module removeConstants (jacobian)
 // ########################################
 //
 //
@@ -3079,6 +3079,90 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
+// post-optimization module removeConstants (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (10)
+// ========================================
+// 1: iC:VARIABLE()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
+// 3: i2:VARIABLE()  type: Real
+// 4: i1:VARIABLE()  type: Real
+// 5: i0:VARIABLE()  type: Real
+// 6: uC:DUMMY_STATE()  type: Real
+// 7: uL:VARIABLE()  type: Real
+// 8: u1:VARIABLE()  type: Real
+// 9: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real
+//
+//
+// Equations (10, 10)
+// ========================================
+// 1/1 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
+// 2/2 (1): uC = cos(time)   [unknown |0|0|0|0|]
+// 3/3 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
+// 4/4 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
+// 5/5 (1): uL = R2 * i2   [dynamic |0|0|0|0|]
+// 6/6 (1): u1 = uC - uL   [dynamic |0|0|0|0|]
+// 7/7 (1): der(iL) = uL / L   [dynamic |0|0|0|0|]
+// 8/8 (1): iC = (-C) * $cse1   [dynamic |0|0|0|0|]
+// 9/9 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
+// 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 10 variables and equations
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 7
+// var 3 is solved in eqn 5
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 9
+// var 6 is solved in eqn 2
+// var 7 is solved in eqn 6
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 1
+// var 10 is solved in eqn 10
+//
+//
+// StrongComponents
+// ========================================
+// {2:6}
+// {6, 5, 4, 3:8, 4, 3, 7} Size: 4 Jacobian Linear
+// {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (5)
+// ========================================
+// 1: C:PARAM()  = 3.0  type: Real
+// 2: L:PARAM()  = 0.5  type: Real
+// 3: R2:PARAM()  = 2.0  type: Real
+// 4: R1:PARAM()  = 1.0  type: Real
+// 5: v0:VARIABLE(fixed = true final = true )  = 0.0  type: Real
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC  type: Real
+// 2: u2:VARIABLE()  = uL  type: Real
+// 3: v1:VARIABLE()  = uC  type: Real
+// 4: v2:VARIABLE()  = uL  type: Real
+//
+//
+//
+// ########################################
 // post-optimization module tearingSystem (simulation)
 // ########################################
 //
@@ -3635,6 +3719,64 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
+// post-optimization module removeConstants (jacobian)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: i1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
+// 2: i2.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
+// 3: $res_LSJac1_1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uL.SeedLSJac1 / R2   [dynamic |0|0|0|0|]
+// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uL.SeedLSJac1) / R1   [dynamic |0|0|0|0|]
+// 3/3 (1): $res_LSJac1_1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {2:1}
+// {1:2}
+// {3:3}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (7)
+// ========================================
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: i1:VARIABLE()  type: Real
+// 3: u1:VARIABLE()  type: Real
+// 4: i2:VARIABLE()  type: Real
+// 5: $res_LSJac1_1:VARIABLE()  type: Real
+// 6: R1:PARAM()  = 1.0  type: Real
+// 7: R2:PARAM()  = 2.0  type: Real
+//
+//
+// Alias Variables (1)
+// ========================================
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real
+//
+//
+//
+// ########################################
 // post-optimization module tearingSystem (jacobian)
 // ########################################
 //
@@ -3694,64 +3836,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 // ########################################
 // post-optimization module calculateStrongComponentJacobians (jacobian)
-// ########################################
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: i1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
-// 2: i2.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
-// 3: $res_LSJac1_1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real unreplaceable
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uL.SeedLSJac1 / R2   [dynamic |0|0|0|0|]
-// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uL.SeedLSJac1) / R1   [dynamic |0|0|0|0|]
-// 3/3 (1): $res_LSJac1_1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {2:1}
-// {1:2}
-// {3:3}
-//
-//
-//
-// BackendDAEType: jacobian
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (7)
-// ========================================
-// 1: input uL.SeedLSJac1:STATE_DER()  type: Real unreplaceable
-// 2: i1:VARIABLE()  type: Real
-// 3: u1:VARIABLE()  type: Real
-// 4: i2:VARIABLE()  type: Real
-// 5: $res_LSJac1_1:VARIABLE()  type: Real
-// 6: R1:PARAM()  = 1.0  type: Real
-// 7: R2:PARAM()  = 2.0  type: Real
-//
-//
-// Alias Variables (1)
-// ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real
-//
-//
-//
-// ########################################
-// post-optimization module removeConstants (jacobian)
 // ########################################
 //
 //
@@ -4041,92 +4125,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 // ########################################
 // post-optimization module symbolicJacobian (simulation)
-// ########################################
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (10)
-// ========================================
-// 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)(fixed = true )  type: Real
-// 3: i2:VARIABLE()  type: Real
-// 4: i1:VARIABLE()  type: Real
-// 5: i0:VARIABLE()  type: Real
-// 6: uC:DUMMY_STATE()  type: Real
-// 7: uL:VARIABLE()  type: Real
-// 8: u1:VARIABLE()  type: Real
-// 9: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
-// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real
-//
-//
-// Equations (10, 10)
-// ========================================
-// 1/1 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
-// 2/2 (1): uC = cos(time)   [unknown |0|0|0|0|]
-// 3/3 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
-// 4/4 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
-// 5/5 (1): uL = R2 * i2   [dynamic |0|0|0|0|]
-// 6/6 (1): u1 = uC - uL   [dynamic |0|0|0|0|]
-// 7/7 (1): der(iL) = uL / L   [dynamic |0|0|0|0|]
-// 8/8 (1): iC = (-C) * $cse1   [dynamic |0|0|0|0|]
-// 9/9 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
-// 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
-//
-//
-// Matching
-// ========================================
-// 10 variables and equations
-// var 1 is solved in eqn 8
-// var 2 is solved in eqn 7
-// var 3 is solved in eqn 5
-// var 4 is solved in eqn 4
-// var 5 is solved in eqn 9
-// var 6 is solved in eqn 2
-// var 7 is solved in eqn 6
-// var 8 is solved in eqn 3
-// var 9 is solved in eqn 1
-// var 10 is solved in eqn 10
-//
-//
-// StrongComponents
-// ========================================
-// {2:6}
-// {{{5:3}, {6:8}, {3:4}}
-// ,{4:7}} Size: 1 linear
-// For more information please use "-d=tearingdump".
-// {7:2}
-// {1:9}
-// {8:1}
-// {9:5}
-// {10:10}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (5)
-// ========================================
-// 1: C:PARAM()  = 3.0  type: Real
-// 2: L:PARAM()  = 0.5  type: Real
-// 3: R2:PARAM()  = 2.0  type: Real
-// 4: R1:PARAM()  = 1.0  type: Real
-// 5: v0:VARIABLE(fixed = true final = true )  = 0.0  type: Real
-//
-//
-// Alias Variables (4)
-// ========================================
-// 1: u0:VARIABLE()  = uC  type: Real
-// 2: u2:VARIABLE()  = uL  type: Real
-// 3: v1:VARIABLE()  = uC  type: Real
-// 4: v2:VARIABLE()  = uL  type: Real
-//
-//
-//
-// ########################################
-// post-optimization module removeConstants (simulation)
 // ########################################
 //
 //

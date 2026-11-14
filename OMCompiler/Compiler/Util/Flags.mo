@@ -732,12 +732,12 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeSimpleEquations",
     "simplifyComplexFunction",
     "solveSimpleEquations",
+    "removeConstants",
     "tearingSystem",
     "inputDerivativesUsed",
     "calculateStrongComponentJacobians",
     "calculateStateSetsJacobians",
     "symbolicJacobian",
-    "removeConstants",
     "simplifyTimeIndepFuncCalls",
     "simplifyAllExpressions",
     "findZeroCrossings",
@@ -1203,8 +1203,8 @@ constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(114, "postOptModulesDAE",
     //"replaceDerCalls",
     "simplifysemiLinear",
     "simplifyComplexFunction",
-    "inputDerivativesUsed",
     "removeConstants",
+    "inputDerivativesUsed",
     "simplifyTimeIndepFuncCalls",
     "simplifyAllExpressions",
     "findZeroCrossings",
@@ -1309,7 +1309,7 @@ constant ConfigFlag PARMODAUTO = CONFIG_FLAG(139, "parmodauto",
   "Experimental: Enable parallelization of independent systems of equations in the translated model. Only works on Linux systems.");
 constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(140, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the port used by the interactive server.");
+  "Sets the port used by the interactive server. 0 lets the operating system choose a free port.");
 constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(141, "allowNonStandardModelica",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     }),
@@ -1487,6 +1487,9 @@ constant ConfigFlag TUNABLE_PARAMETERS = CONFIG_FLAG(173, "tunableParameters",
 constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "buildModelFMU(version=\"2.0+3.0\"): the FMI 3.0 FMU also serves FMI 2.0, for OpenModelicaLibraryTesting only.");
+constant ConfigFlag INSTALL_MISSING_PACKAGES = CONFIG_FLAG(175, "installMissingPackages",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Installs the libraries to load that are not installed, using the package manager.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

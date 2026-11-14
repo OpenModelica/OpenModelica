@@ -83,6 +83,7 @@ members = [
   "openmodelica_wasi_libc",
   "openmodelica_zip",
   "openmodelica_download",
+  "openmodelica_fmi_guide",
   "openmodelica_package_manager",
   "openmodelica_version",
   "openmodelica_modelica_diff",
@@ -193,6 +194,7 @@ openmodelica_codegen_wasm_jit = { path = "openmodelica_codegen_wasm_jit" }
 metamodelica = { path = "metamodelica" }
 openmodelica_ast = { path = "openmodelica_ast" }
 openmodelica_error = { path = "openmodelica_error" }
+openmodelica_fmi_guide = { path = "openmodelica_fmi_guide" }
 openmodelica_frontend = { path = "openmodelica_frontend" }
 openmodelica_frontend_base = { path = "openmodelica_frontend_base" }
 openmodelica_frontend_types = { path = "openmodelica_frontend_types" }

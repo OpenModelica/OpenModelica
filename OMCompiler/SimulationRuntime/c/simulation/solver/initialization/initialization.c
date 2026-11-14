@@ -99,7 +99,7 @@ static void dumpRealVars(DATA *simData, long from, long to, modelica_boolean wit
       if (withAttributes) {
         infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Real %s(start=%g, nominal=%g) = %g (pre: %g)", idx+1, name,
                         real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
-                        real_get(var->attribute.nominal, attributeElementIndex(&var->attribute.nominal, k)),
+                        real_get(var->attribute.positiveNominal, attributeElementIndex(&var->attribute.positiveNominal, k)),
                         simData->localData[0]->realVars[idx],
                         sInfo->realVarsPre[idx]);
       } else {

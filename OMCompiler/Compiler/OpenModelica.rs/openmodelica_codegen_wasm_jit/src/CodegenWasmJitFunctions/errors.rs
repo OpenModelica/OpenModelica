@@ -132,6 +132,38 @@ pub(super) fn emit_assert(
         emit_assert_cond(ctx, cond)?;
         ctx.emit(we::Instruction::LocalSet(cond_h));
     }
+    emit_assert_report(ctx, msg_h, file_h, cond_h, info, in_function, when_body)?;
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// C's `omc_assert(threadData, info, msg)` in a function, for a failure the
+/// generated code detects itself.
+pub(super) fn emit_function_assert(ctx: &mut FnCtx, msg: &str, info: &metamodelica::SourceInfo) -> Result<()> {
+    let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
+    let msg_h = ctx.alloc_temp(WTy::I32);
+    emit_str_literal(ctx, msg.as_bytes())?;
+    ctx.emit(we::Instruction::LocalSet(msg_h));
+    let file_h = ctx.alloc_temp(WTy::I32);
+    emit_str_literal(ctx, file.as_bytes())?;
+    ctx.emit(we::Instruction::LocalSet(file_h));
+    let cond_h = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalSet(cond_h));
+    emit_assert_report(ctx, msg_h, file_h, cond_h, info, true, false)
+}
+
+/// The failing arm of [`emit_assert`]: report the message, file and condition
+/// String handles with `info` and unwind.
+fn emit_assert_report(
+    ctx: &mut FnCtx,
+    msg_h: u32,
+    file_h: u32,
+    cond_h: u32,
+    info: &metamodelica::SourceInfo,
+    in_function: bool,
+    when_body: bool,
+) -> Result<()> {
     // Only one arm runs, and it consumes the Strings; `initial` and `sim_data` follow.
     let report_args = |ctx: &mut FnCtx| -> Result<()> {
         ctx.emit(we::Instruction::LocalGet(msg_h));
@@ -175,38 +207,34 @@ pub(super) fn emit_assert(
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     emit_assert_unwind(ctx);
     ctx.emit(we::Instruction::End);
-    ctx.emit(we::Instruction::End);
     Ok(())
 }
 
 /// C's `assert_cond` followed by the values of the variables in it, as an owned
-/// String handle on the stack.
+/// String handle on the stack. Each value is inserted at its offset in the
+/// literal, the last first, so that the offsets before it stay valid.
 fn emit_assert_cond(ctx: &mut FnCtx, cond: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
-    emit_str_literal(ctx, format!("({})", dumped_exp(cond)?).as_bytes())?;
-    for v in Expression::assertConditionValues(cond.clone())?.iter() {
-        let ty = match exp_sigty(&v) {
-            Ok(ty @ (SigTy::Real | SigTy::Int | SigTy::Bool)) => ty,
+    let mut text = format!("({})", dumped_exp(cond)?);
+    let mut vals = Vec::new();
+    let vars = Expression::assertConditionValues(cond.clone())?;
+    for v in vars.iter() {
+        let (insert, wty) = match exp_sigty(&v) {
+            Ok(SigTy::Real) => ("rt_str_insert_real", WTy::F64),
+            Ok(SigTy::Int) => ("rt_str_insert_int", WTy::I32),
+            Ok(SigTy::Bool) => ("rt_str_insert_bool", WTy::I32),
             _ => continue,
         };
-        emit_str_literal(ctx, format!(", {}=", dumped_exp(&v)?).as_bytes())?;
-        emit_str_append(ctx)?;
-        format_scalar_string(ctx, &v, ty)?;
-        emit_str_append(ctx)?;
+        text.push_str(&format!(", {}=", dumped_exp(&v)?));
+        vals.push((v, text.len(), insert, wty));
+    }
+    emit_str_literal(ctx, text.as_bytes())?;
+    for (v, at, insert, wty) in vals.iter().rev() {
+        ctx.emit(we::Instruction::I32Const(*at as i32));
+        let w = compile_exp(ctx, v)?;
+        coerce(ctx, w, *wty);
+        ctx.emit(we::Instruction::Call(rt_index(insert)?));
     }
     Ok(())
-}
-
-/// Replace the two String handles on the stack by their concatenation.
-fn emit_str_append(ctx: &mut FnCtx) -> Result<()> {
-    let b = ctx.alloc_temp(WTy::I32);
-    ctx.emit(we::Instruction::LocalSet(b));
-    let a = ctx.alloc_temp(WTy::I32);
-    ctx.emit(we::Instruction::LocalSet(a));
-    ctx.emit(we::Instruction::LocalGet(a));
-    ctx.emit(we::Instruction::LocalGet(b));
-    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
-    release_temp(ctx, a)?;
-    release_temp(ctx, b)
 }
 
 /// The running `SimData` pointer, or 0 outside a simulation.

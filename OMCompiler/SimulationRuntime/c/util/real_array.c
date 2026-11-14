@@ -2224,7 +2224,7 @@ void linspace_real_array(modelica_real x1, modelica_real x2, int n,
 modelica_real max_real_array(const real_array a)
 {
     size_t nr_of_elements;
-    modelica_real max_element = DBL_MIN;
+    modelica_real max_element = -DBL_MAX;
 
     omc_assert_macro(base_array_ok(&a));
 

@@ -967,6 +967,7 @@ template simulationFile_jac_header(SimCode simCode)
     static struct { mmc_uint_t rc; _index_t d[1]; } one_dim_lit = { OMC_RC_IMMORTAL, { 1 } };
     #define one_dim (one_dim_lit.d)
     static modelica_real nominal_data[1] = { 1.0 };
+    static modelica_real nominal_sign_data[1] = { 1.0 };
     static modelica_real start_data[1]   = { 0.0 };
     static modelica_real min_data[1]   = { -DBL_MAX };
     static modelica_real max_data[1]   = { DBL_MAX };
@@ -988,10 +989,16 @@ template simulationFile_jac_header(SimCode simCode)
       },
       .fixed = FALSE,
       .useNominal = FALSE,
-      .nominal = {
+      .positiveNominal = {
         .ndims     = 1,
         .dim_size  = one_dim,
         .data      = (void*) nominal_data,
+        .flexible  = FALSE
+      },
+      .nominalSign = {
+        .ndims     = 1,
+        .dim_size  = one_dim,
+        .data      = (void*) nominal_sign_data,
         .flexible  = FALSE
       },
       .start = {
@@ -2056,7 +2063,7 @@ let &sub = buffer ""
     {
       if(data->simulationInfo->extObjs)
       {
-        <%listReverse(extObjInfo.vars) |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name, &sub)%>);' ;separator="\n"%>
+        <%listReverse(extObjInfo.vars) |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'if (<%cref(var.name, &sub)%>) { omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name, &sub)%>); }' ;separator="\n"%>
         free(data->simulationInfo->extObjs);
         data->simulationInfo->extObjs = 0;
       }
@@ -3739,7 +3746,8 @@ template staticArrayElementData(ComponentRef cr)
           let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(cr))), listReverse(crefSubs(crefArrayGetFirstCref(cr))), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           let idx = '<%simVarIndex("real", values, index)%> + (<%offset%>)'
           <<
-          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
+          sysData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
+          sysData->nominalSign[i] = getNominalSignFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
           sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
           sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
           >>
@@ -3761,7 +3769,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           <<
           <%cComment%>
           for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
-            sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%first%> + k_);
+            sysData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%first%> + k_);
+            sysData->nominalSign[i] = getNominalSignFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%first%> + k_);
             sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%first%> + k_);
             sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%first%> + k_);
           }
@@ -3770,7 +3779,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           <<
           <%cComment%>
           for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
-            sysData->nominal[i] = 1.0;
+            sysData->positiveNominal[i] = 1.0;
             sysData->min[i]     = -DBL_MAX;
             sysData->max[i++]   = DBL_MAX;
           }
@@ -3786,21 +3795,22 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           <<
           <%cComment%>
           /* Use default scaling/bounds for unresolved temporary indices (e.g. symbolic-adjoint loop vars). */
-          sysData->nominal[i] = 1.0;
+          sysData->positiveNominal[i] = 1.0;
           sysData->min[i]     = -DBL_MAX;
           sysData->max[i++]   = DBL_MAX;
           >>
         else
           <<
           <%cComment%>
-          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->nominalSign[i] = getNominalSignFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
           sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           >>
       case SIMVAR(type_=T_INTEGER(__)) then
         <<
         <%cComment%>
-        sysData->nominal[i] = 1.0;
+        sysData->positiveNominal[i] = 1.0;
         sysData->min[i]     = integer_get(<%crefAttributes(cr)%>.min, 0);
         sysData->max[i++]   = integer_get(<%crefAttributes(cr)%>.max, 0);
         >>
@@ -3814,7 +3824,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
         else
           <<
           <%cComment%>
-          sysData->nominal[i] = 1.0;
+          sysData->positiveNominal[i] = 1.0;
           sysData->min[i]     = -DBL_MAX;
           sysData->max[i++]   = DBL_MAX;
           >>
@@ -4101,9 +4111,10 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         >>
 
       let ty = crefShortType(cref)
+      let field = if stringEq(attribute, "nominal") then "positiveNominal" else attribute
       // An array expression sets one value per array element, a scalar
       // expression (e.g. `each min = p`) the value of all elements.
-      let attr = '<%crefAttributes(cref)%>.<%attribute%>'
+      let attr = '<%crefAttributes(cref)%>.<%field%>'
       let len = if isArrayType(typeof(exp)) then 'base_array_nr_of_elements(<%expPart%>)' else '1'
       let setAttribute =
         <<
@@ -4114,6 +4125,7 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         <%if isArrayType(typeof(exp))
           then 'copy_<%ty%>_array_data_mem(<%expPart%>, (modelica_<%ty%>*) <%attr%>.data);'
           else 'put_<%ty%>_element(<%expPart%>, 0, &<%attr%>);'%>
+        <%if stringEq(attribute, "nominal") then 'normalizeNominal(&<%crefAttributes(cref)%>, <%crefVarInfo(cref)%>.name);'%>
         >>
       let updateEqs = match attribute
         case "nominal"
@@ -4124,7 +4136,7 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
 
           if (omc_useStream[OMC_LOG_INIT_V]) {
             char <%attribute%>_buffer[2048];
-            <%ty%>_vector_to_string(&<%crefAttributes(cref)%>.<%attribute%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
+            <%ty%>_vector_to_string(&<%attr%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
             infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=%s)",
               <%crefVarInfo(cref)%>.name,
               <%attribute%>_buffer);
@@ -8527,7 +8539,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       <<
       <%preExp%>
       FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
-      omc_terminate(info, omc_string_data(<%msgVar%>));
+      omc_terminate(info, "%s", omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
       assertCommon(condition, List.fill(message,1), level, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction, info)
@@ -9048,7 +9060,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                 start[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
                 min[<%i0%>] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
                 max[<%i0%>] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
-                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(name)%>);
+                nominal[<%i0%>] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(name)%>);
                 useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
                 name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
                 >>

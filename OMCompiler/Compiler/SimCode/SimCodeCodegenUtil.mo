@@ -76,7 +76,6 @@ import SimCodeFunctionUtil;
 import SimCodeUtilShared;
 import StringUtil;
 import System;
-import UnitAbsyn;
 import UnitAbsynBuilder;
 import UnitParserExt;
 import UnorderedMap;
@@ -434,23 +433,33 @@ public function unitConversion
   output Boolean converts = false;
   output Real factor = 1.0;
   output Real offset = 0.0;
-protected
-  UnitAbsyn.Unit u1, u2;
-  Real factor1, factor2, offset1, offset2;
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
   try
     UnitParserExt.initSIUnits();
-    (u1, factor1, offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(to, NONE());
-    (u2, factor2, offset2) := UnitAbsynBuilder.str2unitWithScaleFactor(from, NONE());
-    true := valueEq(u1, u2);
-    factor := factor2/factor1;
-    offset := (offset2 - offset1)/factor1;
-    converts := true;
+    (converts, factor, offset) := UnitAbsynBuilder.convertUnits(to, from);
   else
   end try;
   ErrorExt.rollBack(getInstanceName());
+  if not converts then
+    factor := 1.0;
+    offset := 0.0;
+  end if;
 end unitConversion;
+
+public function radExponent
+  "The exponent of rad in a unit, or 0 where it cannot be parsed."
+  input String unit;
+  output Integer rad = 0;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    UnitParserExt.initSIUnits();
+    (rad, _) := UnitParserExt.angleExponents(unit);
+  else
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+end radExponent;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
  Create a hash table that maps all variable names (crefs) to the simVar objects."

@@ -229,8 +229,9 @@ pub struct NlsSpec<'a> {
     pub jac_csc: bool,
     /// The system's ordinal, which names its side files.
     pub sys_num: u32,
-    /// C's per-iteration-variable `nominal`.
-    pub nominal: &'a [f64],
+    /// C's `positiveNominal` and `nominalSign` per iteration variable.
+    pub positive_nominal: &'a [f64],
+    pub nominal_sign: &'a [f64],
     /// The `min`/`max` pairs a restart point is held inside.
     pub bounds: &'a [f64],
     /// `colptr[size+1] ++ rowidx[nnz] ++ colorCols[size]`; empty without a pattern.
@@ -289,7 +290,7 @@ pub struct NlsRequest<'a> {
     pub guess: &'a [f64],
     /// The values the unknowns held on entry, which a retry restarts from.
     pub warm: &'a [f64],
-    pub nominal: &'a [f64],
+    pub positive_nominal: &'a [f64],
     /// C's `nlsxOld`, the newest stored solution at or before `time`.
     pub old_values: &'a [f64],
     pub eq_index: u32,
@@ -1649,7 +1650,7 @@ enum HomVariant {
 fn homotopy_solve(
     n: usize,
     x: &mut [f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     start_dir: f64,
     variant: HomVariant,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -1658,7 +1659,7 @@ fn homotopy_solve(
     // xScaling[i] = max(nominal[i], |xStart[i]|) from the original start values.
     let mut xscaling = vec![0.0f64; m];
     for i in 0..n {
-        xscaling[i] = fmath::fabs(nominal[i]).max(fmath::fabs(x[i]));
+        xscaling[i] = positive_nominal[i].max(fmath::fabs(x[i]));
         if xscaling[i] <= 0.0 {
             xscaling[i] = 1.0;
         }
@@ -1722,7 +1723,7 @@ fn homotopy_solve(
 fn init_homotopy_solve<'e>(
     n: usize,
     x: &mut [f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     bounds: &[f64],
     export: Option<(u32, bool, alloc::vec::Vec<alloc::string::String>)>,
     eval: &mut (dyn FnMut(&[f64], &mut [f64]) + 'e),
@@ -1731,7 +1732,7 @@ fn init_homotopy_solve<'e>(
     let m = n + 1;
     let mut xscaling = vec![0.0f64; m];
     for i in 0..n {
-        xscaling[i] = fmath::fabs(nominal[i]).max(fmath::fabs(x[i]));
+        xscaling[i] = positive_nominal[i].max(fmath::fabs(x[i]));
     }
     xscaling[m - 1] = 1.0;
     // C's `nlsData->max`, the FD sign-flip bound; lambda's own is unbounded.
@@ -2030,13 +2031,13 @@ fn hybrd_scaled(
     n: usize,
     x: &mut [f64],
     fvec: &mut [f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     maxfev: usize,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     let mut scale = vec![0.0f64; n];
     for i in 0..n {
-        let s = x[i].abs().max(nominal[i]);
+        let s = x[i].abs().max(positive_nominal[i]);
         scale[i] = if s > 0.0 { s } else { 1.0 };
     }
     for i in 0..n {
@@ -2145,7 +2146,8 @@ fn hybrd_c(
     x_start: &[f64],
     warm: &[f64],
     extrapolation: &[f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
+    nominal_sign: &[f64],
     bounds: &[f64],
     t: &HomotopyTrace,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -2195,7 +2197,7 @@ fn hybrd_c(
                 omclog::NLS_V,
                 false,
                 "    nominal = {}\nold = {}\nextrapolated = {}",
-                omclog::f(nominal[i], 0, 6),
+                omclog::f(nominal_sign[i] * positive_nominal[i], 0, 6),
                 omclog::f(warm[i], 0, 6),
                 omclog::f(extrapolation[i], 0, 6),
             );
@@ -2237,7 +2239,7 @@ fn hybrd_c(
         // C's "constrain x": no attempt starts outside the declared range.
         for i in 0..n {
             xv[i] = xv[i].max(bounds[2 * i]).min(bounds[2 * i + 1]);
-            xscale[i] = xv[i].abs().max(nominal[i]).max(1e-16);
+            xscale[i] = xv[i].abs().max(positive_nominal[i]).max(1e-16);
         }
         if log_v {
             print_vector("scaling factors x vector", &xscale);
@@ -2396,12 +2398,13 @@ fn hybrd_c(
             if assert_retries == 0 {
                 for i in 0..n {
                     if nlsx[i] == 0.0 {
-                        nlsx[i] = nominal[i];
-                        xv[i] = nominal[i];
+                        nlsx[i] = nominal_sign[i] * positive_nominal[i];
+                        xv[i] = nlsx[i];
                     }
                 }
             } else {
-                xv[assert_retries - 1] += 0.01 * nominal[assert_retries - 1];
+                xv[assert_retries - 1] +=
+                    0.01 * nominal_sign[assert_retries - 1] * positive_nominal[assert_retries - 1];
             }
             assert_retries += 1;
             log_rung!(
@@ -2417,7 +2420,7 @@ fn hybrd_c(
             );
         } else if retries < 4 {
             for i in 0..n {
-                xv[i] += nominal[i] * 0.1;
+                xv[i] += nominal_sign[i] * positive_nominal[i] * 0.1;
             }
             factor = initial_factor;
             retries += 1;
@@ -2464,7 +2467,9 @@ fn hybrd_c(
             retries2 += 1;
             log_rung!(" - iteration making no progress:\t vary initial point by -1%.");
         } else if retries2 < 4 {
-            xv.copy_from_slice(nominal);
+            for i in 0..n {
+                xv[i] = nominal_sign[i] * positive_nominal[i];
+            }
             retries = 0;
             retries2 += 1;
             log_rung!(" - iteration making no progress:\t try scaling factor as initial point.");
@@ -2518,14 +2523,14 @@ fn hybrj_scaled(
     n: usize,
     x: &mut [f64],
     fvec: &mut [f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     maxfev: usize,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     jac: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     let mut scale = vec![0.0f64; n];
     for i in 0..n {
-        let s = x[i].abs().max(nominal[i]);
+        let s = x[i].abs().max(positive_nominal[i]);
         scale[i] = if s > 0.0 { s } else { 1.0 };
     }
     for i in 0..n {
@@ -2902,7 +2907,7 @@ fn diag_info(eq_index: u32) -> Option<&'static newton_diagnostics::DiagInfo> {
 }
 
 /// C's `printNonLinearInitialInfo`, under the `solve_nonlinear_system` header.
-fn log_nls_enter(eq_index: u32, time: f64, x: &[f64], nominal: &[f64]) {
+fn log_nls_enter(eq_index: u32, time: f64, x: &[f64], positive_nominal: &[f64]) {
     use omclog;
     omclog::info!(
         omclog::NLS,
@@ -2919,7 +2924,7 @@ fn log_nls_enter(eq_index: u32, time: f64, x: &[f64], nominal: &[f64]) {
             "{}{}\t\t nom = {}",
             var_label(names, i),
             omclog::g(x[i], 16, 8),
-            omclog::g(nominal[i], 16, 8),
+            omclog::g(positive_nominal[i], 16, 8),
         );
     }
     omclog::close(omclog::NLS);
@@ -3004,7 +3009,7 @@ struct HomotopyTrace {
 
 /// C's `solveHomotopy` header block, which opens the `LOG_NLS_V` block
 /// [`solve_nls`] closes.
-fn log_homotopy_enter(t: &HomotopyTrace, n: usize, x: &[f64], nominal: &[f64], xscaling: &[f64]) {
+fn log_homotopy_enter(t: &HomotopyTrace, n: usize, x: &[f64], positive_nominal: &[f64], xscaling: &[f64]) {
     use omclog;
     if !omclog::active(omclog::NLS_V) {
         return;
@@ -3022,7 +3027,7 @@ fn log_homotopy_enter(t: &HomotopyTrace, n: usize, x: &[f64], nominal: &[f64], x
         "System extrapolation"
     };
     omclog::debug_vector_double(omclog::NLS_V, label, x);
-    omclog::debug_vector_double(omclog::NLS_V, "Nominal values", nominal);
+    omclog::debug_vector_double(omclog::NLS_V, "Nominal values", positive_nominal);
     // C's `xScaling` element `n` is the homotopy parameter's own scaling.
     let mut scaling = xscaling.to_vec();
     scaling.push(1.0);
@@ -3105,7 +3110,7 @@ fn newton_limit_cycle_step(hist: &mut [f64; 4], n_hist: &mut usize, e: f64) -> b
 fn newton_c(
     n: usize,
     x: &mut [f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     bounds: &[f64],
     res_scaling: &mut [f64],
     x0: &mut [f64],
@@ -3142,14 +3147,14 @@ fn newton_c(
     let mut jac = carve(&mut rest, n * n);
     let mut aug = carve(&mut rest, n * (n + 1)); // C's `fJac`, whose last column is `fvec`
     for i in 0..n {
-        xscaling[i] = nominal[i].abs().max(x[i].abs());
+        xscaling[i] = positive_nominal[i].max(x[i].abs());
         if xscaling[i] <= 0.0 {
             xscaling[i] = 1.0;
         }
     }
 
     if let Some(t) = trace.filter(|t| t.header) {
-        log_homotopy_enter(t, n, x, nominal, &xscaling);
+        log_homotopy_enter(t, n, x, positive_nominal, &xscaling);
     }
 
     // The Jacobian is w.r.t. *scaled* unknowns: both of C's paths scale column `j` by
@@ -4070,7 +4075,8 @@ pub(crate) fn solve_newton_c(
     n: usize,
     x: &mut [f64],
     warm: &[f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
+    nominal_sign: &[f64],
     res_scaling: &mut [f64],
     discrete_call: bool,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -4094,11 +4100,13 @@ pub(crate) fn solve_newton_c(
             retries += 1;
         } else if retries < 2 {
             for i in 0..n {
-                x[i] += nominal[i] * 0.01;
+                x[i] += nominal_sign[i] * positive_nominal[i] * 0.01;
             }
             retries += 1;
         } else if retries < 3 {
-            x.copy_from_slice(nominal);
+            for i in 0..n {
+                x[i] = nominal_sign[i] * positive_nominal[i];
+            }
             retries += 1;
         } else if retries < 4 && discrete_call {
             // C also holds the relations at their `pre` values here — as
@@ -4161,7 +4169,7 @@ pub fn solve_nls(
         hom_method,
         ..
     } = *spec;
-    let (nominal, bounds) = (spec.nominal, spec.bounds);
+    let (positive_nominal, nominal_sign, bounds) = (spec.positive_nominal, spec.nominal_sign, spec.bounds);
     let casual = spec.casual;
     let n = spec.size as u32;
     let hom_support = u32::from(spec.hom_support);
@@ -4412,7 +4420,7 @@ pub fn solve_nls(
     // starts from.
     let log_nls = omclog::active(omclog::NLS);
     if log_nls {
-        log_nls_enter(eq_index, time, &nlsx_old, &nominal);
+        log_nls_enter(eq_index, time, &nlsx_old, &positive_nominal);
     }
     // C's `ERROR_NONLINEARSOLVER` region starts here, after `updateInnerEquation`.
     let _stage = enter_nls_stage();
@@ -4560,7 +4568,7 @@ pub fn solve_nls(
                             x: &mut x,
                             guess: &start_point,
                             warm: &warm,
-                            nominal,
+                            positive_nominal,
                             old_values: &nlsx_old,
                             eq_index,
                             time,
@@ -4580,7 +4588,7 @@ pub fn solve_nls(
                             x: &mut x,
                             guess: &start_point,
                             warm: &warm,
-                            nominal,
+                            positive_nominal,
                             old_values: &nlsx_old,
                             eq_index,
                             time,
@@ -4598,7 +4606,8 @@ pub fn solve_nls(
                         n,
                         &mut x,
                         &warm,
-                        &nominal,
+                        &positive_nominal,
+                        nominal_sign,
                         &mut res_scaling,
                         discrete_call,
                         &mut eval,
@@ -4615,7 +4624,7 @@ pub fn solve_nls(
                     let mut ok = false;
                     for &dir in &[1.0f64, -1.0] {
                         let mut hx = start_point.to_vec();
-                        if homotopy_solve(n, &mut hx, &nominal, dir, HomVariant::Newton, &mut eval) {
+                        if homotopy_solve(n, &mut hx, &positive_nominal, dir, HomVariant::Newton, &mut eval) {
                             x.copy_from_slice(&hx);
                             ok = true;
                             break;
@@ -4666,7 +4675,7 @@ pub fn solve_nls(
                                 (converged, settled) = newton_c(
                                     n,
                                     &mut x,
-                                    &nominal,
+                                    &positive_nominal,
                                     &bounds,
                                     &mut res_scaling,
                                     &mut nlsx,
@@ -4695,7 +4704,8 @@ pub fn solve_nls(
                                         &nlsx,
                                         &nlsx_old,
                                         &guess,
-                                        &nominal,
+                                        &positive_nominal,
+                                        nominal_sign,
                                         &bounds,
                                         &t,
                                         &mut eval,
@@ -4718,7 +4728,7 @@ pub fn solve_nls(
                                 _ => (HomVariant::Fixpoint, 1.0),
                             };
                             let mut hx = start.to_vec();
-                            skip_newton = !homotopy_solve(n, &mut hx, &nominal, dir, variant, &mut eval);
+                            skip_newton = !homotopy_solve(n, &mut hx, &positive_nominal, dir, variant, &mut eval);
                             if skip_newton {
                                 if run_homotopy >= 3 {
                                     break;
@@ -4736,7 +4746,8 @@ pub fn solve_nls(
                             &nlsx,
                             &nlsx_old,
                             &guess,
-                            &nominal,
+                            &positive_nominal,
+                            nominal_sign,
                             &bounds,
                             &t,
                             &mut eval,
@@ -4757,7 +4768,8 @@ pub fn solve_nls(
                             &best,
                             &nlsx_old,
                             &guess,
-                            &nominal,
+                            &positive_nominal,
+                            nominal_sign,
                             &bounds,
                             &t,
                             &mut eval,
@@ -4780,7 +4792,7 @@ pub fn solve_nls(
                             converged = newton_c(
                                 n,
                                 &mut x,
-                                &nominal,
+                                &positive_nominal,
                                 &bounds,
                                 &mut res_scaling,
                                 &mut nlsx,
@@ -4794,11 +4806,13 @@ pub fn solve_nls(
                         }
                         if !converged {
                             stat_inc(STAT_NLS_RETRY);
-                            converged = hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &nominal, maxfev, &mut eval);
+                            converged =
+                                hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &positive_nominal, maxfev, &mut eval);
                         }
                         if !converged {
                             x.copy_from_slice(&guess);
-                            converged = hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &nominal, maxfev, &mut eval);
+                            converged =
+                                hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &positive_nominal, maxfev, &mut eval);
                         }
                         if !converged {
                             x.copy_from_slice(&guess);
@@ -4930,7 +4944,7 @@ pub fn solve_nls(
         let steps = init_homotopy_solve(
             n,
             &mut y,
-            &nominal,
+            &positive_nominal,
             &bounds,
             export,
             &mut eval,
@@ -5177,7 +5191,8 @@ mod tests {
         let mut x = vec![0.0f64; n];
         let x_start: alloc::vec::Vec<f64> = (0..n).map(|i| i as f64 / n as f64 * 0.1).collect();
         let warm = vec![0.0f64; n];
-        let nominal = vec![1.0f64; n];
+        let positive_nominal = vec![1.0f64; n];
+        let nominal_sign = vec![1.0f64; n];
         let mut bounds = vec![0.0f64; 2 * n];
         for i in 0..n {
             bounds[2 * i] = 0.0;
@@ -5202,7 +5217,19 @@ mod tests {
             header: true,
         };
         assert!(hybrd_c(
-            n, &mut x, &x_start, &warm, &x_start, &nominal, &bounds, &t, &mut eval, None, &mut cont, &mut true,
+            n,
+            &mut x,
+            &x_start,
+            &warm,
+            &x_start,
+            &positive_nominal,
+            &nominal_sign,
+            &bounds,
+            &t,
+            &mut eval,
+            None,
+            &mut cont,
+            &mut true,
         ));
         for i in 0..n {
             assert!((x[i] - (i + 1) as f64).abs() < 1e-6, "x={x:?}");
@@ -5308,13 +5335,15 @@ mod tests {
         let mut jaceval = |_: &[f64], _: &mut [f64]| unreachable!();
         let mut x = vec![1.5f64; n];
         let warm = x.clone();
-        let nominal = vec![1.0f64; n];
+        let positive_nominal = vec![1.0f64; n];
+        let nominal_sign = vec![1.0f64; n];
         let mut res_scaling = vec![0.0f64; n];
         assert!(solve_newton_c(
             n,
             &mut x,
             &warm,
-            &nominal,
+            &positive_nominal,
+            &nominal_sign,
             &mut res_scaling,
             false,
             &mut eval,

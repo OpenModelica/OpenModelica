@@ -4,6 +4,7 @@ TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
 FmuFileNamePrefixDash.mos \
+Fmi2ImportIndependent.mos \
 Fmi2NoVariables.mos \
 FmuSparseSolvers.mos \
 FmuLinkLibraries.mos \
@@ -36,6 +37,7 @@ fmi_attributes_22.mos \
 fmi_attributes_23.mos \
 fmi_attributes_24.mos \
 fmi_attributes_25.mos \
+fmi_attributes_26.mos \
 fmi2_array_attributes_nb.mos \
 fmi2_array_attributes.mos \
 Issue13905.mos \
@@ -48,6 +50,7 @@ fmi2_arrays_initial_unknowns.mos \
 fmi2_fmustate_bounds.mos \
 fmi2_fmustate_recover.mos \
 fmi2_import_call_modes.mos \
+fmi2_reset_heap.mos \
 fmi2_string_variability.mos \
 fmi_export_derivative_annotation.mos \
 fmi_export_derivative_annotation_buildings.mos \

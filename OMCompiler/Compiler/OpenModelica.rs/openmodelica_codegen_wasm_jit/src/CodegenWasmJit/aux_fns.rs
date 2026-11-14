@@ -237,6 +237,7 @@ pub(super) fn literal_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option
 /// parameter is not a constant, so the backend hands it over as an equation; only
 /// here, after `functionParameters`, does it have a value. Every attribute is
 /// evaluated (as C does) and left in the log region, whatever else it feeds.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
     layout: &SimLayout,
@@ -246,8 +247,11 @@ pub(super) fn build_update_bound_attrs_fn(
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
-) -> Result<we::Function> {
-    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)> = Vec::new();
+    ty: u32,
+    bodies: &mut Vec<we::Function>,
+    pool: &mut ChunkPool,
+) -> Result<SplitFn> {
+    let mut attrs: Vec<AttrEq> = Vec::new();
     for (i, (attr, cref, exp)) in bound_attr_equations(sim_code).into_iter().enumerate() {
         let key = sim_cref_key(cref)
             .ok()
@@ -269,19 +273,65 @@ pub(super) fn build_update_bound_attrs_fn(
             var,
         ));
     }
-    let sim = sim_ctx(var_map);
-    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &attrs, &[])?;
-    let (locals, instrs) = ctx.finish_sim();
-    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
-    for i in &instrs {
-        func.instruction(i);
-    }
-    Ok(func)
+    let chunks = build_attr_chunks(
+        "functionUpdateBoundVariableAttributes",
+        defaults,
+        dyn_defaults,
+        &attrs,
+        &[],
+        1,
+        ty,
+        var_map,
+        by_name,
+        literals,
+        pool,
+    )?;
+    let slot = bodies.len();
+    bodies.push(empty_eqfn());
+    Ok(SplitFn {
+        slot,
+        chunks,
+        n_params: 1,
+        pre_calls: Vec::new(),
+    })
 }
 
-/// The attribute equations of `functionUpdateTunableParameters(SimData*, mask)`:
-/// each one `mask_of` names, under its byte of the mask. None without any.
+type AttrEq = (Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>);
+
+/// Lower `attrs` into chunk functions in `pool`, `defaults` heading the first: one
+/// function for all of them can exceed wasm's limit on locals.
+#[allow(clippy::too_many_arguments)]
+fn build_attr_chunks(
+    name: &str,
+    defaults: &[(SimOff, ConstSlot)],
+    dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
+    attrs: &[AttrEq],
+    masks: &[Option<u32>],
+    n_params: u32,
+    ty: u32,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    pool: &mut ChunkPool,
+) -> Result<Vec<usize>> {
+    let first = pool.len();
+    let mut i = 0;
+    while i < attrs.len() || pool.len() == first {
+        let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, n_params);
+        let (d, dd) = if pool.len() == first {
+            (defaults, dyn_defaults)
+        } else {
+            (&[][..], &[][..])
+        };
+        i += ctx.emit_update_bound_attrs(d, dd, &attrs[i..], masks.get(i..).unwrap_or(&[]), chunk_instrs())?;
+        pool.push(finish_fn(ctx), ty, format!("{name}${}", pool.len() - first));
+    }
+    Ok((first..pool.len()).collect())
+}
+
+/// The chunks of `functionUpdateTunableParameters(SimData*, mask)` for its
+/// attribute equations: each one `mask_of` names, under its byte of the mask.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn build_tunable_attrs_fn(
     sim_code: &SimCode::SimCode,
     layout: &SimLayout,
@@ -290,8 +340,10 @@ pub(super) fn build_tunable_attrs_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     mask_of: &HashMap<i32, u32>,
-) -> Result<Option<we::Function>> {
-    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)> = Vec::new();
+    ty: u32,
+    pool: &mut ChunkPool,
+) -> Result<Vec<usize>> {
+    let mut attrs: Vec<AttrEq> = Vec::new();
     let mut masks = Vec::new();
     let mut i = 0u32;
     for (attr, eqs) in [
@@ -318,16 +370,21 @@ pub(super) fn build_tunable_attrs_fn(
         }
     }
     if attrs.is_empty() {
-        return Ok(None);
+        return Ok(Vec::new());
     }
-    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
-    ctx.emit_update_bound_attrs(&[], &[], &attrs, &masks)?;
-    let (locals, instrs) = ctx.finish_sim();
-    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
-    for i in &instrs {
-        func.instruction(i);
-    }
-    Ok(Some(func))
+    build_attr_chunks(
+        "functionUpdateTunableParameters$attrs",
+        &[],
+        &[],
+        &attrs,
+        &masks,
+        2,
+        ty,
+        var_map,
+        by_name,
+        literals,
+        pool,
+    )
 }
 
 /// Build `functionAttrDefaults(SimData*)`: the constant attribute defaults only, for
@@ -340,7 +397,7 @@ pub(super) fn build_attr_defaults_fn(
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &[], &[])?;
+    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &[], &[], usize::MAX)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {

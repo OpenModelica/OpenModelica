@@ -97,8 +97,8 @@ void FMU2Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
     break;
   }
 
-  // call FMU log function
-  FMU2_LOG(_wrapper, status, category, msg.c_str());
+  // call FMU log function; msg is not a format string
+  FMU2_LOG(_wrapper, status, category, "%s", msg.c_str());
 }
 
 FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,

@@ -2865,9 +2865,9 @@ fn init_model(
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
-    // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
+    // C's `read_input_xml` and `initializeNonlinearSystems` report these.
     if let Some(m) = model {
-        for w in &m.nls_warnings {
+        for w in &m.startup_warnings {
             omclog::warning(omclog::STDOUT, false, w);
         }
     }
@@ -3245,10 +3245,21 @@ fn update_bound_values(
 /// attribute-log region. A group's header appears even when it is empty, as C's
 /// unconditional `infoStreamPrint` in that function gives.
 fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, model: Option<&SimMeta>) {
+    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
+    let nominal_kind = crate::ATTR_NAME.iter().position(|n| *n == "nominal");
+    for (i, a) in entries
+        .iter()
+        .enumerate()
+        .filter(|(_, a)| Some(a.kind as usize) == nominal_kind)
+    {
+        let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(1.0);
+        if let Some(w) = crate::nominal_warning(&a.name, v) {
+            omclog::warning(omclog::STDOUT, false, &w);
+        }
+    }
     if !omclog::active(omclog::INIT) {
         return;
     }
-    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
     for (kind, name) in crate::ATTR_NAME.iter().enumerate() {
         let header = match *name {
             "start" => "primary start-values".to_string(),
@@ -3258,6 +3269,11 @@ fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, 
         if omclog::active(omclog::INIT_V) {
             for (i, a) in entries.iter().enumerate().filter(|(_, a)| a.kind as usize == kind) {
                 let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(0.0);
+                let v = if *name == "nominal" {
+                    crate::positive_nominal(v)
+                } else {
+                    v
+                };
                 let line = match *name {
                     "start" => format!("updated start value: {}(start={})", a.name, format_g(v, 6)),
                     _ => format!("{}({name}={})", a.name, format_g(v, 6)),
@@ -5126,9 +5142,12 @@ pub fn fmi_handle_timers(
 /// Output point `row` of the equidistant grid, as C's `perform_simulation`
 /// computes it: `row*(stop-start)/numSteps + start`, *not* `start + row*h` —
 /// the two round differently and the result files must agree bit for bit.
+/// The last point is `stop`, which the formula can round below.
 fn grid_time(row: u32, start: f64, stop: f64, n_steps: u32) -> f64 {
     if n_steps == 0 {
         start
+    } else if row >= n_steps {
+        stop
     } else {
         row as f64 * (stop - start) / n_steps as f64 + start
     }
@@ -7090,18 +7109,17 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// C's `realVarsData[i].attribute.nominal` for the states, which scales a
+/// C's `realVarsData[i].attribute.positiveNominal` for the states, which scales a
 /// solver's absolute tolerance and is what `fmi3GetNominalsOfContinuousStates`
-/// answers. Floored as `ida_solver_setNominals` does: read before
-/// `initializeModel` has floored them, a zero nominal is an infinite error
-/// weight.
+/// answers. Before `functionUpdateBoundVariableAttributes` has written them,
+/// the slots are 0, which [`crate::positive_nominal`] makes 1.0.
 pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
     (0..layout.n_states)
         .map(|i| {
-            Ok(fmath::fmax(
-                fmath::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?),
-                1e-32,
-            ))
+            Ok(crate::positive_nominal(read_f64(
+                e,
+                sim_data + layout.state_nom_off + i * 8,
+            )?))
         })
         .collect()
 }
@@ -7113,7 +7131,7 @@ fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
         let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
-        nominals.push(fmath::fmax(fmath::fabs(n), 1e-32));
+        nominals.push(crate::positive_nominal(n));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -7275,7 +7293,7 @@ impl DasslDriver {
             info[4] = 1; // INFO(5)=1: a user Jacobian routine
         }
         // Per-state tolerances scaled by nominal, matching the C runtime
-        // (`dassl.c`: INFO(2)=1, atol[i]=tol·max(|nominal_i|,1e-32)).
+        // (`dassl.c`: INFO(2)=1, atol[i]=tol·nominal_i).
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
         if n_states > 0 {
@@ -8813,6 +8831,8 @@ struct EventsDriver {
     /// Where a retried step ends, short of this row's grid point.
     pending_tout: Option<f64>,
     retry: StepRetry,
+    /// Set when an event step reached the last grid point.
+    terminal_at: Option<f64>,
 }
 
 impl SolverCore {
@@ -10698,7 +10718,18 @@ impl EventsDriver {
             finished: false,
             pending_tout: None,
             retry,
+            terminal_at: None,
         })
+    }
+
+    /// C's skip of an output point an event step reached. At the last point the
+    /// event was at `stop` up to rounding, so the run ends at `stop`.
+    fn skip_row(&mut self, n_steps: u32, stop: f64) {
+        self.row += 1;
+        if self.row > n_steps {
+            self.reached = stop;
+            self.terminal_at = Some(stop);
+        }
     }
 }
 
@@ -10730,8 +10761,7 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| if no_grid { stop } else { grid(row) };
-        // C ends on `currentTime >= stopTime`, not on a row count, so a last grid
-        // point left short of `stop` gets one more step at `grid(n_steps + 1)`.
+        // C ends on `currentTime >= stopTime`, not on a row count.
         let more = |row: u32, t: f64| {
             if no_grid || n_steps == 0 {
                 row < n_rows
@@ -10759,7 +10789,7 @@ impl Driver for EventsDriver {
             }
             while more(self.row, self.reached) {
                 if skip_grid(self.row, self.reached, self.did_event_step) {
-                    self.row += 1;
+                    self.skip_row(n_steps, stop);
                     continue;
                 }
                 if did_step && past_deadline(deadline) {
@@ -10980,7 +11010,7 @@ impl Driver for EventsDriver {
                 break Advance::Done;
             }
             if !self.mid_row && skip_grid(self.row, self.reached, self.did_event_step) {
-                self.row += 1;
+                self.skip_row(n_steps, stop);
                 continue;
             }
             if did_step && past_deadline(deadline) {
@@ -11125,6 +11155,10 @@ impl Driver for EventsDriver {
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
+    }
+
+    fn terminal_time(&self) -> Option<f64> {
+        self.terminal_at
     }
 }
 
@@ -12798,7 +12832,7 @@ pub fn dae_solve_explicit(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
         .collect();
     let mut nominal = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             nominal[ns + k] = nom;
         }
@@ -12917,7 +12951,7 @@ fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, da
         .collect();
     let mut scale = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             scale[ns + k] = nom;
         }

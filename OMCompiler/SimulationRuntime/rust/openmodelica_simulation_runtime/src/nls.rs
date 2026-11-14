@@ -452,7 +452,7 @@ impl nls::NlsBackend for CBackend<'_> {
             self.handle,
             req.n,
             &pat,
-            req.nominal,
+            req.positive_nominal,
             req.guess,
             req.old_values,
             req.x,
@@ -478,7 +478,7 @@ impl nls::NlsBackend for CBackend<'_> {
             req.n,
             0,
             None,
-            req.nominal,
+            req.positive_nominal,
             &start,
             req.old_values,
             req.x,
@@ -553,7 +553,9 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         sys.nlsxExtrapolation = crate::model_data::calloc(size.max(1));
         sys.nlsxOld = crate::model_data::calloc(size.max(1));
         sys.resValues = crate::model_data::calloc(size.max(1));
-        sys.nominal = crate::model_data::calloc(size.max(1));
+        sys.positiveNominal = crate::model_data::calloc(size.max(1));
+        sys.nominalSign = crate::model_data::calloc(size.max(1));
+        unsafe { core::slice::from_raw_parts_mut(sys.nominalSign, size.max(1)) }.fill(1.0);
         sys.min = crate::model_data::calloc(size.max(1));
         sys.max = crate::model_data::calloc(size.max(1));
         if let Some(f) = sys.initializeStaticNLSData {
@@ -639,7 +641,8 @@ pub fn free_nonlinear_systems(data: *mut DATA) {
             &mut sys.nlsxExtrapolation,
             &mut sys.nlsxOld,
             &mut sys.resValues,
-            &mut sys.nominal,
+            &mut sys.positiveNominal,
+            &mut sys.nominalSign,
             &mut sys.min,
             &mut sys.max,
         ] {
@@ -824,7 +827,8 @@ pub extern "C" fn solve_nonlinear_system(data: *mut DATA, thread_data: *mut thre
         sparse_format: sys.matrixFormat == OMC_MATRIX_SPARSE,
     };
 
-    let nominal = unsafe { core::slice::from_raw_parts(sys.nominal, size) }.to_vec();
+    let positive_nominal = unsafe { core::slice::from_raw_parts(sys.positiveNominal, size) }.to_vec();
+    let nominal_sign = unsafe { core::slice::from_raw_parts(sys.nominalSign, size) }.to_vec();
     let mut bounds = vec![0.0f64; 2 * size];
     for i in 0..size {
         bounds[2 * i] = unsafe { *sys.min.add(i) };
@@ -845,7 +849,8 @@ pub extern "C" fn solve_nonlinear_system(data: *mut DATA, thread_data: *mut thre
         nnz: if csc || full_pattern { sd.rowidx.len() as u32 } else { 0 },
         jac_csc: csc,
         sys_num: sys_number as u32,
-        nominal: &nominal,
+        positive_nominal: &positive_nominal,
+        nominal_sign: &nominal_sign,
         bounds: &bounds,
         pattern: if csc || full_pattern { &sd.pattern } else { &[] },
         has_jacobian,

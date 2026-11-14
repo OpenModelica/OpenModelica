@@ -397,6 +397,7 @@ DimUnknown16.mo \
 DimUnknown17.mo \
 DimUnknown18.mo \
 DimUnknown19.mo \
+DimUnknown20.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -1080,6 +1081,7 @@ RecordBinding16.mo \
 RecordBinding17.mo \
 RecordBinding18.mo \
 RecordBinding19.mo \
+RecordBinding20.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \

@@ -52,13 +52,9 @@ val(c[2].y[2], 1);
 // 	### Set Equations:
 // 	[ARRY] (6) c.rates.pX = c.pX; ($RES_BND_8)
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	c.rates.pX	 ==> 	c.pX
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // [propagateSliceAliasStarts] start of c.y: {{1.0, 1.0, 0.0}, {1.0, 1.0, 0.0}}
 // ==================================
@@ -67,12 +63,6 @@ val(c[2].y[2], 1);
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "ForEquationAlias.Top_res.mat",

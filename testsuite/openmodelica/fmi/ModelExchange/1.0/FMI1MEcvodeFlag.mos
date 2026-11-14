@@ -1,6 +1,7 @@
 // name:     FMI1MEcvodeFlag
 // keywords: fmu export fmi 1.0 model exchange cvode fmiFlags
 // status: correct
+// suite: cSources
 // teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_info.json ExpDecayCvode*
 // cflags: --fmiSources=true
 //

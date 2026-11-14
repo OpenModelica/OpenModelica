@@ -201,10 +201,17 @@ char* ModelicaAllocateStringWithErrorReturn(size_t len) {
 }
 
 char* ModelicaDuplicateString(const char *str) {
-  char *res = omc_alloc_interface.malloc_strdup(str);
+  char *res = ModelicaDuplicateStringWithErrorReturn(str);
   if (!res) {
-    ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
+    ModelicaFormatError("%s:%d: ModelicaDuplicateString failed", __FILE__, __LINE__);
   }
-  omc_external_strings_push(res);
+  return res;
+}
+
+char* ModelicaDuplicateStringWithErrorReturn(const char *str) {
+  char *res = omc_alloc_interface.malloc_strdup(str);
+  if (res != NULL) {
+    omc_external_strings_push(res);
+  }
   return res;
 }

@@ -64,6 +64,7 @@ typedef struct {
 #if defined(__EMSCRIPTEN__)
 QStringList omcWorkerFmuPlatforms();
 QStringList omcWorkerFmuCsSolvers();
+QString omcWorkerFmiGuide(const QString &request);
 #endif
 
 class OMCProxy : public QObject

@@ -69,7 +69,7 @@ pub fn free_linear_systems(data: *mut DATA) {
     }
     for i in 0..md.nLinearSystems.max(0) as usize {
         let ls = unsafe { &mut *si.linearSystemData.add(i) };
-        for p in [&mut ls.b, &mut ls.nominal, &mut ls.min, &mut ls.max, &mut ls.A] {
+        for p in [&mut ls.b, &mut ls.positiveNominal, &mut ls.min, &mut ls.max, &mut ls.A] {
             unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
         }
         let scratch = core::mem::replace(&mut ls.solverData[0], core::ptr::null_mut());
@@ -100,7 +100,7 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
         ls.failed = 0;
         ls.logActive = 1;
         ls.b = calloc(size.max(1));
-        ls.nominal = calloc(size.max(1));
+        ls.positiveNominal = calloc(size.max(1));
         ls.min = calloc(size.max(1));
         ls.max = calloc(size.max(1));
 
@@ -637,7 +637,9 @@ fn solve_total_pivot(
         );
     }
     if omclog::active(omclog::LS_V) {
-        log_vector_tp("SCALING", unsafe { core::slice::from_raw_parts(ls.nominal, size) });
+        log_vector_tp("SCALING", unsafe {
+            core::slice::from_raw_parts(ls.positiveNominal, size)
+        });
         log_vector_tp("Old VALUES", unsafe { core::slice::from_raw_parts(aux_x, size) });
     }
     let mut a = vec![0.0f64; (size * size).max(1)];

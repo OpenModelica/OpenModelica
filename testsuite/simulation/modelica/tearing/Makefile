@@ -109,6 +109,7 @@ Tearing18-minimal.mos \
 Tearing18-omc.mos \
 Tearing18-cel.mos \
 Tearing18-celMC3.mos \
+RemoveConstantsTearing.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

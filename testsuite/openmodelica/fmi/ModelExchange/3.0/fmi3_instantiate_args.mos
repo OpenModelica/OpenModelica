@@ -1,0 +1,41 @@
+// name:     fmi3_instantiate_args
+// keywords: FMI 3.0 export instantiate resourcePath logMessage NULL
+// status:   correct
+// teardown_command: rm -rf fmi3_instantiate_args.fmu fmi3_instantiate_args.fmutmp/ fmi3_instantiate_args.log fmi3_instantiate_args_out.txt
+//
+// FMI 3.0 lets the importer pass resourcePath = NULL and logMessage = NULL to
+// fmi3Instantiate*. A NULL logMessage must give an instance. A NULL
+// resourcePath must not crash: the FMU needs its resources directory, so it
+// returns NULL and tells the logger why. The test is for the C runtime.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadString("
+model fmi3_instantiate_args
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end fmi3_instantiate_args;
+"); getErrorString();
+buildModelFMU(fmi3_instantiate_args, version = "3.0", fmuType = "me_cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_instantiate_args.py fmi3_instantiate_args.fmu fmi3_instantiate_args_out.txt > fmi3_instantiate_args.log 2>&1"); getErrorString();
+readFile("fmi3_instantiate_args_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_instantiate_args.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi3InstantiateModelExchange(logMessage = NULL): instance, log: []
+//   initialization: fmi3OK
+// fmi3InstantiateModelExchange(resourcePath = NULL): NULL, log: ['fmi3Error logStatusError']
+// fmi3InstantiateCoSimulation(logMessage = NULL): instance, log: []
+//   initialization: fmi3OK
+// fmi3InstantiateCoSimulation(resourcePath = NULL): NULL, log: ['fmi3Error logStatusError']
+// "
+// ""
+// endResult

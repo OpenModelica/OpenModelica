@@ -1,0 +1,37 @@
+// name:     EnvironmentVariable
+// keywords: getEnvironmentVariable setEnvironmentVar
+// status: correct
+// teardown_command: rm -rf EnvironmentVariable_* EnvironmentVariable EnvironmentVariable.exe EnvironmentVariable.c EnvironmentVariable.libs EnvironmentVariable.log output.log
+//
+// The simulation sees the variables that setEnvironmentVar sets in omc.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model EnvironmentVariable
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+initial algorithm
+  Modelica.Utilities.Streams.print(\"value: \" + Modelica.Utilities.System.getEnvironmentVariable(\"OM_TEST_ENVIRONMENT_VARIABLE\"));
+end EnvironmentVariable;
+"); getErrorString();
+setEnvironmentVar("OM_TEST_ENVIRONMENT_VARIABLE", "abc"); getErrorString();
+echo(false);
+res := simulate(EnvironmentVariable, stopTime = 0.1);
+echo(true);
+res.messages;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// "LOG_STDOUT        | info    | value: abc
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// endResult

@@ -131,7 +131,12 @@ make_socket (unsigned short int port)
     printf("Error binding socket\n");
     return 0;
   }
-  printf("Started a tcp server on port %d\n", port);fflush(NULL);
+  optlen = sizeof(name);
+  if (getsockname(sock, (struct sockaddr *) &name, &optlen) < 0) {
+    printf("Error getting socket name\n");
+    return 0;
+  }
+  printf("Started a tcp server on port %d\n", ntohs(name.sin_port));fflush(NULL);
 
   return sock;
 }

@@ -2066,6 +2066,16 @@ case efn as EXTERNAL_FUNCTION(__) then
        case v::_ then 'omc_ret_ = <%funArgName(v)%>;<%\n%>'
     %><%match outVars case v::_ then rcRetainOut(v)%><%varFrees%>
     <%match outVars
+       case {VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(path=extObjPath)))} then
+         // MLS 3.7, 12.9.8: a constructor returns a null pointer to indicate failure.
+         <<
+         if (!omc_ret_) {
+           FILE_INFO info = {<%infoArgs(info)%>};
+           omc_assert(threadData, info, "The constructor of external object %s failed.", "<%Util.escapeModelicaStringToCString(dotPath(extObjPath))%>");
+         }
+         >>
+    %>
+    <%match outVars
        case v::_ then 'return omc_ret_;'
        else 'return;'
     %>
@@ -2791,7 +2801,7 @@ case EXTERNAL_FUNCTION(__) then
     case "ModelicaError" then
       <<
       FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert(threadData, info, <%args%>);
+      omc_assert(threadData, info, "%s", <%args%>);
       >> else ""
 
   <<
@@ -4039,7 +4049,7 @@ case STMT_TERMINATE(__) then
   <%preExp%>
   {
     FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
-    omc_terminate(info, omc_string_data(<%msgVar%>));
+    omc_terminate(info, "%s", omc_string_data(<%msgVar%>));
   }
   >>
 end algStmtTerminate;
@@ -4929,7 +4939,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let assertCode = match context case FUNCTION_CONTEXT(__) then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
-    <%omcAssertFunc%>info, <%msgVar%>);
+    <%omcAssertFunc%>info, "%s", <%msgVar%>);
     <%assertCheck%>
     >>
     else if neverHeld then
@@ -9197,11 +9207,11 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       for (int k = 0; k < runs[r][2]; ++k) {
         const int i = runs[r][0] + k;
         if (runs[r][3] == 0) {
-          linearSystemData->nominal[i] = 1.0;
+          linearSystemData->positiveNominal[i] = 1.0;
           linearSystemData->min[i]     = -DBL_MAX;
           linearSystemData->max[i]     = DBL_MAX;
         } else {
-          linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
+          linearSystemData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
           linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
           linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
         }

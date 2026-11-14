@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
   }
   test_success = test_success && validateDimensionX(&modelData.realVarsData[0].dimension);
   test_success = test_success && validateStartX(&modelData.realVarsData[0].attribute.start);
-  test_success = test_success && validateNominalX(&modelData.realVarsData[0].attribute.nominal);
+  test_success = test_success && validateNominalX(&modelData.realVarsData[0].attribute.positiveNominal);
   test_success = test_success && validateMinX(&modelData.realVarsData[0].attribute.min);
   test_success = test_success && validateMaxX(&modelData.realVarsData[0].attribute.max);
 

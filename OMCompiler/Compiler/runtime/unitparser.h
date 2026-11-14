@@ -118,6 +118,10 @@ public:
   /** Offset to base unit. E.g. celcius have offset 273.15 (i.e. add 273.15 to the value to get it in Kelvin) */
   Rational offset;
 
+  /** Exponents of rad and Hz, which unitVec counts as 1 and s-1 */
+  Rational radExpo;
+  Rational hzExpo;
+
   /** Unit type parameter vector. The strings include a prepend apostrophe  ,e.g. "'p"  */
   map<string,Rational> typeParamVec;
 
@@ -212,9 +216,10 @@ private:
 
 class DerivedInfo{
 public:
-  DerivedInfo(string qn, string un, string usym, string ustr, Rational pe, Rational sf, Rational o, bool pa, double w)
+  DerivedInfo(string qn, string un, string usym, string ustr, Rational pe, Rational sf, Rational o, bool pa, double w,
+    Rational re = Rational(0), Rational he = Rational(0))
     : quantityName(qn), unitName(un), unitSymbol(usym), unitStrExp(ustr), prefixExpo(pe), scaleFactor(sf),
-    offset(o),prefixAllowed(pa), weight(w) {;}
+    offset(o),prefixAllowed(pa), weight(w), radExpo(re), hzExpo(he) {;}
   string quantityName;
   string unitName;
   string unitSymbol;
@@ -224,6 +229,8 @@ public:
   Rational offset;
   bool prefixAllowed;
   double weight;
+  Rational radExpo;
+  Rational hzExpo;
 };
 
 
@@ -247,7 +254,8 @@ public:
 
   /** Add a derived quantity/unit */
   void addDerived(const string quantityName, const string unitName, const string unitSymbol,
-    const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight=1.0);
+    const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight=1.0,
+    Rational radExpo=Rational(0), Rational hzExpo=Rational(0));
 
   /** Multiply the weight factor to an existing unit symbol. If the symbol does not exist, nothing is updated */
     void accumulateWeight(const string unitSymbol, double weight);
@@ -276,7 +284,8 @@ private:
 
   /** Add a derived quantity/unit */
   UnitRes addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol,
-    const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight);
+    const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight,
+    Rational radExpo, Rational hzExpo);
 
 
   /** Prefixes */

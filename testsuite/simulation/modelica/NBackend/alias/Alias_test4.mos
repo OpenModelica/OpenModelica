@@ -37,10 +37,6 @@ simulate(Test4); getErrorString();
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
 // 	y	 ==> 	3.0 + time
@@ -53,12 +49,6 @@ simulate(Test4); getErrorString();
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "Test4_res.mat",

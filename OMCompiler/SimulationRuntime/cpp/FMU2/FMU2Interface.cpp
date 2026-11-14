@@ -60,7 +60,7 @@ extern "C"
 
 #define CATCH_EXCEPTION(w) \
   catch (std::exception &e) { \
-    FMU2_LOG(w, fmi2Error, logStatusError, e.what()); \
+    FMU2_LOG(w, fmi2Error, logStatusError, "%s", e.what()); \
     return fmi2Error; \
   }
 
@@ -105,7 +105,7 @@ extern "C"
         functions->logger(functions->componentEnvironment,
                           instanceName, fmi2Error,
                           FMU2Wrapper::LogCategoryFMUName(logStatusError),
-                          e.what());
+                          "%s", e.what());
       return NULL;
     }
     LOG_CALL(w, "fmi2Instantiate");
@@ -115,6 +115,8 @@ extern "C"
   void fmi2FreeInstance(fmi2Component c)
   {
     FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    if (w == NULL)
+      return;  // FMI 2.0: the call is ignored for a null pointer
     LOG_CALL(w, "fmi2FreeInstance");
     delete w;
   }
