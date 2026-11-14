@@ -1187,16 +1187,14 @@ protected
   algorithm
     CLASS_DATA(path = path) := node.data;
     ErrorExt.setCheckpoint(getInstanceName());
-    FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
     try
-      (_, v) := CevalScriptBackend.checkModel(FCore.emptyCache(), FGraph.empty(), path, Absyn.NO_MSG());
+      (_, v) := CevalScriptBackend.checkModel(FCore.emptyCache(), FGraph.empty(), path);
       str := match v
         case Values.STRING() then v.string;
         else "";
       end match;
     else
     end try;
-    FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
     messages := list(toMessage(m) for m in ErrorExt.getCheckpointMessages());
     ErrorExt.delCheckpoint(getInstanceName());
     result := (str, messages);

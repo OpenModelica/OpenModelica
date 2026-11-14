@@ -1,0 +1,25 @@
+// name: CheckModel7
+// keywords:
+// status: correct
+//
+
+loadString("
+  block M
+    Real x;
+  equation
+    x = 1;
+    x = 2;
+  end M;
+");
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// "Check of M completed successfully.
+// The block has 2 equation(s) and 1 variables(s).
+// 2 of these are trivial equation(s).
+// Error: The block has 1 equation(s) too many."
+// ""
+// endResult

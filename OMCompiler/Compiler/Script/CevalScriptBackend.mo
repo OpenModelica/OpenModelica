@@ -106,15 +106,16 @@ import Lookup;
 import ModelicaDiff;
 import NFApi;
 import NFCheckModel;
+import NFClassDiagram;
 import NFConvertDAE;
+import NFDefUseChains;
 import NFFlatModel;
 import NFFlatten;
 import NFInst;
+import NFRestriction;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
-import NFClassDiagram;
-import NFDefUseChains;
 import NFUsedElements;
 import Obfuscate;
 import OMGraphics;
@@ -1331,15 +1332,13 @@ algorithm
 
     case ("checkModel",{Values.CODE(Absyn.C_TYPENAME(className))})
       algorithm
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
-        (outCache, ret_val) := checkModel(outCache, inEnv, className, msg);
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
+        (outCache, ret_val) := checkModel(outCache, inEnv, className);
       then
         ret_val;
 
     case ("checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected),Values.BOOL(b)})
       algorithm
-        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, b, msg);
+        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, b);
       then
         ret_val;
 
@@ -6760,21 +6759,36 @@ algorithm
   end matchcontinue;
 end createSimulationResultFromcallModelExecutable;
 
-
-
-public function checkModel " checks a model and returns number of variables and equations"
+public function checkModel
+  "Checks a model and returns the number of variables and equations."
   input output FCore.Cache cache;
   input FCore.Graph env;
   input Absyn.Path className;
-  input Absyn.Msg inMsg;
         output Values.Value outValue;
+algorithm
+  FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
+
+  if Flags.isSet(Flags.SCODE_INST) then
+    outValue := checkModelNF(className);
+  else
+    (cache, outValue) := checkModelOF(cache, env, className);
+  end if;
+
+  FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
+end checkModel;
+
+public function checkModelNF " checks a model and returns number of variables and equations"
+  input Absyn.Path className;
+  output Values.Value outValue;
 protected
   DAE.DAElist dae;
   Integer eqnSize, varSize, simpleEqnSize, warnings, errors;
-  String retStr, classNameStr, eqnsStr, simpleEqnsStr, varsStr, errStr;
+  String retStr, classNameStr, eqnsStr, simpleEqnsStr, varsStr, errStr, resStr;
   Flags.Flag flags;
   NFFlatModel flatModel;
   NFExpression eqnSizeExp, varSizeExp, simpleEqnsExp;
+  list<String> msg_lines = {};
+  Boolean isIntegerSize, isPartial;
 
   function format_errors
     input Integer warnings;
@@ -6806,27 +6820,46 @@ algorithm
   flags := loadCommandLineOptionsFromModel(className);
 
   try
-    if Flags.isSet(Flags.SCODE_INST) then
-      flatModel := runFrontEndNF(className);
-      (varSizeExp, eqnSizeExp, simpleEqnsExp) := NFCheckModel.checkModel(flatModel);
-      varsStr := NFExpression.toString(varSizeExp);
-      eqnsStr := NFExpression.toString(eqnSizeExp);
-      simpleEqnsStr := NFExpression.toString(simpleEqnsExp);
-    else
-      (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
-      (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
-      varsStr := String(varSize);
-      eqnsStr := String(eqnSize);
-      simpleEqnsStr := String(simpleEqnSize);
-    end if;
+    flatModel := runFrontEndNF(className);
+    (varSizeExp, eqnSizeExp, simpleEqnsExp) := NFCheckModel.checkModel(flatModel);
+    varsStr := NFExpression.toString(varSizeExp);
+    eqnsStr := NFExpression.toString(eqnSizeExp);
+    simpleEqnsStr := NFExpression.toString(simpleEqnsExp);
 
     warnings := ErrorExt.getNumWarningMessages() - warnings;
     errors := ErrorExt.getNumErrorMessages() - errors;
 
-    retStr := stringAppendList({
-      "Check of ", classNameStr, " completed successfully", format_errors(warnings, errors), ".\n",
-      "Class ", classNameStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variable(s).\n",
-      simpleEqnsStr, " of these are trivial equation(s)."});
+    msg_lines := {stringAppendList({"Check of ", classNameStr, " completed successfully",
+                                    format_errors(warnings, errors), "."})};
+
+    if not NFRestriction.isFunction(flatModel.restriction) then
+      resStr := NFRestriction.toString(flatModel.restriction);
+      simpleEqnsStr := stringAppendList({simpleEqnsStr, " of these are trivial equation(s)."});
+
+      if varsStr == eqnsStr and not System.getHasPartialInstances() then
+        msg_lines := stringAppendList({"The ", resStr, " is globally balanced with ", varsStr,
+                                        " equation(s) and variable(s)."}) :: msg_lines;
+        msg_lines := simpleEqnsStr :: msg_lines;
+      else
+        msg_lines := stringAppendList({"The ", resStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variables(s)."}) :: msg_lines;
+        msg_lines := simpleEqnsStr :: msg_lines;
+
+        if not flatModel.isPartial then
+          if System.getHasPartialInstances() then
+            msg_lines := stringAppendList({"The ", resStr, " contains replaceable partial components that must be redeclared to determine global balancedness."}) :: msg_lines;
+          elseif not (NFExpression.isInteger(varSizeExp) and NFExpression.isInteger(eqnSizeExp)) then
+            msg_lines := stringAppendList({"The global balance of the ", resStr, " depends on parameters with no default values."}) :: msg_lines;
+          else
+            varSize := stringInt(varsStr);
+            eqnSize := stringInt(eqnsStr);
+            msg_lines := stringAppendList({"Error: The ", resStr, " has ", String(abs(eqnSize - varSize)),
+                                           " equation(s) too ", if eqnSize > varSize then "many." else "few."}) :: msg_lines;
+          end if;
+        end if;
+      end if;
+    end if;
+
+    retStr := stringDelimitList(MetaModelica.Dangerous.listReverseInPlace(msg_lines), "\n");
   else
     if Interactive.existClass(className, SymbolTable.getAbsyn()) then
       warnings := ErrorExt.getNumWarningMessages() - warnings;
@@ -6842,7 +6875,44 @@ algorithm
 
   FlagsUtil.saveFlags(flags);
   outValue := Values.STRING(retStr);
-end checkModel;
+end checkModelNF;
+
+public function checkModelOF
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Path className;
+        output Values.Value outValue;
+protected
+  DAE.DAElist dae;
+  Integer eqnSize, varSize, simpleEqnSize;
+  String retStr, classNameStr;
+  Flags.Flag flags;
+algorithm
+  classNameStr := AbsynUtil.pathString(className);
+  ExecStat.execStatReset();
+  flags := loadCommandLineOptionsFromModel(className);
+
+  try
+    (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
+    (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+
+    retStr := stringAppendList({
+      "Check of ", classNameStr, " completed successfully.\n",
+      "Class ", classNameStr, " has ", String(eqnSize), " equation(s) and ", String(varSize), " variable(s).\n",
+      String(simpleEqnSize), " of these are trivial equation(s)."
+    });
+  else
+    if Interactive.existClass(className, SymbolTable.getAbsyn()) then
+      retStr := stringAppendList({"Check of ", classNameStr, " failed."});
+    else
+      // Return nothing if the class doesn't exist, the frontend will emit an error in that case.
+      retStr := "";
+    end if;
+  end try;
+
+  FlagsUtil.saveFlags(flags);
+  outValue := Values.STRING(retStr);
+end checkModelOF;
 
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
   input Absyn.Path ip;
@@ -7153,12 +7223,11 @@ public function checkAllModelsRecursive
   input Absyn.Path className;
   input Boolean inCheckProtected;
   input Boolean reportTimes;
-  input Absyn.Msg inMsg;
   output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache,outValue):=
-  matchcontinue (inCache, inEnv, inCheckProtected, inMsg)
+  matchcontinue (inCache, inEnv, inCheckProtected)
     local
       list<Absyn.Path> allClassPaths;
       Absyn.Msg msg;
@@ -7168,21 +7237,21 @@ algorithm
       Boolean b;
       Integer failed;
 
-    case (cache, env, b, msg)
+    case (cache, env, b)
       algorithm
         allClassPaths := getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths:\n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
-        failed := checkAll(cache, env, allClassPaths, msg, reportTimes and not Testsuite.isRunning(), 0);
+        failed := checkAll(cache, env, allClassPaths, reportTimes and not Testsuite.isRunning(), 0);
         ret := "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
 
-    case (cache, _, _, _)
+    else
       algorithm
         ret := stringAppend("Error checking: ", AbsynUtil.pathString(className));
-    then
-      (cache,Values.STRING(ret));
+      then
+        (inCache,Values.STRING(ret));
   end matchcontinue;
 end checkAllModelsRecursive;
 
@@ -7215,7 +7284,6 @@ function checkAll
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<Absyn.Path> allClasses;
-  input Absyn.Msg inMsg;
   input Boolean reportTimes;
   input output Integer failed;
 protected
@@ -7244,9 +7312,7 @@ algorithm
         false := Interactive.isType(className, p);
         print("Checking: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... ");
         t1 := clock();
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
-        (_,Values.STRING(str)) := checkModel(FCore.emptyCache(), inEnv, className, inMsg);
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
+        (_,Values.STRING(str)) := checkModel(FCore.emptyCache(), inEnv, className);
         t2 := clock();
         elapsedTime := t2 - t1;
         s := realString(elapsedTime);
@@ -7271,14 +7337,14 @@ algorithm
           (if reportTimes then realString(elapsedTime) + ", " else "") +
           AbsynUtil.pathString(className) + "\n");
         print ("-------------------------------------------------------------------------\n");
-        failed := checkAll(inCache, inEnv, rest, inMsg, reportTimes, failed);
+        failed := checkAll(inCache, inEnv, rest, reportTimes, failed);
       then ();
 
     case className::rest
       algorithm
         c := ProgramUtil.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "...\n");
-        failed := checkAll(inCache, inEnv, rest, inMsg, reportTimes, failed);
+        failed := checkAll(inCache, inEnv, rest, reportTimes, failed);
       then
         ();
   end matchcontinue;

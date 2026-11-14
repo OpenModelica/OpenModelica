@@ -343,6 +343,16 @@ extern void System_setUsesCardinality(int b)
   usesCardinality = b;
 }
 
+extern int System_getHasPartialInstances()
+{
+  return hasPartialInstances;
+}
+
+extern void System_setHasPartialInstances(int b)
+{
+  hasPartialInstances = b;
+}
+
 /* Cooperative cancellation. System_isCancelled is polled by the compiler
  * (Error.checkCancel); System_requestCancel/System_clearCancel are the host
  * (OMEdit) side. Progress is one-way, compiler → host. */
