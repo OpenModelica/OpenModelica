@@ -1,0 +1,35 @@
+// name:     fmi2_reset_heap
+// keywords: FMI 2.0 export reset memory leak
+// status:   correct
+// teardown_command: rm -rf fmi2_reset_heap*.fmu fmi2_reset_heap*.fmutmp/ fmi2_reset_heap*.log fmi2_reset_heap*_out.txt
+//
+// fmi2Reset must free what the instance allocated for the variables, so
+// many resets of one instance do not use more and more memory.
+
+loadString("
+model fmi2_reset_heap
+  parameter Integer n = 200;
+  Real x[n](each start = 1, each fixed = true);
+  output Real y = sum(x);
+equation
+  for i in 1:n loop
+    der(x[i]) = -i*x[i];
+  end for;
+end fmi2_reset_heap;
+"); getErrorString();
+buildModelFMU(fmi2_reset_heap, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_reset_heap.py fmi2_reset_heap.fmu fmi2_reset_heap_out.txt > fmi2_reset_heap.log 2>&1"); getErrorString();
+readFile("fmi2_reset_heap_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi2_reset_heap.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "heap growth after 200 fmi2Reset is below 1 MB: True
+// "
+// ""
+// endResult

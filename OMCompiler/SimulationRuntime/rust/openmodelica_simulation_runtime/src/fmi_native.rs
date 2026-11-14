@@ -304,6 +304,13 @@ fn library_path() -> Option<std::path::PathBuf> {
 
 fn release(data: *mut DATA, thread_data: *mut threadData_t) {
     crate::fmi::deInitializeDataStruc(data);
+    // `_init.bin` (FMI 2.0, 3.0) allocates the variable infos; the generated
+    // `read_input_fmu` of FMI 1.0 points them at literals.
+    unsafe {
+        if (*(*data).callback).read_input_fmu.is_none() {
+            crate::data::free_var_infos(&mut *(*data).modelData);
+        }
+    }
     crate::data::free_data_struc(data, thread_data);
 }
 
