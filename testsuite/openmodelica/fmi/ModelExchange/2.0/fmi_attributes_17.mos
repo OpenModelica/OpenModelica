@@ -166,7 +166,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\" displayUnit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"13\" -->
 //   <ScalarVariable
@@ -176,7 +176,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\" displayUnit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"14\" -->
 //   <ScalarVariable
@@ -186,7 +186,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"300.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
+//     <Real start=\"300.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\" displayUnit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"15\" -->
 //   <ScalarVariable
