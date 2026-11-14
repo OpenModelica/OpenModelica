@@ -2801,7 +2801,7 @@ case EXTERNAL_FUNCTION(__) then
     case "ModelicaError" then
       <<
       FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert(threadData, info, <%args%>);
+      omc_assert(threadData, info, "%s", <%args%>);
       >> else ""
 
   <<
@@ -4049,7 +4049,7 @@ case STMT_TERMINATE(__) then
   <%preExp%>
   {
     FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
-    omc_terminate(info, omc_string_data(<%msgVar%>));
+    omc_terminate(info, "%s", omc_string_data(<%msgVar%>));
   }
   >>
 end algStmtTerminate;
@@ -4939,7 +4939,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let assertCode = match context case FUNCTION_CONTEXT(__) then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
-    <%omcAssertFunc%>info, <%msgVar%>);
+    <%omcAssertFunc%>info, "%s", <%msgVar%>);
     <%assertCheck%>
     >>
     else if neverHeld then

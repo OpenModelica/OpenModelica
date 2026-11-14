@@ -511,7 +511,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"934.2\" min=\"0.0\" unit=\"kg/m3\"/>
+//     <Real start=\"934.2\" min=\"0.0\" unit=\"kg/m3\" displayUnit=\"g/cm3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"40\" -->
 //   <ScalarVariable

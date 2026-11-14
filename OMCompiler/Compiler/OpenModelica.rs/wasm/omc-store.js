@@ -187,13 +187,16 @@ export class Store {
     return !!s && s.handle.read(buf, off) === buf.length;
   }
 
-  // Rewrite the live files into one segment that supersedes all the others.
+  // Rewrite the live files into one segment that supersedes all the others,
+  // also those that another worker still holds open: they cannot be removed,
+  // and must not come back when the segment that superseded them is removed.
   async compactLocked() {
     const old = this.segments.filter(Boolean);
-    const name = newName(await this.backend.list());
+    const names = await this.backend.list();
+    const name = newName(names);
     const entries = [...this.files].sort((a, b) => a[1][0] - b[1][0] || a[1][3] - b[1][3]);
     const files = [];
-    await writeSegment(this.backend, name, { files, removed: [], supersedes: old.map((s) => s.name) }, (out) => {
+    await writeSegment(this.backend, name, { files, removed: [], supersedes: names }, (out) => {
       let at = 0;
       for (const [path, [seg, sec, nsec, off, len]] of entries) {
         const buf = new Uint8Array(len);
@@ -208,7 +211,7 @@ export class Store {
     for (const s of old) s.handle.close();
     this.segments = [{ name, handle }];
     this.files = new Map(files.map(([path, sec, nsec, off, len]) => [path, [0, sec, nsec, off, len]]));
-    for (const s of old) await this.backend.remove(s.name).catch(() => {});
+    for (const n of names) await this.backend.remove(n).catch(() => {});
   }
 
   // Store what changed as a new segment: `data` holds the files' bytes at the

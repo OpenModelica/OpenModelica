@@ -1017,7 +1017,7 @@ algorithm
         name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
         eq := Equation.makeEquality(Expression.CREF(ty, name),  binding_exp, ty,
           ElementSource.createElementSource(info));
-        sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
+        sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.NON_STRUCTURAL_PARAMETER);
       end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
     else
