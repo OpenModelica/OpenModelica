@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+  This file is part of OpenModelica.
+  Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+  c/o Linköpings universitet, Department of Computer and Information Science,
+  SE-58183 Linköping, Sweden.
+  All rights reserved.
+  THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+  THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <!-- A scale of 1: one CSS pixel is one Qt device independent pixel. -->
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=0">
+    <title>OMEdit</title>
+    <script>
+      try {
+        const theme = localStorage.getItem('omedit-theme');
+        if (theme) document.documentElement.dataset.theme = theme;
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/katex/katex.min.css">
+    <link rel="stylesheet" href="assistant.css">
+  </head>
+  <body>
+    <div id="layout">
+      <div id="main">
+        <div id="qtspinner">
+          <img src="omedit_splashscreen.png" alt="" onerror="this.style.display='none'">
+          <div id="qtstatus"></div>
+          <noscript>JavaScript is disabled. Please enable JavaScript to use OMEdit.</noscript>
+        </div>
+        <div id="screen"></div>
+      </div>
+      <div id="assistant-splitter" role="separator" aria-orientation="vertical" aria-label="Resize the assistant"></div>
+      <aside id="assistant" aria-label="Assistant"></aside>
+    </div>
+
+    <script>
+      async function init() {
+        const spinner = document.querySelector('#qtspinner');
+        const screen = document.querySelector('#screen');
+        const status = document.querySelector('#qtstatus');
+        const show = (ui) => {
+          spinner.style.display = ui === spinner ? 'flex' : 'none';
+          screen.style.display = ui === screen ? 'block' : 'none';
+        };
+        try {
+          show(spinner);
+          status.textContent = 'Loading...';
+          await qtLoad({
+            qt: {
+              onLoaded: () => show(screen),
+              onExit: (exitData) => {
+                let text = 'Application exit';
+                if (exitData.code !== undefined) text += ` with code ${exitData.code}`;
+                if (exitData.text !== undefined) text += ` (${exitData.text})`;
+                status.textContent = text;
+                show(spinner);
+              },
+              entryFunction: window.OMEdit_qt_entry,
+              containerElements: [screen],
+            }
+          });
+        } catch (e) {
+          console.error(e);
+          console.error(e.stack);
+        }
+      }
+      window.addEventListener('load', init);
+    </script>
+    <script src="OMEdit-qt.js"></script>
+    <script src="qtloader.js"></script>
+    <script src="vendor/markdown-it/markdown-it.min.js"></script>
+    <script src="vendor/katex/katex.min.js"></script>
+    <script src="assistant.js"></script>
+  </body>
+</html>

@@ -235,6 +235,14 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     }
   }
   setProperty("omeditDarkMode", darkMode);
+#if defined(__EMSCRIPTEN__)
+  // The page around the application (OMEdit-qt.html) takes the same scheme.
+  EM_ASM({
+    const theme = $0 ? 'dark' : 'light';
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('omedit-theme', theme); } catch (e) {}
+  }, darkMode);
+#endif
 
 /* Qt 6.8 defaults to the system color scheme. Pin the scheme to the mode
  * resolved above so the built-in stylesheets remain deterministic.
@@ -468,6 +476,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     MCPServer *pMCPServer = new MCPServer(pMainwindow->getOMCProxy(), enableAdminTools, pMainwindow);
     pMCPServer->listen(hostAddress, port);
   }
+#else
+  startMCPWebBridge(new MCPServer(pMainwindow->getOMCProxy(), pSettings->value("modelContextProtocol/enableAdminTools", false).toBool(), pMainwindow));
 #endif
 
   // On unless the user has turned it off; the same default the options page reads.

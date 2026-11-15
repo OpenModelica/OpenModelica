@@ -1868,6 +1868,54 @@ function(omc_rust_omedit_qt_web_page)
     endif()
   endif()
 
+  # Markdown and math in the assistant panel: markdown-it and KaTeX (both MIT),
+  # from their pinned npm tarballs. Without them the panel shows plain text.
+  set(_assistant_vendor_copy "")
+  set(_assistant_vendor_dirs "")
+  foreach(_pkg IN ITEMS
+          "markdown-it|15.0.3|98a7453983ab0e268c17dbd5260bf7190ba46b4cca912327fc1c1a2578e4b56d"
+          "katex|0.19.1|24da5a599eb2fcede2e270b99a6ff48bca816beecc95feeb84e8cccbd1bb34fd")
+    string(REPLACE "|" ";" _p ${_pkg})
+    list(GET _p 0 _p_name)
+    list(GET _p 1 _p_ver)
+    list(GET _p 2 _p_hash)
+    set(_p_dir ${CMAKE_CURRENT_BINARY_DIR}/omedit-vendor/${_p_name}-${_p_ver})
+    if(NOT EXISTS ${_p_dir}/package/LICENSE)
+      set(_p_tgz ${OM_DOWNLOADS_DIR}/${_p_name}-${_p_ver}.tgz)
+      omc_download(https://registry.npmjs.org/${_p_name}/-/${_p_name}-${_p_ver}.tgz ${_p_tgz} ${_p_hash} _p_dl)
+      if(NOT _p_dl)
+        file(MAKE_DIRECTORY ${_p_dir})
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_p_tgz}
+                        WORKING_DIRECTORY ${_p_dir} RESULT_VARIABLE _p_dl)
+        if(_p_dl EQUAL 0)
+          set(_p_dl "")
+        else()
+          file(REMOVE_RECURSE ${_p_dir})
+        endif()
+      endif()
+      if(_p_dl)
+        message(WARNING "Could not get ${_p_name} ${_p_ver}: ${_p_dl}. "
+                        "The assistant in the OMEdit web page will show plain text.")
+        continue()
+      endif()
+    endif()
+    list(APPEND _assistant_vendor_dirs ${_p_dir}/package)
+  endforeach()
+  list(LENGTH _assistant_vendor_dirs _assistant_vendor_count)
+  if(_assistant_vendor_count EQUAL 2)
+    list(GET _assistant_vendor_dirs 0 _mdit)
+    list(GET _assistant_vendor_dirs 1 _katex)
+    file(GLOB _katex_fonts ${_katex}/dist/fonts/*.woff2)
+    set(_assistant_vendor_copy
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}/vendor/markdown-it ${_qt_pkgdir}/vendor/katex/fonts
+      COMMAND ${CMAKE_COMMAND} -E copy ${_mdit}/dist/browser/markdown-it.umd.min.js
+              ${_qt_pkgdir}/vendor/markdown-it/markdown-it.min.js
+      COMMAND ${CMAKE_COMMAND} -E copy ${_mdit}/LICENSE ${_qt_pkgdir}/vendor/markdown-it/
+      COMMAND ${CMAKE_COMMAND} -E copy ${_katex}/dist/katex.min.js ${_katex}/dist/katex.min.css ${_katex}/LICENSE
+              ${_qt_pkgdir}/vendor/katex/
+      COMMAND ${CMAKE_COMMAND} -E copy ${_katex_fonts} ${_qt_pkgdir}/vendor/katex/fonts/)
+  endif()
+
   add_custom_target(rust_omedit_qt_web ${_qt_web_all}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_bld}
     COMMAND ${_em_cache_env} ${CMAKE_COMMAND} -G "Unix Makefiles" -S ${_qt_src} -B ${_qt_bld}
@@ -1876,10 +1924,12 @@ function(omc_rust_omedit_qt_web_page)
             -DSCRIPTING_API_QT_DIR=${OMC_SCRIPTING_API_QT_DIR}
     COMMAND ${_em_cache_env} ${CMAKE_COMMAND} --build ${_qt_bld} --parallel
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
+    # The page is our own (OMEditGUI/wasm/OMEdit-qt.html), not Qt's shell: it
+    # has the assistant panel next to the application.
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${_qt_bld}/OMEdit-qt.html ${_qt_bld}/OMEdit-qt.js
-            ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
-            ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
+            ${_qt_bld}/OMEdit-qt.js ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
+            ${_qt_src}/OMEdit-qt.html ${_qt_src}/assistant.js ${_qt_src}/assistant.css
+            ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${_qt_bld}/share ${_qt_pkgdir}/share
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     # The OAuth callback goes at the web ROOT, not in the versioned page directory:
@@ -1892,6 +1942,7 @@ function(omc_rust_omedit_qt_web_page)
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_SOURCE_DIR}/OMEdit/OMEditLIB/Resources/icons/omedit_splashscreen.png ${_qt_pkgdir}/
     ${_crml_web_copy}
+    ${_assistant_vendor_copy}
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
   # Cloud storage OAuth client registrations. Kept out of the source tree so that one
