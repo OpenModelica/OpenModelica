@@ -609,17 +609,18 @@ void MessagesWidget::closeSimulationOutputWidgets(const QString &className)
  */
 bool MessagesWidget::closeTab(int index)
 {
-#if !defined(__EMSCRIPTEN__)
   // Close SimulationOutputWidget
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pSimulationOutputWidget
       && !pSimulationOutputWidget->isCompilationProcessRunning()
       && !pSimulationOutputWidget->isPostCompilationProcessRunning()
-      && !pSimulationOutputWidget->isSimulationProcessRunning()) {
+      && !pSimulationOutputWidget->isSimulationProcessRunning()
+      && !pSimulationOutputWidget->isWasmJitSimulationRunning()) {
     mpMessagesTabWidget->removeTab(index);
     emit messageTabClosed(index);
     return true;
   }
+#if !defined(__EMSCRIPTEN__)
   // Close OMSSimulationOutputWidget
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {

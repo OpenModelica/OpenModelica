@@ -517,6 +517,7 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
   // Echo the flags in the compilation output (always visible) so the run is
   // debuggable even if the simulation-messages path has a problem.
   writeCompilationOutput(tr("Simulation flags: %1").arg(simflags.isEmpty() ? tr("(none)") : simflags), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
+  mIsWasmJitSimulationRunning = true;
 #if defined(__EMSCRIPTEN__)
   // Cooperative cancel: enable the button (sendCommand spins a nested QEventLoop, so
   // a click reaches cancelCompilationOrSimulation and sets the shared flag the omc
@@ -524,7 +525,6 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
   mWasmJitCancelled = false;
   if (omedit_cancel_available()) {
     omedit_clear_cancel();
-    mIsWasmJitSimulationRunning = true;
     mpCancelButton->setText(tr("Cancel Simulation"));
     mpCancelButton->setEnabled(true);
   }
@@ -542,8 +542,8 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
     progressTimer.start(100);
     pOMCProxy->sendCommand(command);
   }
-#if defined(__EMSCRIPTEN__)
   mIsWasmJitSimulationRunning = false;
+#if defined(__EMSCRIPTEN__)
   mpCancelButton->setEnabled(false);
 #endif
   const QString simulationResult = pOMCProxy->getResult();
@@ -1426,7 +1426,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
 #if defined(__EMSCRIPTEN__)
   // wasm-jit run: no QProcess to kill — set the shared flag; the blocking simulate()
   // aborts and runWasmJitSimulation reports it.
-  if (mIsWasmJitSimulationRunning) {
+  if (mIsWasmJitSimulationRunning && omedit_cancel_available()) {
     omedit_cancel_sim();
     mWasmJitCancelled = true;
     mpCancelButton->setEnabled(false);

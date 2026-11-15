@@ -116,6 +116,7 @@ public:
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
+  bool isWasmJitSimulationRunning() const {return mIsWasmJitSimulationRunning;}
   QString getCompilationStandardError();
   QString getSimulationStandardOutput() {return mSimulationStandardOutput;}
   QString getSimulationStandardError() {return mSimulationStandardError;}
@@ -155,8 +156,8 @@ private:
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
-  // wasm-jit in-process run (no QProcess): whether a cancellable simulate() is in
-  // flight, and whether the user asked to cancel it (shared-flag cooperative cancel).
+  // wasm-jit in-process run (no QProcess): whether simulate() is in flight, and
+  // whether the user asked to cancel it (shared-flag cooperative cancel).
   bool mIsWasmJitSimulationRunning = false;
   bool mWasmJitCancelled = false;
   bool mIsWasmJit = false;
