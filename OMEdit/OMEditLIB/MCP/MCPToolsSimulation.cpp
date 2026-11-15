@@ -36,7 +36,7 @@
 #include <QtGlobal>
 #include "MCPServer.h"
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0) && __has_include(<QtHttpServer>)
+#ifdef OMEDIT_MCP
 
 #include "MCPServerPrivate.h"
 #include "MainWindow.h"
@@ -338,9 +338,9 @@ static QString checkExternalFunctions(const SimulationOptions &simOpts)
  * \param id       JSON-RPC request id echoed back in the response.
  * \param arguments Tool arguments as a JSON object.
  * \param vision   Whether the client supports receiving images.
- * \return A QHttpServerResponse containing the MCP tool result or error.
+ * \return The MCP tool result or error.
  */
-QHttpServerResponse MCPServer::handleSimulationTool(const QString &toolName, QJsonValue id, QJsonObject arguments, bool vision)
+QJsonObject MCPServer::handleSimulationTool(const QString &toolName, QJsonValue id, QJsonObject arguments, bool vision)
 {
     if (toolName == "getSimulationResultVariables") {
         MainWindow *mainWindow = MainWindow::instance();

@@ -38,11 +38,21 @@
 #include <QtGlobal>
 #include "Modeling/MessagesWidget.h"
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0) || !__has_include(<QtHttpServer>)
-
-MCPServer::MCPServer(OMCProxy *proxy, QString hostAddress, int port, bool enableAdminTools, QObject *parent) : QObject(parent) {
-  Q_UNUSED(proxy) Q_UNUSED(port) Q_UNUSED(enableAdminTools)
+#if !defined(OMEDIT_MCP_HTTP)
+static void warnNoHttpServer() {
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "The MCP server required Qt 6.4.0 (or ideally Qt 6.8.0)", Helper::scriptingKind, Helper::warningLevel));
+}
+#endif
+
+#if !defined(OMEDIT_MCP)
+
+MCPServer::MCPServer(OMCProxy *proxy, bool enableAdminTools, QObject *parent) : QObject(parent) {
+  Q_UNUSED(proxy) Q_UNUSED(enableAdminTools)
+}
+
+void MCPServer::listen(const QString &hostAddress, int port) {
+  Q_UNUSED(hostAddress) Q_UNUSED(port)
+  warnNoHttpServer();
 }
 
 #else
@@ -51,11 +61,9 @@ MCPServer::MCPServer(OMCProxy *proxy, QString hostAddress, int port, bool enable
 #include "MainWindow.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/Commands.h"
-#include <QtHttpServer/QHttpServer>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#if defined(OMEDIT_MCP_HTTP) && QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 #include <QHttpHeaders>
 #endif
-#include <QTcpServer>
 #include "Plotting/PlotWindowContainer.h"
 #include "Plotting/VariablesWidget.h"
 #include <QFileInfo>
@@ -462,13 +470,15 @@ QString typeCheck(QJsonObject argType, QJsonValue argument) {
 *   \li \c resources/list – returns the static list of available MCP resources.
 *   \li \c resources/read – (partially implemented) reads a named resource.
 * \endlist
-* \param request HTTP request; the body must contain a JSON-RPC 2.0 object.
-* \param vision  Whether the client supports receiving image content.
-* \param admin   Whether admin-only tools should be exposed and honoured.
-* \return HTTP response whose body contains the JSON-RPC reply object.
+* \param requestBody Request body; must contain a JSON-RPC 2.0 object.
+* \param baseUrl     Server URL that the icon URL is made from; empty for no icon.
+* \param vision      Whether the client supports receiving image content.
+* \param admin       Whether admin-only tools should be exposed and honoured.
+* \return The JSON-RPC reply object; empty for a notification.
 */
-QHttpServerResponse MCPServer::handleMCPRequest(const QHttpServerRequest &request, bool vision, bool admin) {
-  const auto doc = QJsonDocument::fromJson(request.body());
+QJsonObject MCPServer::handleMCPRequest(const QByteArray &requestBody, const QString &baseUrl, bool vision, bool admin) {
+  admin = admin && m_enableAdminTools;
+  const auto doc = QJsonDocument::fromJson(requestBody);
   if (doc.isNull() || !doc.isObject()) {
     return makeRPCError(0, 0, "Invalid JSON");
   }
@@ -482,22 +492,23 @@ QHttpServerResponse MCPServer::handleMCPRequest(const QHttpServerRequest &reques
   }
   QString method = body.value("method").toString();
   if (method == "initialize") {
-    // Handle initialization
+    QJsonObject serverInfo = {
+      {"name", "OMEdit" + QString(admin ? "-admin" : (vision ? "" : "-noVL"))},
+      {"title", "OMEdit MCP Server" + QString(admin ? " (admin)" : (vision ? "" : " without vision capabilities"))},
+      {"version", "1.0.0"},
+      {"description", "OMEdit is a Modelica development environment that is part of the OpenModelica project."},
+      {"websiteUrl", "https://openmodelica.org"}
+    };
+    if (!baseUrl.isEmpty()) {
+      serverInfo.insert("icons", QJsonArray{QJsonObject{
+        {"src", baseUrl + "/icon.png"},
+        {"mimeType", "image/png"},
+        {"sizes", QJsonArray{"any"}}
+      }});
+    }
     QJsonObject result = {
       {"protocolVersion", "2025-11-25"},
-      {"serverInfo", QJsonObject{
-        {"name", "OMEdit" + QString(admin ? "-admin" : (vision ? "" : "-noVL"))},
-        {"title", "OMEdit MCP Server" + QString(admin ? " (admin)" : (vision ? "" : " without vision capabilities"))},
-        {"version", "1.0.0"},
-        {"icons", QJsonArray{QJsonObject{
-          {"src", request.url().toString(QUrl::RemovePath) + "/icon.png"},
-          {"mimeType", "image/png"},
-          {"sizes", QJsonArray{"any"}}
-        }}},
-        {"description", "OMEdit is a Modelica development environment that is part of the OpenModelica project."},
-        {"websiteUrl", "https://openmodelica.org"}
-      }
-    },
+      {"serverInfo", serverInfo},
     {"instructions", "Use the tools provided by this server to interact with the Modelica classes loaded in OMEdit. You can query information as well as perform actions on the classes."},
     {"capabilities", QJsonObject{
       {"tools", QJsonObject{}},
@@ -508,7 +519,7 @@ QHttpServerResponse MCPServer::handleMCPRequest(const QHttpServerRequest &reques
 return makeRPCResponse(id, result);
 }
 if (method == "notifications/initialized") {
-  return QHttpServerResponse("");  // No response for notifications
+  return QJsonObject();  // No response for notifications
 }
 if (method == "tools/list") {
   QJsonArray tools = vision ? m_toolsArray : m_toolsArrayNoVision;
@@ -822,13 +833,12 @@ if (method == "tools/call") {
   */
   /*!
   * \brief MCPServer::MCPServer
-  * Loads tool definitions from JSON resources, registers all HTTP routes, and
-  * starts listening on \a port.
-  * \param proxy  OMC proxy used for Modelica queries and modifications.
-  * \param port   TCP port the server will listen on (localhost only).
-  * \param parent Optional QObject parent.
+  * Loads tool definitions from JSON resources.
+  * \param proxy            OMC proxy used for Modelica queries and modifications.
+  * \param enableAdminTools Whether admin requests may use the admin tools.
+  * \param parent           Optional QObject parent.
   */
-  MCPServer::MCPServer(OMCProxy *proxy, QString hostAddress, int port, bool enableAdminTools, QObject *parent) : QObject(parent), m_proxy(proxy) {
+  MCPServer::MCPServer(OMCProxy *proxy, bool enableAdminTools, QObject *parent) : QObject(parent), m_proxy(proxy), m_enableAdminTools(enableAdminTools) {
     {
       QFile file(":Resources/json/MCPTools.json");
       file.open(QIODevice::ReadOnly);
@@ -850,14 +860,30 @@ if (method == "tools/call") {
       QString name = tool.toObject().value("name").toString();
       m_adminToolsObject.insert(name, tool);
     }
+  }
 
+  /*!
+  * \brief MCPServer::listen
+  * Registers all HTTP routes and starts listening on \a hostAddress:\a port.
+  * \param hostAddress Address to listen on, e.g. \c localhost.
+  * \param port        TCP port the server will listen on.
+  */
+  void MCPServer::listen(const QString &hostAddress, int port) {
+  #if !defined(OMEDIT_MCP_HTTP)
+    Q_UNUSED(hostAddress) Q_UNUSED(port)
+    warnNoHttpServer();
+  #else
+    auto handle = [this](const QHttpServerRequest &request, bool vision, bool admin) {
+      QJsonObject reply = handleMCPRequest(request.body(), request.url().toString(QUrl::RemovePath), vision, admin);
+      return reply.isEmpty() ? QHttpServerResponse("") : QHttpServerResponse(reply);
+    };
     m_server.route("/mcp", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {Q_UNUSED(request) return "";});
-    m_server.route("/mcp", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, true);});
+    m_server.route("/mcp", QHttpServerRequest::Method::Post, [handle](const QHttpServerRequest &request) {return handle(request, true, false);});
     m_server.route("/mcp/novision", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {Q_UNUSED(request) return "";});
-    m_server.route("/mcp/novision", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, false);});
-    if (enableAdminTools) {
+    m_server.route("/mcp/novision", QHttpServerRequest::Method::Post, [handle](const QHttpServerRequest &request) {return handle(request, false, false);});
+    if (m_enableAdminTools) {
       m_server.route("/mcp/admin", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {Q_UNUSED(request) return "";});
-      m_server.route("/mcp/admin", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, true, true);});
+      m_server.route("/mcp/admin", QHttpServerRequest::Method::Post, [handle](const QHttpServerRequest &request) {return handle(request, true, true);});
     }
 
     m_server.route("/", [] () {
@@ -910,6 +936,7 @@ if (method == "tools/call") {
     #if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "MCP server does not have support for headers (Qt < 6.8.0). AccessControlAllowOrigin can not be set, which means CORS will not work properly (no webbrowser-based MCP clients).", Helper::scriptingKind, Helper::warningLevel));
     #endif
+  #endif
   }
 
   #endif

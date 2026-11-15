@@ -38,8 +38,8 @@
 // MCPToolsSimulation.cpp and MCPToolsDiagram.cpp.
 // All functions are defined in MCPServer.cpp.
 
-#include <QtGlobal>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0) && __has_include(<QtHttpServer>)
+#include "MCPServer.h"
+#ifdef OMEDIT_MCP
 
 #include <QJsonObject>
 #include <QJsonValue>
