@@ -118,6 +118,7 @@ typedef struct {
   unsigned char* eqMask;
   int _tunable_dirty;
   int _tunable_applied;
+  int _step_event;                 /* CS: the next step starts with an event update */
 } ModelInstance;
 
 typedef struct {

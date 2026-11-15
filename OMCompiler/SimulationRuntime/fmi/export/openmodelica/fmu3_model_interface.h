@@ -150,6 +150,7 @@ typedef struct {
   int _tunable_dirty;
   int _tunable_applied;
   int _event_mode_used;            /* CS: the importer uses Event Mode */
+  int _step_event;                 /* CS: the next step starts with an event update */
 
   /* fmi-ls-dae */
   fmi3Boolean daeMode;              /* the importer sets der(x) and the algebraic variables */

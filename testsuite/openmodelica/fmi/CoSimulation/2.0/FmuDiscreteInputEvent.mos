@@ -1,0 +1,49 @@
+// name:     FmuDiscreteInputEvent
+// keywords: FMI 2.0 export co-simulation discrete input event
+// status:   correct
+// teardown_command: rm -rf FmuDiscreteInputEvent.fmu FmuDiscreteInputEvent.fmutmp/ FmuDiscreteInputEvent.log FmuDiscreteInputEvent_out.txt
+//
+// A discrete input that changes at a communication point is an event there.
+// The same value set again is not, and fmi2DoStep does no event iteration
+// without a change (#18090).
+
+loadString("
+model FmuDiscreteInputEvent
+  input Integer k(start = 0);
+  input Boolean b(start = false);
+  input Real u(start = 0);
+  Integer nk(start = 0, fixed = true);
+  Integer nb(start = 0, fixed = true);
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = u;
+  when change(k) then
+    nk = pre(nk) + 1;
+  end when;
+  when b then
+    nb = pre(nb) + 1;
+  end when;
+end FmuDiscreteInputEvent;
+"); getErrorString();
+buildModelFMU(FmuDiscreteInputEvent, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuDiscreteInputEvent.py FmuDiscreteInputEvent.fmu FmuDiscreteInputEvent_out.txt > FmuDiscreteInputEvent.log 2>&1"); getErrorString();
+readFile("FmuDiscreteInputEvent_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuDiscreteInputEvent.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "0: nk=0 nb=0
+// 1: nk=0 nb=0
+// 2: nk=1 nb=0
+// 3: nk=1 nb=0
+// 4: nk=1 nb=1
+// 5: nk=1 nb=1
+// "
+// ""
+// endResult

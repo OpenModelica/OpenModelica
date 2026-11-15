@@ -884,6 +884,27 @@ static fmiXStatus recordSet(ModelInstance *comp, const char *func, int ty, fmiXV
   return fmiXOK;
 }
 
+/* Without Event Mode (FMI 2.0 2.2.7, FMI 3.0 2.4.7 and 4.1.1) a discrete input
+ * or tunable parameter that changes at a communication point is an event that
+ * the FMU handles, a changed continuous input is not. With Event Mode only
+ * Event Mode may change them. This assumes no set during a step: revisit it if
+ * the FMU ever declares providesIntermediateUpdate="true". The discrete Real
+ * variables come last. */
+static void noteStepModeChange(ModelInstance *comp, int ty, fmiXValueReference vr)
+{
+  MODEL_DATA *md = comp->fmuData->modelData;
+  long slot = variableSlot(comp, ty, vr);
+  if (slot >= 0 && slot % 8 == OMC_SLOT_REAL) {
+    long firstDiscrete = md->nDiscreteRealArray > 0
+      ? (long) comp->fmuData->simulationInfo->realVarsIndex[md->nVariablesRealArray - md->nDiscreteRealArray]
+      : md->nVariablesReal;
+    if (slot / 8 < firstDiscrete) {
+      return;
+    }
+  }
+  comp->_step_event = 1;
+}
+
 /* Evaluates the parameter equations that depend on the tunable parameters set
  * since the last call. */
 static void applyTunableParameters(ModelInstance *comp)
@@ -919,6 +940,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
 
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, "internalEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
 
+  comp->_step_event = 0;
   setThreadData(comp);
   /* try */
   OMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -1837,6 +1859,8 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
+  /* Only an event update schedules the first clock tick. */
+  comp->_step_event = isCoSimulation(comp);
 
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "ExitInitializationMode: succeed")
   return res;
@@ -1979,6 +2003,7 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   memset(comp->slotSetBeforeInit, 0, comp->paramDeps->nSlots);
   comp->_tunable_dirty = 0;
   comp->_tunable_applied = 0;
+  comp->_step_event = 0;
 #if OMC_FMI_VERSION == 2
   comp->terminated = fmiXFalse;
 #endif
@@ -2169,6 +2194,8 @@ fmiXStatus FMIX(SetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetReal: #r%u# = %.16g", vr[i], value[i])
     if (recordSet(comp, FMIX_STR "SetReal", OMC_SLOT_REAL, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete && getReal(comp, vr[i]) != value[i])
+      noteStepModeChange(comp, OMC_SLOT_REAL, vr[i]);
     if (setReal(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -2199,6 +2226,8 @@ fmiXStatus FMIX(SetInteger)(fmiXComponent c, const fmiXValueReference vr[], size
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetInteger: #i%u# = %d", vr[i], value[i])
     if (recordSet(comp, FMIX_STR "SetInteger", OMC_SLOT_INTEGER, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete && getInteger(comp, vr[i]) != value[i])
+      noteStepModeChange(comp, OMC_SLOT_INTEGER, vr[i]);
     if (setInteger(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -2228,6 +2257,8 @@ fmiXStatus FMIX(SetBoolean)(fmiXComponent c, const fmiXValueReference vr[], size
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetBoolean: #b%u# = %s", vr[i], value[i] ? "true" : "false")
     if (recordSet(comp, FMIX_STR "SetBoolean", OMC_SLOT_BOOLEAN, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete && !getBoolean(comp, vr[i]) != !value[i])
+      noteStepModeChange(comp, OMC_SLOT_BOOLEAN, vr[i]);
     if (setBoolean(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -2258,6 +2289,11 @@ fmiXStatus FMIX(SetString)(fmiXComponent c, const fmiXValueReference vr[], size_
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetString: #s%u# = '%s'", vr[i], value[i])
     if (recordSet(comp, FMIX_STR "SetString", OMC_SLOT_STRING, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete) {
+      fmiXString old = getString(comp, vr[i]);
+      if (strcmp(old ? old : "", value[i] ? value[i] : ""))
+        noteStepModeChange(comp, OMC_SLOT_STRING, vr[i]);
+    }
     if (setString(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -3365,8 +3401,8 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   eventInfo.terminateSimulation               = fmiXFalse;
   eventInfo.nominalsOfContinuousStatesChanged = fmiXFalse;
   eventInfo.valuesOfContinuousStatesChanged   = fmiXTrue;
-  eventInfo.nextEventTimeDefined              = fmiXFalse;
-  eventInfo.nextEventTime                     = 0.0;
+  eventInfo.nextEventTimeDefined              = comp->eventInfo.nextEventTimeDefined;
+  eventInfo.nextEventTime                     = comp->eventInfo.nextEventTime;
 
   comp->fmuData->localData[0]->timeValue = currentCommunicationPoint;
   tEnd = currentCommunicationPoint + communicationStepSize;
@@ -3384,16 +3420,18 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   }
 #endif
 
-  status = internalEventIteration(c, &eventInfo);
-  if (eventInfo.terminateSimulation) {
-    term = fmiXTrue;
-    done = 1;
-    goto doStep_cleanup;
-  }
-  if (status != fmiXOK) goto doStep_cleanup;
-  if (comp->_tunable_applied) {
-    comp->_tunable_applied = 0;
-    comp->solverInfo->didEventStep = 1;
+  if (comp->_step_event || comp->_tunable_dirty || comp->_tunable_applied) {
+    status = internalEventIteration(c, &eventInfo);
+    if (eventInfo.terminateSimulation) {
+      term = fmiXTrue;
+      done = 1;
+      goto doStep_cleanup;
+    }
+    if (status != fmiXOK) goto doStep_cleanup;
+    if (comp->_tunable_applied || comp->_event_found) {
+      comp->_tunable_applied = 0;
+      comp->solverInfo->didEventStep = 1;
+    }
   }
 
   /* Integration loop */
@@ -3656,6 +3694,8 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
     }
   }
 
+  comp->eventInfo.nextEventTimeDefined = eventInfo.nextEventTimeDefined;
+  comp->eventInfo.nextEventTime = eventInfo.nextEventTime;
   done = 1;
 
   /* catch */
