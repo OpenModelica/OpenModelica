@@ -1355,6 +1355,9 @@ mod alarm_store {
         pub fn get() -> f64 {
             DEADLINE.with(|d| d.get())
         }
+        pub fn swap(v: &mut f64) {
+            *v = DEADLINE.replace(*v);
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -1372,6 +1375,8 @@ mod alarm_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{get, set};
 }
 
@@ -1856,6 +1861,12 @@ mod overrides_store {
         pub fn strings() -> Vec<(u32, String)> {
             STRINGS.with(|o| o.borrow().clone())
         }
+        pub type Groups = (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>, Vec<(u32, String)>);
+        pub fn swap(v: &mut Groups) {
+            PARAM.with_borrow_mut(|o| core::mem::swap(o, &mut v.0));
+            START.with_borrow_mut(|o| core::mem::swap(o, &mut v.1));
+            STRINGS.with_borrow_mut(|o| core::mem::swap(o, &mut v.2));
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -1883,6 +1894,8 @@ mod overrides_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::{Groups, swap};
     pub use imp::{params, set, starts, strings};
 }
 
@@ -1992,6 +2005,9 @@ mod imports_store {
         pub fn get() -> Option<StartImports> {
             IMPORTS.with(|o| o.borrow().clone())
         }
+        pub fn swap(v: &mut Option<StartImports>) {
+            IMPORTS.with_borrow_mut(|o| core::mem::swap(o, v));
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -2010,6 +2026,8 @@ mod imports_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{get, set};
 }
 
@@ -2199,6 +2217,9 @@ mod solver_fail_store {
             let t = AT.with(|a| a.replace(f64::NAN));
             t.is_finite().then_some(t)
         }
+        pub fn swap(v: &mut f64) {
+            *v = AT.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2214,6 +2235,8 @@ mod solver_fail_store {
             t.is_finite().then_some(t)
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, take};
 }
 
@@ -2236,6 +2259,9 @@ mod failed_stats {
         pub fn take() -> Option<Box<SolveStats>> {
             STATS.with(|c| c.borrow_mut().take())
         }
+        pub fn swap(v: &mut Option<Box<SolveStats>>) {
+            STATS.with_borrow_mut(|c| core::mem::swap(c, v));
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2251,6 +2277,8 @@ mod failed_stats {
             unsafe { (*STATS.0.get()).take() }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, take};
 }
 
@@ -2274,6 +2302,9 @@ mod chatter_store {
         pub fn abort() -> bool {
             ABORT.with(|a| a.get())
         }
+        pub fn swap(v: &mut bool) {
+            *v = ABORT.replace(*v);
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -2291,6 +2322,8 @@ mod chatter_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{abort, set_abort};
 }
 
@@ -2375,6 +2408,9 @@ mod term_report {
         pub fn mark() -> bool {
             DONE.with(|d| !d.replace(true))
         }
+        pub fn swap(v: &mut bool) {
+            *v = DONE.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2389,6 +2425,8 @@ mod term_report {
             unsafe { !core::mem::replace(&mut *DONE.0.get(), true) }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{mark, reset};
 }
 
@@ -2410,6 +2448,9 @@ mod steady_report {
         pub fn hit() -> bool {
             HIT.with(|d| d.get())
         }
+        pub fn swap(v: &mut bool) {
+            *v = HIT.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2427,6 +2468,8 @@ mod steady_report {
             unsafe { *HIT.0.get() }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{hit, mark, reset};
 }
 
@@ -2627,6 +2670,13 @@ mod rethrow_store {
                 NOTED.with(|n| n.replace(false)),
             )
         }
+        pub type Window = (Option<AssertInfo>, bool, bool, Option<String>);
+        pub fn swap(v: &mut Window) {
+            PENDING.with_borrow_mut(|p| core::mem::swap(p, &mut v.0));
+            v.1 = EVENT.replace(v.1);
+            v.2 = NOTED.replace(v.2);
+            REASON.with_borrow_mut(|r| core::mem::swap(r, &mut v.3));
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2670,6 +2720,8 @@ mod rethrow_store {
             }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::{Window, swap};
     pub use imp::{arm, note, note_event, note_reason, take, take_reason};
 }
 
@@ -3614,7 +3666,7 @@ pub mod rt_sync {
     use std::cell::Cell;
 
     #[derive(Clone, Copy)]
-    struct State {
+    pub(crate) struct State {
         scaling: f64,
         t0: f64,
         start_ms: f64,
@@ -3624,6 +3676,10 @@ pub mod rt_sync {
 
     std::thread_local! {
         static STATE: Cell<Option<State>> = const { Cell::new(None) };
+    }
+
+    pub(super) fn swap(v: &mut Option<State>) {
+        *v = STATE.replace(*v);
     }
 
     pub(super) fn arm(t0: f64, step: f64) {
@@ -4524,6 +4580,9 @@ pub(crate) mod event_dump_store {
         pub fn with<R>(f: impl FnOnce(&EventDump) -> R) -> R {
             DUMP.with(|c| f(&c.borrow()))
         }
+        pub fn swap(v: &mut EventDump) {
+            DUMP.with_borrow_mut(|c| core::mem::swap(c, v));
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -4543,7 +4602,73 @@ pub(crate) mod event_dump_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, with};
+}
+
+/// The run's per-thread stores. FMI lets the importer call an instance from a
+/// different thread each time, so an FMU moves them with the instance.
+#[cfg(feature = "std")]
+pub struct ThreadState {
+    alarm: f64,
+    overrides: overrides_store::Groups,
+    imports: Option<StartImports>,
+    solver_fail: f64,
+    failed_stats: Option<Box<SolveStats>>,
+    abort_slow: bool,
+    terminated: bool,
+    steady: bool,
+    rethrow: rethrow_store::Window,
+    rt_sync: Option<rt_sync::State>,
+    event_dump: EventDump,
+    profiler: Option<crate::profiling::Profiler>,
+    flags: crate::simflags::SimFlags,
+    nls: openmodelica_nls::ThreadState,
+}
+
+/// What a thread starts with.
+#[cfg(feature = "std")]
+impl Default for ThreadState {
+    fn default() -> Self {
+        ThreadState {
+            alarm: f64::INFINITY,
+            overrides: Default::default(),
+            imports: None,
+            solver_fail: f64::NAN,
+            failed_stats: None,
+            abort_slow: false,
+            terminated: false,
+            steady: false,
+            rethrow: Default::default(),
+            rt_sync: None,
+            event_dump: EventDump::default(),
+            profiler: None,
+            flags: Default::default(),
+            nls: Default::default(),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl ThreadState {
+    /// Exchange with the calling thread's stores.
+    pub fn swap(&mut self) {
+        alarm_store::swap(&mut self.alarm);
+        overrides_store::swap(&mut self.overrides);
+        imports_store::swap(&mut self.imports);
+        solver_fail_store::swap(&mut self.solver_fail);
+        failed_stats::swap(&mut self.failed_stats);
+        chatter_store::swap(&mut self.abort_slow);
+        term_report::swap(&mut self.terminated);
+        steady_report::swap(&mut self.steady);
+        rethrow_store::swap(&mut self.rethrow);
+        rt_sync::swap(&mut self.rt_sync);
+        event_dump_store::swap(&mut self.event_dump);
+        crate::profiling::swap(&mut self.profiler);
+        crate::simflags::swap_flags(&mut self.flags);
+        self.nls.swap();
+    }
 }
 
 /// C's `printRelations` + `printZeroCrossings` (`model_help.c`): `initializeModel`

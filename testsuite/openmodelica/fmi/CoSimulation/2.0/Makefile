@@ -24,6 +24,7 @@ Issue17436.mos \
 FmuStartEventError.mos \
 FmuResourcePlus.mos \
 FmuDiscreteInputEvent.mos \
+FmuThreadCalls.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -42,6 +43,7 @@ FmuEquationAssertLog.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
 FmuStartEventError.py \
+FmuThreadCalls.py \
 FmuZlibLinkOrder-f.c \
 Makefile \
 

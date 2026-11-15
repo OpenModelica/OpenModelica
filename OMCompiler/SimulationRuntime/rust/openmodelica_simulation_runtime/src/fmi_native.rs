@@ -7,6 +7,7 @@ use std::ffi::{CStr, CString};
 
 use openmodelica_fmi3_wasm::Instance;
 use openmodelica_fmi3_wasm::fmi_types::Status;
+use openmodelica_sim_meta::driver::ThreadState;
 
 use crate::abi::*;
 use crate::engine::CEngine;
@@ -153,14 +154,69 @@ pub(crate) struct Native {
     thread_data: *mut threadData_t,
     pub logger: Logger,
     log: core::cell::RefCell<openmodelica_fmi3_wasm::LogState>,
+    /// The runtime's thread-local state between calls: FMI lets the importer make
+    /// each call from another thread.
+    thread_state: core::cell::RefCell<ThreadState>,
+    depth: core::cell::Cell<u32>,
     resources: Option<CString>,
     pub kind: Kind,
 }
 
+/// A component whose instance has its state on the calling thread until this
+/// drops.
+pub(crate) struct Entered<'a, C: HasNative>(&'a mut C);
+
+pub(crate) trait HasNative {
+    fn native(&self) -> &Native;
+}
+
+impl<'a, C: HasNative> Entered<'a, C> {
+    pub(crate) fn new(c: &'a mut C) -> Self {
+        c.native().enter();
+        Entered(c)
+    }
+}
+
+impl<C: HasNative> core::ops::Deref for Entered<'_, C> {
+    type Target = C;
+    fn deref(&self) -> &C {
+        self.0
+    }
+}
+
+impl<C: HasNative> core::ops::DerefMut for Entered<'_, C> {
+    fn deref_mut(&mut self) -> &mut C {
+        self.0
+    }
+}
+
+impl<C: HasNative> Drop for Entered<'_, C> {
+    fn drop(&mut self) {
+        self.0.native().leave();
+    }
+}
+
 impl Native {
+    fn enter(&self) {
+        let d = self.depth.get();
+        if d == 0 {
+            self.thread_state.borrow_mut().swap();
+        }
+        self.depth.set(d + 1);
+        self.bind();
+    }
+
+    fn leave(&self) {
+        let d = self.depth.get() - 1;
+        self.depth.set(d);
+        if d == 0 {
+            self.thread_state.borrow_mut().swap();
+        }
+    }
+
     /// Also C's `setThreadData`: an external function finds `threadData` through
     /// the key, and the importer may have driven another instance since.
-    pub(crate) fn enter(&self) {
+    fn bind(&self) {
         unsafe { CURRENT = &self.logger };
         openmodelica_fmi3_wasm::restore_logging(&self.log.borrow());
         #[cfg(unix)]
@@ -187,7 +243,11 @@ impl Native {
         crate::support::publish_log_streams();
         let resources = resources.or_else(library_resources);
         let fmi3 = matches!(logger, Logger::Fmi3 { .. });
-        let (inst, data, thread_data) = match build(resources.as_ref(), kind, Some(token), fmi3) {
+        let mut thread_state = ThreadState::default();
+        thread_state.swap();
+        let built = build(resources.as_ref(), kind, Some(token), fmi3);
+        thread_state.swap();
+        let (inst, data, thread_data) = match built {
             Ok(b) => b,
             Err(msg) => {
                 logger.log(ERROR, "logStatusError", &format!("{call}: {msg}"));
@@ -201,16 +261,21 @@ impl Native {
             thread_data,
             logger,
             log,
+            thread_state: core::cell::RefCell::new(thread_state),
+            depth: core::cell::Cell::new(0),
             resources,
             kind,
         });
-        n.enter();
+        n.bind();
         Some(n)
     }
 
     /// C's `fmi2Reset`: the model set up again from scratch, as instantiate left it.
+    /// Called inside the instance's [`Entered`].
     pub(crate) fn reset(&mut self, call: &str) -> c_int {
         let fmi3 = matches!(self.logger, Logger::Fmi3 { .. });
+        let mut old_state = ThreadState::default();
+        old_state.swap();
         match build(self.resources.as_ref(), self.kind, None, fmi3) {
             Ok((inst, data, thread_data)) => {
                 let old = core::mem::replace(&mut self.inst, inst);
@@ -218,10 +283,11 @@ impl Native {
                 let old_td = core::mem::replace(&mut self.thread_data, thread_data);
                 old.free();
                 release(old_data, old_td);
-                self.enter();
+                self.bind();
                 OK
             }
             Err(msg) => {
+                old_state.swap();
                 self.logger.log(ERROR, "logStatusError", &format!("{call}: {msg}"));
                 ERROR
             }
@@ -256,6 +322,7 @@ impl Native {
         self.enter();
         self.inst.free();
         release(self.data, self.thread_data);
+        self.thread_state.into_inner().swap();
         unsafe { CURRENT = core::ptr::null() };
     }
 }
