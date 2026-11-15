@@ -84,3 +84,7 @@ class MCPServer : public QObject
   QJsonObject applyShapeAnnotation(QJsonValue id, const QString &className, const QString &view, const QString &shapeStr);
   #endif
 };
+
+#if defined(__EMSCRIPTEN__)
+void startMCPWebBridge(MCPServer *pMCPServer);
+#endif

@@ -74,7 +74,7 @@ file(GLOB_RECURSE OMEDITLIB_HEADERS ${LIB}/*.h)
 # and the FMU build output run native tools.
 set(WASM_EXCLUDE_PATTERNS
   "/generatedfiles/"
-  "/Animation/" "/Debugger/" "/Git/" "/MCP/" "/CrashReport/"
+  "/Animation/" "/Debugger/" "/Git/" "/CrashReport/"
   "/Traceability/"
   "/FMI/ImportFMUDialog\\." "/FMI/ImportFMUModelDescriptionDialog\\."
   "/FMI/FMUExportOutputWidget\\.")
@@ -134,13 +134,16 @@ list(APPEND OMEDITLIB_SOURCES
   # IndexedDB cache of the cloud working copies, so a reload does not re-download.
   ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
   # OAuth popup + same-origin callback page (the desktop half is a loopback socket).
-  ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp
+  # The MCP server for JavaScript in the page (the desktop serves it over HTTP).
+  ${CMAKE_CURRENT_SOURCE_DIR}/mcp_bridge.cpp)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/web_assets.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
-                            ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp PROPERTIES SKIP_AUTOMOC ON)
+                            ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/mcp_bridge.cpp PROPERTIES SKIP_AUTOMOC ON)
 # The simulation metadata tables OMCProxy reads (SOLVER_METHOD_NAME, FLAG_NAME,
 # OMC_LOG_STREAM_NAME, ...); native OMEdit gets them from libOpenModelicaCompiler.
 list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/omc_error.c)
