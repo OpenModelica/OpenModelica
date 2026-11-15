@@ -1,0 +1,48 @@
+// name:     fmi3_cs_event_mode_set
+// keywords: FMI 3.0 export CoSimulation Event Mode input tunable parameter
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_event_mode_set.fmu fmi3_cs_event_mode_set.fmutmp/ fmi3_cs_event_mode_set_info.json fmi3_cs_event_mode_set.log fmi3_cs_event_mode_set_out.txt
+//
+// In Event Mode the importer may set inputs and tunable parameters
+// (FMI 3.0, State: Event Mode), also in Co-Simulation. With Event Mode used,
+// Step Mode may only change continuous inputs (FMI 3.0 2.4.7).
+
+loadString("
+model fmi3_cs_event_mode_set
+  input Integer k(start = 0);
+  input Real u(start = 0);
+  parameter Real p = 1;
+  Real y = 2*u;
+  Integer nk(start = 0, fixed = true);
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = p;
+  when change(k) then
+    nk = pre(nk) + 1;
+  end when;
+end fmi3_cs_event_mode_set;
+"); getErrorString();
+buildModelFMU(fmi3_cs_event_mode_set, version = "3.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_event_mode_set.py fmi3_cs_event_mode_set.fmu fmi3_cs_event_mode_set_out.txt > fmi3_cs_event_mode_set.log 2>&1"); getErrorString();
+readFile("fmi3_cs_event_mode_set_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_cs_event_mode_set.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "t=0.1: nk=1 x=0.200000
+// t=0.2: nk=2 x=0.500000
+// Step Mode, eventModeUsed=True, k: refused
+// Step Mode, eventModeUsed=True, p: refused
+// Step Mode, eventModeUsed=True, u: set
+// Step Mode, eventModeUsed=False, k: set
+// Step Mode, eventModeUsed=False, p: set
+// Step Mode, eventModeUsed=False, u: set
+// "
+// ""
+// endResult

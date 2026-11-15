@@ -281,6 +281,7 @@ fmi3Instance fmi3InstantiateCoSimulation(fmi3String instanceName, fmi3String ins
     ModelInstance3 *inst = (ModelInstance3 *)instance;
     inst->eventModeUsed = eventModeUsed ? 1 : 0;
     inst->earlyReturnAllowed = earlyReturnAllowed ? 1 : 0;
+    inst->comp->_event_mode_used = inst->eventModeUsed;
   }
   return instance;
 }
