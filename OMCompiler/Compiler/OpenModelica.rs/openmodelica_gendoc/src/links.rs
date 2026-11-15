@@ -34,11 +34,7 @@ impl Resolver {
         }
     }
 
-    fn lookup<'a>(
-        table: &'a HashMap<Key, PathBuf>,
-        tag: &str,
-        name: &str,
-    ) -> Option<&'a PathBuf> {
+    fn lookup<'a>(table: &'a HashMap<Key, PathBuf>, tag: &str, name: &str) -> Option<&'a PathBuf> {
         table
             .get(&(tag.to_string(), name.to_string()))
             .or_else(|| table.get(&(String::new(), name.to_string())))
@@ -52,35 +48,30 @@ impl Resolver {
             (true, Some((library, rest))) => format!("{library}@{tag}.{rest}"),
             (true, None) => format!("{name}@{tag}"),
         };
-        Self::lookup(&self.class_dir, tag, name)
-            .map(|_| format!("{}.html", uri_encode(&file_stem(&tagged))))
+        Self::lookup(&self.class_dir, tag, name).map(|_| format!("{}.html", uri_encode(&file_stem(&tagged))))
     }
 
     /// Every `modelica://` URI in `html`, resolved from the `tag` copy of the
     /// library. `prefix` joins the resolved relative URL to it, for a document
     /// that is not at the output root.
-    pub fn rewrite_in(
-        &self,
-        tag: &str,
-        prefix: &str,
-        html: &str,
-        resources: &mut Vec<Resource>,
-    ) -> String {
+    pub fn rewrite_in(&self, tag: &str, prefix: &str, html: &str, resources: &mut Vec<Resource>) -> String {
         let mut out = String::with_capacity(html.len());
         let mut rest = html;
-        while let Some(start) = find_scheme(rest) {
+        while let Some((start, len)) = find_scheme(rest) {
             out.push_str(&rest[..start]);
-            let tail = &rest[start + SCHEME.len()..];
+            let tail = &rest[start + len..];
             // `&` ends it too: documentation strings that mention the scheme in
             // escaped markup would otherwise swallow the `&quot;` after it.
             let end = tail
                 .find(|c: char| c.is_whitespace() || matches!(c, '"' | '\'' | '>' | '&' | '\\'))
                 .unwrap_or(tail.len());
-            let url = self.resolve(tag, &tail[..end], resources);
-            if !url.starts_with(SCHEME) {
-                out.push_str(prefix);
+            match self.resolve(tag, &tail[..end], resources) {
+                Some(url) => {
+                    out.push_str(prefix);
+                    out.push_str(&url);
+                }
+                None => out.push_str(&rest[start..start + len + end]),
             }
-            out.push_str(&url);
             rest = &tail[end..];
         }
         out.push_str(rest);
@@ -90,7 +81,7 @@ impl Resolver {
     /// A URI that names neither a class we generated a page for nor a file that
     /// exists is left as it was: the documentation is discussing the scheme,
     /// not linking with it.
-    fn resolve(&self, tag: &str, uri: &str, resources: &mut Vec<Resource>) -> String {
+    fn resolve(&self, tag: &str, uri: &str, resources: &mut Vec<Resource>) -> Option<String> {
         let (target, anchor) = match uri.split_once('#') {
             Some((u, a)) => (u, Some(a)),
             None => (uri, None),
@@ -99,10 +90,9 @@ impl Resolver {
             Some((class, file)) => self.resolve_file(tag, class, file, resources),
             None => self.page_of(tag, target),
         };
-        match (resolved, anchor) {
-            (Some(page), Some(anchor)) => format!("{page}#{anchor}"),
-            (Some(page), None) => page,
-            (None, _) => format!("{SCHEME}{uri}"),
+        match anchor {
+            Some(anchor) => resolved.map(|page| format!("{page}#{anchor}")),
+            None => resolved,
         }
     }
 
@@ -122,21 +112,12 @@ impl Resolver {
     }
 
     /// `modelica://Lib.Sub/Resources/x.png` -> `resources/Lib/Sub/Resources/x.png`.
-    fn resolve_file(
-        &self,
-        tag: &str,
-        class: &str,
-        file: &str,
-        resources: &mut Vec<Resource>,
-    ) -> Option<String> {
+    fn resolve_file(&self, tag: &str, class: &str, file: &str, resources: &mut Vec<Resource>) -> Option<String> {
         let source = self.source_file(tag, class, file)?;
         let library = class.split('.').next()?;
         let root = Self::lookup(&self.library_root, tag, library)?;
         let relative = source.strip_prefix(root).ok()?;
-        let target = format!(
-            "resources/{library}/{}",
-            relative.to_string_lossy().replace('\\', "/")
-        );
+        let target = format!("resources/{library}/{}", relative.to_string_lossy().replace('\\', "/"));
         let encoded = uri_encode(&target);
         resources.push(Resource { source, target });
         Some(encoded)
@@ -154,9 +135,9 @@ impl Resolver {
     pub fn inline_uris(&self, svg: &str) -> String {
         let mut out = String::with_capacity(svg.len());
         let mut rest = svg;
-        while let Some(start) = find_scheme(rest) {
+        while let Some((start, len)) = find_scheme(rest) {
             out.push_str(&rest[..start]);
-            let tail = &rest[start + SCHEME.len()..];
+            let tail = &rest[start + len..];
             let end = tail
                 .find(|c: char| c.is_whitespace() || matches!(c, '"' | '\'' | '>' | '&' | '\\'))
                 .unwrap_or(tail.len());
@@ -172,10 +153,7 @@ impl Resolver {
                     out.push_str(";base64,");
                     base64_into(&bytes, &mut out);
                 }
-                None => {
-                    out.push_str(SCHEME);
-                    out.push_str(uri);
-                }
+                None => out.push_str(&rest[start..start + len + end]),
             }
             rest = &tail[end..];
         }
@@ -200,26 +178,32 @@ fn media_type(path: &Path) -> &'static str {
 }
 
 fn base64_into(bytes: &[u8], out: &mut String) {
-    const ALPHABET: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     for chunk in bytes.chunks(3) {
         let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
         let n = ((b[0] as u32) << 16) | ((b[1] as u32) << 8) | b[2] as u32;
         out.push(ALPHABET[(n >> 18) as usize & 63] as char);
         out.push(ALPHABET[(n >> 12) as usize & 63] as char);
-        out.push(if chunk.len() > 1 { ALPHABET[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if chunk.len() > 2 { ALPHABET[n as usize & 63] as char } else { '=' });
+        out.push(if chunk.len() > 1 {
+            ALPHABET[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            ALPHABET[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
 }
 
-const SCHEME: &str = "modelica://";
-
-fn find_scheme(haystack: &str) -> Option<usize> {
+/// Where the next `modelica:/`, `modelica://` or `modelica:///` starts, and
+/// its length with the slashes.
+fn find_scheme(haystack: &str) -> Option<(usize, usize)> {
     let bytes = haystack.as_bytes();
-    let scheme = SCHEME.as_bytes();
-    bytes
-        .windows(scheme.len())
-        .position(|w| w.eq_ignore_ascii_case(scheme))
+    let start = bytes.windows(10).position(|w| w.eq_ignore_ascii_case(b"modelica:/"))?;
+    let slashes = bytes[start + 9..].iter().take(3).take_while(|&&b| b == b'/').count();
+    Some((start, 9 + slashes))
 }
 
 /// The same replacements the old GenerateDoc.mos used, so existing links to
@@ -248,10 +232,7 @@ pub fn file_stem(class: &str) -> String {
 pub fn resolve_aliases(names: impl IntoIterator<Item = String>) {
     let mut groups: HashMap<String, Vec<String>> = HashMap::new();
     for name in names {
-        groups
-            .entry(plain_stem(&name).to_lowercase())
-            .or_default()
-            .push(name);
+        groups.entry(plain_stem(&name).to_lowercase()).or_default().push(name);
     }
     let mut aliases = HashMap::new();
     for group in groups.into_values() {
@@ -278,9 +259,7 @@ pub fn query_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for byte in s.bytes() {
         match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(byte as char)
-            }
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => out.push(byte as char),
             _ => out.push_str(&format!("%{byte:02X}")),
         }
     }

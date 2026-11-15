@@ -599,13 +599,13 @@ void OpenModelica_ErrorModule_ModelicaVFormatError(const char *fmt, va_list ap)
 {
   const char *str;
   GC_vasprintf(&str, fmt, ap);
-  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
+  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,"%s",&str,1);
   MMC_THROW();
 }
 
 void OpenModelica_ErrorModule_ModelicaError(const char *str)
 {
-  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
+  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,"%s",&str,1);
   MMC_THROW();
 }
 

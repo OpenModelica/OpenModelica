@@ -1,0 +1,37 @@
+// name:     FmuResourcePlus
+// keywords: FMI 2.0 3.0 export co-simulation resources URI
+// status:   correct
+// teardown_command: rm -rf FmuResourcePlus2.fmu FmuResourcePlus3.fmu FmuResourcePlus2.fmutmp/ FmuResourcePlus3.fmutmp/ FmuResourcePlus2_info.json FmuResourcePlus3_info.json "fmi2 x+y%41" "fmi3 x+y%41" FmuResourcePlus.log FmuResourcePlus_out.txt
+//
+// A '+' in a URI is a '+' (RFC 3986): in a modelica:// resource and in the
+// resources location of an FMU. FMI 3.0 gives the resources as a path, which
+// is not decoded at all. The resource is loaded with modelica:// and with the
+// modelica:/ form the Modelica specification recommends.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadFile("FmuResourcePlus/package.mo"); getErrorString();
+buildModelFMU(FmuResourcePlus.M, version = "2.0", fmuType = "cs", fileNamePrefix = "FmuResourcePlus2"); getErrorString();
+buildModelFMU(FmuResourcePlus.M, version = "3.0", fmuType = "cs", fileNamePrefix = "FmuResourcePlus3"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuResourcePlus.py FmuResourcePlus2.fmu FmuResourcePlus3.fmu FmuResourcePlus_out.txt > FmuResourcePlus.log 2>&1"); getErrorString();
+readFile("FmuResourcePlus_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuResourcePlus2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "FmuResourcePlus3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi2 x+y%41: k = 2.5, k1 = 2.5
+// fmi3 x+y%41: k = 2.5, k1 = 2.5
+// "
+// ""
+// endResult
