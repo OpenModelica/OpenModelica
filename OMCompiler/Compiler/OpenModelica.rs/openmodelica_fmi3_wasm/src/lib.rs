@@ -1058,11 +1058,18 @@ impl<E: FmiHost + 'static> MeState<E> {
         // FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set in
         // Continuous-Time Mode. The states come first among the Reals.
         let state = off >= REAL_OFF && (off - REAL_OFF) / 8 < self.layout.n_states;
+        // FMI 3.0 2.4.7: with Event Mode, only Event Mode changes discrete inputs and
+        // tunable parameters.
+        #[cfg(feature = "cs")]
+        let step_mode = self.defer != CsDefer::None && !self.event_mode;
+        #[cfg(not(feature = "cs"))]
+        let step_mode = false;
         let ok = match self.mode {
             Mode::Instantiated => f & (INITIAL_EXACT | INITIAL_APPROX | INPUT) != 0,
             Mode::Init => f & (INITIAL_EXACT | INPUT) != 0,
             Mode::Ready if dae_unknown => true,
             Mode::Ready if self.continuous_time => state || (f & INPUT != 0 && f & CONTINUOUS != 0),
+            Mode::Ready if step_mode => f & INPUT != 0 && f & CONTINUOUS != 0,
             Mode::Ready => f & (INPUT | TUNABLE) != 0,
             Mode::Failed => false,
         };

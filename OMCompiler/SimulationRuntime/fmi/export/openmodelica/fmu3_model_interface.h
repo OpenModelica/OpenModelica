@@ -149,6 +149,7 @@ typedef struct {
   unsigned char* eqMask;
   int _tunable_dirty;
   int _tunable_applied;
+  int _event_mode_used;            /* CS: the importer uses Event Mode */
 
   /* fmi-ls-dae */
   fmi3Boolean daeMode;              /* the importer sets der(x) and the algebraic variables */

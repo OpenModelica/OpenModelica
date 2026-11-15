@@ -835,8 +835,17 @@ static fmiXBoolean settableNow(ModelInstance *comp, long slot)
     return (f & (OMC_PARAMDEPS_INITIAL_EXACT | OMC_PARAMDEPS_INITIAL_APPROX | OMC_PARAMDEPS_INPUT)) != 0;
   case model_state_initialization_mode:
     return (f & (OMC_PARAMDEPS_INITIAL_EXACT | OMC_PARAMDEPS_INPUT)) != 0;
-  case model_state_me_event_mode:
   case model_state_cs_step_complete:
+#if OMC_FMI_VERSION != 2
+    /* FMI 3.0 2.4.7: with Event Mode, only Event Mode changes discrete inputs
+     * and tunable parameters. */
+    if (comp->_event_mode_used) {
+      return (f & OMC_PARAMDEPS_INPUT) && (f & OMC_PARAMDEPS_CONTINUOUS);
+    }
+    /* fall through */
+  case model_state_cs_event_mode:
+#endif
+  case model_state_me_event_mode:
     return (f & (OMC_PARAMDEPS_INPUT | OMC_PARAMDEPS_TUNABLE)) != 0;
   case model_state_me_continuous_time_mode:
     return (f & OMC_PARAMDEPS_INPUT) && (f & OMC_PARAMDEPS_CONTINUOUS);
