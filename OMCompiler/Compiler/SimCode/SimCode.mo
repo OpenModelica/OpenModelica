@@ -282,9 +282,17 @@ uniontype UnitDefinition "unitDefinitions for fmi modelDescription.xml"
   record UNITDEFINITION
     String name;
     BaseUnit baseUnit;
-    //TODO DisplayUnit
+    list<DisplayUnit> displayUnits "besides the other units of the same dimensions";
   end UNITDEFINITION;
 end UnitDefinition;
+
+uniontype DisplayUnit
+  record DISPLAYUNIT "value_display = factor*value_unit + offset"
+    String name;
+    Real factor;
+    Real offset;
+  end DISPLAYUNIT;
+end DisplayUnit;
 
 uniontype BaseUnit
   record BASEUNIT
@@ -295,6 +303,7 @@ uniontype BaseUnit
     Integer K   "exponent";
     Integer mol "exponent";
     Integer cd  "exponent";
+    Integer rad "exponent";
     Real factor "prefix";
     Real offset "offset";
   end BASEUNIT;

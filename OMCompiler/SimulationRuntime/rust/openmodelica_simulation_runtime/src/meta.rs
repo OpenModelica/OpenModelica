@@ -608,7 +608,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         params,
         attr_log: Vec::new(),
         removed_init_desc: Vec::new(),
-        nls_warnings: Vec::new(),
+        startup_warnings: Vec::new(),
         sens_params,
         nls_vars: Vec::new(),
         n_lin_systems: md.nLinearSystems as u32,

@@ -754,6 +754,7 @@ algorithm
       // translateModel records the lowering error and fails, so the message
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
+      writeExternalFunctionsFile(simCode);
       // The wasm module carries its own metadata; *_init.xml is only read by
       // OMEdit's variable browser and *_info.json only by its transformational
       // debugger, so the latter is written only when debugging is asked for
@@ -792,6 +793,23 @@ algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
 
+protected function writeExternalFunctionsFile
+  "Writes <prefix>_external_functions.json, the names of the external functions
+   the model calls, as the C target does. OMEdit checks it before a run."
+  input SimCode.SimCode simCode;
+protected
+  list<String> names = {};
+algorithm
+  for fn in simCode.modelInfo.functions loop
+    names := match fn
+      case SimCodeFunction.EXTERNAL_FUNCTION() then ("\"" + fn.extName + "\"") :: names;
+      else names;
+    end match;
+  end for;
+  System.writeFile(simCode.fileNamePrefix + "_external_functions.json",
+                   "[\n" + stringDelimitList(listReverse(names), ",\n") + "\n]");
+end writeExternalFunctionsFile;
+
 protected function callTargetTemplatesCPP
   input SimCode.SimCode iSimCode;
 algorithm
@@ -823,7 +841,7 @@ algorithm
       low := System.tolower(tok);
       if StringUtil.endsWith(low, ".dxf") or StringUtil.endsWith(low, ".stl") or
          StringUtil.endsWith(low, ".obj") or StringUtil.endsWith(low, ".3ds") then
-        if System.stringFind(tok, "modelica://") == 0 then
+        if StringUtil.startsWith(low, "modelica:/") then
           path := ProgramUtil.getFullPathFromUri(program, tok, true);
         elseif System.stringFind(tok, "file://") == 0 then
           path := substring(tok, 8, stringLength(tok));
@@ -1670,7 +1688,7 @@ protected
 algorithm
   // A URI cannot contain any of these unencoded, so tokenizing on them lifts the
   // URIs out of the markup without needing to parse it.
-  uris := List.uniqueOnTrue(list(u for u guard StringUtil.startsWith(u, "modelica://")
+  uris := List.uniqueOnTrue(list(u for u guard StringUtil.startsWith(System.tolower(u), "modelica:/")
                                  in System.strtok(page, "\"'<> \t\n\r")), stringEq);
   for uri in uris loop
     try

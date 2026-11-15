@@ -27,6 +27,7 @@ use std::ops::Bound;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::time::Duration;
 
+pub mod env;
 pub mod fs;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod stdio;

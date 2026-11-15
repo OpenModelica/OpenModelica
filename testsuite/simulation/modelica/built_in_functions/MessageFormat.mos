@@ -1,0 +1,88 @@
+// name: MessageFormat
+// keywords: terminate assert ModelicaError message format
+// status: correct
+//
+// The message of terminate(), of an assert in a function and of
+// ModelicaError can contain '%'. The runtime must print it as text,
+// not use it as a printf format.
+
+loadString("
+package MessageFormat
+  function f
+    input Real x;
+    output Real y;
+  algorithm
+    assert(x < 0.5, \"f: 100%s %d %%\", AssertionLevel.warning);
+    y := x;
+  end f;
+
+  function err
+    input String s;
+    external \"C\" ModelicaError(s);
+  end err;
+
+  function g
+    input Real x;
+    output Real y;
+  algorithm
+    if x > 0.5 then
+      err(\"g: 100%s %d %%\");
+    end if;
+    y := x;
+  end g;
+
+  model TerminateEquation
+    Real x(start = 0, fixed = true);
+    Real y;
+  equation
+    der(x) = 1;
+    y = f(x);
+    when time > 0.8 then
+      terminate(\"stop equation: 100%s %d %%\");
+    end when;
+  end TerminateEquation;
+
+  model TerminateAlgorithm
+    Real x(start = 0, fixed = true);
+  equation
+    der(x) = 1;
+  algorithm
+    when time > 0.8 then
+      terminate(\"stop algorithm: 100%s %d %%\");
+    end when;
+  end TerminateAlgorithm;
+
+  model Error
+    Real x(start = 0, fixed = true);
+    Real y;
+  equation
+    der(x) = 1;
+    y = g(x);
+  end Error;
+end MessageFormat;
+"); getErrorString();
+
+echo(false);
+r1 := simulate(MessageFormat.TerminateEquation);
+r2 := simulate(MessageFormat.TerminateAlgorithm);
+r3 := simulate(MessageFormat.Error);
+m1 := r1.messages;
+m2 := r2.messages;
+m3 := r3.messages;
+echo(true);
+// Each message is shown as it is, as a whole line. The message texts and their
+// log levels differ between the simulation targets, so only the text is checked.
+OpenModelica.Scripting.regexBool(m1, "\\| f: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m1, ": stop equation: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m2, ": stop algorithm: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m3, "\\| g: 100%s %d %%\n");
+
+// Result:
+// true
+// ""
+// true
+// true
+// true
+// true
+// true
+// endResult

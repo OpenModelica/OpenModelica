@@ -870,18 +870,17 @@ pub fn simulate(inst: &mut dyn Fmi3ModelExchange, md: &ModelDescription, opts: &
     // Where the fixed-step solvers and IDA in DAE mode leave the derivatives.
     let mut xp = vec![0.0; ny];
     inst.get_continuous_states(&mut x[..nx])?;
+    // Another tool's FMU can give a nominal of 0 or a negative one.
+    let positive_nominal = |n: f64| if n.is_normal() { n.abs() } else { 1.0 };
     let mut nominals = vec![1.0; nx];
     if inst.get_nominals_of_continuous_states(&mut nominals).is_err() {
         nominals.fill(1.0);
     }
+    nominals.iter_mut().for_each(|n| *n = positive_nominal(*n));
     if let Some(d) = &dae {
         for &vr in &d.alg_vrs {
-            let nom = md
-                .variable_by_vr(vr)
-                .and_then(|v| v.nominal)
-                .map(f64::abs)
-                .filter(|n| *n > 0.0);
-            nominals.push(nom.unwrap_or(1.0));
+            let nom = md.variable_by_vr(vr).and_then(|v| v.nominal).unwrap_or(1.0);
+            nominals.push(positive_nominal(nom));
         }
     }
 

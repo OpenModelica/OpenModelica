@@ -546,6 +546,7 @@ protected
   list<PackageManagement.Requirement> requirements = {};
   list<tuple<String, String>> loaded = {};
   list<PackageManagement.Selection> selected;
+  list<PackageManagement.ResolveMessage> messages;
   list<PackageManagement.ConversionHint> conversions;
   list<String> names = {}, versions;
   String name, origin, error;
@@ -570,8 +571,12 @@ algorithm
     end if;
   end for;
 
-  (success, selected, _, error, conversions) := PackageManagement.resolve(listReverse(requirements), loaded, false,
+  (success, selected, messages, error, conversions) := PackageManagement.resolve(listReverse(requirements), loaded, false,
     requireExactVersion, Interactive.libraryMetadata, modelicaPath);
+  if success and Flags.getConfigBool(Flags.INSTALL_MISSING_PACKAGES) and installMissing(messages, requireExactVersion) then
+    (success, selected, _, error, conversions) := PackageManagement.resolve(listReverse(requirements), loaded, false,
+      requireExactVersion, Interactive.libraryMetadata, modelicaPath);
+  end if;
   if not success then
     Error.addMessage(Error.LOAD_MODEL_CONFLICT, {stringDelimitList(List.unique(list(r.origin for r in requirements)), ", "), error});
   end if;
@@ -590,6 +595,29 @@ algorithm
     end if;
   end for;
 end chooseVersions;
+
+protected function installMissing
+  "Installs the libraries that the solver found missing and the package index
+   has. Returns true if any was installed."
+  input list<PackageManagement.ResolveMessage> messages;
+  input Boolean exactMatch;
+  output Boolean installed = false;
+protected
+  list<String> names = {}, dirs;
+  Boolean ok;
+algorithm
+  for m in messages loop
+    if m.kind == "missing" and not listMember(m.name, names) then
+      names := m.name :: names;
+      if not listEmpty(PackageManagement.versionsThatProvideTheWanted(m.name, m.version, printError = false)) then
+        (ok, dirs) := PackageManagement.installPackage(m.name, m.version, exactMatch,
+          wasmABI = CodegenWasmJitFunctions.prebuiltExternalsABI());
+        CodegenWasmJitFunctions.precompilePrebuiltModules(dirs);
+        installed := ok or installed;
+      end if;
+    end if;
+  end for;
+end installMissing;
 
 protected function usesVersion
   "Whether the top-level class cls uses version of library."

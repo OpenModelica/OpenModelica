@@ -1,0 +1,96 @@
+// name: negativeNominal
+// keywords: nonlinear nominal scaling
+// status: correct
+// teardown_command: rm -f NegativeNominal* ZeroNominal*
+//
+// x starts at 0 and has a negative nominal, also one bound to a parameter.
+// The solvers scale by the nominal, which must not give a scale factor of 0
+// and an iteration variable of NaN. A nominal of 0 gives a warning.
+
+loadString("
+model NegativeNominal
+  Real x(start = 0, nominal = -2);
+equation
+  x + x^3 = -10;
+end NegativeNominal;
+"); getErrorString();
+
+simulate(NegativeNominal, stopTime = 0); getErrorString();
+val(x, 0);
+simulate(NegativeNominal, stopTime = 0, simflags = "-nls=hybrid"); getErrorString();
+val(x, 0);
+
+loadString("
+model NegativeNominalParameter
+  parameter Real p = -2;
+  Real x(start = 0, nominal = p);
+equation
+  x + x^3 = -10;
+end NegativeNominalParameter;
+"); getErrorString();
+
+simulate(NegativeNominalParameter, stopTime = 0, simflags = "-nls=kinsol"); getErrorString();
+val(x, 0);
+
+loadString("
+model ZeroNominal
+  parameter Real p = 0;
+  Real x(start = 0, nominal = 0);
+  Real y(start = 0, nominal = p);
+equation
+  x + x^3 = -10;
+  y + y^3 = -10;
+end ZeroNominal;
+"); getErrorString();
+
+simulate(ZeroNominal, stopTime = 0); getErrorString();
+val(x, 0);
+val(y, 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "NegativeNominal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'NegativeNominal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0
+// record SimulationResult
+//     resultFile = "NegativeNominal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'NegativeNominal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=hybrid'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0
+// true
+// ""
+// record SimulationResult
+//     resultFile = "NegativeNominalParameter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'NegativeNominalParameter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0000000000000004
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ZeroNominal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ZeroNominal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | The nominal value of x is 0, but it must be nonzero and finite. The solvers use 1.0 instead.
+// LOG_STDOUT        | warning | The nominal value of y is 0, but it must be nonzero and finite. The solvers use 1.0 instead.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0
+// -2.0
+// endResult

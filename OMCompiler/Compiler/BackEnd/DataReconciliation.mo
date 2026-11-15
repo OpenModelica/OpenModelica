@@ -400,8 +400,8 @@ algorithm
     fail();
   end if;
 
-  // resolve uri if the csv file path is provided as a uri (e.g) modelica:// or file://, otherwise get the absolute path for the csv file
-  if (StringUtil.startsWith(csvFileName, "modelica://") or StringUtil.startsWith(csvFileName, "file://")) then
+  // resolve uri if the csv file path is provided as a uri (e.g) modelica:/ or file:/, otherwise get the absolute path for the csv file
+  if StringUtil.startsWith(System.tolower(csvFileName), "modelica:") or StringUtil.startsWith(System.tolower(csvFileName), "file:") then
     p := SymbolTable.getAbsyn();
     csvFileName := ProgramUtil.getFullPathFromUri(p, csvFileName, true);
   end if;

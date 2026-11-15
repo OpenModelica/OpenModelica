@@ -1355,6 +1355,9 @@ mod alarm_store {
         pub fn get() -> f64 {
             DEADLINE.with(|d| d.get())
         }
+        pub fn swap(v: &mut f64) {
+            *v = DEADLINE.replace(*v);
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -1372,6 +1375,8 @@ mod alarm_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{get, set};
 }
 
@@ -1856,6 +1861,12 @@ mod overrides_store {
         pub fn strings() -> Vec<(u32, String)> {
             STRINGS.with(|o| o.borrow().clone())
         }
+        pub type Groups = (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>, Vec<(u32, String)>);
+        pub fn swap(v: &mut Groups) {
+            PARAM.with_borrow_mut(|o| core::mem::swap(o, &mut v.0));
+            START.with_borrow_mut(|o| core::mem::swap(o, &mut v.1));
+            STRINGS.with_borrow_mut(|o| core::mem::swap(o, &mut v.2));
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -1883,6 +1894,8 @@ mod overrides_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::{Groups, swap};
     pub use imp::{params, set, starts, strings};
 }
 
@@ -1992,6 +2005,9 @@ mod imports_store {
         pub fn get() -> Option<StartImports> {
             IMPORTS.with(|o| o.borrow().clone())
         }
+        pub fn swap(v: &mut Option<StartImports>) {
+            IMPORTS.with_borrow_mut(|o| core::mem::swap(o, v));
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -2010,6 +2026,8 @@ mod imports_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{get, set};
 }
 
@@ -2199,6 +2217,9 @@ mod solver_fail_store {
             let t = AT.with(|a| a.replace(f64::NAN));
             t.is_finite().then_some(t)
         }
+        pub fn swap(v: &mut f64) {
+            *v = AT.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2214,6 +2235,8 @@ mod solver_fail_store {
             t.is_finite().then_some(t)
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, take};
 }
 
@@ -2236,6 +2259,9 @@ mod failed_stats {
         pub fn take() -> Option<Box<SolveStats>> {
             STATS.with(|c| c.borrow_mut().take())
         }
+        pub fn swap(v: &mut Option<Box<SolveStats>>) {
+            STATS.with_borrow_mut(|c| core::mem::swap(c, v));
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2251,6 +2277,8 @@ mod failed_stats {
             unsafe { (*STATS.0.get()).take() }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, take};
 }
 
@@ -2274,6 +2302,9 @@ mod chatter_store {
         pub fn abort() -> bool {
             ABORT.with(|a| a.get())
         }
+        pub fn swap(v: &mut bool) {
+            *v = ABORT.replace(*v);
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -2291,6 +2322,8 @@ mod chatter_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{abort, set_abort};
 }
 
@@ -2375,6 +2408,9 @@ mod term_report {
         pub fn mark() -> bool {
             DONE.with(|d| !d.replace(true))
         }
+        pub fn swap(v: &mut bool) {
+            *v = DONE.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2389,6 +2425,8 @@ mod term_report {
             unsafe { !core::mem::replace(&mut *DONE.0.get(), true) }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{mark, reset};
 }
 
@@ -2410,6 +2448,9 @@ mod steady_report {
         pub fn hit() -> bool {
             HIT.with(|d| d.get())
         }
+        pub fn swap(v: &mut bool) {
+            *v = HIT.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2427,6 +2468,8 @@ mod steady_report {
             unsafe { *HIT.0.get() }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{hit, mark, reset};
 }
 
@@ -2627,6 +2670,13 @@ mod rethrow_store {
                 NOTED.with(|n| n.replace(false)),
             )
         }
+        pub type Window = (Option<AssertInfo>, bool, bool, Option<String>);
+        pub fn swap(v: &mut Window) {
+            PENDING.with_borrow_mut(|p| core::mem::swap(p, &mut v.0));
+            v.1 = EVENT.replace(v.1);
+            v.2 = NOTED.replace(v.2);
+            REASON.with_borrow_mut(|r| core::mem::swap(r, &mut v.3));
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2670,6 +2720,8 @@ mod rethrow_store {
             }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::{Window, swap};
     pub use imp::{arm, note, note_event, note_reason, take, take_reason};
 }
 
@@ -2865,9 +2917,9 @@ fn init_model(
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
-    // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
+    // C's `read_input_xml` and `initializeNonlinearSystems` report these.
     if let Some(m) = model {
-        for w in &m.nls_warnings {
+        for w in &m.startup_warnings {
             omclog::warning(omclog::STDOUT, false, w);
         }
     }
@@ -3245,10 +3297,21 @@ fn update_bound_values(
 /// attribute-log region. A group's header appears even when it is empty, as C's
 /// unconditional `infoStreamPrint` in that function gives.
 fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, model: Option<&SimMeta>) {
+    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
+    let nominal_kind = crate::ATTR_NAME.iter().position(|n| *n == "nominal");
+    for (i, a) in entries
+        .iter()
+        .enumerate()
+        .filter(|(_, a)| Some(a.kind as usize) == nominal_kind)
+    {
+        let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(1.0);
+        if let Some(w) = crate::nominal_warning(&a.name, v) {
+            omclog::warning(omclog::STDOUT, false, &w);
+        }
+    }
     if !omclog::active(omclog::INIT) {
         return;
     }
-    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
     for (kind, name) in crate::ATTR_NAME.iter().enumerate() {
         let header = match *name {
             "start" => "primary start-values".to_string(),
@@ -3258,6 +3321,11 @@ fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, 
         if omclog::active(omclog::INIT_V) {
             for (i, a) in entries.iter().enumerate().filter(|(_, a)| a.kind as usize == kind) {
                 let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(0.0);
+                let v = if *name == "nominal" {
+                    crate::positive_nominal(v)
+                } else {
+                    v
+                };
                 let line = match *name {
                     "start" => format!("updated start value: {}(start={})", a.name, format_g(v, 6)),
                     _ => format!("{}({name}={})", a.name, format_g(v, 6)),
@@ -3598,7 +3666,7 @@ pub mod rt_sync {
     use std::cell::Cell;
 
     #[derive(Clone, Copy)]
-    struct State {
+    pub(crate) struct State {
         scaling: f64,
         t0: f64,
         start_ms: f64,
@@ -3608,6 +3676,10 @@ pub mod rt_sync {
 
     std::thread_local! {
         static STATE: Cell<Option<State>> = const { Cell::new(None) };
+    }
+
+    pub(super) fn swap(v: &mut Option<State>) {
+        *v = STATE.replace(*v);
     }
 
     pub(super) fn arm(t0: f64, step: f64) {
@@ -4508,6 +4580,9 @@ pub(crate) mod event_dump_store {
         pub fn with<R>(f: impl FnOnce(&EventDump) -> R) -> R {
             DUMP.with(|c| f(&c.borrow()))
         }
+        pub fn swap(v: &mut EventDump) {
+            DUMP.with_borrow_mut(|c| core::mem::swap(c, v));
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -4527,7 +4602,73 @@ pub(crate) mod event_dump_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, with};
+}
+
+/// The run's per-thread stores. FMI lets the importer call an instance from a
+/// different thread each time, so an FMU moves them with the instance.
+#[cfg(feature = "std")]
+pub struct ThreadState {
+    alarm: f64,
+    overrides: overrides_store::Groups,
+    imports: Option<StartImports>,
+    solver_fail: f64,
+    failed_stats: Option<Box<SolveStats>>,
+    abort_slow: bool,
+    terminated: bool,
+    steady: bool,
+    rethrow: rethrow_store::Window,
+    rt_sync: Option<rt_sync::State>,
+    event_dump: EventDump,
+    profiler: Option<crate::profiling::Profiler>,
+    flags: crate::simflags::SimFlags,
+    nls: openmodelica_nls::ThreadState,
+}
+
+/// What a thread starts with.
+#[cfg(feature = "std")]
+impl Default for ThreadState {
+    fn default() -> Self {
+        ThreadState {
+            alarm: f64::INFINITY,
+            overrides: Default::default(),
+            imports: None,
+            solver_fail: f64::NAN,
+            failed_stats: None,
+            abort_slow: false,
+            terminated: false,
+            steady: false,
+            rethrow: Default::default(),
+            rt_sync: None,
+            event_dump: EventDump::default(),
+            profiler: None,
+            flags: Default::default(),
+            nls: Default::default(),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl ThreadState {
+    /// Exchange with the calling thread's stores.
+    pub fn swap(&mut self) {
+        alarm_store::swap(&mut self.alarm);
+        overrides_store::swap(&mut self.overrides);
+        imports_store::swap(&mut self.imports);
+        solver_fail_store::swap(&mut self.solver_fail);
+        failed_stats::swap(&mut self.failed_stats);
+        chatter_store::swap(&mut self.abort_slow);
+        term_report::swap(&mut self.terminated);
+        steady_report::swap(&mut self.steady);
+        rethrow_store::swap(&mut self.rethrow);
+        rt_sync::swap(&mut self.rt_sync);
+        event_dump_store::swap(&mut self.event_dump);
+        crate::profiling::swap(&mut self.profiler);
+        crate::simflags::swap_flags(&mut self.flags);
+        self.nls.swap();
+    }
 }
 
 /// C's `printRelations` + `printZeroCrossings` (`model_help.c`): `initializeModel`
@@ -7093,18 +7234,17 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// C's `realVarsData[i].attribute.nominal` for the states, which scales a
+/// C's `realVarsData[i].attribute.positiveNominal` for the states, which scales a
 /// solver's absolute tolerance and is what `fmi3GetNominalsOfContinuousStates`
-/// answers. Floored as `ida_solver_setNominals` does: read before
-/// `initializeModel` has floored them, a zero nominal is an infinite error
-/// weight.
+/// answers. Before `functionUpdateBoundVariableAttributes` has written them,
+/// the slots are 0, which [`crate::positive_nominal`] makes 1.0.
 pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
     (0..layout.n_states)
         .map(|i| {
-            Ok(fmath::fmax(
-                fmath::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?),
-                1e-32,
-            ))
+            Ok(crate::positive_nominal(read_f64(
+                e,
+                sim_data + layout.state_nom_off + i * 8,
+            )?))
         })
         .collect()
 }
@@ -7116,7 +7256,7 @@ fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
         let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
-        nominals.push(fmath::fmax(fmath::fabs(n), 1e-32));
+        nominals.push(crate::positive_nominal(n));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -7278,7 +7418,7 @@ impl DasslDriver {
             info[4] = 1; // INFO(5)=1: a user Jacobian routine
         }
         // Per-state tolerances scaled by nominal, matching the C runtime
-        // (`dassl.c`: INFO(2)=1, atol[i]=tol·max(|nominal_i|,1e-32)).
+        // (`dassl.c`: INFO(2)=1, atol[i]=tol·nominal_i).
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
         if n_states > 0 {
@@ -12817,7 +12957,7 @@ pub fn dae_solve_explicit(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
         .collect();
     let mut nominal = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             nominal[ns + k] = nom;
         }
@@ -12936,7 +13076,7 @@ fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, da
         .collect();
     let mut scale = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             scale[ns + k] = nom;
         }

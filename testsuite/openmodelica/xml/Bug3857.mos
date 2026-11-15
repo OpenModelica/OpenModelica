@@ -148,7 +148,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(inertia1.phi)\" description=\"der(Absolute rotation angle of component)\" valueReference=\"7\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"Hz\" />
+//       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
 //         <exp:QualifiedNamePart name=\"phi\"/>
@@ -160,7 +160,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(inertia2.w)\" description=\"der(Absolute angular velocity of component (= der(phi)))\" valueReference=\"8\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"s-2\" />
+//       <Real    unit=\"rad/s2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia2\"/>
 //         <exp:QualifiedNamePart name=\"w\"/>
@@ -184,7 +184,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(spring.phi_rel)\" description=\"der(Relative rotation angle (= flange_b.phi - flange_a.phi))\" valueReference=\"10\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"Hz\" />
+//       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
 //         <exp:QualifiedNamePart name=\"phi_rel\"/>
@@ -196,7 +196,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(spring.w_rel)\" description=\"der(Relative angular velocity (= der(phi_rel)))\" valueReference=\"11\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"s-2\" />
+//       <Real    unit=\"rad/s2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
 //         <exp:QualifiedNamePart name=\"w_rel\"/>
@@ -753,7 +753,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(inertia1.flange_a.phi)\" description=\"der(Absolute rotation angle of flange)\" valueReference=\"55\" variability=\"continuous\" causality=\"local\" alias=\"der(inertia1.phi)\">
-//       <Real    unit=\"Hz\" />
+//       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
 //         <exp:QualifiedNamePart name=\"flange_a\"/>
@@ -766,7 +766,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(inertia1.flange_b.phi)\" description=\"der(Absolute rotation angle of flange)\" valueReference=\"56\" variability=\"continuous\" causality=\"local\" alias=\"der(inertia1.phi)\">
-//       <Real    unit=\"Hz\" />
+//       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
 //         <exp:QualifiedNamePart name=\"flange_b\"/>
@@ -779,7 +779,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(loadTorque.w)\" description=\"der(Angular velocity of flange with respect to support (= der(phi)))\" valueReference=\"57\" variability=\"continuous\" causality=\"local\" alias=\"der(inertia2.w)\">
-//       <Real    unit=\"s-2\" />
+//       <Real    unit=\"rad/s2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"loadTorque\"/>
 //         <exp:QualifiedNamePart name=\"w\"/>
@@ -791,7 +791,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(speedSensor.flange.phi)\" description=\"der(Absolute rotation angle of flange)\" valueReference=\"58\" variability=\"continuous\" causality=\"local\" alias=\"der(inertia1.phi)\">
-//       <Real    unit=\"Hz\" />
+//       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"speedSensor\"/>
 //         <exp:QualifiedNamePart name=\"flange\"/>
@@ -804,7 +804,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(spring.flange_a.phi)\" description=\"der(Absolute rotation angle of flange)\" valueReference=\"59\" variability=\"continuous\" causality=\"local\" alias=\"der(inertia1.phi)\">
-//       <Real    unit=\"Hz\" />
+//       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
 //         <exp:QualifiedNamePart name=\"flange_a\"/>
@@ -817,7 +817,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(torque.flange.phi)\" description=\"der(Absolute rotation angle of flange)\" valueReference=\"60\" variability=\"continuous\" causality=\"local\" alias=\"der(inertia1.phi)\">
-//       <Real    unit=\"Hz\" />
+//       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"torque\"/>
 //         <exp:QualifiedNamePart name=\"flange\"/>
@@ -5276,7 +5276,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>state</VariableCategory>
 //     </ScalarVariable>
 //     <ScalarVariable name=\"der(h)\"  valueReference=\"2\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"m.s-1\" />
+//       <Real    unit=\"m/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"h\"/>
 //       </QualifiedName>
@@ -5287,7 +5287,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(v)\"  valueReference=\"3\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"m.s-2\" />
+//       <Real    unit=\"m/s2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"v\"/>
 //       </QualifiedName>
@@ -5505,7 +5505,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>state</VariableCategory>
 //     </ScalarVariable>
 //     <ScalarVariable name=\"der(T)\" description=\"der(Temperature)\" valueReference=\"1\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"s-1.K\" />
+//       <Real    unit=\"K/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"T\"/>
 //       </QualifiedName>
@@ -5770,7 +5770,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>state</VariableCategory>
 //     </ScalarVariable>
 //     <ScalarVariable name=\"der(T)\"  valueReference=\"1\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"s-1.K\" />
+//       <Real    unit=\"K/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"T\"/>
 //       </QualifiedName>

@@ -644,7 +644,7 @@ fn kinsol_sparse_solve(
     x: &mut [f64],
     guess: &[f64],
     warm: &[f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     jac: &mut dyn FnMut(&[f64], &mut [f64]),
     pattern: &[u32],
     nnz: usize,
@@ -682,7 +682,7 @@ fn kinsol_sparse_solve(
             handle,
             n,
             &pat,
-            nominal,
+            positive_nominal,
             guess,
             old_values,
             x,
@@ -702,7 +702,7 @@ fn kinsol_sparse_solve(
         x,
         guess,
         warm,
-        nominal,
+        positive_nominal,
         jac,
         pattern,
         nnz,
@@ -721,7 +721,7 @@ fn kinsol_sparse_solve(
 fn kinsol_b_dense_solve(
     n: usize,
     x: &mut [f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     old_values: &[f64],
     has_jac: bool,
     handle: u32,
@@ -739,7 +739,7 @@ fn kinsol_b_dense_solve(
             n,
             0,
             None,
-            nominal,
+            positive_nominal,
             &start,
             old_values,
             x,
@@ -753,7 +753,17 @@ fn kinsol_b_dense_solve(
     #[cfg(not(sundials))]
     {
         let _ = (
-            n, x, nominal, old_values, has_jac, handle, eq_index, time, load_guess, eval, jaceval,
+            n,
+            x,
+            positive_nominal,
+            old_values,
+            has_jac,
+            handle,
+            eq_index,
+            time,
+            load_guess,
+            eval,
+            jaceval,
         );
         false
     }
@@ -769,7 +779,7 @@ fn newton_sparse_solve(
     x: &mut [f64],
     guess: &[f64],
     warm: &[f64],
-    nominal: &[f64],
+    positive_nominal: &[f64],
     jac: &mut dyn FnMut(&[f64], &mut [f64]),
     pattern: &[u32],
     nnz: usize,
@@ -820,7 +830,7 @@ fn newton_sparse_solve(
         x.copy_from_slice(if from_warm { warm } else { guess });
         for i in 0..n {
             xscale[i] = if scaled {
-                1.0 / libm::fmax(nominal[i], libm::fabs(x[i]))
+                1.0 / libm::fmax(positive_nominal[i], libm::fabs(x[i]))
             } else {
                 1.0
             };
@@ -1076,7 +1086,7 @@ impl NlsBackend for WasmBackend<'_> {
             req.x,
             req.guess,
             req.warm,
-            req.nominal,
+            req.positive_nominal,
             jac,
             self.pattern,
             self.nnz,
@@ -1104,7 +1114,7 @@ impl NlsBackend for WasmBackend<'_> {
         kinsol_b_dense_solve(
             req.n,
             req.x,
-            req.nominal,
+            req.positive_nominal,
             req.old_values,
             req.has_jacobian,
             self.handle,
@@ -1219,12 +1229,14 @@ pub extern "C" fn rt_solve_nls(
     };
 
     // `rt_alloc`ed blocks of f64, so aligned; a system without unknowns has none.
-    let (nominal, bounds): (&[f64], &[f64]) = if size == 0 {
-        (&[], &[])
+    // The nominal block holds the `size` magnitudes, then their signs.
+    let (positive_nominal, nominal_sign, bounds): (&[f64], &[f64], &[f64]) = if size == 0 {
+        (&[], &[], &[])
     } else {
         unsafe {
             (
                 core::slice::from_raw_parts(nominal_addr as *const f64, size),
+                core::slice::from_raw_parts((nominal_addr + 8 * n) as *const f64, size),
                 core::slice::from_raw_parts(bounds_addr as *const f64, 2 * size),
             )
         }
@@ -1260,7 +1272,8 @@ pub extern "C" fn rt_solve_nls(
         nnz,
         jac_csc: sparse_default != 0,
         sys_num: nls_sys_number(hist_addr),
-        nominal,
+        positive_nominal,
+        nominal_sign,
         bounds,
         pattern,
         has_jacobian,

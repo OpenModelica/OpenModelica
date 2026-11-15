@@ -1,0 +1,95 @@
+// name: derivativeUnits.mos
+// status: correct
+// teardown_command: rm -rf derivativeUnits.fmu derivativeUnits.log derivativeUnits.txt derivativeUnits.fmutmp/ derivativeUnits_info.json
+//
+// The unit of der(x) is the unit of x divided by s, in the unit symbols of x (#18092)
+
+loadString("
+model derivativeUnits
+  Real x01(unit = \"rad\", start = 0, fixed = true);
+  Real x02(unit = \"rad/s\", start = 0, fixed = true);
+  Real x03(unit = \"deg\", start = 0, fixed = true);
+  Real x04(unit = \"rpm\", start = 0, fixed = true);
+  Real x05(unit = \"kg\", start = 0, fixed = true);
+  Real x06(unit = \"m\", start = 0, fixed = true);
+  Real x07(unit = \"1\", start = 0, fixed = true);
+  Real x08(unit = \"degC\", start = 0, fixed = true);
+  Real x09(unit = \"degF\", start = 0, fixed = true);
+  Real x10(unit = \"W/(m2.K)\", start = 0, fixed = true);
+  Real x11(unit = \"1/s\", start = 0, fixed = true);
+  Real x12(unit = \"s\", start = 0, fixed = true);
+  Real x13(unit = \"kg/m3\", start = 0, fixed = true);
+  Real x14(unit = \"ms\", start = 0, fixed = true);
+  Real x15(unit = \"A.s\", start = 0, fixed = true);
+  Real x16(unit = \"1/min\", start = 0, fixed = true);
+  Real x17(unit = \"J\", start = 0, fixed = true);
+  Real x18(unit = \"m.s-1\", start = 0, fixed = true);
+  Real x19(unit = \"g/cm3\", start = 0, fixed = true);
+  Real x20(unit = \"kW.h\", start = 0, fixed = true);
+  Real x21(unit = \"Pa\", start = 0, fixed = true);
+equation
+  der(x01) = 1; der(x02) = 1; der(x03) = 1; der(x04) = 1; der(x05) = 1; der(x06) = 1; der(x07) = 1;
+  der(x08) = 1; der(x09) = 1; der(x10) = 1; der(x11) = 1; der(x12) = 1; der(x13) = 1; der(x14) = 1;
+  der(x15) = 1; der(x16) = 1; der(x17) = 1; der(x18) = 1; der(x19) = 1; der(x20) = 1; der(x21) = 1;
+end derivativeUnits;
+"); getErrorString();
+
+buildModelFMU(derivativeUnits); getErrorString();
+
+system("unzip -cqq derivativeUnits.fmu modelDescription.xml | grep -B3 \"derivative=\" | grep \"name=\\|<Real\" > derivativeUnits.txt"); getErrorString();
+readFile("derivativeUnits.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "derivativeUnits.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "    name=\"der(x01)\"
+//     <Real derivative=\"1\" unit=\"rad/s\"/>
+//     name=\"der(x02)\"
+//     <Real derivative=\"2\" unit=\"rad/s2\"/>
+//     name=\"der(x03)\"
+//     <Real derivative=\"3\" unit=\"deg/s\"/>
+//     name=\"der(x04)\"
+//     <Real derivative=\"4\" unit=\"rpm/s\"/>
+//     name=\"der(x05)\"
+//     <Real derivative=\"5\" unit=\"kg/s\"/>
+//     name=\"der(x06)\"
+//     <Real derivative=\"6\" unit=\"m/s\"/>
+//     name=\"der(x07)\"
+//     <Real derivative=\"7\" unit=\"1/s\"/>
+//     name=\"der(x08)\"
+//     <Real derivative=\"8\" unit=\"K/s\"/>
+//     name=\"der(x09)\"
+//     <Real derivative=\"9\" unit=\"degRk/s\"/>
+//     name=\"der(x10)\"
+//     <Real derivative=\"10\" unit=\"W/(m2.K.s)\"/>
+//     name=\"der(x11)\"
+//     <Real derivative=\"11\" unit=\"1/s2\"/>
+//     name=\"der(x12)\"
+//     <Real derivative=\"12\" unit=\"1\"/>
+//     name=\"der(x13)\"
+//     <Real derivative=\"13\" unit=\"kg/(m3.s)\"/>
+//     name=\"der(x14)\"
+//     <Real derivative=\"14\" unit=\"ms/s\"/>
+//     name=\"der(x15)\"
+//     <Real derivative=\"15\" unit=\"A\"/>
+//     name=\"der(x16)\"
+//     <Real derivative=\"16\" unit=\"1/(min.s)\"/>
+//     name=\"der(x17)\"
+//     <Real derivative=\"17\" unit=\"J/s\"/>
+//     name=\"der(x18)\"
+//     <Real derivative=\"18\" unit=\"m.s-2\"/>
+//     name=\"der(x19)\"
+//     <Real derivative=\"19\" unit=\"g/(cm3.s)\"/>
+//     name=\"der(x20)\"
+//     <Real derivative=\"20\" unit=\"kW.h/s\"/>
+//     name=\"der(x21)\"
+//     <Real derivative=\"21\" unit=\"Pa/s\"/>
+// "
+// ""
+// endResult

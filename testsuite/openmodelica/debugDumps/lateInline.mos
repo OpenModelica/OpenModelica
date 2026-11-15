@@ -1145,6 +1145,48 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
+// post-optimization module removeConstants (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real
+// 2: x:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
 // post-optimization module tearingSystem (simulation)
 // ########################################
 //
@@ -1314,48 +1356,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 // ########################################
 // post-optimization module symbolicJacobian (simulation)
-// ########################################
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE()  type: Real
-// 2: x:VARIABLE()  type: Real
-// 3: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
-// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-//
-// ########################################
-// post-optimization module removeConstants (simulation)
 // ########################################
 //
 //

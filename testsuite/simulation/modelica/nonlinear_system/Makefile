@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 kinsolBoundStart.mos \
+negativeNominal.mos \
 bug_2841.mos \
 bug_3527.mos \
 externalErrorThenThrow.mos \

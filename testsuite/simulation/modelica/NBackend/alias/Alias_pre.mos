@@ -38,8 +38,6 @@ simulate(Alias_pre); getErrorString();
 // 	[SCAL] (1) y = 3.0 + x; ($RES_SIM_3)
 // 	[SCAL] (1) b = x; ($RES_SIM_4)
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	$FUN_1	 ==> 	y
@@ -57,12 +55,6 @@ simulate(Alias_pre); getErrorString();
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "Alias_pre_res.mat",

@@ -21,8 +21,8 @@ end nlsArrayElementNominal;
 
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 simulate(nlsArrayElementNominal, stopTime = 0); getErrorString();
-regexBool(readFile("nlsArrayElementNominal_02nls.c"), "sysData->nominal\\[i\\] = getNominalFromScalarIdx\\(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, data->simulationInfo->realVarsIndex\\[[0-9]+\\] \\+ ");
-regexBool(readFile("nlsArrayElementNominal_02nls.c"), "sysData->nominal\\[i\\] = 1.0;");
+regexBool(readFile("nlsArrayElementNominal_02nls.c"), "sysData->positiveNominal\\[i\\] = getPositiveNominalFromScalarIdx\\(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, data->simulationInfo->realVarsIndex\\[[0-9]+\\] \\+ ");
+regexBool(readFile("nlsArrayElementNominal_02nls.c"), "sysData->positiveNominal\\[i\\] = 1.0;");
 val(c.x[1], 0);
 val(c.y[3], 0);
 

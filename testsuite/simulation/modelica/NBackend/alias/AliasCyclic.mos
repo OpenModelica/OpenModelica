@@ -38,10 +38,6 @@ diffSimulationResults("AliasCyclic_res.mat", "ReferenceFiles/AliasCyclic_res.mat
 // 	b	 ==> 	-1
 // 	c	 ==> 	-1
 // 	a	 ==> 	0
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
@@ -49,12 +45,6 @@ diffSimulationResults("AliasCyclic_res.mat", "ReferenceFiles/AliasCyclic_res.mat
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "AliasCyclic_res.mat",

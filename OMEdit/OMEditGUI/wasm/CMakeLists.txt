@@ -21,14 +21,6 @@ find_package(Qt6 REQUIRED COMPONENTS
   Quick Quick3D Qml QuickWidgets)
 qt_standard_project_setup()
 
-# Qt forces -sERROR_ON_UNDEFINED_SYMBOLS=1 via Qt6::Platform; emcc takes the last
-# -s flag and interface options come after target_link_options, so appending =0
-# here is the only place it wins (lets the dead-feature symbols be deferred imports).
-if(TARGET Qt6::Platform)
-  set_property(TARGET Qt6::Platform APPEND PROPERTY
-    INTERFACE_LINK_OPTIONS -sERROR_ON_UNDEFINED_SYMBOLS=0)
-endif()
-
 get_filename_component(OM_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 set(LIB    ${CMAKE_CURRENT_SOURCE_DIR}/../../OMEditLIB)
 set(GUI    ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -62,9 +54,10 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/PlotPicker.h ${OMPLOT}/PlotGrid.h ${OMPLOT}/PlotCurve.h ${OMPLOT}/PlotWindow.h
   ${OMPLOT}/PlotWindowContainer.h ${OMPLOT}/PlotMainWindow.h ${OMPLOT}/ScaleDraw.h
   ${OMPLOT}/LogScaleEngine.h ${OMPLOT}/LinearScaleEngine.h ${OMPLOT}/PlotTranslator.h
-  # VisualizationCSV still uses the C csv reader (om_strtod from omc_numbers.c).
+  # VisualizationCSV still uses the C csv reader (om_strtod from omc_numbers.c,
+  # matrix_transpose from read_matlab4.c).
   ${SIMRT}/util/read_csv.c ${SIMRT}/util/libcsv.c ${SIMRT}/util/omc_numbers.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/omc_file_shim.c)
+  ${SIMRT}/util/read_matlab4.c ${CMAKE_CURRENT_SOURCE_DIR}/omc_file_shim.c)
 target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
 target_include_directories(OMPlotLib PUBLIC ${OMPLOT} PRIVATE ${SIMRT})
 target_link_libraries(OMPlotLib PUBLIC
@@ -75,21 +68,24 @@ target_link_libraries(OMPlotLib PUBLIC
 # is stale checked-in moc/ui/rcc output that AUTOMOC/AUTOUIC/AUTORCC regenerate.
 file(GLOB_RECURSE OMEDITLIB_SOURCES ${LIB}/*.cpp)
 file(GLOB_RECURSE OMEDITLIB_HEADERS ${LIB}/*.h)
-# OMS is compiled (MainWindow constructs OMSProxy at startup; its oms_* externs
-# defer). Debugger is excluded: it is GDB-over-QProcess, and MainWindow's debugger
-# construction/usage is guarded out under __EMSCRIPTEN__.
-set(WASM_EXCLUDE_DIRS
+# The link fails on an undefined symbol: a call into an excluded file must be
+# guarded out under __EMSCRIPTEN__. OMS is compiled (MainWindow constructs
+# OMSProxy at startup). Debugger is excluded: it is GDB-over-QProcess. FMU import
+# and the FMU build output run native tools.
+set(WASM_EXCLUDE_PATTERNS
   "/generatedfiles/"
-  "/Animation/" "/Debugger/" "/FMI/" "/Git/" "/MCP/" "/CrashReport/"
-  "/Traceability/")
-foreach(pat ${WASM_EXCLUDE_DIRS})
+  "/Animation/" "/Debugger/" "/Git/" "/MCP/" "/CrashReport/"
+  "/Traceability/"
+  "/FMI/ImportFMUDialog\\." "/FMI/ImportFMUModelDescriptionDialog\\."
+  "/FMI/FMUExportOutputWidget\\.")
+foreach(pat ${WASM_EXCLUDE_PATTERNS})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${pat}")
   list(FILTER OMEDITLIB_HEADERS EXCLUDE REGEX "${pat}")
 endforeach()
-# Native-only .cpp (subprocess / OPC-UA); their headers still compile and their
-# symbols defer (the features are unavailable on web v1). SimulationOutputWidget.cpp
-# IS compiled: the wasm-jit run drives it via runWasmJitSimulation() and its
-# QProcess/QTcpServer paths are guarded out under __EMSCRIPTEN__.
+# Native-only .cpp (subprocess / OPC-UA); their headers still compile.
+# SimulationOutputWidget.cpp IS compiled: the wasm-jit run drives it via
+# runWasmJitSimulation() and its QProcess/QTcpServer paths are guarded out under
+# __EMSCRIPTEN__.
 set(WASM_EXCLUDE_FILES
   # Desktop OAuth redirect (QTcpServer loopback); the browser uses a popup instead.
   "Cloud/OAuth2RedirectLoopback.cpp"
@@ -184,8 +180,8 @@ add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
 # main.cpp inherits it.
 target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI)
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
-# Headers for subsystems whose libs aren't linked on wasm (antlr/OMParser,
-# open62541) compile fine for the static lib; the symbols are deferred.
+# Headers of libraries that are not linked on wasm (antlr4 runtime, open62541);
+# the code that calls them is guarded out under __EMSCRIPTEN__ or not compiled.
 target_include_directories(OMEditLib PUBLIC ${LIB} ${SCRIPTING_API_QT}
   ${CMAKE_BINARY_DIR}
   ${OM_ROOT}/OMEdit
@@ -255,9 +251,6 @@ target_link_options(OMEdit-qt PRIVATE
   # (worker init included) run post-main-loop through a nested QEventLoop, i.e.
   # Qt's own Asyncify import, so they need not be listed here.
   -sASYNCIFY_IMPORTS=omedit_await_call
-  # Dead-feature symbols stay deferred imports that abort if reached
-  # (ERROR_ON_UNDEFINED_SYMBOLS=0, set via Qt6::Platform above); everything else links.
-  -Wl,--allow-undefined
   -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToNewUTF8,FS,lengthBytesUTF8,stringToUTF8)
 
 # -g2 keeps wasm function names in browser traces.

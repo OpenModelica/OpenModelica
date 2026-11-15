@@ -75,6 +75,7 @@ import Settings;
 import System;
 import Testsuite;
 import UnorderedMap;
+import Util;
 
 type FlowControl = enumeration(NEXT, CONTINUE, BREAK, RETURN, ASSERTION);
 type ArgumentMap = UnorderedMap<InstNode, Expression>;
@@ -1354,6 +1355,7 @@ protected
   SCode.Annotation ann;
   list<String> libs = {}, dirs = {}, includes = {}, paths = {}, libs2 = {}, failures = {};
   Boolean found = false;
+  Boolean msvc = System.stringFind(System.openModelicaPlatform(), "msvc") == 0;
   String installLibDir;
 algorithm
   if Autoconf.os == "Windows_NT" then
@@ -1410,6 +1412,13 @@ algorithm
       // Search for both dir/lib and e.g. dir/linux64/lib.
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
+
+      // A DLL built with MSVC, e.g. dir/win64/vs2022/lib, for an omc built with MSVC.
+      if msvc then
+        for compiler in listReverse(Util.msvcLibraryDirectories()) loop
+          paths := (dir + "/" + System.modelicaPlatform() + "/" + compiler + "/" + lib) :: paths;
+        end for;
+      end if;
 
       // Windows and macOS also install under the openModelicaPlatform name; a
       // wasm build searches wasm32-wasip1 and, for a module needing nothing of

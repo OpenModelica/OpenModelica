@@ -3277,6 +3277,7 @@ case "1.0" then
   end match
 case "2.0" then
   match fmiModelVariable
+  case REALVARIABLE(causality="independent") then ""
   case REALVARIABLE(__) then
     <<
     <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIRealModelVariableStartValue(FMUVersion, causality, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
@@ -3863,6 +3864,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   #include "util/integer_array.h"
   #include "util/boolean_array.h"
   #include "util/string_array.h"
+  #include "util/varinfo.h"
 
   OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
 
@@ -3940,7 +3942,7 @@ template ScalarVariableFMU(SimVar simVar, String classType)
       <%infostr%>.comment = "<%description%>";
       <%getInfoArgsFMU(infostr+".info", info)%>
       <%DimensionsFMU(simVar, classType, ci)%>
-      <%ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
+      <%ScalarVariableTypeFMU(attrstr, infostr, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
       >>
 end ScalarVariableFMU;
 
@@ -3988,7 +3990,7 @@ template optInitValFMU(Option<Exp> exp, String default)
   else default
 end optInitValFMU;
 
-template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
+template ScalarVariableTypeFMU(String attrstr, String infostr, String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
@@ -4000,7 +4002,8 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       put_real_element(<%optInitValFMU(maxValue,"DBL_MAX")%>, 0, &<%attrstr%>.max);
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
-      put_real_element(<%optInitValFMU(nominalValue,"1.0")%>, 0, &<%attrstr%>.nominal);
+      put_real_element(<%optInitValFMU(nominalValue,"1.0")%>, 0, &<%attrstr%>.positiveNominal);
+      normalizeNominal(&<%attrstr%>, <%infostr%>.name);
       put_real_element(<%optInitValFMU(startValue,"0.0")%>, 0, &<%attrstr%>.start);
       >>
     case T_INTEGER(__) then
@@ -4028,7 +4031,7 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       >>
     case T_ARRAY(ty=ty) then
       // non-scalarized array variable: emit the attributes using the element type
-      ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, startValue, nominalValue, isFixed, ty)
+      ScalarVariableTypeFMU(attrstr, infostr, unit, displayUnit, minValue, maxValue, startValue, nominalValue, isFixed, ty)
     else error(sourceInfo(), 'ScalarVariableTypeFMU: <%unparseType(type_)%>')
 end ScalarVariableTypeFMU;
 

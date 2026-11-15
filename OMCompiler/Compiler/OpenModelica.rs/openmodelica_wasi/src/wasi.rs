@@ -20,10 +20,25 @@ thread_local! {
     static GUEST_ENV: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
 }
 
-/// The `NAME=value` environment every guest started from now on sees: what the
-/// external libraries of the simulation about to run ask for.
+/// The `NAME=value` variables every guest started from now on sees on top of the
+/// process environment: what the external libraries of the simulation about to
+/// run ask for.
 pub fn set_guest_env(env: Vec<String>) {
     GUEST_ENV.with(|e| *e.borrow_mut() = env);
+}
+
+/// What a C simulation executable inherits from omc, with the [`set_guest_env`]
+/// variables over it.
+fn guest_environ() -> Vec<String> {
+    let own = GUEST_ENV.with(|e| e.borrow().clone());
+    let name = |v: &str| v.split_once('=').map_or(v, |(n, _)| n).to_owned();
+    let names: std::collections::HashSet<String> = own.iter().map(|v| name(v)).collect();
+    crate::env::vars()
+        .into_iter()
+        .filter(|(k, _)| !names.contains(k))
+        .map(|(k, v)| format!("{k}={v}"))
+        .chain(own)
+        .collect()
 }
 
 /// Begin capturing fd 1/2 (stdout/stderr) writes into an in-memory buffer instead
@@ -929,19 +944,16 @@ impl WasiCtx {
         ERRNO_SUCCESS
     }
 
-    /// Only the [`set_guest_env`] variables are exposed, never the host's.
     pub fn environ_sizes_get<M: GuestMem>(&mut self, mem: &mut M, count: u32, buf_size: u32) -> i32 {
-        let (n, size) = GUEST_ENV.with(|e| {
-            let e = e.borrow();
-            (e.len() as u32, e.iter().map(|v| v.len() as u32 + 1).sum::<u32>())
-        });
+        let env = guest_environ();
+        let (n, size) = (env.len() as u32, env.iter().map(|v| v.len() as u32 + 1).sum::<u32>());
         if !Self::wr_u32(mem, count, n) || !Self::wr_u32(mem, buf_size, size) {
             return ERRNO_FAULT;
         }
         ERRNO_SUCCESS
     }
     pub fn environ_get<M: GuestMem>(&mut self, mem: &mut M, environ: u32, buf: u32) -> i32 {
-        let env = GUEST_ENV.with(|e| e.borrow().clone());
+        let env = guest_environ();
         let mut p = buf;
         for (i, v) in env.iter().enumerate() {
             if !Self::wr_u32(mem, environ + i as u32 * 4, p) {

@@ -94,6 +94,8 @@ public:
   ~SimulationOutputWidget();
   void start();
   void runWasmJitSimulation(const QString &simulationParameters);
+  bool isWasmJit() const {return mIsWasmJit;}
+  bool isWasmJitSimulationSucceeded() const {return mWasmJitSimulationSucceeded;}
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   bool isDebugInfoAvailable() const {return mDebugInfoAvailable;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
@@ -157,6 +159,9 @@ private:
   // flight, and whether the user asked to cancel it (shared-flag cooperative cancel).
   bool mIsWasmJitSimulationRunning = false;
   bool mWasmJitCancelled = false;
+  bool mIsWasmJit = false;
+  bool mWasmJitSimulationSucceeded = false;
+  QString mWasmJitSimulationParameters;
   // Whether <model>_info.json is there for "Debug more". A wasm-jit run writes it
   // only under -d=infoXmlOperations; the C target always does.
   bool mDebugInfoAvailable = true;

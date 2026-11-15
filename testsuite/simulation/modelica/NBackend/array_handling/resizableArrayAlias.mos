@@ -37,13 +37,9 @@ val(x[5], 0.1);
 // 	### Set Equations:
 // 	[ARRY] (3) x = y; ($RES_SIM_4)
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	y	 ==> 	x
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
@@ -51,12 +47,6 @@ val(x[5], 0.1);
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "resizableArrayAlias_res.mat",

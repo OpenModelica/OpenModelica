@@ -939,6 +939,8 @@ struct MeState<E: FmiHost + 'static> {
     dae_current: bool,
     /// C's `_need_update`, consumed by `update_if_needed`.
     need_update: bool,
+    /// C's `_step_event`: a discrete input changed since the last event update.
+    step_event: bool,
     /// `set-input-derivatives`: the first-order derivative of each Real input slot,
     /// which `do-step` extrapolates the input with, as C's `fmi2DoStep` does.
     #[cfg(feature = "cs")]
@@ -1058,11 +1060,18 @@ impl<E: FmiHost + 'static> MeState<E> {
         // FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set in
         // Continuous-Time Mode. The states come first among the Reals.
         let state = off >= REAL_OFF && (off - REAL_OFF) / 8 < self.layout.n_states;
+        // FMI 3.0 2.4.7: with Event Mode, only Event Mode changes discrete inputs and
+        // tunable parameters.
+        #[cfg(feature = "cs")]
+        let step_mode = self.defer != CsDefer::None && !self.event_mode;
+        #[cfg(not(feature = "cs"))]
+        let step_mode = false;
         let ok = match self.mode {
             Mode::Instantiated => f & (INITIAL_EXACT | INITIAL_APPROX | INPUT) != 0,
             Mode::Init => f & (INITIAL_EXACT | INPUT) != 0,
             Mode::Ready if dae_unknown => true,
             Mode::Ready if self.continuous_time => state || (f & INPUT != 0 && f & CONTINUOUS != 0),
+            Mode::Ready if step_mode => f & INPUT != 0 && f & CONTINUOUS != 0,
             Mode::Ready => f & (INPUT | TUNABLE) != 0,
             Mode::Failed => false,
         };
@@ -1079,6 +1088,20 @@ impl<E: FmiHost + 'static> MeState<E> {
             t.pending = true;
         }
         Ok(())
+    }
+
+    /// C's `noteStepModeChange`: without Event Mode, a discrete input or tunable
+    /// parameter that changes at a communication point is an event the FMU handles,
+    /// a changed continuous input is not (FMI 3.0 2.4.7 and 4.1.1). With Event Mode
+    /// only Event Mode may change them. This assumes no set during a step: revisit
+    /// it if the FMU ever declares `providesIntermediateUpdate="true"`. The discrete
+    /// Reals come last.
+    fn note_change(&mut self, off: u32) {
+        let l = &self.layout;
+        let first_discrete = ((l.rparam_off - l.real_off) / 8).saturating_sub(self.meta.soti.n_discrete_real);
+        if !(off >= l.real_off && off < l.rparam_off && (off - l.real_off) / 8 < first_discrete) {
+            self.step_event = true;
+        }
     }
 
     /// C's `applyTunableParameters`: the parameter equations that depend on the
@@ -1370,6 +1393,7 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// event, then the timers again for an event clock — with the CS driver ordering
     /// its own schedule where it owns one.
     fn run_event_update(&mut self, time: f64) -> driver::Result<Updated> {
+        self.step_event = false;
         self.apply_tunable()?;
         let tunable = core::mem::take(&mut self.tunable.applied);
         let (sim_data, layout) = (self.sim_data, self.layout);
@@ -1723,6 +1747,7 @@ fn new_state() -> Option<MeState<Engine>> {
         configuring: false,
         dae_current: false,
         need_update: true,
+        step_event: false,
         #[cfg(feature = "cs")]
         input_ders: Vec::new(),
         terminated: false,
@@ -1909,12 +1934,12 @@ macro_rules! cs_instance_methods {
                 Err(e) => return Err(err_status(e)),
             }
         }
-        // A tunable parameter changed at the communication point: an event there,
-        // which also restarts the integrator.
+        // A tunable parameter or a discrete input changed at the communication point:
+        // an event there, which also restarts the integrator.
         if let Err(err) = st.apply_tunable() {
             return Err(failed(&mut st.engine, sim_data, err));
         }
-        if st.tunable.applied {
+        if st.tunable.applied || st.step_event {
             if let Err(err) = st.run_event_update(t) {
                 return Err(failed(&mut st.engine, sim_data, err));
             }
@@ -2209,6 +2234,7 @@ macro_rules! shared_instance_methods {
         st.dae_mode = false;
         st.configuring = false;
         st.need_update = true;
+        st.step_event = false;
         st.terminated = false;
         st.dae_current = false;
         st.init_overrides.clear();
@@ -2388,6 +2414,9 @@ macro_rules! shared_instance_methods {
                     if let Err(s) = st.check_set("fmi3SetFloat64", vr, e.off) {
                         return s;
                     }
+                    if st.mode == Mode::Ready && st.read_f64(e.off) != v {
+                        st.note_change(e.off);
+                    }
                     st.write_f64(e.off, v);
                     if st.mode != Mode::Ready {
                         let start = e.start_off != 0;
@@ -2419,6 +2448,9 @@ macro_rules! shared_instance_methods {
                     if let Err(s) = st.check_set("fmi3SetInt32", vr, e.off) {
                         return s;
                     }
+                    if st.mode == Mode::Ready && st.read_i32(e.off) != v {
+                        st.note_change(e.off);
+                    }
                     st.write_i32(e.off, v);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -2442,6 +2474,9 @@ macro_rules! shared_instance_methods {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
                     if let Err(s) = st.check_set("fmi3SetInt64", vr, e.off) {
                         return s;
+                    }
+                    if st.mode == Mode::Ready && st.read_i32(e.off) != v as i32 {
+                        st.note_change(e.off);
                     }
                     st.write_i32(e.off, v as i32);
                     if st.mode != Mode::Ready {
@@ -2476,6 +2511,9 @@ macro_rules! shared_instance_methods {
                     if let Err(s) = st.check_set("fmi3SetUInt64", vr, e.off) {
                         return s;
                     }
+                    if st.mode == Mode::Ready && st.read_i32(e.off) != v as i32 {
+                        st.note_change(e.off);
+                    }
                     st.write_i32(e.off, v as i32);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -2509,6 +2547,9 @@ macro_rules! shared_instance_methods {
                         return s;
                     }
                     let iv = if v { 1 } else { 0 };
+                    if st.mode == Mode::Ready && (st.read_i32(e.off) != 0) != v {
+                        st.note_change(e.off);
+                    }
                     st.write_i32(e.off, iv);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, iv as f64, false);
@@ -2532,6 +2573,9 @@ macro_rules! shared_instance_methods {
                 Some(e) if e.is_string => {
                     if let Err(s) = st.check_set("fmi3SetString", vr, e.off) {
                         return s;
+                    }
+                    if st.mode == Mode::Ready && st.read_string(e.off) != val {
+                        st.note_change(e.off);
                     }
                     st.write_string(e.off, &val);
                     if st.mode != Mode::Ready {
@@ -2919,6 +2963,7 @@ impl<E: FmiHost + 'static> Instance<E> {
             configuring: false,
             dae_current: false,
             need_update: true,
+            step_event: false,
             #[cfg(feature = "cs")]
             input_ders: Vec::new(),
             terminated: false,

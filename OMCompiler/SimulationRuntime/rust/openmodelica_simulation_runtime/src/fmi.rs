@@ -161,7 +161,8 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
         for i in 0..count as usize {
             let a = unsafe { &mut (*base.add(i)).attribute };
             alloc_scalar_real_array(&mut a.start);
-            alloc_scalar_real_array(&mut a.nominal);
+            alloc_scalar_real_array(&mut a.positiveNominal);
+            alloc_scalar_real_array(&mut a.nominalSign);
             alloc_scalar_real_array(&mut a.min);
             alloc_scalar_real_array(&mut a.max);
         }

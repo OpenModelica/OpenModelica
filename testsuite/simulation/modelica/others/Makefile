@@ -5,6 +5,7 @@ world.mos \
 noemit.mos \
 resultFileFlag.mos \
 resultFileFlagRealTime.mos \
+resultFileMissingDir.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \

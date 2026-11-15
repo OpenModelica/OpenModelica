@@ -558,6 +558,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("UnitParserExtImpl__initSIUnits", Infallible);
         m.insert("UnitParserExtImpl__registerWeight", Infallible);
         m.insert("UnitParserExtImpl__rollback", Infallible);
+        m.insert("UnitParserExt_angleExponents", Fallible);
         m.insert("UnitParserExt_str2unit", Fallible);
         m.insert("UnitParserExt_unit2str", Infallible);
 

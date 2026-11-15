@@ -2,6 +2,27 @@
 
 See also the top-level [AGENTS.md](../AGENTS.md).
 
+## The web build
+
+The OMEdit web page is built by
+[OMEditGUI/wasm/CMakeLists.txt](OMEditGUI/wasm/CMakeLists.txt), not by
+`OMEditLIB/CMakeLists.txt`. It compiles every `OMEditLIB/**/*.cpp` except the
+files that match `WASM_EXCLUDE_PATTERNS` and `WASM_EXCLUDE_FILES`.
+
+- Add a new file to `OMEditLIB/CMakeLists.txt`. The web build finds it
+  automatically, unless it matches an exclude pattern.
+- Code that only works on the desktop (`QProcess`, sockets, fmilib) must be
+  guarded with `#if !defined(__EMSCRIPTEN__)`, or be in an excluded file whose
+  callers are all guarded.
+- The link fails on an undefined symbol, e.g.
+  `undefined symbol: FMUExportDialog::FMUExportDialog(...)` when a file that
+  is used is excluded. Check changes with the `rust_omedit_qt_web` target of
+  the web build ("Web bundle only" in
+  [OpenModelica.rs/README.md](../OMCompiler/Compiler/OpenModelica.rs/README.md)),
+  which needs the Qt-for-WebAssembly toolchain (`-DOMSHELL_QT_WASM_PREFIX`).
+  `-DOMEDIT_WASM_OPTIMIZE=OFF` links faster, but the page then does not run in
+  the browser.
+
 ## Translations
 
 The translations are Qt `.ts` files in `OMEditLIB/Resources/nls` (OMEdit) and

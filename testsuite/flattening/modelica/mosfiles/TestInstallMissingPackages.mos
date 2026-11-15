@@ -1,0 +1,74 @@
+// name: TestInstallMissingPackages
+// keywords: package manager
+// status: correct
+// depends: TestInstallMissingPackages.mo
+// teardown_command: rm -rf TestInstallMissingPackagesHome TestInstallMissingPackagesRepo TestInstallMissingPackages.zip TestInstallMissingPackages*.log
+// A library given on the command line can have a version, and
+// --installMissingPackages installs a missing library and its uses from the
+// package index.
+
+echo(false);
+omc := getInstallationDirectoryPath() + "/bin/omc";
+dir := cd();
+home := dir + "/TestInstallMissingPackagesHome";
+libs := home + "/.openmodelica/libraries";
+mkdir(libs);
+mkdir("TestInstallMissingPackagesRepo/A1");
+mkdir("TestInstallMissingPackagesRepo/A2");
+mkdir("TestInstallMissingPackagesRepo/B");
+writeFile("TestInstallMissingPackagesRepo/A1/package.mo", "package A constant Real x = 1; annotation(version=\"1.0.0\", uses(B(version=\"1.0.0\"))); end A;");
+writeFile("TestInstallMissingPackagesRepo/A2/package.mo", "package A constant Real x = 2; annotation(version=\"2.0.0\"); end A;");
+writeFile("TestInstallMissingPackagesRepo/B/package.mo", "package B annotation(version=\"1.0.0\"); end B;");
+system("python3 -m zipfile -c TestInstallMissingPackages.zip TestInstallMissingPackagesRepo");
+zip := "\"zipfile\": \"file://" + dir + "/TestInstallMissingPackages.zip\"";
+writeFile(libs + "/index.json", "{\"libs\": {
+  \"A\": {\"versions\": {
+    \"1.0.0\": {\"version\": \"1.0.0\", " + zip + ", \"path\": \"A1\", \"sha\": \"a1\", \"uses\": {\"B\": \"1.0.0\"}},
+    \"2.0.0\": {\"version\": \"2.0.0\", " + zip + ", \"path\": \"A2\", \"sha\": \"a2\"}}},
+  \"B\": {\"versions\": {
+    \"1.0.0\": {\"version\": \"1.0.0\", " + zip + ", \"path\": \"B\", \"sha\": \"b1\"}}}}}");
+setEnvironmentVar("HOME", home);
+setEnvironmentVar("OPENMODELICALIBRARY", libs);
+echo(true);
+
+system(omc + " TestInstallMissingPackages.mo \"A 1.0.0\"", "TestInstallMissingPackages1.log");
+stringReplace(readFile("TestInstallMissingPackages1.log"), dir + "/", "");
+system(omc + " --installMissingPackages TestInstallMissingPackages.mo \"A 1.0.0\"", "TestInstallMissingPackages2.log");
+stringReplace(readFile("TestInstallMissingPackages2.log"), dir + "/", "");
+system(omc + " --installMissingPackages TestInstallMissingPackages.mo \"A 2.0.0\"", "TestInstallMissingPackages3.log");
+stringReplace(readFile("TestInstallMissingPackages3.log"), dir + "/", "");
+
+// Result:
+// true
+// 1
+// "Error processing file: TestInstallMissingPackages.mo
+// Failed to load library: A 1.0.0!
+//
+// Notification: You can install the requested package using one of the commands:
+//   installPackage(A, \"1.0.0\", exactMatch=false)
+//   installPackage(A, \"1.0.0\", exactMatch=true).
+// Error: Failed to load package A (1.0.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) TestInstallMissingPackagesHome/.openmodelica/libraries.
+//
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+// Failed to load library: A 1.0.0!
+//
+// Execution failed!
+// "
+// 0
+// "class TestInstallMissingPackages
+//   Real x = 1.0;
+// end TestInstallMissingPackages;
+// [TestInstallMissingPackagesHome/.openmodelica/libraries/B 1.0.0/package.mo:0:0-0:0:readonly] Notification: Package installed successfully (SHA b1).
+// [TestInstallMissingPackagesHome/.openmodelica/libraries/A 1.0.0/package.mo:0:0-0:0:readonly] Notification: Package installed successfully (SHA a1).
+// Notification: Automatically loaded package B 1.0.0 due to uses annotation from A.
+//
+// "
+// 0
+// "class TestInstallMissingPackages
+//   Real x = 2.0;
+// end TestInstallMissingPackages;
+// [TestInstallMissingPackagesHome/.openmodelica/libraries/A 2.0.0/package.mo:0:0-0:0:readonly] Notification: Package installed successfully (SHA a2).
+//
+// "
+// endResult

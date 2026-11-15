@@ -257,7 +257,8 @@ pub struct REAL_ATTRIBUTE {
     pub max: real_array,
     pub fixed: modelica_boolean,
     pub useNominal: modelica_boolean,
-    pub nominal: real_array,
+    pub positiveNominal: real_array,
+    pub nominalSign: real_array,
     pub start: real_array,
 }
 
@@ -356,7 +357,8 @@ pub struct NONLINEAR_SYSTEM_DATA {
     pub mixedSystem: modelica_boolean,
     pub min: *mut modelica_real,
     pub max: *mut modelica_real,
-    pub nominal: *mut modelica_real,
+    pub positiveNominal: *mut modelica_real,
+    pub nominalSign: *mut modelica_real,
     pub analyticalJacobianColumn: jacobianColumn_func_ptr,
     pub initialAnalyticalJacobian: initialAnalyticalJacobian_func_ptr,
     pub jacobianIndex: modelica_integer,
@@ -422,7 +424,7 @@ pub struct LINEAR_SYSTEM_DATA {
     pub checkConstraints: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
     pub min: *mut modelica_real,
     pub max: *mut modelica_real,
-    pub nominal: *mut modelica_real,
+    pub positiveNominal: *mut modelica_real,
     pub nnz: modelica_integer,
     pub size: modelica_integer,
     pub equationIndex: modelica_integer,

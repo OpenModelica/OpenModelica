@@ -107,8 +107,6 @@ simulate(simple_tuple); getErrorString();
 // 	### Set Equations:
 // 	[SCAL] (1) a = $FUN_1; ($RES_SIM_5)
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	$FUN_6	 ==> 	z3
@@ -118,8 +116,6 @@ simulate(simple_tuple); getErrorString();
 // 	z1	 ==> 	z2
 // 	$FUN_2	 ==> 	b
 // 	$FUN_1	 ==> 	a
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
@@ -127,12 +123,6 @@ simulate(simple_tuple); getErrorString();
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // Sliced State Alias
 // --------------------

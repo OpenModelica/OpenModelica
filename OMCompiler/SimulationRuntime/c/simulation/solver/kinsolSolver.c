@@ -1025,7 +1025,7 @@ static void nlsKinsolXScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
   switch (mode) {
   case SCALING_NOMINALSTART:
     for (i = 0; i < nlsData->size; i++) {
-      xScaling[i] = 1.0 / fmax(nlsData->nominal[i], fabs(xStart[i]));
+      xScaling[i] = 1.0 / fmax(nlsData->positiveNominal[i], fabs(xStart[i]));
     }
     break;
   case SCALING_ONES:
@@ -1380,7 +1380,7 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
   for (i = 0; i < kinsolData->size; i++) {
     c[i] = 0.0;
     /* a variable on the bound, up to rounding, would block every step that points outside */
-    tol = sqrt(DBL_EPSILON) * fabs(nlsData->nominal[i]);
+    tol = sqrt(DBL_EPSILON) * nlsData->positiveNominal[i];
     if (nlsData->min[i] >= 0.0 && x[i] > tol) {
       c[i] = nlsData->min[i] > 0.0 ? 2.0 : 1.0;    /* x > 0 or x >= 0 */
     } else if (nlsData->max[i] <= 0.0 && x[i] < -tol) {

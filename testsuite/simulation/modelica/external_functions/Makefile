@@ -2,13 +2,16 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 CevalModelicaStrings.mos \
+EnvironmentVariable.mos \
 ExternalCFuncInputOnly.mos \
+ExternalFunctionsWasmJit.mos \
 ExternalLibraries.mos \
 ExternalNlsRecovery.mos \
 ExternalRHSFlag.mos \
 ExternalUncaughtException.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
+ExtObjNotConstructed.mos \
 ExtObjStringParam.mos \
 GetExternalFunctions.mos \
 ImplicitArray.mos \
@@ -23,6 +26,7 @@ QualifiedCrefArg.mos \
 RecordMemberArguments.mos \
 TestRoots.mos \
 ts.mos \
+UserDllCompilerDirectory.mos \
 UserDllModelicaError.mos
 
 # test that currently fail. Move up when fixed.
@@ -49,6 +53,7 @@ ExternalRHSFlag.c \
 ExternalUncaughtException.c \
 ExtObj.c \
 ExtObj.h \
+ExtObjNotConstructed.ext.c \
 ExtObjOrder.h \
 ExtObjStringParam.ext.c \
 ExtObjStringParam.ext.h \
@@ -60,6 +65,7 @@ ModelicaUtilities.myExtFunction.c \
 PrebuiltWasmExternals \
 QualifiedCrefArg-f.c \
 testTables.txt \
+UserDllCompilerDirectory-lib.c \
 UserDllModelicaError-lib.c \
 
 

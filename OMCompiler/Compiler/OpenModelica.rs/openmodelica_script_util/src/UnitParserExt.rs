@@ -28,11 +28,11 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use metamodelica::Result;
 use arcstr::{ArcStr, literal};
+use metamodelica::Result;
 use metamodelica::{List, OrderedFloat, Real, cons, nil};
-use openmodelica_util::Error;
 use openmodelica_error::ErrorTypes;
+use openmodelica_util::Error;
 
 /// Signed integer matching the C++ `mmc_sint_t` used throughout the parser.
 type Sint = i64;
@@ -107,7 +107,10 @@ impl Rational {
 
     fn simplify(q: Rational) -> Rational {
         let g = Rational::gcd(q.num, q.denom);
-        let mut q2 = Rational { num: q.num / g, denom: q.denom / g };
+        let mut q2 = Rational {
+            num: q.num / g,
+            denom: q.denom / g,
+        };
         q2.fixsign();
         q2
     }
@@ -127,11 +130,17 @@ impl Rational {
     }
 
     fn mul(q1: Rational, q2: Rational) -> Rational {
-        Rational::simplify(Rational { num: q1.num * q2.num, denom: q1.denom * q2.denom })
+        Rational::simplify(Rational {
+            num: q1.num * q2.num,
+            denom: q1.denom * q2.denom,
+        })
     }
 
     fn div(q1: Rational, q2: Rational) -> Rational {
-        Rational::simplify(Rational { num: q1.num * q2.denom, denom: q1.denom * q2.num })
+        Rational::simplify(Rational {
+            num: q1.num * q2.denom,
+            denom: q1.denom * q2.num,
+        })
     }
 
     fn powint(mut base: Sint, mut exp: Sint) -> Sint {
@@ -231,6 +240,9 @@ struct Unit {
     scale_factor: Rational,
     /// Additive offset to the base unit (e.g. `degC` ⇒ 273.15).
     offset: Rational,
+    /// Exponents of rad and Hz, which `unit_vec` counts as 1 and s-1.
+    rad_expo: Rational,
+    hz_expo: Rational,
     /// Symbolic type parameters; the key includes the leading apostrophe.
     type_param_vec: BTreeMap<String, Rational>,
     quantity_name: String,
@@ -249,6 +261,8 @@ impl Default for Unit {
             prefix_expo: Rational::whole(0),
             scale_factor: Rational::whole(1),
             offset: Rational::whole(0),
+            rad_expo: Rational::whole(0),
+            hz_expo: Rational::whole(0),
             type_param_vec: BTreeMap::new(),
             quantity_name: String::new(),
             unit_name: String::new(),
@@ -313,13 +327,25 @@ impl Unit {
         } else {
             Rational::div(u1.scale_factor, u2.scale_factor)
         };
+        let addsub = |q1, q2| {
+            if mulop {
+                Rational::add(q1, q2)
+            } else {
+                Rational::sub(q1, q2)
+            }
+        };
+        ur.rad_expo = addsub(u1.rad_expo, u2.rad_expo);
+        ur.hz_expo = addsub(u1.hz_expo, u2.hz_expo);
         ur.unit_vec.clear();
         let n = u1.unit_vec.len().max(u2.unit_vec.len());
         for i in 0..n {
             let q1 = u1.unit_vec.get(i).copied().unwrap_or(Rational::whole(0));
             let q2 = u2.unit_vec.get(i).copied().unwrap_or(Rational::whole(0));
-            ur.unit_vec
-                .push(if mulop { Rational::add(q1, q2) } else { Rational::sub(q1, q2) });
+            ur.unit_vec.push(if mulop {
+                Rational::add(q1, q2)
+            } else {
+                Rational::sub(q1, q2)
+            });
         }
         // Merge the sorted type-parameter maps. Both BTreeMaps iterate in key
         // order, so we keep the C++ merge that adds matching exponents and (for
@@ -327,12 +353,19 @@ impl Unit {
         for (k, v2) in &u2.type_param_vec {
             match u1.type_param_vec.get(k) {
                 Some(v1) => {
-                    let combined =
-                        if mulop { Rational::add(*v1, *v2) } else { Rational::sub(*v1, *v2) };
+                    let combined = if mulop {
+                        Rational::add(*v1, *v2)
+                    } else {
+                        Rational::sub(*v1, *v2)
+                    };
                     ur.type_param_vec.insert(k.clone(), combined);
                 }
                 None => {
-                    let v = if mulop { *v2 } else { Rational::mul(*v2, Rational::whole(-1)) };
+                    let v = if mulop {
+                        *v2
+                    } else {
+                        Rational::mul(*v2, Rational::whole(-1))
+                    };
                     ur.type_param_vec.insert(k.clone(), v);
                 }
             }
@@ -362,6 +395,8 @@ impl Unit {
         let mut ur = u.clone();
         ur.prefix_expo = Rational::mul(u.prefix_expo, e);
         ur.scale_factor = Rational::pow(u.scale_factor, e);
+        ur.rad_expo = Rational::mul(u.rad_expo, e);
+        ur.hz_expo = Rational::mul(u.hz_expo, e);
         ur.unit_vec = u.unit_vec.iter().map(|q| Rational::mul(*q, e)).collect();
         for v in ur.type_param_vec.values_mut() {
             *v = Rational::mul(*v, e);
@@ -388,6 +423,8 @@ struct DerivedInfo {
     offset: Rational,
     prefix_allowed: bool,
     weight: f64,
+    rad_expo: Rational,
+    hz_expo: Rational,
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -417,7 +454,10 @@ struct Scanner {
 
 impl Scanner {
     fn new(s: &str) -> Scanner {
-        Scanner { str: s.as_bytes().to_vec(), index: 0 }
+        Scanner {
+            str: s.as_bytes().to_vec(),
+            index: 0,
+        }
     }
 
     fn is_text_char(&self, i: usize) -> bool {
@@ -574,7 +614,9 @@ impl UnitParser {
         if self.units.contains_key(unit_symbol) {
             return;
         }
-        self.base.push(Base { unit_symbol: unit_symbol.to_string() });
+        self.base.push(Base {
+            unit_symbol: unit_symbol.to_string(),
+        });
         let mut u = Unit::default();
         u.prefix_allowed = prefix_allowed;
         u.quantity_name = quantity_name.to_string();
@@ -598,6 +640,8 @@ impl UnitParser {
     fn add_derived_internal(&mut self, d: &DerivedInfo) -> UnitResult<()> {
         let mut u = Unit::default();
         self.str2unit(&d.unit_str_exp, &mut u)?;
+        u.rad_expo = Rational::add(u.rad_expo, d.rad_expo);
+        u.hz_expo = Rational::add(u.hz_expo, d.hz_expo);
         u.quantity_name = d.quantity_name.clone();
         u.unit_name = d.unit_name.clone();
         u.unit_symbol = d.unit_symbol.clone();
@@ -738,7 +782,11 @@ impl UnitParser {
         }
         let mut scan = Scanner::new(unitstr);
         *unit = self.parse_expression(&mut scan)?;
-        if scan.finished() { Ok(()) } else { Err(UnitErr::ParseError) }
+        if scan.finished() {
+            Ok(())
+        } else {
+            Err(UnitErr::ParseError)
+        }
     }
 
     fn parse_expression(&self, scan: &mut Scanner) -> UnitResult<Unit> {
@@ -935,72 +983,277 @@ impl UnitParser {
         self.add_base("luminous intensity", "candela", "cd", true);
 
         // (quantity, unit name, symbol, expression, prefixExpo, scale n, scale d, offset n, offset d, weight)
-        let d = |q: &str, un: &str, us: &str, ex: &str, pe: Sint, sn: Sint, sd: Sint, on: Sint, od: Sint, w: f64| DerivedInfo {
-            quantity_name: q.to_string(),
-            unit_name: un.to_string(),
-            unit_symbol: us.to_string(),
-            unit_str_exp: ex.to_string(),
-            prefix_expo: Rational::whole(pe),
-            scale_factor: Rational::new(sn, sd),
-            offset: Rational::new(on, od),
-            prefix_allowed: true,
-            weight: w,
+        let d = |q: &str, un: &str, us: &str, ex: &str, pe: Sint, sn: Sint, sd: Sint, on: Sint, od: Sint, w: f64| {
+            DerivedInfo {
+                quantity_name: q.to_string(),
+                unit_name: un.to_string(),
+                unit_symbol: us.to_string(),
+                unit_str_exp: ex.to_string(),
+                prefix_expo: Rational::whole(pe),
+                scale_factor: Rational::new(sn, sd),
+                offset: Rational::new(on, od),
+                prefix_allowed: true,
+                weight: w,
+                rad_expo: Rational::whole(0),
+                hz_expo: Rational::whole(0),
+            }
         };
 
         // Special derived unit for handling gram.
         self.add_derived(d("mass", "gram", "g", "kg", -3, 1, 1, 0, 1, 1.0));
 
         // Standard derived units (SI brochure 8th ed., page 118).
-        self.add_derived(d("plane angle", "radian", "rad", "m/m", 0, 1, 1, 0, 1, 1.0));
+        self.add_derived(DerivedInfo {
+            rad_expo: Rational::whole(1),
+            ..d("plane angle", "radian", "rad", "m/m", 0, 1, 1, 0, 1, 1.0)
+        });
         self.add_derived(d("solid angle", "steradian", "sr", "m2/m2", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("frequency", "hertz", "Hz", "s-1", 0, 1, 1, 0, 1, 0.8));
+        self.add_derived(DerivedInfo {
+            hz_expo: Rational::whole(1),
+            ..d("frequency", "hertz", "Hz", "s-1", 0, 1, 1, 0, 1, 0.8)
+        });
         self.add_derived(d("force", "newton", "N", "m.kg.s-2", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("pressure, stress", "pascal", "Pa", "N/m2", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("power, radiant flux", "watt", "W", "J/s", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("energy, work, amount of heat", "joule", "J", "N.m", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("electric charge, amount of electricity", "coulomb", "C", "s.A", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("electric potential difference, electromotive force", "volt", "V", "W/A", 0, 1, 1, 0, 1, 1.0));
+        self.add_derived(d(
+            "energy, work, amount of heat",
+            "joule",
+            "J",
+            "N.m",
+            0,
+            1,
+            1,
+            0,
+            1,
+            1.0,
+        ));
+        self.add_derived(d(
+            "electric charge, amount of electricity",
+            "coulomb",
+            "C",
+            "s.A",
+            0,
+            1,
+            1,
+            0,
+            1,
+            1.0,
+        ));
+        self.add_derived(d(
+            "electric potential difference, electromotive force",
+            "volt",
+            "V",
+            "W/A",
+            0,
+            1,
+            1,
+            0,
+            1,
+            1.0,
+        ));
         self.add_derived(d("capacitance", "farad", "F", "C/V", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("electric resistance", "ohm", "Ohm", "V/A", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("electric conductance", "siemens", "S", "A/V", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("magnetic flux", "weber", "Wb", "V.s", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("magnetic flux density", "tesla", "T", "Wb/m2", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("inductance", "henry", "H", "Wb/A", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("thermodynamic temperature", "degree Celsius", "degC", "K", 0, 1, 1, 27315, 100, 1.0));
+        self.add_derived(d(
+            "thermodynamic temperature",
+            "degree Celsius",
+            "degC",
+            "K",
+            0,
+            1,
+            1,
+            27315,
+            100,
+            1.0,
+        ));
         self.add_derived(d("luminous flux", "lumen", "lm", "cd.sr", 0, 1, 1, 0, 1, 1.0));
         self.add_derived(d("illuminance", "lux", "lx", "lm/m2", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("activity referred to a radionuclide", "becquerel", "Bq", "s-1", 0, 1, 1, 0, 1, 0.8));
-        self.add_derived(d("absorbed dose, specific energy (imparted), kerma", "gray", "Gy", "J/kg", 0, 1, 1, 0, 1, 1.0));
+        self.add_derived(d(
+            "activity referred to a radionuclide",
+            "becquerel",
+            "Bq",
+            "s-1",
+            0,
+            1,
+            1,
+            0,
+            1,
+            0.8,
+        ));
+        self.add_derived(d(
+            "absorbed dose, specific energy (imparted), kerma",
+            "gray",
+            "Gy",
+            "J/kg",
+            0,
+            1,
+            1,
+            0,
+            1,
+            1.0,
+        ));
         self.add_derived(d(
             "dose equivalent, ambient dose equivalent, directional dose equivalent, personal dose equivalent",
-            "sievert", "Sv", "J/kg", 0, 1, 1, 0, 1, 1.0,
+            "sievert",
+            "Sv",
+            "J/kg",
+            0,
+            1,
+            1,
+            0,
+            1,
+            1.0,
         ));
         self.add_derived(d("catalyctic activity", "katal", "kat", "s-1.mol", 0, 1, 1, 0, 1, 1.0));
 
         // More derived units (64-bit scale factors).
-        self.add_derived(d("plane angle", "degree", "deg", "rad", 0, 31415926535897932, 1800000000000000000, 0, 1, 1.0));
-        self.add_derived(d("plane angle", "revolutions", "rev", "rad", 0, 31415926535897932, 5000000000000000, 0, 1, 1.0));
-        self.add_derived(d("angular velocity", "revolutions per minute", "rpm", "rad/s", 0, 31415926535897932, 300000000000000000, 0, 1, 1.0));
+        self.add_derived(d(
+            "plane angle",
+            "degree",
+            "deg",
+            "rad",
+            0,
+            31415926535897932,
+            1800000000000000000,
+            0,
+            1,
+            1.0,
+        ));
+        self.add_derived(d(
+            "plane angle",
+            "revolutions",
+            "rev",
+            "rad",
+            0,
+            31415926535897932,
+            5000000000000000,
+            0,
+            1,
+            1.0,
+        ));
+        self.add_derived(d(
+            "angular velocity",
+            "revolutions per minute",
+            "rpm",
+            "rad/s",
+            0,
+            31415926535897932,
+            300000000000000000,
+            0,
+            1,
+            1.0,
+        ));
         self.add_derived(d("energy", "watt hour", "Wh", "J", 0, 3600, 1, 0, 1, 1.0));
-        self.add_derived(d("energy", "electron volt", "eV", "J", -19, 1602176634, 1000000000, 0, 1, 1.0));
+        self.add_derived(d(
+            "energy",
+            "electron volt",
+            "eV",
+            "J",
+            -19,
+            1602176634,
+            1000000000,
+            0,
+            1,
+            1.0,
+        ));
         self.add_derived(d("velocity", "knot", "kn", "m/s", 0, 1852, 3600, 0, 1, 1.0));
         self.add_derived(d("mass", "metric ton", "t", "kg", 3, 1, 1, 0, 1, 1.0));
         self.add_derived(d("volume", "litre", "l", "m3", 0, 1, 1000, 0, 1, 1.0));
         self.add_derived(d("apparent power", "volt-ampere", "VA", "J/s", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("reactive power", "volt-ampere reactive", "var", "J/s", 0, 1, 1, 0, 1, 1.0));
-        self.add_derived(d("thermodynamic temperature", "degree Fahrenheit", "degF", "K", 0, 5, 9, 27315 * 9 - 3200 * 5, 900, 1.0));
-        self.add_derived(d("thermodynamic temperature", "degree Rankine", "degRk", "K", 0, 5, 9, 0, 1, 1.0));
+        self.add_derived(d(
+            "reactive power",
+            "volt-ampere reactive",
+            "var",
+            "J/s",
+            0,
+            1,
+            1,
+            0,
+            1,
+            1.0,
+        ));
+        self.add_derived(d(
+            "thermodynamic temperature",
+            "degree Fahrenheit",
+            "degF",
+            "K",
+            0,
+            5,
+            9,
+            27315 * 9 - 3200 * 5,
+            900,
+            1.0,
+        ));
+        self.add_derived(d(
+            "thermodynamic temperature",
+            "degree Rankine",
+            "degRk",
+            "K",
+            0,
+            5,
+            9,
+            0,
+            1,
+            1.0,
+        ));
         self.add_derived(d("pressure", "bar", "bar", "Pa", 0, 100000, 1, 0, 1, 1.0));
-        self.add_derived(d("pressure", "millimeter of mercury", "mmHg", "Pa", 0, 133322387415, 1000000000, 0, 1, 1.0));
+        self.add_derived(d(
+            "pressure",
+            "millimeter of mercury",
+            "mmHg",
+            "Pa",
+            0,
+            133322387415,
+            1000000000,
+            0,
+            1,
+            1.0,
+        ));
         self.add_derived(d("time", "minute", "min", "s", 0, 60, 1, 0, 1, 1.0));
         self.add_derived(d("time", "hour", "h", "s", 0, 60 * 60, 1, 0, 1, 1.0));
         self.add_derived(d("time", "day", "d", "s", 0, 60 * 60 * 24, 1, 0, 1, 1.0));
         self.add_derived(d("length", "inch", "in", "m", 0, 254, 10000, 0, 1, 1.0));
         self.add_derived(d("length", "foot", "ft", "m", 0, 3048, 10000, 0, 1, 1.0));
-        self.add_derived(d("velocity", "miles per hour", "mph", "m/s", 0, 44704, 100000, 0, 1, 1.0));
+        self.add_derived(d(
+            "velocity",
+            "miles per hour",
+            "mph",
+            "m/s",
+            0,
+            44704,
+            100000,
+            0,
+            1,
+            1.0,
+        ));
         self.add_derived(d("mass", "pound", "lb", "kg", 0, 45359237, 100000000, 0, 1, 1.0));
-        self.add_derived(d("pressure", "pound per square inch", "psi", "Pa", 0, 689475729, 100000, 0, 1, 1.0));
-        self.add_derived(d("pressure", "inch water gauge", "inWG", "Pa", 0, 249088908333, 1000000000, 0, 1, 1.0));
+        self.add_derived(d(
+            "pressure",
+            "pound per square inch",
+            "psi",
+            "Pa",
+            0,
+            689475729,
+            100000,
+            0,
+            1,
+            1.0,
+        ));
+        self.add_derived(d(
+            "pressure",
+            "inch water gauge",
+            "inWG",
+            "Pa",
+            0,
+            249088908333,
+            1000000000,
+            0,
+            1,
+            1.0,
+        ));
 
         let _ = self.commit();
     }
@@ -1060,7 +1313,9 @@ pub fn unit2str(
     let mut tpn = (&*tpnoms).into_iter();
     let mut tpd = (&*tpdenoms).into_iter();
     for sym in (&*tpstrs).into_iter() {
-        let (Some(n), Some(dn)) = (tpn.next(), tpd.next()) else { break };
+        let (Some(n), Some(dn)) = (tpn.next(), tpd.next()) else {
+            break;
+        };
         unit.type_param_vec
             .insert(sym.as_str().to_string(), Rational::new(*n as Sint, *dn as Sint));
     }
@@ -1068,17 +1323,7 @@ pub fn unit2str(
     ArcStr::from(res)
 }
 
-pub fn str2unit(
-    res: ArcStr,
-) -> Result<(
-    List<i32>,
-    List<i32>,
-    List<i32>,
-    List<i32>,
-    List<ArcStr>,
-    Real,
-    Real,
-)> {
+pub fn str2unit(res: ArcStr) -> Result<(List<i32>, List<i32>, List<i32>, List<i32>, List<ArcStr>, Real, Real)> {
     let input = res.as_str();
     let mut unit = Unit::default();
     let parse = with_state(|s| s.parser.str2unit(input, &mut unit));
@@ -1098,11 +1343,25 @@ pub fn str2unit(
     let denoms = List::from_iter(unit.unit_vec.iter().map(|r| r.denom as i32));
     let tpnoms = List::from_iter(unit.type_param_vec.values().map(|r| r.num as i32));
     let tpdenoms = List::from_iter(unit.type_param_vec.values().map(|r| r.denom as i32));
-    let tpstrs = List::from_iter(
-        unit.type_param_vec.keys().map(|k| ArcStr::from(k.as_str())),
-    );
+    let tpstrs = List::from_iter(unit.type_param_vec.keys().map(|k| ArcStr::from(k.as_str())));
 
-    Ok((noms, denoms, tpnoms, tpdenoms, tpstrs, OrderedFloat(scale_factor), OrderedFloat(offset)))
+    Ok((
+        noms,
+        denoms,
+        tpnoms,
+        tpdenoms,
+        tpstrs,
+        OrderedFloat(scale_factor),
+        OrderedFloat(offset),
+    ))
+}
+
+pub fn angleExponents(unit: ArcStr) -> Result<(i32, i32)> {
+    let mut u = Unit::default();
+    match with_state(|s| s.parser.str2unit(unit.as_str(), &mut u)) {
+        Ok(()) if u.rad_expo.denom == 1 && u.hz_expo.denom == 1 => Ok((u.rad_expo.num as i32, u.hz_expo.num as i32)),
+        _ => Err("UnitParserExt.angleExponents"),
+    }
 }
 
 pub fn allUnitSymbols() -> List<ArcStr> {
@@ -1133,6 +1392,8 @@ pub fn addDerivedWeight(name: ArcStr, exp: ArcStr, weight: Real) {
         offset: Rational::whole(0),
         prefix_allowed: true,
         weight: weight.into_inner(),
+        rad_expo: Rational::whole(0),
+        hz_expo: Rational::whole(0),
     };
     with_state(|s| s.parser.add_derived(info));
 }

@@ -55,7 +55,6 @@ import Interactive.Access;
 import InteractiveUtil;
 import Values;
 import SimCode;
-import UnitAbsyn;
 
 // protected imports
 protected
@@ -794,7 +793,7 @@ algorithm
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
       list<String> strs,strs1,strs2;
-      Real timeTotal,timeSimulation,linearizeTime,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
+      Real timeTotal,timeSimulation,linearizeTime,offset,scaleFactor;
       Boolean bval, b, b1, b2, b3, b4, b5, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, lineEndingIsCRLF;
       Boolean symLinFlag, dynOptFlag;
       Integer grammarFlag;
@@ -806,7 +805,6 @@ algorithm
       Absyn.Within within_;
       Boolean dumpExtractionSteps;
       list<Boolean> blst;
-      UnitAbsyn.Unit u1,u2;
       SymbolTable forkedSymbolTable;
       SimCode.SimulationSettings simSettings;
 
@@ -888,15 +886,7 @@ algorithm
       algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        (u1,scaleFactor1,offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
-        (u2,scaleFactor2,offset2) := UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
-        b := valueEq(u1,u2);
-        /* How to calculate the final scale factor and offset:
-        F = C*1.8 + 32
-        C = (F - 32)/1.8 = F/1.8 - 32/1.8
-        */
-        scaleFactor := realDiv(scaleFactor2, scaleFactor1);
-        offset := realDiv(realSub(offset2, offset1), scaleFactor1);
+        (b,scaleFactor,offset) := UnitAbsynBuilder.convertUnits(str1,str2);
       then
         Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)});
 
@@ -907,8 +897,7 @@ algorithm
       algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        u1 := UnitAbsynBuilder.str2unit(str1, NONE());
-        strs := UnitAbsynBuilder.getDerivedUnits(u1, str1);
+        strs := UnitAbsynBuilder.getDerivedUnits(str1);
       then
         ValuesMake.makeArray(List.map(strs, ValuesMake.makeString));
 

@@ -71,9 +71,9 @@ optimization purposes.
 > If you install and use `gfortran`, it is recommended that you also use `gcc` and `g++`
 > (instead of `clang` and `clang++`).
 
-If you cannot (Apple Silicon has no libquadmath) or do not want to use `gfortran`, disable
-Fortran support by adding `-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF
--DOM_OMC_ENABLE_MOO=OFF` to the CMake configuration command.
+If you cannot or do not want to use `gfortran`, disable Fortran support by adding
+`-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF` to
+the CMake configuration command.
 
 `libomp` puts its headers in `/opt/local/include/libomp`, so OpenMP needs `OpenMP_ROOT` and
 that include directory as well.
