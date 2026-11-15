@@ -486,6 +486,52 @@ impl Flags {
     }
 }
 
+#[cfg(feature = "std")]
+impl Flags {
+    fn exchange(&self, o: &Flags) {
+        fn x32(a: &AtomicU32, b: &AtomicU32) {
+            b.store(a.swap(b.load(Ordering::Relaxed), Ordering::Relaxed), Ordering::Relaxed);
+        }
+        fn x64(a: &AtomicU64, b: &AtomicU64) {
+            b.store(a.swap(b.load(Ordering::Relaxed), Ordering::Relaxed), Ordering::Relaxed);
+        }
+        x32(&self.error_stage[0], &o.error_stage[0]);
+        x32(&self.error_stage[1], &o.error_stage[1]);
+        x32(&self.depth, &o.depth);
+        x32(&self.assert_hit, &o.assert_hit);
+        x32(&self.eval_hit, &o.eval_hit);
+        x32(&self.assert_seen, &o.assert_seen);
+        x32(&self.eval_threw, &o.eval_threw);
+        x32(&self.throw_seen, &o.throw_seen);
+        x32(&self.dt_violated, &o.dt_violated);
+        x32(&self.no_throw_div_zero, &o.no_throw_div_zero);
+        x32(&self.jac_depth, &o.jac_depth);
+        x64(&self.jac_evals, &o.jac_evals);
+        x64(&self.iters, &o.iters);
+        x64(&self.res_evals, &o.res_evals);
+    }
+}
+
+/// One run's [`Flags`] while it is not on a thread. The values move, not the
+/// thread's set, whose addresses generated code may hold.
+#[cfg(feature = "std")]
+pub struct ThreadState(Flags);
+
+#[cfg(feature = "std")]
+impl Default for ThreadState {
+    fn default() -> Self {
+        ThreadState(Flags::new())
+    }
+}
+
+#[cfg(feature = "std")]
+impl ThreadState {
+    /// Exchange with the calling thread's flags.
+    pub fn swap(&mut self) {
+        flags().exchange(&self.0);
+    }
+}
+
 /// The calling thread's [`Flags`]. Leaked rather than dropped with the thread: the
 /// addresses handed out live as long as anything can reach them, and a run has one
 /// set per worker.

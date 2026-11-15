@@ -6,7 +6,7 @@ use std::ffi::CString;
 
 use openmodelica_fmi_state_machine::fmi3::{Interface, Machine, st};
 
-use crate::fmi_native::{ERROR, Fmi3LogCb, Kind, Logger, Native, OK, code, cstr};
+use crate::fmi_native::{ERROR, Entered, Fmi3LogCb, HasNative, Kind, Logger, Native, OK, code, cstr};
 
 struct Component {
     n: Box<Native>,
@@ -17,7 +17,15 @@ struct Component {
 
 /// `c`, unless `check` refused the call, which is then logged as C's
 /// `invalidState` logs it.
-fn checked<'a>(c: &'a mut Component, check: Result<(), String>) -> Option<&'a mut Component> {
+impl HasNative for Component {
+    fn native(&self) -> &Native {
+        &self.n
+    }
+}
+
+type Comp<'a> = Entered<'a, Component>;
+
+fn checked(c: Comp<'_>, check: Result<(), String>) -> Option<Comp<'_>> {
     match check {
         Ok(()) => Some(c),
         Err(msg) => {
@@ -27,34 +35,34 @@ fn checked<'a>(c: &'a mut Component, check: Result<(), String>) -> Option<&'a mu
     }
 }
 
-fn refuse<'a>(c: &'a mut Component, func: &str, place: &str) -> Option<&'a mut Component> {
+fn refuse<'a>(mut c: Comp<'a>, func: &str, place: &str) -> Option<Comp<'a>> {
     let msg = c.m.refuse(func, place);
     checked(c, Err(msg))
 }
 
 /// [`comp`], if `func` may be called in the instance's state (FMI 3.0, 5.x state
 /// machines); otherwise refused.
-fn in_state<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<&'a mut Component> {
-    let c = comp(c)?;
+fn in_state<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<Comp<'a>> {
+    let mut c = comp(c)?;
     let r = c.m.check(func, allowed);
     checked(c, r)
 }
 
-fn in_state_me<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<&'a mut Component> {
-    let c = comp(c)?;
+fn in_state_me<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<Comp<'a>> {
+    let mut c = comp(c)?;
     let r = c.m.check_me(func, allowed);
     checked(c, r)
 }
 
-fn in_state_cs<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<&'a mut Component> {
-    let c = comp(c)?;
+fn in_state_cs<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<Comp<'a>> {
+    let mut c = comp(c)?;
     let r = c.m.check_cs(func, allowed);
     checked(c, r)
 }
 
 /// [`in_state`] for fmi3Set{VariableType}: in Configuration Mode, only for
 /// structural parameters.
-fn in_set_state<'a>(c: *mut c_void, func: &str, allowed: u32, vr: *const u32, nvr: usize) -> Option<&'a mut Component> {
+fn in_set_state<'a>(c: *mut c_void, func: &str, allowed: u32, vr: *const u32, nvr: usize) -> Option<Comp<'a>> {
     let c = in_state(c, func, allowed)?;
     if c.m.state == st::CONFIGURATION
         && unsafe { vrs(vr, nvr) }
@@ -66,10 +74,8 @@ fn in_set_state<'a>(c: *mut c_void, func: &str, allowed: u32, vr: *const u32, nv
     Some(c)
 }
 
-fn comp<'a>(c: *mut c_void) -> Option<&'a mut Component> {
-    let c = unsafe { (c as *mut Component).as_mut() }?;
-    c.n.enter();
-    Some(c)
+fn comp<'a>(c: *mut c_void) -> Option<Comp<'a>> {
+    unsafe { (c as *mut Component).as_mut() }.map(Entered::new)
 }
 
 unsafe fn vrs(p: *const u32, n: usize) -> Vec<u32> {
@@ -241,7 +247,7 @@ pub unsafe extern "C" fn omc_fmi3FreeInstance(c: *mut c_void) {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3Reset(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi3Reset", st::ANY) else {
+    let Some(mut c) = in_state(c, "fmi3Reset", st::ANY) else {
         return ERROR;
     };
     let r = c.n.reset("fmi3Reset");
@@ -252,7 +258,7 @@ macro_rules! nullary {
     ($cfn:ident, $fname:literal, $mask:expr, $next:expr, $method:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else {
+            let Some(mut c) = in_state(c, $fname, $mask) else {
                 return ERROR;
             };
             let r = code(c.n.inst.$method());
@@ -263,17 +269,18 @@ macro_rules! nullary {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3ExitInitializationMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi3ExitInitializationMode", st::INIT) else {
+    let Some(mut c) = in_state(c, "fmi3ExitInitializationMode", st::INIT) else {
         return ERROR;
     };
-    c.m.exit_initialization_mode(code(c.n.inst.exit_initialization_mode()))
+    let r = code(c.n.inst.exit_initialization_mode());
+    c.m.exit_initialization_mode(r)
 }
 
 /// Only from Step Mode, and only for an importer that said it uses Event Mode.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3EnterEventMode(c: *mut c_void) -> c_int {
     let allowed = comp(c).map_or(0, |c| c.m.enter_event_mode_states());
-    let Some(c) = in_state(c, "fmi3EnterEventMode", allowed) else {
+    let Some(mut c) = in_state(c, "fmi3EnterEventMode", allowed) else {
         return ERROR;
     };
     let r = code(c.n.inst.enter_event_mode());
@@ -292,7 +299,7 @@ nullary!(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3EnterConfigurationMode(c: *mut c_void) -> c_int {
     let func = "fmi3EnterConfigurationMode";
-    let Some(c) = in_state(c, func, st::INSTANTIATED) else {
+    let Some(mut c) = in_state(c, func, st::INSTANTIATED) else {
         return ERROR;
     };
     if !c.n.inst.has_structural_parameters() {
@@ -319,7 +326,7 @@ nullary!(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3EnterStepMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state_cs(c, "fmi3EnterStepMode", st::EVENT) else {
+    let Some(mut c) = in_state_cs(c, "fmi3EnterStepMode", st::EVENT) else {
         return ERROR;
     };
     let r = code(c.n.inst.enter_step_mode());
@@ -335,7 +342,7 @@ pub unsafe extern "C" fn omc_fmi3EnterInitializationMode(
     stop_time_defined: bool,
     stop_time: f64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3EnterInitializationMode", st::INSTANTIATED) else {
+    let Some(mut c) = in_state(c, "fmi3EnterInitializationMode", st::INSTANTIATED) else {
         return ERROR;
     };
     let (tol, stop) = (
@@ -504,7 +511,7 @@ pub unsafe extern "C" fn omc_fmi3GetString(
     values: *mut *const c_char,
     n: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetString", st::GET) else {
+    let Some(mut c) = in_state(c, "fmi3GetString", st::GET) else {
         return ERROR;
     };
     match c.n.inst.get_string(unsafe { vrs(vr, nvr) }) {
@@ -555,7 +562,7 @@ pub unsafe extern "C" fn omc_fmi3GetBinary(
     }
     for (i, vr) in unsafe { vrs(vr, nvr) }.into_iter().enumerate() {
         let Some(slot) = c.n.ext_obj_slot(vr) else {
-            return bad_binary(c, "fmi3GetBinary", vr);
+            return bad_binary(&c, "fmi3GetBinary", vr);
         };
         unsafe {
             *value_sizes.add(i) = core::mem::size_of::<*mut c_void>();
@@ -585,10 +592,10 @@ pub unsafe extern "C" fn omc_fmi3SetBinary(
     }
     for (i, vr) in unsafe { vrs(vr, nvr) }.into_iter().enumerate() {
         let Some(slot) = c.n.ext_obj_slot(vr) else {
-            return bad_binary(c, "fmi3SetBinary", vr);
+            return bad_binary(&c, "fmi3SetBinary", vr);
         };
         if sizes[i] != core::mem::size_of::<*mut c_void>() || ptrs[i].is_null() {
-            return bad_binary(c, "fmi3SetBinary", vr);
+            return bad_binary(&c, "fmi3SetBinary", vr);
         }
         unsafe { core::ptr::copy_nonoverlapping(ptrs[i], slot as *mut u8, sizes[i]) };
     }
@@ -632,7 +639,7 @@ pub unsafe extern "C" fn omc_fmi3GetFMUState(c: *mut c_void, state: *mut *mut c_
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3SetFMUState(c: *mut c_void, state: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi3SetFMUState", st::FMU_STATE) else {
+    let Some(mut c) = in_state(c, "fmi3SetFMUState", st::FMU_STATE) else {
         return ERROR;
     };
     let Some((mode, bytes)) = (unsafe { (state as *const Vec<u8>).as_ref() }).and_then(|v| Machine::split(v)) else {
@@ -985,7 +992,7 @@ set_fraction!(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3EnterContinuousTimeMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state_me(c, "fmi3EnterContinuousTimeMode", st::EVENT) else {
+    let Some(mut c) = in_state_me(c, "fmi3EnterContinuousTimeMode", st::EVENT) else {
         return ERROR;
     };
     let r = code(c.n.inst.enter_continuous_time_mode());
@@ -1174,7 +1181,7 @@ pub unsafe extern "C" fn omc_fmi3ActivateModelPartition(
     clock_reference: u32,
     activation_time: f64,
 ) -> c_int {
-    let Some(c) = comp(c) else {
+    let Some(mut c) = comp(c) else {
         return ERROR;
     };
     let r = c.m.check_se("fmi3ActivateModelPartition", st::CLOCK);
