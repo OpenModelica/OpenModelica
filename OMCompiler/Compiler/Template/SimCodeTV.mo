@@ -1349,6 +1349,11 @@ end SimCodeFunction;
 
 package SimCodeCodegenUtil
 
+  function discreteChangeRanges
+    input SimCodeVar.SimVars vars;
+    output list<Integer> ranges;
+  end discreteChangeRanges;
+
   function linearSystemMatrixFormat
     input SimCode.LinearSystem ls;
     output String format;

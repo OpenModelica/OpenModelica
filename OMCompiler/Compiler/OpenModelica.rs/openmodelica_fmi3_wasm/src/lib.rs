@@ -1098,8 +1098,10 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// Reals come last.
     fn note_change(&mut self, off: u32) {
         let l = &self.layout;
-        let first_discrete = ((l.rparam_off - l.real_off) / 8).saturating_sub(self.meta.soti.n_discrete_real);
-        if !(off >= l.real_off && off < l.rparam_off && (off - l.real_off) / 8 < first_discrete) {
+        let continuous = off >= l.real_off
+            && off < l.rparam_off
+            && self.meta.soti.checked_reals.get(((off - l.real_off) / 8) as usize) == Some(&false);
+        if !continuous {
             self.step_event = true;
         }
     }
@@ -1514,6 +1516,7 @@ impl<E: FmiHost + 'static> MeState<E> {
         );
         let start_time = self.read_f64(TIME_OFF);
         // No `-csvInput` on the FMI path: the importer drives the inputs.
+        driver::install_event_dump(&self.meta);
         run_initialization(&mut self.engine, self.sim_data, &self.layout, &[], start_time)?;
         self.dss = driver::StateSelection::initial(&mut self.engine, self.sim_data, &self.meta)?;
         // C's `initializeModel` runs `initSynchronous` too.

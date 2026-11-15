@@ -76,6 +76,9 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the arrow result
     // file's `modelica.units` needs the unit database's display conversions.
     "SimCodeCodegenUtil.unitConversion",
+    // openmodelica_codegen_wasm_jit/src/CodegenWasmJit/meta.rs → which discrete
+    // variables the event iteration compares.
+    "SimCodeCodegenUtil.isCommonSubexpression",
     // openmodelica_gendoc/src/{icons,main}.rs → the documentation generator
     // instantiates a library once and renders each class' icon from the model
     // instance, then drops the top scope.

@@ -4060,5 +4060,54 @@ algorithm
                  or size > minSize;
 end useSparseSolver;
 
+public function isCommonSubexpression
+  "A common subexpression temporary ($cse) holds a function call result. It is
+   no Modelica variable and does not count in pre(v) == v at the end of an event
+   iteration (#9598)."
+  input SimCodeVar.SimVar var;
+  output Boolean b = StringUtil.startsWith(ComponentReferenceBasics.crefFirstIdent(var.name), "$cse");
+end isCommonSubexpression;
+
+public function discreteChangeRanges
+  "The variables that checkForDiscreteChanges compares, as index ranges into
+   the modelData variable arrays: for the discrete Real, the Integer, the Boolean
+   and the String variables in turn the number of ranges, then each range as its
+   start and its end (exclusive)."
+  input SimCodeVar.SimVars vars;
+  output list<Integer> ranges;
+algorithm
+  ranges := List.flatten({
+    comparedRanges(vars.discreteAlgVars, listLength(vars.stateVars) + listLength(vars.derivativeVars) + listLength(vars.algVars)),
+    comparedRanges(vars.intAlgVars, 0),
+    comparedRanges(vars.boolAlgVars, 0),
+    comparedRanges(vars.stringAlgVars, 0)});
+end discreteChangeRanges;
+
+protected function comparedRanges
+  input list<SimCodeVar.SimVar> vars;
+  input Integer first "the index of the first of vars";
+  output list<Integer> ranges = {};
+protected
+  Integer i = first, n = 0, start = -1;
+algorithm
+  for var in vars loop
+    if isCommonSubexpression(var) then
+      if start >= 0 then
+        ranges := i :: start :: ranges;
+        n := n + 1;
+        start := -1;
+      end if;
+    elseif start < 0 then
+      start := i;
+    end if;
+    i := i + 1;
+  end for;
+  if start >= 0 then
+    ranges := i :: start :: ranges;
+    n := n + 1;
+  end if;
+  ranges := n :: listReverse(ranges);
+end comparedRanges;
+
 annotation(__OpenModelica_Interface="codegen_util");
 end SimCodeCodegenUtil;

@@ -889,18 +889,20 @@ static fmiXStatus recordSet(ModelInstance *comp, const char *func, int ty, fmiXV
  * the FMU handles, a changed continuous input is not. With Event Mode only
  * Event Mode may change them. This assumes no set during a step: revisit it if
  * the FMU ever declares providesIntermediateUpdate="true". The discrete Real
- * variables come last. */
+ * variables are the first ranges of modelData->discreteChangeRanges. */
 static void noteStepModeChange(ModelInstance *comp, int ty, fmiXValueReference vr)
 {
-  MODEL_DATA *md = comp->fmuData->modelData;
+  const long *r = comp->fmuData->modelData->discreteChangeRanges;
+  const size_t *index = comp->fmuData->simulationInfo->realVarsIndex;
   long slot = variableSlot(comp, ty, vr);
-  if (slot >= 0 && slot % 8 == OMC_SLOT_REAL) {
-    long firstDiscrete = md->nDiscreteRealArray > 0
-      ? (long) comp->fmuData->simulationInfo->realVarsIndex[md->nVariablesRealArray - md->nDiscreteRealArray]
-      : md->nVariablesReal;
-    if (slot / 8 < firstDiscrete) {
-      return;
+  long k, n;
+  if (slot >= 0 && slot % 8 == OMC_SLOT_REAL && !isParameterSlot(comp, slot)) {
+    for (n = *r++, k = 0; k < n; k++, r += 2) {
+      if ((long) index[r[0]] <= slot / 8 && slot / 8 < (long) index[r[1]]) {
+        comp->_step_event = 1;
+      }
     }
+    return;
   }
   comp->_step_event = 1;
 }

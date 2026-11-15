@@ -631,6 +631,7 @@ pub struct MODEL_DATA {
 
     pub nEnumerationTypes: usize,
     pub enumerationTypes: *mut ENUMERATION_TYPE,
+    pub discreteChangeRanges: *const c_long,
 }
 
 #[repr(C)]

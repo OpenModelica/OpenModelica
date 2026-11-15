@@ -2836,6 +2836,12 @@ pub fn set_abort_slow(v: bool) {
     chatter_store::set_abort(v);
 }
 
+/// What the event iteration compares and logs, for a caller that initializes
+/// through [`run_initialization`]; [`run_initialization_model`] installs it itself.
+pub fn install_event_dump(model: &SimMeta) {
+    event_dump_store::set(EventDump::new(model));
+}
+
 /// Solve the initial system: `functionParameters`, then `functionInitialEquations`
 /// with the relations fresh (init mode) — directly, or through the global
 /// equidistant homotopy continuation (C's `solveWithGlobalHomotopy`), see
@@ -4531,6 +4537,9 @@ pub(crate) struct EventDump {
     reals: Vec<(String, u32, u32)>,
     ints: Vec<(String, u32, u32)>,
     bools: Vec<(String, u32, u32)>,
+    /// The live slots of `bools`, `ints` and `reals` as `(offset, bytes)` runs. The
+    /// Booleans come first: a changed when condition then ends the comparison early.
+    runs: Vec<(u32, u32)>,
     /// Every real variable in index order, for [`log_reinits`].
     real_names: Vec<String>,
     real_off: u32,
@@ -4539,25 +4548,53 @@ pub(crate) struct EventDump {
 impl EventDump {
     fn new(model: &SimMeta) -> Self {
         let l = &model.layout;
-        let n_real = 2 * l.n_states + l.n_real_alg;
-        let first = n_real.saturating_sub(model.soti.n_discrete_real) as usize;
-        let slots = |names: &[String], live: u32, pre: u32, w: u32, from: usize| -> Vec<(String, u32, u32)> {
+        let slots = |names: &[String], checked: &[bool], live: u32, pre: u32, w: u32| -> Vec<(String, u32, u32)> {
             names
                 .iter()
+                .zip(checked)
                 .enumerate()
-                .skip(from)
-                // C skips common-subexpression temporaries.
-                .filter(|(_, n)| !n.starts_with("$cse"))
-                .map(|(i, n)| (n.clone(), live + i as u32 * w, pre + i as u32 * w))
+                .filter(|(_, (_, c))| **c)
+                .map(|(i, (n, _))| (n.clone(), live + i as u32 * w, pre + i as u32 * w))
                 .collect()
         };
         let named = |v: &[(String, i32)]| v.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>();
+        let reals = slots(
+            &model.soti.reals,
+            &model.soti.checked_reals,
+            l.real_off,
+            l.pre_real_off,
+            8,
+        );
+        let ints = slots(
+            &named(&model.soti.ints),
+            &model.soti.checked_ints,
+            l.int_off,
+            l.pre_int_off,
+            4,
+        );
+        let bools = slots(
+            &named(&model.soti.bools),
+            &model.soti.checked_bools,
+            l.bool_off,
+            l.pre_bool_off,
+            4,
+        );
+        let mut runs: Vec<(u32, u32)> = Vec::new();
+        for (list, w) in [(&bools, 4), (&ints, 4), (&reals, 8)] {
+            for &(_, live, _) in list {
+                match runs.last_mut() {
+                    Some((off, len)) if *off + *len == live => *len += w,
+                    _ => runs.push((live, w)),
+                }
+            }
+        }
         EventDump {
             rel_desc: model.rel_desc.clone(),
             zc_desc: model.zc_desc.clone(),
-            reals: slots(&model.soti.reals, l.real_off, l.pre_real_off, 8, first),
-            ints: slots(&named(&model.soti.ints), l.int_off, l.pre_int_off, 4, 0),
-            bools: slots(&named(&model.soti.bools), l.bool_off, l.pre_bool_off, 4, 0),
+            reals,
+            ints,
+            bools,
+            runs,
             real_names: model.soti.reals.clone(),
             real_off: model.layout.real_off,
         }
@@ -4737,7 +4774,7 @@ fn discrete_pre_values(e: &dyn SimEngine, sim_data: u32) -> Result<(Vec<f64>, Ve
 }
 
 /// C's `checkForDiscreteChanges` printing half; the detection half is
-/// [`discrete_snapshot`], which compares the same regions in bulk.
+/// [`discrete_snapshot`], which compares the same slots in bulk.
 fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Vec<i32>)) -> Result<()> {
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
     omclog::info!(omclog::EVENTS_V, true, "check for discrete changes at time={time}");
@@ -4901,19 +4938,17 @@ fn locate_zc_root(
     Ok((a, b))
 }
 
-/// Snapshot of the discrete state — boolean/integer algebraics, held relations and
-/// discrete Reals — used to detect when an event's discrete update has reached a fixed point.
+/// Snapshot of the discrete state — the held relations and the discrete variables
+/// C's `checkForDiscreteChanges` compares — used to detect when an event's
+/// discrete update has reached a fixed point.
 pub fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
-    let mut buf = vec![0u8; ((layout.n_bool_alg() + layout.n_int_alg()) * 4 + layout.n_rel * 4) as usize];
-    let (bools, rest) = buf.split_at_mut((layout.n_bool_alg() * 4) as usize);
-    let (ints, rels) = rest.split_at_mut((layout.n_int_alg() * 4) as usize);
-    e.read_bytes(sim_data + layout.bool_off, bools)?;
-    e.read_bytes(sim_data + layout.int_off, ints)?;
-    e.read_bytes(sim_data + layout.relations_off, rels)?;
-    // C's `checkForDiscreteChanges` walks the discrete Reals first.
+    let mut buf = vec![0u8; (layout.n_rel * 4) as usize];
+    e.read_bytes(sim_data + layout.relations_off, &mut buf)?;
     event_dump_store::with(|d| {
-        for (_, live, _) in &d.reals {
-            buf.extend_from_slice(&read_f64(e, sim_data + live)?.to_bits().to_ne_bytes());
+        for &(off, len) in &d.runs {
+            let at = buf.len();
+            buf.resize(at + len as usize, 0);
+            e.read_bytes(sim_data + off, &mut buf[at..])?;
         }
         Ok(())
     })?;
@@ -4971,8 +5006,8 @@ fn iterate_discrete_from(
     // evaluation lets an already-settled system stop after a single evaluation.
     let max = max_event_iter();
     let mut iter = 0usize;
+    let mut prev = discrete_snapshot(e, sim_data, layout)?;
     loop {
-        let prev = discrete_snapshot(e, sim_data, layout)?;
         // C's `updateDiscreteSystem` `storePreValues`: make this pass's discrete
         // values visible as `pre()` to the next (e.g. a clutch's `pre(mode)`).
         if iter > 0 || evaluated {
@@ -4996,9 +5031,11 @@ fn iterate_discrete_from(
         if let Some(before) = &before {
             log_discrete_changes(e, sim_data, before)?;
         }
-        if discrete_snapshot(e, sim_data, layout)? == prev {
+        let now = discrete_snapshot(e, sim_data, layout)?;
+        if now == prev {
             return Ok(());
         }
+        prev = now;
         iter += 1;
         if iter > max {
             omclog::debug!(
