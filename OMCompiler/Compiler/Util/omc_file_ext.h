@@ -94,7 +94,9 @@ static inline void om_file_free(__OMC_FILE *file)
 #if defined(__OMC_FILE_DEBUG)
   fprintf(stderr,"File.destructor: close:%s,%p,%p\n",file->name, file->file, file); fflush(NULL);
 #endif
-  fclose(file->file);
+  if (file->file) {
+    fclose(file->file);
+  }
   file->file = 0;
   file->name = "[closed]";
   GC_free(file);
