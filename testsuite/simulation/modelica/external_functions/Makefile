@@ -4,6 +4,7 @@ TESTFILES = \
 CevalModelicaStrings.mos \
 EnvironmentVariable.mos \
 ExternalCFuncInputOnly.mos \
+ExternalFunctionsWasmJit.mos \
 ExternalLibraries.mos \
 ExternalNlsRecovery.mos \
 ExternalRHSFlag.mos \

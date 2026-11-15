@@ -1192,6 +1192,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setCflags(mpCflagsTextBox->text());
   simulationOptions.setNumberOfProcessors(mpNumberOfProcessorsSpinBox->value());
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
+  simulationOptions.setTargetLanguage(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText());
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
 #if !defined(WITHOUT_ANIMATION)

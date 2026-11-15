@@ -1,0 +1,36 @@
+// name:     ExternalFunctionsWasmJit
+// keywords: external wasm-jit OMEdit MCP
+// status:   correct
+// suite:    wasm
+// teardown_command: rm -f ExternalFunctionsWasmJit_*
+//
+// The wasm-jit target writes <prefix>_external_functions.json, the external
+// functions that the model calls, as the C target does. The OMEdit MCP tool
+// simulate reads it before it runs a model.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadString("
+model ExternalFunctionsWasmJit
+  function len
+    input String s;
+    output Integer n;
+    external \"C\" n = ModelicaStrings_length(s) annotation(Library = \"ModelicaExternalC\");
+  end len;
+  String s = if time < 0.5 then \"abc\" else \"abcd\";
+  Integer n = len(s);
+end ExternalFunctionsWasmJit;
+"); getErrorString();
+translateModel(ExternalFunctionsWasmJit); getErrorString();
+readFile("ExternalFunctionsWasmJit_external_functions.json");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "[
+// \"ModelicaStrings_length\"
+// ]"
+// endResult
