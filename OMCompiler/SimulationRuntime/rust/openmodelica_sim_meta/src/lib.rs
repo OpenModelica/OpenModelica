@@ -1205,9 +1205,12 @@ pub struct SotiVars {
     pub bools: Vec<(String, i32)>,
     /// String variables with their `start` attribute.
     pub strings: Vec<(String, String)>,
-    /// C's `nDiscreteRealArray`: how many of [`SotiVars::reals`] at the tail are
-    /// discrete. `checkForDiscreteChanges` walks exactly those.
-    pub n_discrete_real: u32,
+    /// Which entries of `reals`, `ints` and `bools` C's `checkForDiscreteChanges`
+    /// compares: the discrete variables without the common subexpression
+    /// temporaries, as `SimCodeCodegenUtil.discreteChangeRanges` has them.
+    pub checked_reals: Vec<bool>,
+    pub checked_ints: Vec<bool>,
+    pub checked_bools: Vec<bool>,
 }
 
 /// C's `modelData` parameter arrays (name, `start`, `fixed`) in the order of the
@@ -2087,6 +2090,10 @@ impl SimMeta {
         self.soti.reals = expand_entries(core::mem::take(&mut self.soti.reals), &arrays, |a, n, out| {
             out.extend(a.names(n))
         });
+        self.soti.checked_reals =
+            expand_entries(core::mem::take(&mut self.soti.checked_reals), &arrays, |a, &c, out| {
+                out.extend(core::iter::repeat_n(c, a.dims.iter().product::<u32>() as usize))
+            });
     }
 
     pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
@@ -2190,7 +2197,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 29;
+const VERSION: u32 = 30;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2497,7 +2504,10 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, n);
         put_str(&mut o, v);
     }
-    put_u32(&mut o, m.soti.n_discrete_real);
+    for flags in [&m.soti.checked_reals, &m.soti.checked_ints, &m.soti.checked_bools] {
+        put_u32(&mut o, flags.len() as u32);
+        o.extend(flags.iter().map(|&c| c as u8));
+    }
     put_u32s(&mut o, &m.sens_params);
     put_u32(&mut o, m.nls_vars.len() as u32);
     for v in &m.nls_vars {
@@ -3066,7 +3076,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..r.u32()? {
         soti.strings.push((r.string()?, r.string()?));
     }
-    soti.n_discrete_real = r.u32()?;
+    for flags in [&mut soti.checked_reals, &mut soti.checked_ints, &mut soti.checked_bools] {
+        for _ in 0..r.u32()? {
+            flags.push(r.u8()? != 0);
+        }
+    }
     let sens_params = r.u32s()?;
     let nsys = r.u32()? as usize;
     let mut nls_vars = Vec::with_capacity(nsys);

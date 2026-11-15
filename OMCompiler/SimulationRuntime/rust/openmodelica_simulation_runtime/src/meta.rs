@@ -815,8 +815,32 @@ pub(crate) fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
             }
         }
     }
-    v.n_discrete_real = md.nDiscreteRealArray as u32;
+    checked_flags(md, si, &mut v);
     v
+}
+
+/// The scalars `md.discreteChangeRanges` names for C's `checkForDiscreteChanges`:
+/// per type the number of ranges, then the ranges of array indices.
+fn checked_flags(md: &MODEL_DATA, si: &SIMULATION_INFO, v: &mut SotiVars) {
+    let index = [si.realVarsIndex, si.integerVarsIndex, si.booleanVarsIndex];
+    let mut out = [
+        vec![false; v.reals.len()],
+        vec![false; v.ints.len()],
+        vec![false; v.bools.len()],
+    ];
+    let mut r = md.discreteChangeRanges;
+    unsafe {
+        for (flags, index) in out.iter_mut().zip(index) {
+            let n = *r;
+            r = r.add(1);
+            for _ in 0..n {
+                let (a0, a1) = (*r as usize, *r.add(1) as usize);
+                r = r.add(2);
+                flags[*index.add(a0)..*index.add(a1)].fill(true);
+            }
+        }
+    }
+    [v.checked_reals, v.checked_ints, v.checked_bools] = out;
 }
 
 /// What the `LOG_INIT_V` parameter dump reports.

@@ -739,6 +739,7 @@ typedef struct MODEL_DATA
 
   size_t nEnumerationTypes;
   ENUMERATION_TYPE *enumerationTypes;  /* of the enumeration variables, from the init XML */
+  const long *discreteChangeRanges;    /* what checkForDiscreteChanges compares, see SimCodeCodegenUtil.discreteChangeRanges */
 } MODEL_DATA;
 
 /**
