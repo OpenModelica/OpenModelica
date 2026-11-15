@@ -10184,7 +10184,7 @@ impl SolverCore {
                         }
                     }
                     if left.is_some() {
-                        let _ = save_zero_crossings(e, sim_data, layout, self.settle_relations)?;
+                        let _ = save_zero_crossings(e, sim_data, layout, self.settle_relations && !layout.has_when)?;
                     }
                     if defers(troot) {
                         write_time(e, sim_data, troot)?;
