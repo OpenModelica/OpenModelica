@@ -59,9 +59,6 @@ Logger::Logger(LogSettings settings, bool enabled)
   : _logSettings(settings)
   , _isEnabled(enabled)
 {
-  if (_instance != NULL)
-    delete _instance;
-  _instance = NULL;
   _startTime = _endTime = 0.0;
 }
 
@@ -71,6 +68,7 @@ Logger::~Logger()
 
 void Logger::initialize(LogSettings settings)
 {
+  finalize();
   switch (settings.format) {
   case LF_TXT:
     _instance = new Logger(settings, true);

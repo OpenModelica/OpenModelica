@@ -577,6 +577,10 @@ void omcWorkerWaitReply(int id) {
   omcDeliverLoadedModels();
 }
 
+bool omcWorkerCallInFlight() {
+  return !g_omcWaitStack.isEmpty();
+}
+
 // Spawn + initialise the worker (replaces the in-process GC + omc_Main_init).
 // installMsl=false: OMEdit loads libraries itself as ordinary commands. Returns
 // "" on success or an error string (caller frees with free()).

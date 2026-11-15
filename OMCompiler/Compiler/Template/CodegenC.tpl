@@ -1604,6 +1604,10 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
     data->modelData->nStatesArray = <%varInfo.numStateVars%>;
     data->modelData->nDiscreteRealArray = <%varInfo.numDiscreteReal%>;
+    {
+      static const long discreteChangeRanges[] = {<%SimCodeCodegenUtil.discreteChangeRanges(vars) ;separator=", "%>};
+      data->modelData->discreteChangeRanges = discreteChangeRanges;
+    }
     data->modelData->nVariablesRealArray = <%nVariablesReal(varInfo)%>;
     data->modelData->nVariablesIntegerArray = <%varInfo.numIntAlgVars%>;
     data->modelData->nVariablesBooleanArray = <%varInfo.numBoolAlgVars%>;

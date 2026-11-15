@@ -10,6 +10,7 @@ cseFunctionCall2.mos \
 cseFunctionCall3.mos \
 cseFunctionCall4.mos \
 cseFunctionCall4b.mos \
+cseEventIteration.mos \
 cseFunctionCall4c.mos \
 cseFunctionCall4d.mos \
 cseFunctionCall5.mos \
