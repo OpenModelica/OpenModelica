@@ -119,6 +119,10 @@ static QImage getPlotImage(OMPlot::PlotWindow *pPlotWindow) {
  */
 static QString waitAndCheckCompilation(SimulationOutputWidget *output)
 {
+    if (output->isWasmJit()) {
+        return QString();
+    }
+#if QT_CONFIG(process)
     QCoreApplication::processEvents(); // Important: the flag is set in a slot, so we must process events to observe it.
     while (output->isCompilationProcessRunning() || output->isPostCompilationProcessRunning()) {
         QCoreApplication::processEvents();
@@ -131,6 +135,7 @@ static QString waitAndCheckCompilation(SimulationOutputWidget *output)
             .arg(compilationProc ? compilationProc->exitCode() : -1)
             .arg(output->getCompilationStandardError());
     }
+#endif
     return QString();
 }
 
@@ -148,6 +153,11 @@ static QString waitAndCheckCompilation(SimulationOutputWidget *output)
  */
 static QString waitAndCheckSimulationRun(SimulationOutputWidget *output)
 {
+    if (output->isWasmJit()) {
+        return output->isWasmJitSimulationSucceeded() ? QString()
+             : QString("Simulation failed:\n%1").arg(output->getSimulationStandardOutput());
+    }
+#if QT_CONFIG(process)
     QCoreApplication::processEvents(); // Important: the flag is set in a slot, so we must process events to observe it.
     while (!output->isSimulationProcessRunning() && !output->getSimulationProcess()) {
         QCoreApplication::processEvents();
@@ -168,6 +178,7 @@ static QString waitAndCheckSimulationRun(SimulationOutputWidget *output)
             .arg(simulationProc ? simulationProc->exitCode() : -1)
             .arg(log);
     }
+#endif
     return QString();
 }
 
@@ -385,6 +396,7 @@ QJsonObject MCPServer::handleSimulationTool(const QString &toolName, QJsonValue 
             QModelIndex index = pVariablesTreeModel->variablesTreeItemIndex(foundVariable, 1 /* value */);
             pVariablesTreeModel->setData(index, variables.value(plotName).toVariant(), Qt::EditRole);
         }
+        MessagesWidget::instance()->closeSimulationOutputWidgets(className);
         pVariablesWidget->reSimulate(foundResultFile->getSimulationOptions(), foundResultFile, false);
         QCoreApplication::processEvents();
         SimulationOutputWidget *simulationOutput = MessagesWidget::instance()->getSimulationOutputWidget(className);

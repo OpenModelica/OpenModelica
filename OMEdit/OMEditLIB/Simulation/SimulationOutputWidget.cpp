@@ -486,6 +486,17 @@ void SimulationOutputWidget::start()
  */
 void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParameters)
 {
+  mIsWasmJit = true;
+  mWasmJitSimulationParameters = simulationParameters;
+  if (mSimulationOptions.getBuildOnly()) {
+    mpProgressBar->setRange(0, 1);
+    mpProgressBar->setValue(1);
+    const QString progressStr = tr("Compilation of %1 finished.").arg(mSimulationOptions.getClassName());
+    mpProgressLabel->setText(progressStr);
+    updateMessageTab(progressStr);
+    mpArchivedSimulationItem->setStatus(Helper::finished);
+    return;
+  }
   mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   mIsLogFileWrittenByOmc = true;
   mpProgressBar->setRange(0, 0);
@@ -544,6 +555,8 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
                          .match(simulationResult).captured(1);
   messages.replace("\\\"", "\"");
   const bool ok = !resultFile.isEmpty();
+  mWasmJitSimulationSucceeded = ok && !mWasmJitCancelled;
+  mSimulationStandardOutput = messages;
 #if defined(__EMSCRIPTEN__)
   // The transformational debugger ("Debug more") reads <model>_info.json from the
   // page MEMFS. omc writes it only under -d=infoXmlOperations, and without it the
@@ -848,7 +861,6 @@ void SimulationOutputWidget::reSimulate(bool showSetup)
   MainWindow::instance()->getVariablesWidget()->reSimulate(mSimulationOptions, pVariablesTreeItem, showSetup);
 }
 
-#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::startSimulationAfterBuild
  * Resumes execution by launching the simulation executable after a successful
@@ -863,8 +875,16 @@ void SimulationOutputWidget::reSimulate(bool showSetup)
 void SimulationOutputWidget::startSimulationAfterBuild()
 {
   mSimulationOptions.setBuildOnly(false);
+  if (mIsWasmJit) {
+    runWasmJitSimulation(mWasmJitSimulationParameters);
+    return;
+  }
+#if QT_CONFIG(process)
   runSimulationExecutable();
+#endif
 }
+
+#if QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::runSimulationExecutable
