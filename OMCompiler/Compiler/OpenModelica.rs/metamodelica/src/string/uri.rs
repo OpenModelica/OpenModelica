@@ -47,16 +47,15 @@ fn uri_lookup_directory(name: &str) -> Option<String> {
     })
 }
 
-/// Port of `OpenModelica_decode_uri_inplace`: `+` becomes a space and
-/// `%XX` hex escapes are decoded; a `%` followed by invalid hex is copied
-/// through literally.
+/// Port of `OpenModelica_decode_uri_inplace`: `%XX` hex escapes are decoded;
+/// a `%` followed by invalid hex is copied through literally. A `+` is a `+`
+/// (RFC 3986).
 fn decode_uri(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
     let mut i = 0;
     while i < bytes.len() {
         match bytes[i] {
-            b'+' => out.push(b' '),
             b'%' if i + 2 < bytes.len() && bytes[i + 1].is_ascii_hexdigit() && bytes[i + 2].is_ascii_hexdigit() => {
                 let hi = (bytes[i + 1] as char).to_digit(16).unwrap() as u8;
                 let lo = (bytes[i + 2] as char).to_digit(16).unwrap() as u8;
@@ -80,12 +79,12 @@ fn decode_uri(src: &str) -> String {
 /// `mmtorust::typedexp::cref_to_dotted`).
 ///
 /// Schemes handled:
-/// * `modelica://Package.Sub/path` — look up `Package`'s source directory
+/// * `modelica:/Package.Sub/path` (or `modelica://`) — look up `Package`'s source directory
 ///   in the table installed by [`updateUriMapping`], descend into nested
 ///   class subdirectories as long as they exist on disk, and append the
 ///   path part. Fails (like the C `MMC_THROW`) when the package is not in
 ///   the table.
-/// * `file://path` — strip the prefix and treat as a regular path.
+/// * `file:` URIs (RFC 8089) — the decoded path, treated as a regular path.
 /// * Other `xxx://` URIs — fail, matching the C runtime's `MMC_THROW`.
 /// * Plain paths — canonicalize (`GetFullPathNameW` on Windows) if the path
 ///   exists; otherwise return as-is when absolute, or prepend the current
@@ -138,12 +137,16 @@ pub fn uriToFilename(uri_om: ArcStr) -> Result<ArcStr> {
         }
     }
 
-    if scheme_match("modelica://") {
-        let rest = &uri[11..];
+    if scheme_match("modelica:") {
+        // modelica:/A.B/x, modelica:///A.B/x and the deprecated modelica://A.B/x
+        let after = &uri[9..];
+        let rest = after.trim_start_matches('/');
+        let slashes = after.len() - rest.len();
+        let rest = &after[slashes.min(3)..];
         // getIdent: the class name runs up to the first '.' or '/'.
         let ident_end = rest.find(['.', '/']).unwrap_or(rest.len());
         let class_name = &rest[..ident_end];
-        if class_name.is_empty() {
+        if slashes == 0 || class_name.is_empty() {
             omc_assert!("Malformed URI (couldn't get a class name): {uri}");
         }
         let mut dir = match uri_lookup_directory(class_name).filter(|d| !d.is_empty()) {
@@ -183,12 +186,38 @@ pub fn uriToFilename(uri_om: ArcStr) -> Result<ArcStr> {
         return Ok(regular_paths(&path, &uri_om));
     }
 
-    let path: &str = if scheme_match("file://") {
-        &uri[7..]
-    } else if uri.contains("://") {
+    if scheme_match("file:") {
+        // RFC 8089: file:/p, file:///p and file://localhost/p name /p, and file://C:/p names C:/p
+        let mut rest = &uri[5..];
+        if let Some(r) = rest.strip_prefix("//") {
+            let n = r.find('/').unwrap_or(r.len());
+            let b = r.as_bytes();
+            if n == 2 && b[0].is_ascii_alphabetic() && b[1] == b':' {
+                rest = r;
+            } else if n == 0 || r[..n].eq_ignore_ascii_case("localhost") {
+                rest = &r[n..];
+            } else {
+                omc_assert!("File URI using hostnames is not supported: {uri}");
+            }
+        }
+        let mut path = decode_uri(rest);
+        if path.is_empty() {
+            omc_assert!("File URI has no path: {uri}");
+        }
+        let p = path.as_bytes();
+        if cfg!(windows)
+            && p.len() > 3
+            && p[0] == b'/'
+            && p[1].is_ascii_alphabetic()
+            && p[2] == b':'
+            && (p[3] == b'/' || p[3] == b'\\')
+        {
+            path.remove(0);
+        }
+        return Ok(regular_paths(&path, &uri_om));
+    }
+    if uri.contains("://") {
         omc_assert!("Unknown URI schema: {uri}");
-    } else {
-        uri
-    };
-    Ok(regular_paths(path, &uri_om))
+    }
+    Ok(regular_paths(uri, &uri_om))
 }

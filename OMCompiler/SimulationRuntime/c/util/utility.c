@@ -41,6 +41,7 @@
 #include "../simulation_data.h"
 #include "../simulation/options.h"
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include <float.h>
 #include <limits.h>
@@ -167,6 +168,40 @@ static int hasDriveLetter(const char* uri)
          uri[1]==':' && (uri[2] == '/' || uri[2] == '\\');
 }
 
+#if defined(_MSC_VER)
+#define strncasecmp _strnicmp
+#endif
+
+/* RFC 8089: the path of file:/p, file:///p and file://localhost/p is /p, and
+ * that of file://C:/p is C:/p. Another host is not supported. */
+static char* fileUriPath(threadData_t *threadData, char *rest, const char *origUri)
+{
+  if (rest[0] == '/' && rest[1] == '/') {
+    char *authority = rest + 2;
+    char *end = strchr(authority, '/');
+    size_t n = end ? (size_t) (end - authority) : strlen(authority);
+    if (n == 2 && isalpha((unsigned char) authority[0]) && authority[1] == ':') {
+      rest = authority;
+    } else if (n == 0 || (n == 9 && 0 == strncasecmp(authority, "localhost", 9))) {
+      rest = authority + n;
+    } else {
+      omc_assert(threadData, omc_dummyFileInfo, "File URI using hostnames is not supported: %s", origUri);
+      OMC_THROW();
+    }
+  }
+  OpenModelica_decode_uri_inplace(rest);
+  if (0 == *rest) {
+    omc_assert(threadData, omc_dummyFileInfo, "File URI has no path: %s", origUri);
+    OMC_THROW();
+  }
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (rest[0] == '/' && hasDriveLetter(rest + 1)) {
+    rest++;
+  }
+#endif
+  return rest;
+}
+
 static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const char *uri, char buf[PATH_MAX], const char *origUri, const char *resourcesDir)
 {
   omc_stat_t stat_buf;
@@ -289,29 +324,18 @@ static void getIdent(char *str, char *this, char **next)
   *next = str;
 }
 
+/* RFC 3986: decodes %XX only. A '+' is a '+'. */
 extern void OpenModelica_decode_uri_inplace(char *src)
 {
   char *tmp = src;
   while (*src) {
-    if (*src == '+') *(tmp++) = ' ';
-    else if (*src == '%' && src[1]) {
-      char buf[3];
-      int i;
-      buf[0] = src[1];
-      buf[1] = src[2];
-      buf[2] = '\0';
-      errno = 0;
-      i = strtol(buf,NULL,16);
-      if (errno) {
-        *(tmp++) = *src;
-        errno = 0;
-      } else {
-        *(tmp++) = i;
-        *tmp = 0;
-        src += 2;
-      }
-    } else *(tmp++) = *src;
-    src++;
+    if (*src == '%' && isxdigit((unsigned char) src[1]) && isxdigit((unsigned char) src[2])) {
+      char buf[3] = {src[1], src[2], '\0'};
+      *(tmp++) = (char) strtol(buf, NULL, 16);
+      src += 3;
+    } else {
+      *(tmp++) = *(src++);
+    }
   }
   *tmp = '\0';
 }
@@ -333,11 +357,15 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
   strcpy(uri, omc_string_data(uri_om));
 
   modelica_string dir;
-  if (0==strncasecmp(uri, "modelica://", 11)) {
+  if (0==strncasecmp(uri, "modelica:", 9)) {
     omc_stat_t stat_buf;
-    uri += 11;
+    int slashes = 0;
+    /* modelica:/A.B/x, modelica:///A.B/x and the deprecated modelica://A.B/x */
+    for (uri += 9; *uri == '/' && slashes < 3; uri++) {
+      slashes++;
+    }
     getIdent(uri, buf, &uri);
-    if (0 == *buf) {
+    if (0 == slashes || 0 == *buf) {
       omc_assert(threadData, omc_dummyFileInfo, "Malformed URI (couldn't get a class name): %s", omc_string_data(uri_om));
       OMC_THROW();
     }
@@ -402,8 +430,8 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
     dir = omc_string_new(buf);
     return uriToFilenameRegularPaths(dir, omc_string_data(dir), buf, omc_string_data(uri_om), NULL);
   }
-  if (0==strncasecmp(uri, "file://", 7)) {
-    return uriToFilenameRegularPaths(NULL, uri+7, buf, omc_string_data(uri_om), resourcesDir);
+  if (0==strncasecmp(uri, "file:", 5)) {
+    return uriToFilenameRegularPaths(NULL, fileUriPath(threadData, uri+5, omc_string_data(uri_om)), buf, omc_string_data(uri_om), resourcesDir);
   }
   if (strstr(uri, "://")) {
     omc_assert(threadData, omc_dummyFileInfo, "Unknown URI schema: %s", omc_string_data(uri_om));

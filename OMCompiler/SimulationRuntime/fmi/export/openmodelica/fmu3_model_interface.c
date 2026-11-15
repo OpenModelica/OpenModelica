@@ -221,10 +221,25 @@ static fmi3Instance fmu3InstantiateCommon(int interfaceType, fmi3String instance
   const char *resourceUri = resourcePath;
   char *resourceUriBuf = NULL;
   if (resourcePath && strncmp(resourcePath, "file:", 5) != 0) {
-    size_t n = strlen(resourcePath) + strlen("file://") + 1;
+    /* '%' becomes %25, so that the URI decodes back to the path. */
+    size_t n = strlen("file://") + 1;
+    const char *p;
+    for (p = resourcePath; *p; p++) {
+      n += *p == '%' ? 3 : 1;
+    }
     resourceUriBuf = (char *)malloc(n);
     if (resourceUriBuf) {
-      snprintf(resourceUriBuf, n, "file://%s", resourcePath);
+      char *q = resourceUriBuf + strlen("file://");
+      strcpy(resourceUriBuf, "file://");
+      for (p = resourcePath; *p; p++) {
+        if (*p == '%') {
+          memcpy(q, "%25", 3);
+          q += 3;
+        } else {
+          *q++ = *p;
+        }
+      }
+      *q = '\0';
       resourceUri = resourceUriBuf;
     }
   }

@@ -107,7 +107,9 @@ static void omc_assert_compiler_common(threadData_t *threadData,ErrorLevel sever
   ErrorMessage::TokenList tokens;
   const char *str;
   GC_vasprintf(&str, msg, args);
-  add_source_message(threadData, 0, ErrorType_runtime, severity, str, tokens, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly, info.filename);
+  /* The formatted message is a token: a '%' in it, as in a URI, is no placeholder. */
+  tokens.push_back(str);
+  add_source_message(threadData, 0, ErrorType_runtime, severity, "%s", tokens, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly, info.filename);
 }
 
 static void omc_assert_compiler(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));

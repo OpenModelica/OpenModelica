@@ -293,7 +293,7 @@ algorithm
     fail();
   end if;
 
-  if StringUtil.startsWith(csvFileName, "modelica://") or StringUtil.startsWith(csvFileName, "file://") then
+  if StringUtil.startsWith(System.tolower(csvFileName), "modelica:") or StringUtil.startsWith(System.tolower(csvFileName), "file:") then
     csvFileName := ProgramUtil.getFullPathFromUri(program, csvFileName, true);
   end if;
 

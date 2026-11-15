@@ -823,7 +823,7 @@ algorithm
       low := System.tolower(tok);
       if StringUtil.endsWith(low, ".dxf") or StringUtil.endsWith(low, ".stl") or
          StringUtil.endsWith(low, ".obj") or StringUtil.endsWith(low, ".3ds") then
-        if System.stringFind(tok, "modelica://") == 0 then
+        if StringUtil.startsWith(low, "modelica:/") then
           path := ProgramUtil.getFullPathFromUri(program, tok, true);
         elseif System.stringFind(tok, "file://") == 0 then
           path := substring(tok, 8, stringLength(tok));
@@ -1670,7 +1670,7 @@ protected
 algorithm
   // A URI cannot contain any of these unencoded, so tokenizing on them lifts the
   // URIs out of the markup without needing to parse it.
-  uris := List.uniqueOnTrue(list(u for u guard StringUtil.startsWith(u, "modelica://")
+  uris := List.uniqueOnTrue(list(u for u guard StringUtil.startsWith(System.tolower(u), "modelica:/")
                                  in System.strtok(page, "\"'<> \t\n\r")), stringEq);
   for uri in uris loop
     try

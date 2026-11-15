@@ -22,6 +22,7 @@ Issue14456.mos \
 CvodeStepTooClose.mos \
 Issue17436.mos \
 FmuStartEventError.mos \
+FmuResourcePlus.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -33,6 +34,8 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 FmuAssertSolverRetry.py \
+FmuResourcePlus \
+FmuResourcePlus.py \
 FmuEquationAssertLog.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
