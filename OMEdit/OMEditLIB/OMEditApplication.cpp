@@ -465,7 +465,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     if (pSettings->contains("modelContextProtocol/enableAdminTools")) {
       enableAdminTools = pSettings->value("modelContextProtocol/enableAdminTools").toBool();
     }
-    new MCPServer(pMainwindow->getOMCProxy(), hostAddress, port, enableAdminTools, pMainwindow);
+    MCPServer *pMCPServer = new MCPServer(pMainwindow->getOMCProxy(), enableAdminTools, pMainwindow);
+    pMCPServer->listen(hostAddress, port);
   }
 #endif
 
