@@ -367,6 +367,12 @@ self.onmessage = async (e) => {
       let size;
       try { size = wasi_path_filestat_get(msg.path); } catch (e) { size = -1; }
       self.postMessage({ kind: "vfsStatResult", id: msg.id, size });
+    } else if (msg.cmd === "vfsStatMany") {
+      // vfsStat for many paths in one round trip.
+      const sizes = msg.paths.map((path) => {
+        try { return wasi_path_filestat_get(path); } catch (e) { return -1; }
+      });
+      self.postMessage({ kind: "vfsStatManyResult", sizes });
     }
   } catch (err) {
     // A trap inside omc must not silently wedge the shell: report it on the

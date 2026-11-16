@@ -42,6 +42,8 @@
 #include "Helper.h"
 #if defined(__EMSCRIPTEN__)
 #include "PersistentStorage.h"
+// Defined in OMC/OMCProxy.cpp.
+QList<qint64> omcWorkerFileSizes(const QStringList &paths);
 #endif
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
@@ -836,6 +838,41 @@ QString& Utilities::tempDirectory()
     }
   }
   return tmpPath;
+}
+
+/*!
+ * \brief Utilities::existingFilePaths
+ * Returns the file names that are absolute paths that exist.
+ * On the web, this is one round-trip to the omc worker.
+ * \param fileNames
+ * \return
+ */
+QSet<QString> Utilities::existingFilePaths(const QStringList &fileNames)
+{
+  QStringList absoluteFileNames;
+  for (const QString &fileName : fileNames) {
+    if (!fileName.isEmpty() && !QFileInfo(fileName).isRelative()) {
+      absoluteFileNames.append(fileName);
+    }
+  }
+#if defined(__EMSCRIPTEN__)
+  const QList<qint64> sizes = omcWorkerFileSizes(absoluteFileNames);
+#endif
+  QSet<QString> existingFileNames;
+  for (int i = 0; i < absoluteFileNames.size(); ++i) {
+    const QString &fileName = absoluteFileNames.at(i);
+#if defined(__EMSCRIPTEN__)
+    // A path that is not a file of the omc worker can still be a directory or a file of the page.
+    if (sizes.value(i, -1) >= 0) {
+      existingFileNames.insert(fileName);
+      continue;
+    }
+#endif
+    if (QFileInfo::exists(fileName)) {
+      existingFileNames.insert(fileName);
+    }
+  }
+  return existingFileNames;
 }
 
 /*
