@@ -87,8 +87,8 @@ private:
   QString mObjectRefFile;
   QList<QString> mCommandsList;
   int mCurrentCommandIndex;
-  FILE *mpCommunicationLogFile;
-  FILE *mpCommandsLogFile;
+  FILE *mpCommunicationLogFile = nullptr;
+  FILE *mpCommandsLogFile = nullptr;
   double mTotalOMCCallsTime;
   QList<UnitConverion> mUnitConversionList;
   QMap<QString, QList<QString> > mDerivedUnitsMap;
