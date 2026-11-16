@@ -271,6 +271,8 @@ struct Instance {
     /// FMI 2.0 only: what the 3.0 interface has no place to keep.
     fmi2: Option<fmi2::State>,
     machine: Machine,
+    /// Co-Simulation: the independent variable, where a discarded step ended.
+    time_vr: Option<u32>,
 }
 
 /// The state machine of the API the instance was created through.
@@ -337,6 +339,17 @@ impl Instance {
             Kind::Cs { .. } => None,
         }
     }
+
+    /// The independent variable, which after `fmi3DoStep` holds `lastSuccessfulTime`.
+    fn time(&mut self) -> Option<f64> {
+        let vr = self.time_vr?;
+        let (store, g, h) = self.cs()?;
+        match g.call_get_float64(store, h, &[vr]) {
+            Ok(Ok(v)) => v.first().copied(),
+            _ => None,
+        }
+    }
+
     fn cs(&mut self) -> Option<(&mut Store<Host>, GuestCoSimulationInstance<'_>, ResourceAny)> {
         let Instance { store, kind, .. } = self;
         match kind {
@@ -618,6 +631,7 @@ pub(crate) fn instantiate_me(
         strings: Vec::new(),
         binaries: Vec::new(),
         fmi2: None,
+        time_vr: None,
         machine: Machine::Fmi3(sm::fmi3::Machine::new(Interface::ModelExchange)),
     }))
 }
@@ -667,7 +681,35 @@ pub(crate) fn instantiate_cs(
         binaries: Vec::new(),
         fmi2: None,
         machine: Machine::Fmi3(sm::fmi3::Machine::new(Interface::CoSimulation { event_mode_used })),
+        time_vr: independent_vr(res),
     }))
+}
+
+/// The independent variable's value reference, from the model description
+/// beside `res`. Scanned rather than parsed, as `fmi2vr.json` is.
+fn independent_vr(res: &str) -> Option<u32> {
+    let xml = std::fs::read_to_string(Path::new(res).parent()?.join("modelDescription.xml")).ok()?;
+    xml.split('<')
+        .map(|t| t.split('>').next().unwrap_or(t))
+        .find(|tag| attr(tag, "causality") == Some("independent"))
+        .and_then(|tag| attr(tag, "valueReference")?.parse().ok())
+}
+
+fn attr<'a>(tag: &'a str, name: &str) -> Option<&'a str> {
+    let mut from = 0;
+    while let Some(i) = tag[from..].find(name).map(|i| from + i) {
+        from = i + name.len();
+        if !tag[..i].ends_with(char::is_whitespace) {
+            continue;
+        }
+        let Some(v) = tag[from..].trim_start().strip_prefix('=') else {
+            continue;
+        };
+        let v = v.trim_start();
+        let q = v.chars().next().filter(|q| *q == '"' || *q == '\'')?;
+        return v[1..].find(q).map(|end| &v[1..1 + end]);
+    }
+    None
 }
 
 #[unsafe(no_mangle)]
@@ -1937,7 +1979,15 @@ pub unsafe extern "C" fn fmi3DoStep(
             }
             OK
         }
-        Ok(Err(s)) => st_cs(s),
+        Ok(Err(s)) => {
+            let status = st_cs(s);
+            if status == DISCARD && !last_successful_time.is_null() {
+                if let Some(t) = inst.time() {
+                    unsafe { *last_successful_time = t }
+                }
+            }
+            status
+        }
         Err(_) => ERROR,
     }
 }

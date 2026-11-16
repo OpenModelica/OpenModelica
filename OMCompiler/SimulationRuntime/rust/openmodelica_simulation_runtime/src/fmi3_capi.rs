@@ -1148,7 +1148,12 @@ pub unsafe extern "C" fn omc_fmi3DoStep(
             }
             OK
         }
-        Err(s) => code(s),
+        Err(s) => {
+            if !last_successful_time.is_null() {
+                unsafe { *last_successful_time = c.n.inst.time() }
+            }
+            code(s)
+        }
     }
 }
 

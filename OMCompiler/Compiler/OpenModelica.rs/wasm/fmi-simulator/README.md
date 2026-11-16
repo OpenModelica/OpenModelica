@@ -129,9 +129,9 @@ expression or value per element, separated by commas (`0, -9.81, 0`).
   (`openmodelica_fmi_ls_wasm_to_native`) translates that to the FMI 3.0
   numbering the component uses. Run is disabled and the page says so.
 * String and binary variables are shown but cannot be set.
-* `fmi3GetFMUState`/`fmi3SetFMUState` are unused: no rollback, so a
-  Co-Simulation FMU that discards a step fails the run rather than retrying it
-  smaller.
+* `fmi3GetFMUState`/`fmi3SetFMUState` are unused: no rollback. A
+  Co-Simulation FMU that discards a step continues from where its independent
+  variable says it stopped; one that discards without progress fails the run.
 * `intermediate-update` always declines early return; the FMU's own early
   returns are honoured.
 * Samples arrive only when the run ends — the progress line moves, the plot does
@@ -143,6 +143,8 @@ expression or value per element, separated by commas (`0, -9.81, 0`).
 To be loadable here, an exported FMU needs `modelDescription.xml` (FMI 3.0, with
 `instantiationToken` and a `<CoSimulation>` or `<ModelExchange>` element) and a
 component at `binaries/wasm32-wasip2/<modelIdentifier>.wasm` implementing the
-`fmi:fmi3/world.co-simulation-fmu` or `model-exchange-fmu` world. The page
+`fmi:fmi3/world.co-simulation-fmu` or `model-exchange-fmu` world. The page shows
+the `fmi-ls-version` of `extra/org.modelica.fmi-ls-wasm/manifest.xml` beside the
+draft it implements (`openmodelica_fmi::lswasm::LS_VERSION`). The page
 reports which imports an FMU asks for that the host does not provide, which is
 the first thing to check when a fresh export will not instantiate.

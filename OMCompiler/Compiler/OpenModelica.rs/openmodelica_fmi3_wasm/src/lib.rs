@@ -1652,7 +1652,6 @@ pub mod fmi_types {
         pub event_handling_needed: bool,
         pub terminate_simulation: bool,
         pub early_return: bool,
-        pub discarded: bool,
     }
 }
 #[cfg(not(feature = "wasm"))]
@@ -1967,31 +1966,22 @@ macro_rules! cs_instance_methods {
                 event_handling_needed: false,
                 terminate_simulation: false,
                 early_return: false,
-                discarded: false,
             }),
             Ok(CsStep::Event { time }) => Ok(DoStepResult {
                 last_successful_time: time,
                 event_handling_needed: true,
                 terminate_simulation: false,
                 early_return: time + eps < target,
-                discarded: false,
             }),
             Ok(CsStep::Terminated) => Ok(DoStepResult {
                 last_successful_time: last,
                 event_handling_needed: false,
                 terminate_simulation: true,
                 early_return: false,
-                discarded: false,
             }),
-            // C's `retrySimulationStep` got half way and no further: the master
-            // takes it from there.
-            Ok(CsStep::Discarded) => Ok(DoStepResult {
-                last_successful_time: last,
-                event_handling_needed: false,
-                terminate_simulation: false,
-                early_return: true,
-                discarded: true,
-            }),
+            // C's `retrySimulationStep` got half way and no further. The FMU stands
+            // there, and its independent variable says where.
+            Ok(CsStep::Discarded) => Err(Status::Discard),
             Err(err) => Err(failed(&mut st.engine, sim_data, err)),
         }
     }
@@ -3067,6 +3057,11 @@ impl<E: FmiHost + 'static> Instance<E> {
             }
             Err(s) => s,
         }
+    }
+
+    /// The model's time: after `fmi3DoStep`, `lastSuccessfulTime`.
+    pub fn time(&self) -> f64 {
+        self.st.borrow().read_f64(TIME_OFF)
     }
 
     /// Whether [`Self::set_fmu_state`] takes `state`; changes nothing.
