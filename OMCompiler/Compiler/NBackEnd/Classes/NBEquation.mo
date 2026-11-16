@@ -4188,7 +4188,10 @@ public
         assigned := match stmt
           local
             ComponentRef lhs;
+            list<Expression> elements;
           case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs)) then lhs :: assigned;
+          case WhenStatement.ASSIGN(lhs = Expression.TUPLE(elements = elements))
+          then listAppend(list(Expression.toCref(e) for e guard(Expression.isCref(e) and not ComponentRef.isWild(Expression.toCref(e))) in elements), assigned);
           else assigned;
         end match;
       end for;
