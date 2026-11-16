@@ -1123,6 +1123,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 {
   /* create the tmp path */
   QString& tmpPath = Utilities::tempDirectory();
+  // On the web nothing can read the log files, so do not write them.
+#if !defined(__EMSCRIPTEN__)
   /* create a file to write OMEdit communication log */
   QString communicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
 #ifdef Q_OS_WIN
@@ -1140,6 +1142,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   // Unbuffered: a crash mid-startup still leaves the last command on disk.
   if (mpCommunicationLogFile) setvbuf(mpCommunicationLogFile, NULL, _IONBF, 0);
   if (mpCommandsLogFile) setvbuf(mpCommandsLogFile, NULL, _IONBF, 0);
+#endif
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
@@ -1409,20 +1412,13 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
 void OMCProxy::logResponse(QString command, QString response, double elapsed, bool customCommand)
 {
   if (isLoggingEnabled()) {
-    QString firstLine("");
-    for (int i = 0; i < command.length(); i++) {
-      if (command.at(i) != '\n') {
-        firstLine.append(command.at(i));
-      } else {
-        break;
-      }
-    }
     if (customCommand || MainWindow::instance()->isDebug()) {
       // insert the response to the logger window.
       mpOMCLoggerTextBox->appendOutput(response + "\n\n");
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
+      const QString firstLine = command.left(command.indexOf('\n'));
       mTotalOMCCallsTime += elapsed;
       fputs(QString("%1 %2\n").arg(response).arg(QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
       fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMCCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(), mpCommunicationLogFile);
