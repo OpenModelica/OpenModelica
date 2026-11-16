@@ -12,6 +12,7 @@ nonlinear.mos \
 nonlinear_kinsol.mos \
 kinsolSignConstraint.mos \
 kinsolStatistics.mos \
+mixedSingleEquation.mos \
 nonlinearDelayTest.mos \
 nonlinearFailed.mos \
 nonlinearFailed_kinsol.mos \
