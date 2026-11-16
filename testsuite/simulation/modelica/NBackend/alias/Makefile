@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+aliasAttributeLookup.mos \
 AliasIntegerNonTrivial.mos \
 AliasBoundsNegated.mos \
 AliasBoundsThree.mos \
