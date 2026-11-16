@@ -3208,7 +3208,7 @@ public function makeNoEvent " adds a noEvent call around an expression"
 input DAE.Exp e1;
 output DAE.Exp res;
 algorithm
-  res := Expression.makePureBuiltinCall("noEvent", {e1}, DAE.T_BOOL_DEFAULT);
+  res := Expression.makePureBuiltinCall("noEvent", {e1}, typeof(e1));
 end makeNoEvent;
 
 public function makeAbs ""

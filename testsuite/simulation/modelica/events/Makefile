@@ -31,6 +31,7 @@ IntegerZeroCrossings.mos \
 MathEventFuncs1.mos \
 MathEventFuncs2.mos \
 noEventEmit.mos \
+noEventIfType.mos \
 noEventNotRespected.mos \
 Reinit.mos \
 sample1.mos \
