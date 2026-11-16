@@ -29,6 +29,7 @@
 #include "events.h"
 #include "epsilon.h"
 #include "dassl.h"
+#include "spatialDistribution.h"
 
 #include "../simulation_runtime.h"
 #include "../results/simulation_result.h"
@@ -95,11 +96,11 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
     data->callback->functionODE(data, threadData);
     data->callback->functionAlgebraics(data, threadData);
   }
+  if (data->modelData->nSpatialDistributions && OMC_ERROR_RAISED()) return;
   data->callback->output_function(data, threadData);
   data->callback->setc_function(data, threadData);
   data->callback->setb_function(data, threadData);
   data->callback->function_storeDelayed(data, threadData);
-  data->callback->function_storeSpatialDistribution(data, threadData);
   storePreValues(data);
 }
 
@@ -145,6 +146,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
         sim_result.emit(&sim_result, data, threadData);
         rt_tick(SIM_TIMER_EVENT);
       }
+      if (storeSpatialDistributionStep(data, threadData)) return NO_TIMER_FIRED;
       handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       /* Nothing is left to retry from: an error raised here ends the run. */
       if (OMC_ERROR_RAISED()) {
@@ -159,6 +161,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
     }
     else /* no event */
     {
+      data->callback->function_storeSpatialDistribution(data, threadData);
       solverInfo->laststep = solverInfo->currentTime;
       solverInfo->didEventStep = 0;
     }
@@ -188,6 +191,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   /* Update continous system because hold() needs to be re-evaluated */
   if (timerWasActivated == 1) {
     prefixedName_updateContinuousSystem(data, threadData);
+    data->callback->function_storeSpatialDistribution(data, threadData);
   }
 
   /* Add event to spatialDistribution */
@@ -215,7 +219,10 @@ static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   if(0 != strcmp("ia", data->simulationInfo->outputFormat)) {
     communicateStatus("Running", (solverInfo->currentTime - simInfo->startTime)/(simInfo->stopTime - simInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
   }
-  return solver_main_step(data, threadData, solverInfo);
+  spatialDistributionNeedsHistory(data, 1);
+  int ret = solver_main_step(data, threadData, solverInfo);
+  if (!ret && !OMC_ERROR_RAISED()) spatialDistributionNeedsHistory(data, 1);
+  return ret;
 }
 
 typedef struct MEASURE_TIME {
@@ -410,7 +417,7 @@ static void clear_rt_step(DATA* data)
  *  was not taken since its last event. Only the first retry of a step is
  *  reported with a warning.
  */
-static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int retry)
+static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int retry, int historyFailure)
 {
   /* reduce step size by a half and try again */
   solverInfo->laststep = solverInfo->currentTime - solverInfo->laststep;
@@ -421,7 +428,7 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   overwriteOldSimulationData(data);
   updateDiscreteSystem(data, threadData);
   saveZeroCrossingsAfterEvent(data, threadData);
-  if (0 == retry) {
+  if (0 == retry && !historyFailure) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
   }
   solverInfo->didEventStep = 1;
@@ -472,6 +479,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   volatile double retryStepSize = DBL_MAX; /* upper limit of the step size after a failed step */
   volatile double triedStepSize = 0;       /* step size of the current attempt */
   volatile int skipOutputPoint = 0;        /* the step to the current output point failed */
+  double* spatialCheckpoint = NULL;
+  size_t spatialCheckpointSize = 0;
+  size_t spatialCheckpointCapacity = 0;
   int maxStepRetries = data->modelData->nStates < 1 ? MAX_STEP_RETRIES : 1;
   double minRetryStepSize = MINIMAL_STEP_SIZE;
 
@@ -525,6 +535,15 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     while(solverInfo->currentTime < simInfo->stopTime || !simInfo->useStopTime)
     {
       int success = 0;
+      if (!retry && data->modelData->nSpatialDistributions) {
+        spatialCheckpointSize = spatialDistributionStateWords(data, NULL);
+        if (spatialCheckpointSize > spatialCheckpointCapacity) {
+          spatialCheckpointCapacity = spatialCheckpointSize;
+          spatialCheckpoint = realloc(spatialCheckpoint, spatialCheckpointCapacity * sizeof(double));
+          assertStreamPrint(threadData, spatialCheckpoint != NULL, "Out of memory saving spatialDistribution history");
+        }
+        spatialDistributionStateWords(data, spatialCheckpoint);
+      }
       threadData->currentErrorStage = ERROR_SIMULATION;
 
       /* Check if loggin should be activated or deactivated */
@@ -656,6 +675,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         */
         infoStreamPrint(OMC_LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
         retValIntegrator = simulationStep(data, threadData, solverInfo);
+        if (retValIntegrator && spatialDistributionNeedsHistory(data, 0)) omc_error_raise(threadData);
         infoStreamPrint(OMC_LOG_SOLVER, 0, "finished solver step %g", solverInfo->currentTime);
         messageClose(OMC_LOG_SOLVER);
 
@@ -666,7 +686,8 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           }
           break;
         }
-        syncStep = simulationUpdate(data, threadData, solverInfo);
+        if (!data->modelData->nSpatialDistributions || (!retValIntegrator && !OMC_ERROR_RAISED()))
+          syncStep = simulationUpdate(data, threadData, solverInfo);
         /* The step is only over if it came back clean. */
         if (!OMC_ERROR_RAISED()) {
         retry = 0; /* reset retry */
@@ -706,12 +727,16 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
       if (!success) { /* catch */
+        int historyFailure = spatialDistributionNeedsHistory(data, 0);
         /* halve the step size until the step succeeds, there is no step size to
          * halve for the optimization though */
-        if(S_OPTIMIZATION == solverInfo->solverMethod ? 0 == retry : retry < maxStepRetries && (0 == retry || triedStepSize/2 >= minRetryStepSize)) {
+        if(S_OPTIMIZATION == solverInfo->solverMethod ? 0 == retry :
+            historyFailure ? triedStepSize/2 >= minRetryStepSize && solverInfo->currentTime + triedStepSize/2 > solverInfo->currentTime :
+            retry < maxStepRetries && (0 == retry || triedStepSize/2 >= minRetryStepSize)) {
           retryStepSize = triedStepSize/2;
-          skipOutputPoint = skipOutputPoint || !stepShortened;
-          retrySimulationStep(data, threadData, solverInfo, retry);
+          skipOutputPoint = skipOutputPoint || (!stepShortened && !historyFailure);
+          if (spatialCheckpoint) setSpatialDistributionStateWords(data, spatialCheckpoint, spatialCheckpointSize, TRUE);
+          retrySimulationStep(data, threadData, solverInfo, retry, historyFailure);
           retry++;
           infoStreamPrint(OMC_LOG_SOLVER, 0, "step failed, retry %d with step size %g", (int)retry, (double)retryStepSize);
         } else {
@@ -723,6 +748,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     } /* end while solver */
   } /* end else */
 
+  free(spatialCheckpoint);
   fmtClose(&fmt);
 
   if (omc_flag[FLAG_STEADY_STATE] && !steadStateReached) {

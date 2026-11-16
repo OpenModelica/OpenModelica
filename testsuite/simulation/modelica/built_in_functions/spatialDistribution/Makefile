@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+	causalSteps.mos \
 	nameClash.mos \
 	initSpatialDistribution.mos \
 	helloSpatialDistribution.mos \
@@ -27,6 +28,7 @@ FAILINGTESTFILES=  \
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
+historyBehavior.c \
 *.mo \
 *.mos \
 Makefile \

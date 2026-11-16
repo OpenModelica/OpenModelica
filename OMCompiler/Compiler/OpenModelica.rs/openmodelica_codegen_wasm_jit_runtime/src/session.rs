@@ -231,6 +231,10 @@ impl SimEngine for InWasmEngine {
     fn prof_init(&mut self, n: u32) {
         crate::prof::rt_prof_init(n);
     }
+    fn spatial_history(&mut self, action: openmodelica_sim_meta::driver::SpatialHistory) -> bool {
+        crate::spatial::rt_spatial_history(action as u32) != 0
+    }
+
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }

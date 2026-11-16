@@ -1258,6 +1258,16 @@ impl sim_driver::SimEngine for WasmerEngine {
             Err(_) => 0,
         }
     }
+    fn spatial_history(&mut self, action: sim_driver::SpatialHistory) -> bool {
+        self.rt_inst
+            .exports
+            .get_typed_function::<u32, u32>(&self.store, "rt_spatial_history")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, action as u32).ok())
+            .unwrap_or(0)
+            != 0
+    }
+
     fn error_stage_addr(&mut self) -> u32 {
         match self
             .rt_inst

@@ -459,23 +459,23 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ),
     ("rt_delay_zc", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
     // `spatialDistribution(...)` transported profiles (runtime `spatial.rs`).
-    // `rt_spatial_eval` returns `out0`; `rt_spatial_out1` hands back the `out1` of
+    // `rt_spatial_value` returns `out0`; `rt_spatial_out1` hands back the `out1` of
     // that same call, which is C's `double* out1` out-parameter without a
     // scratch address.
     ("rt_spatial_init", &[WTy::I32], &[]),
     ("rt_spatial_init_profile", &[WTy::I32, WTy::I32, WTy::I32], &[]),
     (
         "rt_spatial_store",
-        &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32],
-        &[],
-    ),
-    (
-        "rt_spatial_eval",
         &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32, WTy::I32],
-        &[WTy::F64],
+        &[],
     ),
     ("rt_spatial_out1", &[WTy::I32], &[WTy::F64]),
     ("rt_spatial_zc", &[WTy::I32, WTy::F64, WTy::I32, WTy::F64], &[WTy::F64]),
+    (
+        "rt_spatial_value",
+        &[WTy::I32, WTy::F64, WTy::F64, WTy::I32, WTy::I32],
+        &[WTy::F64],
+    ),
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),

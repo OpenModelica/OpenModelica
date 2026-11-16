@@ -39,6 +39,12 @@ end SingleBeltChangingVel;"); getErrorString();
 // Simulate
 simulate(SingleBeltChangingVel, stopTime=2.0, simflags="-lv=LOG_EVENTS"); getErrorString();
 
+echo(false);
+ok := abs(val(rightOutput,0.5-1e-6,"SingleBeltChangingVel_res.mat")) < 1e-5 and abs(val(rightOutput,0.5+1e-6,"SingleBeltChangingVel_res.mat")-1) < 1e-5;
+ok := ok and abs(val(leftOutput,1.5-1e-6,"SingleBeltChangingVel_res.mat")-1) < 1e-5 and abs(val(leftOutput,1.5+1e-6,"SingleBeltChangingVel_res.mat")+1) < 1e-5;
+echo(true);
+ok; getErrorString();
+
 // Result:
 // true
 // ""
@@ -64,5 +70,8 @@ simulate(SingleBeltChangingVel, stopTime=2.0, simflags="-lv=LOG_EVENTS"); getErr
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
+// ""
+// true
+// true
 // ""
 // endResult

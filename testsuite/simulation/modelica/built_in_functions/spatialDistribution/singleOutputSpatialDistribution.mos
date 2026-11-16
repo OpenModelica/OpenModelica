@@ -44,12 +44,14 @@ end SingleOutputSecond;"); getErrorString();
 
 simulate(SingleOutputFirst, stopTime=2.0); getErrorString();
 val(leftOutput, 0.0);
-val(leftOutput, 1.0);
+val(leftOutput, 1.0-1e-6);
+val(leftOutput, 1.0+1e-6);
 val(leftOutput, 2.0);
 
 simulate(SingleOutputSecond, stopTime=2.0); getErrorString();
 val(rightOutput, 0.0);
-val(rightOutput, 1.0);
+val(rightOutput, 1.0-1e-6);
+val(rightOutput, 1.0+1e-6);
 val(rightOutput, 2.0);
 
 // Result:
@@ -66,7 +68,8 @@ val(rightOutput, 2.0);
 // end SimulationResult;
 // ""
 // 1.0
-// 0.0
+// 1.0
+// 0.000002
 // 2.0
 // record SimulationResult
 //     resultFile = "SingleOutputSecond_res.mat",
@@ -78,5 +81,6 @@ val(rightOutput, 2.0);
 // ""
 // 1.0
 // 1.0
+// 0.000002
 // 2.0
 // endResult

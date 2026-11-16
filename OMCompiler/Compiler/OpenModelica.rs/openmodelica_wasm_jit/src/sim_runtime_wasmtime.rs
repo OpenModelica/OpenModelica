@@ -2154,6 +2154,15 @@ impl sim_driver::SimEngine for WasmtimeEngine {
     fn context_addr(&mut self) -> u32 {
         self.rt_addr(RtAddr::Context)
     }
+    fn spatial_history(&mut self, action: sim_driver::SpatialHistory) -> bool {
+        self.rt_inst
+            .get_typed_func::<u32, u32>(&mut self.store, "rt_spatial_history")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, action as u32).ok())
+            .unwrap_or(0)
+            != 0
+    }
+
     fn error_stage_addr(&mut self) -> u32 {
         self.rt_addr(RtAddr::ErrorStage)
     }

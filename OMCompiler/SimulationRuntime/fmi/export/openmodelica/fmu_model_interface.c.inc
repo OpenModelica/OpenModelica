@@ -3707,6 +3707,11 @@ doStep_cleanup:
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
 
+  if ((!done || status >= fmiXError) && spatialDistributionNeedsHistory(comp->fmuData, 0)) {
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "DoStep: spatialDistribution transport history exhausted at time %.15g. Restart the simulation with smaller communication steps.",
+                 comp->fmuData->localData[0]->timeValue)
+  }
+
   if (!done && status == fmiXOK)
   {
     FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, FMIX_STR "DoStep: terminated by an assertion.")

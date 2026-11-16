@@ -1,0 +1,95 @@
+// name:                causalSteps
+// keywords:            spatialDistribution history solver events
+// status:              correct
+// suite:               cSources
+// depends:             historyBehavior.c
+// teardown_command:    rm -f SpatialDistributionCausal* SpatialCoarseEvents* SpatialHistoryEvents* SpatialInitialProfile* SpatialHistoryBehavior*
+
+loadFile("SpatialDistributionModels.mo"); getErrorString();
+
+echo(false);
+ok := true;
+// Expected value of filtered at t=3, with a 0.1 s transport delay.
+expected := sum(0.1^(k - 1) * (3 - 0.1 * k - 1 + exp(-(3 - 0.1 * k))) for k in 1:30);
+runtime := if getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET") == "C+Rust" then "C+Rust" else "C";
+
+if getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET") <> "wasm-jit" then
+  if runtime == "C" then
+    setCommandLineOptions("--newBackend=false --simCodeTarget=C");
+    // Run historyBehavior.c; it should return true.
+    result := simulate(SpatialHistoryBehavior, stopTime = 0);
+    ok := ok and result.resultFile <> "";
+  end if;
+
+  setCommandLineOptions("--newBackend=false --daeMode=false --simCodeTarget=" + runtime + " --generateDynamicJacobian=numeric");
+  buildModel(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7);
+  buildModel(SpatialCoarseEvents, stopTime = 1, numberOfIntervals = 1, tolerance = 1e-8);
+
+  // Try large steps with root finding on/off, then check that the pulse is preserved.
+  for scenario in {1, 2, 3} loop
+    pulse := scenario == 3;
+    prefix := if pulse then "SpatialCoarseEvents" else "SpatialDistributionCausal";
+    flags := if pulse then " -initialStepSize=1" else " -initialStepSize=3" + (if scenario == 2 then " -noRootFinding" else "");
+    solvers := if runtime == "C" then {"dassl", "cvode", "ida", "gbode -gbm=esdirk4", "gbode -gbm=radauIIA3"}
+      else {"dassl", "cvode", "ida"};
+    if runtime == "C" and pulse then
+      // Fixed-step GBODE should also preserve the pulse.
+      solvers := cat(1, solvers, {"gbode -gbm=esdirk4 -gbctrl=const", "gbode -gbm=radauIIA3 -gbctrl=const"});
+    end if;
+
+    for solver in solvers loop
+      for direction in {1, -1} loop
+        deleteFile(prefix + "_res.mat");
+        rc := system("./" + prefix + " -alarm=15 -s=" + solver + flags
+          + " -override=direction=" + String(direction) + " > " + prefix + "_run.log 2>&1");
+        actual := if rc <> 0 then -1
+          elseif pulse then val(integral, 1, prefix + "_res.mat")
+          else val(filtered, 3, prefix + "_res.mat");
+        closeSimulationResultFile();
+
+        // Expect pulse area 0.2, or the calculated filtered value for the feedback model.
+        good := rc == 0 and abs(actual - (if pulse then 0.2 else expected)) < (if pulse then 1e-6 else 0.002);
+        if not good then
+          print(runtime + " " + solver + " direction=" + String(direction) + " " + prefix + flags + ": " + String(actual) + "\n");
+        end if;
+        ok := ok and good;
+      end for;
+    end for;
+  end for;
+
+  // With a 1 s delay, filtered at t=3 should equal 1 + exp(-2) + 0.1*exp(-1).
+  rc := system("./SpatialDistributionCausal -alarm=15 -s=cvode -override=velocity=1 > SpatialDistributionCausal_run.log 2>&1");
+  ok := ok and rc == 0 and abs(val(filtered, 3, "SpatialDistributionCausal_res.mat") - (1 + exp(-2) + 0.1 * exp(-1))) < 1e-5;
+  closeSimulationResultFile();
+
+  // The outlet should be 2.9 at t=3 even though it does not affect any state derivative.
+  result := simulate(SpatialHistoryEvents, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-8,
+    method = "ida", simflags = "-initialStepSize=3 -alarm=15");
+  ok := ok and result.resultFile <> "" and abs(val(outlet, 3, "SpatialHistoryEvents_res.mat") - 2.9) < 1e-5;
+  closeSimulationResultFile();
+
+  // Initialization should find position 5, then the outlet should fall from 1 to 0.25.
+  result := simulate(SpatialInitialProfile, stopTime = 0.75, numberOfIntervals = 3, tolerance = 1e-8, simflags = "-alarm=15");
+  ok := ok and result.resultFile <> "" and abs(val(position, 0, "SpatialInitialProfile_res.mat") - 5) < 1e-7
+    and abs(val(outlet, 0, "SpatialInitialProfile_res.mat") - 1) < 1e-7
+    and abs(val(outlet, 0.75, "SpatialInitialProfile_res.mat") - 0.25) < 1e-7;
+  closeSimulationResultFile();
+
+  // Run the feedback model in DAE mode; it should give the same filtered value.
+  setCommandLineOptions("--daeMode");
+  buildModel(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
+    fileNamePrefix = "SpatialDistributionCausalDAE");
+  rc := system("./SpatialDistributionCausalDAE -alarm=15 -s=ida -initialStepSize=3 > SpatialDistributionCausal_run.log 2>&1");
+  ok := ok and rc == 0 and abs(val(filtered, 3, "SpatialDistributionCausalDAE_res.mat") - expected) < 0.002;
+  closeSimulationResultFile();
+end if;
+echo(true);
+ok; getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// endResult

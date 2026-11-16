@@ -387,6 +387,10 @@ impl Cvode {
     /// CVODE may step past `tout` and interpolate back to it, as IDA does; an FMU's
     /// `doStep` must not, as its inputs change there.
     pub fn step(&mut self, t: &mut f64, tout: f64, stop: bool) -> Stop {
+        self.step_internal(t, tout, stop, false)
+    }
+
+    pub fn step_internal(&mut self, t: &mut f64, tout: f64, stop: bool, one_step: bool) -> Stop {
         unsafe {
             if stop {
                 let flag = CVodeSetStopTime(self.mem, tout);
@@ -394,8 +398,14 @@ impl Cvode {
                     return Stop::Failed(flag);
                 }
             }
-            match CVode(self.mem, tout, self.y, t, CV_NORMAL) {
-                CV_SUCCESS | CV_TSTOP_RETURN => Stop::Reached,
+            match CVode(self.mem, tout, self.y, t, if one_step { 2 } else { CV_NORMAL }) {
+                CV_SUCCESS | CV_TSTOP_RETURN => {
+                    if one_step && *t < tout {
+                        Stop::Stepped
+                    } else {
+                        Stop::Reached
+                    }
+                }
                 CV_ROOT_RETURN => {
                     CVodeGetRootInfo(self.mem, self.roots.as_mut_ptr());
                     Stop::Root

@@ -47,8 +47,25 @@ end SingleBeltInitialize2;"); getErrorString();
 // Simulate
 simulate(SingleBeltInitialize1, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErrorString();
 
-simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErrorString();
+simulate(SingleBeltInitialize2, stopTime=0.1002, numberOfIntervals=501, simflags="-lv=LOG_EVENTS"); getErrorString();
 
+
+echo(false);
+ok := abs(val(rightOutput,0,"SingleBeltInitialize1_res.mat")-5) < 1e-5 and abs(val(rightOutput,1e-6,"SingleBeltInitialize1_res.mat")-1) < 1e-5;
+for edge in {0.0557,0.0765433,0.09} loop
+  before := val(rightOutput,edge-1e-6,"SingleBeltInitialize1_res.mat");
+  after := val(rightOutput,edge+1e-6,"SingleBeltInitialize1_res.mat");
+  ok := ok and abs(before+after) < 1e-5 and abs(before-after) > 1.99;
+end for;
+ok := ok and abs(val(leftOutput,0,"SingleBeltInitialize2_res.mat")+1) < 1e-5;
+for edge in {0.01,0.0234567,0.0443} loop
+  before := val(leftOutput,edge-1e-6,"SingleBeltInitialize2_res.mat");
+  after := val(leftOutput,edge+1e-6,"SingleBeltInitialize2_res.mat");
+  ok := ok and abs(before+after) < 1e-5 and abs(before-after) > 1.99;
+end for;
+ok := ok and abs(val(leftOutput,0.1-1e-6,"SingleBeltInitialize2_res.mat")-1) < 1e-5 and abs(val(leftOutput,0.1+1e-6,"SingleBeltInitialize2_res.mat")) < 1e-5;
+echo(true);
+ok; getErrorString();
 
 // Result:
 // true
@@ -79,7 +96,7 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 // ""
 // record SimulationResult
 //     resultFile = "SingleBeltInitialize2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'SingleBeltInitialize2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1002, numberOfIntervals = 501, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'SingleBeltInitialize2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = $spatialDistributionZeroCrossing(0, 0, x, false)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
@@ -96,5 +113,8 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
+// ""
+// true
+// true
 // ""
 // endResult

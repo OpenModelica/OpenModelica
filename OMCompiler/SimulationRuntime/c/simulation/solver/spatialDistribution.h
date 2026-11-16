@@ -36,11 +36,13 @@
 #endif
 
 SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistributions);
+modelica_boolean spatialDistributionNeedsHistory(DATA* data, modelica_boolean reset);
+int storeSpatialDistributionStep(DATA* data, threadData_t* threadData);
 void freeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributionData, unsigned int nSpatialDistributions);
 void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int index, real_array* initialPoints, real_array* initialValues, unsigned int length);
-void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int index, double in0, double in1, double posX, int isPositiveVelocity) ;
-double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int index, double in0, double in1, double posX, int isPositiveVelocity, double* out1);
-double spatialDistributionZeroCrossing (DATA* data, threadData_t *threadData, unsigned int index, unsigned int relationIndex, double posX, int isPositiveVelocity);
+void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int index, double in0, double in1, double posX, modelica_boolean isPositiveVelocity) ;
+double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int index, double posX, modelica_boolean isPositiveVelocity, double* out1);
+double spatialDistributionZeroCrossing (DATA* data, threadData_t *threadData, unsigned int index, unsigned int relationIndex, double posX, modelica_boolean isPositiveVelocity);
 
 void printTransportedQuantity(void* data, int stream, void* nodePointer);
 size_t spatialDistributionStateWords(DATA* data, double* out);

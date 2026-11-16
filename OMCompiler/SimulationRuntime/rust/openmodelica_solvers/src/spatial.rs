@@ -11,8 +11,8 @@
 //!
 //! Where C uses two malloc-per-node doubly-linked lists, this keeps both in
 //! `VecDeque`s: the operator only ever pushes at one end and pops at the other, so
-//! a ring buffer fits it exactly, and the contiguous storage makes the
-//! zero-crossing lookup a binary search instead of a walk (see [`Spatial::zc`]).
+//! a ring buffer fits it exactly. The next outgoing event is found at an end of
+//! the event deque (see [`Spatial::zc`]).
 //!
 //! Only the operators; allocating the state and reporting a model error are the
 //! runtime's business, as they are for [`crate::delay`].
@@ -34,11 +34,12 @@ pub fn set_throw_hook(f: fn(&str) -> !) {
     THROW_HOOK.store(f as usize, Ordering::Relaxed);
 }
 
-/// The relation evaluation modes [`SpatialState::eval`] is handed (`SimLayout`'s
+/// The relation evaluation modes [`SpatialState::value`] is handed (`SimLayout`'s
 /// `rel_fresh`): continuous integration, an event update, the initial system.
 const MODE_CONTINUOUS: u32 = 0;
 #[cfg(test)]
 const MODE_EVENT: u32 = 1;
+const MODE_INITIAL: u32 = 2;
 
 /// C `SPATIAL_EPS` (`epsilon.h`).
 const SPATIAL_EPS: f64 = f64::EPSILON;
@@ -130,14 +131,6 @@ fn interpolate(left: Node, right: Node, at: f64) -> f64 {
     left.val * ((right.pos - at) / d) + right.val * ((at - left.pos) / d)
 }
 
-fn extrapolate(left: Node, right: Node, at: f64) -> f64 {
-    let d = right.pos - left.pos;
-    if !(d > 0.0) {
-        fatal("extrapolateTransportedQuantity: wrong order or same position!");
-    }
-    left.val + (right.val - left.val) / d * (at - left.pos)
-}
-
 /// C's `warnStepSizeTooBig`: the warning and its subline, `-lvMaxWarn` times.
 fn warn_step_size_too_big(n_displayed: &mut u64, what: &str, time: f64, index: u32, events: i32) {
     let max_displayed = crate::solverflags::max_warn_displays();
@@ -167,18 +160,19 @@ fn warn_step_size_too_big(n_displayed: &mut u64, what: &str, time: f64, index: u
 /// What [`Spatial::read_output`] found at the output edge.
 struct Read {
     out: f64,
-    /// Value in front of the last discontinuity walked over.
+    /// Value before the first pending discontinuity.
     event_pre: Option<f64>,
     /// Number of discontinuities between the stored output edge and the new one.
     events: i32,
 }
 
 /// One `spatialDistribution(...)` operator's state.
+#[derive(Clone)]
 struct Spatial {
     profile: VecDeque<Node>,
     events: VecDeque<Event>,
     initialized: bool,
-    /// `x` at the operator's first call. The operator only depends on the *change*
+    /// `x` at initialization. The operator only depends on the *change*
     /// of `x`, and the initial profile is stored assuming `x(t0) = 0`, so this is
     /// subtracted from every `x` (C's `startPosX`). Captured lazily: an operator
     /// inside an inactive `if`-branch must not start before the branch is taken.
@@ -192,6 +186,8 @@ struct Spatial {
     out1: f64,
     n_warnings_removed_events: u64,
     n_warnings_output_events: u64,
+    needs_history: bool,
+    has_stored_inlet: bool,
 }
 
 impl Spatial {
@@ -206,6 +202,8 @@ impl Spatial {
             out1: 0.0,
             n_warnings_removed_events: 0,
             n_warnings_output_events: 0,
+            needs_history: false,
+            has_stored_inlet: false,
         }
     }
 
@@ -345,7 +343,7 @@ impl Spatial {
 
     /// C `storeSpatialDistribution`: an accepted step, so the boundary condition
     /// becomes a new node at the input edge and whatever left the domain is dropped.
-    fn store(&mut self, index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: bool) {
+    fn store(&mut self, index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: bool, initial: bool) {
         let pos_x = self.shift(pos_x);
         omclog::info!(
             omclog::SPATIALDISTR,
@@ -369,6 +367,10 @@ impl Spatial {
         let (moved, dx) = self.progress(pos_x);
         if dx <= zero_delta_x(self.old_pos_x, pos_x) {
             self.store_boundary(positive, if positive { in0 } else { in1 });
+            if self.has_stored_inlet && !initial {
+                self.prune(positive);
+            }
+            self.has_stored_inlet = true;
             omclog::close(omclog::SPATIALDISTR);
             return;
         }
@@ -376,6 +378,10 @@ impl Spatial {
         // The sign of the actual progress outranks the operator's argument: with
         // `positiveVelocity` inside a `noEvent` the argument can lag a reversal.
         let positive = moved.unwrap_or(positive);
+        if self.read_output(pos_x, positive).events < 0 {
+            omclog::close(omclog::SPATIALDISTR);
+            return;
+        }
 
         // A node at the input edge, or -- when the edge did not move -- a
         // discontinuity on top of the node already sitting there. Event nodes go
@@ -397,6 +403,7 @@ impl Spatial {
             warn_step_size_too_big(&mut self.n_warnings_removed_events, "Removed", time, index, walked);
         }
         self.old_pos_x = pos_x;
+        self.has_stored_inlet = true;
         omclog::close(omclog::SPATIALDISTR);
     }
 
@@ -425,9 +432,8 @@ impl Spatial {
         }
     }
 
-    /// C `removeStaleEventsSpatialDistribution`: `prune` keeps events up to
-    /// `SPATIAL_ZERO_DELTA_X` outside the profile. When `x` reverses before they
-    /// are dropped, they would be on the wrong side of a new event at that edge.
+    /// C `removeStaleEventsSpatialDistribution`: drop events beyond the new
+    /// input edge before adding its discontinuity.
     fn remove_stale_events(&mut self, front: bool, pos: f64) {
         loop {
             let ev = if front { self.events.front() } else { self.events.back() };
@@ -493,7 +499,8 @@ impl Spatial {
             }
         } else {
             match self.events.back() {
-                None => 1.0,
+                None if self.last_event_sign == 0.0 => 1.0,
+                None => -self.last_event_sign,
                 Some(ev) => {
                     if pos < ev.pos {
                         fatal("New end position is not bigger then previous last event node.");
@@ -575,22 +582,14 @@ impl Spatial {
             self.profile.drain(..prev);
         }
 
-        // Events outside [leftEdge - SPATIAL_ZERO_DELTA_X, rightEdge + SPATIAL_ZERO_DELTA_X].
-        if positive {
-            while let Some(ev) = self.events.back().copied() {
-                if edge.pos + 1.0 + zero_delta_x(edge.pos, ev.pos) >= ev.pos {
-                    break;
-                }
-                self.last_event_sign = ev.sign;
-                self.events.pop_back();
-            }
-        } else {
-            while let Some(ev) = self.events.front().copied() {
-                if edge.pos - 1.0 - zero_delta_x(edge.pos, ev.pos) <= ev.pos {
-                    break;
-                }
-                self.last_event_sign = ev.sign;
-                self.events.pop_front();
+        for _ in 0..walked {
+            let event = if positive {
+                self.events.pop_back()
+            } else {
+                self.events.pop_front()
+            };
+            if let Some(event) = event {
+                self.last_event_sign = event.sign;
             }
         }
         self.log_lists();
@@ -599,33 +598,21 @@ impl Spatial {
 
     /// C `findOppositeEndSpatialDistribution`: `z` at the output edge for the `x`
     /// of this call, walking in from the stored output edge.
-    fn read_output(&self, in0: f64, in1: f64, pos_x: f64, positive: bool) -> Read {
+    fn read_output(&mut self, pos_x: f64, positive: bool) -> Read {
+        self.needs_history = false;
         let n = self.profile.len();
         let first = self.front();
         let last = self.back();
         let read = Self::out_pos(pos_x, positive);
 
-        // More than one domain length since the last accepted step: the material at
-        // the output edge entered after it, so only the boundary condition describes it.
-        if positive && read < first.pos {
-            let inject = Node { pos: -pos_x, val: in0 };
-            let out = interpolate(inject, first, read);
+        if (positive && read < first.pos - pos_eps(read, first.pos))
+            || (!positive && read > last.pos + pos_eps(read, last.pos))
+        {
+            self.needs_history = true;
             return Read {
-                out,
-                event_pre: Some(out),
-                events: self.events.len() as i32,
-            };
-        }
-        if !positive && read > last.pos {
-            let inject = Node {
-                pos: 1.0 - pos_x,
-                val: in1,
-            };
-            let out = interpolate(last, inject, read);
-            return Read {
-                out,
-                event_pre: Some(out),
-                events: self.events.len() as i32,
+                out: f64::NAN,
+                event_pre: None,
+                events: -1,
             };
         }
 
@@ -662,7 +649,7 @@ impl Spatial {
             if (self.profile[prev].pos - self.profile[i].pos).abs()
                 < pos_eps(self.profile[prev].pos, self.profile[i].pos)
             {
-                event_pre = Some(self.profile[prev].val);
+                event_pre.get_or_insert(self.profile[prev].val);
                 walked += 1;
             }
             let beyond = if positive {
@@ -693,17 +680,10 @@ impl Spatial {
 
     /// C `spatialDistribution`: `(out0, out1)` for the `x` of this call, without
     /// storing anything — the step may still be rejected.
-    fn eval(
-        &mut self,
-        index: u32,
-        time: f64,
-        in0: f64,
-        in1: f64,
-        pos_x: f64,
-        positive: bool,
-        // C's `discreteCall` is `mode != MODE_CONTINUOUS`.
-        mode: u32,
-    ) -> (f64, f64) {
+    fn value(&mut self, index: u32, time: f64, pos_x: f64, positive: bool, mode: u32) -> (f64, f64) {
+        if mode == MODE_INITIAL {
+            self.start_pos_x = Some(pos_x);
+        }
         let pos_x = self.shift(pos_x);
         omclog::info!(
             omclog::SPATIALDISTR,
@@ -711,35 +691,15 @@ impl Spatial {
             "Calling spatialDistribution (index={index}, time={})",
             e(time),
         );
-        omclog::info!(
-            omclog::SPATIALDISTR,
-            false,
-            "(out0,out1) = spatialDistribution(in0={}, in1={}, x={}, isPositiveVelocity={})",
-            f(in0),
-            f(in1),
-            f(pos_x),
-            if positive { "true" } else { "false" },
-        );
         self.log_lists();
-
-        let discrete = mode != MODE_CONTINUOUS;
-        let (moved, delta) = self.progress(pos_x);
-        let zdx = zero_delta_x(self.old_pos_x, pos_x);
-        // The argument disagrees with the direction `x` actually moved in. Trust
-        // the movement, but remember that the velocity sign is in doubt.
-        let jumped = delta > zdx && moved == Some(!positive);
-        let positive = if jumped { !positive } else { positive };
-        if delta > zdx && discrete {
-            fatal(&format!(
-                "x got reinitialized during an event at time {}. OpenModelica can't handle that.",
-                f(time)
-            ));
-        }
-
-        let (out0, out1) = if delta < pos_eps(self.old_pos_x, pos_x) {
-            (self.front().val, self.back().val)
-        } else {
-            let read = self.read_output(in0, in1, pos_x, positive);
+        let discrete = mode != MODE_CONTINUOUS && mode != MODE_INITIAL;
+        let (out0, out1) = {
+            let read = self.read_output(pos_x, positive);
+            if read.events < 0 {
+                self.out1 = f64::NAN;
+                omclog::close(omclog::SPATIALDISTR);
+                return (f64::NAN, f64::NAN);
+            }
             if read.events > 1 {
                 warn_step_size_too_big(
                     &mut self.n_warnings_output_events,
@@ -764,28 +724,11 @@ impl Spatial {
                     out = pre;
                 }
             }
-            // The input-side output is extrapolated rather than taken straight from
-            // `in0`/`in1`, which would close an algebraic loop through the operator.
-            // Suppressed after a `jumped` step: which input feeds which end is
-            // exactly what is in doubt there.
-            let n = self.profile.len();
-            let extrapolate_ok = !jumped && delta > pos_eps(self.old_pos_x, pos_x);
+            // MLS 3.7.4.2 uses the stored incoming value to avoid an algebraic loop.
             if positive {
-                let (a, b) = (self.profile[0], self.profile[1]);
-                let out0 = if extrapolate_ok && (a.pos - b.pos).abs() > pos_eps(a.pos, b.pos) {
-                    extrapolate(a, b, -pos_x)
-                } else {
-                    a.val
-                };
-                (out0, out)
+                (self.front().val, out)
             } else {
-                let (a, b) = (self.profile[n - 2], self.profile[n - 1]);
-                let out1 = if extrapolate_ok && (a.pos - b.pos).abs() > pos_eps(a.pos, b.pos) {
-                    extrapolate(a, b, 1.0 - pos_x)
-                } else {
-                    b.val
-                };
-                (out, out1)
+                (out, self.back().val)
             }
         };
         omclog::info!(omclog::SPATIALDISTR, false, "(out0,out1) = ({}, {})", f(out0), f(out1));
@@ -794,14 +737,14 @@ impl Spatial {
         (out0, out1)
     }
 
-    /// C `spatialDistributionZeroCrossing`: flips sign every time a stored
-    /// discontinuity passes the output edge, so the root finder can place the event.
-    ///
-    /// C spells this out as two mirrored walks over the event list; both come down to
-    /// the negated sign of the nearest discontinuity at or below the read position
-    /// (the signs alternate, so "the one above, not negated" is the same value).
+    /// Event indicator for the next discontinuity leaving the profile.
     fn zc(&self, pos_x: f64, positive: bool, zc_pre: f64) -> f64 {
         if self.events.is_empty() {
+            let zc_pre = if self.last_event_sign != 0.0 {
+                (if positive { 1.0 } else { -1.0 }) * self.last_event_sign
+            } else {
+                zc_pre
+            };
             omclog::info!(
                 omclog::SPATIALDISTR,
                 false,
@@ -821,15 +764,21 @@ impl Spatial {
             Some(start) => pos_x - start,
             None => 0.0,
         };
-        let read = Self::out_pos(pos_x, positive);
-        // Rightmost discontinuity at or below the read position. The tolerance is the
-        // absolute `SPATIAL_EPS`: a wider one flips the value before the discontinuity
-        // is reached, leaving no sign change to find.
-        let below = self.events.partition_point(|ev| ev.pos <= read + SPATIAL_EPS);
-        let value = if below == 0 {
-            self.events[0].sign
+        let event = if positive {
+            self.events.back().unwrap()
         } else {
-            -self.events[below - 1].sign
+            self.events.front().unwrap()
+        };
+        let value = if positive {
+            if 1.0 - pos_x >= event.pos - SPATIAL_EPS {
+                -event.sign
+            } else {
+                event.sign
+            }
+        } else if -pos_x < event.pos {
+            event.sign
+        } else {
+            -event.sign
         };
         omclog::info!(
             omclog::SPATIALDISTR,
@@ -846,6 +795,16 @@ impl Spatial {
 /// One `spatialDistribution(...)` operator per index, for one run.
 pub struct SpatialState {
     ops: Vec<Spatial>,
+    checkpoint: Vec<Spatial>,
+}
+
+#[derive(Clone, Copy)]
+#[repr(u32)]
+pub enum History {
+    Needed = 1,
+    Clear,
+    Save,
+    Restore,
 }
 
 impl SpatialState {
@@ -875,6 +834,7 @@ impl SpatialState {
                 s.out1,
                 s.n_warnings_removed_events as f64,
                 s.n_warnings_output_events as f64,
+                s.has_stored_inlet as u8 as f64,
             ]);
         }
     }
@@ -906,9 +866,13 @@ impl SpatialState {
             s.out1 = w.next()?;
             s.n_warnings_removed_events = w.next()? as u64;
             s.n_warnings_output_events = w.next()? as u64;
+            s.has_stored_inlet = w.next()? != 0.0;
             ops.push(s);
         }
-        Some(SpatialState { ops })
+        Some(SpatialState {
+            ops,
+            checkpoint: Vec::new(),
+        })
     }
 
     /// C `allocSpatialDistribution`: `n` uninitialized operators for a fresh run.
@@ -920,6 +884,7 @@ impl SpatialState {
         );
         SpatialState {
             ops: (0..n).map(|_| Spatial::new()).collect(),
+            checkpoint: Vec::new(),
         }
     }
 
@@ -947,29 +912,40 @@ impl SpatialState {
         self.at(index).init_profile(index, points, values)
     }
 
-    /// C `storeSpatialDistribution`: commit the boundary condition of an accepted
-    /// step.
-    pub fn store(&mut self, index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: bool) {
-        self.at_ready(index).store(index, time, in0, in1, pos_x, positive)
+    /// C `storeSpatialDistribution`: commit the boundary condition of an accepted step.
+    pub fn store(&mut self, index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: bool, initial: bool) {
+        self.at_ready(index)
+            .store(index, time, in0, in1, pos_x, positive, initial)
     }
 
-    /// C `spatialDistribution`: `(out0, out1)`. `mode` is the relation evaluation
-    /// mode, of which C's `simulationInfo->discreteCall` is `mode != 0`.
-    #[allow(clippy::too_many_arguments)]
-    pub fn eval(
-        &mut self,
-        index: u32,
-        time: f64,
-        in0: f64,
-        in1: f64,
-        pos_x: f64,
-        positive: bool,
-        mode: u32,
-    ) -> (f64, f64) {
-        self.at_ready(index).eval(index, time, in0, in1, pos_x, positive, mode)
+    pub fn value(&mut self, index: u32, time: f64, pos_x: f64, positive: bool, mode: u32) -> (f64, f64) {
+        self.at_ready(index).value(index, time, pos_x, positive, mode)
     }
 
-    /// The second output of the preceding [`Self::eval`] of the same operator, for
+    pub fn needs_history(&mut self, reset: bool) -> bool {
+        let needed = self.ops.iter().any(|s| s.needs_history);
+        if reset {
+            for s in &mut self.ops {
+                s.needs_history = false;
+            }
+        }
+        needed
+    }
+
+    pub fn history(&mut self, action: History) -> bool {
+        match action {
+            History::Needed => return self.needs_history(false),
+            History::Clear => return self.needs_history(true),
+            History::Save => self.checkpoint.clone_from(&self.ops),
+            History::Restore => {
+                self.ops.clone_from(&self.checkpoint);
+                self.needs_history(true);
+            }
+        }
+        !self.ops.is_empty()
+    }
+
+    /// The second output of the preceding [`Self::value`] of the same operator, for
     /// a host whose ABI returns one value per call.
     pub fn out1(&mut self, index: u32) -> f64 {
         self.at(index).out1
@@ -991,8 +967,8 @@ mod tests {
     fn belt(points: &[f64], values: &[f64]) -> Spatial {
         let mut s = Spatial::new();
         s.init_profile(0, points, values);
-        s.eval(0, 0.0, values[0], values[values.len() - 1], 0.0, true, MODE_CONTINUOUS);
-        s.store(0, 0.0, values[0], values[values.len() - 1], 0.0, true);
+        s.value(0, 0.0, 0.0, true, MODE_CONTINUOUS);
+        s.store(0, 0.0, values[0], values[values.len() - 1], 0.0, true, false);
         s
     }
 
@@ -1010,9 +986,9 @@ mod tests {
         for k in 1..=n {
             let t = k as f64 * h;
             let x = if positive { t } else { -t };
-            let (o0, o1) = s.eval(0, t, in0(t), in1(t), x, positive, MODE_CONTINUOUS);
+            let (o0, o1) = s.value(0, t, x, positive, MODE_CONTINUOUS);
             out.push((t, o0, o1));
-            s.store(0, t, in0(t), in1(t), x, positive);
+            s.store(0, t, in0(t), in1(t), x, positive, false);
         }
         out
     }
@@ -1025,6 +1001,9 @@ mod tests {
             let want = if t < 1.0 { 0.0 } else { t - 1.0 };
             assert!((o1 - want).abs() < 1e-9, "t={t}: out1={o1}, want {want}");
         }
+        assert_eq!(s.value(0, 2.5, 2.5, true, MODE_CONTINUOUS).0, 2.0);
+        s.store(0, 2.5, 2.5, 0.0, 2.5, true, false);
+        assert_eq!(s.value(0, 2.5, 2.5, true, MODE_CONTINUOUS).0, 2.5);
     }
 
     #[test]
@@ -1043,6 +1022,9 @@ mod tests {
             let want = if t < 1.0 { 0.0 } else { t - 1.0 };
             assert!((o0 - want).abs() < 1e-9, "t={t}: out0={o0}, want {want}");
         }
+        assert_eq!(s.value(0, 2.5, -2.5, false, MODE_CONTINUOUS).1, 2.0);
+        s.store(0, 2.5, 0.0, 2.5, -2.5, false, false);
+        assert_eq!(s.value(0, 2.5, -2.5, false, MODE_CONTINUOUS).1, 2.5);
     }
 
     #[test]
@@ -1063,11 +1045,17 @@ mod tests {
         let mut s = belt(&[0.0, 0.3, 0.3, 0.5, 0.5, 1.0], &[3.0, 3.0, 2.0, 2.0, 1.0, 1.0]);
         let before = s.zc(0.0, true, 0.0);
         assert_eq!(s.zc(0.5, true, 0.0), before, "not flipped yet at the root");
-        s.eval(0, 0.5, 0.0, 0.0, 0.5, true, MODE_CONTINUOUS);
-        s.store(0, 0.5, 0.0, 0.0, 0.5, true);
-        s.eval(0, 0.5, 0.0, 0.0, 0.5, true, MODE_EVENT);
-        assert_eq!(s.zc(0.5, true, before), before, "the event update left the list alone");
+        s.value(0, 0.5, 0.5, true, MODE_CONTINUOUS);
+        s.store(0, 0.5, 0.0, 0.0, 0.5, true, false);
+        s.value(0, 0.5, 0.5, true, MODE_EVENT);
+        assert_eq!(s.zc(0.5, true, before), -before, "pruning consumed the outgoing jump");
         assert_eq!(s.zc(0.5001, true, before), -before, "flipped once x is past it");
+        let mut s = belt(&[0.0, 0.5, 0.5, 1.0], &[0.0, 0.0, 1.0, 1.0]);
+        s.store(0, 0.75, 0.0, 1.0, -0.75, false, false);
+        assert!(s.events.is_empty());
+        let before = s.zc(-0.75, false, 0.0);
+        s.store(0, 0.75, 0.0, 2.0, -0.75, false, false);
+        assert_eq!(s.zc(-0.75, false, before), before);
     }
 
     #[test]
@@ -1083,26 +1071,26 @@ mod tests {
         // A step that walks the discontinuity past the output edge: the continuous
         // call still reports the value in front of it, so the zero crossing has a
         // sign change to bracket; the event call that follows reports the one behind.
-        let (_, pre) = s.eval(0, 0.6, 0.0, 0.0, 0.6, true, MODE_CONTINUOUS);
+        let (_, pre) = s.value(0, 0.6, 0.6, true, MODE_CONTINUOUS);
         assert_eq!(pre, 1.0);
         // The driver stores the accepted point before running the discrete update,
         // so the event call sees the same `x` (a moved `x` there is an error).
-        s.store(0, 0.6, 0.0, 0.0, 0.6, true);
-        let (_, post) = s.eval(0, 0.6, 0.0, 0.0, 0.6, true, MODE_EVENT);
+        s.store(0, 0.6, 0.0, 0.0, 0.6, true, false);
+        let (_, post) = s.value(0, 0.6, 0.6, true, MODE_EVENT);
         assert_eq!(post, 2.0);
     }
 
     #[test]
     fn discontinuity_count_survives_pruning() {
         // Two discontinuities inside one step: both are reported as walked over.
-        let s = belt(&[0.0, 0.3, 0.3, 0.6, 0.6, 1.0], &[3.0, 3.0, 2.0, 2.0, 1.0, 1.0]);
-        assert_eq!(s.read_output(0.0, 0.0, 0.75, true).events, 2);
+        let mut s = belt(&[0.0, 0.3, 0.3, 0.6, 0.6, 1.0], &[3.0, 3.0, 2.0, 2.0, 1.0, 1.0]);
+        assert_eq!(s.read_output(0.75, true).events, 2);
     }
 
     #[test]
     fn standing_still_reports_the_stored_edges() {
         let mut s = belt(&[0.0, 1.0], &[7.0, 9.0]);
-        let (o0, o1) = s.eval(0, 0.0, 1.0, 2.0, 0.0, true, MODE_CONTINUOUS);
+        let (o0, o1) = s.value(0, 0.0, 0.0, true, MODE_CONTINUOUS);
         assert_eq!((o0, o1), (7.0, 9.0));
     }
 
@@ -1112,26 +1100,30 @@ mod tests {
         let mut b = Spatial::new();
         b.init_profile(0, &[0.0, 1.0], &[0.0, 0.0]);
         // Same run, but x starts at 5 instead of 0.
-        b.eval(0, 0.0, 0.0, 0.0, 5.0, true, MODE_CONTINUOUS);
-        b.store(0, 0.0, 0.0, 0.0, 5.0, true);
+        b.value(0, 0.0, 5.0, true, MODE_CONTINUOUS);
+        b.store(0, 0.0, 0.0, 0.0, 5.0, true, false);
         for k in 1..=150 {
             let t = k as f64 * 0.01;
-            let (_, ra) = a.eval(0, t, t, 0.0, t, true, MODE_CONTINUOUS);
-            a.store(0, t, t, 0.0, t, true);
-            let (_, rb) = b.eval(0, t, t, 0.0, 5.0 + t, true, MODE_CONTINUOUS);
-            b.store(0, t, t, 0.0, 5.0 + t, true);
+            let (_, ra) = a.value(0, t, t, true, MODE_CONTINUOUS);
+            a.store(0, t, t, 0.0, t, true, false);
+            let (_, rb) = b.value(0, t, 5.0 + t, true, MODE_CONTINUOUS);
+            b.store(0, t, t, 0.0, 5.0 + t, true, false);
             assert!((ra - rb).abs() < 1e-12, "t={t}: {ra} vs {rb}");
         }
     }
 
     #[test]
-    fn a_step_longer_than_the_domain_reads_the_boundary_condition() {
-        // x advances 2.5 domain lengths in one step: the material at the output edge
-        // entered after the last accepted step, so the only description of it is the
-        // line from the profile's front (0, 0) to the boundary condition (-2.5, 42).
-        let mut s = belt(&[0.0, 1.0], &[0.0, 0.0]);
-        let (_, o1) = s.eval(0, 0.5, 42.0, 0.0, 2.5, true, MODE_CONTINUOUS);
-        assert!((o1 - 42.0 * 1.5 / 2.5).abs() < 1e-12, "out1={o1}");
+    fn missing_history_requires_subdivision_in_both_directions() {
+        for positive in [true, false] {
+            let mut s = belt(&[0.0, 1.0], &[0.0, 0.0]);
+            let x = if positive { 2.5 } else { -2.5 };
+            let (a, b) = s.value(0, 0.5, x, positive, MODE_CONTINUOUS);
+            assert!(a.is_nan() && b.is_nan());
+            assert!(s.needs_history);
+            let (a, b) = s.value(0, 0.1, x / 5.0, positive, MODE_CONTINUOUS);
+            assert!(a.is_finite() && b.is_finite());
+            assert!(!s.needs_history);
+        }
     }
 
     #[test]
@@ -1148,24 +1140,24 @@ mod tests {
         let mut s = belt(&[0.0, 1.0], &[0.0, 0.0]);
         for k in 1..=100 {
             let t = k as f64 * 0.01;
-            s.store(0, t, t, 0.0, 0.0, true);
+            s.store(0, t, t, 0.0, 0.0, true, false);
         }
         assert_eq!((s.profile.len(), s.events.len()), (3, 1));
         assert_eq!(s.front().val, 1.0);
         // Moving on transports the last boundary value.
-        let (_, o1) = s.eval(0, 2.0, 1.0, 0.0, 0.999, true, MODE_CONTINUOUS);
+        let (_, o1) = s.value(0, 2.0, 0.999, true, MODE_CONTINUOUS);
         assert!((o1 - 0.0).abs() < 1e-9, "out1={o1}");
     }
 
     #[test]
     fn reversal_drops_events_that_left_the_domain() {
         let mut s = belt(&[0.0, 1.0], &[0.0, 0.0]);
-        s.store(0, 0.1, 1.0, 0.0, 0.0, true);
-        s.store(0, 0.2, 1.0, 0.0, 2e-12, true);
+        s.store(0, 0.1, 1.0, 0.0, 0.0, true, false);
+        s.store(0, 0.2, 1.0, 0.0, 2e-12, true, false);
         // Back by more than SPATIAL_ZERO_DELTA_X: the event at 0 is cut off the
         // profile but kept within the tolerance of the front edge.
-        s.store(0, 0.3, 1.0, 0.0, -0.5e-12, false);
-        s.store(0, 0.4, 2.0, 0.0, -0.5e-12, true);
+        s.store(0, 0.3, 1.0, 0.0, -0.5e-12, false, false);
+        s.store(0, 0.4, 2.0, 0.0, -0.5e-12, true, false);
         assert_eq!(s.events.len(), 1);
         assert_eq!(s.events[0].pos, s.front().pos);
     }
@@ -1176,15 +1168,15 @@ mod tests {
         // Fill half the domain with 1.0 from the left, then reverse.
         for k in 1..=50 {
             let t = k as f64 * 0.01;
-            s.eval(0, t, 1.0, 0.0, t, true, MODE_CONTINUOUS);
-            s.store(0, t, 1.0, 0.0, t, true);
+            s.value(0, t, t, true, MODE_CONTINUOUS);
+            s.store(0, t, 1.0, 0.0, t, true, false);
         }
         let mut seen = 0.0f64;
         for k in 1..=40 {
             let t = 0.5 + k as f64 * 0.01;
             let x = 0.5 - k as f64 * 0.01;
-            let (o0, _) = s.eval(0, t, 1.0, 0.0, x, false, MODE_CONTINUOUS);
-            s.store(0, t, 1.0, 0.0, x, false);
+            let (o0, _) = s.value(0, t, x, false, MODE_CONTINUOUS);
+            s.store(0, t, 1.0, 0.0, x, false, false);
             seen = seen.max(o0);
         }
         // What went in on the left comes back out of the left.

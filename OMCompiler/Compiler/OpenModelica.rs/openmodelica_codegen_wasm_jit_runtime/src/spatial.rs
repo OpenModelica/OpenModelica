@@ -53,27 +53,38 @@ pub extern "C" fn rt_spatial_init_profile(index: u32, points: u32, values: u32) 
 
 /// C `storeSpatialDistribution`: commit the boundary condition of an accepted step.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_spatial_store(index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: u32) {
-    state().store(index, time, in0, in1, pos_x, positive != 0);
+pub extern "C" fn rt_spatial_store(index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: u32, mode: u32) {
+    state().store(index, time, in0, in1, pos_x, positive != 0, mode == 2);
+    check_history();
 }
 
-/// C `spatialDistribution`: returns `out0`; `out1` follows from
-/// [`rt_spatial_out1`]. `mode` is the relation evaluation mode, of which C's
-/// `simulationInfo->discreteCall` is `mode != 0`.
+fn check_history() {
+    if state().needs_history(false) {
+        crate::nls::model_error();
+    }
+}
+
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_spatial_eval(
-    index: u32,
-    time: f64,
-    in0: f64,
-    in1: f64,
-    pos_x: f64,
-    positive: u32,
-    mode: u32,
-) -> f64 {
-    state().eval(index, time, in0, in1, pos_x, positive != 0, mode).0
+pub extern "C" fn rt_spatial_value(index: u32, time: f64, pos_x: f64, positive: u32, mode: u32) -> f64 {
+    let out = state().value(index, time, pos_x, positive != 0, mode).0;
+    check_history();
+    out
 }
 
-/// The second output of the preceding [`rt_spatial_eval`] of the same operator.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_spatial_history(action: u32) -> u32 {
+    use openmodelica_sim_meta::spatial::History;
+    let action = match action {
+        1 => History::Needed,
+        2 => History::Clear,
+        3 => History::Save,
+        4 => History::Restore,
+        _ => return 0,
+    };
+    unsafe { (*SPATIAL.0.get()).as_mut() }.is_some_and(|s| s.history(action)) as u32
+}
+
+/// The second output of the preceding value query of the same operator.
 /// The codegen emits the two back to back for one `spatialDistribution(...)` call,
 /// which is C's `double* out1` out-parameter without the scratch address.
 #[unsafe(no_mangle)]
