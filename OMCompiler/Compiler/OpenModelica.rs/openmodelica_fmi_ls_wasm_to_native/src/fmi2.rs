@@ -836,8 +836,7 @@ pub unsafe extern "C" fn fmi2DoStep(
     if checked(c, "fmi2DoStep", 0, st::STEP_COMPLETE).is_none() {
         return ERROR;
     }
-    let target = current_communication_point + communication_step_size;
-    let (mut event, mut terminate, mut early, mut last) = (false, false, false, target);
+    let (mut event, mut terminate, mut early, mut last) = (false, false, false, current_communication_point);
     let status = unsafe {
         crate::fmi3DoStep(
             c,

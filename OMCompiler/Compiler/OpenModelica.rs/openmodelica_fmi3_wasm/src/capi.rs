@@ -403,7 +403,6 @@ pub extern "C" fn om_fmi3DoStep(point: f64, size: f64, no_set_state_prior: i32, 
                     r.event_handling_needed as i32,
                     r.terminate_simulation as i32,
                     r.early_return as i32,
-                    r.discarded as i32,
                 ];
                 unsafe {
                     core::ptr::copy_nonoverlapping(flags.as_ptr(), out as *mut i32, flags.len());

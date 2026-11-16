@@ -98,27 +98,28 @@ pub fn simulate(inst: &mut dyn Fmi3CoSimulation, md: &ModelDescription, opts: &O
                 call,
                 status: crate::api::Status::Discard,
             }) => {
-                // Retrying needs `fmi3SetFMUState` to put the FMU back where the
-                // step started; without it the master has nothing to retry from.
-                return Err(Error::Status {
-                    call,
-                    status: crate::api::Status::Discard,
-                });
+                // C's `retrySimulationStep`: the FMU got part of the way and stands
+                // there; that end is the row and the communication point is skipped.
+                // Without progress, retrying needs `fmi3SetFMUState`.
+                steps += 1;
+                match fmu_time(inst, md) {
+                    Some(stop) if stop > t => {
+                        t = stop;
+                        rec.sample(as_common(inst), t)?;
+                        next = grid.next();
+                        continue;
+                    }
+                    _ => {
+                        return Err(Error::Status {
+                            call,
+                            status: crate::api::Status::Discard,
+                        });
+                    }
+                }
             }
             Err(e) => return Err(e),
         };
         steps += 1;
-        if r.discarded {
-            // C's `retrySimulationStep`: the FMU retook the step half way and stands
-            // there; that end is the row and the communication point is skipped.
-            if r.last_successful_time <= t {
-                return Err(Error::Solver("fmi3DoStep discarded the step without progress"));
-            }
-            t = r.last_successful_time;
-            rec.sample(as_common(inst), t)?;
-            next = grid.next();
-            continue;
-        }
         // An FMU may return at the very time it started from when an event sits
         // there: the event is handled below and the step retaken. Only a run of
         // such steps with nothing in between is a stuck FMU.
@@ -185,6 +186,16 @@ const MAX_STALLED_STEPS: u32 = 100;
 /// A time this close to the communication point counts as having reached it.
 fn step_epsilon(opts: &Options<'_>) -> f64 {
     (opts.stop_time - opts.start_time).abs() * 1e-12
+}
+
+/// The independent variable, which after `fmi3DoStep` holds `lastSuccessfulTime`.
+fn fmu_time(inst: &mut dyn Fmi3CoSimulation, md: &ModelDescription) -> Option<f64> {
+    let v = md.time_variable()?;
+    let mut value = [0.0];
+    as_common(inst)
+        .get_numeric(v.ty.wire(), &[v.value_reference], &mut value)
+        .ok()?;
+    Some(value[0])
 }
 
 /// The common half of the interface, which the shared helpers take.

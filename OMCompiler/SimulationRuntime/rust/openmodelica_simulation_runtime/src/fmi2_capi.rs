@@ -770,21 +770,20 @@ pub unsafe extern "C" fn omc_fmi2DoStep(
     if !matches!(c.n.kind, Kind::CoSimulation { .. }) {
         return ERROR;
     }
-    let target = current_communication_point + communication_step_size;
     (c.step_status, c.last_successful_time, c.terminated) = match c.n.inst.do_step(
         current_communication_point,
         communication_step_size,
         b(no_set_fmu_state_prior),
     ) {
         Ok(r) => {
-            let status = if r.terminate_simulation || r.early_return || r.discarded {
+            let status = if r.terminate_simulation || r.early_return {
                 DISCARD
             } else {
                 OK
             };
             (status, r.last_successful_time, r.terminate_simulation)
         }
-        Err(s) => (code(s), target, false),
+        Err(s) => (code(s), c.n.inst.time(), false),
     };
     c.step_status
 }

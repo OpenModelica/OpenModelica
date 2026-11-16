@@ -18,6 +18,7 @@ fmi3_wasm_daemode_nores.mos \
 fmi3_wasm_error_reason.mos \
 fmi3_wasm_fmi2_no_platform.mos \
 fmi3_wasm_logging_off.mos \
+fmi3_wasm_ls_manifest.mos \
 fmi3_wasm_flags_restored.mos \
 fmi3_wasm_solver_absent.mos \
 fmi3_wasm_solver_libraries.mos \
