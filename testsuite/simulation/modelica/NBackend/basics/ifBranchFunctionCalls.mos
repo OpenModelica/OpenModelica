@@ -1,0 +1,36 @@
+// name: ifBranchFunctionCalls
+// keywords: NewBackend
+// status: correct
+// Function calls in if-expression branches are only evaluated if the branch is active.
+
+loadString("
+model IfBranchFunctionCalls
+  parameter Real dp = 0;
+  parameter Real kFixed = if dp > 0 then 1/sqrt(dp) else 0;
+  parameter Real k = if dp > 0 then sqrt(1/(1/kFixed^2 + 1)) else 1;
+  Real x = time - 0.5;
+  Real y = if x > 0 then log(x) else 0;
+end IfBranchFunctionCalls;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(IfBranchFunctionCalls); getErrorString();
+val(k, 0.0);
+val(y, 0.25);
+val(y, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IfBranchFunctionCalls_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'IfBranchFunctionCalls', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.0
+// -0.6931471805599453
+// endResult
