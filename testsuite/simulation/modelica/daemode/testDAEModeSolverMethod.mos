@@ -3,8 +3,10 @@
 // status: correct
 // teardown_command: rm -rf SolverMethod* output.log
 //
-// The default method auto chooses dassl, or ida for --daeMode. A method given
-// explicitly is never replaced: --daeMode with dassl is an error. See #17727.
+// The default method auto chooses dassl, or ida for --daeMode. A model
+// without states runs with euler, whatever the method. Otherwise a method
+// given explicitly is never replaced: --daeMode with dassl is an error.
+// See #17727.
 
 loadString("
 model SolverMethod
@@ -22,6 +24,25 @@ getErrorString();
 res.simulationOptions;
 regexBool(messages, "-s=auto chooses solver method dassl");
 val(x, 1.0);
+
+loadString("
+model SolverMethodNoStates
+  Real y = time;
+end SolverMethodNoStates;
+"); getErrorString();
+
+echo(false);
+res := simulate(SolverMethodNoStates, simflags = "-lv=LOG_SOLVER");
+messages := res.messages;
+echo(true);
+getErrorString();
+regexBool(messages, "-s=auto chooses solver method euler");
+
+echo(false);
+res := simulate(SolverMethodNoStates, method = "ida", simflags = "-lv=LOG_SOLVER");
+messages := res.messages;
+echo(true);
+regexBool(messages, "The model has no states, solver method ida is replaced by euler.");
 
 setCommandLineOptions("--daeMode"); getErrorString();
 
@@ -46,6 +67,13 @@ val(x, 1.0);
 // "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SolverMethod', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SOLVER'"
 // true
 // 0.36787945153397683
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
 // true
 // ""
 // record SimulationResult
