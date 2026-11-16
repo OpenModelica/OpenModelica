@@ -495,6 +495,28 @@ namespace FlatModelica
       OpType _op;
   };
 
+  class Expression::IteratorBase
+  {
+    public:
+      virtual ~IteratorBase() {}
+
+      virtual Expression::Iterator::value_type dereference() const = 0;
+      virtual void increment() = 0;
+      virtual bool equal(const Expression::IteratorBase &it) const = 0;
+  };
+
+  class NullIterator : public Expression::IteratorBase
+  {
+    public:
+      Expression::Iterator::value_type dereference() const override
+      {
+        throw std::runtime_error("dereferenced NullIterator");
+      }
+
+      void increment() override {};
+      bool equal(const Expression::IteratorBase &it) const override { return true; }
+  };
+
   class ExpressionBase
   {
     public:
@@ -519,6 +541,16 @@ namespace FlatModelica
 
       virtual std::unique_ptr<ExpressionBase> clone() const = 0;
       virtual Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level = 0) const = 0;
+
+      virtual Expression::Iterator begin() const
+      {
+        return Expression::Iterator{std::make_unique<NullIterator>()};
+      }
+
+      virtual Expression::Iterator end() const
+      {
+        return Expression::Iterator{std::make_unique<NullIterator>()};
+      }
 
       virtual void print(std::ostream &os) const = 0;
   };
@@ -2986,6 +3018,16 @@ namespace FlatModelica
     return p->value();
   }
 
+  Expression::Iterator Expression::begin() const
+  {
+    return _value ? _value->begin() : Iterator{std::make_unique<NullIterator>()};
+  }
+
+  Expression::Iterator Expression::end() const
+  {
+    return _value ? _value->end() : Iterator{std::make_unique<NullIterator>()};
+  }
+
   /*!
    * \brief Expression::operator+=
    * Adds another Expression to this Expression, or throws an error if such an
@@ -3419,5 +3461,36 @@ namespace FlatModelica
       os << "NIL";
     }
     return os;
+  }
+
+  Expression::Iterator::Iterator(std::unique_ptr<Expression::IteratorBase> it)
+    : _it{std::move(it)}
+  {
+  }
+
+  Expression::Iterator::value_type Expression::Iterator::operator*() const
+  {
+    return _it->dereference();
+  }
+
+  Expression::Iterator& Expression::Iterator::operator++()
+  {
+    _it->increment();
+    return *this;
+  }
+
+  void Expression::Iterator::operator++(int)
+  {
+    ++(*this);
+  }
+
+  bool operator== (const Expression::Iterator &i1, const Expression::Iterator &i2)
+  {
+    return i1._it->equal(*(i1._it));
+  }
+
+  bool operator!= (const Expression::Iterator &i1, const Expression::Iterator &i2)
+  {
+    return !i1._it->equal(*(i1._it));
   }
 }

@@ -42,6 +42,7 @@
 #include <ostream>
 #include <functional>
 #include <vector>
+#include <iterator>
 
 #include <QString>
 #include <QJsonValue>
@@ -79,6 +80,30 @@ namespace FlatModelica
   {
     public:
       using VariableEvaluator = std::function<Expression(std::string cref_name)>;
+
+      class IteratorBase;
+
+      class Iterator
+      {
+        public:
+          using iterator_category = std::input_iterator_tag;
+          using different_type    = std::ptrdiff_t;
+          using value_type        = Expression;
+          using pointer           = value_type*;
+          using reference         = value_type&;
+
+          Iterator(std::unique_ptr<IteratorBase> it);
+
+          value_type operator*() const;
+          Iterator& operator++();
+          void operator++(int);
+
+          friend bool operator== (const Iterator &i1, const Iterator &i2);
+          friend bool operator!= (const Iterator &i1, const Iterator &i2);
+
+        private:
+          std::unique_ptr<IteratorBase> _it;
+      };
 
     public:
       Expression();
@@ -149,6 +174,9 @@ namespace FlatModelica
       void setArg(size_t index, const Expression &e);
       std::string_view argName() const;
       const Expression& argValue() const;
+
+      Iterator begin() const;
+      Iterator end() const;
 
       Expression& operator+= (const Expression &other);
       Expression& operator-= (const Expression &other);
