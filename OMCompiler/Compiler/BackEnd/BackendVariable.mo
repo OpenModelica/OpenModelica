@@ -3333,6 +3333,18 @@ algorithm
   end try;
 end getVarExpanded;
 
+public function expandVariableSubscripts
+  "The elements an array element with variable indices, e.g. x[i], can refer to,
+  as getVar finds them. Fails if cr has no variable indices."
+  input DAE.ComponentRef cr;
+  output list<DAE.ComponentRef> crs;
+protected
+  DAE.ComponentRef cr1;
+algorithm
+  (cr1, true) := replaceVarWithWholeDim(cr, false);
+  crs := ComponentReference.expandCref(cr1, true);
+end expandVariableSubscripts;
+
 protected function queryShape
   "prefix: getVar can answer cr from the prefix index (an array or record with
    constant indices, every qualifier but the last fully indexed, so that

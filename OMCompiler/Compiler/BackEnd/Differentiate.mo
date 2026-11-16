@@ -1223,6 +1223,22 @@ algorithm
       then
         (res, inFunctionTree);
 
+    // array element with variable indices, e.g. x[i] in a for loop, if all the elements are of the same kind
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME())
+      guard ComponentReference.crefIsScalarWithVariableSubs(cr)
+      algorithm
+        (scalarLst, _) := BackendVariable.getVar(cr, timevars);
+        if not Types.isReal(tp) or List.all(scalarLst, BackendVariable.isVarDiscrete) then
+          (res,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        elseif List.all(scalarLst, BackendVariable.isDummyStateVar) then
+          res := Expression.makeCrefExp(ComponentReference.crefPrefixDer(cr), tp);
+        else
+          false := List.any(scalarLst, BackendVariable.isVarDiscrete) or List.any(scalarLst, BackendVariable.isDummyStateVar);
+          res := DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
+        end if;
+      then
+        (res, inFunctionTree);
+
     //
     // This part contains special rules for DIFFERENTIATION_FUNCTION()
     //
@@ -1329,7 +1345,8 @@ algorithm
 
     // fallback case -> not known cref results in zero
     // D(y)/dx => 0
-    case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFFERENTIATION_TIME())
+    case (DAE.CREF(componentRef = cr, ty = tp), _, _, BackendDAE.DIFFERENTIATION_TIME())
+      guard not (ComponentReference.crefIsScalarWithVariableSubs(cr) and isDependentVar(cr, inInputData))
       algorithm
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -3488,7 +3505,8 @@ protected
   BackendDAE.Variables glVars;
 algorithm
   if isSome(outDiffData.knownVars) then
-    glVars := BackendVariable.addVars(inVarsLst, Util.getOption(outDiffData.knownVars));
+    // addVars updates the arrays of the shared known variables in place
+    glVars := BackendVariable.addVars(inVarsLst, BackendVariable.copyVariables(Util.getOption(outDiffData.knownVars)));
   else
     glVars := BackendVariable.listVar(inVarsLst);
   end if;
