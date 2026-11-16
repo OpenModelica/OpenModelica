@@ -1,0 +1,60 @@
+// name: underdeterminedTest7
+// keywords: initialization, under-determined
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.underdeterminedTest7* _initializationTests.underdeterminedTest7* output.log
+//
+// The filter states x have no initial condition, and the start value of the
+// stretch filter y is assumed instead. -d=initialization lists the variables
+// that could get an initial equation instead: the filter states x and the
+// position s of the mass.
+//
+
+loadString("
+within ;
+package initializationTests
+  model underdeterminedTest7
+    Real x[2] \"filter states without initial equations\";
+    Real y(start = 1) \"filtered stretch factor, starts in steady state\";
+    Real s \"position of the mass, follows the filter\";
+    Real v;
+    Real f \"constraint force that makes the mass follow the filter\";
+    parameter Real l(fixed = false) \"nominal length, from the initial distance\";
+    Real L = 1 + s;
+  initial equation
+    der(y) = 0;
+    l = 0.998*L;
+  equation
+    der(x[1]) = -x[1];
+    der(x[2]) = x[1] - x[2];
+    der(y) = (L/l - y)/0.1;
+    s = x[2];
+    der(s) = v;
+    der(v) = f;
+  end underdeterminedTest7;
+end initializationTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("initialization"); getErrorString();
+translateModel(initializationTests.underdeterminedTest7); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// Nonlinear iteration variables with default zero start attribute in NLSJac0. (1)
+// ========================================
+// 1: l:VARIABLE(fixed = false )  "nominal length, from the initial distance" type: Real
+//
+// Info: Only non-linear iteration variables in non-linear eqation systems require start values. All other start values have no influence on convergence and are ignored. Use "-d=dumpLoops" to show all loops. In OMEdit Tools->Options->Simulation->Additional Translation Flags, in OMNotebook call setCommandLineOptions("-d=dumpLoops")
+//
+// true
+// "Warning: Assuming fixed start value for the following 2 variables:
+//          y:VARIABLE(start = 1.0 fixed = true )  \"filtered stretch factor, starts in steady state\" type: Real
+//          v:VARIABLE(fixed = true )  type: Real
+// Instead of the start value of the variable on the left, an initial equation for one of the variables on the right also completes the initial conditions:
+//          v: x[1]
+//          y: l, s, x[1]
+// "
+// endResult
