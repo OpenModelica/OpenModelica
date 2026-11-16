@@ -66,7 +66,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, IfEquationBody};
   import FunctionAlias = NBFunctionAlias;
   import BPartition = NBPartition;
   import NBVariable.{VariablePointers, VarData};
@@ -606,24 +606,16 @@ protected
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
     input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
+  protected
+    Pointer<Variable> state_var;
   algorithm
-    for body_stmt in body.when_stmts loop
-      () := match body_stmt
-        local
-          ComponentRef state_cref;
-          Pointer<Variable> state_var;
-
-        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
-          // the function getPreVar() does all necessary collecting of information
-          // but we don't need the actual pre cref it returns
-          state_var := BVariable.getVarPointer(state_cref, sourceInfo());
-          BVariable.makeDiscreteStateVar(state_var);
-          getPreVar(state_cref, state_var, acc_previous, scalarized);
-          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
-        then ();
-
-        else ();
-      end match;
+    for state_cref in WhenEquationBody.getAllAssigned(body) loop
+      // the function getPreVar() does all necessary collecting of information
+      // but we don't need the actual pre cref it returns
+      state_var := BVariable.getVarPointer(state_cref, sourceInfo());
+      BVariable.makeDiscreteStateVar(state_var);
+      getPreVar(state_cref, state_var, acc_previous, scalarized);
+      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
     end for;
   end collectDiscreteStatesFromWhenBody;
 
@@ -672,25 +664,18 @@ protected
     input WhenEquationBody body;
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
     input Pointer<list<Pointer<Variable>>> acc_previous;
+  protected
+    Pointer<Variable> state_var, pre_var;
   algorithm
-    for body_stmt in body.when_stmts loop
-      () := match body_stmt
-        local
-          ComponentRef state_cref;
-          Pointer<Variable> state_var, pre_var;
-
-        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
-          state_var := BVariable.getVarPointer(state_cref, sourceInfo());
-          () := match BVariable.getVarPre(state_var)
-            case SOME(pre_var) algorithm
-              Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
-            then ();
-            else ();
-          end match;
-          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+    for state_cref in WhenEquationBody.getAllAssigned(body) loop
+      state_var := BVariable.getVarPointer(state_cref, sourceInfo());
+      () := match BVariable.getVarPre(state_var)
+        case SOME(pre_var) algorithm
+          Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
         then ();
         else ();
       end match;
+      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
     end for;
   end findDiscreteStatesFromWhenBody;
 
