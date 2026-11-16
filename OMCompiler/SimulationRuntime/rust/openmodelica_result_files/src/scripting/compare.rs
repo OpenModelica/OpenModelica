@@ -634,10 +634,11 @@ pub fn diff(
     reltol: f64,
     reltol_diff_max_min: f64,
     range_delta: f64,
+    algorithm: Algorithm,
     vars: &[String],
     keep_equal_results: bool,
 ) -> (bool, Vec<String>) {
-    let Some(d) = Diff::open(
+    let Some(mut d) = Diff::open(
         msgs,
         running_testsuite,
         filename,
@@ -649,6 +650,7 @@ pub fn diff(
     ) else {
         return (false, Vec::new());
     };
+    d.tol.algorithm = algorithm;
     let mut differs = Vec::new();
     d.run(msgs, |_, var, c| {
         let failed = c.differs();

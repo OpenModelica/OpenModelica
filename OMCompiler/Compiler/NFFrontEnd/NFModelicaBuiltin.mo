@@ -3790,6 +3790,8 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end deltaSimulationResults;
 
+type TubeAlgorithm = enumeration(rectangle "csv-compare's default", ellipse "csv-compare's ellipse", ellipse2014 "the ellipse of 2014, with relTol, relTolDiffMinMax and event points") "Enumeration used by diffSimulationResults to select the tube.";
+
 impure function diffSimulationResults
   "Compares simulation results."
   input String actualFile;
@@ -3800,12 +3802,14 @@ impure function diffSimulationResults
   input Real rangeDelta = 0.002 "x tolerance";
   input String[:] vars = fill("",0);
   input Boolean keepEqualResults = false;
+  input TubeAlgorithm tube = TubeAlgorithm.ellipse2014;
   output Boolean success /* On success, resultFiles is empty. But it might be empty on failure anyway (for example if an input file does not exist) */;
   output String[:] failVars;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
+<p>tube selects the comparison. rectangle and ellipse are the algorithms of <a href=\"https://github.com/modelica-tools/csv-compare\">csv-compare</a>, rectangle being the one it uses. They test the points of actualFile, use rangeDelta as the tolerance of csv-compare and ignore relTol and relTolDiffMinMax.</p>
 </html>"),preferredView="text");
 end diffSimulationResults;
 

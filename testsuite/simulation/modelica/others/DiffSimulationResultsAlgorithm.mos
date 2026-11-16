@@ -1,0 +1,31 @@
+// name: DiffSimulationResultsAlgorithm
+// keywords: diffSimulationResults algorithm rectangle
+// status: correct
+// teardown_command: rm -f DiffSimulationResultsAlgorithm_ref.csv DiffSimulationResultsAlgorithm_res.csv DiffSimulationResultsAlgorithm.x.csv
+//
+// ellipse2014 resamples the result onto the reference points, so it does not
+// see a spike between two of them. rectangle tests the points of the result.
+
+writeFile("DiffSimulationResultsAlgorithm_ref.csv", "time,x\n0,0\n1,0\n2,0\n3,0\n");
+writeFile("DiffSimulationResultsAlgorithm_res.csv", "time,x\n0,0\n0.5,0\n1,0\n1.5,1\n2,0\n3,0\n");
+diffSimulationResults("DiffSimulationResultsAlgorithm_res.csv", "DiffSimulationResultsAlgorithm_ref.csv", ""); getErrorString();
+diffSimulationResults("DiffSimulationResultsAlgorithm_res.csv", "DiffSimulationResultsAlgorithm_ref.csv", "DiffSimulationResultsAlgorithm", tube=OpenModelica.Scripting.TubeAlgorithm.rectangle); getErrorString();
+readFile("DiffSimulationResultsAlgorithm.x.csv");
+
+// Result:
+// true
+// true
+// (true, {})
+// ""
+// (false, {"x"})
+// ""
+// "time,reference,actual,high,low,error,actual (raw)
+// 0,0,0,2e-06,-2e-06,0,0
+// 0.5,,0,2e-06,-2e-06,0,0
+// 1,0,0,2e-06,-2e-06,0,0
+// 1.5,,1,2e-06,-2e-06,0.999998,1
+// 2,0,0,2e-06,-2e-06,0,0
+// 3,0,0,2e-06,-2e-06,0,0
+//
+// "
+// endResult
