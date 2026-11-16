@@ -18,6 +18,7 @@ implicitEquation.mos \
 minArr.mos \
 parameterIndex.mos \
 parameterSystem.mos \
+externalObjectEquations.mos \
 partitioning.mos \
 promotePreferStates.mos \
 simpleForLoop.mos \
