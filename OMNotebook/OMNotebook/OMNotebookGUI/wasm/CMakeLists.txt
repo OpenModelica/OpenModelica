@@ -46,7 +46,6 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/ScaleDraw.cpp
   ${OMPLOT}/LogScaleEngine.cpp
   ${OMPLOT}/LinearScaleEngine.cpp
-  ${OMPLOT}/resource_omplot.qrc
   # Q_OBJECT classes live in headers whose name differs from the .cpp (e.g. class
   # Plot in OMPlot.h), so AUTOMOC's .cpp/.h pairing misses them; list the headers
   # explicitly — mirrors the native OMPLOTLIB_HEADERS.
@@ -92,6 +91,7 @@ set(OMNOTEBOOK_HEADERS
   ${NB}/updategroupcellvisitor.h ${NB}/updatelinkvisitor.h ${NB}/visitor.h
   ${NB}/xmlnodename.h ${NB}/xmlparser.h)
 
+# The linker drops an unreferenced qrc object from a static library.
 qt_add_executable(OMNotebook-qt
   ${NB}/qtapp.cpp
   ${NB}/cellapplication.cpp
@@ -125,7 +125,8 @@ qt_add_executable(OMNotebook-qt
   ${NB}/latexcell.cpp
   ${NB}/indent.cpp
   ${OMNOTEBOOK_HEADERS}
-  ${NB}/res_qt.qrc)
+  ${NB}/res_qt.qrc
+  ${OMPLOT}/resource_omplot.qrc)
 target_compile_definitions(OMNotebook-qt PRIVATE OMNOTEBOOKLIB_MOC_INCLUDE)
 target_include_directories(OMNotebook-qt PRIVATE ${NB})
 target_link_libraries(OMNotebook-qt PRIVATE
