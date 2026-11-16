@@ -1,7 +1,7 @@
 // name: aliasAttributeLookup
 // keywords: NewBackend, alias, start, fixed, stateSelect
 // status: correct
-// teardown_command: rm -f aliasAttribute*_*
+// teardown_command: rm -f aliasAttributeAlways* aliasAttributeFixed* aliasAttributeSubscript*
 //
 // Alias sets with a StateSelect.always variable without start value, a
 // fixed variable without start value, and a parameter element selected by
