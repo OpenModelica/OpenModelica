@@ -21,7 +21,7 @@ instantiateModel(PDEModelicaTest); getErrorString();
 // "function DomainLineSegment1D \"Automatically generated record constructor for DomainLineSegment1D\"
 //   input Real x0(unit = \"m\") = 0.0;
 //   input Real L(unit = \"m\") = 1.0;
-//   input Real dx = 0.1111111111111111 * L;
+//   input Real dx = L / 9.0;
 //   input Real[10] x(unit = \"m\") = {x0, x0 + dx, x0 + 2.0 * dx, x0 + 3.0 * dx, x0 + 4.0 * dx, x0 + 5.0 * dx, x0 + 6.0 * dx, x0 + 7.0 * dx, x0 + 8.0 * dx, x0 + 9.0 * dx};
 //   input DomainLineSegment1D.Region left = DomainLineSegment1D.Region();
 //   input DomainLineSegment1D.Region right = DomainLineSegment1D.Region();

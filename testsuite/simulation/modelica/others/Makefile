@@ -25,6 +25,7 @@ Bug3687.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
 CombiTimeTableTest.mos \
+CombiTimeTableTimeScale.mos \
 ComplexAlgebraicLoop.mos \
 ComplexFun.mos \
 DiscreteVectorStateSpace.mos \
