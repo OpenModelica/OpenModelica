@@ -1,0 +1,67 @@
+// name: fmi3_spatial
+// keywords: FMI 3.0 spatialDistribution history events
+// status: correct
+// depends: fmi3_spatial.py
+// teardown_command: rm -rf SpatialCS* spatial_fmu.log
+
+echo(false);
+ok := true;
+runtime := if getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET") == "C+Rust" then "C+Rust" else "C";
+if getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET") <> "wasm-jit" then
+  setCommandLineOptions("--newBackend=false --simCodeTarget=" + runtime + " --fmiFlags=s:cvode --numProcs=1"); getErrorString();
+  loadString("model SpatialCSHistory
+    Real unused;
+    Real y;
+    output Integer ticks(start=0,fixed=true);
+  equation
+    (unused,y)=spatialDistribution(time,0,10*time,true,{0,1},{0,0});
+    when sample(0.2,0.5) then ticks=pre(ticks)+1; end when;
+  end SpatialCSHistory;
+  model SpatialCSEvent
+    Real x(start=0,fixed=true), unused;
+    Real y;
+  equation
+    der(x)=1;
+    (unused,y)=spatialDistribution(if x>0.25 then 1 else 0,0,x,true,{0,1},{0,0});
+  end SpatialCSEvent;
+  model SpatialCSPulse
+    Real x(start=0,fixed=true), unused;
+    Real y;
+    output Real area(start=0,fixed=true);
+  equation
+    der(x)=1;
+    der(area)=y;
+    (unused,y)=spatialDistribution(0,0,x,true,{0,0.2,0.2,0.4,0.4,1},{0,0,1,1,0,0});
+  end SpatialCSPulse;
+  model SpatialCSDae
+    Real x(start=0,fixed=true), inlet, unused, y;
+    output Real area(start=0,fixed=true);
+  equation
+    der(x)=10;
+    der(area)=y;
+    inlet=time+0.1*y;
+    (unused,y)=spatialDistribution(inlet,0,x,true,{0,1},{0,0});
+  end SpatialCSDae;"); getErrorString();
+  if runtime == "C" then
+    setCommandLineOptions("--daeMode --generateDynamicJacobian=numeric"); getErrorString();
+    buildModelFMU(SpatialCSDae, version="3.0", fmuType="cs"); getErrorString();
+    tests := "SpatialCoSimulation.test_dae_refreshes_inlet";
+  else
+    buildModelFMU(SpatialCSHistory, version="3.0", fmuType="cs"); getErrorString();
+    buildModelFMU(SpatialCSEvent, version="3.0", fmuType="cs"); getErrorString();
+    buildModelFMU(SpatialCSPulse, version="3.0", fmuType="cs"); getErrorString();
+    tests := "SpatialCoSimulation.test_repeated_history_subdivision "
+      + "SpatialCoSimulation.test_deferred_event_keeps_left_limit SpatialCoSimulation.test_internal_events_preserve_pulse";
+  end if;
+  ok := system("\"" + (if getEnvironmentVar("FMPY_TOOL")=="" then "python3" else getEnvironmentVar("FMPY_TOOL"))
+    + "\" fmi3_spatial.py " + tests + " > spatial_fmu.log 2>&1") == 0;
+  if not ok then print(readFile("spatial_fmu.log")); end if;
+end if;
+echo(true);
+ok; getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// endResult

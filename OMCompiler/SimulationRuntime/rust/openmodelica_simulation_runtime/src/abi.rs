@@ -692,6 +692,8 @@ pub struct SPATIAL_DISTRIBUTION_DATA {
     pub lastStoredEventValue: c_int,
     pub nWarningsRemovedEvents: c_ulong,
     pub nWarningsOutputEvents: c_ulong,
+    pub needsHistory: modelica_boolean,
+    pub hasStoredInlet: modelica_boolean,
 }
 
 #[repr(C)]

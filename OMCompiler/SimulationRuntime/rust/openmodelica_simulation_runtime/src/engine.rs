@@ -275,6 +275,10 @@ impl SimEngine for CEngine {
         self.rt.layout.total + crate::data::CONTEXT_OFF
     }
 
+    fn spatial_history(&mut self, action: driver::SpatialHistory) -> bool {
+        crate::spatial::history(self.rt.data, action)
+    }
+
     /// The `[stage, hit]` pair, in the driver's own memory past the layout's end.
     fn error_stage_addr(&mut self) -> u32 {
         self.err_off()

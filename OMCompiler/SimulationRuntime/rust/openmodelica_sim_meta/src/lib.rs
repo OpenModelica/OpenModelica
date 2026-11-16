@@ -189,6 +189,7 @@ pub struct Layout<T = u32> {
     /// with an internal history that `functionStoreDelayed` /
     /// `functionStoreSpatialDistribution` must be fed at every accepted point.
     pub has_history_ops: bool,
+    pub has_spatial_distribution: bool,
     /// The model has a `SES_LINEAR` with a symbolic Jacobian, the only reader of
     /// `old_real_off`.
     pub has_old_real: bool,
@@ -438,6 +439,7 @@ impl Layout {
             homotopy_method,
             has_init_lambda0,
             has_history_ops,
+            has_spatial_distribution: false,
             has_old_real,
             compiled_dae_mode,
             resizable: false,
@@ -519,6 +521,7 @@ pub struct LayoutFlags {
     pub homotopy_method: HomotopyMethod,
     pub has_init_lambda0: bool,
     pub has_history_ops: bool,
+    pub has_spatial_distribution: bool,
     pub has_old_real: bool,
     pub compiled_dae_mode: bool,
     /// The size-table pointer in the header ([`REAL_OFF_RESIZABLE`]), and the
@@ -553,6 +556,7 @@ impl<T: sizes::LayoutNum> Layout<T> {
             homotopy_method: f.homotopy_method,
             has_init_lambda0: f.has_init_lambda0,
             has_history_ops: f.has_history_ops,
+            has_spatial_distribution: f.has_spatial_distribution,
             has_old_real: f.has_old_real,
             compiled_dae_mode: f.compiled_dae_mode,
             ..Layout::zero()
@@ -593,6 +597,7 @@ impl<T: sizes::LayoutNum> Layout<T> {
             homotopy_method: HomotopyMethod::default(),
             has_init_lambda0: false,
             has_history_ops: false,
+            has_spatial_distribution: false,
             has_old_real: false,
             compiled_dae_mode: false,
             lambda_off: z.clone(),
@@ -778,6 +783,7 @@ impl<T> Layout<T> {
             homotopy_method: self.homotopy_method,
             has_init_lambda0: self.has_init_lambda0,
             has_history_ops: self.has_history_ops,
+            has_spatial_distribution: self.has_spatial_distribution,
             has_old_real: self.has_old_real,
             compiled_dae_mode: self.compiled_dae_mode,
             lambda_off: off(&self.lambda_off)?,
@@ -2216,7 +2222,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 30;
+const VERSION: u32 = 31;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2323,6 +2329,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     o.push(l.homotopy_method.code());
     o.push(l.has_init_lambda0 as u8);
     o.push(l.has_history_ops as u8);
+    o.push(l.has_spatial_distribution as u8);
     o.push(l.has_old_real as u8);
     o.push(l.compiled_dae_mode as u8);
 }
@@ -2909,6 +2916,7 @@ impl<'a> Reader<'a> {
             homotopy_method: HomotopyMethod::default(),
             has_init_lambda0: false,
             has_history_ops: false,
+            has_spatial_distribution: false,
             has_old_real: false,
             compiled_dae_mode: false,
             extra_cols: 0,
@@ -2918,6 +2926,7 @@ impl<'a> Reader<'a> {
         l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
         l.has_init_lambda0 = self.u8()? != 0;
         l.has_history_ops = self.u8()? != 0;
+        l.has_spatial_distribution = self.u8()? != 0;
         l.has_old_real = self.u8()? != 0;
         l.compiled_dae_mode = self.u8()? != 0;
         Ok(l)
@@ -3953,12 +3962,89 @@ mod tests {
 
     #[test]
     fn round_trips() {
-        let m = with_enumeration(sample());
+        let mut m = with_enumeration(sample());
+        m.layout.has_spatial_distribution = true;
         let blob = encode(&m);
         let back = decode(&blob).expect("decode");
         assert_eq!(m, back);
         // Re-encoding the decoded value is byte-identical (canonical).
         assert_eq!(blob, encode(&back));
+    }
+
+    #[test]
+    fn spatial_driver_selection_precedes_operator_allocation() {
+        #[derive(Default)]
+        struct Uninitialized {
+            spatial_driver_selected: bool,
+            history: Option<bool>,
+        }
+        impl driver::SimEngine for Uninitialized {
+            fn spatial_history(&mut self, action: driver::SpatialHistory) -> bool {
+                let history = self
+                    .history
+                    .as_mut()
+                    .expect("driver selection queried unallocated spatial storage");
+                let needed = *history;
+                if matches!(action, driver::SpatialHistory::Clear) {
+                    *history = false;
+                }
+                needed
+            }
+            fn read_bytes(&self, _: u32, buf: &mut [u8]) -> driver::Result<()> {
+                buf.fill(0);
+                Ok(())
+            }
+            fn write_bytes(&mut self, _: u32, _: &[u8]) -> driver::Result<()> {
+                Ok(())
+            }
+            fn call1_raw(&mut self, name: &str, _: u32) -> driver::Result<()> {
+                if let Some(history) = &mut self.history {
+                    assert!(!*history, "previous evaluation's history failure was not cleared");
+                    *history = true;
+                    return Ok(());
+                }
+                self.spatial_driver_selected = name == "functionAttrDefaults";
+                Err("stop before allocating spatial operators")
+            }
+            fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+                self.call1_raw(name, arg)
+            }
+            fn call2_raw(&mut self, name: &str, arg: u32, _: u32) -> driver::Result<()> {
+                self.call1_raw(name, arg)
+            }
+            fn call_simulate(&mut self, _: u32, _: f64, _: f64, _: u32) -> driver::Result<u32> {
+                unreachable!()
+            }
+            fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
+                None
+            }
+        }
+        let mut m = sample();
+        m.layout.n_zc = 0;
+        m.layout.n_samples = 0;
+        m.layout.n_dae_res = 0;
+        m.layout.n_dae_alg = 0;
+        m.layout.has_spatial_distribution = true;
+        m.clocks.clear();
+        m.parmod = None;
+        for (method, available) in [("dassl", true), ("cvode", CVODE), ("ida", IDA)] {
+            if !available {
+                continue;
+            }
+            let mut e = Uninitialized::default();
+            assert!(driver::make_driver(&mut e, &m, 0, method).is_err());
+            assert!(e.spatial_driver_selected, "{method} selected the ordinary driver");
+        }
+        let mut e = Uninitialized {
+            history: Some(true),
+            ..Uninitialized::default()
+        };
+        driver::SimEngine::call1(&mut e, "functionODE", 0).unwrap();
+        assert_eq!(e.history, Some(true), "a fresh failure must remain visible");
+        driver::SimEngine::call2(&mut e, driver::MODEL_FN_DAE, 0, driver::eval_stage::DYNAMIC).unwrap();
+        assert_eq!(e.history, Some(true), "a fresh DAE failure must remain visible");
+        driver::SimEngine::call1(&mut e, "functionZeroCrossingsEquations", 0).unwrap();
+        assert_eq!(e.history, Some(true), "a fresh root probe failure must remain visible");
     }
 
     #[test]

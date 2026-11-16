@@ -1494,6 +1494,9 @@ impl<'a> FnCtx<'a> {
             }
             let w = compile_exp(self, &sd.dir)?;
             coerce(self, w, WTy::I32);
+            let mode = self.sim()?.rel_fresh_off;
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::I32Load(sim_mem(mode, 2)?));
             self.emit(we::Instruction::Call(rt_index("rt_spatial_store")?));
             if sd.condition.is_some() {
                 self.emit(we::Instruction::End);

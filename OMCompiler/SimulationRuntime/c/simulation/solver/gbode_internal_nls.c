@@ -258,7 +258,7 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
     }
 
     // eval f(x + h)
-    gbode_fODE(data, threadData, NULL, selection);
+    int rhsFailed = gbode_fODE(data, threadData, NULL, selection);
 
     // do forward finite differencing (f(x + h) - f(x)) / h and reset states
     for (unsigned int col = 0; col < size; col++)
@@ -277,6 +277,10 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
 
         x[big_col] = x_save[big_col];
       }
+    }
+    if (rhsFailed) {
+      omc_error_raise(threadData);
+      return;
     }
   }
 }
@@ -749,6 +753,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   for (int newt_it = 1 ;; newt_it++)
   {
     nonlinsys->residualFunc(&resUserData, x, res, &flag);
+    if (omc_error_take(threadData)) return NLS_FAILED;
 
     ret = gbInternal_dKLU_solve(&nls->klu, 0, size, res);
     if (ret < 0) return NLS_FAILED;

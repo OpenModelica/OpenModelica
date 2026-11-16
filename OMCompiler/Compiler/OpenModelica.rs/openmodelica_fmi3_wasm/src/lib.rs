@@ -823,6 +823,10 @@ impl SimEngine for Engine {
     fn context_addr(&mut self) -> u32 {
         openmodelica_codegen_wasm_jit_runtime::rt_context_addr()
     }
+    fn spatial_history(&mut self, action: openmodelica_sim_meta::driver::SpatialHistory) -> bool {
+        openmodelica_codegen_wasm_jit_runtime::spatial::rt_spatial_history(action as u32) != 0
+    }
+
     fn error_stage_addr(&mut self) -> u32 {
         openmodelica_codegen_wasm_jit_runtime::rt_error_stage_addr()
     }

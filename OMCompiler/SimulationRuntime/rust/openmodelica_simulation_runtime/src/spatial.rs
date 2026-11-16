@@ -6,7 +6,7 @@
 //! `simulationInfo->spatialDistributionData`; this runtime keeps the shared
 //! `SpatialState` there instead, so both targets transport the profile with one
 //! implementation. The generated code only ever reaches the operators through the
-//! four functions below.
+//! C entry points below.
 
 use core::cell::Cell;
 use core::ffi::{c_int, c_uint};
@@ -121,28 +121,43 @@ pub extern "C" fn storeSpatialDistribution(
     isPositiveVelocity: c_int,
 ) {
     let time = unsafe { (*(*(*data).localData)).timeValue };
-    state(data, threadData).store(index, time, in0, in1, posX, isPositiveVelocity != 0);
+    let initial = unsafe { (*(*data).simulationInfo).initial != 0 };
+    state(data, threadData).store(index, time, in0, in1, posX, isPositiveVelocity != 0, initial);
+    if state(data, threadData).needs_history(false) {
+        unsafe { crate::support::omc_error_raise(threadData) };
+    }
+}
+
+pub(crate) fn history(data: *mut DATA, action: openmodelica_sim_meta::spatial::History) -> bool {
+    unsafe { ((*(*data).simulationInfo).spatialDistributionData as *mut SpatialState).as_mut() }
+        .is_some_and(|s| s.history(action))
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn spatialDistribution(
     data: *mut DATA,
-    threadData: *mut threadData_t,
+    td: *mut threadData_t,
     index: c_uint,
-    in0: f64,
-    in1: f64,
-    posX: f64,
-    isPositiveVelocity: c_int,
+    x: f64,
+    positive: c_int,
     out1: *mut f64,
 ) -> f64 {
     let si = unsafe { &*(*data).simulationInfo };
-    let time = unsafe { (*(*(*data).localData)).timeValue };
-    let mode = (si.discreteCall != 0) as u32;
-    let (o0, o1) = state(data, threadData).eval(index, time, in0, in1, posX, isPositiveVelocity != 0, mode);
-    if !out1.is_null() {
-        unsafe { *out1 = o1 };
+    let mode = if si.initial != 0 {
+        2
+    } else {
+        (si.discreteCall != 0) as u32
+    };
+    let s = state(data, td);
+    let time = unsafe { (**(*data).localData).timeValue };
+    let (a, b) = s.value(index, time, x, positive != 0, mode);
+    if s.needs_history(false) {
+        unsafe { crate::support::omc_error_raise(td) };
     }
-    o0
+    if !out1.is_null() {
+        unsafe { *out1 = b };
+    }
+    a
 }
 
 #[unsafe(no_mangle)]

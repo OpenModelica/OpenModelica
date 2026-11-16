@@ -182,7 +182,7 @@ unsafe extern "C" {
     /// `util/omc_error.h`: whether an error was raised, clearing it. The mirror
     /// stops at `parent`, so the field itself is out of reach here.
     fn omc_error_take(threadData: *mut threadData_t) -> c_int;
-    fn omc_error_raise(threadData: *mut threadData_t);
+    pub(crate) fn omc_error_raise(threadData: *mut threadData_t);
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.

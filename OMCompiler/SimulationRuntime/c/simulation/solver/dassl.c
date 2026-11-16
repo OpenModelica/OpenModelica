@@ -50,6 +50,7 @@
 #include "solver_main.h"
 
 #include "dassl.h"
+#include "spatialDistribution.h"
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 #define DASSL_FIRST_STEP_RESTARTS 3
@@ -540,11 +541,11 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   /* Never step past the next time event: what the model computes beyond it
    * continues the left limit and is no part of the solution. */
-  if (data->simulationInfo->nextSampleEvent < DBL_MAX &&
-      (0 == dasslData->info[0] || data->simulationInfo->nextSampleEvent >= dasslData->rwork[3]))
+  if (data->modelData->nSpatialDistributions || (data->simulationInfo->nextSampleEvent < DBL_MAX &&
+      (0 == dasslData->info[0] || data->simulationInfo->nextSampleEvent >= dasslData->rwork[3])))
   {
     dasslData->info[3] = 1;
-    dasslData->rwork[0] = fmax(data->simulationInfo->nextSampleEvent, tout);
+    dasslData->rwork[0] = data->modelData->nSpatialDistributions ? tout : fmax(data->simulationInfo->nextSampleEvent, tout);
   }
   else
   {
@@ -610,6 +611,12 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
       /* set ringbuffer time to current time */
       sData->timeValue = solverInfo->currentTime;
+      if (data->modelData->nSpatialDistributions && (solverInfo->solverRootFinding || !data->modelData->nZeroCrossings)
+          && dasslData->idid == 1 && solverInfo->currentTime < tout && storeSpatialDistributionStep(data, threadData))
+      {
+        retVal = -1;
+        break;
+      }
 
       /* rhs final flag is TRUE during for output evaluation */
       RHSFinalFlag = 1;
@@ -680,7 +687,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
   /* After a failed root function, DDASKR searches on stale values and its root
    * is none: the step fails and performSimulation retries it. */
-  if (OMC_ERROR_RAISED() && !dasslData->rootFailed) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !dasslData->rootFailed && !data->modelData->nSpatialDistributions) { OMC_ERROR_CLEAR(); }
 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;

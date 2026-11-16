@@ -1954,20 +1954,32 @@ protected function createEquationsForSystems "Some kind of comments would be ver
 protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
-  array<AvlSetInt.Tree> zcVars;
+  array<AvlSetInt.Tree> zcVars, spatialVars;
+  list<DAE.Exp> spatialInputs = {};
+  list<SimCode.SpatialDistribution> spatialDistributions;
   Integer sysIdx = 0, eqOffset = 0;
   list<Integer> offsets = eqOffsets;
 algorithm
   try
     arg := (shared, createAlgebraicEquations, list(s.orderedVars for s in inSysts));
     zcVars := BackendDAEUtil.zeroCrossingVarIndices(inSysts, inAllZeroCrossings);
+    if Config.simCodeTarget() == "C" or Config.simCodeTarget() == "wasm-jit" then
+      SimCode.SPATIAL_DISTRIBUTION_INFO(spatialDistributions=spatialDistributions) := extractSpatialDistributionInfo(BackendDAE.DAE(inSysts, shared));
+      for sd in spatialDistributions loop
+        spatialInputs := sd.in0 :: sd.in1 :: sd.pos :: sd.dir :: spatialInputs;
+        if isSome(sd.condition) then
+          spatialInputs := Util.getOption(sd.condition) :: spatialInputs;
+        end if;
+      end for;
+    end if;
+    spatialVars := BackendDAEUtil.zeroCrossingVarIndices(inSysts, {}, spatialInputs);
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
     for syst in inSysts loop
       sysIdx := sysIdx + 1;
       if not listEmpty(offsets) then
         eqOffset :: offsets := offsets;
       end if;
-      foldArg := createEquationsForSystems1(syst, arrayGet(zcVars, sysIdx), eqOffset, arg, foldArg);
+      foldArg := createEquationsForSystems1(syst, arrayGet(zcVars, sysIdx), arrayGet(spatialVars, sysIdx), eqOffset, arg, foldArg);
     end for;
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otimeInvariantEquations,
     otempvars, oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
@@ -1983,6 +1995,7 @@ end createEquationsForSystems;
 protected function createEquationsForSystems1
   input BackendDAE.EqSystem inSyst;
   input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing";
+  input AvlSetInt.Tree spatialVars "inputs of spatialDistribution, evaluated before committing history";
   input Integer eqOffset;
   input CreateEquationsForSystemsArg inArg;
   input CreateEquationsForSystemsFold inFold;
@@ -2021,6 +2034,7 @@ algorithm
         stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark := BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
+        stateeqnsmark := BackendDAEUtil.markZeroCrossingEquations(syst, spatialVars, stateeqnsmark, ass1);
         zceqnsmarks := BackendDAEUtil.markZeroCrossingEquations(syst, zcVars, zceqnsmarks, ass1);
         // IDA perturbs the parameters to get the sensitivities; the HPCOM task graph keeps all blocks in the ODE system.
         if Flags.isSet(Flags.TIME_INVARIANT_BLOCKS) and not Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) and

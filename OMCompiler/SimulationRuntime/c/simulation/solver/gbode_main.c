@@ -36,6 +36,7 @@
 #include <time.h>
 
 #include "gbode_main.h"
+#include "spatialDistribution.h"
 #include "gbode_util.h"
 
 #include "gbode_conf.h"
@@ -1541,6 +1542,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     */
     gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
+    if (data->modelData->nSpatialDistributions)
+      gbData->stepSize = fmin(gbData->stepSize, targetTime - gbData->time);
     // TODO maybe easier to use targetTime
     //gbData->stepSize = fmin(gbData->stepSize, targetTime - gbData->time);
 
@@ -1776,7 +1779,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (!gbData->tableau->isKRightAvailable) {
         sData->timeValue = gbData->timeRight;
         memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+        if (gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL)) {
+          gbData->stepSize *= 0.5;
+          if (gbData->time + gbData->stepSize <= gbData->time) return -1;
+          gbData->stats.nConvergenceTestFailures++;
+          err = INFINITY;
+          continue;
+        }
         memcpy(gbData->kRight, fODE, nStates * sizeof(double));
       }
       else
@@ -2037,6 +2046,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     /* update time with performed stepSize */
     gbData->time = gbData->timeRight;
 
+    if (data->modelData->nSpatialDistributions && gbData->time < targetTime) {
+      sData->timeValue = gbData->time;
+      memcpy(sData->realVars, gbData->yRight, nStates * sizeof(double));
+      if (storeSpatialDistributionStep(data, threadData)) return -1;
+    }
+
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->yRight, nStates * sizeof(double));
 
@@ -2089,7 +2104,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     if (gbData->noRestart) {
       gbData->timeRight = gbData->time;
       memcpy(gbData->yRight, gbData->yOld, nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+      if (gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL)) return -1;
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
     }
 
