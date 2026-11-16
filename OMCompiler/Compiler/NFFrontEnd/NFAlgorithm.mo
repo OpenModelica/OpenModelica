@@ -343,16 +343,12 @@ protected
     () := match exp
       local
         ComponentRef cr;
-        Type ty;
 
       // Skip time
       case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr)) then ();
 
       // Skip iterators
       case Expression.CREF(cref = cr) guard ComponentRef.isIterator(cr) then ();
-
-      // Skip external Objects
-      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then ();
 
       case Expression.CREF(cref = cr) algorithm
         // since outputs get stripped, also strip inputs
