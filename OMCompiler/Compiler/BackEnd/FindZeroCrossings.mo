@@ -1033,8 +1033,12 @@ algorithm
 end collectZCGuarded;
 
 protected function guardZeroCrossing
+  "Rewrites `relation_` to `condition and relation_`, so the zero crossing
+   triggers no events while its branch is inactive. Zero crossings that are not
+   relations or logical expressions, and those of delay() and
+   spatialDistribution(), stay unguarded."
   input output BackendDAE.ZeroCrossing zc;
-  input DAE.Exp condition;
+  input DAE.Exp condition "parameter expression that is true while the branch is active";
 algorithm
   zc.relation_ := match zc.relation_
     // these keep the state of delay() and spatialDistribution() up to date

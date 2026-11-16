@@ -1,12 +1,14 @@
 // name:     ZeroCrossingInactiveBranch
 // keywords: events, zero crossing, parameter, if-expression
 // status: correct
-// teardown_command: rm -rf M_* M.* MNoEvent* MElse* MPlain* output.log
+// teardown_command: rm -rf ZeroCrossingInactiveBranch_* output.log
 //
 // A relation in a branch of an if-expression that a parameter deselects must not
-// trigger events. Each event adds points to the output file.
+// trigger events. -lv=LOG_STATS reports the number of state events; the regex
+// picks it out of the messages, which also hold run-dependent timings.
 
 loadString("
+package ZeroCrossingInactiveBranch
 model M
   parameter Boolean p = false;
   Real x = sin(62.83185307179586*time);
@@ -16,16 +18,6 @@ equation
   b = if p then x >= 0 else true;
   der(y) = if b then 1 else 0;
 end M;
-
-model MNoEvent
-  parameter Boolean p = false;
-  Real x = sin(62.83185307179586*time);
-  Boolean b;
-  Real y(start = 0, fixed = true);
-equation
-  b = if p then noEvent(x >= 0) else true;
-  der(y) = if b then 1 else 0;
-end MNoEvent;
 
 model MElse
   parameter Boolean p = true;
@@ -47,91 +39,70 @@ equation
   b = if p then x >= 0 else true;
   der(y) = if c then 1 else 0;
 end MPlain;
+end ZeroCrossingInactiveBranch;
 "); getErrorString();
 
-simulate(MNoEvent, stopTime=1, numberOfIntervals=100, fileNamePrefix="M_noEvent"); getErrorString();
-n := readSimulationResultSize("M_noEvent_res.mat");
+// then branch inactive (p = false): no events
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.M, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS", fileNamePrefix="ZeroCrossingInactiveBranch_off");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+val(y, 1, "ZeroCrossingInactiveBranch_off_res.mat");
 
-simulate(M, stopTime=1, numberOfIntervals=100, fileNamePrefix="M_off"); getErrorString();
-readSimulationResultSize("M_off_res.mat") == n;
-val(y, 1, "M_off_res.mat");
+// then branch active via -override: events still happen
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.M, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS -override=p=true", fileNamePrefix="ZeroCrossingInactiveBranch_on");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+abs(val(y, 1, "ZeroCrossingInactiveBranch_on_res.mat") - 0.5) < 1e-6;
 
-simulate(M, stopTime=1, numberOfIntervals=100, simflags="-override=p=true", fileNamePrefix="M_on"); getErrorString();
-readSimulationResultSize("M_on_res.mat") > n;
-abs(val(y, 1, "M_on_res.mat") - 0.5) < 1e-6;
+// else branch inactive (p = true): no events
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.MElse, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS", fileNamePrefix="ZeroCrossingInactiveBranch_else");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+val(y, 1, "ZeroCrossingInactiveBranch_else_res.mat");
 
-simulate(MElse, stopTime=1, numberOfIntervals=100, fileNamePrefix="M_else"); getErrorString();
-readSimulationResultSize("M_else_res.mat") == n;
-val(y, 1, "M_else_res.mat");
+// else branch active via -override: events still happen
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.MElse, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS -override=p=false", fileNamePrefix="ZeroCrossingInactiveBranch_elseOn");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+abs(val(y, 1, "ZeroCrossingInactiveBranch_elseOn_res.mat") - 0.5) < 1e-6;
 
-simulate(MElse, stopTime=1, numberOfIntervals=100, simflags="-override=p=false", fileNamePrefix="M_elseOn"); getErrorString();
-readSimulationResultSize("M_elseOn_res.mat") > n;
-abs(val(y, 1, "M_elseOn_res.mat") - 0.5) < 1e-6;
-
-simulate(MPlain, stopTime=1, numberOfIntervals=100, fileNamePrefix="M_plain"); getErrorString();
-readSimulationResultSize("M_plain_res.mat") > n;
-abs(val(y, 1, "M_plain_res.mat") - 0.5) < 1e-6;
+// same relation also used outside the if-expression: its events stay
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.MPlain, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS", fileNamePrefix="ZeroCrossingInactiveBranch_plain");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+abs(val(y, 1, "ZeroCrossingInactiveBranch_plain_res.mat") - 0.5) < 1e-6;
 
 // Result:
 // true
 // ""
-// record SimulationResult
-//     resultFile = "M_noEvent_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M_noEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// 102
-// record SimulationResult
-//     resultFile = "M_off_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M_off', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
 // true
+// ""
+// (2, {"0 state events", "0"})
 // 1.0
-// record SimulationResult
-//     resultFile = "M_on_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M_on', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=p=true'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// true
 // ""
+// (2, {"19 state events", "19"})
 // true
 // true
-// record SimulationResult
-//     resultFile = "M_else_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M_else', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
 // ""
-// true
+// (2, {"0 state events", "0"})
 // 1.0
-// record SimulationResult
-//     resultFile = "M_elseOn_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M_elseOn', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=p=false'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// true
 // ""
+// (2, {"19 state events", "19"})
 // true
 // true
-// record SimulationResult
-//     resultFile = "M_plain_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M_plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
 // ""
-// true
+// (2, {"19 state events", "19"})
 // true
 // endResult
