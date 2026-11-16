@@ -1899,8 +1899,9 @@ protected
       end if;
     else
       // state/composite events require at least one continuous real variable;
-      // skip purely discrete/integer conditions like (m == 1) with iterator m
-      if not BackendUtil.containsContinuousVar(exp) then
+      // skip purely discrete/integer conditions like (m == 1) with iterator m,
+      // but not discrete conditions combined with sample(), e.g. (b and sample(t0, dt))
+      if not (BackendUtil.containsContinuousVar(exp) or Expression.contains(exp, isSampleCall)) then
         return;
       end if;
       (exp, bucket, failed) := CompositeEvent.create(exp, bucket, iter, createEqn);

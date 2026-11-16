@@ -25,6 +25,7 @@ sampleFor.mos\
 compositeRelationEvents.mos\
 noEventReduction.mos\
 infoJsonEquationOrder.mos\
+discreteSampleCondition.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
