@@ -49,7 +49,7 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/PlotPanner.cpp ${OMPLOT}/PlotPicker.cpp ${OMPLOT}/PlotGrid.cpp
   ${OMPLOT}/PlotCurve.cpp ${OMPLOT}/PlotWindow.cpp ${OMPLOT}/PlotWindowContainer.cpp
   ${OMPLOT}/PlotMainWindow.cpp ${OMPLOT}/ScaleDraw.cpp ${OMPLOT}/LogScaleEngine.cpp
-  ${OMPLOT}/LinearScaleEngine.cpp ${OMPLOT}/PlotTranslator.cpp ${OMPLOT}/resource_omplot.qrc
+  ${OMPLOT}/LinearScaleEngine.cpp ${OMPLOT}/PlotTranslator.cpp
   ${OMPLOT}/OMPlot.h ${OMPLOT}/PlotZoomer.h ${OMPLOT}/Legend.h ${OMPLOT}/PlotPanner.h
   ${OMPLOT}/PlotPicker.h ${OMPLOT}/PlotGrid.h ${OMPLOT}/PlotCurve.h ${OMPLOT}/PlotWindow.h
   ${OMPLOT}/PlotWindowContainer.h ${OMPLOT}/PlotMainWindow.h ${OMPLOT}/ScaleDraw.h
@@ -236,7 +236,8 @@ add_custom_command(OUTPUT ${WEB_SHARE}/index.json
 add_custom_target(OMEditWebShare ALL DEPENDS ${WEB_SHARE}/index.json)
 
 # ---- OMEdit executable ----
-qt_add_executable(OMEdit-qt ${GUI}/main.cpp)
+# The linker drops an unreferenced qrc object from a static library.
+qt_add_executable(OMEdit-qt ${GUI}/main.cpp ${OMPLOT}/resource_omplot.qrc)
 target_link_libraries(OMEdit-qt PRIVATE OMEditLib)
 # Static wasm build: the QtQuick/QtQuick3D/QtQml QML plugins must be linked for the
 # animation View3D. The scene QML is built from inline strings (QQmlComponent::setData),
