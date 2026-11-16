@@ -1324,6 +1324,7 @@ protected
     artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
+    variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function Equation.renameCallIterators(prefix = "$i_")));
     variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, set = binding_iter_set));
     binding_iter_lst:= UnorderedSet.toList(binding_iter_set);
     variables       := VariablePointers.addList(binding_iter_lst, variables);
