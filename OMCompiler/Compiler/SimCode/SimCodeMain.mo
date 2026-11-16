@@ -1539,12 +1539,14 @@ algorithm
               if FMUVersion == "3.0"
               then {"fmi-export/fmu3_model_interface.c"}
               else {"fmi-export/fmu2_model_interface.c"}) loop
-            modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + fmuModelInterfaceFile);
+            // readFile keeps CRLF but writeFile translates \n to \r\n on Windows,
+            // giving \r\r\n, which breaks backslash line continuations in macros.
+            modelDefinesHeaderStr := System.stringReplace(System.readFile(fmu_tmp_sources_dir + fmuModelInterfaceFile), "\r\n", "\n");
             modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, fmu_dummy_include_defines, "../" + simCode.fileNamePrefix + "_FMU.h");
             System.writeFile(fmu_tmp_sources_dir + fmuModelInterfaceFile, modelDefinesHeaderStr);
           end for;
           if withFMI2 then
-            modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+            modelDefinesHeaderStr := System.stringReplace(System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c"), "\r\n", "\n");
             modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU2.h");
             System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
           end if;
