@@ -405,6 +405,46 @@ void ExpressionTest::evaluateIteratorCall()
     throw std::runtime_error("Unexpected variable: " + name);
   });
   QCOMPARE(result.toQString(), QString("{128,0,0}"));
+
+  // Array-valued iterator domains use the same Expression iteration interface.
+  FlatModelica::Expression arrayComprehension;
+  arrayComprehension.deserialize(QJsonObject{
+    {"$kind", "iterator_call"},
+    {"name", "$array"},
+    {"exp", QJsonObject{
+      {"$kind", "cref"},
+      {"parts", QJsonArray{QJsonObject{{"name", "$i1"}}}}
+    }},
+    {"iterators", QJsonArray{
+      QJsonObject{
+        {"name", "$i1"},
+        {"range", QJsonArray{10, 20}}
+      }
+    }}
+  });
+  const auto arrayResult = arrayComprehension.evaluate([] (const std::string &name) -> FlatModelica::Expression {
+    throw std::runtime_error("Unexpected variable: " + name);
+  });
+  QCOMPARE(arrayResult.toQString(), QString("{10,20}"));
+
+  auto iterator = arrayResult.begin();
+  auto iteratorCopy = iterator;
+  ++iterator;
+  QVERIFY(iterator != iteratorCopy);
+  QCOMPARE((*iteratorCopy).toQString(), QString("10"));
+
+  FlatModelica::Expression descendingRange;
+  descendingRange.deserialize(QJsonObject{
+    {"$kind", "range"},
+    {"start", 3},
+    {"step", -1},
+    {"stop", 1}
+  });
+  std::vector<FlatModelica::Expression> descendingValues;
+  for (auto value : descendingRange) {
+    descendingValues.emplace_back(std::move(value));
+  }
+  QCOMPARE(FlatModelica::Expression(std::move(descendingValues)).toQString(), QString("{3,2,1}"));
 }
 
 void ExpressionTest::parseJSON()
