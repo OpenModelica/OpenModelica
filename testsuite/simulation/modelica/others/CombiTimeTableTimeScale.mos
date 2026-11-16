@@ -1,0 +1,37 @@
+// name: CombiTimeTableTimeScale
+// keywords: CombiTimeTable, timeScale, startTime, time event, simplify
+// status: correct
+//
+// time/timeScale must stay a division: the table compares it with
+// startTime/timeScale at the start time event (#18132).
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model CombiTimeTableTimeScale
+  Modelica.Blocks.Sources.CombiTimeTable t1(table = [0, 0; 1, 1], startTime = 0.3, timeScale = 0.7);
+  Modelica.Blocks.Sources.CombiTimeTable t2(table = [0, 0; 1, 1], startTime = 1.5, timeScale = 3600);
+end CombiTimeTableTimeScale;
+"); getErrorString();
+simulate(CombiTimeTableTimeScale, stopTime = 2); getErrorString();
+val(t1.y[1], 0.5);
+val(t1.y[1], 1.5);
+val(t2.y[1], 2.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CombiTimeTableTimeScale_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'CombiTimeTableTimeScale', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.2857142857142857
+// 1.7142857142857142
+// 1.3888888888888886e-4
+// endResult
