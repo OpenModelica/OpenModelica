@@ -1,13 +1,13 @@
 //! The dygraph HTML page `diffSimulationResultsHtml` returns for one variable,
 //! and the CSV file `diffSimulationResults` writes for it.
 
+use crate::Comparison;
 use crate::format::{format_g_prec, format_g_prec15};
-use crate::{Algorithm, Comparison};
 
-/// The rows `[time,reference,actual,high,low,error,actual(original)]` of an
-/// `Ellipse2014` comparison of the actual `(time, data)`, like C `cmpDataTubes`.
+/// The rows `[time,reference,actual,high,low,error,actual(original)]` of a
+/// resampled comparison of the actual `(time, data)`, like C `cmpDataTubes`.
 fn rows(out: &mut String, time: &[f64], data: &[f64], cmp: &Comparison, html: bool) {
-    debug_assert_eq!(cmp.algorithm, Algorithm::Ellipse2014);
+    debug_assert!(cmp.resampled);
     let (reftime, refdata) = (&cmp.reference.x, &cmp.reference.y);
     let n = cmp.time.len();
     let error = (cmp.error_count > 0).then_some(&cmp.error);
@@ -52,7 +52,7 @@ fn rows(out: &mut String, time: &[f64], data: &[f64], cmp: &Comparison, html: bo
 /// The comparison as `diffSimulationResults` writes it to `<prefix>.<var>.csv`.
 pub fn tube_csv(time: &[f64], data: &[f64], cmp: &Comparison) -> String {
     let mut csv = String::from("time,reference,actual,high,low,error,actual (raw)\n");
-    if cmp.algorithm == Algorithm::Ellipse2014 {
+    if cmp.resampled {
         rows(&mut csv, time, data, cmp, false);
     } else {
         rows_on_actual_time(&mut csv, cmp);

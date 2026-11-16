@@ -222,6 +222,16 @@ fn calibrate_values(
     out
 }
 
+/// `(time, data)` on `reftime`, as far as both go: [`cmp_data_tubes`]'s
+/// resampling, for the algorithms that do not do it themselves.
+pub(crate) fn resample(reftime: &[f64], time: &[f64], data: &[f64]) -> Vec<f64> {
+    let mut n = reftime.len();
+    let xabstol = (reftime[n - 1] - reftime[0]) * 1e-3 / (time.len().max(n) as f64);
+    let mut values = calibrate_values(reftime, time, data, &mut n, time.len(), xabstol);
+    values.truncate(n);
+    values
+}
+
 /// C `addRelativeTolerance`: widen the tube by a relative+absolute margin.
 fn add_relative_tolerance(target: &mut [f64], source: &[f64], length: usize, reltol: f64, abstol: f64, direction: i32) {
     if direction > 0 {

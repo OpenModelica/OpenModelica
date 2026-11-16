@@ -3555,7 +3555,7 @@ external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
-<p>tube selects the comparison. rectangle and ellipse are the algorithms of <a href=\"https://github.com/modelica-tools/csv-compare\">csv-compare</a>, rectangle being the one it uses. They test the points of actualFile, use rangeDelta as the tolerance of csv-compare and ignore relTol and relTolDiffMinMax.</p>
+<p>tube selects the comparison. rectangle and ellipse are the algorithms of <a href=\"https://github.com/modelica-tools/csv-compare\">csv-compare</a>, rectangle being the one it uses. They use rangeDelta as the tolerance of csv-compare and ignore relTol and relTolDiffMinMax. As with ellipse2014, actualFile is interpolated onto the time points of the reference, which csv-compare does not do.</p>
 </html>"),preferredView="text");
 end diffSimulationResults;
 

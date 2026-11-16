@@ -596,6 +596,7 @@ impl Tolerances {
             reltol_diff_min_max: self.reltol_diff_min_max,
             nominal_value: self.nominal_value,
             legacy_base: true,
+            resample: true,
         }
     }
 }
@@ -767,9 +768,7 @@ pub fn diff_variable(
     let n = cmp.time.len();
     Ok(TubeDiff {
         differs: cmp.differs(),
-        // Ellipse2014 compares on the reference's own timeline, so the
-        // reference is already aligned; the others compare on the test's.
-        reference: if cmp.algorithm == Algorithm::Ellipse2014 {
+        reference: if cmp.resampled {
             cmp.reference.y[..n].to_vec()
         } else {
             resample(&cmp.reference.x, &cmp.reference.y, &cmp.time)
