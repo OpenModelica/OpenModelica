@@ -93,6 +93,7 @@ FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \
+CsvParameterAlias.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \
 localKnownVars.mos \
