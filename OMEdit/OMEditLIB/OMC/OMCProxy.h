@@ -135,6 +135,8 @@ public:
                             bool sort = false, bool builtin = false, bool showProtected = true, bool includeConstants = false);
   QStringList searchClassNames(QString searchText, bool findInText = false);
   OMCInterface::getClassInformation_res getClassInformation(QString className);
+  void prefetchClassInformation(const QStringList &classNames);
+  void dropPrefetched();
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);
   QString getBuiltinType(QString typeName);
