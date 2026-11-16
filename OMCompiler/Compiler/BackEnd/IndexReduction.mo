@@ -1544,15 +1544,20 @@ end getVar;
 protected type StateSets = list<tuple<Integer,Integer,Integer,Integer,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> "Level,nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
 
 protected function reduceStateSets
+  "Replaces the state sets with fixed dummy states for the dummy derivatives
+   method: removes the state candidates of the sets from the dummy states
+   and adds the dummy states selected from each set."
   input StateSets iTplLst;
-  input list<BackendDAE.Var> idummyStates;
-  output list<BackendDAE.Var> odummyStates;
+  input list<BackendDAE.Var> idummyStates "static dummy states and all state candidates of the sets";
+  output list<BackendDAE.Var> odummyStates = idummyStates;
+protected
+  list<BackendDAE.Var> stateCandidates;
 algorithm
-  if not listEmpty(iTplLst) then
-    odummyStates := reduceStateSets2(iTplLst);
-  else
-    odummyStates := idummyStates;
-  end if;
+  for tpl in iTplLst loop
+    (_,_,_,_,stateCandidates,_,_,_) := tpl;
+    odummyStates := List.setDifferenceOnTrue(odummyStates, stateCandidates, BackendVariable.varEqual);
+  end for;
+  odummyStates := listAppend(reduceStateSets2(iTplLst), odummyStates);
 end reduceStateSets;
 
 protected function reduceStateSets2
