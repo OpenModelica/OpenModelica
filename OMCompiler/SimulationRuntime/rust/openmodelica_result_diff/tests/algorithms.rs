@@ -346,3 +346,31 @@ fn resampling_changes_nothing_on_the_same_time_points() {
         assert_eq!(on_actual.error, resampled.error, "{algorithm:?}");
     }
 }
+
+#[test]
+fn resampling_compares_the_left_limit_at_the_stop_time() {
+    let differs = |t: &[f64], v: &[f64], rt: &[f64], rv: &[f64], algorithm, resample| {
+        let s = Settings {
+            resample,
+            ..settings(algorithm, 0.002)
+        };
+        compare(t, v, rt, rv, &s).unwrap().differs()
+    };
+    // The reference repeats its last point; the actual has an event there.
+    let reftime = [0.0, 1.0, 2.0, 2.0];
+    let refvalues = [8.0, 8.0, 8.0, 8.0];
+    let time = [0.0, 1.0, 2.0, 2.0];
+    let values = [8.0, 8.0, 8.0, 4.0];
+    for a in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        assert!(differs(&time, &values, &reftime, &refvalues, a, false));
+        assert!(!differs(&time, &values, &reftime, &refvalues, a, true));
+        assert!(!differs(&reftime, &refvalues, &time, &values, a, true));
+        // the stop time of the reference with a rounding error, and an actual that runs longer
+        let reftime = [0.0, 1.0, 2.0, 2.0 + 4e-12];
+        let time = [0.0, 1.0, 2.0, 2.0, 3.0];
+        let same = [8.0, 8.0, 8.0, 4.0, 4.0];
+        let off = [8.0, 8.0, 7.0, 4.0, 4.0];
+        assert!(!differs(&time, &same, &reftime, &refvalues, a, true));
+        assert!(differs(&time, &off, &reftime, &refvalues, a, true));
+    }
+}

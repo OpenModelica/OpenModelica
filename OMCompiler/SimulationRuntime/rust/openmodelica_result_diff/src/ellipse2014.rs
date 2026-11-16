@@ -226,10 +226,28 @@ fn calibrate_values(
 /// resampling, for the algorithms that do not do it themselves.
 pub(crate) fn resample(reftime: &[f64], time: &[f64], data: &[f64]) -> Vec<f64> {
     let mut n = reftime.len();
-    let xabstol = (reftime[n - 1] - reftime[0]) * 1e-3 / (time.len().max(n) as f64);
+    let xabstol = resample_xabstol(reftime, time.len());
     let mut values = calibrate_values(reftime, time, data, &mut n, time.len(), xabstol);
     values.truncate(n);
     values
+}
+
+fn resample_xabstol(reftime: &[f64], nactual: usize) -> f64 {
+    let n = reftime.len();
+    (reftime[n - 1] - reftime[0]) * 1e-3 / (nactual.max(n) as f64)
+}
+
+/// The number of reference points up to the first one at the stop time.
+/// Tools differ in whether they handle an event at the stop time, so
+/// [`resample`] compares only the left limit there.
+pub(crate) fn up_to_stop_time(reftime: &[f64], nactual: usize) -> usize {
+    let xabstol = resample_xabstol(reftime, nactual);
+    let stop = reftime[reftime.len() - 1];
+    let mut k = reftime.len() - 1;
+    while k > 0 && almost_equal_rel_abs(reftime[k - 1], stop, 0.0, xabstol) {
+        k -= 1;
+    }
+    k + 1
 }
 
 /// C `addRelativeTolerance`: widen the tube by a relative+absolute margin.

@@ -1,20 +1,33 @@
 // name: DiffSimulationResultsAlgorithm
 // keywords: diffSimulationResults algorithm rectangle
 // status: correct
-// teardown_command: rm -f DiffSimulationResultsAlgorithm_ref.csv DiffSimulationResultsAlgorithm_res.csv
+// teardown_command: rm -f DiffSimulationResultsAlgorithm_ref.csv DiffSimulationResultsAlgorithm_res.csv DiffSimulationResultsAlgorithm_ref2.csv DiffSimulationResultsAlgorithm_res2.csv
 //
 // All tubes interpolate the result onto the reference points, so none sees
 // the spike at 1.5. Near zero, the rectangle is wider than ellipse2014.
+//
+// x has an event at the stop time only in the result, and y an event at the
+// start time that the result has 1e-9 later. Both pass.
 
 writeFile("DiffSimulationResultsAlgorithm_ref.csv", "time,x\n0,0\n1,0\n2,0\n3,0\n");
 writeFile("DiffSimulationResultsAlgorithm_res.csv", "time,x\n0,0\n0.5,0\n1,1e-6\n1.5,1\n2,0\n3,0\n");
 diffSimulationResults("DiffSimulationResultsAlgorithm_res.csv", "DiffSimulationResultsAlgorithm_ref.csv", ""); getErrorString();
 diffSimulationResults("DiffSimulationResultsAlgorithm_res.csv", "DiffSimulationResultsAlgorithm_ref.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.rectangle); getErrorString();
+writeFile("DiffSimulationResultsAlgorithm_ref2.csv", "time,x,y\n0,8,0\n0,8,1\n1,8,1\n2,8,1\n2,8,1\n");
+writeFile("DiffSimulationResultsAlgorithm_res2.csv", "time,x,y\n0,8,0\n1e-9,8,0\n1e-9,8,1\n1,8,1\n2,8,1\n2,4,1\n");
+diffSimulationResults("DiffSimulationResultsAlgorithm_res2.csv", "DiffSimulationResultsAlgorithm_ref2.csv", ""); getErrorString();
+diffSimulationResults("DiffSimulationResultsAlgorithm_res2.csv", "DiffSimulationResultsAlgorithm_ref2.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.rectangle); getErrorString();
 
 // Result:
 // true
 // true
 // (false, {"x"})
+// ""
+// (true, {})
+// ""
+// true
+// true
+// (true, {})
 // ""
 // (true, {})
 // ""

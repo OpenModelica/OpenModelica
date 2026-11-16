@@ -103,8 +103,9 @@ pub struct Settings {
     /// csv-compare uses, rather than `SetStandardBaseAndRatio`.
     pub legacy_base: bool,
     /// `Rectangle`/`Ellipse` only: test the curve under test on the reference
-    /// timeline, as `Ellipse2014` does, instead of on its own points.
-    /// csv-compare does not, but there both results have the same output points.
+    /// timeline, as `Ellipse2014` does, instead of on its own points, and only
+    /// up to the left limit at the stop time. csv-compare does neither, but
+    /// there both results come from the same tool and output points.
     pub resample: bool,
 }
 
@@ -223,6 +224,14 @@ pub fn compare(
             abstol: cmp.abstol,
         });
     }
+
+    let refvalues = if settings.resample {
+        let k = ellipse2014::up_to_stop_time(&reftime, n);
+        reftime.truncate(k);
+        &refvalues[..k]
+    } else {
+        refvalues
+    };
 
     let mut size = if settings.legacy_base {
         TubeSize::legacy(&reftime, refvalues, settings.nominal_value)
