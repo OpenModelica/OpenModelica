@@ -782,28 +782,65 @@ static enum SOLVER_METHOD resolveGbodeShorthand(enum SOLVER_METHOD solverID)
   return S_GBODE;
 }
 
+static modelica_boolean noStatesPresent(DATA* data)
+{
+  if (compiledInDAEMode) {
+    return data->simulationInfo->daeModeData->nResidualVars +
+           data->simulationInfo->daeModeData->nAlgebraicDAEVars < 1;
+  }
+  return data->modelData->nStates < 1;
+}
+
+/**
+ * @brief Read the integration method from its name.
+ *
+ * Throws if the method is unknown.
+ *
+ * @param method      Name of the integration method, e.g. from -s.
+ * @param threadData  Thread data for error handling.
+ * @return            The method; S_AUTO for an empty string.
+ */
+static enum SOLVER_METHOD readSolverMethod(const char* method, threadData_t *threadData)
+{
+  if (std::string("") == method) {
+    return S_AUTO;
+  }
+  for (int i = 1; i < S_MAX; ++i) {
+    if (std::string(SOLVER_METHOD_NAME[i]) == method) {
+      return (enum SOLVER_METHOD) i;
+    }
+  }
+
+  warningStreamPrint(OMC_LOG_STDOUT, 0, "unrecognized option -s %s", method);
+  warningStreamPrint(OMC_LOG_STDOUT, 0, "current options are:");
+  for (int i = 1; i < S_MAX; ++i) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
+  }
+  throwStreamPrint(threadData, "see last warning");
+}
+
 /**
  * @brief Choose the integration method for -s=auto.
  *
+ * @param data      Data object.
  * @param solverID  Integration method.
  * @return          The chosen method for S_AUTO, otherwise solverID.
  */
-static enum SOLVER_METHOD resolveAutoSolver(enum SOLVER_METHOD solverID)
+static enum SOLVER_METHOD resolveAutoSolver(DATA* data, enum SOLVER_METHOD solverID)
 {
   if (solverID != S_AUTO) {
     return solverID;
   }
-  if (compiledInDAEMode) {
-    solverID = S_IDA;
-  } else {
-#if defined(WITH_DASSL)
-    solverID = S_DASSL;
-#else
-    solverID = S_RUNGEKUTTA;
-#endif
+  if (noStatesPresent(data)) {
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method euler, because the model has no states.");
+    return S_EULER;
   }
-  infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method %s", SOLVER_METHOD_NAME[solverID]);
-  return solverID;
+  if (compiledInDAEMode) {
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method ida, because the model was compiled with --daeMode.");
+    return S_IDA;
+  }
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method dassl, the default ODE solver.");
+  return S_DASSL;
 }
 
 /**
@@ -819,63 +856,37 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
       double init_time, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
 {
   int retVal = -1;
-  mmc_sint_t i;
   enum SOLVER_METHOD solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
-  OMC_TRY_INTERNAL(mmc_jumper)
-  OMC_TRY_INTERNAL(globalJumpBuffer)
 
   if (initializeResultData(simData, threadData, cpuTime)) {
     return -1;
   }
+
+  OMC_TRY_INTERNAL(mmc_jumper)
+  OMC_TRY_INTERNAL(globalJumpBuffer)
+
   simData->real_time_sync.scaling = getFlagReal(FLAG_RT, 0.0);
 
-  if(std::string("") == simData->simulationInfo->solverMethod) {
-    solverID = S_AUTO;
-  } else {
-    for(i=1; i<S_MAX; ++i) {
-      if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo->solverMethod) {
-        solverID = (enum SOLVER_METHOD) i;
-      }
-    }
-  }
-
-  solverID = resolveAutoSolver(solverID);
+  solverID = readSolverMethod(simData->simulationInfo->solverMethod, threadData);
+  solverID = resolveAutoSolver(simData, solverID);
   solverID = resolveGbodeShorthand(solverID);
 
-  /* if no states are present, then we can
-   * use euler method, since it does nothing.
-   */
-  if ( (simData->modelData->nStates < 1 &&
-        solverID != S_OPTIMIZATION &&
-        !compiledInDAEMode) ||
-       (compiledInDAEMode && (simData->simulationInfo->daeModeData->nResidualVars +
-                             simData->simulationInfo->daeModeData->nAlgebraicDAEVars < 1))
-      )
-  {
-    solverID = S_EULER;
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "No states present, continuing without ODE solver.");
-    if (compiledInDAEMode)
-    {
+  if (noStatesPresent(simData) && (compiledInDAEMode || solverID != S_OPTIMIZATION)) {
+    if (solverID != S_EULER) {
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "The model has no states, solver method %s is replaced by euler.", SOLVER_METHOD_NAME[solverID]);
+      solverID = S_EULER;
+    }
+    if (compiledInDAEMode) {
       simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
       simData->callback->function_ZeroCrossingsEquations = evaluateDAEResiduals_wrapperZeroCrossingsEquations;
     }
-  } else if (compiledInDAEMode && solverID != S_IDA && solverID != S_UNKNOWN) {
+  } else if (compiledInDAEMode && solverID != S_IDA) {
     throwStreamPrint(threadData, "The model was compiled with --daeMode, which works only with -s=ida or -s=auto.");
   }
 
-  if(S_UNKNOWN == solverID) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "unrecognized option -s %s", (char*) simData->simulationInfo->solverMethod);
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "current options are:");
-    for(i=1; i<S_MAX; ++i) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
-    }
-    throwStreamPrint(threadData,"see last warning");
-    retVal = 1;
-  } else {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
-    retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
-  }
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
+  retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
 
   OMC_CATCH_INTERNAL(mmc_jumper)
   OMC_CATCH_INTERNAL(globalJumpBuffer)
