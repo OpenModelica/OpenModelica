@@ -281,3 +281,68 @@ fn ellipse2014_keeps_both_sides_of_the_tube_around_a_short_blip() {
         }
     }
 }
+
+#[test]
+fn resampling_does_not_test_between_the_reference_points() {
+    let peak = |t: f64| (t * std::f64::consts::PI).sin();
+    let reftime: Vec<f64> = (0..=4).map(|i| i as f64 / 4.0).collect();
+    let refvalues: Vec<f64> = reftime.iter().map(|t| peak(*t)).collect();
+    let time: Vec<f64> = (0..=40).map(|i| i as f64 / 40.0).collect();
+    let values: Vec<f64> = time.iter().map(|t| peak(*t)).collect();
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        let on_actual = compare(&time, &values, &reftime, &refvalues, &settings(algorithm, 0.002)).unwrap();
+        assert!(on_actual.differs(), "{algorithm:?}");
+        let s = Settings {
+            resample: true,
+            ..settings(algorithm, 0.002)
+        };
+        let c = compare(&time, &values, &reftime, &refvalues, &s).unwrap();
+        assert!(!c.differs(), "{algorithm:?}: {:?}", c.error);
+        assert_eq!(c.time, reftime, "{algorithm:?}");
+    }
+}
+
+#[test]
+fn resampling_takes_the_left_value_of_an_event_the_reference_does_not_have() {
+    let reftime = [0.0, 1.0, 2.0];
+    let refvalues = [8.0, 8.0, 8.0];
+    let time = [0.0, 1.0, 2.0, 2.0];
+    let values = [8.0, 8.0, 8.0, 4.0];
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        let s = Settings {
+            resample: true,
+            ..settings(algorithm, 0.002)
+        };
+        assert!(
+            !compare(&time, &values, &reftime, &refvalues, &s).unwrap().differs(),
+            "{algorithm:?}"
+        );
+    }
+}
+
+#[test]
+fn resampling_changes_nothing_on_the_same_time_points() {
+    let mut t: Vec<f64> = (0..=40).map(|i| i as f64 / 40.0).collect();
+    t.insert(22, t[21]);
+    let reference: Vec<f64> = t
+        .iter()
+        .enumerate()
+        .map(|(i, x)| (x * 6.0).sin() + if i > 21 { 0.5 } else { 0.0 })
+        .collect();
+    let actual: Vec<f64> = reference
+        .iter()
+        .enumerate()
+        .map(|(i, y)| y + [0.0, 1e-4, -3e-3, 2e-2][i % 4])
+        .collect();
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        let on_actual = compare(&t, &actual, &t, &reference, &settings(algorithm, 0.002)).unwrap();
+        let s = Settings {
+            resample: true,
+            ..settings(algorithm, 0.002)
+        };
+        let resampled = compare(&t, &actual, &t, &reference, &s).unwrap();
+        assert!(on_actual.differs(), "{algorithm:?}");
+        assert_eq!(on_actual.values, resampled.values, "{algorithm:?}");
+        assert_eq!(on_actual.error, resampled.error, "{algorithm:?}");
+    }
+}

@@ -8,8 +8,8 @@
 //!
 //! | | tube | sized by | tested on |
 //! | --- | --- | --- | --- |
-//! | [`Algorithm::Rectangle`] | rectangles per reference point ([`rectangle`]) | [`tube_size`] | the curve under test |
-//! | [`Algorithm::Ellipse`] | ellipses per reference point ([`ellipse`]) | [`tube_size`] | the curve under test |
+//! | [`Algorithm::Rectangle`] | rectangles per reference point ([`rectangle`]) | [`tube_size`] | the curve under test, or the reference with [`Settings::resample`] |
+//! | [`Algorithm::Ellipse`] | ellipses per reference point ([`ellipse`]) | [`tube_size`] | the curve under test, or the reference with [`Settings::resample`] |
 //! | [`Algorithm::Ellipse2014`] | the 2014 ellipse ([`ellipse2014`]) | `tolerance * (tStop - tStart)` | the reference, plus `relTol` and event handling |
 //!
 //! `Rectangle` is what csv-compare itself uses; `Ellipse2014` is what omc's
@@ -102,6 +102,10 @@ pub struct Settings {
     /// `Rectangle`/`Ellipse` only: `SetFormerBaseAndRatio`, which is what
     /// csv-compare uses, rather than `SetStandardBaseAndRatio`.
     pub legacy_base: bool,
+    /// `Rectangle`/`Ellipse` only: test the curve under test on the reference
+    /// timeline, as `Ellipse2014` does, instead of on its own points.
+    /// csv-compare does not, but there both results have the same output points.
+    pub resample: bool,
 }
 
 impl Default for Settings {
@@ -113,6 +117,7 @@ impl Default for Settings {
             reltol_diff_min_max: 1e-4,
             nominal_value: DEFAULT_NOMINAL_VALUE,
             legacy_base: true,
+            resample: false,
         }
     }
 }
@@ -122,6 +127,9 @@ impl Default for Settings {
 /// the curves to plot.
 pub struct Comparison {
     pub algorithm: Algorithm,
+    /// `time` is the start of the reference timeline and `values` the curve
+    /// under test interpolated onto it.
+    pub resampled: bool,
     /// As compared: the ellipse algorithms nudge its time to stay increasing.
     pub reference: Curve,
     pub lower: Curve,
@@ -163,7 +171,7 @@ pub fn compare(
     if n == 0 {
         return Err("the curve under test is empty".to_owned());
     }
-    if settings.algorithm == Algorithm::Ellipse2014 && n < 2 {
+    if (settings.algorithm == Algorithm::Ellipse2014 || settings.resample) && n < 2 {
         // calibrateValues resamples from this curve and needs a segment; the C
         // reads out of bounds here instead.
         return Err("the curve under test needs at least two points".to_owned());
@@ -192,6 +200,7 @@ pub fn compare(
         let delta_error = validate::delta_error(&time, &cmp.calibrated, &error);
         return Ok(Comparison {
             algorithm: settings.algorithm,
+            resampled: true,
             reference: Curve {
                 x: reftime.clone(),
                 y: refvalues.to_vec(),
@@ -227,6 +236,13 @@ pub fn compare(
         _ => ellipse::ellipse_tube(&mut reftime, refvalues, &size),
     };
 
+    let resampled;
+    let (time, values) = if settings.resample {
+        resampled = ellipse2014::resample(&reftime, time, values);
+        (&reftime[..resampled.len()], &resampled[..])
+    } else {
+        (time, values)
+    };
     let v = validate::validate(time, values, &lower, &upper);
     let n = v.n;
     let time = time[..n.min(time.len())].to_vec();
@@ -234,6 +250,7 @@ pub fn compare(
     let delta_error = validate::delta_error(&time, &values, &v.error);
     Ok(Comparison {
         algorithm: settings.algorithm,
+        resampled: settings.resample,
         reference: Curve {
             x: reftime,
             y: refvalues.to_vec(),
