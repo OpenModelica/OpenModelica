@@ -64,6 +64,17 @@ impl Algorithm {
         }
     }
 
+    /// The numbering of C `omc_result_algorithm` and of
+    /// `OpenModelica.Scripting.TubeAlgorithm`, from 0. Anything else is
+    /// `Ellipse2014`.
+    pub fn from_index(i: i32) -> Algorithm {
+        match i {
+            0 => Algorithm::Rectangle,
+            1 => Algorithm::Ellipse,
+            _ => Algorithm::Ellipse2014,
+        }
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             Algorithm::Rectangle => "rectangle",

@@ -158,8 +158,9 @@ double omc_result_script_delta(const omc_result_messages *m, const char *filenam
                                const char *method, const char *const *vars, size_t n);
 char **omc_result_script_diff(const omc_result_messages *m, int running_testsuite, const char *filename,
                               const char *reffilename, const char *prefix, double reltol,
-                              double reltol_diff_max_min, double range_delta, const char *const *vars, size_t n,
-                              int keep_equal_results, int *success, size_t *n_out);
+                              double reltol_diff_max_min, double range_delta, int algorithm,
+                              const char *const *vars, size_t n, int keep_equal_results, int *success,
+                              size_t *n_out);
 /* NULL when the files cannot be compared. */
 char *omc_result_script_diff_html(const omc_result_messages *m, int running_testsuite, const char *var,
                                   const char *filename, const char *reffilename, double reltol,

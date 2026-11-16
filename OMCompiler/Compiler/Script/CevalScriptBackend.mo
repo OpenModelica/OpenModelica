@@ -2439,14 +2439,14 @@ algorithm
     case ("filterSimulationResults",_)
       then Values.BOOL(false);
 
-    case ("diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b)})
+    case ("diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.ENUM_LITERAL(index=i)})
       algorithm
         filename := Util.absoluteOrRelative(filename);
         filename_1 := Testsuite.friendlyPath(filename_1);
         filename_1 := Util.absoluteOrRelative(filename_1);
         filename2 := Util.absoluteOrRelative(filename2);
         vars_1 := List.map(cvars, ValuesUtil.extractValueString);
-        (b,strings) := SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
+        (b,strings) := SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,i-1,vars_1,b);
         cvars := List.map(strings,ValuesMake.makeString);
         v1 := ValuesMake.makeArray(cvars);
       then

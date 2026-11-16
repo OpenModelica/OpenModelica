@@ -114,11 +114,7 @@ impl omc_result_tolerances {
             reltol: t.reltol,
             reltol_diff_min_max: t.reltol_diff_min_max,
             range_delta: t.range_delta,
-            algorithm: match t.algorithm {
-                0 => Algorithm::Rectangle,
-                1 => Algorithm::Ellipse,
-                _ => Algorithm::Ellipse2014,
-            },
+            algorithm: Algorithm::from_index(t.algorithm),
             nominal_value: t.nominal_value,
         }
     }

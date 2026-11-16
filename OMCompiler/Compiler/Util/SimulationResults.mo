@@ -129,11 +129,12 @@ public function diffSimulationResults
   input Real refTol;
   input Real relTolDiffMaxMin;
   input Real rangeDelta;
+  input Integer tube "omc_result_algorithm";
   input list<String> vars;
   input Boolean keepEqualResults;
   output Boolean success;
   output list<String> res;
-  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,relTolDiffMaxMin,rangeDelta,vars,keepEqualResults,success) annotation(Library = "omcruntime");
+  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,relTolDiffMaxMin,rangeDelta,tube,vars,keepEqualResults,success) annotation(Library = "omcruntime");
 end diffSimulationResults;
 
 public function diffSimulationResultsHtml
