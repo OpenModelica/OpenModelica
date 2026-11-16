@@ -35,71 +35,71 @@ checkModel(PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear); ge
 // true
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.FreeBody completed successfully.
-// Class PlanarMechanicsForTesting.Examples.FreeBody has 48 equation(s) and 48 variable(s).
+// The model is globally balanced with 48 equation(s) and variable(s).
 // 42 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.Pendulum completed successfully.
-// Class PlanarMechanicsForTesting.Examples.Pendulum has 152 equation(s) and 152 variable(s).
+// The model is globally balanced with 152 equation(s) and variable(s).
 // 127 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.DoublePendulum completed successfully.
-// Class PlanarMechanicsForTesting.Examples.DoublePendulum has 298 equation(s) and 298 variable(s).
+// The model is globally balanced with 298 equation(s) and variable(s).
 // 245 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.CounterSpin completed successfully.
-// Class PlanarMechanicsForTesting.Examples.CounterSpin has 124 equation(s) and 124 variable(s).
+// The model is globally balanced with 124 equation(s) and variable(s).
 // 85 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.CraneCrab completed successfully.
-// Class PlanarMechanicsForTesting.Examples.CraneCrab has 276 equation(s) and 276 variable(s).
+// The model is globally balanced with 276 equation(s) and variable(s).
 // 211 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.ControlledCraneCrab completed successfully.
-// Class PlanarMechanicsForTesting.Examples.ControlledCraneCrab has 285 equation(s) and 285 variable(s).
+// The model is globally balanced with 285 equation(s) and variable(s).
 // 226 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.InvertedCraneCrab completed successfully.
-// Class PlanarMechanicsForTesting.Examples.InvertedCraneCrab has 275 equation(s) and 275 variable(s).
+// The model is globally balanced with 275 equation(s) and variable(s).
 // 221 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.WheelBasedCranCrab completed successfully.
-// Class PlanarMechanicsForTesting.Examples.WheelBasedCranCrab has 300 equation(s) and 300 variable(s).
+// The model is globally balanced with 300 equation(s) and variable(s).
 // 231 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.PistonEngine completed successfully.
-// Class PlanarMechanicsForTesting.Examples.PistonEngine has 408 equation(s) and 408 variable(s).
+// The model is globally balanced with 408 equation(s) and variable(s).
 // 330 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection completed successfully.
-// Class PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection has 408 equation(s) and 408 variable(s).
+// The model is globally balanced with 408 equation(s) and variable(s).
 // 330 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.KinematicLoop completed successfully.
-// Class PlanarMechanicsForTesting.Examples.KinematicLoop has 466 equation(s) and 466 variable(s).
+// The model is globally balanced with 466 equation(s) and variable(s).
 // 370 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection completed successfully.
-// Class PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection has 466 equation(s) and 466 variable(s).
+// The model is globally balanced with 466 equation(s) and variable(s).
 // 370 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.TestIdealWheel completed successfully.
-// Class PlanarMechanicsForTesting.Examples.TestIdealWheel has 287 equation(s) and 287 variable(s).
+// The model is globally balanced with 287 equation(s) and variable(s).
 // 204 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.TestDryFrictionWheel completed successfully.
-// Class PlanarMechanicsForTesting.Examples.TestDryFrictionWheel has 292 equation(s) and 292 variable(s).
+// The model is globally balanced with 292 equation(s) and variable(s).
 // 204 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.TestSlipBasedWheel completed successfully.
-// Class PlanarMechanicsForTesting.Examples.TestSlipBasedWheel has 297 equation(s) and 297 variable(s).
+// The model is globally balanced with 297 equation(s) and variable(s).
 // 206 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.SingleTrackWithEngine completed successfully.
-// Class PlanarMechanicsForTesting.Examples.SingleTrackWithEngine has 482 equation(s) and 482 variable(s).
+// The model is globally balanced with 482 equation(s) and variable(s).
 // 329 of these are trivial equation(s)."
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear completed successfully.
-// Class PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear has 1132 equation(s) and 1132 variable(s).
+// The model is globally balanced with 1132 equation(s) and variable(s).
 // 755 of these are trivial equation(s)."
 // ""
 // endResult

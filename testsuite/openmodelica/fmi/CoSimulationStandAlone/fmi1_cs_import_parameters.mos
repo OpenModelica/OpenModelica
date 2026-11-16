@@ -55,7 +55,7 @@ checkModel(vanDerPol_cs_st_FMU); getErrorString();
 // true
 // ""
 // "Check of vanDerPol_cs_st_FMU completed successfully.
-// Class vanDerPol_cs_st_FMU has 5 equation(s) and 5 variable(s).
+// The model is globally balanced with 5 equation(s) and variable(s).
 // 1 of these are trivial equation(s)."
 // ""
 // endResult

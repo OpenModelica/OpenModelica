@@ -28,7 +28,7 @@ getErrorString();
 // Checking skipped: package TestCheckAll...
 // Checking: model TestCheckAll.A... OK
 // 	Check of TestCheckAll.A completed successfully.
-// 	Class TestCheckAll.A has 0 equation(s) and 0 variable(s).
+// 	The model is globally balanced with 0 equation(s) and variable(s).
 // 	0 of these are trivial equation(s).
 // Error String:
 //
@@ -50,7 +50,7 @@ getErrorString();
 // -------------------------------------------------------------------------
 // Checking: model TestCheckAll.C... OK
 // 	Check of TestCheckAll.C completed successfully.
-// 	Class TestCheckAll.C has 0 equation(s) and 0 variable(s).
+// 	The model is globally balanced with 0 equation(s) and variable(s).
 // 	0 of these are trivial equation(s).
 // Error String:
 //

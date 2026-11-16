@@ -23,20 +23,21 @@ checkModel(Test07); getErrorString();
 // true
 // ""
 // "Check of QHP_Electrolytes_test_BusOMC completed successfully.
-// Class QHP_Electrolytes_test_BusOMC has 12 equation(s) and 12 variable(s).
+// The model is globally balanced with 12 equation(s) and variable(s).
 // 10 of these are trivial equation(s)."
 // ""
 // true
 // ""
 // "Check of QHP_Electrolytes_test_T2 completed successfully.
-// Class QHP_Electrolytes_test_T2 has 1565 equation(s) and 1565 variable(s).
+// The model is globally balanced with 1565 equation(s) and variable(s).
 // 1389 of these are trivial equation(s)."
 // "[flattening/modelica/expandable/ElectrolytesT2Total.mo:2116:13-2116:72:writable] Notification: Invalid unit expression '%'.
 // "
 // true
 // ""
 // "Check of Test07 completed successfully.
-// Class Test07 has 4 equation(s) and 8 variable(s).
-// 4 of these are trivial equation(s)."
+// The model has 4 equation(s) and 8 variables(s).
+// 4 of these are trivial equation(s).
+// Error: The model has 4 equation(s) too few."
 // ""
 // endResult

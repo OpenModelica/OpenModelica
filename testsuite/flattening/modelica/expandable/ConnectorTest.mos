@@ -65,7 +65,7 @@ simulate(ConnectorTest.Test); getErrorString();
 // "
 // ""
 // "Check of ConnectorTest.Test completed successfully.
-// Class ConnectorTest.Test has 24 equation(s) and 24 variable(s).
+// The model is globally balanced with 24 equation(s) and variable(s).
 // 20 of these are trivial equation(s)."
 // ""
 // record SimulationResult

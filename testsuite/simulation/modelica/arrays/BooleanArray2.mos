@@ -34,7 +34,8 @@ checkModel(Bug2112); getErrorString();
 // true
 // ""
 // "Check of Bug2112 completed successfully.
-// Class Bug2112 has 5 equation(s) and 3 variable(s).
-// 0 of these are trivial equation(s)."
+// The model has 5 equation(s) and 3 variables(s).
+// 0 of these are trivial equation(s).
+// Error: The model has 2 equation(s) too many."
 // ""
 // endResult

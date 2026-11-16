@@ -26,8 +26,12 @@ CheckModel3.mos \
 CheckModel4.mos \
 CheckModel5.mos \
 CheckModel6.mos \
-CheckModelNonexistentClass1.mos \
+CheckModel7.mos \
 CheckModelExtObj1.mos \
+CheckModelNonexistentClass1.mos \
+CheckModelPartial1.mos \
+CheckModelPartial2.mos \
+CheckModelPartial3.mos \
 choicesAllMatching.mos \
 Cmd1.mos \
 Cmd2.mos \

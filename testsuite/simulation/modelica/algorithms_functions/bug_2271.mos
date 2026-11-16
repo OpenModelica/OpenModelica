@@ -40,11 +40,12 @@ checkModel(bug_2271_c); getErrorString();
 // true
 // ""
 // "Check of bug_2271_b completed successfully.
-// Class bug_2271_b has 6 equation(s) and 6 variable(s).
+// The model is globally balanced with 6 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // "Check of bug_2271_c completed successfully.
-// Class bug_2271_c has 4 equation(s) and 2 variable(s).
-// 0 of these are trivial equation(s)."
+// The model has 4 equation(s) and 2 variables(s).
+// 0 of these are trivial equation(s).
+// Error: The model has 2 equation(s) too many."
 // ""
 // endResult

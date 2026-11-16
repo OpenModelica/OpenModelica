@@ -26,7 +26,7 @@ instantiateModel(ZeroDims); getErrorString();
 // end ZeroDims;"
 // ""
 // "Check of ZeroDims completed successfully.
-// Class ZeroDims has 0 equation(s) and 0 variable(s).
+// The model is globally balanced with 0 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // "class ZeroDims

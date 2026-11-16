@@ -95,7 +95,7 @@ simulate(TestMedia.TestModels.TestNitrogen); getErrorString();
 // "
 // ""
 // "Check of TestMedia.TestModels.TestNitrogen completed successfully.
-// Class TestMedia.TestModels.TestNitrogen has 6 equation(s) and 6 variable(s).
+// The model is globally balanced with 6 equation(s) and variable(s).
 // 2 of these are trivial equation(s)."
 // ""
 // record SimulationResult

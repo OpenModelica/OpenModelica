@@ -1642,7 +1642,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 // "
 // ""
 // "Check of TestMedia.TestModels.TestWater completed successfully.
-// Class TestMedia.TestModels.TestWater has 9 equation(s) and 9 variable(s).
+// The model is globally balanced with 9 equation(s) and variable(s).
 // 2 of these are trivial equation(s)."
 // ""
 // record SimulationResult

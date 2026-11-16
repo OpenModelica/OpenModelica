@@ -631,7 +631,7 @@ simulate(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();
 // "
 // ""
 // "Check of PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv completed successfully.
-// Class PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv has 214 equation(s) and 214 variable(s).
+// The model is globally balanced with 214 equation(s) and variable(s).
 // 149 of these are trivial equation(s)."
 // ""
 // record SimulationResult

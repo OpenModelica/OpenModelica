@@ -58,11 +58,11 @@ checkModel(bug_2452_2); getErrorString();
 // true
 // ""
 // "Check of bug_2452 completed successfully.
-// Class bug_2452 has 10 equation(s) and 10 variable(s).
+// The model is globally balanced with 10 equation(s) and variable(s).
 // 3 of these are trivial equation(s)."
 // ""
 // "Check of bug_2452_2 completed successfully.
-// Class bug_2452_2 has 2 equation(s) and 2 variable(s).
+// The model is globally balanced with 2 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // endResult
