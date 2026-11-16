@@ -502,6 +502,11 @@ pub fn is_gbode_shorthand(method: &str) -> bool {
         .any(|(n, s, _)| *n == method && *s == Solver::GbodeShorthand)
 }
 
+/// Whether `method` is a value of `-s`.
+pub fn is_solver_name(method: &str) -> bool {
+    SOLVERS.iter().any(|(n, ..)| *n == method)
+}
+
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     // Each solver library is linked on its own, so each is its own question --

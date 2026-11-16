@@ -5491,11 +5491,21 @@ fn check_method(method: &str) -> bool {
         || method == "optimization"
 }
 
-/// Apply `-s=` and choose a method for `auto` (C's `resolveAutoSolver`). An
-/// explicit method is never replaced.
-fn choose_solver_method(method: &str, dae_mode: bool, no_states: bool) -> &str {
+/// Apply `-s=` and reject an unknown method (C's `readSolverMethod`). The empty
+/// method is `auto`.
+fn read_solver_method(method: &str) -> Result<&str> {
     match effective_method(method) {
-        "" | "auto" => {
+        "" => Ok("auto"),
+        m if crate::simflags::is_solver_name(m) || is_dassl(m) => Ok(m),
+        _ => Err(UNSUPPORTED_METHOD),
+    }
+}
+
+/// Choose a method for `auto` (C's `resolveAutoSolver`). An explicit method is
+/// returned as it is.
+fn choose_solver_method(method: &str, dae_mode: bool, no_states: bool) -> &str {
+    match method {
+        "auto" => {
             let (chosen, reason) = if no_states {
                 ("euler", ", because the model has no states.")
             } else if dae_mode {
@@ -5529,7 +5539,7 @@ fn resolve_solver_method(method: &str, dae_mode: bool) -> Result<&str> {
     validate_solver_method(if dae_mode {
         "ida"
     } else {
-        choose_solver_method(method, false, false)
+        choose_solver_method(read_solver_method(method)?, false, false)
     })
 }
 
@@ -5540,7 +5550,7 @@ fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<
         true => layout.n_dae_res + layout.n_dae_alg < 1,
         false => layout.n_states < 1,
     };
-    let method = choose_solver_method(method, layout.compiled_dae_mode, no_states);
+    let method = choose_solver_method(read_solver_method(method)?, layout.compiled_dae_mode, no_states);
     if no_states && (layout.compiled_dae_mode || method != "optimization") {
         if method != "euler" {
             omclog::info!(

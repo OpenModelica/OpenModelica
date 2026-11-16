@@ -14,10 +14,13 @@ methods. This section contains additional information about the different
 integration methods in OpenModelica. They can be selected by the method
 parameter of the :ref:`simulate` command or the :ref:`-s simflag <simflag-s>`.
 
-The default method ``auto`` chooses a solver from the model: `IDA`_ for a
-model compiled with ``--daeMode``, otherwise `DASSL`_. A method that is
-given explicitly is always used. If it cannot simulate the model, the
-simulation stops with an error.
+The default method ``auto`` chooses a solver from the model:
+:ref:`explicit Euler <euler>` for a model without states, `IDA`_ for a model
+compiled with ``--daeMode``, otherwise `DASSL`_. A model without states has
+nothing to integrate, so it is simulated with explicit Euler also when a
+method is given explicitly (``-lv=LOG_SOLVER`` shows this). Otherwise a
+method that is given explicitly is always used. If it cannot simulate the
+model, the simulation stops with an error.
 
 The different methods are also called solver and can be distinguished by
 their characteristic:

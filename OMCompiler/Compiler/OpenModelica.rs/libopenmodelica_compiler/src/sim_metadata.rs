@@ -363,7 +363,7 @@ pub static SOLVER_METHOD_NAME: CStrTable<15> = CStrTable([
 #[unsafe(no_mangle)]
 pub static SOLVER_METHOD_DESC: CStrTable<15> = CStrTable([
     c"unknown".as_ptr(),
-    c"auto (default) - chooses the method from the model: ida for a model compiled with --daeMode, otherwise dassl".as_ptr(),
+    c"auto (default) - chooses the method from the model: euler for a model without states, ida for a model compiled with --daeMode, otherwise dassl".as_ptr(),
     c"dassl - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location".as_ptr(),
     c"ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity".as_ptr(),
     c"cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration".as_ptr(),

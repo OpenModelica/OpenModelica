@@ -1368,7 +1368,7 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
-  /* S_AUTO */          "auto (default) - chooses the method from the model: ida for a model compiled with --daeMode, otherwise dassl",
+  /* S_AUTO */          "auto (default) - chooses the method from the model: euler for a model without states, ida for a model compiled with --daeMode, otherwise dassl",
   /* S_DASSL */         "dassl - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location",
   /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity",
   /* S_CVODE */         "cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration",
