@@ -251,7 +251,7 @@
       const url = joinUrl(settings.baseUrl || PROVIDERS.openai.url, 'chat/completions');
       const headers = { 'Content-Type': 'application/json' };
       if (settings.apiKey) headers.Authorization = `Bearer ${settings.apiKey}`;
-      const body = { model: settings.model, messages: [{ role: 'system', content: system }, ...history], stream: true };
+      const body = { model: settings.model, messages: [{ role: 'system', content: system }, ...this.withImages(history)], stream: true };
       if (tools.length) {
         body.tools = tools.map((t) => ({
           type: 'function',
@@ -323,6 +323,11 @@
       return messages;
     },
 
+    withImages(history) {
+      if (settings.vision) return history;
+      return history.filter((m) => !(m.role === 'user' && Array.isArray(m.content) && m.content.some((c) => c.type === 'image_url')));
+    },
+
     async listModels() {
       const url = joinUrl(settings.baseUrl || PROVIDERS.openai.url, 'models');
       const headers = settings.apiKey ? { Authorization: `Bearer ${settings.apiKey}` } : {};
@@ -352,7 +357,7 @@
 
     async complete(history, tools, system, view, signal) {
       const url = joinUrl(this.base(), 'v1/messages');
-      const body = { model: settings.model, max_tokens: 64000, system, messages: history, stream: true };
+      const body = { model: settings.model, max_tokens: 64000, system, messages: this.withImages(history), stream: true };
       if (tools.length) {
         body.tools = tools.map((t) => ({
           name: t.name, description: t.description || '', input_schema: t.inputSchema || { type: 'object', properties: {} },
@@ -443,6 +448,18 @@
           return { type: 'tool_result', tool_use_id: call.id, content, is_error: result.isError };
         }),
       }];
+    },
+
+    withImages(history) {
+      if (settings.vision) return history;
+      return history.map((m) => (m.role !== 'user' ? m : {
+        ...m,
+        content: m.content.map((block) => {
+          if (block.type !== 'tool_result' || !block.content.some((c) => c.type === 'image')) return block;
+          const content = block.content.filter((c) => c.type !== 'image');
+          return { ...block, content: content.length ? content : [{ type: 'text', text: '(no output)' }] };
+        }),
+      }));
     },
 
     async listModels() {
@@ -556,6 +573,7 @@
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
     hide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',
   };
 
   function el(tag, attributes, ...children) {
@@ -599,11 +617,13 @@
   const settingsButton = el('button', { type: 'button', class: 'as-icon', title: 'Settings', 'aria-pressed': 'false', html: ICONS.gear, onclick: toggleSettings });
   const newButton = el('button', { type: 'button', class: 'as-icon', title: 'New chat', html: ICONS.plus, onclick: newChat });
   const messages = el('div', { class: 'as-messages', role: 'log', 'aria-live': 'polite' });
+  const scroller = el('div', { class: 'as-scroll' }, messages);
+  const downButton = el('button', { type: 'button', class: 'as-down', title: 'Go to the latest message', hidden: true, html: ICONS.down, onclick: scrollDown });
   const textarea = el('textarea', { rows: '3', placeholder: 'Ask about the classes in OMEdit, or ask to build, simulate and plot a model' });
   const sendButton = el('button', { type: 'submit', class: 'as-button primary', text: 'Send' });
   const hint = el('span', { class: 'as-hint', text: 'Enter sends, Shift+Enter starts a new line' });
   const stopButton = el('button', { type: 'button', class: 'as-button', text: 'Stop', hidden: true, onclick: stop });
-  const form = el('form', { class: 'as-input' }, textarea,
+  const form = el('form', { class: 'as-input' }, downButton, textarea,
     el('div', { class: 'as-actions' }, hint, stopButton, sendButton));
 
   root.append(
@@ -612,7 +632,7 @@
       el('header', { class: 'as-header' },
         el('span', { class: 'as-title', text: 'Assistant' }), status, newButton, settingsButton,
         el('button', { type: 'button', class: 'as-icon', title: 'Hide the assistant', html: ICONS.hide, onclick: () => setOpen(false) })),
-      settingsPanel, messages, form));
+      settingsPanel, scroller, form));
   root.querySelectorAll('.as-tab svg').forEach((svg) => { svg.style.width = '16px'; svg.style.height = '16px'; });
 
   // Keyboard and clipboard events in the panel are not for OMEdit.
@@ -704,16 +724,37 @@
   splitter.addEventListener('pointerup', endDrag);
   splitter.addEventListener('pointercancel', endDrag);
 
-  function scrollDown() {
-    messages.scrollTop = messages.scrollHeight;
+  // Stay at the bottom while the chat grows, until the user scrolls up.
+  let follow = true;
+  let lastTop = 0;
+  const atBottom = (slack) => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= slack;
+
+  function setFollow(value) {
+    follow = value;
+    downButton.hidden = value;
   }
+
+  function scrollDown() {
+    setFollow(true);
+    scroller.scrollTop = scroller.scrollHeight;
+  }
+
+  scroller.addEventListener('scroll', () => {
+    if (scroller.scrollTop < lastTop && !atBottom(1)) setFollow(false);
+    else if (atBottom(30)) setFollow(true);
+    lastTop = scroller.scrollTop;
+  });
+  const resizes = new ResizeObserver(() => {
+    if (follow) scroller.scrollTop = scroller.scrollHeight;
+    else if (atBottom(1)) setFollow(true);
+  });
+  resizes.observe(messages);
+  resizes.observe(scroller);
 
   function add(node) {
     const empty = messages.querySelector('.as-empty');
     if (empty) empty.remove();
-    const atBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 40;
     messages.append(node);
-    if (atBottom) scrollDown();
     return node;
   }
 
@@ -723,11 +764,12 @@
   }
 
   function notice(text) {
-    add(el('div', { class: 'as-msg notice', text }));
+    return add(el('div', { class: 'as-msg notice' }, el('div', { text })));
   }
 
-  function showError(error) {
-    add(el('div', { class: 'as-msg error', text: error.message || String(error) }));
+  function showError(error, hint) {
+    return add(el('div', { class: 'as-msg error' }, el('div', { text: error.message || String(error) }),
+      hint ? el('div', { class: 'as-error-hint', text: hint }) : null));
   }
 
   const HINT = 'Enter sends, Shift+Enter starts a new line';
@@ -763,15 +805,13 @@
     const tools = new Map();
     const render = () => {
       pending = null;
-      const atBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 40;
       if (thinkingNode && thinkingNode.dataset.text) {
         const body = thinkingNode.querySelector('.body');
-        const follow = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+        const bodyAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
         body.textContent = thinkingNode.dataset.text;
-        if (follow) body.scrollTop = body.scrollHeight;
+        if (bodyAtBottom) body.scrollTop = body.scrollHeight;
       }
       if (textNode) textNode.innerHTML = renderMarkdown(textNode.dataset.text);
-      if (atBottom) scrollDown();
     };
     const schedule = () => {
       if (!pending) pending = requestAnimationFrame(render);
@@ -949,7 +989,6 @@
       return;
     }
     toggleSettings(false);
-    const adapter = ADAPTERS[settings.provider];
     if (conversation.provider !== settings.provider) conversation = { provider: settings.provider, messages: [] };
     const history = conversation.messages;
     const mark = historyMark();
@@ -957,16 +996,44 @@
     if (mark.content >= 0) {
       history[history.length - 1].content.push({ type: 'text', text });
     } else {
-      history.push(adapter.userMessage(text));
+      history.push(ADAPTERS[conversation.provider].userMessage(text));
     }
+    scrollDown();
+    await run();
+  }
+
+  let resumeButton = null;
+
+  // `kept` is the last node before the output of the unfinished model call.
+  function offerResume(node, kept, label) {
+    const resumed = conversation;
+    resumeButton = el('button', { type: 'button', class: 'as-button', text: label,
+      onclick: () => {
+        if (running || resumed !== conversation) return;
+        while (kept.nextSibling) kept.nextSibling.remove();
+        run();
+      } });
+    node.append(el('div', { class: 'as-resume' }, resumeButton));
+  }
+
+  // A failed or stopped model call leaves the history as it was before the call,
+  // so that the turn can continue.
+  async function run() {
+    if (resumeButton) resumeButton.parentNode.remove();
+    resumeButton = null;
+    const adapter = ADAPTERS[conversation.provider];
+    const history = conversation.messages;
     running = { controller: new AbortController(), stopped: false };
     setRunning(true);
+    let kept = messages.lastChild;
+    let end = null;
+    let label = 'Continue';
     try {
       await waitForOMEdit();
       const { tools, instructions } = await getTools();
       for (let step = 0; ; step++) {
         if (step === MAX_STEPS) {
-          notice(`Stopped after ${MAX_STEPS} model calls.`);
+          end = notice(`Stopped after ${MAX_STEPS} model calls.`);
           break;
         }
         const view = assistantView();
@@ -974,11 +1041,9 @@
         try {
           turn = await adapter.complete(history, tools, systemPrompt(instructions), view, running.controller.signal);
         } catch (e) {
-          if (running.stopped) {
-            notice('Stopped.');
-            return;
-          }
-          throw e;
+          if (!running.stopped) throw e;
+          end = notice('Stopped.');
+          break;
         }
         if (turn.message) history.push(turn.message);
         if (turn.note) notice(turn.note);
@@ -986,19 +1051,23 @@
         const results = [];
         for (const call of turn.toolCalls) results.push(await runTool(call, view.toolView(call)));
         history.push(...adapter.toolResults(turn.toolCalls, results));
+        kept = messages.lastChild;
         if (running.stopped) {
-          notice('Stopped.');
-          return;
+          end = notice('Stopped.');
+          break;
         }
       }
     } catch (e) {
-      truncateHistory(mark);
-      showError(e);
+      const hint = settings.vision && /image/i.test(e.message || '')
+        ? 'If the model does not take images, turn off "Send images" in the settings and retry.' : null;
+      end = showError(e, hint);
+      label = 'Retry';
     } finally {
       running = null;
       live.end();
       setRunning(false);
     }
+    if (end) offerResume(end, kept, label);
   }
 
   const sentTexts = [];
