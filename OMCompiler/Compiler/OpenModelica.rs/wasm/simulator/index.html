@@ -473,7 +473,8 @@ function installLibrary() {
   return installed;
 }
 function loadLibrary() {
-  loaded ||= installLibrary().then(() => call(worker, 'loadLibrary', LIBRARY)).then(() => {
+  loaded ||= installLibrary().then(() => call(worker, 'loadLibrary', LIBRARY)).then((r) => {
+    if (!r.ok) throw new Error(r.error);
     mslDone = true;
     // Warm the JIT with a throwaway run, unless a real one is already waiting.
     if (!mslJobStarted) call(worker, 'warmup').catch((e) => log('warmup failed', e));

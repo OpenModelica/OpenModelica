@@ -200,6 +200,9 @@ function snapshot() {
   return { snap: { ok: true, info, parameters, series, cols, time, units }, transfer };
 }
 
+// Why the last installPackage failed, for the loadLibrary that follows it.
+let installError = '';
+
 function simError(fallback) {
   return { ok: false, error: unquote(omc_eval('getErrorString()')) || fallback };
 }
@@ -375,14 +378,31 @@ self.onmessage = async (ev) => {
       // take whichever release is already there.
       case 'installPackage': {
         const exact = a.version ? `, "${esc(a.version)}", exactMatch=true` : '';
-        await evalWithDownloads(`installPackage(${a.name}${exact})`, status);
-        reply({ ok: true, message: omc_eval('getErrorString()').trim() });
+        const install = async () => (await evalWithDownloads(`installPackage(${a.name}${exact})`, status)).trim() === 'true';
+        let ok = await install();
+        let message = unquote(omc_eval('getErrorString()'));
+        // The stored package index may be from before the library was added.
+        // A download finds the file in place, so the old index goes first.
+        if (!ok) {
+          status('Updating the package index…');
+          omc_eval('deleteFile(getHomeDirectoryPath() + "/.openmodelica/libraries/index.json")');
+          await evalWithDownloads('updatePackageIndex()', status);
+          omc_eval('getErrorString()');
+          ok = await install();
+          message = unquote(omc_eval('getErrorString()'));
+        }
+        installError = ok ? '' : message;
+        reply({ ok, message });
         break;
       }
       case 'loadLibrary': {
         const priority = a.version ? `, {"${esc(a.version)}"}` : '';
         status('Loading ' + a.name + '…');
-        await evalWithDownloads(`loadModel(${a.name}${priority})`, status);
+        if ((await evalWithDownloads(`loadModel(${a.name}${priority})`, status)).trim() !== 'true') {
+          const failed = simError('Could not load ' + a.name + '.');
+          if (installError) failed.error = installError + '\n' + failed.error;
+          return reply(failed);
+        }
         reply({ ok: true, message: omc_eval('getErrorString()').trim() });
         break;
       }
