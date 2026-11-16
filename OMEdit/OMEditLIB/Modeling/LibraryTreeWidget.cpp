@@ -154,16 +154,12 @@ void LibraryTreeItem::updateClassInformation()
     mRevisionId = mClassInformation.revisionId;
     setReadOnly(mClassInformation.fileReadOnly);
     // set save contents type
-    if (isFilePathValid()) {
-      QFileInfo fileInfo(getFileName());
-      // if item has file name as package.mo and is top level then its save folder structure
-      if (isTopLevel() && (fileInfo.fileName().compare("package.mo") == 0)) {
-        setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-      } else if ((fileInfo.fileName().compare("package.mo") == 0) && (mpParentLibraryTreeItem->getFileName().compare(getFileName()) != 0)) {
-        setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-      } else {
-        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-      }
+    const bool isPackageFile = QFileInfo(getFileName()).fileName().compare("package.mo") == 0;
+    const SaveContentsType saveContentsType = isPackageFile && (isTopLevel() || mpParentLibraryTreeItem->getFileName().compare(getFileName()) != 0)
+                                              ? LibraryTreeItem::SaveFolderStructure : LibraryTreeItem::SaveInOneFile;
+    // the file check is a round-trip to omc on the web, so only do it when the type changes
+    if (saveContentsType != getSaveContentsType() && isFilePathValid()) {
+      setSaveContentsType(saveContentsType);
     }
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
@@ -2359,6 +2355,9 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     if (!libs.isEmpty()) {
       libs.removeFirst();
     }
+    /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
+    libs.removeIf([](const QString &lib) {return lib.contains("$Code");});
+    pOMCProxy->prefetchClassInformation(libs);
     LibraryTreeItem *pParentLibraryTreeItem = 0;
 #if defined(__EMSCRIPTEN__)
     const int totalLibs = libs.size();
@@ -2369,10 +2368,6 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
       // Drive the startup-splash progress bar; setProgress throttles the repaint.
       WasmSplash::setProgress(++doneLibs, totalLibs);
 #endif
-      /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
-      if (lib.contains("$Code")) {
-        continue;
-      }
       QString name = StringHandler::getLastWordAfterDot(lib);
       QString parentName = StringHandler::removeLastWordAfterDot(lib);
       if (!(pParentLibraryTreeItem && pParentLibraryTreeItem->getNameStructure().compare(parentName) == 0)) {
@@ -2382,6 +2377,7 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled());
       }
     }
+    pOMCProxy->dropPrefetched();
   } else if (pLibraryTreeItem->isSSP()) {
     if (pLibraryTreeItem->isTopLevel()) {
       QJsonArray pElementsJson;

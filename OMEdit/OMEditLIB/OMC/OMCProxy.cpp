@@ -108,6 +108,10 @@ static QString omcPhaseLabel(int phase) {
 #include <QPair>
 #include <QtCore/private/qwasmsuspendresumecontrol_p.h>
 
+// Defined in the generated OpenModelicaScriptingAPIQtBridge.cpp.
+void omcBridgePrefetch(const char *fn, const QList<QJsonArray> &argsList);
+void omcBridgeDropPrefetched();
+
 // omc runs in the shared omc_worker.js Web Worker. Calls are posted without
 // suspending; the reply is stashed by id and the C++ side waits for it. A raw
 // Asyncify suspend is only safe before Qt's loop runs (it corrupts Qt's wasm
@@ -269,6 +273,15 @@ EM_JS(int, omedit_post_eval, (const char *src), {
 });
 EM_JS(int, omedit_post_abi, (const char *req), {
   return Module.__omcPostCall({ cmd: "abi", request: UTF8ToString(req), id: ++Module.__omcMsgId });
+});
+EM_JS(int, omedit_post_abi_batch, (const char *reqs), {
+  return Module.__omcPostCall({ cmd: "abiBatch", requests: UTF8ToString(reqs) });
+});
+EM_JS(char *, omedit_take_abi_batch_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return stringToNewUTF8(((r && r.responses) || []).join("\n"));
 });
 EM_JS(int, omedit_call_ready, (int id), {
   return Object.prototype.hasOwnProperty.call(Module.__omcReplies, id) ? 1 : 0;
@@ -1824,6 +1837,38 @@ OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString clas
 #endif
   classInformation.comment = comment;
   return classInformation;
+}
+
+/*!
+ * \brief OMCProxy::prefetchClassInformation
+ * On the web, gets the class information of all the classes in one round-trip to omc.
+ * The getClassInformation calls for these classes then do not make a round-trip each.
+ * Call dropPrefetched when done.
+ * \param classNames
+ */
+void OMCProxy::prefetchClassInformation(const QStringList &classNames)
+{
+#if defined(__EMSCRIPTEN__)
+  QList<QJsonArray> argsList;
+  argsList.reserve(classNames.size());
+  for (const QString &className : classNames) {
+    argsList.append(QJsonArray{className});
+  }
+  omcBridgePrefetch("getClassInformation", argsList);
+#else
+  Q_UNUSED(classNames);
+#endif
+}
+
+/*!
+ * \brief OMCProxy::dropPrefetched
+ * Drops the prefetched replies that were not used.
+ */
+void OMCProxy::dropPrefetched()
+{
+#if defined(__EMSCRIPTEN__)
+  omcBridgeDropPrefetched();
+#endif
 }
 
 /*!
@@ -3737,7 +3782,7 @@ bool OMCProxy::disableNewInstantiation()
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
   // get img src tags
-  QRegularExpression imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
   QRegularExpressionMatchIterator imgIterator = imgRegExp.globalMatch(documentation);
   QStringList attributeMatches;
   QStringList tagMatches;
@@ -3747,7 +3792,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     attributeMatches.append(match.captured(1)); // attribute
   }
   // get script src tags
-  QRegularExpression scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
   QRegularExpressionMatchIterator scriptIterator = scriptRegExp.globalMatch(documentation);
   while (scriptIterator.hasNext()) {
     QRegularExpressionMatch match = scriptIterator.next();
@@ -3755,7 +3800,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     attributeMatches.append(match.captured(1));
   }
   // get link href tags
-  QRegularExpression linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
   QRegularExpressionMatchIterator linkIterator = linkRegExp.globalMatch(documentation);
   while (linkIterator.hasNext()) {
     QRegularExpressionMatch match = linkIterator.next();
