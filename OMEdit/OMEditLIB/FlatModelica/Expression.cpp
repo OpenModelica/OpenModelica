@@ -42,6 +42,8 @@
 #include <array>
 #include <vector>
 #include <utility>
+#include <limits>
+#include <unordered_map>
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -660,6 +662,8 @@ namespace FlatModelica
 
     private:
       std::string _name;
+      std::string _subscriptedName;
+      std::vector<Expression> _iteratorSubscripts;
   };
 
   class Array : public ExpressionBase
@@ -1551,7 +1555,8 @@ namespace FlatModelica
 
     auto const parts_array = parts.toArray();
 
-    for (const auto &part: parts_array) {
+    for (qsizetype partIndex = 0; partIndex < parts_array.size(); ++partIndex) {
+      const auto &part = parts_array.at(partIndex);
       auto part_obj = part.toObject();
       auto name = part_obj["name"];
 
@@ -1569,6 +1574,8 @@ namespace FlatModelica
 
       if (!subs.empty()) {
         std::string subs_str;
+        std::vector<Expression> subscriptExpressions;
+        bool hasIteratorSubscript = false;
 
         for (const auto& sub: subs) {
           if (!subs_str.empty()) {
@@ -1577,11 +1584,25 @@ namespace FlatModelica
 
           if (sub.isString()) {
             subs_str += sub.toString().toStdString();
+            subscriptExpressions.emplace_back(sub.toString());
           } else {
             Expression sub_exp;
             sub_exp.deserialize(sub);
-            subs_str += sub_exp.toString();
+            const auto subscript = sub_exp.toString();
+            subs_str += subscript;
+            hasIteratorSubscript |= subscript.rfind("$i", 0) == 0;
+            subscriptExpressions.emplace_back(std::move(sub_exp));
           }
+        }
+
+        /*
+         * Vectorized annotation expressions encode generated iterator variables
+         * inside cref subscripts. Keep the unindexed name so eval can fetch the
+         * array before resolving those indexes in the iterator scope.
+         */
+        if (hasIteratorSubscript && partIndex == parts_array.size() - 1) {
+          _subscriptedName = _name;
+          _iteratorSubscripts = std::move(subscriptExpressions);
         }
 
         _name += '[' + subs_str + ']';
@@ -1593,6 +1614,32 @@ namespace FlatModelica
   {
     if (recursion_level > 100) {
       throw std::runtime_error("Recursion limit reached");
+    }
+
+    /*
+     * The model variable evaluator resolves names such as `color`, not a cref
+     * containing a generated iterator subscript such as `color[$i1]`. Resolve
+     * the base array first, then evaluate the indexes with the same callback,
+     * which can see the comprehension's iterator bindings.
+     */
+    if (!_iteratorSubscripts.empty()) {
+      auto exp = var_eval(_subscriptedName).evaluate(var_eval, recursion_level + 1);
+
+      for (const auto &subscript : _iteratorSubscripts) {
+        auto index = subscript.evaluate(var_eval, recursion_level);
+        if (!index.isInteger() || !exp.isArray()) {
+          return Expression(clone());
+        }
+
+        const auto i = index.intValue();
+        const auto &elements = exp.elements();
+        if (i < 1 || static_cast<size_t>(i) > elements.size()) {
+          throw std::runtime_error("Cref::eval: subscript out of bounds");
+        }
+        exp = elements[static_cast<size_t>(i - 1)];
+      }
+
+      return exp;
     }
 
     return var_eval(_name).evaluate(var_eval, recursion_level + 1);
@@ -1988,11 +2035,133 @@ namespace FlatModelica
     }
   }
 
+  /*!
+   * `$array` iterator calls represent array constructors generated for
+   * vectorized expressions. Expand them only when their iterator domains can
+   * be resolved to arrays or numeric ranges. Each iterator is visible while
+   * evaluating later domains and the body. If a domain is unresolved, retain
+   * the original call instead of returning a partial array.
+   *
+   * Other iterator-call forms are not evaluated here.
+   */
   Expression IteratorCall::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
-    Q_UNUSED(var_eval);
-    Q_UNUSED(recursion_level);
-    return Expression(std::make_unique<IteratorCall>(*this));
+    if (_name != "$array") {
+      return Expression(std::make_unique<IteratorCall>(*this));
+    }
+
+    std::unordered_map<std::string, Expression> iteratorValues;
+    const Expression::VariableEvaluator scopedVarEval = [&] (const std::string &name) {
+      auto it = iteratorValues.find(name);
+      // Comprehension locals shadow model variables with the same name.
+      return it != iteratorValues.end() ? it->second : var_eval(name);
+    };
+
+    const auto getRangeValues = [&] (const Expression &range, std::vector<Expression> &values) {
+      // Evaluate each domain in the current scope, since it may use earlier iterators.
+      const auto evaluatedRange = range.evaluate(scopedVarEval, recursion_level);
+      if (evaluatedRange.isArray()) {
+        values = evaluatedRange.elements();
+        return true;
+      }
+
+      const auto rangeObject = evaluatedRange.serialize().toObject();
+      if (rangeObject.value("$kind").toString() != "range") {
+        return false;
+      }
+
+      Expression start;
+      Expression stop;
+      Expression step;
+      start.deserialize(rangeObject.value("start"));
+      stop.deserialize(rangeObject.value("stop"));
+      if (rangeObject.contains("step")) {
+        step.deserialize(rangeObject.value("step"));
+      } else {
+        step = Expression(1);
+      }
+      if (!start.isNumber() || !step.isNumber() || !stop.isNumber()) {
+        return false;
+      }
+
+      if (start.isInteger() && step.isInteger() && stop.isInteger()) {
+        // Keep integer ranges as integers when binding the iterator.
+        const auto first = start.intValue();
+        const auto increment = step.intValue();
+        const auto last = stop.intValue();
+        if (increment == 0) {
+          throw std::runtime_error("IteratorCall::eval: range step is zero");
+        }
+
+        for (auto value = first; increment > 0 ? value <= last : value >= last;) {
+          values.emplace_back(value);
+          if ((increment > 0 && value > std::numeric_limits<int64_t>::max() - increment) ||
+              (increment < 0 && value < std::numeric_limits<int64_t>::min() - increment)) {
+            break;
+          }
+          value += increment;
+        }
+      } else {
+        // A floating-point step may stop changing the value at large magnitudes.
+        const auto first = start.realValue();
+        const auto increment = step.realValue();
+        const auto last = stop.realValue();
+        if (increment == 0) {
+          throw std::runtime_error("IteratorCall::eval: range step is zero");
+        }
+
+        for (auto value = first; increment > 0 ? value <= last : value >= last;) {
+          values.emplace_back(value);
+          const auto next = value + increment;
+          if (!std::isfinite(next) || next == value) {
+            break;
+          }
+          value = next;
+        }
+      }
+      return true;
+    };
+
+    std::vector<Expression> elements;
+    bool canEvaluate = true;
+    /*
+     * Walk domains from left to right. Save and restore each binding so later
+     * domains can use earlier iterators, and a repeated name can shadow safely.
+     * Reaching the end of the iterator list produces one element of the result.
+     */
+    std::function<void(size_t)> evaluateIterators = [&] (size_t iteratorIndex) {
+      if (iteratorIndex == _iterators.size()) {
+        elements.emplace_back(_exp.evaluate(scopedVarEval, recursion_level));
+        return;
+      }
+
+      const auto &iterator = _iterators[iteratorIndex];
+      std::vector<Expression> values;
+      if (!getRangeValues(iterator.range(), values)) {
+        canEvaluate = false;
+        return;
+      }
+
+      for (const auto &value : values) {
+        const auto previous = iteratorValues.find(iterator.name());
+        const bool hadPrevious = previous != iteratorValues.end();
+        Expression previousValue = hadPrevious ? previous->second : Expression();
+        iteratorValues[iterator.name()] = value;
+        evaluateIterators(iteratorIndex + 1);
+        if (hadPrevious) {
+          iteratorValues[iterator.name()] = std::move(previousValue);
+        } else {
+          iteratorValues.erase(iterator.name());
+        }
+        if (!canEvaluate) {
+          return;
+        }
+      }
+    };
+
+    evaluateIterators(0);
+    // Do not expose a partially evaluated comprehension if any domain is unknown.
+    return canEvaluate ? Expression(std::move(elements)) : Expression(std::make_unique<IteratorCall>(*this));
   }
 
   void IteratorCall::print(std::ostream &os) const
