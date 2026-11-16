@@ -103,6 +103,7 @@ static QString omcPhaseLabel(int phase) {
 #include <emscripten/em_js.h>
 #include <emscripten/val.h>
 #include <QEventLoop>
+#include <QJsonDocument>
 #include <QTimer>
 #include <QVarLengthArray>
 #include <QPair>
@@ -646,6 +647,34 @@ EM_JS(char *, omedit_take_vfs_bytes, (int id, int *outLen), {
   HEAP32[outLen >> 2] = len;
   return ptr;
 });
+
+EM_JS(int, omedit_post_vfs_stat_many, (const char *paths), {
+  return Module.__omcPostCall({ cmd: "vfsStatMany", paths: JSON.parse(UTF8ToString(paths)) });
+});
+EM_JS(char *, omedit_take_vfs_sizes, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return stringToNewUTF8(JSON.stringify((r && r.sizes) || []));
+});
+
+// The sizes of worker-VFS files in one round-trip, -1 for a path that is not a file.
+// Empty if the worker did not answer.
+QList<qint64> omcWorkerFileSizes(const QStringList &paths) {
+  QList<qint64> sizes;
+  if (paths.isEmpty() || !omedit_worker_ready()) return sizes;
+  int id = omedit_post_vfs_stat_many(QJsonDocument(QJsonArray::fromStringList(paths)).toJson(QJsonDocument::Compact).constData());
+  omcWorkerWaitReply(id);
+  char *p = omedit_take_vfs_sizes(id);
+  const QJsonArray array = QJsonDocument::fromJson(QByteArray(p)).array();
+  free(p);
+  if (array.size() != paths.size()) return sizes;
+  sizes.reserve(array.size());
+  for (const QJsonValue &size : array) {
+    sizes.append(qint64(size.toDouble(-1)));
+  }
+  return sizes;
+}
 
 QByteArray omcWorkerReadFile(const char *path) {
   if (!omedit_worker_ready()) return QByteArray();
@@ -1836,13 +1865,12 @@ OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString clas
 }
 
 /*!
- * \brief OMCProxy::prefetchClassInformation
- * On the web, gets the class information of all the classes in one round-trip to omc.
- * The getClassInformation calls for these classes then do not make a round-trip each.
- * Call dropPrefetched when done.
+ * \brief OMCProxy::getClassInformation
+ * Gets the class information of many classes. On the web, this is one round-trip to omc.
  * \param classNames
+ * \return the class information in the order of classNames
  */
-void OMCProxy::prefetchClassInformation(const QStringList &classNames)
+QList<OMCInterface::getClassInformation_res> OMCProxy::getClassInformation(const QStringList &classNames)
 {
 #if defined(__EMSCRIPTEN__)
   QList<QJsonArray> argsList;
@@ -1851,20 +1879,16 @@ void OMCProxy::prefetchClassInformation(const QStringList &classNames)
     argsList.append(QJsonArray{className});
   }
   omcBridgePrefetch("getClassInformation", argsList);
-#else
-  Q_UNUSED(classNames);
 #endif
-}
-
-/*!
- * \brief OMCProxy::dropPrefetched
- * Drops the prefetched replies that were not used.
- */
-void OMCProxy::dropPrefetched()
-{
+  QList<OMCInterface::getClassInformation_res> classInformations;
+  classInformations.reserve(classNames.size());
+  for (const QString &className : classNames) {
+    classInformations.append(getClassInformation(className));
+  }
 #if defined(__EMSCRIPTEN__)
   omcBridgeDropPrefetched();
 #endif
+  return classInformations;
 }
 
 /*!

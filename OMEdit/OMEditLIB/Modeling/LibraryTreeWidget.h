@@ -48,6 +48,7 @@
 
 #include <QTreeView>
 #include <QRegularExpression>
+#include <QSet>
 #include <QSortFilterProxyModel>
 
 class CompleterItem;
@@ -103,6 +104,7 @@ public:
   const QString& getNameStructure() const {return mNameStructure;}
   QString getWhereToMoveFMU();
   void updateClassInformation();
+  void updateClassInformation(const OMCInterface::getClassInformation_res &classInformation, const QSet<QString> *pExistingFiles = nullptr);
   void setFileName(QString fileName) {mFileName = fileName;}
   const QString& getFileName() const {return mFileName;}
   const QString& getVersion() const;
@@ -305,7 +307,9 @@ private:
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                             bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
+                                             bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false,
+                                             const OMCInterface::getClassInformation_res *pClassInformation = nullptr,
+                                             const QSet<QString> *pExistingFiles = nullptr);
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
