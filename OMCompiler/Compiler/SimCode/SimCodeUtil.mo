@@ -2165,7 +2165,7 @@ protected function isMixedSystem
 algorithm
   (mixedSystem, _) := BackendEquation.iterationVarsinRelations(
     BackendEquation.replaceDerOpInEquationList(eqns),
-    BackendVariable.listVar1(list(BackendDAETransform.transformXToXd(v) for v in vars)));
+    BackendVariable.listVar1(list(BackendVariable.transformXToXd(v) for v in vars)));
 end isMixedSystem;
 
 protected function createEquation
