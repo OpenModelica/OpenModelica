@@ -68,6 +68,15 @@ fn read_commands_xml() -> Option<String> {
     if let Ok(p) = std::env::var("OMSHELL_COMMANDS_XML") {
         candidates.push(PathBuf::from(p));
     }
+    // The installation this executable is part of (`<home>/bin/<exe>`), before
+    // `OPENMODELICAHOME`: with several versions installed the environment
+    // variable points to the default one, which need not be this one.
+    if let Some(home) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().and_then(|bin| bin.parent()).map(PathBuf::from))
+    {
+        candidates.push(home.join("share/omshell/commands.xml"));
+    }
     if let Ok(home) = std::env::var("OPENMODELICAHOME") {
         candidates.push(PathBuf::from(home).join("share/omshell/commands.xml"));
     }

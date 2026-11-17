@@ -1,3 +1,5 @@
+.. _ommatlab:
+
 OMMatlab - OpenModelica Matlab Interface
 ========================================
 
@@ -53,6 +55,11 @@ To get started, create a OMMatlab session object:
 
 .. figure :: media/sineplot.png
   :name: sineplot
+
+If several OpenModelica versions are installed, see :ref:`multiple-installations`, select the one
+to use with the second argument of the constructor; the first one is the path to an omc executable:
+
+>>> omc= OMMatlab('', '1.27.0')
 
 
 Advanced OMMatlab Features

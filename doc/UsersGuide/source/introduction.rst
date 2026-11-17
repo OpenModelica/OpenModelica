@@ -930,6 +930,61 @@ help() Print this helptext (returned as a string).
 
 quit() Leave and quit the OpenModelica environment
 
+.. _multiple-installations :
+
+Installing Several OpenModelica Versions on Windows
+---------------------------------------------------
+
+Different OpenModelica versions can be installed side by side on Windows, for example the latest
+release and a nightly build. Each version has its own installation directory, its own folder in the
+Start Menu and its own entry in the list of installed programs, so start the OMEdit of the version you
+want to work with from its Start Menu folder. The libraries installed with the
+:ref:`package manager <packagemanagement>` are shared by all versions.
+
+When a version is installed, the installer looks at what is already there:
+
+- the same version is uninstalled first,
+- a release from before side by side installations were possible can be uninstalled or kept. If it
+  is kept, uninstalling it later removes the :code:`OPENMODELICAHOME` environment variable and the
+  association of the :code:`.mo` files, also if they belong to another version,
+- another nightly build can be uninstalled or kept when a nightly build is installed,
+- any other version is kept.
+
+The component *Default installation* of the installer, which is selected by default, makes the
+installed version the default one: the :code:`.mo` and :code:`.onb` files are opened with it and the
+environment variable :code:`OPENMODELICAHOME` points to it. When the default version is uninstalled,
+one of the remaining versions takes over.
+
+OpenModelica itself does not need :code:`OPENMODELICAHOME`: omc and OMEdit use the installation
+they are started from. The variable is used by the clients which have to find OpenModelica, such as
+:ref:`OMPython <ompython>`, :ref:`OMJulia <omjulia>`, :ref:`OMMatlab <ommatlab>` and :ref:`MDT <mdt>`. To let them use
+another version than the default one, the installer also sets one environment variable for each
+installed version, :code:`OPENMODELICAHOME_<version>`, where every character of the version that is
+not a letter or a digit is replaced by an underscore:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Version
+     - Environment variable
+   * - 1.27.0
+     - :code:`OPENMODELICAHOME_1_27_0`
+   * - 1.28.0-dev-1962-g6e348e217c
+     - :code:`OPENMODELICAHOME_1_28_0_dev_1962_g6e348e217c`
+
+OMPython, OMJulia and OMMatlab accept the version to use, see their chapters. They look for
+OpenModelica in this order: the installation or omc given explicitly, the version given explicitly,
+:code:`OPENMODELICAHOME`, the newest version found in the :code:`OPENMODELICAHOME_<version>`
+variables, and omc in the :code:`PATH`.
+
+The installer can be run without user interaction with the options:
+
+- :code:`/S` silent installation for all users. The same version and a release from before side by
+  side installations were possible are uninstalled, anything else is kept.
+- :code:`/REMOVENIGHTLIES` together with :code:`/S`: uninstall the other nightly builds when a nightly build is installed.
+- :code:`/DEFAULT=0` do not make the installed version the default one.
+- :code:`/D=<directory>` the installation directory; it has to be the last option and is not quoted.
+
 Running the compiler from command line
 --------------------------------------
 

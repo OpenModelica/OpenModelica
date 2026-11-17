@@ -78,19 +78,24 @@ OMPython provides a set of classes named :code:`OMCSession*`. All of them use Ze
 communicate with the OpenModelica Compiler (OMC) and they all offer the same interface, see
 :ref:`om_session_api`. The following options exist:
 
--  :code:`OMCSessionLocal(timeout=None, omhome=None)` - the default; it starts an :code:`omc` server as a
+-  :code:`OMCSessionLocal(timeout=None, omhome=None, version=None)` - the default; it starts an :code:`omc` server as a
    child process of the current Python process. :code:`omhome` is the OpenModelica installation directory,
-   i.e. the directory which contains :code:`bin/omc`. If it is not given, the installation is looked up in
-   the :code:`OPENMODELICAHOME` environment variable, and then via the :code:`omc` command in
-   :code:`PATH`.
+   i.e. the directory which contains :code:`bin/omc`. :code:`version` selects one of several installed
+   OpenModelica versions, see :ref:`multiple-installations`; it is :code:`"1.27.0"` for exactly that version or
+   the start of a version such as :code:`"1.27"` for the newest installed 1.27.x. If neither is given, the
+   installation is looked up in the :code:`OPENMODELICAHOME` environment variable, then in the
+   :code:`OPENMODELICAHOME_<version>` environment variables (the newest version), and then via the :code:`omc`
+   command in :code:`PATH`.
 
    .. code-block:: python
 
      import OMPython
-     # the installation is looked up in $OPENMODELICAHOME and then in $PATH
+     # the installation is looked up in $OPENMODELICAHOME, $OPENMODELICAHOME_<version> and then in $PATH
      omc = OMPython.OMCSessionLocal()
      # or select the installation explicitly; a longer timeout for slow operations
      omc = OMPython.OMCSessionLocal(omhome="/opt/openmodelica", timeout=600)
+     # or select one of the installed versions
+     omc = OMPython.OMCSessionLocal(version="1.27.0")
 
 -  :code:`OMCSessionPort(omc_port, timeout=None)` - connects to an already running OMC server.
    :code:`omc_port` is the connection string which the server reports, for example :code:`tcp://127.0.0.1:41613`.
@@ -426,9 +431,12 @@ If this is not desired or additional configuration is needed, several options ex
 
 -  :code:`omhome` (optional) - the OpenModelica installation directory, i.e. the directory which
    contains :code:`bin/omc`. It is only used when the session is created, so it has no effect in
-   combination with :code:`session`. If it is not given, the directory is taken from the
-   :code:`OPENMODELICAHOME` environment variable, and otherwise derived from the :code:`omc` command
-   in :code:`PATH`.
+   combination with :code:`session`. If it is not given, the directory is looked up as described
+   for :code:`OMCSessionLocal`.
+
+-  :code:`version` (optional) - one of several installed OpenModelica versions, for example
+   :code:`"1.27.0"`, see :ref:`multiple-installations`. Like :code:`omhome` it is only used when the
+   session is created.
 
 -  :code:`session` (optional) - an existing session to use. This is the way to combine
    :code:`ModelicaSystem` with a Docker, WSL or port based session:
