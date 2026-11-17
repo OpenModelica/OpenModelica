@@ -68,6 +68,7 @@ namespace OptionsDefaults
     bool showProtectedClasses = false;
     bool showHiddenClasses = false;
     bool synchronizeWithModelWidget = true;
+    bool reloadLibraryOnFileChange = false;
     bool enableAutoSave = true;
     int autoSaveInterval = 300;
     int welcomePageView = 1;

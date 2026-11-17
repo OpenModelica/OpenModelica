@@ -4248,6 +4248,10 @@ Weiter warten oder das Debuggen abbrechen?</numerusform>
         <translation>Mit dem Modellfenster synchronisieren</translation>
     </message>
     <message>
+        <source>Reload a loaded library when its files are changed outside OMEdit. When unchecked, OMEdit asks before reloading.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Show Latest News &amp;&amp; Events</source>
         <translation>Neueste Nachrichten &amp;&amp; Veranstaltungen anzeigen</translation>
     </message>
@@ -4270,6 +4274,10 @@ Weiter warten oder das Debuggen abbrechen?</numerusform>
     <message>
         <source>Show Protected Classes</source>
         <translation>Geschützte Klassen anzeigen</translation>
+    </message>
+    <message>
+        <source>Reload libraries when files change on disk</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable Auto Save</source>
@@ -6240,6 +6248,37 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
     </message>
 </context>
 <context>
+    <name>LibraryFileChangeDialog</name>
+    <message>
+        <source>Files Changed on Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the following libraries from disk?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished">Neu laden</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reloading from disk discards unsaved changes in the selected libraries.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Libraries deleted on disk are removed from OMEdit when you reload them.&lt;br /&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The default reload behavior can be set in &lt;b&gt;Tools &gt; Options &gt; General &gt; Library Browser &gt; Reload libraries when files change on disk&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LibraryTreeModel</name>
     <message>
         <source> while deleting </source>
@@ -6386,6 +6425,18 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
     <message>
         <source>Unable to load %1. See messages above for more details.</source>
         <translation>%1 kann nicht geladen werden. Weitere Details stehen in den Meldungen oben.</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished">Warnung</translation>
+    </message>
+    <message>
+        <source>The file &lt;b&gt;%1&lt;/b&gt; changed or was deleted on disk after OMEdit loaded it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saving now overwrites the changes made outside OMEdit. Do you want to overwrite the file?</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Saving %1</source>

@@ -366,6 +366,12 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->setChecked(OptionsDefaults::GeneralSettings::synchronizeWithModelWidget);
   }
+  // read reload library on file change
+  if (mpSettings->contains("reloadLibraryOnFileChange")) {
+    mpGeneralSettingsPage->getReloadLibraryOnFileChangeCheckBox()->setChecked(mpSettings->value("reloadLibraryOnFileChange").toBool());
+  } else {
+    mpGeneralSettingsPage->getReloadLibraryOnFileChangeCheckBox()->setChecked(OptionsDefaults::GeneralSettings::reloadLibraryOnFileChange);
+  }
   // read auto save
   if (mpSettings->contains("autoSave/enable")) {
     mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mpSettings->value("autoSave/enable").toBool());
@@ -1744,6 +1750,13 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("synchronizeWithModelWidget", synchronizeWithModelWidget);
   }
   MainWindow::instance()->getLibraryWidget()->getTreeSearchFilters()->getScrollToActiveButton()->setVisible(!synchronizeWithModelWidget);
+  // save reload library on file change
+  bool reloadLibraryOnFileChange = mpGeneralSettingsPage->getReloadLibraryOnFileChangeCheckBox()->isChecked();
+  if (reloadLibraryOnFileChange == OptionsDefaults::GeneralSettings::reloadLibraryOnFileChange) {
+    mpSettings->remove("reloadLibraryOnFileChange");
+  } else {
+    mpSettings->setValue("reloadLibraryOnFileChange", reloadLibraryOnFileChange);
+  }
   // save auto save
   bool enableAutoSave = mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked();
   if (enableAutoSave == OptionsDefaults::GeneralSettings::enableAutoSave) {
@@ -3796,6 +3809,11 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // synchronize library browser with ModelWidget
   mpSynchronizeWithModelWidgetCheckBox = new QCheckBox(tr("Synchronize with Model Widget"));
   mpSynchronizeWithModelWidgetCheckBox->setChecked(OptionsDefaults::GeneralSettings::synchronizeWithModelWidget);
+  // reload libraries when files change on disk
+  mpReloadLibraryOnFileChangeCheckBox = new QCheckBox(tr("Reload libraries when files change on disk"));
+  mpReloadLibraryOnFileChangeCheckBox->setToolTip(tr("Reload a loaded library when its files are changed outside OMEdit. "
+                                                     "When unchecked, OMEdit asks before reloading."));
+  mpReloadLibraryOnFileChangeCheckBox->setChecked(OptionsDefaults::GeneralSettings::reloadLibraryOnFileChange);
   // Library browser group box layout
   QGridLayout *pLibraryBrowserLayout = new QGridLayout;
   pLibraryBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3807,6 +3825,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibraryBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
   pLibraryBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
   pLibraryBrowserLayout->addWidget(mpSynchronizeWithModelWidgetCheckBox, 4, 0, 1, 2);
+  pLibraryBrowserLayout->addWidget(mpReloadLibraryOnFileChangeCheckBox, 5, 0, 1, 2);
   mpLibraryBrowserGroupBox->setLayout(pLibraryBrowserLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));

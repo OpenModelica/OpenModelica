@@ -38,6 +38,7 @@
  */
 
 #include "LibraryTreeWidget.h"
+#include "LibraryFileWatcher.h"
 #include "ItemDelegate.h"
 #include "MainWindow.h"
 #include "ModelWidgetContainer.h"
@@ -65,9 +66,12 @@
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
 #endif
 
+#include <QApplication>
 #include <QClipboard>
 #include <QDockWidget>
 #include <QDrag>
+#include <QEvent>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QMenu>
 #include <QPushButton>
@@ -2052,6 +2056,7 @@ void LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
   }
   /* Update the model switcher toolbar button. */
   MainWindow::instance()->updateModelSwitcherMenu(0);
+  mpLibraryWidget->refreshLibraryFileWatcher();
 }
 
 /*!
@@ -2695,6 +2700,8 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool
     if (fail) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE)
                                                             .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
+    } else {
+      mpLibraryWidget->ignoreFileChange(fileInfo.absoluteFilePath());
     }
   }
 }
@@ -4016,7 +4023,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
  * \param pParent
  */
 LibraryWidget::LibraryWidget(QWidget *pParent)
-  : QWidget(pParent)
+  : QWidget(pParent), mpLibraryTreeModel(nullptr), mpLibraryFileWatcher(nullptr)
 {
   setLoadingLibraries(false);
   mAutoLoadedLibrariesTimer.setSingleShot(true);
@@ -4033,6 +4040,9 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpTreeSearchFilters->getScrollToActiveButton(), SIGNAL(clicked()), SLOT(scrollToActiveLibraryTreeItem()));
   // create tree view
   mpLibraryTreeModel = new LibraryTreeModel(this);
+  mpLibraryFileWatcher = new LibraryFileWatcher(this);
+  connect(mpLibraryTreeModel, &LibraryTreeModel::modelStateChanged, this, &LibraryWidget::refreshLibraryFileWatcher);
+  connect(mpLibraryFileWatcher, &RecursiveFileWatcher::filesChanged, this, &LibraryWidget::handleLibraryFileWatcherChanges);
   mpLibraryTreeProxyModel = new LibraryTreeProxyModel(this, false);
   mpLibraryTreeProxyModel->setDynamicSortFilter(true);
   mpLibraryTreeProxyModel->setSourceModel(mpLibraryTreeModel);
@@ -4040,6 +4050,15 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   mpLibraryTreeView->setModel(mpLibraryTreeProxyModel);
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
+  // Defer the file change dialogs until the main window is active again.
+  if (pParent) {
+    pParent->installEventFilter(this);
+  }
+  connect(qApp, &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
+    if (state == Qt::ApplicationActive) {
+      QTimer::singleShot(0, this, [this]() { processPendingLibraryFileWatcherChanges(); });
+    }
+  });
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -4047,6 +4066,24 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   pMainLayout->addWidget(mpTreeSearchFilters, 0, 0);
   pMainLayout->addWidget(mpLibraryTreeView, 2, 0);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief LibraryWidget::eventFilter
+ * Processes the deferred library file changes when the main window becomes
+ * active again.
+ * \param pObject
+ * \param pEvent
+ * \return
+ */
+bool LibraryWidget::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  if (pObject == parent()
+      && (pEvent->type() == QEvent::Show || pEvent->type() == QEvent::WindowActivate || pEvent->type() == QEvent::WindowStateChange)) {
+    // Let the window finish changing its state before asking the user.
+    QTimer::singleShot(0, this, [this]() { processPendingLibraryFileWatcherChanges(); });
+  }
+  return QWidget::eventFilter(pObject, pEvent);
 }
 
 /*!
@@ -4204,6 +4241,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->clearMessage();
   }
+  refreshLibraryFileWatcher();
 }
 
 /*!
@@ -4333,6 +4371,7 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress, bool ski
                                                                                   fileInfo.absoluteFilePath(), true, false, mpLibraryTreeModel->getRootLibraryTreeItem(), row);
     if (pLibraryTreeItem) {
       mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+      refreshLibraryFileWatcher();
       if (!skipAddRecentFile) {
         MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
       }
@@ -4436,6 +4475,7 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress, bool sk
   }
   // create a LibraryTreeItem for new loaded file.
   mpLibraryTreeModel->createLibraryTreeItems(fileInfo, mpLibraryTreeModel->getRootLibraryTreeItem(), row);
+  refreshLibraryFileWatcher();
   if (!skipAddRecentFile) {
     MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   }
@@ -4503,6 +4543,30 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
  */
 bool LibraryWidget::saveFile(QString fileName, QString contents)
 {
+  const QString absoluteFilePath = QDir::cleanPath(QFileInfo(fileName).absoluteFilePath());
+  if (mpLibraryFileWatcher && mpLibraryFileWatcher->hasChangedSinceSnapshot(fileName)) {
+    mExternallyChangedFiles.insert(absoluteFilePath);
+  }
+  if (mExternallyChangedFiles.contains(absoluteFilePath)) {
+    // Do not interrupt another application with an auto save prompt. The auto save timer tries again.
+    if (mAutoSaving
+        && (QApplication::applicationState() != Qt::ApplicationActive
+            || !MainWindow::instance()->isActiveWindow() || MainWindow::instance()->isMinimized())) {
+      return false;
+    }
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Warning")));
+    pMessageBox->setIcon(QMessageBox::Warning);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(tr("The file <b>%1</b> changed or was deleted on disk after OMEdit loaded it.").arg(Utilities::escapeForHtmlNonSecure(fileName)));
+    pMessageBox->setInformativeText(tr("Saving now overwrites the changes made outside OMEdit. Do you want to overwrite the file?"));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::No);
+    if (pMessageBox->exec() != QMessageBox::Yes) {
+      return false;
+    }
+  }
+
   // set the BOM settings
   QComboBox *pBOMComboBox = OptionsDialog::instance()->getTextEditorPage()->getBOMComboBox();
   Utilities::BomMode bomMode = (Utilities::BomMode)pBOMComboBox->itemData(pBOMComboBox->currentIndex()).toInt();
@@ -4554,6 +4618,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     textStream.setGenerateByteOrderMark(bom);
     textStream << newContents;
     file.close();
+    ignoreFileChange(fileName);
     return true;
   } else {
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
@@ -4562,6 +4627,33 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
+}
+
+/*!
+ * \brief LibraryWidget::ignoreFileChange
+ * Records the current state of a file that OMEdit has just written or renamed.
+ * \param filePath
+ */
+void LibraryWidget::ignoreFileChange(const QString &filePath)
+{
+  if (mpLibraryFileWatcher) {
+    mpLibraryFileWatcher->ignorePath(filePath);
+  }
+  mExternallyChangedFiles.remove(QDir::cleanPath(QFileInfo(filePath).absoluteFilePath()));
+}
+
+/*!
+ * \brief LibraryWidget::resyncLibraryFileWatcher
+ * Reads the watched files again after OMEdit changed the tree on disk in a way
+ * that does not map to a single file, so the change is not reported back.
+ */
+void LibraryWidget::resyncLibraryFileWatcher()
+{
+  if (!mpLibraryFileWatcher) {
+    return;
+  }
+  refreshLibraryFileWatcher();
+  mpLibraryFileWatcher->resync();
 }
 
 /*!
@@ -4605,6 +4697,8 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool 
   }
   /* Ticket #4788. Add the file to the recent files list. */
   if (result) {
+    // A new class has no file name until it is saved.
+    refreshLibraryFileWatcher();
     QString topLevelLibraryTreeItemName = StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure());
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(topLevelLibraryTreeItemName);
     // Ticket #4987. Only add the top level model/package to recent files list.
@@ -4656,6 +4750,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(tr("Unable to save the file, unknown library type.")), QMessageBox::Ok);
   }
+  refreshLibraryFileWatcher();
 }
 
 /*!
@@ -4714,6 +4809,8 @@ void LibraryWidget::setLoadingLibraries(bool loadingLibraries)
   // if we finish loading libraries then see if any model needs update because of it.
   if (!loadingLibraries) {
     reDrawModelsToUpdate();
+    refreshLibraryFileWatcher();
+    processPendingLibraryFileWatcherChanges();
   }
 }
 
@@ -4728,6 +4825,8 @@ void LibraryWidget::setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary)
   mCreatingAutoLoadedLibrary = creatingAutoLoadedLibrary;
   if (!creatingAutoLoadedLibrary) {
     reDrawModelsToUpdate();
+    refreshLibraryFileWatcher();
+    processPendingLibraryFileWatcherChanges();
   }
 }
 
@@ -5029,20 +5128,23 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
             }
           }
           if (!classExists) {
-            if (QDir().exists(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine))) {
-              if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
-                QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                              QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
-              } else {
-                Utilities::removeDirectoryRecursively(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
-              }
+            const QString basePath = QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine);
+            const bool isClassDirectory = QDir(basePath).exists();
+            const QString classPath = isClassDirectory ? basePath + QStringLiteral("/package.mo") : basePath + QStringLiteral(".mo");
+            const QString backupPath = classPath.left(classPath.length() - 3) + QStringLiteral(".bak-mo");
+            const bool createBackup = OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked();
+            if (createBackup) {
+              QFile::rename(classPath, backupPath);
+            } else if (isClassDirectory) {
+              Utilities::removeDirectoryRecursively(basePath);
             } else {
-              if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
-                QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                              QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
-              } else {
-                QFile::remove(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
-              }
+              QFile::remove(classPath);
+            }
+            // Both paths are OMEdit's own doing, not an external change.
+            ignoreFileChange(classPath);
+            ignoreFileChange(backupPath);
+            if (isClassDirectory && !createBackup) {
+              ignoreFileChange(basePath);
             }
           }
         }
@@ -5283,6 +5385,309 @@ void LibraryWidget::reDrawModelsToUpdate()
       pLibraryTreeItem->getModelWidget()->reDrawModelWidget(pLibraryTreeItem->getModelWidget()->createModelInfo());
     }
   }
+}
+
+/*!
+ * \brief LibraryWidget::libraryFileWatcherRootForItem
+ * Returns the file or directory that LibraryFileWatcher should watch for a top
+ * level library item. A package stored as a directory hierarchy is watched as
+ * a directory so that files added to or removed from it are seen.
+ * \param pLibraryTreeItem
+ * \return watched path
+ */
+QString LibraryWidget::libraryFileWatcherRootForItem(LibraryTreeItem *pLibraryTreeItem) const
+{
+  if (!pLibraryTreeItem || pLibraryTreeItem->isSystemLibrary() || pLibraryTreeItem->isSSP()
+      || pLibraryTreeItem->isEncryptedClass() || pLibraryTreeItem->getFileName().isEmpty()) {
+    return QString();
+  }
+  const QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+  if (pLibraryTreeItem->isModelica()) {
+    if (fileInfo.fileName().compare(QStringLiteral("package.mo")) == 0) {
+      return fileInfo.absolutePath();
+    }
+    return fileInfo.absoluteFilePath();
+  }
+  /* A Text item that is a directory has no Modelica semantics and reloadClass()
+   * assumes that every text directory contains a package.mo. Reloading also runs
+   * the Modelica parser, which only makes sense for .mo files. */
+  if (pLibraryTreeItem->isText() && !fileInfo.isDir()
+      && fileInfo.suffix().compare(QStringLiteral("mo"), Qt::CaseInsensitive) == 0) {
+    return fileInfo.absoluteFilePath();
+  }
+  return QString();
+}
+
+/*!
+ * \brief LibraryWidget::topLevelLibraryTreeItemForFile
+ * Finds the loaded top level library that contains the file.
+ * \param filePath
+ * \return top level LibraryTreeItem or 0
+ */
+LibraryTreeItem* LibraryWidget::topLevelLibraryTreeItemForFile(const QString &filePath) const
+{
+  const QString absoluteFilePath = QDir::cleanPath(QFileInfo(filePath).absoluteFilePath());
+  LibraryTreeItem *pRootLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem();
+  if (!pRootLibraryTreeItem) {
+    return 0;
+  }
+  for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); ++i) {
+    LibraryTreeItem *pLibraryTreeItem = pRootLibraryTreeItem->child(i);
+    const QString root = libraryFileWatcherRootForItem(pLibraryTreeItem);
+    if (root.isEmpty()) {
+      continue;
+    }
+    if (absoluteFilePath.compare(root) == 0) {
+      return pLibraryTreeItem;
+    }
+    // A package.mo is the root of a directory hierarchy even when the
+    // directory has just been removed and isDir() is false.
+    const bool rootIsDirectory = pLibraryTreeItem->isModelica()
+        && QFileInfo(pLibraryTreeItem->getFileName()).fileName().compare(QStringLiteral("package.mo")) == 0;
+    if ((rootIsDirectory || QFileInfo(root).isDir()) && absoluteFilePath.startsWith(root + QLatin1Char('/'))) {
+      return pLibraryTreeItem;
+    }
+  }
+  return 0;
+}
+
+/*!
+ * \brief LibraryWidget::libraryHasUnsavedChanges
+ * Checks the whole subtree of a library for unsaved changes.
+ * \param pLibraryTreeItem
+ * \return true if an item in the subtree is unsaved
+ */
+bool LibraryWidget::libraryHasUnsavedChanges(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (!pLibraryTreeItem) {
+    return false;
+  }
+  if (!pLibraryTreeItem->isSaved()) {
+    return true;
+  }
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); ++i) {
+    if (libraryHasUnsavedChanges(pLibraryTreeItem->child(i))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*!
+ * \brief LibraryWidget::clearExternallyChangedFilesForLibrary
+ * Forgets the files of a library that changed outside OMEdit.
+ * \param pLibraryTreeItem
+ */
+void LibraryWidget::clearExternallyChangedFilesForLibrary(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (auto it = mExternallyChangedFiles.begin(); it != mExternallyChangedFiles.end();) {
+    if (topLevelLibraryTreeItemForFile(*it) == pLibraryTreeItem) {
+      it = mExternallyChangedFiles.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+/*!
+ * \brief LibraryWidget::reloadLibraryTreeItem
+ * Reloads a top level library from disk, keeping the expanded tree items and
+ * the open model tabs.
+ * \param pLibraryTreeItem
+ */
+void LibraryWidget::reloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem) {
+    mpLibraryTreeModel->reloadClass(pLibraryTreeItem, false);
+  }
+}
+
+/*!
+ * \brief LibraryWidget::refreshLibraryFileWatcher
+ * Updates the files watched for external changes from the loaded libraries.
+ */
+void LibraryWidget::refreshLibraryFileWatcher()
+{
+  if (!mpLibraryTreeModel || !mpLibraryFileWatcher) {
+    return;
+  }
+  // Every class creation emits modelStateChanged; wait until the load ends.
+  if (isLoadingLibraries() || isCreatingAutoLoadedLibrary()) {
+    return;
+  }
+  QStringList roots;
+  LibraryTreeItem *pRootLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem();
+  if (pRootLibraryTreeItem) {
+    for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); ++i) {
+      const QString root = libraryFileWatcherRootForItem(pRootLibraryTreeItem->child(i));
+      if (!root.isEmpty() && !roots.contains(root)) {
+        roots.append(root);
+      }
+    }
+  }
+  mpLibraryFileWatcher->setRoots(roots);
+  // Changes to a library that is no longer loaded are not interesting.
+  for (auto it = mExternallyChangedFiles.begin(); it != mExternallyChangedFiles.end();) {
+    if (!topLevelLibraryTreeItemForFile(*it)) {
+      it = mExternallyChangedFiles.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+/*!
+ * \brief LibraryWidget::handleLibraryFileWatcherChanges
+ * Queues the files that LibraryFileWatcher reported and processes them.
+ * \param changedFiles
+ * \param createdFiles
+ * \param deletedFiles
+ */
+void LibraryWidget::handleLibraryFileWatcherChanges(const QStringList &changedFiles, const QStringList &createdFiles, const QStringList &deletedFiles)
+{
+  // Created files need the same handling as changed files; only deletions
+  // affect whether the library root disappeared.
+  mPendingChangedFiles.append(changedFiles);
+  mPendingChangedFiles.append(createdFiles);
+  mPendingDeletedFiles.append(deletedFiles);
+  /* The dialog below waits until OMEdit is active again. Remember the files now
+   * so that an auto save cannot overwrite them in the meantime. */
+  for (const QString &filePath : changedFiles) {
+    mExternallyChangedFiles.insert(QDir::cleanPath(QFileInfo(filePath).absoluteFilePath()));
+  }
+  for (const QString &filePath : createdFiles) {
+    mExternallyChangedFiles.insert(QDir::cleanPath(QFileInfo(filePath).absoluteFilePath()));
+  }
+  for (const QString &filePath : deletedFiles) {
+    mExternallyChangedFiles.insert(QDir::cleanPath(QFileInfo(filePath).absoluteFilePath()));
+  }
+  processPendingLibraryFileWatcherChanges();
+}
+
+/*!
+ * \brief LibraryWidget::processPendingLibraryFileWatcherChanges
+ * Reloads the libraries whose files were changed outside OMEdit. All libraries
+ * that need a decision are shown in one message box.
+ */
+void LibraryWidget::processPendingLibraryFileWatcherChanges()
+{
+  if (mHandlingLibraryFileChanges) {
+    return;
+  }
+  // Waiting for the load keeps the tree consistent while it is built.
+  if (isLoadingLibraries() || isCreatingAutoLoadedLibrary()) {
+    return;
+  }
+  if (mPendingChangedFiles.isEmpty() && mPendingDeletedFiles.isEmpty()) {
+    return;
+  }
+  // Collect changes in the background and process them when OMEdit becomes active.
+  if (QApplication::applicationState() != Qt::ApplicationActive
+      || !MainWindow::instance()->isActiveWindow() || MainWindow::instance()->isMinimized()) {
+    return;
+  }
+
+  struct LibraryFileChanges {
+    QStringList changedFiles;
+    QStringList deletedFiles;
+    bool rootFileDeleted = false;
+    bool hasUnsavedChanges = false;
+  };
+
+  mHandlingLibraryFileChanges = true;
+  while (!mPendingChangedFiles.isEmpty() || !mPendingDeletedFiles.isEmpty()) {
+    const QStringList changed = mPendingChangedFiles;
+    const QStringList deleted = mPendingDeletedFiles;
+    mPendingChangedFiles.clear();
+    mPendingDeletedFiles.clear();
+
+    QList<LibraryTreeItem*> libraries;
+    QHash<LibraryTreeItem*, LibraryFileChanges> libraryChanges;
+    const auto noteFile = [&](const QString &filePath, QStringList LibraryFileChanges::*pFiles) {
+      LibraryTreeItem *pLibraryTreeItem = topLevelLibraryTreeItemForFile(filePath);
+      if (!pLibraryTreeItem) {
+        return;
+      }
+      if (!libraryChanges.contains(pLibraryTreeItem)) {
+        libraries.append(pLibraryTreeItem);
+        libraryChanges.insert(pLibraryTreeItem, LibraryFileChanges());
+      }
+      const QString absoluteFilePath = QDir::cleanPath(QFileInfo(filePath).absoluteFilePath());
+      QStringList &files = libraryChanges[pLibraryTreeItem].*pFiles;
+      if (!files.contains(absoluteFilePath)) {
+        files.append(absoluteFilePath);
+      }
+    };
+    for (const QString &filePath : changed) {
+      noteFile(filePath, &LibraryFileChanges::changedFiles);
+    }
+    for (const QString &filePath : deleted) {
+      noteFile(filePath, &LibraryFileChanges::deletedFiles);
+    }
+
+    QList<LibraryTreeItem*> promptLibraries;
+    const bool autoReload = OptionsDialog::instance()->getGeneralSettingsPage()->getReloadLibraryOnFileChangeCheckBox()->isChecked();
+    for (LibraryTreeItem *pLibraryTreeItem : libraries) {
+      LibraryFileChanges &libraryChange = libraryChanges[pLibraryTreeItem];
+      // An atomic save removes and recreates a file. Do not treat it as deleted
+      // if it is back by the time the batch is handled.
+      for (int i = libraryChange.deletedFiles.size() - 1; i >= 0; --i) {
+        if (QFileInfo(libraryChange.deletedFiles.at(i)).isFile()) {
+          libraryChange.changedFiles.append(libraryChange.deletedFiles.takeAt(i));
+        }
+      }
+      if (libraryChange.changedFiles.isEmpty() && libraryChange.deletedFiles.isEmpty()) {
+        continue;
+      }
+
+      const QString libraryFileName = QDir::cleanPath(QFileInfo(pLibraryTreeItem->getFileName()).absoluteFilePath());
+      libraryChange.rootFileDeleted = libraryChange.deletedFiles.contains(libraryFileName);
+      libraryChange.hasUnsavedChanges = libraryHasUnsavedChanges(pLibraryTreeItem);
+      // A removed library is always shown in the message box so that it does
+      // not disappear from the Libraries Browser unexpectedly.
+      if (autoReload && !libraryChange.rootFileDeleted && !libraryChange.hasUnsavedChanges) {
+        clearExternallyChangedFilesForLibrary(pLibraryTreeItem);
+        reloadLibraryTreeItem(pLibraryTreeItem);
+      } else {
+        promptLibraries.append(pLibraryTreeItem);
+      }
+    }
+
+    if (!promptLibraries.isEmpty()) {
+      bool anyUnsavedChanges = false;
+      QStringList libraryNames;
+      for (LibraryTreeItem *pLibraryTreeItem : promptLibraries) {
+        const LibraryFileChanges &libraryChange = libraryChanges[pLibraryTreeItem];
+        anyUnsavedChanges |= libraryChange.hasUnsavedChanges;
+        libraryNames.append(pLibraryTreeItem->isModelica() ? pLibraryTreeItem->getNameStructure() : pLibraryTreeItem->getName());
+      }
+
+      LibraryFileChangeDialog libraryFileChangeDialog(MainWindow::instance());
+      libraryFileChangeDialog.listChangedLibraries(libraryNames, anyUnsavedChanges);
+      if (libraryFileChangeDialog.exec() == QDialog::Accepted) {
+        const QList<int> selectedRows = libraryFileChangeDialog.getSelectedRows();
+        for (int i = 0; i < promptLibraries.size(); ++i) {
+          if (!selectedRows.contains(i)) {
+            continue;
+          }
+          LibraryTreeItem *pLibraryTreeItem = promptLibraries.at(i);
+          const bool rootFileDeleted = libraryChanges[pLibraryTreeItem].rootFileDeleted;
+          clearExternallyChangedFilesForLibrary(pLibraryTreeItem);
+          if (rootFileDeleted) {
+            if (pLibraryTreeItem->isText()) {
+              mpLibraryTreeModel->unloadTextFile(pLibraryTreeItem, false);
+            } else {
+              mpLibraryTreeModel->unloadClass(pLibraryTreeItem, false, true);
+            }
+          } else {
+            reloadLibraryTreeItem(pLibraryTreeItem);
+          }
+        }
+      }
+    }
+  }
+  mHandlingLibraryFileChanges = false;
+  refreshLibraryFileWatcher();
 }
 
 /*!

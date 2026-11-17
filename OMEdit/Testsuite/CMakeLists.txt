@@ -78,6 +78,9 @@ set(OMEDIT_TEST_EXPRESSION_SOURCES Expression/ExpressionTest.cpp
                                    Expression/ExpressionTest.h)
 add_omedit_test(Expression "${OMEDIT_TEST_EXPRESSION_SOURCES}")
 
+set(OMEDIT_TEST_FILEWATCHER_SOURCES FileWatcher/RecursiveFileWatcherTest.cpp)
+add_omedit_test(RecursiveFileWatcher "${OMEDIT_TEST_FILEWATCHER_SOURCES}")
+
 set(OMEDIT_TEST_FMIGUIDE_SOURCES FMIGuide/FMIGuideTest.cpp
                                  FMIGuide/FMIGuideTest.h)
 add_omedit_test(FMIGuide "${OMEDIT_TEST_FMIGUIDE_SOURCES}")

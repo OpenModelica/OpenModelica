@@ -4540,7 +4540,9 @@ void MainWindow::messageTabClosed(int index)
  */
 void MainWindow::autoSave()
 {
+  mpLibraryWidget->setAutoSaving(true);
   autoSaveHelper(mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem());
+  mpLibraryWidget->setAutoSaving(false);
 }
 
 /*!

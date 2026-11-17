@@ -329,6 +329,21 @@ public slots:
   int exec();
 };
 
+class LibraryFileChangeDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  LibraryFileChangeDialog(QWidget *pParent = 0);
+  void listChangedLibraries(const QStringList &libraries, bool anyUnsavedChanges);
+  QList<int> getSelectedRows() const;
+private:
+  Label *mpChangesLabel;
+  QListWidget *mpChangedLibrariesListWidget;
+  QPushButton *mpReloadButton;
+  QPushButton *mpKeepButton;
+  QDialogButtonBox *mpButtonBox;
+};
+
 class ExportFigaroDialog : public QDialog
 {
   Q_OBJECT
