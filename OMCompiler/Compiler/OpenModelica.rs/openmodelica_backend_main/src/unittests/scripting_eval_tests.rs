@@ -67,7 +67,7 @@ fn eval(call: &str, context: i32) -> Result<String, String> {
         let (_, top) = NFInstanceAPI::mkTop(program, None, &"test".into())?;
         let exp = NFInst::instExp(exp, &top, context, &info)?;
         let (exp, _, _, _) = NFTyping::typeExp(exp, context, &info, false)?;
-        let exp = NFCeval::evalExp(exp, &NFCeval::EvalTarget::new(info, context, None))?;
+        let exp = NFCeval::evalExp(exp, &NFCeval::EvalTarget::new(info, context, true, None))?;
         Ok(Dump::printExpStr(NFExpression::toAbsyn(exp)?)?.to_string())
     })();
     result.map_err(|_| Error::printMessagesStr(false).to_string())
