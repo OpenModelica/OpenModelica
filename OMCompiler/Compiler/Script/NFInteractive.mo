@@ -239,16 +239,18 @@ function evaluateExpAndType
    many of them return values their declared output type does not describe."
   input Absyn.Exp absynExp;
   input SourceInfo info;
+  input Boolean firstOutput = false "Only the first output of a call with several outputs.";
   output Values.Value value;
   output DAE.Type emptyArrayType = DAE.T_UNKNOWN_DEFAULT "The type of an empty array value.";
 protected
   InstNode top;
   NFExpression exp;
+  NFType ty;
   NFCeval.EvalTarget target = NFCeval.EvalTarget.new(info, CONTEXT);
 algorithm
   (_, top) := NFInstanceAPI.mkTop(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), "<interactive>");
   exp := NFInst.instExp(absynExp, top, CONTEXT, info);
-  (exp, _) := NFTyping.typeExp(exp, CONTEXT, info);
+  (exp, ty) := NFTyping.typeExp(exp, CONTEXT, info);
 
   value := match exp
     local
@@ -264,8 +266,18 @@ algorithm
     else NFExpression.toDAEValue(NFCeval.evalExp(exp, target));
   end match;
 
+  if firstOutput and NFType.isTuple(ty) then
+    value := match value
+      local
+        Values.Value v;
+      case Values.TUPLE(valueLst = v :: _) then v;
+      else value;
+    end match;
+    ty := NFType.firstTupleType(ty);
+  end if;
+
   emptyArrayType := match value
-    case Values.ARRAY() guard listMember(0, value.dimLst) then NFType.toDAE(NFExpression.typeOf(exp));
+    case Values.ARRAY() guard listMember(0, value.dimLst) then NFType.toDAE(ty);
     else emptyArrayType;
   end match;
 end evaluateExpAndType;
@@ -284,7 +296,7 @@ algorithm
   () := match alg
     case Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cref as Absyn.CREF_IDENT()))
       algorithm
-        (value, ty) := evaluateExpAndType(alg.value, info);
+        (value, ty) := evaluateExpAndType(alg.value, info, firstOutput = true);
         assignVariable(cref, value, info, ty);
         result := ValuesDump.valStringInteractive(value);
       then

@@ -37,6 +37,7 @@ QuotedFunction.mos \
 QuotedIdentifier.mos \
 QuotedIdentifierCSV.mos \
 Return.mos \
+ScriptAssignFirstOutput.mos \
 StringArrayReturn.mos \
 StringSignificantDigits.mos \
 TestInstallMissingPackages.mos \
