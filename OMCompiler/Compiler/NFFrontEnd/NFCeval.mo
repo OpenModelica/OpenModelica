@@ -83,14 +83,16 @@ uniontype EvalTarget
   record EVAL_TARGET
     SourceInfo info;
     InstContext.Type context;
+    Boolean evalSubscripts;
     Option<EvalTargetData> extra;
   end EVAL_TARGET;
 
   function new
     input SourceInfo info;
     input InstContext.Type context = NFInstContext.NO_CONTEXT;
+    input Boolean evalSubscripts = true;
     input Option<EvalTargetData> extra = NONE();
-    output EvalTarget target = EVAL_TARGET(info, context, extra);
+    output EvalTarget target = EVAL_TARGET(info, context, evalSubscripts, extra);
   end new;
 
   function hasInfo
@@ -102,9 +104,16 @@ uniontype EvalTarget
     input EvalTarget target;
     output SourceInfo info = target.info;
   end getInfo;
+
+  function setEvalSubscripts
+    input output EvalTarget target;
+    input Boolean evalSubscripts;
+  algorithm
+    target.evalSubscripts := evalSubscripts;
+  end setEvalSubscripts;
 end EvalTarget;
 
-constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(Absyn.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
+constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(Absyn.dummyInfo, NFInstContext.NO_CONTEXT, true, NONE());
 
 uniontype EvalTargetData
   record DIMENSION_DATA
@@ -315,6 +324,7 @@ function evalExpPartial
   output Boolean outEvaluated "True if the whole expression is evaluated, otherwise false.";
 protected
   Expression e;
+  EvalTarget t;
 algorithm
   (e, outEvaluated) :=
     Expression.mapFoldShallow(exp, function evalExpPartial(target = target), true);
@@ -328,7 +338,7 @@ algorithm
           outEvaluated := false;
         else
           // Crefs can be evaluated even if they have non-evaluated subscripts.
-          outExp := evalCref(e.cref, e, target, evalSubscripts = false);
+          outExp := evalCref(e.cref, e, EvalTarget.setEvalSubscripts(target, false));
           outEvaluated := Expression.isLiteral(outExp);
         end if;
       then
@@ -352,7 +362,6 @@ function evalCref
   input ComponentRef cref;
   input Expression defaultExp;
   input EvalTarget target;
-  input Boolean evalSubscripts = true;
   input Boolean liftExp = true;
   output Expression exp;
 protected
@@ -363,8 +372,7 @@ algorithm
       guard InstNode.isComponent(ComponentRef.node(cref)) and
             not ComponentRef.isIterator(cref) and
             ComponentRef.nodeVariability(cref) <= Variability.NON_STRUCTURAL_PARAMETER
-      then evalComponentBinding(ComponentRef.node(cref), cref, defaultExp, target,
-                                evalSubscripts, liftExp);
+      then evalComponentBinding(ComponentRef.node(cref), cref, defaultExp, target, liftExp);
 
     else defaultExp;
   end match;
@@ -375,7 +383,6 @@ function evalComponentBinding
   input ComponentRef cref;
   input Expression defaultExp "The expression returned if the binding couldn't be evaluated";
   input EvalTarget target;
-  input Boolean evalSubscripts = true;
   input Boolean liftExp = false "Ensure that the result has the same dimensions as the cref";
   output Expression exp;
 protected
@@ -400,7 +407,7 @@ algorithm
 
     if Binding.isUnbound(binding) then
       // If we couldn't construct a binding, try to use the start value instead.
-      start_exp := evalComponentStartBinding(node, comp, cref, target, evalSubscripts);
+      start_exp := evalComponentStartBinding(node, comp, cref, target);
 
       if isSome(start_exp) then
         // The component had a valid start value. The value has already been
@@ -478,7 +485,7 @@ algorithm
 
   // Apply subscripts from the cref to the binding expression as needed.
   if evaluated then
-    exp := subscriptBinding(exp, cref, evalSubscripts);
+    exp := subscriptBinding(exp, cref, target.evalSubscripts);
   end if;
 
   if liftExp and not Expression.contains(exp, Expression.isSplitSubscriptedExp) then
@@ -625,7 +632,6 @@ function evalComponentStartBinding
   input Component comp;
   input ComponentRef cref;
   input EvalTarget target;
-  input Boolean evalSubscripts;
   output Option<Expression> outExp = NONE();
 protected
   Variability var;
@@ -3578,7 +3584,12 @@ algorithm
     else evalExp(exp, target);
   end match;
 
-  subs := list(Subscript.mapShallowExp(s, function evalExp(target = target)) for s in subscripts);
+  if target.evalSubscripts then
+    subs := list(Subscript.mapShallowExp(s, function evalExp(target = target)) for s in subscripts);
+  else
+    subs := subscripts;
+  end if;
+
   result := Expression.applySubscripts(subs, result);
 end evalSubscriptedExp;
 

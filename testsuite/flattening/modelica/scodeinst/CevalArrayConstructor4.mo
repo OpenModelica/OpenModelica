@@ -75,6 +75,4 @@ end CevalArrayConstructor4;
 //   der(sla.con[2].T[4]) = -sla.con[2].T[4];
 //   der(sla.con[2].T[5]) = -sla.con[2].T[5];
 // end CevalArrayConstructor4;
-// [NFFrontEnd/NFCeval.mo:0:0-0:0:writable] Error: Internal error NFCeval.evalBinaryAdd failed to evaluate ‘i + 1‘
-//
 // endResult

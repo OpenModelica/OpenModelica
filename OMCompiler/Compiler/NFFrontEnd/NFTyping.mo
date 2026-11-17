@@ -781,7 +781,7 @@ algorithm
               exp := Ceval.tryEvalExp(exp);
             else
               target := Ceval.EvalTarget.new(info, context,
-                SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+                extra = SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
               exp := Ceval.tryEvalExpResizable(exp, target);
             end if;
           elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
@@ -884,7 +884,7 @@ algorithm
                 exp := Ceval.tryEvalExp(exp);
               else
                 target := Ceval.EvalTarget.new(info, context,
-                  SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+                  extra = SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
                 exp := Ceval.evalExp(exp, target);
               end if;
 
@@ -960,7 +960,7 @@ algorithm
       e := Ceval.tryEvalExp(e);
     else
       e := Ceval.evalExp(e, Ceval.EvalTarget.new(info, context,
-        SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, e))));
+        extra = SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, e))));
     end if;
 
     (dim, error) := nthDimensionBoundsChecked(Expression.typeOf(e), dim_index);
