@@ -67,6 +67,7 @@ import CheckModel;
 import ClassInf;
 import ComponentReference;
 import ComponentReferenceBasics;
+import Config;
 import DAEUtil;
 import DAEDump;
 import DoubleEnded;
@@ -3979,6 +3980,15 @@ algorithm
         (varlst, _) := BackendVariable.getVar(cr, vars);
         vars := updateStatesVars(vars, varlst, false);
       then (e1, vars);
+    // der(u) of a top-level input u stays, see inputDerivativesForDynOpt and
+    // inputDerivativesUsed, unless it becomes the input $DER.u
+    case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})
+      guard not (Flags.getConfigString(Flags.INPUT_DERIVATIVES) == "input" and
+                 not (Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM)))
+      algorithm
+        (v, _) := BackendVariable.getVarSingle(cr, BackendVariable.daeGlobalKnownVars(Mutable.access(inShared)));
+        true := BackendVariable.isVarOnTopLevelAndInput(v);
+      then (exp, vars);
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1})
       algorithm
         (e2, shared) := Differentiate.differentiateExpTime(e1, vars, Mutable.access(inShared));

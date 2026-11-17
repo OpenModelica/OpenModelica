@@ -485,7 +485,7 @@ algorithm
       String s;
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
       (_, explst as _::_) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
-      s := stringDelimitList(List.map(explst, ExpressionBasics.printExpStr), "\n");
+      s := stringDelimitList(List.map(listReverse(explst), ExpressionBasics.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
       hasFailed := true;
     then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);
@@ -518,7 +518,7 @@ algorithm
     local
       BackendDAE.Variables vars;
       DAE.Exp e;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, cr1;
       BackendDAE.Var var;
       list<DAE.Exp> explst;
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)})}),(vars,explst))
@@ -526,11 +526,19 @@ algorithm
         (var,_) := BackendVariable.getVarSingle(cr, vars);
         true := BackendVariable.isVarOnTopLevelAndInput(var);
       then (e,false,(vars,e::explst));
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,explst))
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=DAE.CREF(componentRef=cr)::_),(vars,explst))
       algorithm
         (var,_) := BackendVariable.getVarSingle(cr, vars);
         true := BackendVariable.isVarOnTopLevelAndInput(var);
-      then (e,false,(vars,e::explst));
+      then (e,false,(vars,if List.isMemberOnTrue(e, explst, ExpressionBasics.expEqual) then explst else e::explst));
+    // $DER.u from the differentiation of a top-level input u, see Differentiate.differentiateCrefs
+    case (DAE.CREF(componentRef=cr1 as DAE.CREF_QUAL(ident=DAE.derivativeNamePrefix, componentRef=cr)),(vars,explst))
+      guard not BackendVariable.containsCref(cr1, vars)
+      algorithm
+        (var,_) := BackendVariable.getVarSingle(cr, vars);
+        true := BackendVariable.isVarOnTopLevelAndInput(var);
+        e := Expression.expDer(Expression.crefExp(cr));
+      then (inExp,false,(vars,if List.isMemberOnTrue(e, explst, ExpressionBasics.expEqual) then explst else e::explst));
     else (inExp,true,tpl);
   end matchcontinue;
 end traverserExpinputDerivativesUsed;
