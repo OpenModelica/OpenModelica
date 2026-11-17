@@ -510,7 +510,7 @@ algorithm
       true := BackendVariable.hasContinuousVar(var_lst);   //lochel: pure discrete equation systems are not supported
       eqn_lst1 := BackendEquation.replaceDerOpInEquationList(eqn_lst);
       // States are solved for der(x) not x.
-      var_lst_1 := List.map(var_lst, transformXToXd);
+      var_lst_1 := List.map(var_lst, BackendVariable.transformXToXd);
       vars_1 := BackendVariable.listVar1(var_lst_1);
       eqns_1 := BackendEquation.listEquation(eqn_lst1);
       (mixedSystem, _) := BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
@@ -661,19 +661,6 @@ algorithm
     //outValid := false;
   end if;
 end analyzeConstantJacobian;
-
-protected function transformXToXd "author: PA
-  this function transforms x variables (in the state vector)
-  to corresponding xd variable (in the derivatives vector)"
-  input BackendDAE.Var inVar;
-  output BackendDAE.Var outVar = inVar;
-algorithm
-  if BackendVariable.isStateVar(inVar) then
-    outVar.varName := ComponentReference.crefPrefixDer(inVar.varName);
-    outVar.varKind := BackendDAE.STATE_DER();
-    outVar.unreplaceable := false;
-  end if;
-end transformXToXd;
 
 public function getEquationAndSolvedVar "author: PA
   Retrieves the equation and the variable solved in that equation

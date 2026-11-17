@@ -2157,6 +2157,17 @@ algorithm
   end match;
 end partitionKindToClockIndex;
 
+protected function isMixedSystem
+  "True if a relation in the equations depends on the iteration variables."
+  input list<BackendDAE.Equation> eqns;
+  input list<BackendDAE.Var> vars;
+  output Boolean mixedSystem;
+algorithm
+  (mixedSystem, _) := BackendEquation.iterationVarsinRelations(
+    BackendEquation.replaceDerOpInEquationList(eqns),
+    BackendVariable.listVar1(list(BackendVariable.transformXToXd(v) for v in vars)));
+end isMixedSystem;
+
 protected function createEquation
   input Integer eqNum;
   input Integer varNum;
@@ -2322,7 +2333,7 @@ algorithm
           resEqs := fixNonlinearResidualIndices(resEqs);
           cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
           (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-          eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
+          eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, isMixedSystem({eqn}, {v}), false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
           uniqueEqIndex := uniqueEqIndex+1;
         end try;
       then (eqSystlst, uniqueEqIndex,tempvars);
@@ -5686,7 +5697,7 @@ algorithm
       (resEqs, uniqueEqIndex, tempvars, crefs) := createNonlinearResidualEquationsSingleComplex(e1, e2, source, eqAttr, iuniqueEqIndex, itempvars, crefs);
       resEqs := fixNonlinearResidualIndices(resEqs);
       (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, isMixedSystem({inEquation}, inVars), false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
     case BackendDAE.COMPLEX_EQUATION(attr=eqAttr) algorithm
       crefs := List.map(inVars, BackendVariable.varCref);
@@ -5702,7 +5713,7 @@ algorithm
       (resEqs, (uniqueEqIndex, _), tempvars) := createNonlinearResidualEquations({inEquation}, (iuniqueEqIndex, 0), itempvars, funcTree);
       resEqs := fixNonlinearResidualIndices(resEqs);
       (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, isMixedSystem({inEquation}, inVars), false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
     // failure
     case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2) algorithm
@@ -6273,7 +6284,7 @@ algorithm
       if not listEmpty(solvedVars) then
         result := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1,
                       {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, true, eqAttr)},
-                   solvedVars, 0, listLength(vars), NONE(), false, false, false, clockIndex), NONE(), eqAttr)};
+                   solvedVars, 0, listLength(vars), NONE(), false, isMixedSystem(eqns, vars), false, clockIndex), NONE(), eqAttr)};
         ouniqueEqIndex := iuniqueEqIndex+2;
       else
         result := {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, false, eqAttr)};
