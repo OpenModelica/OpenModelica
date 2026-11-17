@@ -1783,11 +1783,19 @@ algorithm
 
     case (Type.INTEGER(), Type.ENUMERATION()) guard Error.nonStandardAccepted("nonStdIntegersAsEnumeration")
       algorithm
-        exp1 := Expression.typeCast(exp1, type2);
-        Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
-          {"Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
+        try
+          // Fails for an Integer literal that is not the index of an enumeration literal.
+          exp1 := Expression.typeCast(exp1, type2);
+          Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
+            {"Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
+          compatibleType := type2;
+          matchKind := MatchKind.CAST;
+        else
+          compatibleType := Type.UNKNOWN();
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        end try;
       then
-        (type2, MatchKind.CAST);
+        (compatibleType, matchKind);
 
     case (Type.REAL(), Type.INTEGER())
       algorithm
@@ -2649,11 +2657,19 @@ algorithm
     // Allow using enumeration as Integer without the explicit cast
     case (Type.INTEGER(), Type.ENUMERATION()) guard Error.nonStandardAccepted("nonStdIntegersAsEnumeration")
       algorithm
-        expression := Expression.typeCast(expression, expectedType);
-        Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
-          {"Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
+        try
+          // Fails for an Integer literal that is not the index of an enumeration literal.
+          expression := Expression.typeCast(expression, expectedType);
+          Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
+            {"Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
+          compatibleType := expectedType;
+          matchKind := MatchKind.CAST;
+        else
+          compatibleType := Type.UNKNOWN();
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        end try;
       then
-        (expectedType, MatchKind.CAST);
+        (compatibleType, matchKind);
 
     // If the actual type is a tuple but the expected type isn't,
     // try to use the first type in the tuple.
@@ -3189,12 +3205,19 @@ algorithm
     Error.addMultiSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_ERROR,
       {Binding.toString(binding), name}, {binding_info, comp_info});
   else
-    (_, _, mk) := matchTypes(Type.arrayElementType(bindingType),
-                             Type.arrayElementType(componentType),
-                             Expression.EMPTY(bindingType), ALLOW_UNKNOWN);
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      (_, _, mk) := matchTypes(Type.arrayElementType(bindingType),
+                               Type.arrayElementType(componentType),
+                               Expression.EMPTY(bindingType), ALLOW_UNKNOWN);
+    else
+      mk := MatchKind.NOT_COMPATIBLE;
+    end try;
+    ErrorExt.rollBack(getInstanceName());
 
     if not InstContext.inAnnotation(context) then // forget errors when handling annotations
-      if isValidAssignmentMatch(mk) then
+      if isValidAssignmentMatch(mk) and
+         not List.isEqualOnTrue(Type.arrayDims(componentType), Type.arrayDims(bindingType), Dimension.isEqualKnown) then
         Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
           {name, Binding.toString(binding),
            Dimension.toStringList(Type.arrayDims(componentType)),

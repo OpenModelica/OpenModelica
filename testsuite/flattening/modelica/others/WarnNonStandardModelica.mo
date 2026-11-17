@@ -77,4 +77,22 @@ package WarnNonStandardModelica
   model MultipleExternal
     Real y = f1(time);
   end MultipleExternal;
+
+  model StringOfIntegerLiteral
+    parameter Real x[3] = {1, 2, 3};
+    parameter String s1 = String(size(x, 1));
+    parameter String s2 = String(3, minimumLength = 2);
+  end StringOfIntegerLiteral;
+
+  model IntegerAsEnumerationOutOfRange
+    E e = 3;
+  end IntegerAsEnumerationOutOfRange;
+
+  model EnumerationAsIntegerDimensions
+    Integer i[3] = {E.a, E.b};
+  end EnumerationAsIntegerDimensions;
+
+  model IntegerAsEnumerationMatrix
+    E e[1, 2] = [E.b, 1];
+  end IntegerAsEnumerationMatrix;
 end WarnNonStandardModelica;
