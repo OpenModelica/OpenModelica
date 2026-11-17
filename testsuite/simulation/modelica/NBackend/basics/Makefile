@@ -27,6 +27,7 @@ solveSingleEquation.mos \
 underdetermined_init.mos \
 variability.mos \
 loadResource.mos \
+ifBranchFunctionCalls.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
