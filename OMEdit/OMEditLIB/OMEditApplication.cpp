@@ -218,14 +218,29 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // light before that. The --DarkMode command line option overrides the
   // setting. The testsuite always runs in light mode.
   bool darkMode = false;
+  int colorScheme = GeneralSettingsPage::SystemColorScheme;
   if (!testsuiteRunning) {
-    const int colorScheme = Utilities::getApplicationSettings()->value("colorScheme", GeneralSettingsPage::SystemColorScheme).toInt();
+    colorScheme = Utilities::getApplicationSettings()->value("colorScheme", GeneralSettingsPage::SystemColorScheme).toInt();
     if (colorScheme == GeneralSettingsPage::DarkColorScheme) {
       darkMode = true;
     } else if (colorScheme == GeneralSettingsPage::SystemColorScheme) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
       darkMode = styleHints()->colorScheme() == Qt::ColorScheme::Dark;
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+#if defined(__EMSCRIPTEN__)
+      // The scheme selected in the launcher of the web clients, if any.
+      const int webColorScheme = EM_ASM_INT({
+        try {
+          const theme = localStorage.getItem('om-theme');
+          return theme === 'dark' ? 2 : theme === 'light' ? 1 : 0;
+        } catch (e) {
+          return 0;
+        }
+      });
+      if (webColorScheme != GeneralSettingsPage::SystemColorScheme) {
+        darkMode = webColorScheme == GeneralSettingsPage::DarkColorScheme;
+      }
+#endif
     }
     for (int i = 1; i < arguments().size(); i++) {
       bool argumentDarkMode = false;
@@ -237,11 +252,15 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   setProperty("omeditDarkMode", darkMode);
 #if defined(__EMSCRIPTEN__)
   // The page around the application (OMEdit-qt.html) takes the same scheme.
+  // It reads omedit-theme before the next start, when OMEdit sets the scheme.
   EM_ASM({
     const theme = $0 ? 'dark' : 'light';
     document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem('omedit-theme', theme); } catch (e) {}
-  }, darkMode);
+    try {
+      if ($1) localStorage.setItem('omedit-theme', theme);
+      else localStorage.removeItem('omedit-theme');
+    } catch (e) {}
+  }, darkMode, colorScheme != GeneralSettingsPage::SystemColorScheme);
 #endif
 
 /* Qt 6.8 defaults to the system color scheme. Pin the scheme to the mode
