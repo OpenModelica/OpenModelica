@@ -414,7 +414,7 @@ algorithm
                           value = Absyn.CREF(cr))
       algorithm
         value := getVariableValueLst(AbsynUtil.pathToStringList(AbsynUtil.crefToPath(cr)), SymbolTable.getVars());
-        str := ValuesDump.valString(value);
+        str := ValuesDump.valStringInteractive(value);
         ty := Types.typeOfValue(value);
         SymbolTable.addVar(DAE.CREF_IDENT(ident, ty, {}), value, FGraph.empty());
       then
@@ -428,7 +428,7 @@ algorithm
         (_, dsubs, _) := Static.elabSubscripts(cache, env, subs, true, DAE.NOPRE(), info);
 
         ty := Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
-        str := ValuesDump.valString(value);
+        str := ValuesDump.valStringInteractive(value);
         SymbolTable.addVar(DAE.CREF_IDENT(ident, ty, dsubs), value, env);
       then
         str;
@@ -720,7 +720,7 @@ protected function evaluateExprToStr
   output String outString;
 algorithm
   try
-    outString := ValuesDump.valString(evaluateExpr(inExp, info));
+    outString := ValuesDump.valStringInteractive(evaluateExpr(inExp, info));
   else
     outString := "";
   end try;
@@ -748,7 +748,7 @@ algorithm
     (_, value) := CevalScriptBackend.simulate(
       CevalScriptBackend.simulationArguments(Parser.stringPath(className), args, "simulate"),
       FCore.emptyCache(), FGraph.empty(), Absyn.MSG(Absyn.dummyInfo));
-    result := ValuesDump.valString(value);
+    result := ValuesDump.valStringInteractive(value);
   else
     result := "";
   end try;

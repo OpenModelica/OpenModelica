@@ -59,15 +59,23 @@ public function valString "This function returns a textual representation of a v
 protected
   Integer handle;
 algorithm
-  if Flags.getConfigEnum(Flags.INTERACTIVE_DUMP_FORMAT) == Flags.IDUMP_JSON then
-    outString := valStringJSON(inValue);
-    return;
-  end if;
   handle := Print.saveAndClearBuf();
   valString2(inValue);
   outString := Print.getString();
   Print.restoreBuf(handle);
 end valString;
+
+public function valStringInteractive
+  "The result of an interactive statement, in the format of --interactiveDumpFormat."
+  input Values.Value inValue;
+  output String outString;
+algorithm
+  if Flags.getConfigEnum(Flags.INTERACTIVE_DUMP_FORMAT) == Flags.IDUMP_JSON then
+    outString := valStringJSON(inValue);
+  else
+    outString := valString(inValue);
+  end if;
+end valStringInteractive;
 
 public function valStringJSON "A JSON representation of a value, for programmatic consumers."
   input Values.Value inValue;
@@ -93,8 +101,14 @@ algorithm
       list<String> ids;
       Values.Value v;
       Absyn.Path p;
+      Absyn.ComponentRef cr;
+      Absyn.CodeNode c;
     case Values.INTEGER(integer = n) algorithm Print.printBuf(intString(n)); then ();
-    case Values.REAL(real = x) algorithm Print.printBuf(realString(x)); then ();
+    case Values.REAL(real = x)
+      algorithm
+        // JSON has no inf or NaN.
+        Print.printBuf(if System.realIsNaN(x) or abs(x) > 1.7976931348623157e308 then "null" else realString(x));
+      then ();
     case Values.BOOL(boolean = true) algorithm Print.printBuf("true"); then ();
     case Values.BOOL(boolean = false) algorithm Print.printBuf("false"); then ();
     case Values.STRING(string = s) algorithm printJSONString(s); then ();
@@ -107,6 +121,10 @@ algorithm
     case Values.OPTION(some = SOME(v)) algorithm valJSON(v); then ();
     case Values.OPTION(some = NONE()) algorithm Print.printBuf("null"); then ();
     case Values.RECORD(orderd = xs, comp = ids) algorithm valJSONRecord(xs, ids); then ();
+    case Values.META_BOX(value = v) algorithm valJSON(v); then ();
+    case Values.CODE(A = Absyn.C_TYPENAME(p)) algorithm printJSONString(AbsynUtil.pathString(p)); then ();
+    case Values.CODE(A = Absyn.C_VARIABLENAME(cr)) algorithm printJSONString(Dump.printComponentRefStr(cr)); then ();
+    case Values.CODE(A = c) algorithm printJSONString(Dump.printCodeStr(c)); then ();
     else algorithm Print.printBuf("null"); then ();
   end match;
 end valJSON;

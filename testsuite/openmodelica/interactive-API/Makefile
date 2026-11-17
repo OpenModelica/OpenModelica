@@ -133,6 +133,7 @@ interactive_api_loadsave.mos \
 interactive_api_param.mos \
 interactive_api_simulations.mos \
 interactive_test.mos \
+interactiveDumpFormatJSON.mos \
 isConstant.mos \
 isExperiment.mos \
 isParameter.mos \
