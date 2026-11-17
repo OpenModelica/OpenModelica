@@ -89,6 +89,7 @@ ResultFileArrowTimeAlias.mos \
 StateDerivativeAliases.mos \
 FilterSimulationResultsCsvTime.mos \
 DiffSimulationResultsAlgorithm.mos \
+DiffSimulationResultsOneRow.mos \
 FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
