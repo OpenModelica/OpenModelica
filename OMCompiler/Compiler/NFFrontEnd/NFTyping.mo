@@ -406,8 +406,13 @@ algorithm
   // be equal to the number of variables that are neither parameter, constant,
   // input, output, stream nor flow.
   if pots <> flows and not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "unbalancedModel") then
-    Error.addStrictMessage(Error.UNBALANCED_CONNECTOR,
-      {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+    if Flags.getConfigBool(Flags.WARN_NON_STANDARD_MODELICA) then
+      Error.addNonStandardWarning("unbalancedModel", Error.UNBALANCED_CONNECTOR,
+        {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+    else
+      Error.addStrictMessage(Error.UNBALANCED_CONNECTOR,
+        {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+    end if;
   end if;
 
   // Modelica 3.2 section 15.1:

@@ -1548,6 +1548,61 @@ algorithm
   end if;
 end addStrictMessage;
 
+function nonStandardAccepted
+  "True if --allowNonStandardModelica=option or --warnNonStandardModelica is set."
+  input String option;
+  output Boolean accepted = Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, option) or
+                            Flags.getConfigBool(Flags.WARN_NON_STANDARD_MODELICA);
+end nonStandardAccepted;
+
+function nonStandardSuffix
+  "The text --warnNonStandardModelica adds to the message of a non-standard
+   construct, or an empty string if --allowNonStandardModelica=option is set."
+  input String option;
+  output String suffix;
+algorithm
+  if Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, option) then
+    suffix := "";
+  else
+    suffix := " [Non-standard Modelica: --allowNonStandardModelica=" + option + "]";
+  end if;
+end nonStandardSuffix;
+
+function addNonStandardWarning
+  "Adds the message as the warning --warnNonStandardModelica gives, unless
+   --allowNonStandardModelica=option is set."
+  input String option;
+  input ErrorTypes.Message errorMsg;
+  input ErrorTypes.MessageTokens tokens;
+  input SourceInfo info;
+protected
+  ErrorTypes.Message msg = errorMsg;
+algorithm
+  if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, option) then
+    msg.severity := ErrorTypes.WARNING();
+    msg.message := msg.message + nonStandardSuffix(option);
+    addSourceMessage(msg, tokens, info);
+  end if;
+end addNonStandardWarning;
+
+function addNonStandardMessage
+  "Reports a construct that --allowNonStandardModelica=option allows: nothing
+   with the option, a warning with --warnNonStandardModelica, else an error.
+   Returns false for an error."
+  input String option;
+  input ErrorTypes.Message errorMsg;
+  input ErrorTypes.MessageTokens tokens;
+  input SourceInfo info;
+  output Boolean accepted = true;
+algorithm
+  if nonStandardAccepted(option) then
+    addNonStandardWarning(option, errorMsg, tokens, info);
+  else
+    addSourceMessageAsError(errorMsg, tokens, info);
+    accepted := false;
+  end if;
+end addNonStandardMessage;
+
 public function addSourceMessageAndFail
   "Same as addSourceMessage, but fails after adding the error."
   input ErrorTypes.Message inErrorMsg;

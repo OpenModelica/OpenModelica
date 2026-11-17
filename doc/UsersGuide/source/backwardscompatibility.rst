@@ -57,3 +57,8 @@ with non-standard Modelica code in newer version of OpenModelica: the
 compiler flag allows to disable some Modelica compatibility checks and continue using your legacy
 code with newer versions of the compiler. This flag can be set in OMEdit in the
 *Tools | Options | Simulation | Additional Translation Flags*.
+
+To find out which of these checks a model fails, use the
+`--warnNonStandardModelica <https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/omchelptext.html#omcflag-warnnonstandardmodelica>`_
+flag. It gives a warning instead of an error for each non-standard construct, and the warning names
+the ``--allowNonStandardModelica`` option that allows it.

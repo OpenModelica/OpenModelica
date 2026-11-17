@@ -349,7 +349,7 @@ algorithm
     Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
     Flags.isSet(Flags.VECTORIZE_BINDINGS),
-    Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute"),
+    Error.nonStandardAccepted("implicitParameterStartAttribute"),
     Flags.getConfigString(Flags.EVALUATE_STRUCTURAL_PARAMETERS) <> "all"
   );
 
@@ -873,12 +873,19 @@ algorithm
 
       if Binding.isUnbound(start_binding) then
         // Fixed parameters must have a binding equation or a start attribute.
-        Error.addSourceMessage(Error.UNBOUND_PARAMETER_ERROR,
-          {ComponentRef.toString(var.name)}, var.info);
+        if settings.implicitStartAttribute and
+           not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute") then
+          Error.addNonStandardWarning("implicitParameterStartAttribute", Error.UNBOUND_PARAMETER_ERROR,
+            {ComponentRef.toString(var.name)}, var.info);
+        else
+          Error.addSourceMessage(Error.UNBOUND_PARAMETER_ERROR,
+            {ComponentRef.toString(var.name)}, var.info);
+        end if;
 
         if settings.implicitStartAttribute then
           // Create a start attribute if it's missing and
-          // --allowNonStandardModelica=implicitParameterStartAttribute is used
+          // --allowNonStandardModelica=implicitParameterStartAttribute or
+          // --warnNonStandardModelica is used
           min_exp_opt := eval_binding(Variable.lookupTypeAttribute("min", var));
           max_exp_opt := eval_binding(Variable.lookupTypeAttribute("max", var));
           start_exp := Expression.makeDefaultValue(var.ty, min_exp_opt, max_exp_opt);
@@ -4041,10 +4048,9 @@ algorithm
     case Expression.CREF()
       guard isDeletedCref(exp.cref, deletedVars)
       algorithm
-        Error.addSourceMessage(Error.INVALID_DELETED_COMPONENT_CONTEXT,
-          {ComponentRef.toString(exp.cref)}, info);
-
-        if not settings.relaxedErrorChecking then
+        if not Error.addNonStandardMessage("illegalConditionalContext",
+                 Error.INVALID_DELETED_COMPONENT_CONTEXT, {ComponentRef.toString(exp.cref)}, info) and
+           not settings.relaxedErrorChecking then
           fail();
         end if;
       then

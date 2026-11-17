@@ -457,9 +457,8 @@ uniontype LookupState
         algorithm
           // A protected element generates an error.
           if InstNode.isProtected(node) and
-             not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "protectedAccess") then
-            Error.addSourceMessage(Error.PROTECTED_ACCESS,
-              {InstNode.name(node)}, InstNode.info(node));
+             not Error.addNonStandardMessage("protectedAccess", Error.PROTECTED_ACCESS,
+                   {InstNode.name(node)}, InstNode.info(node)) then
             fail();
           end if;
         then

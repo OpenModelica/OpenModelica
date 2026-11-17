@@ -446,7 +446,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMI_TUNABLE_PARAMETERS,
   Flags.TUNABLE_PARAMETERS,
   Flags.FMU_WITH_FMI2,
-  Flags.INSTALL_MISSING_PACKAGES
+  Flags.INSTALL_MISSING_PACKAGES,
+  Flags.WARN_NON_STANDARD_MODELICA
 };
 
 public function new
