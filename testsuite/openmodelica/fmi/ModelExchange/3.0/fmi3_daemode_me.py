@@ -2,8 +2,10 @@
 """Run a --daeMode Model Exchange FMU of fmi-ls-dae with FMPy, with implicit
 Euler and fixed steps.
 
-In DAE mode the importer owns the states, their derivatives and the algebraic
-variables, and solves the residuals that the FMU gives with Newton. In ODE mode
+In DAE mode the importer owns the states and the algebraic variables, and
+solves the residuals that the FMU gives with Newton. In the semi-explicit form
+the derivatives of the states are algebraic variables too (ContinuousStateDerivative),
+and the importer adds the rows der(x) = getContinuousStateDerivatives(). In ODE mode
 the FMU solves them. After an event the event indicators are read again, as
 FMI 3.0 says. Prints the residuals after initialization and the variables at
 the stop time. In ODE mode, also whether the derivatives right after each event
@@ -30,6 +32,7 @@ def main(fmu, mode, stop, steps, variables):
     enable = int(manifest.find("EnableDAEParameter").get("valueReference"))
     alg = [int(a.get("valueReference")) for a in manifest.iter("AlgebraicVariable")]
     res = [int(r.get("valueReference")) for r in manifest.iter("Residual")]
+    semi = manifest.find("ModelStructure/ContinuousStateDerivative") is not None
     ders = [u.variable.valueReference for u in md.derivatives]
     states = [u.variable.derivative.valueReference for u in md.derivatives]
     vrs = {v.name: v.valueReference for v in md.modelVariables}
@@ -71,9 +74,13 @@ def main(fmu, mode, stop, steps, variables):
     def residual(u):
         if dae:
             set_states(u[:nx])
-            inst.setFloat64(ders, list((u[:nx] - x) / h))
+            if not semi:
+                inst.setFloat64(ders, list((u[:nx] - x) / h))
             inst.setFloat64(alg, list(u[nx:]))
-            return np.array(inst.getFloat64(res))
+            f = np.array(inst.getFloat64(res))
+            if semi:
+                return np.concatenate((f, (u[:nx] - x) / h - derivatives()))
+            return f
         set_states(u)
         der = (c_double * nx)()
         inst.getContinuousStateDerivatives(der, nx)
