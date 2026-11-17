@@ -27,6 +27,7 @@ noEventReduction.mos\
 infoJsonEquationOrder.mos\
 discreteSampleCondition.mos\
 algorithmWhenConditionOrder.mos\
+whenForLoopEdge.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
