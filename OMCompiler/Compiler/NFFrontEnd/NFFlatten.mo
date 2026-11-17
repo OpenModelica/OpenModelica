@@ -873,14 +873,8 @@ algorithm
 
       if Binding.isUnbound(start_binding) then
         // Fixed parameters must have a binding equation or a start attribute.
-        if settings.implicitStartAttribute and
-           not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute") then
-          Error.addNonStandardWarning("implicitParameterStartAttribute", Error.UNBOUND_PARAMETER_ERROR,
-            {ComponentRef.toString(var.name)}, var.info);
-        else
-          Error.addSourceMessage(Error.UNBOUND_PARAMETER_ERROR,
-            {ComponentRef.toString(var.name)}, var.info);
-        end if;
+        Error.addNonStandardMessage("implicitParameterStartAttribute", Error.UNBOUND_PARAMETER_ERROR,
+          {ComponentRef.toString(var.name)}, var.info);
 
         if settings.implicitStartAttribute then
           // Create a start attribute if it's missing and

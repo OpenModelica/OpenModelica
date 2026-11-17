@@ -1555,19 +1555,6 @@ function nonStandardAccepted
                             Flags.getConfigBool(Flags.WARN_NON_STANDARD_MODELICA);
 end nonStandardAccepted;
 
-function nonStandardSuffix
-  "The text --warnNonStandardModelica adds to the message of a non-standard
-   construct, or an empty string if --allowNonStandardModelica=option is set."
-  input String option;
-  output String suffix;
-algorithm
-  if Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, option) then
-    suffix := "";
-  else
-    suffix := " [Non-standard Modelica: --allowNonStandardModelica=" + option + "]";
-  end if;
-end nonStandardSuffix;
-
 function addNonStandardWarning
   "Adds the message as the warning --warnNonStandardModelica gives, unless
    --allowNonStandardModelica=option is set."
@@ -1580,7 +1567,7 @@ protected
 algorithm
   if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, option) then
     msg.severity := ErrorTypes.WARNING();
-    msg.message := msg.message + nonStandardSuffix(option);
+    msg.message := msg.message + " [Non-standard Modelica: --allowNonStandardModelica=" + option + "]";
     addSourceMessage(msg, tokens, info);
   end if;
 end addNonStandardWarning;

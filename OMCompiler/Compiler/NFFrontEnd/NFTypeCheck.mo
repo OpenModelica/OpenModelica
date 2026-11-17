@@ -1776,14 +1776,16 @@ algorithm
     case (Type.ENUMERATION(), Type.INTEGER()) guard Error.nonStandardAccepted("nonStdEnumerationAsIntegers")
       algorithm
         exp1 := Expression.typeCast(exp1, type2);
-        Error.addCompilerWarning("Allowing casting of enumeration expression: " + Expression.toString(before) + " to Integer: "+ Expression.toString(exp1) +". This is non-standard Modelica, use Integer(" +  Expression.toString(before) + ") instead!" + Error.nonStandardSuffix("nonStdEnumerationAsIntegers"));
+        Error.addNonStandardWarning("nonStdEnumerationAsIntegers", Error.COMPILER_WARNING,
+          {"Allowing casting of enumeration expression: " + Expression.toString(before) + " to Integer: "+ Expression.toString(exp1) +". This is non-standard Modelica, use Integer(" +  Expression.toString(before) + ") instead!"}, Absyn.dummyInfo);
       then
         (type2, MatchKind.CAST);
 
     case (Type.INTEGER(), Type.ENUMERATION()) guard Error.nonStandardAccepted("nonStdIntegersAsEnumeration")
       algorithm
         exp1 := Expression.typeCast(exp1, type2);
-        Error.addCompilerWarning("Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!" + Error.nonStandardSuffix("nonStdIntegersAsEnumeration"));
+        Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
+          {"Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
       then
         (type2, MatchKind.CAST);
 
@@ -2639,7 +2641,8 @@ algorithm
     case (Type.ENUMERATION(), Type.INTEGER()) guard Error.nonStandardAccepted("nonStdEnumerationAsIntegers")
       algorithm
         expression := Expression.typeCast(expression, expectedType);
-        Error.addCompilerWarning("Allowing usage of enumeration expression: " + Expression.toString(before) + " as Integer: "+ Expression.toString(expression) +". This is non-standard Modelica, use Integer(" + Expression.toString(before) + ") instead!" + Error.nonStandardSuffix("nonStdEnumerationAsIntegers"));
+        Error.addNonStandardWarning("nonStdEnumerationAsIntegers", Error.COMPILER_WARNING,
+          {"Allowing usage of enumeration expression: " + Expression.toString(before) + " as Integer: "+ Expression.toString(expression) +". This is non-standard Modelica, use Integer(" + Expression.toString(before) + ") instead!"}, Absyn.dummyInfo);
       then
         (expectedType, MatchKind.CAST);
 
@@ -2647,7 +2650,8 @@ algorithm
     case (Type.INTEGER(), Type.ENUMERATION()) guard Error.nonStandardAccepted("nonStdIntegersAsEnumeration")
       algorithm
         expression := Expression.typeCast(expression, expectedType);
-        Error.addCompilerWarning("Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!" + Error.nonStandardSuffix("nonStdIntegersAsEnumeration"));
+        Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
+          {"Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
       then
         (expectedType, MatchKind.CAST);
 

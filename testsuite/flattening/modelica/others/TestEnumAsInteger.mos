@@ -38,11 +38,7 @@ instantiateModel(TestNonStandardExtensions.TestIntegerAsEnum); getErrorString();
 //   x = 1.0;
 // end TestNonStandardExtensions.TestEnumAsInteger;
 // "
-// "Warning: Allowing usage of enumeration expression: E.one as Integer: 1. This is non-standard Modelica, use Integer(E.one) instead!
-// Warning: Allowing usage of enumeration expression: E.two as Integer: 2. This is non-standard Modelica, use Integer(E.two) instead!
-// Warning: Allowing usage of enumeration expression: E.three as Integer: 3. This is non-standard Modelica, use Integer(E.three) instead!
-// Warning: Allowing casting of enumeration expression: E.three to Integer: 3. This is non-standard Modelica, use Integer(E.three) instead!
-// "
+// ""
 // "function TestNonStandardExtensions.TestIntegerAsEnum.f
 //   input enumeration(one, two, three) e;
 //   output Integer i;
@@ -63,8 +59,5 @@ instantiateModel(TestNonStandardExtensions.TestIntegerAsEnum); getErrorString();
 //   x = TestNonStandardExtensions.TestIntegerAsEnum.f(/*E*/(i[E.three]));
 // end TestNonStandardExtensions.TestIntegerAsEnum;
 // "
-// "Warning: Allowing usage of Integer expression: 1 as enumeration: E.one. This is non-standard Modelica, use the actual enumeration instead!
-// Warning: Allowing usage of Integer expression: 2 as enumeration: E.two. This is non-standard Modelica, use the actual enumeration instead!
-// Warning: Allowing usage of Integer expression: 3 as enumeration: E.three. This is non-standard Modelica, use the actual enumeration instead!
-// "
+// ""
 // endResult

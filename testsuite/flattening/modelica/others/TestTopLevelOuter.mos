@@ -24,7 +24,6 @@ instantiateModel(TestNonStandardExtensions.TestTopLevelOuter); getErrorString();
 //   parameter Real o.x = 1.0;
 // end TestNonStandardExtensions.TestTopLevelOuter;
 // "
-// "[flattening/modelica/others/TestTopLevelOuter.mo:8:3-8:26:writable] Warning: The model can't be instantiated due to top-level outer element 'o', it may only be used as part of a simulation model.
-// [flattening/modelica/others/TestTopLevelOuter.mo:8:3-8:26:writable] Warning: An inner declaration for outer component o could not be found and was automatically generated.
+// "[flattening/modelica/others/TestTopLevelOuter.mo:8:3-8:26:writable] Warning: An inner declaration for outer component o could not be found and was automatically generated.
 // "
 // endResult
