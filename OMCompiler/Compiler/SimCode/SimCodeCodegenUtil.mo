@@ -3444,6 +3444,7 @@ public function getFMI3Terminals
    by their connector instance (the terminal), preserving the variable order. Used
    by CodegenFMU3 to emit terminalsAndIcons.xml."
   input SimCode.SimCode simCode;
+  input Boolean scalarize "a member per array element, as in FMI 2.0 ModelVariables";
   output list<SimCode.FmiTerminal> terminals = {};
 protected
   SimCodeVar.SimVars vars;
@@ -3470,7 +3471,7 @@ algorithm
     vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
     vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars,
     vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
-  for v in allVars loop
+  for v in scalarElements(allVars, scalarize) loop
     om := match v.name
       case DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix) then NONE();
       else connectorMemberOf(v);
@@ -3516,8 +3517,16 @@ algorithm
   // flat model, no annotation/JSON needed) and make each top-level scalar its own
   // single-member terminal; structured connector members are qualified crefs and
   // are already grouped above, so they are skipped here.
-  terminals := listAppend(listReverse(terminals), simplePortTerminals(vars, names));
+  terminals := listAppend(listReverse(terminals), simplePortTerminals(vars, names, scalarize));
 end getFMI3Terminals;
+
+protected function scalarElements
+  input list<SimCodeVar.SimVar> vars;
+  input Boolean scalarize;
+  output list<SimCodeVar.SimVar> elements;
+algorithm
+  elements := if scalarize then List.flatten(list(getScalarElements(v) for v in vars)) else vars;
+end scalarElements;
 
 protected function simplePortTerminals
   "One single-member terminal per top-level scalar input/output variable (the FMU
@@ -3528,11 +3537,12 @@ protected function simplePortTerminals
    variables already part of a structured connector terminal (`taken`)."
   input SimCodeVar.SimVars vars;
   input list<String> taken;
+  input Boolean scalarize;
   output list<SimCode.FmiTerminal> terminals = {};
 protected
   list<String> seen = taken;
 algorithm
-  for v in listAppend(vars.inputVars, vars.outputVars) loop
+  for v in scalarElements(listAppend(vars.inputVars, vars.outputVars), scalarize) loop
     terminals := matchcontinue v
       local
         DAE.ComponentRef cr;
@@ -3568,7 +3578,7 @@ algorithm
       DAE.ComponentRef cref;
       String tname, member, tkind, kind;
       Boolean isExp;
-    case _ guard isSome(var.exportVar)
+    case _ guard isSome(var.exportVar) and isTerminalMemberCausality(var.causality)
       algorithm
         cref := Util.getOption(var.exportVar);
         (tname, member, isExp, tkind) := crefConnectorSplit(cref);
@@ -3581,6 +3591,22 @@ algorithm
     else NONE();
   end matchcontinue;
 end connectorMemberOf;
+
+protected function isTerminalMemberCausality
+  "FMI 3.0, 2.4.9: a terminal member variable is an input, output, parameter or
+   calculated parameter, so connectors of sub-components and, in FMI 2.0, acausal
+   connectors have no terminal."
+  input Option<SimCodeVar.Causality> causality;
+  output Boolean b;
+algorithm
+  b := match causality
+    case SOME(SimCodeVar.INPUT()) then true;
+    case SOME(SimCodeVar.OUTPUT()) then true;
+    case SOME(SimCodeVar.PARAMETER()) then true;
+    case SOME(SimCodeVar.CALCULATED_PARAMETER()) then true;
+    else false;
+  end match;
+end isTerminalMemberCausality;
 
 public function getFMI3VisualizationResource
   "The <name>_visual.xml resource -d=visxml exported, or \"\" if none. CodegenFMU3
@@ -3614,17 +3640,18 @@ algorithm
       DAE.ComponentRef rest;
       DAE.Type ity;
       String id, innerT, innerM, innerK;
+      list<DAE.Subscript> subs;
       Boolean isExp;
-    // the outermost qualifier is itself a connector: bus.a -> terminal bus, member a
-    case DAE.CREF_QUAL(ident = id, identType = ity, componentRef = rest)
+    // the outermost qualifier is itself a connector: bus.a[1] -> terminal bus, member a[1]
+    case DAE.CREF_QUAL(ident = id, identType = ity, subscriptLst = subs, componentRef = rest)
       guard Types.isConnector(ity)
-      then (id, ComponentReference.crefStr(rest), connectorIsExpandable(ity),
-            connectorTypePath(ity));
+      then (ComponentReferenceBasics.printComponentRef2Str(id, subs), ComponentReferenceBasics.printComponentRefStr(rest),
+            connectorIsExpandable(ity), connectorTypePath(ity));
     // a non-connector qualifier wrapping a connector deeper in: comp.bus.a
-    case DAE.CREF_QUAL(ident = id, componentRef = rest)
+    case DAE.CREF_QUAL(ident = id, subscriptLst = subs, componentRef = rest)
       algorithm
         (innerT, innerM, isExp, innerK) := crefConnectorSplit(rest);
-      then (id + "." + innerT, innerM, isExp, innerK);
+      then (ComponentReferenceBasics.printComponentRef2Str(id, subs) + "." + innerT, innerM, isExp, innerK);
   end match;
 end crefConnectorSplit;
 

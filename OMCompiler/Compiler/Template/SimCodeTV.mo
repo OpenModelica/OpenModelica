@@ -1664,6 +1664,7 @@ package SimCodeCodegenUtil
 
   function getFMI3Terminals
     input SimCode.SimCode simCode;
+    input Boolean scalarize;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
 

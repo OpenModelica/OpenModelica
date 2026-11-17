@@ -136,8 +136,8 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   // Generate optional extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml (--daeMode ME)
   let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiLsDaeManifestFile(simCode, FMUType, fileNamePrefixHash)
 
-  // Generate optional terminalsAndIcons/terminalsAndIcons.xml (FMI 3.0 Terminals)
-  let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiTerminalsAndIconsFile(simCode, fileNamePrefixHash)
+  // Generate optional terminalsAndIcons/terminalsAndIcons.xml (FMI 3.0 Terminals, also in FMI 2.0.4)
+  let _ = if boolNot(isFMIVersion10(FMUVersion)) then CodegenFMU3.fmiTerminalsAndIconsFile(simCode, fileNamePrefixHash, isFMIVersion20(FMUVersion))
 
   // Generate sources/buildDescription.xml (FMI 3.0 source-FMU build instructions)
   let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiBuildDescriptionFile(simCode, sourceFiles, fileNamePrefixHash)

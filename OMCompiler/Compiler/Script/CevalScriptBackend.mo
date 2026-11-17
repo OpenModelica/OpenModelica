@@ -4310,6 +4310,7 @@ public function generateFMI3GraphicalRepresentation
   input Absyn.Path className;
   input String fmutmp;
   input String modelIdentifier;
+  input Boolean modelPng = false "also write icon.png as model.png, the FMI 2.0 icon";
 protected
   Integer handle, nConn, i;
   String svg, grepr, modelName, taiDir, taiFile, content;
@@ -4340,6 +4341,9 @@ algorithm
         Util.createDirectoryTree(taiDir);
         if OMGraphics.writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png") then
           System.writeFile(taiDir + "icon.svg", svg);
+          if modelPng then
+            System.copyFile(taiDir + "icon.png", fmutmp + "/model.png");
+          end if;
         else
           // icon.png is mandatory for the <Icon> in <GraphicalRepresentation>;
           // drop the block rather than reference a file we failed to write.
@@ -4412,8 +4416,8 @@ algorithm
   end try;
 end generateFMI3GraphicalRepresentation;
 
-public function generateFMI2ModelIcon
-  "Writes model.png, the FMI 1.0/2.0 icon of the FMU. As the FMI 3.0 icon.png, it
+public function generateFMI1ModelIcon
+  "Writes model.png, the FMI 1.0 icon of the FMU. As the FMI 3.0 icon.png, it
    has no connectors: the importer draws them. No file if the model has no icon."
   input Absyn.Path className;
   input String fmutmp;
@@ -4428,7 +4432,7 @@ algorithm
     end if;
   else
   end try;
-end generateFMI2ModelIcon;
+end generateFMI1ModelIcon;
 
 protected function spliceGraphicalRepresentation
   "Insert a <GraphicalRepresentation> block in FMI 3.0 schema order: right before
