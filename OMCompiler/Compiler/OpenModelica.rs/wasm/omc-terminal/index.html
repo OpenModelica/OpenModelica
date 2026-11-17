@@ -4,24 +4,27 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica (wasm) — interactive</title>
+<script src="../theme.js"></script>
 <link rel="stylesheet" href="../theme.css" />
 <style>
+  :root { --cmd: #569cd6; --prompt: #608b4e; }
+  :root[data-theme="light"] { --cmd: #0b62c4; --prompt: #3b7a2a; }
     body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   header b { color: var(--teal); }
   #log { flex: 1 1 auto; overflow-y: auto; padding: 12px; white-space: pre-wrap; word-break: break-word; }
-  .cmd { color: #569cd6; }
-  .cmd::before { content: ">>> "; color: #608b4e; }
+  .cmd { color: var(--cmd); }
+  .cmd::before { content: ">>> "; color: var(--prompt); }
   .reply { color: var(--fg); }
   .err { color: var(--err); }
   .meta { color: var(--muted); font-style: italic; }
   .plot { background: #fff; border-radius: 4px; padding: 8px; margin: 8px 0; max-width: 100%; overflow: auto; }
   .plot svg { display: block; max-width: 100%; height: auto; }
   header .hint { color: var(--muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  header code { color: #ce9178; }
+  header code { color: var(--code); }
   /* Compact, monospace buttons rather than theme.css's roomier default. */
   button { border-radius: 3px; padding: 5px 12px; font-size: inherit; }
   form { display: flex; flex: 0 0 auto; border-top: 1px solid var(--border); background: var(--panel); }
-  #prompt { color: #608b4e; padding: 8px 4px 8px 12px; }
+  #prompt { color: var(--prompt); padding: 8px 4px 8px 12px; }
   #input { flex: 1; background: transparent; border: 0; border-radius: 0; color: var(--fg); font: inherit; padding: 8px 12px 8px 4px; outline: none; }
 </style>
 </head>

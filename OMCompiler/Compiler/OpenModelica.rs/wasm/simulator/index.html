@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — Simulator</title>
+<script src="../theme.js"></script>
 <link rel="stylesheet" href="../theme.css" />
 <style>
 
@@ -423,12 +424,6 @@ const EMBED = PARAMS.get('embed') === '1';
 const CONFIG = PARAMS.get('config');
 const CONFIG_URL = new URL(CONFIG || './config.json', location.href);
 
-// `?theme=light|dark`, and `om-theme` afterwards: the embedding page decides.
-function applyTheme(theme) {
-  if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
-  else delete document.documentElement.dataset.theme;
-}
-applyTheme(PARAMS.get('theme'));
 // The library to install: the requested one, or the MSL by default.
 let LIBRARY = REQUEST
   ? { name: REQUEST.package, version: REQUEST.version }
@@ -1399,7 +1394,7 @@ exSel.addEventListener('change', () => {
 // than the one installed does need the reload.
 window.addEventListener('message', (event) => {
   const m = event.data;
-  if (m && m.type === 'om-theme') return applyTheme(m.theme);
+  if (m && m.type === 'om-theme') return omTheme.pin(m.theme);
   if (!m || m.type !== 'om-load' || !m.class) return;
   const pkg = m.package || m.class.split('.')[0];
   if (pkg !== LIBRARY.name || (m.version || '') !== LIBRARY.version) {

@@ -76,6 +76,7 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/em_js.h>
+#include <QStyleHints>
 
 // Fetch the bundled example notebooks (next to the page) and extract them into
 // MEMFS at "/" so DrModelica/DrControl/OMNotebookHelp.onb resolve like a normal
@@ -175,6 +176,18 @@ namespace IAEX
       : QObject()
   {
       app_ = new MyApp(argc, argv, this);
+
+#ifdef __EMSCRIPTEN__
+      // The scheme selected in the launcher of the web clients, if any.
+      app_->styleHints()->setColorScheme(static_cast<Qt::ColorScheme>(EM_ASM_INT({
+          try {
+              const theme = localStorage.getItem('om-theme');
+              return theme === 'dark' ? 2 : theme === 'light' ? 1 : 0;
+          } catch (e) {
+              return 0;
+          }
+      })));
+#endif
 
 #ifndef __EMSCRIPTEN__
       const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();

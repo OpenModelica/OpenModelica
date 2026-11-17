@@ -813,6 +813,7 @@ wasm/storage/upload.js
 wasm/storage/worker.js
 wasm/symbolize.html
 wasm/theme.css
+wasm/theme.js
 wasm/units.js
 wasm/ui.js
 wasm/wasm-blobs.js

@@ -12,6 +12,8 @@ pub struct App {
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        follow_launcher_theme(&cc.egui_ctx);
         let ctx = cc.egui_ctx.clone();
         let shell = Shell::with_backend(omshell_omc::backend(), move || ctx.request_repaint());
         // Build the shared WebGPU demo into the egui_wgpu renderer's resource map
@@ -259,4 +261,34 @@ impl egui_wgpu::CallbackTrait for DemoCallback {
             demo.draw(render_pass);
         }
     }
+}
+
+/// The colour scheme selected in the launcher of the web clients (`om-theme` in
+/// localStorage), also when it changes while the page is open.
+#[cfg(target_arch = "wasm32")]
+fn follow_launcher_theme(ctx: &egui::Context) {
+    use eframe::wasm_bindgen::{JsCast as _, closure::Closure};
+
+    fn stored() -> egui::ThemePreference {
+        let theme = web_sys::window()
+            .and_then(|window| window.local_storage().ok().flatten())
+            .and_then(|storage| storage.get_item("om-theme").ok().flatten());
+        match theme.as_deref() {
+            Some("light") => egui::ThemePreference::Light,
+            Some("dark") => egui::ThemePreference::Dark,
+            _ => egui::ThemePreference::System,
+        }
+    }
+
+    ctx.set_theme(stored());
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let ctx = ctx.clone();
+    let on_storage = Closure::<dyn Fn()>::new(move || {
+        ctx.set_theme(stored());
+        ctx.request_repaint();
+    });
+    let _ = window.add_event_listener_with_callback("storage", on_storage.as_ref().unchecked_ref());
+    on_storage.forget();
 }

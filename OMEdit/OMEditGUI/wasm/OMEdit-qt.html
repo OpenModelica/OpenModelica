@@ -16,7 +16,7 @@
     <title>OMEdit</title>
     <script>
       try {
-        const theme = localStorage.getItem('omedit-theme');
+        const theme = localStorage.getItem('omedit-theme') || localStorage.getItem('om-theme');
         if (theme) document.documentElement.dataset.theme = theme;
       } catch (e) {}
     </script>
