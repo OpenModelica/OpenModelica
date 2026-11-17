@@ -1,0 +1,31 @@
+// name: fmi3_wasm_ls_manifest.mos
+// keywords: FMI 3.0 export wasm fmi-ls-wasm manifest
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf LsManifest.fmu LsManifest.fmu.log om-wasm-include-*
+//
+// A wasm FMU declares fmi-ls-wasm, and the draft it follows, in the layered
+// standard manifest.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadString("model M Real x(start=1, fixed=true); equation der(x) = -x; end M;"); getErrorString();
+buildModelFMU(M, fileNamePrefix="LsManifest", fmuType="cs", version="3.0", platforms={"wasm"}); getErrorString();
+system("unzip -p LsManifest.fmu extra/org.modelica.fmi-ls-wasm/manifest.xml"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "LsManifest.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// <?xml version="1.0" encoding="UTF-8"?>
+// <fmiLayeredStandardManifest
+//   xmlns:fmi-ls="http://fmi-standard.org/fmi-ls-manifest"
+//   fmi-ls:fmi-ls-name="org.modelica.fmi-ls-wasm"
+//   fmi-ls:fmi-ls-version="0.1.0-draft+1804e6c"
+//   fmi-ls:fmi-ls-description="FMI Layered Standard for WebAssembly"/>
+// 0
+// ""
+// endResult

@@ -74,6 +74,18 @@
 #include <QScreen>
 
 /*!
+ * \brief isPackageFile
+ * Returns true if the file is a package.mo. Unlike QFileInfo, this creates no file engine,
+ * which on the web is a call into JavaScript.
+ * \param fileName
+ * \return
+ */
+static bool isPackageFile(const QString &fileName)
+{
+  return fileName.compare("package.mo") == 0 || QDir::fromNativeSeparators(fileName).endsWith("/package.mo");
+}
+
+/*!
  * \class LibraryTreeItem
  * \brief Contains the information about the Modelica class.
  */
@@ -107,9 +119,8 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setInternal(isInternal);
   setAccessAnnotations(false);
   setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-  if (type == LibraryTreeItem::Modelica) {
-    updateClassInformation();
-  } else {
+  // LibraryTreeModel::createLibraryTreeItemImpl sets the class information of a Modelica item
+  if (type != LibraryTreeItem::Modelica) {
     setFileName(fileName);
     setReadOnly(!StringHandler::isFileWritAble(fileName));
   }
@@ -146,7 +157,20 @@ QString LibraryTreeItem::getWhereToMoveFMU()
 void LibraryTreeItem::updateClassInformation()
 {
   if (isModelica()) {
-    mClassInformation = MainWindow::instance()->getOMCProxy()->getClassInformation(mNameStructure);
+    updateClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(mNameStructure));
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::updateClassInformation
+ * Updates the item from the class information.
+ * \param classInformation
+ * \param pExistingFiles - the files that exist, see Utilities::existingFilePaths. If null, the file is checked here.
+ */
+void LibraryTreeItem::updateClassInformation(const OMCInterface::getClassInformation_res &classInformation, const QSet<QString> *pExistingFiles)
+{
+  if (isModelica()) {
+    mClassInformation = classInformation;
     setFileName(mClassInformation.fileName);
     mVersionDate = mClassInformation.versionDate;
     mVersionBuild = mClassInformation.versionBuild;
@@ -154,16 +178,11 @@ void LibraryTreeItem::updateClassInformation()
     mRevisionId = mClassInformation.revisionId;
     setReadOnly(mClassInformation.fileReadOnly);
     // set save contents type
-    if (isFilePathValid()) {
-      QFileInfo fileInfo(getFileName());
-      // if item has file name as package.mo and is top level then its save folder structure
-      if (isTopLevel() && (fileInfo.fileName().compare("package.mo") == 0)) {
-        setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-      } else if ((fileInfo.fileName().compare("package.mo") == 0) && (mpParentLibraryTreeItem->getFileName().compare(getFileName()) != 0)) {
-        setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-      } else {
-        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-      }
+    const SaveContentsType saveContentsType = isPackageFile(getFileName()) && (isTopLevel() || mpParentLibraryTreeItem->getFileName().compare(getFileName()) != 0)
+                                              ? LibraryTreeItem::SaveFolderStructure : LibraryTreeItem::SaveInOneFile;
+    // the file check is a round-trip to omc on the web, so only do it when the type changes
+    if (saveContentsType != getSaveContentsType() && (pExistingFiles ? pExistingFiles->contains(getFileName()) : isFilePathValid())) {
+      setSaveContentsType(saveContentsType);
     }
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
@@ -2359,27 +2378,32 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     if (!libs.isEmpty()) {
       libs.removeFirst();
     }
+    /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
+    libs.removeIf([](const QString &lib) {return lib.contains("$Code");});
+    // fetch for all items at once: on the web, one round-trip instead of one per item
+    const QList<OMCInterface::getClassInformation_res> classInformations = pOMCProxy->getClassInformation(libs);
+    QStringList packageFiles;
+    for (const OMCInterface::getClassInformation_res &classInformation : classInformations) {
+      if (isPackageFile(classInformation.fileName)) {
+        packageFiles.append(classInformation.fileName);
+      }
+    }
+    const QSet<QString> existingFiles = Utilities::existingFilePaths(packageFiles);
     LibraryTreeItem *pParentLibraryTreeItem = 0;
-#if defined(__EMSCRIPTEN__)
-    const int totalLibs = libs.size();
-    int doneLibs = 0;
-#endif
-    foreach (QString lib, libs) {
+    for (int i = 0; i < libs.size(); ++i) {
 #if defined(__EMSCRIPTEN__)
       // Drive the startup-splash progress bar; setProgress throttles the repaint.
-      WasmSplash::setProgress(++doneLibs, totalLibs);
+      WasmSplash::setProgress(i + 1, libs.size());
 #endif
-      /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
-      if (lib.contains("$Code")) {
-        continue;
-      }
+      const QString &lib = libs.at(i);
       QString name = StringHandler::getLastWordAfterDot(lib);
       QString parentName = StringHandler::removeLastWordAfterDot(lib);
       if (!(pParentLibraryTreeItem && pParentLibraryTreeItem->getNameStructure().compare(parentName) == 0)) {
         pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
       }
       if (pParentLibraryTreeItem) {
-        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled());
+        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled(),
+                                  &classInformations.at(i), &existingFiles);
       }
     }
   } else if (pLibraryTreeItem->isSSP()) {
@@ -2521,13 +2545,23 @@ QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *
  * \param isSystemLibrary
  * \param load
  * \param row
+ * \param activateAccessAnnotations
+ * \param pClassInformation - the class information, if already fetched.
+ * \param pExistingFiles - see LibraryTreeItem::updateClassInformation.
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                             bool isSystemLibrary, bool load, int row, bool activateAccessAnnotations)
+                                                             bool isSystemLibrary, bool load, int row, bool activateAccessAnnotations,
+                                                             const OMCInterface::getClassInformation_res *pClassInformation,
+                                                             const QSet<QString> *pExistingFiles)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, "", isSaved, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem);
+  if (pClassInformation) {
+    pLibraryTreeItem->updateClassInformation(*pClassInformation, pExistingFiles);
+  } else {
+    pLibraryTreeItem->updateClassInformation();
+  }
   pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
   pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
   if (row == -1) {

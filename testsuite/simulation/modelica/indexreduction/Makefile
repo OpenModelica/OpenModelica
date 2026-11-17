@@ -9,6 +9,7 @@ DiscreteTupleOutput.mos \
 TupleConstraintEquation.mos \
 TupleConstraintStateSet.mos \
 TupleAssignInIf.mos \
+ForLoopAlgorithm.mos \
 StateSetArrayEq.mos \
 StateSetDerivativeCandidate.mos
 

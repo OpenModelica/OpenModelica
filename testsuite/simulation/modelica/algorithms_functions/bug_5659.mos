@@ -58,15 +58,16 @@ checkModel(bug_5659_3); getErrorString();
 // true
 // ""
 // "Check of bug_5659_1 completed successfully.
-// Class bug_5659_1 has 4 equation(s) and 4 variable(s).
+// The model is globally balanced with 4 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // "Check of bug_5659_2 completed successfully.
-// Class bug_5659_2 has 2 equation(s) and 2 variable(s).
+// The model is globally balanced with 2 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // "Check of bug_5659_3 completed successfully.
-// Class bug_5659_3 has 1 equation(s) and 2 variable(s).
-// 0 of these are trivial equation(s)."
+// The model has 1 equation(s) and 2 variables(s).
+// 0 of these are trivial equation(s).
+// Error: The model has 1 equation(s) too few."
 // ""
 // endResult

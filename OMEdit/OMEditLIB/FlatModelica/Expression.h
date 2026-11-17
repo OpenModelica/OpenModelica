@@ -42,6 +42,8 @@
 #include <ostream>
 #include <functional>
 #include <vector>
+#include <iterator>
+#include <cstddef>
 
 #include <QString>
 #include <QJsonValue>
@@ -79,6 +81,41 @@ namespace FlatModelica
   {
     public:
       using VariableEvaluator = std::function<Expression(std::string cref_name)>;
+
+      class IteratorBase;
+
+      /*!
+       * Input iterator over array elements or the values of a numeric range.
+       * The referenced Expression must outlive the iterator.
+       */
+      class Iterator
+      {
+        public:
+          using iterator_category = std::input_iterator_tag;
+          using difference_type = std::ptrdiff_t;
+          using value_type = Expression;
+          using pointer = void;
+          using reference = value_type;
+
+          Iterator();
+          explicit Iterator(std::unique_ptr<IteratorBase> it);
+          ~Iterator();
+
+          Iterator(const Iterator &other);
+          Iterator& operator=(const Iterator &other);
+          Iterator(Iterator &&other) noexcept;
+          Iterator& operator=(Iterator &&other) noexcept;
+
+          value_type operator*() const;
+          Iterator& operator++();
+          Iterator operator++(int);
+
+          friend bool operator== (const Iterator &i1, const Iterator &i2);
+          friend bool operator!= (const Iterator &i1, const Iterator &i2);
+
+        private:
+          std::unique_ptr<IteratorBase> _it;
+      };
 
     public:
       Expression();
@@ -118,6 +155,7 @@ namespace FlatModelica
       bool isBooleanish() const;
       bool isString() const;
       bool isArray() const;
+      bool isRange() const;
       bool isCall() const;
       bool isCall(const std::string &name) const;
 
@@ -149,6 +187,10 @@ namespace FlatModelica
       void setArg(size_t index, const Expression &e);
       std::string_view argName() const;
       const Expression& argValue() const;
+
+      //! Returns iterators over arrays and numeric ranges; other expressions are empty.
+      Iterator begin() const;
+      Iterator end() const;
 
       Expression& operator+= (const Expression &other);
       Expression& operator-= (const Expression &other);

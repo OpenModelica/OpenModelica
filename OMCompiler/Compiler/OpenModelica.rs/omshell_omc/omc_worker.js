@@ -104,7 +104,7 @@ const ready = (async () => {
 // that can change it. The next command waits for the save.
 let store = null;
 let saving = Promise.resolve();
-const SAVES = new Set(["init", "eval", "abi", "vfsPut", "vfsPutMany", "vfsLoadZip", "vfsRemove", "vfsRename"]);
+const SAVES = new Set(["init", "eval", "abi", "abiBatch", "vfsPut", "vfsPutMany", "vfsLoadZip", "vfsRemove", "vfsRename"]);
 
 const trim = (s) => (s ?? "").trim();
 const unquote = (s) => s.replace(/^"+|"+$/g, "");
@@ -301,6 +301,17 @@ self.onmessage = async (e) => {
           : JSON.stringify({ error: "omc_abi unavailable (omc built without the scripting_api feature)" });
       resetControl();
       self.postMessage({ kind: "abiResult", id: msg.id, response, loaded: takeLoadedModels() });
+    } else if (msg.cmd === "abiBatch") {
+      // Many typed calls in one round trip: `requests` is one "abi" request per
+      // line. A request or response is compact JSON, so it has no raw newline.
+      const responses = [];
+      if (typeof OmcModule.omc_abi === "function") {
+        for (const request of msg.requests.split("\n")) {
+          responses.push(await abiWithDownloads(request));
+        }
+      }
+      resetControl();
+      self.postMessage({ kind: "abiBatchResult", responses, loaded: takeLoadedModels() });
     } else if (msg.cmd === "fmiGuide") {
       // The FMI settings guide: JSON in, JSON out. The reply goes the way of an
       // "abi" reply, so the page collects it by `id`.
@@ -356,6 +367,12 @@ self.onmessage = async (e) => {
       let size;
       try { size = wasi_path_filestat_get(msg.path); } catch (e) { size = -1; }
       self.postMessage({ kind: "vfsStatResult", id: msg.id, size });
+    } else if (msg.cmd === "vfsStatMany") {
+      // vfsStat for many paths in one round trip.
+      const sizes = msg.paths.map((path) => {
+        try { return wasi_path_filestat_get(path); } catch (e) { return -1; }
+      });
+      self.postMessage({ kind: "vfsStatManyResult", sizes });
     }
   } catch (err) {
     // A trap inside omc must not silently wedge the shell: report it on the
@@ -364,6 +381,8 @@ self.onmessage = async (e) => {
       self.postMessage({ kind: "ready", ok: false, error: describeError(err) });
     } else if (msg.cmd === "abi" || msg.cmd === "fmiGuide") {
       self.postMessage({ kind: "abiResult", id: msg.id, response: JSON.stringify({ error: describeError(err) }) });
+    } else if (msg.cmd === "abiBatch") {
+      self.postMessage({ kind: "abiBatchResult", responses: [] });
     } else {
       self.postMessage({ kind: "done", result: "", error: describeError(err), keep: true });
     }

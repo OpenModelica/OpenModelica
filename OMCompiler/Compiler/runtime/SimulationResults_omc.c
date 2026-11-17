@@ -148,13 +148,13 @@ double SimulationResults_deltaSimulationResults(const char *filename, const char
   return omc_result_script_delta(&messages, filename, reffilename, methodname, names, n);
 }
 
-void* SimulationResults_diffSimulationResults(int runningTestsuite, const char *filename, const char *reffilename, const char *prefix, double refTol, double reltolDiffMaxMin, double rangeDelta, void *vars, int keepEqualResults, int *success)
+void* SimulationResults_diffSimulationResults(int runningTestsuite, const char *filename, const char *reffilename, const char *prefix, double refTol, double reltolDiffMaxMin, double rangeDelta, int tube, void *vars, int keepEqualResults, int *success)
 {
   size_t n, nres = 0;
   const char **names = to_strings(vars, &n);
   char **res;
   *success = 0;
-  res = omc_result_script_diff(&messages, runningTestsuite, filename, reffilename, prefix, refTol, reltolDiffMaxMin, rangeDelta, names, n, keepEqualResults, success, &nres);
+  res = omc_result_script_diff(&messages, runningTestsuite, filename, reffilename, prefix, refTol, reltolDiffMaxMin, rangeDelta, tube, names, n, keepEqualResults, success, &nres);
   return res ? to_list(res, nres) : mmc_mk_nil();
 }
 

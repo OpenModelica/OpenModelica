@@ -5491,13 +5491,29 @@ fn check_method(method: &str) -> bool {
         || method == "optimization"
 }
 
-/// Apply `-s=` and choose a method for `auto` (C's `resolveAutoSolver`). An
-/// explicit method is never replaced.
-fn choose_solver_method(method: &str, dae_mode: bool) -> &str {
+/// Apply `-s=` and reject an unknown method (C's `readSolverMethod`). The empty
+/// method is `auto`.
+fn read_solver_method(method: &str) -> Result<&str> {
     match effective_method(method) {
-        "" | "auto" => {
-            let chosen = if dae_mode { "ida" } else { "dassl" };
-            omclog::info!(omclog::SOLVER, false, "-s=auto chooses solver method {chosen}");
+        "" => Ok("auto"),
+        m if crate::simflags::is_solver_name(m) || is_dassl(m) => Ok(m),
+        _ => Err(UNSUPPORTED_METHOD),
+    }
+}
+
+/// Choose a method for `auto` (C's `resolveAutoSolver`). An explicit method is
+/// returned as it is.
+fn choose_solver_method(method: &str, dae_mode: bool, no_states: bool) -> &str {
+    match method {
+        "auto" => {
+            let (chosen, reason) = if no_states {
+                ("euler", ", because the model has no states.")
+            } else if dae_mode {
+                ("ida", ", because the model was compiled with --daeMode.")
+            } else {
+                ("dassl", ", the default ODE solver.")
+            };
+            omclog::info!(omclog::SOLVER, false, "-s=auto chooses solver method {chosen}{reason}");
             chosen
         }
         m => m,
@@ -5523,26 +5539,26 @@ fn resolve_solver_method(method: &str, dae_mode: bool) -> Result<&str> {
     validate_solver_method(if dae_mode {
         "ida"
     } else {
-        choose_solver_method(method, false)
+        choose_solver_method(read_solver_method(method)?, false, false)
     })
 }
 
-/// The method of a standalone run: an explicit method is never replaced, and
-/// C's "no states present" swap from `startNonInteractiveSimulation` applies. As
-/// in C, a model with nothing to integrate accepts any method.
+/// The method of a standalone run. As C's `callSolver`, a model with nothing to
+/// integrate runs with euler, except `optimization` in ODE mode.
 fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
-    let method = choose_solver_method(method, layout.compiled_dae_mode);
-    // C exempts `optimization` in ODE mode only.
-    let nothing_to_solve = match layout.compiled_dae_mode {
+    let no_states = match layout.compiled_dae_mode {
         true => layout.n_dae_res + layout.n_dae_alg < 1,
-        false => layout.n_states < 1 && method != "optimization",
+        false => layout.n_states < 1,
     };
-    if nothing_to_solve {
-        omclog::info(
-            omclog::SOLVER,
-            false,
-            "No states present, continuing without ODE solver.",
-        );
+    let method = choose_solver_method(read_solver_method(method)?, layout.compiled_dae_mode, no_states);
+    if no_states && (layout.compiled_dae_mode || method != "optimization") {
+        if method != "euler" {
+            omclog::info!(
+                omclog::SOLVER,
+                false,
+                "The model has no states, solver method {method} is replaced by euler."
+            );
+        }
         return Ok("euler");
     }
     if layout.compiled_dae_mode && method != "ida" {

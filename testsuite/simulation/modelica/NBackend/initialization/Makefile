@@ -10,6 +10,7 @@ whenAlgorithmPreCondition.mos \
 experimental_initialSimplified.mos \
 discreteCallArgument.mos \
 functionOutputStart.mos \
+whenTupleInit.mos \
 functionOutputStartAlias.mos \
 functionAliasStartLoop.mos \
 primaryParameterFor.mos \

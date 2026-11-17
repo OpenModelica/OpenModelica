@@ -57,6 +57,7 @@ struct SysState {
     has_stream: bool,
     uses_cardinality: bool,
     has_inner_outer: bool,
+    has_partial_instances: bool,
 
     // tmpTick / tmpTickIndex counters. Index 0 is the unindexed `tmpTick`.
     // The C runtime keeps an array `tmp_tick_no[NUM_TICKS]`; we lazily grow
@@ -1206,6 +1207,7 @@ flag_pair!(
     getHasInnerOuterDefinitions,
     has_inner_outer
 );
+flag_pair!(setHasPartialInstances, getHasPartialInstances, has_partial_instances);
 
 // ───────────────────────────────── tmpTick ────────────────────────────────────
 

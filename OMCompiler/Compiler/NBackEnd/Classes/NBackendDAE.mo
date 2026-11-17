@@ -1282,7 +1282,10 @@ protected
         then ();
 
         case VariableKind.EXTOBJ() algorithm
-          lowVar_ptr := BVariable.setFixed(lowVar_ptr);
+          // objects without binding are defined by equations in the initialization
+          if BVariable.isBound(lowVar_ptr) then
+            lowVar_ptr := BVariable.setFixed(lowVar_ptr);
+          end if;
           external_objects_lst := lowVar_ptr :: external_objects_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
@@ -1542,6 +1545,13 @@ protected
     varData   := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, VarData.getVariables(varData));
+
+    // external objects are known during the simulation, the equations between them are solved in the initialization
+    for eqn_ptr in EquationPointers.toList(equations) loop
+      if Equation.isExternalObject(eqn_ptr) then
+        Pointer.update(eqn_ptr, Equation.setInitial(Pointer.access(eqn_ptr)));
+      end if;
+    end for;
 
     (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 

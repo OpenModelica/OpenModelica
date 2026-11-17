@@ -1742,7 +1742,7 @@ protected
 
       // time, parameter or constant found (nothing happens)
       case Expression.CREF()
-        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref, sourceInfo()))
+        guard((BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref, sourceInfo())) and not hasVariableSubscript(exp.cref))
           or ComponentRef.isTime(exp.cref)
           or Variable.isTopLevelInput(BVariable.getVar(exp.cref, sourceInfo())))
       then tpl;
@@ -1775,6 +1775,24 @@ protected
       else tpl;
     end match;
   end findCrefs;
+
+  function hasVariableSubscript
+    "true for a parameter element selected by a variable, e.g. p[i] with discrete i"
+    input ComponentRef cref;
+    output Boolean b = List.any(list(Expression.contains(Subscript.toExp(sub), isVariableCref)
+      for sub guard(not Subscript.isWhole(sub)) in ComponentRef.subscriptsAllFlat(cref)), Util.id);
+  end hasVariableSubscript;
+
+  function isVariableCref
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() guard(not (ComponentRef.isIterator(exp.cref) or ComponentRef.isTime(exp.cref)))
+        then not BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref, sourceInfo()));
+      else false;
+    end match;
+  end isVariableCref;
 
   function findCrefsFail
     "finds all failing cases to stop searching for simple crefs.
@@ -2089,8 +2107,9 @@ protected
     if isSome(new_stateSelect) and isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
       Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_stateSelect), attrcollector.stateSelect_map); // update attribute collector
-      if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then // start value of var with StateSelect = always is stronger than start value of fixed var
-        new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
+      // start value of var with StateSelect = always is stronger than start value of fixed var
+      new_start := if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then UnorderedMap.get(Util.getOption(new_cref), attrcollector.start_map) else NONE();
+      if isSome(new_start) then
         Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
         UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
       end if;
@@ -2234,14 +2253,17 @@ protected
     list<Expression> fixed_start_lst;
     Integer count_fixed = 0;
     ComponentRef cref;
-    Expression sval, fval;
+    Expression fval;
+    Option<Expression> osval;
   algorithm
     for tpl in fixed_lst loop
       (cref,fval) := tpl;
       if Expression.isTrue(fval) then
-        count_fixed := count_fixed + 1;
-        sval := UnorderedMap.getSafe(cref, start_map, sourceInfo());
-        UnorderedMap.add(cref, sval, fixed_start_map);
+        osval := fixedStartValue(cref, start_map);
+        if isSome(osval) then
+          count_fixed := count_fixed + 1;
+          UnorderedMap.add(cref, Util.getOption(osval), fixed_start_map);
+        end if;
       end if;
     end for;
     if count_fixed > 1 then
@@ -2274,6 +2296,24 @@ protected
       end if;
     end if;
   end setStartFixed;
+
+  function fixedStartValue
+    "the start value of a fixed variable, the default value of its type without one.
+    other types (e.g. external objects) have none."
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Expression> start_map;
+    output Option<Expression> start = UnorderedMap.get(cref, start_map);
+  protected
+    Type ty, elem_ty;
+  algorithm
+    if isNone(start) then
+      ty := ComponentRef.getSubscriptedType(cref);
+      elem_ty := Type.arrayElementType(ty);
+      if Type.isReal(elem_ty) or Type.isInteger(elem_ty) or Type.isBoolean(elem_ty) or Type.isEnumeration(elem_ty) or Type.isString(elem_ty) then
+        start := SOME(Expression.makeDefaultValue(ty));
+      end if;
+    end if;
+  end fixedStartValue;
 
   function selectStartByConfidence
     "Selects the start value with the strongest (lowest) confidence

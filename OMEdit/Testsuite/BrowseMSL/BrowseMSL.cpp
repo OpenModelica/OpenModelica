@@ -65,6 +65,23 @@ void BrowseMSL::mediaAir()
   }
 }
 
+void BrowseMSL::saveContentsType()
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  // a package in a directory of its own
+  const QStringList folderStructures = {"Modelica", "Modelica.Electrical.Analog", "Modelica.Electrical.Analog.Basic"};
+  for (const QString &className : folderStructures) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(className);
+    QVERIFY2(pLibraryTreeItem && pLibraryTreeItem->isSaveFolderStructure(), qPrintable(className));
+  }
+  // a class in a file of its own, and a package in the package.mo of its parent
+  const QStringList oneFiles = {"Modelica.Electrical.Analog.Basic.Resistor", "Modelica.Blocks.Examples"};
+  for (const QString &className : oneFiles) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(className);
+    QVERIFY2(pLibraryTreeItem && pLibraryTreeItem->isSaveInOneFile(), qPrintable(className));
+  }
+}
+
 void BrowseMSL::cleanupTestCase()
 {
   MainWindow::instance()->close();

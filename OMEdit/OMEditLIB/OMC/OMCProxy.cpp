@@ -103,10 +103,15 @@ static QString omcPhaseLabel(int phase) {
 #include <emscripten/em_js.h>
 #include <emscripten/val.h>
 #include <QEventLoop>
+#include <QJsonDocument>
 #include <QTimer>
 #include <QVarLengthArray>
 #include <QPair>
 #include <QtCore/private/qwasmsuspendresumecontrol_p.h>
+
+// Defined in the generated OpenModelicaScriptingAPIQtBridge.cpp.
+void omcBridgePrefetch(const char *fn, const QList<QJsonArray> &argsList);
+void omcBridgeDropPrefetched();
 
 // omc runs in the shared omc_worker.js Web Worker. Calls are posted without
 // suspending; the reply is stashed by id and the C++ side waits for it. A raw
@@ -269,6 +274,15 @@ EM_JS(int, omedit_post_eval, (const char *src), {
 });
 EM_JS(int, omedit_post_abi, (const char *req), {
   return Module.__omcPostCall({ cmd: "abi", request: UTF8ToString(req), id: ++Module.__omcMsgId });
+});
+EM_JS(int, omedit_post_abi_batch, (const char *reqs), {
+  return Module.__omcPostCall({ cmd: "abiBatch", requests: UTF8ToString(reqs) });
+});
+EM_JS(char *, omedit_take_abi_batch_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return stringToNewUTF8(((r && r.responses) || []).join("\n"));
 });
 EM_JS(int, omedit_call_ready, (int id), {
   return Object.prototype.hasOwnProperty.call(Module.__omcReplies, id) ? 1 : 0;
@@ -633,6 +647,34 @@ EM_JS(char *, omedit_take_vfs_bytes, (int id, int *outLen), {
   HEAP32[outLen >> 2] = len;
   return ptr;
 });
+
+EM_JS(int, omedit_post_vfs_stat_many, (const char *paths), {
+  return Module.__omcPostCall({ cmd: "vfsStatMany", paths: JSON.parse(UTF8ToString(paths)) });
+});
+EM_JS(char *, omedit_take_vfs_sizes, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return stringToNewUTF8(JSON.stringify((r && r.sizes) || []));
+});
+
+// The sizes of worker-VFS files in one round-trip, -1 for a path that is not a file.
+// Empty if the worker did not answer.
+QList<qint64> omcWorkerFileSizes(const QStringList &paths) {
+  QList<qint64> sizes;
+  if (paths.isEmpty() || !omedit_worker_ready()) return sizes;
+  int id = omedit_post_vfs_stat_many(QJsonDocument(QJsonArray::fromStringList(paths)).toJson(QJsonDocument::Compact).constData());
+  omcWorkerWaitReply(id);
+  char *p = omedit_take_vfs_sizes(id);
+  const QJsonArray array = QJsonDocument::fromJson(QByteArray(p)).array();
+  free(p);
+  if (array.size() != paths.size()) return sizes;
+  sizes.reserve(array.size());
+  for (const QJsonValue &size : array) {
+    sizes.append(qint64(size.toDouble(-1)));
+  }
+  return sizes;
+}
 
 QByteArray omcWorkerReadFile(const char *path) {
   if (!omedit_worker_ready()) return QByteArray();
@@ -1110,6 +1152,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 {
   /* create the tmp path */
   QString& tmpPath = Utilities::tempDirectory();
+  // On the web nothing can read the log files, so do not write them.
+#if !defined(__EMSCRIPTEN__)
   /* create a file to write OMEdit communication log */
   QString communicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
 #ifdef Q_OS_WIN
@@ -1127,6 +1171,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   // Unbuffered: a crash mid-startup still leaves the last command on disk.
   if (mpCommunicationLogFile) setvbuf(mpCommunicationLogFile, NULL, _IONBF, 0);
   if (mpCommandsLogFile) setvbuf(mpCommandsLogFile, NULL, _IONBF, 0);
+#endif
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
@@ -1396,20 +1441,13 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
 void OMCProxy::logResponse(QString command, QString response, double elapsed, bool customCommand)
 {
   if (isLoggingEnabled()) {
-    QString firstLine("");
-    for (int i = 0; i < command.length(); i++) {
-      if (command.at(i) != '\n') {
-        firstLine.append(command.at(i));
-      } else {
-        break;
-      }
-    }
     if (customCommand || MainWindow::instance()->isDebug()) {
       // insert the response to the logger window.
       mpOMCLoggerTextBox->appendOutput(response + "\n\n");
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
+      const QString firstLine = command.left(command.indexOf('\n'));
       mTotalOMCCallsTime += elapsed;
       fputs(QString("%1 %2\n").arg(response).arg(QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
       fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMCCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(), mpCommunicationLogFile);
@@ -1824,6 +1862,33 @@ OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString clas
 #endif
   classInformation.comment = comment;
   return classInformation;
+}
+
+/*!
+ * \brief OMCProxy::getClassInformation
+ * Gets the class information of many classes. On the web, this is one round-trip to omc.
+ * \param classNames
+ * \return the class information in the order of classNames
+ */
+QList<OMCInterface::getClassInformation_res> OMCProxy::getClassInformation(const QStringList &classNames)
+{
+#if defined(__EMSCRIPTEN__)
+  QList<QJsonArray> argsList;
+  argsList.reserve(classNames.size());
+  for (const QString &className : classNames) {
+    argsList.append(QJsonArray{className});
+  }
+  omcBridgePrefetch("getClassInformation", argsList);
+#endif
+  QList<OMCInterface::getClassInformation_res> classInformations;
+  classInformations.reserve(classNames.size());
+  for (const QString &className : classNames) {
+    classInformations.append(getClassInformation(className));
+  }
+#if defined(__EMSCRIPTEN__)
+  omcBridgeDropPrefetched();
+#endif
+  return classInformations;
 }
 
 /*!
@@ -3737,7 +3802,7 @@ bool OMCProxy::disableNewInstantiation()
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
   // get img src tags
-  QRegularExpression imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
   QRegularExpressionMatchIterator imgIterator = imgRegExp.globalMatch(documentation);
   QStringList attributeMatches;
   QStringList tagMatches;
@@ -3747,7 +3812,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     attributeMatches.append(match.captured(1)); // attribute
   }
   // get script src tags
-  QRegularExpression scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
   QRegularExpressionMatchIterator scriptIterator = scriptRegExp.globalMatch(documentation);
   while (scriptIterator.hasNext()) {
     QRegularExpressionMatch match = scriptIterator.next();
@@ -3755,7 +3820,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     attributeMatches.append(match.captured(1));
   }
   // get link href tags
-  QRegularExpression linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
   QRegularExpressionMatchIterator linkIterator = linkRegExp.globalMatch(documentation);
   while (linkIterator.hasNext()) {
     QRegularExpressionMatch match = linkIterator.next();

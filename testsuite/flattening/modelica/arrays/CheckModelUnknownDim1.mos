@@ -39,15 +39,15 @@ getErrorString();
 // Result:
 // true
 // "Check of M1 completed successfully.
-// Class M1 has 0 equation(s) and 0 variable(s).
+// The model is globally balanced with 0 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // "Check of M2 completed successfully.
-// Class M2 has 0 equation(s) and 0 variable(s).
+// The model is globally balanced with 0 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // "Check of M3 completed successfully.
-// Class M3 has 0 equation(s) and 0 variable(s).
+// The model is globally balanced with 0 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // endResult

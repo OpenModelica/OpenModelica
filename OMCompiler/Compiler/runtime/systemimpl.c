@@ -184,6 +184,7 @@ static int hasInnerOuterDefinitions = 0;
 static int hasStreamConnectors = 0;
 static int isPartialInstantiation = 0;
 static int usesCardinality = 1;
+static int hasPartialInstances = 0;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
 

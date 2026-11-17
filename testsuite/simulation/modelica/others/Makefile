@@ -25,6 +25,7 @@ Bug3687.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
 CombiTimeTableTest.mos \
+CombiTimeTableTimeScale.mos \
 ComplexAlgebraicLoop.mos \
 ComplexFun.mos \
 DiscreteVectorStateSpace.mos \
@@ -87,10 +88,13 @@ ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \
 StateDerivativeAliases.mos \
 FilterSimulationResultsCsvTime.mos \
+DiffSimulationResultsAlgorithm.mos \
+DiffSimulationResultsOneRow.mos \
 FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \
+CsvParameterAlias.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \
 localKnownVars.mos \

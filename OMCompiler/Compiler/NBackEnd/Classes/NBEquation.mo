@@ -2570,6 +2570,30 @@ public
       b := attr.exclusively_initial;
     end isInitial;
 
+    function setInitial
+      input output Equation eq;
+    protected
+      EquationAttributes attr = getAttributes(eq);
+    algorithm
+      attr.exclusively_initial := true;
+      eq := setAttributes(eq, attr);
+    end setInitial;
+
+    function isExternalObject
+      "true for an equation between external objects"
+      extends checkEqn;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+    algorithm
+      b := match eqn
+        case SCALAR_EQUATION() then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case ARRAY_EQUATION()  then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case RECORD_EQUATION() then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case FOR_EQUATION()    then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        else false;
+      end match;
+    end isExternalObject;
+
     function isWhenEquation extends checkEqn;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
@@ -4188,7 +4212,10 @@ public
         assigned := match stmt
           local
             ComponentRef lhs;
+            list<Expression> elements;
           case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs)) then lhs :: assigned;
+          case WhenStatement.ASSIGN(lhs = Expression.TUPLE(elements = elements))
+          then listAppend(list(Expression.toCref(e) for e guard(Expression.isCref(e) and not ComponentRef.isWild(Expression.toCref(e))) in elements), assigned);
           else assigned;
         end match;
       end for;

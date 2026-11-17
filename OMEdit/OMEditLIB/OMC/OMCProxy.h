@@ -87,8 +87,8 @@ private:
   QString mObjectRefFile;
   QList<QString> mCommandsList;
   int mCurrentCommandIndex;
-  FILE *mpCommunicationLogFile;
-  FILE *mpCommandsLogFile;
+  FILE *mpCommunicationLogFile = nullptr;
+  FILE *mpCommandsLogFile = nullptr;
   double mTotalOMCCallsTime;
   QList<UnitConverion> mUnitConversionList;
   QMap<QString, QList<QString> > mDerivedUnitsMap;
@@ -135,6 +135,7 @@ public:
                             bool sort = false, bool builtin = false, bool showProtected = true, bool includeConstants = false);
   QStringList searchClassNames(QString searchText, bool findInText = false);
   OMCInterface::getClassInformation_res getClassInformation(QString className);
+  QList<OMCInterface::getClassInformation_res> getClassInformation(const QStringList &classNames);
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);
   QString getBuiltinType(QString typeName);

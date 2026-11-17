@@ -17,7 +17,7 @@ pub use openmodelica_mat_writer::Precision;
 use openmodelica_mat_writer::{Mat4Stream, MatVar};
 use openmodelica_plt_writer::{PltKind, PltVar};
 
-use crate::{MetaKind, Neg, SimMeta, VarTy, WTy};
+use crate::{MetaKind, Neg, SimMeta, VarTy, WTy, var_filter};
 
 /// The `-outputFormat` values a run can produce. `empty` is accepted and writes
 /// nothing; the check happens before the run so a typo fails early, as C does.
@@ -131,8 +131,8 @@ impl openmodelica_arrow_writer::Out for ArrowOut<'_> {
 enum Kind {
     Mat(Mat4Stream),
     Arrow(ArrowStream),
-    /// `(column, negation, integer-valued)` per kept signal.
-    Csv(Vec<(u32, Neg, bool)>),
+    /// `(source, negation, integer-valued)` per kept signal.
+    Csv(Vec<(CsvSrc, Neg, bool)>),
     Plt {
         signals: Vec<(String, PltKind)>,
         params: Vec<f64>,
@@ -221,7 +221,7 @@ impl ResultStream {
                 Kind::Arrow(s)
             }
             "csv" => {
-                let cols = csv_cols(meta, &keep_num);
+                let cols = csv_cols(meta, &keep_num, params);
                 let mut line = String::from("\"time\"");
                 for (name, ..) in &cols {
                     line.push_str(&format!(",\"{}\"", name.replace('"', "\"\"")));
@@ -365,7 +365,7 @@ pub fn write(
     match format {
         "mat" => Some(mat(meta, rows, n_reals, params, &keep_num, precision)),
         "arrow" => Some(arrow(meta, rows, n_reals, params, keep, precision)),
-        "csv" => Some(csv(meta, rows, n_reals, &keep_num).into_bytes()),
+        "csv" => Some(csv(meta, rows, n_reals, params, &keep_num).into_bytes()),
         "plt" => Some(plt(meta, rows, n_reals, params, &keep_num)),
         _ => None,
     }
@@ -509,18 +509,34 @@ pub fn plt(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &[b
     openmodelica_plt_writer::write_plt(&signals, rows, n_reals, &kept)
 }
 
-/// The `.csv` columns: `(name, column, negation, integer-valued)`. Time-invariant
-/// signals are not columns.
-fn csv_cols<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<(&'a str, u32, Neg, bool)> {
+#[derive(Clone, Copy)]
+enum CsvSrc {
+    Row(u32),
+    Value(f64),
+}
+
+/// The `.csv` columns after time: `(name, source, negation, integer-valued)`. A
+/// parameter is a column only when it is the value of an alias.
+fn csv_cols<'a>(meta: &'a SimMeta, keep: &[bool], params: &[f64]) -> Vec<(&'a str, CsvSrc, Neg, bool)> {
     let layout = &meta.layout;
     let int_col0 = layout.n_reals_row();
     let sens_col0 = layout.sens_col0();
+    let mut param_ix = 0usize;
     meta.vars
         .iter()
         .zip(keep)
         .filter_map(|(v, &k)| match v.kind {
-            MetaKind::Column { col, negate } if k => {
-                Some((v.name.as_str(), col, negate, col >= int_col0 && col < sens_col0))
+            MetaKind::Column { col, negate } if k => Some((
+                v.name.as_str(),
+                CsvSrc::Row(col),
+                negate,
+                col >= int_col0 && col < sens_col0,
+            )),
+            MetaKind::Param { negate, .. } => {
+                let value = params.get(param_ix).copied().unwrap_or(0.0);
+                param_ix += 1;
+                (k && v.filter & var_filter::ALIAS != 0)
+                    .then(|| (v.name.as_str(), CsvSrc::Value(value), negate, v.ty != VarTy::Real))
             }
             _ => None,
         })
@@ -528,10 +544,13 @@ fn csv_cols<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<(&'a str, u32, Neg, boo
 }
 
 /// One `%.16g` row line: time, then each column's value (`%i` for integers/booleans).
-fn csv_line(out: &mut String, row: &[f64], cols: &[(u32, Neg, bool)]) {
+fn csv_line(out: &mut String, row: &[f64], cols: &[(CsvSrc, Neg, bool)]) {
     out.push_str(&crate::driver::format_g(row[0], 16));
-    for &(col, negate, is_int) in cols {
-        let v = negate.apply_f64(row.get(col as usize).copied().unwrap_or(0.0));
+    for &(src, negate, is_int) in cols {
+        let v = negate.apply_f64(match src {
+            CsvSrc::Row(col) => row.get(col as usize).copied().unwrap_or(0.0),
+            CsvSrc::Value(v) => v,
+        });
         out.push(',');
         if is_int {
             out.push_str(&format!("{}", v as i64));
@@ -543,14 +562,14 @@ fn csv_line(out: &mut String, row: &[f64], cols: &[(u32, Neg, bool)]) {
 }
 
 /// C's `simulation_result_csv`: a quoted-name header, then one line per row.
-pub fn csv(meta: &SimMeta, rows: &[f64], n_reals: u32, keep: &[bool]) -> String {
-    let cols = csv_cols(meta, keep);
+pub fn csv(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &[bool]) -> String {
+    let cols = csv_cols(meta, keep, params);
     let mut out = String::from("\"time\"");
     for (name, ..) in &cols {
         out.push_str(&format!(",\"{}\"", name.replace('"', "\"\"")));
     }
     out.push('\n');
-    let plain: Vec<(u32, Neg, bool)> = cols.iter().map(|&(_, c, n, i)| (c, n, i)).collect();
+    let plain: Vec<(CsvSrc, Neg, bool)> = cols.iter().map(|&(_, c, n, i)| (c, n, i)).collect();
     for row in rows.chunks_exact(n_reals.max(1) as usize) {
         csv_line(&mut out, row, &plain);
     }

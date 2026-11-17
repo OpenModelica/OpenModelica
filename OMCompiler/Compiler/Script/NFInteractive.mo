@@ -106,7 +106,7 @@ algorithm
     case GlobalScript.IEXP()
       algorithm
         try
-          result := ValuesDump.valString(evaluateExp(statement.exp, statement.info));
+          result := ValuesDump.valStringInteractive(evaluateExp(statement.exp, statement.info));
         else
           result := "";
         end try;
@@ -286,7 +286,7 @@ algorithm
       algorithm
         (value, ty) := evaluateExpAndType(alg.value, info);
         assignVariable(cref, value, info, ty);
-        result := ValuesDump.valString(value);
+        result := ValuesDump.valStringInteractive(value);
       then
         ();
 

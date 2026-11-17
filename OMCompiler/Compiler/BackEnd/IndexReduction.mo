@@ -4351,7 +4351,7 @@ algorithm
         try
           e := BaseHashTable.get((cr,1),ht);
         else
-          e := exp;
+          e := if ComponentReference.crefIsScalarWithVariableSubs(cr) then replaceDummyDerivativeVariableSubs(exp, cr, ht) else exp;
         end try;
       then e;
     case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_)
@@ -4361,6 +4361,39 @@ algorithm
     else exp;
   end match;
 end replaceDummyDerivativesExp;
+
+protected function replaceDummyDerivativeVariableSubs
+  "der(x[i]) with variable indices is $DER.x[i] if all the elements x[i] can
+   refer to are dummy states."
+  input DAE.Exp exp;
+  input DAE.ComponentRef cr;
+  input HashTableCrIntToExp.HashTable ht;
+  output DAE.Exp outExp = exp;
+protected
+  list<DAE.ComponentRef> crs;
+  Integer dummies;
+algorithm
+  try
+    crs := BackendVariable.expandVariableSubscripts(cr);
+  else
+    return;
+  end try;
+  dummies := 0;
+  for c in crs loop
+    if BaseHashTable.hasKey((c,1), ht) then
+      if not ExpressionBasics.expEqual(BaseHashTable.get((c,1), ht), Expression.crefExp(ComponentReference.crefPrefixDer(c))) then
+        warnDummyDerivativeFailed(exp);
+        return;
+      end if;
+      dummies := dummies + 1;
+    end if;
+  end for;
+  if dummies > 0 and dummies == listLength(crs) then
+    outExp := Expression.crefExp(ComponentReference.crefPrefixDer(cr));
+  elseif dummies > 0 then
+    warnDummyDerivativeFailed(exp);
+  end if;
+end replaceDummyDerivativeVariableSubs;
 
 protected function warnDummyDerivativeFailed
   input DAE.Exp exp;

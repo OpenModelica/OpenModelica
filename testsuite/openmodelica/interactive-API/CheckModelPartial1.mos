@@ -1,0 +1,23 @@
+// name: CheckModelPartial1
+// keywords:
+// status: correct
+//
+
+loadString("
+  partial model M
+    Real x, y;
+  equation
+    x = y;
+  end M;
+");
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// "Check of M completed successfully.
+// The model has 1 equation(s) and 2 variables(s).
+// 1 of these are trivial equation(s)."
+// ""
+// endResult

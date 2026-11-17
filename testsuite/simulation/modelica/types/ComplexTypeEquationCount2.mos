@@ -54,6 +54,6 @@ checkModel(ExtendedThermodynamicState);
 // Result:
 // true
 // "Check of ExtendedThermodynamicState completed successfully.
-// Class ExtendedThermodynamicState has 7 equation(s) and 7 variable(s).
+// The model is globally balanced with 7 equation(s) and variable(s).
 // 2 of these are trivial equation(s)."
 // endResult

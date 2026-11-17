@@ -155,7 +155,7 @@ checkModel(M_total); getErrorString();
 // true
 // ""
 // "Check of M_total completed successfully.
-// Class M_total has 7 equation(s) and 7 variable(s).
+// The model is globally balanced with 7 equation(s) and variable(s).
 // 7 of these are trivial equation(s)."
 // ""
 // endResult
