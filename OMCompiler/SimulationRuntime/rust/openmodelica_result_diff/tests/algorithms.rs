@@ -131,8 +131,7 @@ fn an_empty_curve_is_rejected_rather_than_panicking() {
 }
 
 /// A one-sample reference: the tube degenerates to a flat one rather than
-/// erroring. A one-sample curve *under test* is only usable by the algorithms
-/// that do not resample from it.
+/// erroring.
 #[test]
 fn a_single_sample_reference_still_compares() {
     let (t, y) = ramp(21, 1.0);
@@ -140,10 +139,72 @@ fn a_single_sample_reference_still_compares() {
         let c = compare(&t, &y, &[0.0], &[0.0], &settings(algorithm, 0.002)).unwrap();
         assert!(!c.differs(), "{} flagged a flat one-sample reference", algorithm.name());
     }
-    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
         compare(&[0.0], &[0.0], &t, &y, &settings(algorithm, 0.002)).unwrap();
     }
-    assert!(compare(&[0.0], &[0.0], &t, &y, &settings(Algorithm::Ellipse2014, 0.002)).is_err());
+}
+
+/// stopTime == startTime: an FMU importer writes one row where the C runtime
+/// writes the start and terminal rows.
+#[test]
+fn a_single_row_result_compares_like_the_start_and_terminal_rows() {
+    let t = [0.0, 0.0];
+    let y = [1.0, 1.0];
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
+        for resample in [false, true] {
+            let s = Settings {
+                resample,
+                ..settings(algorithm, 0.002)
+            };
+            for (time, value) in [(&[0.0][..], 1.0), (&t[..], 1.0)] {
+                let values = vec![value; time.len()];
+                assert!(!compare(time, &values, &t, &y, &s).unwrap().differs());
+                let off = vec![2.0; time.len()];
+                let c = compare(time, &off, &t, &y, &s).unwrap();
+                assert!(
+                    c.differs(),
+                    "{} resample={resample} rows={}",
+                    algorithm.name(),
+                    time.len()
+                );
+            }
+        }
+    }
+}
+
+/// A reference without a time span has no tube; its points are checked with
+/// relTol and an abstol of relTolDiffMinMax².
+#[test]
+fn a_zero_length_reference_is_checked_with_reltol_and_abstol() {
+    let t = [0.0, 0.0];
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
+        let s = settings(algorithm, 0.002);
+        let differs = |values: &[f64], reference: &[f64]| compare(&t, values, &t, reference, &s).unwrap().differs();
+        assert!(!differs(&[1.0005, 1.0005], &[1.0, 1.0]));
+        assert!(differs(&[1.002, 1.002], &[1.0, 1.0]));
+        assert!(!differs(&[1e-9, 1e-9], &[0.0, 0.0]));
+        assert!(differs(&[1e-6, 1e-6], &[0.0, 0.0]));
+        assert!(!differs(&[1.45e-7, 1.45e-7], &[1.4e-7, 1.4e-7]));
+        assert!(differs(&[-1e-6, -1e-6], &[0.0, 0.0]));
+        assert!(differs(&[f64::NAN, f64::NAN], &[1.0, 1.0]));
+        // an event at the start: the rows are compared in order
+        assert!(!differs(&[0.0, 1.0], &[0.0, 1.0]));
+        assert!(differs(&[1.0, 0.0], &[0.0, 1.0]));
+        assert!(differs(&[0.05, 1000.0], &[0.0, 1000.0]));
+    }
+}
+
+/// A short time span still gives a tube (stopTime = 1e-11 in
+/// Modelica.Electrical.Spice3.Examples.Inverter).
+#[test]
+fn a_short_time_span_is_not_zero() {
+    let scale = |(t, y): (Vec<f64>, Vec<f64>)| (t.iter().map(|x| x * 1e-11).collect::<Vec<f64>>(), y);
+    let (rt, ry) = scale(ramp(21, 1.0));
+    let (t, y) = scale(ramp(51, 1.0));
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
+        let c = compare(&t, &y, &rt, &ry, &settings(algorithm, 0.002)).unwrap();
+        assert!(!c.differs(), "{}", algorithm.name());
+    }
 }
 
 /// A trajectory one value short of its timeline (a truncated last CSV row).
