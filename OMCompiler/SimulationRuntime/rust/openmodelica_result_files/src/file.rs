@@ -642,8 +642,10 @@ impl Pair<'_> {
         })
     }
 
-    /// Both trajectories of `var`, leading duplicates dropped.
-    fn data(&mut self, var: &str) -> Result<(Vec<f64>, Vec<f64>), Missing> {
+    /// Both trajectories of `var`, leading duplicates dropped. The csv-compare
+    /// tubes keep those of the reference: they take a jump at the start like
+    /// any other.
+    fn data(&mut self, var: &str, algorithm: Algorithm) -> Result<(Vec<f64>, Vec<f64>), Missing> {
         let var = var.replace('"', "");
         let mut dataref = self
             .reference
@@ -658,12 +660,14 @@ impl Pair<'_> {
             .filter(|d| !d.is_empty())
             .ok_or(Missing::Actual)?;
         drop_leading_dups(&mut data, self.offset);
-        drop_leading_dups(&mut dataref, self.offset_ref);
+        if algorithm == Algorithm::Ellipse2014 {
+            drop_leading_dups(&mut dataref, self.offset_ref);
+        }
         Ok((data, dataref))
     }
 
     fn compare(&mut self, var: &str, settings: &Settings) -> Result<Compared, Missing> {
-        let (data, dataref) = self.data(var)?;
+        let (data, dataref) = self.data(var, settings.algorithm)?;
         let timeref = self.reference.time.as_deref().unwrap();
         let time = self.actual.time.clone().unwrap();
         let cmp = compare(&time, &data, timeref, &dataref, settings);
