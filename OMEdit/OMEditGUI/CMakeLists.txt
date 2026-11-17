@@ -254,3 +254,16 @@ if(MODELICA_LS_STAGE_FILES OR MODELICA_LS_STAGE_EXE)
     endif()
   endif()
 endif()
+
+# mocoal beside the built OMEdit, where AutoLayout::findProgram() looks after
+# MOCOAL; set by OMEditLIB like MODELICA_LS_STAGE_*.
+if(MOCOAL_STAGE_EXE)
+  add_custom_command(TARGET OMEdit POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                             "${MOCOAL_STAGE_EXE}" $<TARGET_FILE_DIR:OMEdit>/${MOCOAL_STAGE_EXE_NAME}
+                     COMMENT "Staging mocoal beside OMEdit")
+  if(UNIX)
+    add_custom_command(TARGET OMEdit POST_BUILD
+                       COMMAND chmod +x $<TARGET_FILE_DIR:OMEdit>/${MOCOAL_STAGE_EXE_NAME})
+  endif()
+endif()
