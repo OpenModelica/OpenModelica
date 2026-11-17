@@ -4412,6 +4412,24 @@ algorithm
   end try;
 end generateFMI3GraphicalRepresentation;
 
+public function generateFMI2ModelIcon
+  "Writes model.png, the FMI 1.0/2.0 icon of the FMU. As the FMI 3.0 icon.png, it
+   has no connectors: the importer draws them. No file if the model has no icon."
+  input Absyn.Path className;
+  input String fmutmp;
+protected
+  Integer handle;
+algorithm
+  try
+    Values.INTEGER(handle) := NFApi.getModelInstanceIconReference(className);
+    if handle > 0 then
+      OMGraphics.writeIconPNGFromHandle(handle, AbsynUtil.pathLastIdent(className), fmutmp + "/model.png");
+      Values.BOOL(_) := NFApi.releaseModelInstanceReference(handle);
+    end if;
+  else
+  end try;
+end generateFMI2ModelIcon;
+
 protected function spliceGraphicalRepresentation
   "Insert a <GraphicalRepresentation> block in FMI 3.0 schema order: right before
    the <Terminals> open tag when present, otherwise before the closing root tag."

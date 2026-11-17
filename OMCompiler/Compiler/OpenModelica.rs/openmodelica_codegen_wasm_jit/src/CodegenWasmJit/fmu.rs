@@ -17,6 +17,7 @@ pub fn emitCsFmu(
     ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
+    model_icon: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
     emit_fmu(
@@ -26,6 +27,7 @@ pub fn emitCsFmu(
         ls_dae_manifest,
         documentation_dir,
         terminals_dir,
+        model_icon,
         simulation_flags_json,
         FMI3_MECS_ADAPTER(),
         "CS",
@@ -42,6 +44,7 @@ pub fn emitMeCsFmu(
     ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
+    model_icon: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
     emit_fmu(
@@ -51,6 +54,7 @@ pub fn emitMeCsFmu(
         ls_dae_manifest,
         documentation_dir,
         terminals_dir,
+        model_icon,
         simulation_flags_json,
         FMI3_MECS_ADAPTER(),
         "me_cs",
@@ -579,6 +583,7 @@ pub(super) fn emit_fmu(
     ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
+    model_icon: ArcStr,
     simulation_flags_json: ArcStr,
     adapter: &[u8],
     kind: &str,
@@ -644,6 +649,11 @@ pub(super) fn emit_fmu(
         if !bare {
             add_directory(&mut entries, &documentation_dir, "documentation");
             add_directory(&mut entries, &terminals_dir, "terminalsAndIcons");
+            if !model_icon.is_empty()
+                && let Ok(bytes) = openmodelica_wasi::fs::read(&model_icon)
+            {
+                entries.push(("model.png".to_string(), bytes));
+            }
         }
         // What the FMU was built with, where C's carries what its runtime reads.
         if !simulation_flags_json.is_empty() {

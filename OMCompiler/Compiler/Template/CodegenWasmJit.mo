@@ -132,6 +132,7 @@ function emitMeFmu
   input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
   input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
+  input String modelIcon "file shipped as model.png, the FMI 2.0 icon; empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
@@ -149,6 +150,7 @@ function emitCsFmu
   input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
   input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
+  input String modelIcon "file shipped as model.png, the FMI 2.0 icon; empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
@@ -166,6 +168,7 @@ function emitMeCsFmu
   input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
   input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
+  input String modelIcon "file shipped as model.png, the FMI 2.0 icon; empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
