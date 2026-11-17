@@ -56,7 +56,7 @@ simulate(RelationEqualOperands.JumpUp, stopTime = 4.0, fileNamePrefix = "Relatio
 // ""
 // record SimulationResult
 //     resultFile = "RelationEqualOperands_Touch_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RelationEqualOperands_Touch', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'RelationEqualOperands_Touch', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -65,7 +65,7 @@ simulate(RelationEqualOperands.JumpUp, stopTime = 4.0, fileNamePrefix = "Relatio
 // {1.0, 0.0, 1.0, 0.0, 0.0, 1.0}
 // record SimulationResult
 //     resultFile = "RelationEqualOperands_JumpDown_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RelationEqualOperands_JumpDown', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'RelationEqualOperands_JumpDown', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -74,7 +74,7 @@ simulate(RelationEqualOperands.JumpUp, stopTime = 4.0, fileNamePrefix = "Relatio
 // {0.0, 2.0, 2.0}
 // record SimulationResult
 //     resultFile = "RelationEqualOperands_JumpUp_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RelationEqualOperands_JumpUp', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'RelationEqualOperands_JumpUp', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
