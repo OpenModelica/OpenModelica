@@ -48,6 +48,7 @@ fmi_import_boolean.mos \
 fmi_import_enum_names.mos \
 fmi2_array_nonscalarized.mos \
 fmi2_arrays_initial_unknowns.mos \
+fmi2_model_png.mos \
 fmi2_fmustate_bounds.mos \
 fmi2_fmustate_recover.mos \
 fmi2_reset_heap.mos \

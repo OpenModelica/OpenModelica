@@ -1,0 +1,70 @@
+// name: fmi2_model_png.mos
+// keywords: FMI 2.0 export icon model.png
+// status: correct
+// teardown_command: rm -rf WithIcon.fmu WithIcon.fmutmp/ WithIcon3.fmu WithIcon3.fmutmp/ OnlyConnectors.fmu OnlyConnectors.fmutmp/ WithIcon*.log WithIcon*_info.json WithIcon*_FMU.libs WithIcon*_FMU.makefile OnlyConnectors.log OnlyConnectors_info.json OnlyConnectors_FMU.libs OnlyConnectors_FMU.makefile model.png
+//
+// An FMI 2.0 FMU has the model icon as model.png in its root (#13162). As the
+// FMI 3.0 terminalsAndIcons/icon.png, it holds the Icon layer of the model and
+// its base classes, but not the connectors: the importer draws them.
+
+loadString("
+connector In = input Real annotation(Icon(graphics = {
+  Polygon(points = {{-100,100},{100,0},{-100,-100}}, lineColor = {0,0,127}, fillColor = {0,0,127}, fillPattern = FillPattern.Solid)}));
+
+partial model IconBase
+  annotation(Icon(coordinateSystem(extent = {{-100,-100},{100,100}}), graphics = {
+    Rectangle(extent = {{-100,-100},{100,100}}, lineColor = {0,0,127}, fillColor = {255,255,255}, fillPattern = FillPattern.Solid)}));
+end IconBase;
+
+model WithIcon
+  extends IconBase;
+  In u annotation(Placement(transformation(extent = {{-120,-10},{-100,10}})));
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = u - x;
+end WithIcon;
+
+model OnlyConnectors
+  In u annotation(Placement(transformation(extent = {{-120,-10},{-100,10}})));
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = u - x;
+end OnlyConnectors;
+"); getErrorString();
+
+buildModelFMU(WithIcon, version = "2.0", fmuType = "me"); getErrorString();
+system("unzip -Z1 WithIcon.fmu | grep -x model.png"); getErrorString();
+
+// The same image as the FMI 3.0 icon without terminals.
+buildModelFMU(WithIcon, version = "3.0", fmuType = "me", fileNamePrefix = "WithIcon3"); getErrorString();
+system("unzip -o -qq WithIcon.fmu model.png && unzip -p WithIcon3.fmu terminalsAndIcons/icon.png | cmp - model.png && echo same"); getErrorString();
+
+// No icon of its own: no model.png.
+buildModelFMU(OnlyConnectors, version = "2.0", fmuType = "me"); getErrorString();
+system("unzip -Z1 OnlyConnectors.fmu | grep -c -x model.png"); getErrorString();
+
+// Result:
+// true
+// ""
+// "WithIcon.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// model.png
+// 0
+// ""
+// "WithIcon3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// same
+// 0
+// ""
+// "OnlyConnectors.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// 1
+// ""
+// endResult

@@ -991,7 +991,7 @@ public function emitWasmFMU
 protected
   String guid, modelDescriptionStr, simulationFlagsJson;
   String lsDaeManifestStr = "";
-  String fmutmp = "", terminalsDir = "", documentationDir = "";
+  String fmutmp = "", terminalsDir = "", documentationDir = "", modelIcon = "";
   list<SimCode.FmiTerminal> terminals;
   // `--fmuDirectory`: an export for an OpenModelica importer, which reads the
   // model description and the artifact and nothing else.
@@ -1018,6 +1018,13 @@ algorithm
   if FMI.isFMIVersion20(FMUVersion) then
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU2.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
+    if not bareExport then
+      Util.createDirectoryTree(fmutmp);
+      CevalScriptBackend.generateFMI2ModelIcon(simCode.modelInfo.name, fmutmp);
+      if System.regularFileExists(fmutmp + "/model.png") then
+        modelIcon := fmutmp + "/model.png";
+      end if;
+    end if;
   else
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
@@ -1054,11 +1061,11 @@ algorithm
   System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_TEMPLATES);
   simulationFlagsJson := wasmFMUSimulationFlagsJson(simCode);
   if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, modelIcon, simulationFlagsJson);
   elseif FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, modelIcon, simulationFlagsJson);
   else
-    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, modelIcon, simulationFlagsJson);
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end emitWasmFMU;
@@ -1433,6 +1440,8 @@ algorithm
         // the documentation, which shows the icon it produced.
         if FMUVersion == "3.0" then
           CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix);
+        else
+          CevalScriptBackend.generateFMI2ModelIcon(simCode.modelInfo.name, fmutmp);
         end if;
         if writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
           ExecStat.execStat("FMU documentation");
