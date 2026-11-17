@@ -1250,12 +1250,12 @@ public
       // Integer can be cast to Real.
       case INTEGER()
         then if Type.isReal(ety) then REAL(intReal(exp.value))
-             elseif Type.isEnumeration(ety) and Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration") // Integer can be cast to Enumeration with non-standard Modelica
+             elseif Type.isEnumeration(ety) and Error.nonStandardAccepted("nonStdIntegersAsEnumeration") // Integer can be cast to Enumeration with non-standard Modelica
              then ENUM_LITERAL(ety, Type.nthEnumLiteral(ety, exp.value), exp.value)
              else typeCastGeneric(exp, ety);
 
       // Enumeration can be cast to Integer with non-standard Modelica
-      case ENUM_LITERAL() guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+      case ENUM_LITERAL() guard Error.nonStandardAccepted("nonStdEnumerationAsIntegers")
         then if Type.isInteger(ety) then INTEGER(toInteger(exp)) else typeCastGeneric(exp, ety);
 
       // Boolean can be cast to Real (only if -d=nfAPI is on)

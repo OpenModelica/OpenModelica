@@ -1490,6 +1490,9 @@ constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
 constant ConfigFlag INSTALL_MISSING_PACKAGES = CONFIG_FLAG(175, "installMissingPackages",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Installs the libraries to load that are not installed, using the package manager.");
+constant ConfigFlag WARN_NON_STANDARD_MODELICA = CONFIG_FLAG(176, "warnNonStandardModelica",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Reports the non-standard Modelica that --allowNonStandardModelica allows as warnings instead of errors.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

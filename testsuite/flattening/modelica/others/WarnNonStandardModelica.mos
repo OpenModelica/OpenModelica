@@ -1,0 +1,71 @@
+// name:     WarnNonStandardModelica.mos
+// keywords: non-standard Modelica extensions
+// status:   correct
+//
+// --warnNonStandardModelica turns the errors that --allowNonStandardModelica
+// removes into warnings that name the option.
+//
+
+loadFile("WarnNonStandardModelica.mo"); getErrorString();
+setCommandLineOptions("--warnNonStandardModelica"); getErrorString();
+instantiateModel(WarnNonStandardModelica.RealEquality) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.ReinitInAlgorithm) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.ProtectedAccess) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.TopLevelOuter) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.UnbalancedConnector) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.ImplicitStart); getErrorString();
+instantiateModel(WarnNonStandardModelica.ConditionalContext) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.EnumerationAsInteger) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.IntegerAsEnumeration) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.MultipleExternal) <> ""; getErrorString();
+// --allowNonStandardModelica takes precedence.
+setCommandLineOptions("--allowNonStandardModelica=realEquality,protectedAccess"); getErrorString();
+instantiateModel(WarnNonStandardModelica.RealEquality) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.ProtectedAccess) <> ""; getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:4:5-4:25:writable] Warning: In relation x == 0.5, == on Real operands is not allowed in non-function contexts. Use --allowNonStandardModelica=realEquality to ignore this error. [Non-standard Modelica: --allowNonStandardModelica=realEquality]
+// "
+// true
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:13:7-13:19:writable] Warning: Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore). [Non-standard Modelica: --allowNonStandardModelica=reinitInAlgorithms]
+// "
+// true
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:19:5-19:24:writable] Warning: Illegal access of protected element c. [Non-standard Modelica: --allowNonStandardModelica=protectedAccess]
+// "
+// true
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:31:5-31:14:writable] Warning: The model can't be instantiated due to top-level outer element 'o', it may only be used as part of a simulation model. [Non-standard Modelica: --allowNonStandardModelica=nonStdTopLevelOuter]
+// [flattening/modelica/others/WarnNonStandardModelica.mo:31:5-31:14:writable] Warning: An inner declaration for outer component o could not be found and was automatically generated.
+// "
+// true
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:40:5-40:8:writable] Warning: Connector c is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0). [Non-standard Modelica: --allowNonStandardModelica=unbalancedModel]
+// "
+// "class WarnNonStandardModelica.ImplicitStart
+//   parameter Real p = 0.0;
+// end WarnNonStandardModelica.ImplicitStart;
+// "
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:47:5-47:21:writable] Warning: Parameter p has neither value nor start value, and is fixed during initialization (fixed=true). [Non-standard Modelica: --allowNonStandardModelica=implicitParameterStartAttribute]
+// "
+// true
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:53:5-53:15:writable] Warning: 'y' refers to a component with a false condition. [Non-standard Modelica: --allowNonStandardModelica=illegalConditionalContext]
+// "
+// true
+// "Warning: Allowing usage of enumeration expression: WarnNonStandardModelica.E.b as Integer: 2. This is non-standard Modelica, use Integer(WarnNonStandardModelica.E.b) instead! [Non-standard Modelica: --allowNonStandardModelica=nonStdEnumerationAsIntegers]
+// "
+// true
+// "Warning: Allowing usage of Integer expression: 1 as enumeration: WarnNonStandardModelica.E.a. This is non-standard Modelica, use the actual enumeration instead! [Non-standard Modelica: --allowNonStandardModelica=nonStdIntegersAsEnumeration]
+// "
+// true
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:72:3-75:9:writable] Warning: Function f1 has more than one algorithm section or external declaration. [Non-standard Modelica: --allowNonStandardModelica=nonStdMultipleExternalDeclarations]
+// "
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// endResult
