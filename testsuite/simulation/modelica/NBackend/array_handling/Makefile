@@ -46,6 +46,7 @@ arrayConnectRooted.mos \
 entwinedOrder.mos \
 entwinedScalarAnchors.mos \
 entwinedOrderResizable.mos \
+entwinedIndependentElements.mos \
 resizableOverride.mos \
 resizableSizeDimension.mos \
 resizableDiffIteratorArray.mos \

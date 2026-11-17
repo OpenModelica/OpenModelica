@@ -641,7 +641,8 @@ public
   end createPseudoSlice;
 
   function createPseudoEntwined
-    input list<Integer> eqn_indices;
+    "uses the first call order with a periodic order, otherwise the last one"
+    input list<list<Integer>> candidates "valid call orders of the same scalar equations";
     input array<Integer> eqn_to_var;
     input Mapping mapping;
     input VariablePointers vars;
@@ -650,7 +651,8 @@ public
     output StrongComponent entwined;
   protected
     UnorderedMap<Integer, ComponentRef> cref_map = UnorderedMap.new<ComponentRef>(Util.id, intEq);
-    Option<StrongComponent> opt_entwined;
+    Option<StrongComponent> opt_entwined = NONE();
+    list<Integer> eqn_indices = listHead(candidates);
   algorithm
     // collect crefs to solve for
     for node in nodes loop
@@ -661,7 +663,10 @@ public
         else ();
       end match;
     end for;
-    opt_entwined := tryPseudoEntwined(eqn_indices, eqn_to_var, mapping, vars, eqns, cref_map);
+    for order in candidates loop
+      opt_entwined := tryPseudoEntwined(order, eqn_to_var, mapping, vars, eqns, cref_map);
+      if hasPeriodicOrder(opt_entwined) then break; end if;
+    end for;
     if isNone(opt_entwined) then
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because the order of the entwined equations could not be resolved for every size of the resizable arrays:\n"
         + stringDelimitList(list(Equation.pointerToString(EquationPointers.getEqnAt(eqns, e), "\t") for e in List.unique(list(mapping.eqn_StA[i] for i in eqn_indices))), "\n")});
@@ -669,6 +674,16 @@ public
     end if;
     SOME(entwined) := opt_entwined;
   end createPseudoEntwined;
+
+  function hasPeriodicOrder
+    input Option<StrongComponent> comp;
+    output Boolean b;
+  algorithm
+    b := match comp
+      case SOME(ENTWINED_COMPONENT(periodic_order = SOME(_))) then true;
+      else false;
+    end match;
+  end hasPeriodicOrder;
 
   function tryPseudoEntwined
     "the entwined component for the scalar equations in call order, none if it has resizable
