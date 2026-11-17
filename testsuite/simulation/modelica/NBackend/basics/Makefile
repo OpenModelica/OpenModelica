@@ -28,6 +28,7 @@ underdetermined_init.mos \
 variability.mos \
 loadResource.mos \
 ifBranchFunctionCalls.mos \
+iteratorNameClash.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
