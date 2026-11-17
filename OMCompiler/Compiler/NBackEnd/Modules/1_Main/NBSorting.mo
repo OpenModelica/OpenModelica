@@ -656,7 +656,10 @@ public
             // an algebraic loop can not be interleaved with the other equations, solve all of them together
             comp := StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);
           else
-            comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
+            comp := StrongComponent.createPseudoEntwined({
+              orderedTopological(m_local, map_back, mapping, true),
+              orderedTopological(m_local, map_back, mapping, false),
+              sorted_body_indices}, matching.eqn_to_var, mapping, vars, eqns, node_comp);
           end if;
         then comp;
 
@@ -668,6 +671,70 @@ public
     end collapse;
 
   protected
+    function orderedTopological
+      "a topological order of an acyclic local system that calls the elements of each array
+      equation by increasing (forward) or decreasing scalar index. scalar equations are called
+      when an element needs them."
+      input Adjacency.IntMatrix m       "local adjacency matrix, variable i is solved by equation i";
+      input array<Integer> map_back     "local to global equation indices";
+      input Adjacency.Mapping mapping;
+      input Boolean forward;
+      output list<Integer> order = {}   "global equation indices";
+    protected
+      Integer n = arrayLength(map_back);
+      array<Boolean> done = arrayCreate(n, false);
+      array<Integer> call_eqn = arrayCreate(n, 0), call_pos = arrayCreate(n, 0);
+      list<tuple<Integer, Integer, Integer>> keyed = {} "key, array equation and local equation";
+      Integer first, size, top, e, pos, dep;
+    algorithm
+      for j in 1:n loop
+        (first, size) := mapping.eqn_AtS[mapping.eqn_StA[map_back[j]]];
+        keyed := (if size == 1 then -1 else (if forward then map_back[j] - first else first + size - 1 - map_back[j]),
+                  mapping.eqn_StA[map_back[j]], j) :: keyed;
+      end for;
+      keyed := List.sort(keyed, keyGreater);
+
+      // iterative depth-first search, the dependencies of an equation are called before it
+      for tpl in keyed loop
+        (_, _, e) := tpl;
+        if done[e] then continue; end if;
+        top := 1;
+        call_eqn[1] := e;
+        call_pos[1] := 1;
+        while top > 0 loop
+          e := call_eqn[top];
+          pos := call_pos[top];
+          if pos <= Adjacency.IntMatrix.rowLength(m, e) then
+            call_pos[top] := pos + 1;
+            dep := Adjacency.IntMatrix.get(m, e, pos);
+            if dep <> e and not done[dep] then
+              top := top + 1;
+              call_eqn[top] := dep;
+              call_pos[top] := 1;
+            end if;
+          else
+            done[e] := true;
+            order := map_back[e] :: order;
+            top := top - 1;
+          end if;
+        end while;
+      end for;
+      order := listReverse(order);
+    end orderedTopological;
+
+    function keyGreater
+      input tuple<Integer, Integer, Integer> t1;
+      input tuple<Integer, Integer, Integer> t2;
+      output Boolean b;
+    protected
+      Integer k1, a1, k2, a2;
+    algorithm
+      (k1, a1, _) := t1;
+      (k2, a2, _) := t2;
+      // scalar equations (-1) last
+      b := if k1 == -1 or k2 == -1 then k2 <> -1 else k1 > k2 or (k1 == k2 and a1 > a2);
+    end keyGreater;
+
     function isAlgebraicLoop
       input SuperNode node;
       output Boolean b;
