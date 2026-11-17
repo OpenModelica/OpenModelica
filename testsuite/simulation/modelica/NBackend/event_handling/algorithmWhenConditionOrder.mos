@@ -1,0 +1,26 @@
+// name: algorithmWhenConditionOrder
+// keywords: NewBackend
+// status: correct
+// The condition of a when statement has to be computed before the algorithm.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(Modelica.Electrical.Analog.Examples.AD_DA_conversion, stopTime = 0.01); getErrorString();
+val(dA_Converter.y, 0.0012);
+val(dA_Converter.y, 0.01);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.AD_DA_conversion_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.01, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.AD_DA_conversion', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 67.0
+// 101.0
+// endResult

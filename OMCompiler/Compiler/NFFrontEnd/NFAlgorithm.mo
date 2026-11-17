@@ -252,7 +252,7 @@ protected
   algorithm
     () := match statement
       local
-        Expression lhs, rhs;
+        Expression lhs, rhs, cond;
         list<Expression> elements;
         list<Statement> stmts;
         list<tuple<Expression, list<Statement>>> branches;
@@ -284,7 +284,8 @@ protected
 
       case Statement.IF(branches = branches) algorithm
         for branch in branches loop
-          (_, stmts) := branch;
+          (cond, stmts) := branch;
+          Expression.apply(cond, function expressionInputs(inputs_set = inputs_set, outputs_set = outputs_set));
           // TODO warn about using unassigned outputs in condition -> const eval?
           for stmt in stmts loop
             statementInputsOutputs(stmt, inputs_set, outputs_set);
@@ -295,7 +296,8 @@ protected
 
       case Statement.WHEN(branches = branches) algorithm
         for branch in branches loop
-          (_, stmts) := branch;
+          (cond, stmts) := branch;
+          Expression.apply(cond, function expressionInputs(inputs_set = inputs_set, outputs_set = outputs_set));
           // what about using unassigned outputs in condition?
           for stmt in stmts loop
             statementInputsOutputs(stmt, inputs_set, outputs_set);
@@ -305,6 +307,7 @@ protected
       then ();
 
       case Statement.WHILE(body = stmts) algorithm
+        Expression.apply(statement.condition, function expressionInputs(inputs_set = inputs_set, outputs_set = outputs_set));
         // TODO warn about using unassigned outputs in condition -> const eval?
         for stmt in stmts loop
           statementInputsOutputs(stmt, inputs_set, outputs_set);
