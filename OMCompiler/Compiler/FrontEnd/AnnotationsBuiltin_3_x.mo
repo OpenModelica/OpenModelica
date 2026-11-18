@@ -395,6 +395,7 @@ record Plot
   Curve[:] curves "Plot curves";
   Axis x = Axis() "X axis properties";
   Axis y = Axis() "Y axis properties";
+  Axis yRight = Axis() "Right y axis properties";
 end Plot;
 
 record Figure
