@@ -75,7 +75,8 @@ Configuring the OpenModelica Compiler
 MDT needs to be able to locate the binary of the compiler. It uses the
 environment variable OPENMODELICAHOME to do so. If several OpenModelica versions
 are installed on Windows, see :ref:`multiple-installations`, this is the
-version selected as the default one.
+version selected as the default one; if none is selected, MDT uses the newest
+installed version.
 
 If you have problems using MDT, make sure that OPENMODELICAHOME is
 pointing to the folder where the OpenModelica Compiler is installed. In
