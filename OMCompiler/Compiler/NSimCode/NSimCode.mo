@@ -82,6 +82,7 @@ protected
   import BackendUtil = NBBackendUtil;
   import NBPartitioning.ClockedInfo;
   import BEquation = NBEquation;
+  import Jacobian = NBJacobian;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, Iterator};
   import NBEvents.EventInfo;
   import NBInitialization;
@@ -301,6 +302,7 @@ public
       input Absyn.Program program "the instantiated program; passed in by the caller (e.g. from SymbolTable.getAbsyn) so NSimCode does not depend on the old backend's SymbolTable";
       output SimCode simCode;
       output AvlTreePathFunction.Tree oldFunctionTree;
+      output SimCodeIndices simCodeIndices "Continue allocating unique indices for target-specific Jacobians.";
     protected
       partial function mapExp
         input output Expression exp;
@@ -335,7 +337,6 @@ public
           list<OldSimCodeFunction.RecordDeclaration> recordDecls;
           // New SimCode structures
           ModelInfo modelInfo;
-          SimCodeIndices simCodeIndices;
           UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
           list<SimPartition> clockedPartitions;
           Pointer<Integer> literals_idx;
@@ -595,6 +596,35 @@ public
         then fail();
       end match;
     end create;
+
+    function addJacobian
+      "Include a target-specific Jacobian before converting SimCode to the template representation."
+      input BackendDAE jacobian;
+      input output SimCode simCode;
+      input output SimCodeIndices indices;
+    protected
+      Option<SimJacobian> simJacobian;
+      SimJacobian jac;
+      ModelInfo modelInfo;
+      VarInfo varInfo;
+    algorithm
+      (simJacobian, indices) := SimJacobian.create(jacobian, indices, simCode.simcode_map);
+      if isSome(simJacobian) then
+        jac := Util.getOption(simJacobian);
+        simCode.jacobians := jac :: simCode.jacobians;
+        simCode.jac_blocks := listAppend(SimJacobian.getJacobianBlocks(jac), simCode.jac_blocks);
+        modelInfo := simCode.modelInfo;
+        if isSome(jac.jac_map) then
+          modelInfo.vars := SimVars.addSeedAndJacobianVars(modelInfo.vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
+        end if;
+        // Creating the Jacobian also allocates equation and system indices.
+        varInfo := VarInfo.create(modelInfo.vars, simCode.eventInfo, indices);
+        // Target-specific matrices are not included in VarInfo's default count.
+        varInfo.numJacobians := indices.jacobianIndex;
+        modelInfo.varInfo := varInfo;
+        simCode.modelInfo := modelInfo;
+      end if;
+    end addJacobian;
 
     function convert
       input SimCode simCode;

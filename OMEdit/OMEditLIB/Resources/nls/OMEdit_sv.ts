@@ -4167,7 +4167,7 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
         <translation>Stöd för CRML är inte aktiverat. Aktivera det i &lt;b&gt;%1-&gt;Allmänt-&gt;Aktivera stöd för CRML&lt;/b&gt; och starta om OMEdit.</translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation>Ett fel inträffade när modellen lästes in:
 %1.</translation>

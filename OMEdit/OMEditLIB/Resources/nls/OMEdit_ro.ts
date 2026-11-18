@@ -4145,7 +4145,7 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>Nu se poate elibera un element pe el însuși.</translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation type="unfinished"></translation>
     </message>

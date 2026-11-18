@@ -1,0 +1,44 @@
+// name: fmi3_adjoint_derivatives.mos
+// keywords: FMI 3.0 export adjoint derivatives jacobian
+// status: correct
+// teardown_command: rm -rf Mdd.fmu Mdd.fmutmp/ Mdd_md.xml Mdd.log Mdd_info.json index.html Mdd_FMU.libs Mdd_FMU.makefile Mdd_external_functions.json resources
+//
+// FMI 3.0 adjoint derivatives. With --newBackend and -d=-disableDirectionalDerivatives the
+// FMIDER Jacobian is generated, the ModelExchange element advertises
+// providesAdjointDerivatives="true", and the runtime fmi3GetAdjointDerivative
+// returns the vector-Jacobian product (verified at runtime via the FMI 3.0 C API).
+// Only the new backend supports adjoint derivatives and it also only supports adjoint derivatives and not directional derivatives (currently).
+// So -disableDirectionalDerivatives with --newBackend only generates adjoint derivatives and not directional derivatives.
+
+setCommandLineOptions("--newBackend -d=-disableDirectionalDerivatives"); getErrorString();
+
+loadString("
+model Mdd
+  Real x(start = 1.0);
+  Real y(start = 2.0);
+equation
+  der(x) = -2*x + y;
+  der(y) = x - 3*y;
+end Mdd;
+"); getErrorString();
+
+buildModelFMU(Mdd, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq Mdd.fmu modelDescription.xml > Mdd_md.xml"); getErrorString();
+system("grep -oE 'providesAdjointDerivatives=\"[a-z]*\"' Mdd_md.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Mdd.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// providesAdjointDerivatives="true"
+// 0
+// ""
+// endResult

@@ -262,6 +262,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.CHECK_DEF_USE,
   Flags.TEARING_COST,
   Flags.OMEDIT,
+  Flags.FMI_ADJOINT_PARAMETERS,
+  Flags.FMI_DIRECTIONAL_PARAMETERS,
   Flags.CHECK_USED_ELEMENTS_LOOKUP,
   Flags.NF_SCRIPTING,
   Flags.HOMOTOPY_IN_RESIDUALS

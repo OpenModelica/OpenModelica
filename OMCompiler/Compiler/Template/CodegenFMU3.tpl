@@ -395,7 +395,7 @@ case SIMCODE(__) then
     canGetAndSetFMUState="true"
     canSerializeFMUState="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivatives="true"' else 'providesDirectionalDerivatives="false"'%>
-    providesAdjointDerivatives="false"
+    <% if providesAdjointDerivative(simCode) then 'providesAdjointDerivatives="true"' else 'providesAdjointDerivatives="false"'%>
     providesPerElementDependencies="false"
     needsCompletedIntegratorStep="true"/>
   >>
@@ -423,7 +423,7 @@ case SIMCODE(__) then
     canGetAndSetFMUState="true"
     canSerializeFMUState="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivatives="true"' else 'providesDirectionalDerivatives="false"'%>
-    providesAdjointDerivatives="false"
+    <% if providesAdjointDerivative(simCode) then 'providesAdjointDerivatives="true"' else 'providesAdjointDerivatives="false"'%>
     providesPerElementDependencies="false"/>
   >>
 end CoSimulation3;
@@ -442,7 +442,7 @@ case SIMCODE(__) then
     canGetAndSetFMUState="true"
     canSerializeFMUState="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivatives="true"' else 'providesDirectionalDerivatives="false"'%>
-    providesAdjointDerivatives="false"
+    <% if providesAdjointDerivative(simCode) then 'providesAdjointDerivatives="true"' else 'providesAdjointDerivatives="false"'%>
     providesPerElementDependencies="false"/>
   >>
 end ScheduledExecution3;

@@ -1,0 +1,44 @@
+// name: fmi3_adjoint_derivatives_eval.mos
+// keywords: FMI 3.0 export adjoint derivatives jacobian fmpy
+// status: correct
+// teardown_command: rm -rf AdjointSmoke.fmu AdjointSmoke.fmutmp/ AdjointSmoke.log AdjointSmoke_info.json index.html AdjointSmoke_FMU.libs AdjointSmoke_FMU.makefile AdjointSmoke_external_functions.json resources
+//
+// FMI 3.0 adjoint derivatives runtime validation. Export with the new backend
+// and directional derivatives, then verify via FMPy that
+// fmi3GetAdjointDerivative returns the expected vector-Jacobian products.
+// DISCLAIMER: Needs the old C runtime.
+
+setCommandLineOptions("--newBackend --simCodeTarget=C.old -d=-disableDirectionalDerivatives"); getErrorString();
+
+loadString("
+model AdjointSmoke
+  input Real u(start = 0.5);
+  Real x(start = 1, fixed = true);
+  Real z(start = 2, fixed = true);
+  output Real y;
+equation
+  der(x) = -2*x + 3*z + 5*u;
+  der(z) =  7*x - 11*z + 13*u;
+  y = 17*x + 19*z + 23*u;
+end AdjointSmoke;
+"); getErrorString();
+
+buildModelFMU(AdjointSmoke, version="3.0", fmuType="me"); getErrorString();
+
+// Which interpreter can import fmpy is a property of the machine, not of the
+// test, so rtest hands it over in FMPY_TOOL; python3 is the default.
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../check_fmi3_adjoint_derivatives_fmpy.py AdjointSmoke.fmu"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "AdjointSmoke.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// PASS: FMI 3 New Backend export and adjoint derivatives
+// 0
+// ""
+// endResult

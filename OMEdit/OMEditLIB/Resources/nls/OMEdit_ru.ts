@@ -4156,7 +4156,7 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>Невозможно перетащить элемент на самого себя.</translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation type="unfinished"></translation>
     </message>

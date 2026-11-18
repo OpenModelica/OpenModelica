@@ -325,6 +325,7 @@ case SIMCODE(__) then
   #define FMI3_CLOCK_VR_OFFSET   (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS)
   #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
   #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
+  <%if Flags.getConfigBool(Flags.NEW_BACKEND) then '#define OMC_FMI3_FORWARD_JACOBIAN_MAP'%>
   <%SimCodeCodegenUtil.fmi3ArrayDefines(simCode)%>
   >>
   else if isFMIVersion20(FMUVersion) then
@@ -358,6 +359,10 @@ case SIMCODE(__) then
   fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
+  int mapAdjointReference2KnownNumber(const fmi2ValueReference vr);
+  int mapAdjointReference2UnknownNumber(const fmi2ValueReference vr);
+  int mapDirectionalReference2KnownNumber(const fmi2ValueReference vr);
+  int mapDirectionalReference2UnknownNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr);
@@ -1389,6 +1394,41 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
           default:
             return -1;
         }
+    }
+    <%if Flags.getConfigBool(Flags.NEW_BACKEND) then <<
+    /* Forward axes use actual generated indices, including optional parameters. */
+    int mapDirectionalReference2KnownNumber(const fmi2ValueReference vr) {
+      switch (vr) {
+        <%SimCodeCodegenUtil.fmi3AdjointVariables(simCode, true, "FMIDER") |> SIMVAR(name=name, index=index) =>
+        'case <%lookupVR(name, simCode)%>: return <%index%>;' ;separator="\n"%>
+        default: return -1;
+      }
+    }
+    int mapDirectionalReference2UnknownNumber(const fmi2ValueReference vr) {
+      switch (vr) {
+        <%SimCodeCodegenUtil.fmi3AdjointVariables(simCode, false, "FMIDER") |> SIMVAR(name=name, index=index) =>
+        'case <%lookupVR(name, simCode)%>: return <%index%>;' ;separator="\n"%>
+        default: return -1;
+      }
+    }
+    >>%>
+    /* The adjoint result axis includes exactly the generated independent variables. */
+    int mapAdjointReference2KnownNumber(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%SimCodeCodegenUtil.fmi3AdjointVariables(simCode, false, "FMIDERADJ") |> SIMVAR(name=name, index=index) =>
+          'case <%lookupVR(name, simCode)%>: return <%index%>;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    /* The adjoint seed axis need not match the exported output order. */
+    int mapAdjointReference2UnknownNumber(const fmi2ValueReference vr) {
+      switch (vr) {
+        <%SimCodeCodegenUtil.fmi3AdjointVariables(simCode, true, "FMIDERADJ") |> SIMVAR(name=name, index=index) =>
+        'case <%lookupVR(name, simCode)%>: return <%index%>;' ;separator="\n"%>
+        default:
+        return -1;
+      }
     }
     >>
 end match

@@ -1049,6 +1049,7 @@ end SparsityRow;
       FmiDerivatives fmiDerivatives;
       Option<JacobianMatrix> continuousPartialDerivatives;
       Option<JacobianMatrix> initialPartialDerivatives;
+      Option<JacobianMatrix> adjointPartialDerivatives;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
       list<FmiArray> fmiArrays;
@@ -1499,6 +1500,13 @@ package SimCodeCodegenUtil
     output String defines;
   end fmi3ArrayDefines;
 
+  function fmi3AdjointVariables
+    input SimCode.SimCode simCode;
+    input Boolean seedVars;
+    input String matrixName;
+    output list<SimCodeVar.SimVar> knowns;
+  end fmi3AdjointVariables;
+
   function cacheFMI3ValueReferences
     input SimCode.SimCode simCode;
     output String dummy;
@@ -1736,6 +1744,11 @@ package SimCodeCodegenUtil
     input SimCode.SimCode inSimCode;
     output Boolean b;
   end providesDirectionalDerivative;
+
+  function providesAdjointDerivative
+    input SimCode.SimCode inSimCode;
+    output Boolean b;
+  end providesAdjointDerivative;
 
   function isVarIndexListConsecutive
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;

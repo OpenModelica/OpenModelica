@@ -1,0 +1,47 @@
+// name: fmi3_directional_derivatives_nb_eval.mos
+// keywords: FMI 3.0 new backend directional derivatives parameters
+// status: correct
+// teardown_command: rm -rf DirectionalParameters.fmu DirectionalParameters.fmutmp DirectionalParameters.log DirectionalParameters_info.json DirectionalParameters_FMU.libs DirectionalParameters_FMU.makefile DirectionalParameters_external_functions.json index.html resources
+
+setCommandLineOptions("--newBackend --simCodeTarget=C.old -d=-disableDirectionalDerivatives"); getErrorString();
+loadFile("DirectionalParameters.mo"); getErrorString();
+buildModelFMU(DirectionalParameters, version="3.0", fmuType="me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../check_fmi3_directional_derivatives_fmpy.py DirectionalParameters.fmu default-parameters"); getErrorString();
+setCommandLineOptions("-d=fmiDirectionalParameters --simCodeScalarize=false"); getErrorString();
+buildModelFMU(DirectionalParameters, version="3.0", fmuType="me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../check_fmi3_directional_derivatives_fmpy.py DirectionalParameters.fmu parameters"); getErrorString();
+setCommandLineOptions("--simCodeScalarize=true"); getErrorString();
+buildModelFMU(DirectionalParameters, version="3.0", fmuType="me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../check_fmi3_directional_derivatives_fmpy.py DirectionalParameters.fmu parameters"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "DirectionalParameters.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// PASS: FMI 3 New Backend directional derivatives (default-parameters)
+// 0
+// ""
+// true
+// ""
+// "DirectionalParameters.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// PASS: FMI 3 New Backend directional derivatives (parameters)
+// 0
+// ""
+// true
+// ""
+// "DirectionalParameters.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// PASS: FMI 3 New Backend directional derivatives (parameters)
+// 0
+// ""
+// endResult

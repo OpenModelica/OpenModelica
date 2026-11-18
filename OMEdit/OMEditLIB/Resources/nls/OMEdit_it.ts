@@ -4167,7 +4167,7 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>Non è possibile rilasciare una voce su se stessa.</translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation>Si è verificato un errore durante il caricamento del modello:
 %1.</translation>

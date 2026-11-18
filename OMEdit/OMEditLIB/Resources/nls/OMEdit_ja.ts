@@ -4147,7 +4147,7 @@ You can choose between waiting longer or abort debugging.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation type="unfinished"></translation>
     </message>

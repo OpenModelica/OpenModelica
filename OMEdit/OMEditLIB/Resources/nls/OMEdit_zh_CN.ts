@@ -4157,7 +4157,7 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>名称&lt;b&gt;%1&lt;/b&gt;不是有效的标识符。&gt;名称必须以字母开头，并且所有字符必须是字母或数字，且名称不能是保留字。</translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation type="unfinished"></translation>
     </message>

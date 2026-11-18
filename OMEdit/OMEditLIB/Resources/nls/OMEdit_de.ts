@@ -4167,7 +4167,7 @@ Weiter warten oder das Debuggen abbrechen?</numerusform>
         <translation>Ein Element kann nicht auf sich selbst gezogen werden.</translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation>Beim Laden des Modells ist ein Fehler aufgetreten:
 %1.</translation>

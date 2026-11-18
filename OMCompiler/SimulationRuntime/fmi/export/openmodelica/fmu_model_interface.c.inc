@@ -1599,6 +1599,19 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
     }
   }
 
+  /* allocate memory for the adjoint (vector-Jacobian product) Jacobian used by
+   * fmi3GetAdjointDerivative; only present when the new backend generated it. */
+  comp->_has_jacobian_adjoint = 0;
+  comp->fmiDerJacAdj = NULL;
+  if (comp->fmuData->callback->initialPartialFMIDERADJ != NULL)
+  {
+    comp->fmiDerJacAdj = (JACOBIAN*) calloc(1, sizeof(JACOBIAN));
+    if (! comp->fmuData->callback->initialPartialFMIDERADJ(comp->fmuData, comp->threadData, comp->fmiDerJacAdj))
+    {
+      comp->_has_jacobian_adjoint = 1;
+    }
+  }
+
   // int cols = comp->fmiDerJac->sizeCols;
   // int rows = comp->fmiDerJac->sizeRows;
   // printf("\nFMIDER number of rows and colums");
@@ -1710,6 +1723,21 @@ void FMIX(FreeInstance)(fmiXComponent c)
     free(comp->fmiDerJacInitialization->sparsePattern); comp->fmiDerJacInitialization->sparsePattern = NULL;
 
     free(comp->fmiDerJacInitialization); comp->fmiDerJacInitialization=NULL;
+  }
+
+
+  /* Free adjoint jacobian data */
+  if (comp->_has_jacobian_adjoint == 1) {
+    free(comp->fmiDerJacAdj->seedVars); comp->fmiDerJacAdj->seedVars = NULL;
+    free(comp->fmiDerJacAdj->resultVars); comp->fmiDerJacAdj->resultVars = NULL;
+    free(comp->fmiDerJacAdj->tmpVars); comp->fmiDerJacAdj->tmpVars = NULL;
+
+    free(comp->fmiDerJacAdj->sparsePattern->leadindex); comp->fmiDerJacAdj->sparsePattern->leadindex = NULL;
+    free(comp->fmiDerJacAdj->sparsePattern->index); comp->fmiDerJacAdj->sparsePattern->index = NULL;
+    free(comp->fmiDerJacAdj->sparsePattern->colorCols); comp->fmiDerJacAdj->sparsePattern->colorCols = NULL;
+    free(comp->fmiDerJacAdj->sparsePattern); comp->fmiDerJacAdj->sparsePattern = NULL;
+
+    free(comp->fmiDerJacAdj); comp->fmiDerJacAdj=NULL;
   }
 
   free(comp->states); comp->states = NULL;

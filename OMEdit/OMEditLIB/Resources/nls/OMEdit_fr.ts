@@ -4169,7 +4169,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation type="unfinished"></translation>
     </message>

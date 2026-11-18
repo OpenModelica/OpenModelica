@@ -678,6 +678,17 @@ algorithm
   end match;
 end providesDirectionalDerivative;
 
+public function providesAdjointDerivative
+  input SimCode.SimCode inSimCode;
+  output Boolean b;
+algorithm
+  b := match inSimCode
+    case SimCode.SIMCODE(modelStructure=SOME(SimCode.FMIMODELSTRUCTURE(adjointPartialDerivatives=SOME(_))))
+    then true;
+    else false;
+  end match;
+end providesAdjointDerivative;
+
 protected function getVarIndexInfosByMapping "author: marcusw
   Return the variable indices stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
@@ -2788,6 +2799,54 @@ algorithm
     else ();
   end match;
 end stackArrayLength;
+
+public function fmi3AdjointVariables
+  "The primal knowns or unknowns with their actual FMI Jacobian result/seed indices. Use the
+   Jacobian map rather than assuming states/inputs/parameters have the same
+    order or size as the exported variable lists. An absent entry is not a
+   supported independent variable (in particular, parameters by default)."
+  input SimCode.SimCode simCode;
+  input Boolean seedVars = false;
+  input String matrixName = "FMIDERADJ";
+  output list<SimCodeVar.SimVar> knowns = {};
+protected
+  HashTableCrefSimVar.HashTable ht;
+  SimCodeVar.SimVar known;
+  UnorderedMap<Integer, Integer> indices = UnorderedMap.new<Integer>(Util.id, intEq);
+  Option<Integer> reference;
+  Integer vr;
+algorithm
+  for jac in simCode.jacobianMatrices loop
+    if jac.matrixName == matrixName and isSome(jac.crefsHT) then
+      ht := Util.getOption(jac.crefsHT);
+      for v in BaseHashTable.hashTableValueList(ht) loop
+        if (if seedVars then valueEq(v.varKind, BackendDAE.SEED_VAR())
+          else valueEq(v.varKind, BackendDAE.JAC_VAR())) and v.index >= 0 then
+          known := v;
+          known.name := ComponentReference.crefStripFirstIdent(v.name);
+          // The Jacobian hash table also contains aggregate array aliases.
+          // Only exported scalar keys belong in the scalarized VR switch;
+          // aggregate aliases may be absent from the model's VR table, or
+          // share the first element's VR and Jacobian index.
+          reference := AvlTreeCRToInt.getOpt(simCode.valueReferences, known.name);
+          if isSome(reference) then
+            vr := Util.getOption(reference);
+            if not UnorderedMap.contains(vr, indices) then
+              UnorderedMap.add(vr, known.index, indices);
+              knowns := known :: knowns;
+            else
+              true := UnorderedMap.getOrFail(vr, indices) == known.index;
+            end if;
+          elseif Flags.isSet(Flags.FAILTRACE) then
+            print("FMI Jacobian: skipping non-exported aggregate " + ComponentReferenceBasics.printComponentRefStr(known.name) + "\n");
+          end if;
+        end if;
+      end for;
+      knowns := List.sort(knowns, simVarIndexGt);
+      return;
+    end if;
+  end for;
+end fmi3AdjointVariables;
 
 public function isJacobianColumnCref
   "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The
