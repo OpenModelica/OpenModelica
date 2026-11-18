@@ -405,7 +405,10 @@ static void clear_rt_step(DATA* data)
  *  non-linear system that could not be solved: It restores the last accepted
  *  point and settles the discrete system over it, so performSimulation can take
  *  the step again with a smaller step size. The integrator restarts on it like
- *  after an event. Only the first retry of a step is reported with a warning.
+ *  after an event, so the zero crossings are saved as after an event, too:
+ *  updateDiscreteSystem evaluates every relation, also one in an if-branch that
+ *  was not taken since its last event. Only the first retry of a step is
+ *  reported with a warning.
  */
 static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int retry)
 {
@@ -417,6 +420,7 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   solverInfo->currentTime = data->localData[0]->timeValue;
   overwriteOldSimulationData(data);
   updateDiscreteSystem(data, threadData);
+  saveZeroCrossingsAfterEvent(data, threadData);
   if (0 == retry) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
   }
