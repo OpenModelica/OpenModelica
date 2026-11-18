@@ -24,7 +24,10 @@ fn close(a: f64, b: f64) -> bool {
 fn assert_vec(got: &[f64], want: &[f64], what: &str) {
     assert_eq!(got.len(), want.len(), "{what}: length");
     for (i, (g, w)) in got.iter().zip(want).enumerate() {
-        assert!(close(*g, *w), "{what}[{i}]: got {g}, want {w}\n  got  {got:?}\n  want {want:?}");
+        assert!(
+            close(*g, *w),
+            "{what}[{i}]: got {g}, want {w}\n  got  {got:?}\n  want {want:?}"
+        );
     }
 }
 
@@ -60,7 +63,13 @@ fn dgetrf_packed_factors_and_pivots() {
         for j in 0..3 {
             let mut s = 0.0;
             for k in 0..3 {
-                let lik = if i > k { l[i + k * 3] } else if i == k { 1.0 } else { 0.0 };
+                let lik = if i > k {
+                    l[i + k * 3]
+                } else if i == k {
+                    1.0
+                } else {
+                    0.0
+                };
                 let ukj = if k <= j { u[k + j * 3] } else { 0.0 };
                 s += lik * ukj;
             }
@@ -119,7 +128,11 @@ fn dgetrs_transposed_and_not() {
         let mut a = cm(A3);
         let mut ipiv = vec![0i32; 3];
         assert_eq!(dgetrf(3, 3, &mut a, 3, &mut ipiv), 0);
-        let mut b = if trans == "N" { vec![10.0, 22.0, 12.0] } else { vec![10.0, 22.0, 12.0] };
+        let mut b = if trans == "N" {
+            vec![10.0, 22.0, 12.0]
+        } else {
+            vec![10.0, 22.0, 12.0]
+        };
         assert_eq!(dgetrs(trans, 3, 1, &a, 3, &ipiv, &mut b, 3), 0);
         // Verify by residual rather than a hardcoded vector for the transposed
         // case: op(A)*x must reproduce the right-hand side.
@@ -299,7 +312,13 @@ fn dgesvd_residual_that_is_numerically_zero() {
     assert_eq!(info, 0, "dgesvd did not converge");
     assert_vec(
         &s,
-        &[2.797178265633934e-17, 2.7755575615628914e-17, 8.606574918951206e-19, 0.0, 0.0],
+        &[
+            2.797178265633934e-17,
+            2.7755575615628914e-17,
+            8.606574918951206e-19,
+            0.0,
+            0.0,
+        ],
         "singular values of a near-zero matrix",
     );
 }
@@ -358,8 +377,7 @@ fn dgeev_complex_pair_packing() {
     assert!(wi[0] > 0.0, "the positive imaginary part must come first: {wi:?}");
     assert!(close(wi[0], s) && close(wi[1], -s), "imaginary parts {wi:?}");
     // A*(vr + i*vi) = (wr + i*wi)*(vr + i*vi), with vr in column 0 and vi in 1.
-    let (re, im): (Vec<f64>, Vec<f64>) =
-        ((0..2).map(|i| vr[i]).collect(), (0..2).map(|i| vr[i + 2]).collect());
+    let (re, im): (Vec<f64>, Vec<f64>) = ((0..2).map(|i| vr[i]).collect(), (0..2).map(|i| vr[i + 2]).collect());
     for i in 0..2 {
         let ar: f64 = (0..2).map(|k| a[i + k * 2] * re[k]).sum();
         let ai: f64 = (0..2).map(|k| a[i + k * 2] * im[k]).sum();

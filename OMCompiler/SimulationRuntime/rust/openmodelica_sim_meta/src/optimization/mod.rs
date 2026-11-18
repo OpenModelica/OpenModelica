@@ -16,11 +16,11 @@
 // Ipopt is linked only into a native (`std`) build; `build.rs` never sets the cfg
 // for wasm32.
 #[cfg(all(ipopt, feature = "std"))]
+mod eval;
+#[cfg(all(ipopt, feature = "std"))]
 pub mod ipopt;
 #[cfg(all(ipopt, feature = "std"))]
 mod ipopt_out;
-#[cfg(all(ipopt, feature = "std"))]
-mod eval;
 #[cfg(all(ipopt, feature = "std"))]
 mod model;
 #[cfg(all(ipopt, feature = "std"))]
@@ -41,17 +41,17 @@ pub use run::run_optimizer;
 
 #[cfg(all(ipopt, feature = "std"))]
 mod run {
-    use openmodelica_solvers::fmath;
     use alloc::format;
     use alloc::string::String;
     use alloc::vec;
     use alloc::vec::Vec;
+    use openmodelica_solvers::fmath;
 
     use super::ipopt::{self, Bounds, Callbacks, Nlp};
     use super::model::Model;
     use super::{eval, setup};
     use crate::driver::{self, Result, SimEngine};
-    use crate::{omclog, OptInfo, SimMeta};
+    use crate::{OptInfo, SimMeta, omclog};
 
     /// C's `OptDataDim`.
     #[derive(Default)]
@@ -267,11 +267,7 @@ mod run {
     }
 
     /// C's `runOptimizer`. Returns the result rows; the caller writes them out.
-    pub fn run_optimizer(
-        e: &mut (dyn SimEngine + 'static),
-        meta: &SimMeta,
-        sim_data: u32,
-    ) -> Result<Vec<f64>> {
+    pub fn run_optimizer(e: &mut (dyn SimEngine + 'static), meta: &SimMeta, sim_data: u32) -> Result<Vec<f64>> {
         let Some(opt) = meta.opt.clone() else {
             return Err(super::NOT_COMPILED);
         };
@@ -288,12 +284,7 @@ mod run {
         res
     }
 
-    fn run_solve(
-        e: &mut (dyn SimEngine + 'static),
-        meta: &SimMeta,
-        sim_data: u32,
-        opt: OptInfo,
-    ) -> Result<Vec<f64>> {
+    fn run_solve(e: &mut (dyn SimEngine + 'static), meta: &SimMeta, sim_data: u32, opt: OptInfo) -> Result<Vec<f64>> {
         let mut data = setup::pick_up_model_data(e, meta, sim_data, opt)?;
         setup::initial_guess(&mut data)?;
         setup::allocate_der_struct(&mut data)?;
@@ -382,8 +373,7 @@ mod run {
         nlp.int_option("print_level", print_level);
         nlp.int_option("file_print_level", 0);
 
-        let (jac_test, hesse_test) =
-            (omclog::active(omclog::IPOPT_JAC), omclog::active(omclog::IPOPT_HESSE));
+        let (jac_test, hesse_test) = (omclog::active(omclog::IPOPT_JAC), omclog::active(omclog::IPOPT_HESSE));
         match (jac_test, hesse_test) {
             (true, true) => {
                 nlp.int_option("print_level", 4);
@@ -429,10 +419,11 @@ mod run {
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
                         }
-                        driver::log_line(omclog::STDOUT, omclog::INFO, &format!(
-                            "\nmax_iter = {}",
-                            v.parse::<i32>().unwrap_or(0)
-                        ));
+                        driver::log_line(
+                            omclog::STDOUT,
+                            omclog::INFO,
+                            &format!("\nmax_iter = {}", v.parse::<i32>().unwrap_or(0)),
+                        );
                     }
                     Some((m, x)) => {
                         let (m, x): (i32, i32) = (m.parse().unwrap_or(0), x.parse().unwrap_or(0));
@@ -441,11 +432,15 @@ mod run {
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
                         }
-                        driver::log_line(omclog::STDOUT, omclog::INFO, &format!(
-                            "\nmax_iter = (int) {} | (double) {}",
-                            max_iter,
-                            crate::driver::format_g(scaled, 6)
-                        ));
+                        driver::log_line(
+                            omclog::STDOUT,
+                            omclog::INFO,
+                            &format!(
+                                "\nmax_iter = (int) {} | (double) {}",
+                                max_iter,
+                                crate::driver::format_g(scaled, 6)
+                            ),
+                        );
                     }
                 }
             }
@@ -456,7 +451,11 @@ mod run {
 
         // Heuristics: a warm start shifts the barrier parameter and the bound
         // multipliers toward the given decade.
-        let ws: i32 = flags.ipopt_warm_start.as_deref().and_then(|v| v.parse().ok()).unwrap_or(0);
+        let ws: i32 = flags
+            .ipopt_warm_start
+            .as_deref()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
         if ws > 0 {
             let shift = fmath::pow(10.0, -(ws as f64));
             nlp.num_option("mu_init", shift);

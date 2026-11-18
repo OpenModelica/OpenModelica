@@ -89,8 +89,7 @@ fn parse(xml: &str) -> Vec<CommandDef> {
 
         let mut template = name.clone();
         for field in body.split("<field ").skip(1) {
-            if let (Some(key), Some(label)) = (attr(field, "name=\""), between(field, ">", "</field>"))
-            {
+            if let (Some(key), Some(label)) = (attr(field, "name=\""), between(field, ">", "</field>")) {
                 template = template.replace(&key, label.trim());
             }
         }

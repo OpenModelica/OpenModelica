@@ -6,9 +6,9 @@
 // Position indices are 1-based throughout (MetaModelica convention).
 // NO_POS (= 0) is returned when a character is not found.
 
-use metamodelica::Result;
-use arcstr::{ArcStr, literal};
 use crate::StringUtil as S;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
 
 // ── constants ────────────────────────────────────────────────────────────────
 
@@ -77,16 +77,22 @@ fn test_is_alpha_special_chars_are_not() {
 fn test_quote_empty() {
     // Expected (correct): `""` (two double-quote chars, 2 chars total)
     // Actual (buggy):     `\"\"` (backslash+dquote+backslash+dquote, 4 chars)
-    assert_eq!(S::quote(literal!("")), literal!("\"\""),
-        "BUG: quote uses backslash+dquote instead of just dquote");
+    assert_eq!(
+        S::quote(literal!("")),
+        literal!("\"\""),
+        "BUG: quote uses backslash+dquote instead of just dquote"
+    );
 }
 
 #[test]
 fn test_quote_word() {
     // Expected (correct): `"hello"` (7 chars)
     // Actual (buggy):     `\"hello\"` (9 chars with literal backslashes)
-    assert_eq!(S::quote(literal!("hello")), literal!("\"hello\""),
-        "BUG: quote wraps with backslash+dquote instead of just dquote");
+    assert_eq!(
+        S::quote(literal!("hello")),
+        literal!("\"hello\""),
+        "BUG: quote wraps with backslash+dquote instead of just dquote"
+    );
 }
 
 // ── rest ─────────────────────────────────────────────────────────────────────
@@ -395,8 +401,10 @@ fn test_strip_bom_with_bom_and_content() -> Result<()> {
     // The call should succeed and return ("Hello", "Hel"), but due to the
     // bytes/chars mismatch it actually errors.
     let (s, _bom) = S::stripBOM(input)?;
-    assert!(s == "Hello",
-        "BUG: stripBOM fails with real UTF-8 BOM due to byte/char inconsistency");
+    assert!(
+        s == "Hello",
+        "BUG: stripBOM fails with real UTF-8 BOM due to byte/char inconsistency"
+    );
     Ok(())
 }
 
@@ -406,12 +414,13 @@ fn test_strip_bom_with_bom_short_content() -> Result<()> {
     // After stripping BOM: s = "Hi" (len=2)
     // bom = substring("Hi", 1, 3) -> error (stop > len)
     let bom_bytes = [239u8, 187u8, 191u8];
-    let input = format!("{}Hi",
-        std::str::from_utf8(&bom_bytes).unwrap_or("\u{FEFF}"));
+    let input = format!("{}Hi", std::str::from_utf8(&bom_bytes).unwrap_or("\u{FEFF}"));
     let input_arcstr = ArcStr::from(input);
     let (s, _bom) = S::stripBOM(input_arcstr)?;
     // substring("Hi", 1, 3) should fail because stop=3 > len=2
-    assert!(s == "Hi",
-        "substring out of bounds: bom=substring(stripped, 1, 3) fails when stripped is 'Hi'");
+    assert!(
+        s == "Hi",
+        "substring out of bounds: bom=substring(stripped, 1, 3) fails when stripped is 'Hi'"
+    );
     Ok(())
 }

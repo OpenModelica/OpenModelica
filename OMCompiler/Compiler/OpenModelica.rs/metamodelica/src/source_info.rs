@@ -1,7 +1,7 @@
 //! `SourceInfo` and the `sourceInfo!` builtin macro.
 
-use arcstr::ArcStr;
 use crate::Real;
+use arcstr::ArcStr;
 
 /// MetaModelica's `sourceInfo()` built-in: returns a `SourceInfo` populated from
 /// the *compiler* call-site, not from any runtime value. We mirror that here by

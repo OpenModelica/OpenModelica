@@ -209,7 +209,10 @@ pub fn stats_guard() -> SolverGuard {
 
 fn guard(needed: bool) -> SolverGuard {
     if !needed || POOL.get().is_none() {
-        return SolverGuard { counted: false, _lock: None };
+        return SolverGuard {
+            counted: false,
+            _lock: None,
+        };
     }
     let first = SOLVER_DEPTH.with(|d| {
         let v = d.get();
@@ -217,7 +220,10 @@ fn guard(needed: bool) -> SolverGuard {
         v == 0
     });
     let lock = first.then(|| SOLVER_LOCK.lock().unwrap_or_else(|e| e.into_inner()));
-    SolverGuard { counted: true, _lock: lock }
+    SolverGuard {
+        counted: true,
+        _lock: lock,
+    }
 }
 
 // ───────────────────────────── the worker pool ─────────────────────────────
@@ -293,7 +299,11 @@ pub fn can_parallel() -> bool {
 /// being the last participant.
 fn pool(main_td: *mut threadData_t) -> &'static Arc<Pool> {
     POOL.get_or_init(|| {
-        let empty = Arc::new(Graph { clusters: Vec::new(), parents_n: Vec::new(), children: Vec::new() });
+        let empty = Arc::new(Graph {
+            clusters: Vec::new(),
+            parents_n: Vec::new(),
+            children: Vec::new(),
+        });
         let pool = Arc::new(Pool {
             generation: AtomicU64::new(0),
             remaining: AtomicUsize::new(0),
@@ -301,7 +311,10 @@ fn pool(main_td: *mut threadData_t) -> &'static Arc<Pool> {
             stage: AtomicI32::new(0),
             jumped: AtomicBool::new(false),
             graph: Mutex::new(empty),
-            lock: Mutex::new(Round { waiting: Vec::new(), ready: Vec::new() }),
+            lock: Mutex::new(Round {
+                waiting: Vec::new(),
+                ready: Vec::new(),
+            }),
             work: Condvar::new(),
             sleepers: AtomicU32::new(0),
             plan_id: AtomicU64::new(0),
@@ -375,9 +388,7 @@ fn run_round(pool: &Pool, graph: &Graph, td: *mut threadData_t, round: u64) {
     let mut spins = 0u32;
     let mut waited: Option<std::time::Instant> = None;
     loop {
-        if pool.remaining.load(Ordering::Acquire) == 0
-            || pool.generation.load(Ordering::Acquire) != round
-        {
+        if pool.remaining.load(Ordering::Acquire) == 0 || pool.generation.load(Ordering::Acquire) != round {
             return;
         }
         if pool.ready_n.load(Ordering::Acquire) == 0 {
@@ -508,7 +519,8 @@ pub fn run_plan(plan: &Plan, stage: c_int, main_td: *mut threadData_t, settled: 
         g.waiting.clear();
         g.waiting.extend_from_slice(&graph.parents_n);
         g.ready.clear();
-        g.ready.extend((0..graph.clusters.len()).filter(|&c| graph.parents_n[c] == 0));
+        g.ready
+            .extend((0..graph.clusters.len()).filter(|&c| graph.parents_n[c] == 0));
         pool.ready_n.store(g.ready.len(), Ordering::Release);
         pool.stage.store(stage, Ordering::Relaxed);
         pool.jumped.store(false, Ordering::Relaxed);
@@ -527,7 +539,11 @@ pub fn run_plan(plan: &Plan, stage: c_int, main_td: *mut threadData_t, settled: 
 /// parent count reach zero.
 fn plan_points_backwards(plan: &Plan) -> bool {
     plan.parents.len() == plan.clusters.len()
-        && plan.parents.iter().enumerate().all(|(c, ps)| ps.iter().all(|&p| (p as usize) < c))
+        && plan
+            .parents
+            .iter()
+            .enumerate()
+            .all(|(c, ps)| ps.iter().all(|&p| (p as usize) < c))
 }
 
 /// A round that stops making progress is a bug in the counters, and one that only

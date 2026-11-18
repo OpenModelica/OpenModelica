@@ -34,8 +34,7 @@ pub enum Format {
 
 impl Format {
     #[cfg(not(feature = "minarrow"))]
-    pub const ALL: &'static [Format] =
-        &[Format::Mat, Format::ArrowJson, Format::Arrow, Format::Sdf, Format::Mtsf];
+    pub const ALL: &'static [Format] = &[Format::Mat, Format::ArrowJson, Format::Arrow, Format::Sdf, Format::Mtsf];
     #[cfg(feature = "minarrow")]
     pub const ALL: &'static [Format] = &[
         Format::Mat,
@@ -98,7 +97,13 @@ pub struct WriteOpts {
 
 impl Default for WriteOpts {
     fn default() -> WriteOpts {
-        WriteOpts { block_rows: 1024, expected_rows: None, deflate: None, shuffle: false, chunk_cols: 0 }
+        WriteOpts {
+            block_rows: 1024,
+            expected_rows: None,
+            deflate: None,
+            shuffle: false,
+            chunk_cols: 0,
+        }
     }
 }
 
@@ -112,7 +117,11 @@ pub struct FileOut {
 
 impl FileOut {
     pub fn create(path: &str) -> std::io::Result<FileOut> {
-        Ok(FileOut { file: File::create(path)?, buf: Vec::with_capacity(1 << 20), pos: 0 })
+        Ok(FileOut {
+            file: File::create(path)?,
+            buf: Vec::with_capacity(1 << 20),
+            pos: 0,
+        })
     }
 
     fn spill(&mut self) {
@@ -236,22 +245,52 @@ pub fn begin(format: Format, path: &str, data: &Dataset, opts: &WriteOpts) -> Wr
                 &data.params,
                 mw::Precision::Double,
             );
-            Writer { kind: Kind::Mat(s, out), path: path.to_owned() }
+            Writer {
+                kind: Kind::Mat(s, out),
+                path: path.to_owned(),
+            }
         }
         Format::ArrowJson | Format::Arrow => {
             let vars: Vec<aw::ArrowVar> = data.vars.iter().map(arrow_var).collect();
             let col_types = column_types(data);
             let units = aw::units::declared(unit_defs(data));
-            let meta = aw::FileMeta { span: Some((data.start_time, data.stop_time)), units: &units, zstd: opts.deflate.map(i32::from) };
+            let meta = aw::FileMeta {
+                span: Some((data.start_time, data.stop_time)),
+                units: &units,
+                zstd: opts.deflate.map(i32::from),
+            };
             let mut out = FileOut::create(path).expect("create");
             let kind = if format == Format::Arrow {
-                let s = aw::ArrowStream::begin(&mut out, &vars, &data.params, data.first_row(), n_cols, &col_types, opts.block_rows, aw::no_strings(), &meta);
+                let s = aw::ArrowStream::begin(
+                    &mut out,
+                    &vars,
+                    &data.params,
+                    data.first_row(),
+                    n_cols,
+                    &col_types,
+                    opts.block_rows,
+                    aw::no_strings(),
+                    &meta,
+                );
                 Kind::Arrow(Box::new(s), out)
             } else {
-                let s = aw::json::ArrowStream::begin(&mut out, &vars, &data.params, data.first_row(), n_cols, &col_types, opts.block_rows, aw::no_strings(), &meta);
+                let s = aw::json::ArrowStream::begin(
+                    &mut out,
+                    &vars,
+                    &data.params,
+                    data.first_row(),
+                    n_cols,
+                    &col_types,
+                    opts.block_rows,
+                    aw::no_strings(),
+                    &meta,
+                );
                 Kind::ArrowJson(Box::new(s), out)
             };
-            Writer { kind, path: path.to_owned() }
+            Writer {
+                kind,
+                path: path.to_owned(),
+            }
         }
         #[cfg(feature = "minarrow")]
         Format::Minarrow => Writer {
@@ -260,15 +299,37 @@ pub fn begin(format: Format, path: &str, data: &Dataset, opts: &WriteOpts) -> Wr
         },
         Format::Sdf => {
             let vars: Vec<h5w::Var> = data.vars.iter().map(h5_var).collect();
-            let s = h5w::SdfStream::begin(path, &vars, &data.params, data.first_row(), n_cols, &meta(data), &h5_opts(opts))
-                .expect("sdf begin");
-            Writer { kind: Kind::Sdf(s), path: path.to_owned() }
+            let s = h5w::SdfStream::begin(
+                path,
+                &vars,
+                &data.params,
+                data.first_row(),
+                n_cols,
+                &meta(data),
+                &h5_opts(opts),
+            )
+            .expect("sdf begin");
+            Writer {
+                kind: Kind::Sdf(s),
+                path: path.to_owned(),
+            }
         }
         Format::Mtsf => {
             let vars: Vec<h5w::Var> = data.vars.iter().map(h5_var).collect();
-            let s = h5w::MtsfStream::begin(path, &vars, &data.params, data.first_row(), n_cols, &meta(data), &h5_opts(opts))
-                .expect("mtsf begin");
-            Writer { kind: Kind::Mtsf(s), path: path.to_owned() }
+            let s = h5w::MtsfStream::begin(
+                path,
+                &vars,
+                &data.params,
+                data.first_row(),
+                n_cols,
+                &meta(data),
+                &h5_opts(opts),
+            )
+            .expect("mtsf begin");
+            Writer {
+                kind: Kind::Mtsf(s),
+                path: path.to_owned(),
+            }
         }
     }
 }
@@ -332,19 +393,36 @@ fn unit_defs(data: &Dataset) -> Vec<aw::UnitDef> {
 fn mat_var(v: &VarDesc) -> mw::MatVar<'_> {
     let kind = match v.kind {
         h5w::Kind::Time => mw::MatKind::Time,
-        h5w::Kind::Column { col, affine } => {
-            mw::MatKind::Column { col, negate: if affine.scale < 0.0 { mw::Neg::Arith } else { mw::Neg::None } }
-        }
-        h5w::Kind::Param { affine } => {
-            mw::MatKind::Param { negate: if affine.scale < 0.0 { mw::Neg::Arith } else { mw::Neg::None } }
-        }
+        h5w::Kind::Column { col, affine } => mw::MatKind::Column {
+            col,
+            negate: if affine.scale < 0.0 {
+                mw::Neg::Arith
+            } else {
+                mw::Neg::None
+            },
+        },
+        h5w::Kind::Param { affine } => mw::MatKind::Param {
+            negate: if affine.scale < 0.0 {
+                mw::Neg::Arith
+            } else {
+                mw::Neg::None
+            },
+        },
         h5w::Kind::Const { value } => mw::MatKind::Const { value },
     };
-    mw::MatVar { name: &v.name, comment: &v.comment, kind, unvarying: false }
+    mw::MatVar {
+        name: &v.name,
+        comment: &v.comment,
+        kind,
+        unvarying: false,
+    }
 }
 
 fn arrow_var(v: &VarDesc) -> aw::ArrowVar<'_> {
-    let affine = |a: h5w::Affine| aw::Affine { scale: a.scale, offset: a.offset };
+    let affine = |a: h5w::Affine| aw::Affine {
+        scale: a.scale,
+        offset: a.offset,
+    };
     let kind = match v.kind {
         h5w::Kind::Time => aw::ArrowKind::Time,
         h5w::Kind::Column { col, affine: a } => aw::ArrowKind::Column { col, affine: affine(a) },
@@ -553,7 +631,9 @@ impl Threaded {
         }
         // The work queue is as deep as the buffer pool, so holding a buffer
         // guarantees a free slot and this send never blocks.
-        self.work.send(Job::Rows(std::mem::take(&mut self.block))).expect("writer thread died");
+        self.work
+            .send(Job::Rows(std::mem::take(&mut self.block)))
+            .expect("writer thread died");
         self.rows = 0;
     }
 
@@ -562,6 +642,10 @@ impl Threaded {
     fn finish(mut self) -> String {
         self.hand_over();
         let _ = self.work.send(Job::Finish);
-        self.handle.take().expect("writer thread").join().expect("writer thread")
+        self.handle
+            .take()
+            .expect("writer thread")
+            .join()
+            .expect("writer thread")
     }
 }

@@ -3,7 +3,7 @@
 //! integration is needed — this is why gbode sets `solverRootFinding` and the
 //! driver leaves root finding to it.
 
-use super::{Gbode, Ode, MINIMAL_STEP_SIZE};
+use super::{Gbode, MINIMAL_STEP_SIZE, Ode};
 use crate::Result;
 use crate::gbode::math::abs;
 

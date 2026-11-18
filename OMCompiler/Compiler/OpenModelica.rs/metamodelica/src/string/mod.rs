@@ -2,9 +2,9 @@
 //! `substring`. Hashing lives in [`hash`], URI resolution in [`uri`].
 
 use crate::Result;
+use crate::{Real, list::List};
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
-use crate::{Real, list::List};
 
 pub mod hash;
 pub mod uri;
@@ -20,7 +20,8 @@ pub fn stringCharInt(ch: ArcStr) -> Result<i32> {
     if ch.chars().count() != 1 {
         return Err("stringCharInt expects a single-character string, got '{}'");
     };
-    ch.chars().next()
+    ch.chars()
+        .next()
         .map(|c| c as i32)
         .ok_or_else(|| "Failed to get character from string: {}")
 }
@@ -116,7 +117,9 @@ pub fn stringEmpty(str: impl AsRef<str>) -> bool {
 /// Returns the byte value at the given 1-based index.
 pub fn stringGet(str: impl AsRef<str>, index: i32) -> Result<i32> {
     let idx = (index - 1) as usize; // 1-based to 0-based
-    str.as_ref().bytes().nth(idx)
+    str.as_ref()
+        .bytes()
+        .nth(idx)
         .map(|b| b as i32)
         .ok_or_else(|| "Index {} out of bounds for string of length {}")
 }
@@ -124,7 +127,8 @@ pub fn stringGet(str: impl AsRef<str>, index: i32) -> Result<i32> {
 /// Returns the character at the given 1-based index as a string.
 pub fn stringGetStringChar(str: ArcStr, index: i32) -> Result<ArcStr> {
     let idx = (index - 1) as usize; // 1-based to 0-based
-    str.chars().nth(idx)
+    str.chars()
+        .nth(idx)
         .map(|c| format!("{}", c))
         .ok_or_else(|| "Index {} out of bounds for string of length {}")
 }
@@ -198,7 +202,7 @@ pub fn substring(str: ArcStr, start: i32, stop: i32) -> Result<ArcStr> {
     // "Stop index 8 exceeds string length 6" on a UTF-8 BOM input
     // because the BOM is 1 char but 3 bytes.
     let start_idx = (start - 1) as usize; // 1-based to 0-based
-    let stop_idx = stop as usize;         // 1-based, inclusive -> exclusive
+    let stop_idx = stop as usize; // 1-based, inclusive -> exclusive
     if stop_idx > str.len() {
         return Err("Stop index {} exceeds string length {}");
     }
@@ -227,9 +231,9 @@ pub fn stringCharListString(strs: List<ArcStr>) -> ArcStr {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod string_char_tests {
         use super::*;
 
@@ -273,7 +277,10 @@ mod tests {
         #[test]
         fn test_string_list_string_char() {
             let result = stringListStringChar(literal!("abc "));
-            assert_eq!(result, List::from_iter([literal!("a"), literal!("b"), literal!("c"), literal!(" ")]));
+            assert_eq!(
+                result,
+                List::from_iter([literal!("a"), literal!("b"), literal!("c"), literal!(" ")])
+            );
         }
 
         #[test]
@@ -327,9 +334,18 @@ mod tests {
 
         #[test]
         fn test_string_update_string_char() {
-            assert_eq!(stringUpdateStringChar(literal!("hello"), literal!("X"), 1).unwrap(), literal!("Xello"));
-            assert_eq!(stringUpdateStringChar(literal!("hello"), literal!("X"), 3).unwrap(), literal!("heXlo"));
-            assert_eq!(stringUpdateStringChar(literal!("hello"), literal!("X"), 5).unwrap(), literal!("hellX"));
+            assert_eq!(
+                stringUpdateStringChar(literal!("hello"), literal!("X"), 1).unwrap(),
+                literal!("Xello")
+            );
+            assert_eq!(
+                stringUpdateStringChar(literal!("hello"), literal!("X"), 3).unwrap(),
+                literal!("heXlo")
+            );
+            assert_eq!(
+                stringUpdateStringChar(literal!("hello"), literal!("X"), 5).unwrap(),
+                literal!("hellX")
+            );
             assert!(stringUpdateStringChar(literal!("hello"), literal!("X"), 0).is_err());
             assert!(stringUpdateStringChar(literal!("hello"), literal!("X"), 6).is_err());
             assert!(stringUpdateStringChar(literal!("hello"), literal!(""), 1).is_err());
@@ -341,7 +357,10 @@ mod tests {
 
         #[test]
         fn test_string_append() {
-            assert_eq!(stringAppend(literal!("hello"), literal!(" world")), literal!("hello world"));
+            assert_eq!(
+                stringAppend(literal!("hello"), literal!(" world")),
+                literal!("hello world")
+            );
             assert_eq!(stringAppend(literal!(""), literal!("hello")), literal!("hello"));
             assert_eq!(stringAppend(literal!("hello"), literal!("")), literal!("hello"));
         }
@@ -386,10 +405,10 @@ mod tests {
 
         #[test]
         fn test_substring_errors() {
-            assert!(substring(literal!("hello"), 0, 3).is_err());  // start < 1
-            assert!(substring(literal!("hello"), 3, 2).is_err());  // stop < start
-            assert!(substring(literal!("hello"), 1, 6).is_err());  // stop out of bounds
-            assert!(substring(literal!("hello"), 6, 7).is_err());  // start out of bounds
+            assert!(substring(literal!("hello"), 0, 3).is_err()); // start < 1
+            assert!(substring(literal!("hello"), 3, 2).is_err()); // stop < start
+            assert!(substring(literal!("hello"), 1, 6).is_err()); // stop out of bounds
+            assert!(substring(literal!("hello"), 6, 7).is_err()); // start out of bounds
         }
     }
 

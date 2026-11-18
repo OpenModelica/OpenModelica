@@ -61,7 +61,9 @@ fn syms() -> &'static Syms {
             .map(|name| {
                 let h = unsafe { libc::dlopen(name.as_ptr().cast(), libc::RTLD_NOW | libc::RTLD_GLOBAL) };
                 if h.is_null() {
-                    let err = unsafe { std::ffi::CStr::from_ptr(libc::dlerror()) }.to_string_lossy().into_owned();
+                    let err = unsafe { std::ffi::CStr::from_ptr(libc::dlerror()) }
+                        .to_string_lossy()
+                        .into_owned();
                     panic!("cannot load {}: {err}", name.trim_end_matches('\0'));
                 }
                 h

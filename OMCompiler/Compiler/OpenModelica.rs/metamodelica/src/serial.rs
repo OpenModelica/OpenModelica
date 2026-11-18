@@ -23,7 +23,10 @@ pub trait MMSerial: Sized {
 
 impl Encoder {
     pub fn new() -> Self {
-        Encoder { buf: Vec::new(), strings: HashMap::new() }
+        Encoder {
+            buf: Vec::new(),
+            strings: HashMap::new(),
+        }
     }
 
     #[inline]
@@ -44,7 +47,11 @@ impl Default for Encoder {
 
 impl<'a> Decoder<'a> {
     pub fn new(buf: &'a [u8]) -> Self {
-        Decoder { buf, pos: 0, strings: Vec::new() }
+        Decoder {
+            buf,
+            pos: 0,
+            strings: Vec::new(),
+        }
     }
 
     #[inline]
@@ -70,12 +77,18 @@ impl<'a> Decoder<'a> {
 }
 
 impl MMSerial for bool {
-    fn mm_encode(&self, e: &mut Encoder) { e.buf.push(*self as u8) }
-    fn mm_decode(d: &mut Decoder) -> Self { d.bytes(1)[0] != 0 }
+    fn mm_encode(&self, e: &mut Encoder) {
+        e.buf.push(*self as u8)
+    }
+    fn mm_decode(d: &mut Decoder) -> Self {
+        d.bytes(1)[0] != 0
+    }
 }
 
 impl MMSerial for i32 {
-    fn mm_encode(&self, e: &mut Encoder) { e.varint(((*self << 1) ^ (*self >> 31)) as u32 as u64) }
+    fn mm_encode(&self, e: &mut Encoder) {
+        e.varint(((*self << 1) ^ (*self >> 31)) as u32 as u64)
+    }
     fn mm_decode(d: &mut Decoder) -> Self {
         let v = d.varint() as u32;
         ((v >> 1) as i32) ^ -((v & 1) as i32)
@@ -83,13 +96,21 @@ impl MMSerial for i32 {
 }
 
 impl MMSerial for f64 {
-    fn mm_encode(&self, e: &mut Encoder) { e.buf.extend_from_slice(&self.to_le_bytes()) }
-    fn mm_decode(d: &mut Decoder) -> Self { f64::from_le_bytes(d.bytes(8).try_into().unwrap()) }
+    fn mm_encode(&self, e: &mut Encoder) {
+        e.buf.extend_from_slice(&self.to_le_bytes())
+    }
+    fn mm_decode(d: &mut Decoder) -> Self {
+        f64::from_le_bytes(d.bytes(8).try_into().unwrap())
+    }
 }
 
 impl MMSerial for Real {
-    fn mm_encode(&self, e: &mut Encoder) { self.0.mm_encode(e) }
-    fn mm_decode(d: &mut Decoder) -> Self { Real::from(f64::mm_decode(d)) }
+    fn mm_encode(&self, e: &mut Encoder) {
+        self.0.mm_encode(e)
+    }
+    fn mm_decode(d: &mut Decoder) -> Self {
+        Real::from(f64::mm_decode(d))
+    }
 }
 
 impl MMSerial for ArcStr {
@@ -129,13 +150,21 @@ impl<T: MMSerial> MMSerial for Option<T> {
         }
     }
     fn mm_decode(d: &mut Decoder) -> Self {
-        if d.bytes(1)[0] == 0 { None } else { Some(T::mm_decode(d)) }
+        if d.bytes(1)[0] == 0 {
+            None
+        } else {
+            Some(T::mm_decode(d))
+        }
     }
 }
 
 impl<T: MMSerial> MMSerial for Ref<T> {
-    fn mm_encode(&self, e: &mut Encoder) { (**self).mm_encode(e) }
-    fn mm_decode(d: &mut Decoder) -> Self { Ref::new(T::mm_decode(d)) }
+    fn mm_encode(&self, e: &mut Encoder) {
+        (**self).mm_encode(e)
+    }
+    fn mm_decode(d: &mut Decoder) -> Self {
+        Ref::new(T::mm_decode(d))
+    }
 }
 
 impl<T: MMSerial + Clone> MMSerial for List<T> {

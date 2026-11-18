@@ -9,9 +9,9 @@ mod v2;
 mod v3;
 
 use crate::description::*;
-pub(crate) use v3::unknowns as unknowns3;
 use crate::{Error, Result};
 use roxmltree::{Document, Node};
+pub(crate) use v3::unknowns as unknowns3;
 
 pub fn model_description(xml: &str) -> Result<ModelDescription> {
     let doc = Document::parse(xml).map_err(|e| Error::Xml(e.to_string()))?;
@@ -50,7 +50,10 @@ fn tool_annotations(root: Node, xml: &str) -> Vec<ToolAnnotation> {
                 "Annotation" => attr(t, "type")?,
                 _ => return None,
             };
-            Some(ToolAnnotation { name: name.to_string(), xml: xml.get(t.range())?.to_string() })
+            Some(ToolAnnotation {
+                name: name.to_string(),
+                xml: xml.get(t.range())?.to_string(),
+            })
         })
         .collect()
 }
@@ -64,9 +67,7 @@ pub(crate) fn string_attr(n: Node, name: &str) -> Option<String> {
 }
 
 pub(crate) fn required<'a>(n: Node<'a, 'a>, name: &str) -> Result<&'a str> {
-    attr(n, name).ok_or_else(|| {
-        Error::Xml(format!("<{}> has no {name} attribute", n.tag_name().name()))
-    })
+    attr(n, name).ok_or_else(|| Error::Xml(format!("<{}> has no {name} attribute", n.tag_name().name())))
 }
 
 /// xs:boolean, which XML spells either way round.
@@ -97,18 +98,21 @@ pub(crate) fn i32_attr(n: Node, name: &str) -> Option<i32> {
 /// A whitespace-separated list attribute (`dependencies`, `clocks`, an array
 /// variable's `start`).
 pub(crate) fn list_attr<T: std::str::FromStr>(n: Node, name: &str) -> Option<Vec<T>> {
-    Some(attr(n, name)?.split_whitespace().filter_map(|s| s.parse().ok()).collect())
+    Some(
+        attr(n, name)?
+            .split_whitespace()
+            .filter_map(|s| s.parse().ok())
+            .collect(),
+    )
 }
 
 pub(crate) fn child<'a>(n: Node<'a, 'a>, name: &str) -> Option<Node<'a, 'a>> {
     n.children().find(|c| c.is_element() && c.tag_name().name() == name)
 }
 
-pub(crate) fn children<'a>(
-    n: Node<'a, 'a>,
-    name: &'static str,
-) -> impl Iterator<Item = Node<'a, 'a>> {
-    n.children().filter(move |c| c.is_element() && c.tag_name().name() == name)
+pub(crate) fn children<'a>(n: Node<'a, 'a>, name: &'static str) -> impl Iterator<Item = Node<'a, 'a>> {
+    n.children()
+        .filter(move |c| c.is_element() && c.tag_name().name() == name)
 }
 
 pub(crate) fn causality(s: Option<&str>, default: Causality) -> Causality {
@@ -171,7 +175,9 @@ pub(crate) fn default_experiment(root: Node) -> Option<DefaultExperiment> {
 }
 
 pub(crate) fn log_categories(root: Node) -> Vec<LogCategory> {
-    let Some(cats) = child(root, "LogCategories") else { return Vec::new() };
+    let Some(cats) = child(root, "LogCategories") else {
+        return Vec::new();
+    };
     children(cats, "Category")
         .filter_map(|c| {
             Some(LogCategory {

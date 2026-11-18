@@ -12,9 +12,9 @@ pub const SUNDIALS: bool = cfg!(sundials);
 /// so the *wait* is what gives way.
 pub const COMPILE_CANCELLED: &str = "CodegenWasmJit: model compilation cancelled";
 
-pub mod sig;
-pub mod model;
 pub mod dylink;
+pub mod model;
+pub mod sig;
 
 // A wasm trap collapses to the crate's `&'static str` error on the way out of the
 // engine, losing the trap kind and the backtrace. The engine parks its message
@@ -55,8 +55,8 @@ pub mod isolate;
 
 // A thin facade over openmodelica_sim_meta::driver; present even in the no-jit
 // stub build, which reads its result types.
-pub mod sim_driver;
 pub mod result_sink;
+pub mod sim_driver;
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 #[path = "sim_runtime_wasmtime.rs"]
 pub mod sim_runtime;
@@ -73,11 +73,11 @@ pub mod wasi_shim;
 // Loading shared libraries under wasmer, and the compile-time `external "C"`
 // evaluation that is the one host with no simulation behind it. Only a wasm omc
 // needs them: a native one has dlopen and libffi.
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+#[path = "dylink_wasmtime.rs"]
+pub mod dylink_engine;
 #[cfg(all(feature = "jit", target_arch = "wasm32"))]
 #[path = "dylink_wasmer.rs"]
 pub mod dylink_wasmer;
 #[cfg(all(feature = "jit", target_arch = "wasm32"))]
 pub mod ext_eval;
-#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-#[path = "dylink_wasmtime.rs"]
-pub mod dylink_engine;

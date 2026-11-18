@@ -10,9 +10,8 @@
 #                               # and in the working tree (common/pre-commit.sh)
 #   format.sh [--check] --all   # every file git tracks or would track
 #
-# The rules are only enforced for files that are added or changed, so the tree
-# is formatted file by file as it is worked on. Do not commit the result of
-# --all.
+# All files are formatted. CI checks the files a pull request adds or changes;
+# `--check --all` checks every file.
 #
 # Why not `cargo fmt`: it needs `cargo metadata`, and the compiler workspace
 # does not load on a clean checkout (the lib.rs files mmtorust generates are

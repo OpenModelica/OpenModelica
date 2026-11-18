@@ -104,7 +104,9 @@ fn collect_output_names(c: &Absyn::Class, out: &mut HashMap<String, Vec<String>>
     if is_function {
         let mut names = Vec::new();
         for_each_element(parts, |spec| {
-            if let Absyn::ElementSpec::COMPONENTS { attributes, components, .. } = spec
+            if let Absyn::ElementSpec::COMPONENTS {
+                attributes, components, ..
+            } = spec
                 && matches!(
                     attributes.direction,
                     Absyn::Direction::OUTPUT | Absyn::Direction::INPUT_OUTPUT
@@ -137,8 +139,12 @@ fn for_each_element(
             _ => continue,
         };
         for item in items.as_ref() {
-            let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
-            let Absyn::Element::ELEMENT { specification, .. } = element.as_ref() else { continue };
+            let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
+                continue;
+            };
+            let Absyn::Element::ELEMENT { specification, .. } = element.as_ref() else {
+                continue;
+            };
             f(specification);
         }
     }
@@ -151,7 +157,9 @@ pub fn generate(node: &NameNode<'_>, output_names: &HashMap<String, Vec<String>>
     let mut skipped: Vec<String> = Vec::new();
 
     for (name, child) in &node.children {
-        let Ty::Function { inputs, output, .. } = &child.ty else { continue };
+        let Ty::Function { inputs, output, .. } = &child.ty else {
+            continue;
+        };
         // Reject anything outside the supported type space rather than emit
         // code that would not compile or would silently misbehave.
         let supported = inputs.iter().all(|i| is_supported_arg(&i.ty)) && is_supported_ret(output);
@@ -322,7 +330,11 @@ fn gen_rust_wrapper(s: &mut String, f: &Func) {
         .map(|(n, ty)| format!("{}: {}", arg_ident(n), rust_c_arg_ty(ty)))
         .collect();
     let ret = rust_c_ret_ty(&f.output);
-    let ret_clause = if f.output == Ty::Unit { String::new() } else { format!(" -> {ret}") };
+    let ret_clause = if f.output == Ty::Unit {
+        String::new()
+    } else {
+        format!(" -> {ret}")
+    };
 
     writeln!(s, "#[unsafe(no_mangle)]").unwrap();
     writeln!(s, "pub extern \"C\" fn {sym}({}){ret_clause} {{", params.join(", ")).unwrap();
@@ -341,7 +353,11 @@ fn gen_rust_wrapper(s: &mut String, f: &Func) {
         call_args.join(", ")
     );
 
-    writeln!(s, "    let __r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{").unwrap();
+    writeln!(
+        s,
+        "    let __r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{"
+    )
+    .unwrap();
     s.push_str(&conv);
     writeln!(s, "        {call}").unwrap();
     writeln!(s, "    }}));").unwrap();
@@ -355,11 +371,21 @@ fn gen_rust_wrapper(s: &mut String, f: &Func) {
     if f.output == Ty::Unit {
         writeln!(s, "        Ok(Ok(_)) => {{}},").unwrap();
         writeln!(s, "        Ok(Err(_)) => {{}},").unwrap();
-        writeln!(s, "        Err(__e) => {{ abi_set_exception(format!(\"{}: {{}}\", panic_msg(__e))); }},", f.name).unwrap();
+        writeln!(
+            s,
+            "        Err(__e) => {{ abi_set_exception(format!(\"{}: {{}}\", panic_msg(__e))); }},",
+            f.name
+        )
+        .unwrap();
     } else {
         writeln!(s, "        Ok(Ok(__v)) => {ok},").unwrap();
         writeln!(s, "        Ok(Err(_)) => {default},").unwrap();
-        writeln!(s, "        Err(__e) => {{ abi_set_exception(format!(\"{}: {{}}\", panic_msg(__e))); {default} }},", f.name).unwrap();
+        writeln!(
+            s,
+            "        Err(__e) => {{ abi_set_exception(format!(\"{}: {{}}\", panic_msg(__e))); {default} }},",
+            f.name
+        )
+        .unwrap();
     }
     writeln!(s, "    }}").unwrap();
     writeln!(s, "}}").unwrap();
@@ -404,7 +430,11 @@ fn gen_dispatch_arm(s: &mut String, f: &Func) {
     let name = &f.name;
     let call_ident = crate::codegen::escape_ident(name);
     writeln!(s, "        \"{name}\" => {{").unwrap();
-    writeln!(s, "            let __r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{").unwrap();
+    writeln!(
+        s,
+        "            let __r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{"
+    )
+    .unwrap();
     let mut call_args: Vec<String> = Vec::new();
     for (i, (_n, ty)) in f.inputs.iter().enumerate() {
         writeln!(s, "                let __a{i} = {};", json_arg(ty, i)).unwrap();
@@ -443,7 +473,11 @@ fn gen_dispatch_arm(s: &mut String, f: &Func) {
             writeln!(s, "                Ok(Err(_)) => __ok({}),", json_default(ty)).unwrap();
         }
     }
-    writeln!(s, "                Err(__e) => __err(format!(\"{name}: {{}}\", panic_msg(__e))),").unwrap();
+    writeln!(
+        s,
+        "                Err(__e) => __err(format!(\"{name}: {{}}\", panic_msg(__e))),"
+    )
+    .unwrap();
     writeln!(s, "            }}").unwrap();
     writeln!(s, "        }}").unwrap();
 }
@@ -649,9 +683,19 @@ fn abi_out(ty: &Ty, v: &str, depth: usize) -> String {
             let s = format!("__s{depth}");
             let binds: Vec<String> = (0..tys.len()).map(|i| format!("__t{depth}_{i}")).collect();
             let mut body = String::new();
-            write!(body, "{{ let ({}) = {v}; let mut {s} = Box::new(OmcSeq::new()); ", binds.join(", ")).unwrap();
+            write!(
+                body,
+                "{{ let ({}) = {v}; let mut {s} = Box::new(OmcSeq::new()); ",
+                binds.join(", ")
+            )
+            .unwrap();
             for (i, t) in tys.iter().enumerate() {
-                write!(body, "{s}.0.push({}); ", omc_val(t, &format!("&{}", binds[i]), depth + 1)).unwrap();
+                write!(
+                    body,
+                    "{s}.0.push({}); ",
+                    omc_val(t, &format!("&{}", binds[i]), depth + 1)
+                )
+                .unwrap();
             }
             write!(body, "Box::into_raw({s}) }}").unwrap();
             body
@@ -910,7 +954,11 @@ const OmcSeq* omc_seq_seq(const OmcSeq*, size_t);
     );
     for f in funcs {
         let params: Vec<String> = f.inputs.iter().map(|(_, ty)| c_arg_ty(ty).to_string()).collect();
-        let plist = if params.is_empty() { "void".to_string() } else { params.join(", ") };
+        let plist = if params.is_empty() {
+            "void".to_string()
+        } else {
+            params.join(", ")
+        };
         writeln!(s, "{} omc_scripting_{}({});", c_ret_ty(&f.output), f.name, plist).unwrap();
     }
     s.push_str("\n#ifdef __cplusplus\n}\n#endif\n#endif\n");
@@ -984,11 +1032,7 @@ fn gen_res_struct(f: &Func, tys: &[Ty]) -> String {
 
 /// `<retType> <name>(<qt params>)` (no trailing semicolon, no class qualifier).
 fn method_signature(f: &Func) -> String {
-    let params: Vec<String> = f
-        .inputs
-        .iter()
-        .map(|(n, ty)| format!("{} {}", qt_ty(ty), n))
-        .collect();
+    let params: Vec<String> = f.inputs.iter().map(|(n, ty)| format!("{} {}", qt_ty(ty), n)).collect();
     let ret = match &f.output {
         Ty::Unit => "void".to_string(),
         Ty::Tuple(_) => res_struct(&f.name),
@@ -1027,11 +1071,7 @@ fn gen_qt_method(s: &mut String, f: &Func) {
         Ty::Tuple(_) => format!("OMCInterface::{}", res_struct(&f.name)),
         ty => qt_ty(ty),
     };
-    let params: Vec<String> = f
-        .inputs
-        .iter()
-        .map(|(n, ty)| format!("{} {}", qt_ty(ty), n))
-        .collect();
+    let params: Vec<String> = f.inputs.iter().map(|(n, ty)| format!("{} {}", qt_ty(ty), n)).collect();
     writeln!(s, "{ret} OMCInterface::{}({})", f.name, params.join(", ")).unwrap();
     writeln!(s, "{{").unwrap();
     writeln!(s, "  QElapsedTimer commandTime;").unwrap();
@@ -1087,11 +1127,21 @@ fn gen_qt_method(s: &mut String, f: &Func) {
     }
     writeln!(s, "    if (omc_abi_has_exception()) {{").unwrap();
     writeln!(s, "      char *__ex = omc_abi_take_exception();").unwrap();
-    writeln!(s, "      emit throwException(QString(\"{} failed. %1\").arg(QString::fromUtf8(__ex)));", f.name).unwrap();
+    writeln!(
+        s,
+        "      emit throwException(QString(\"{} failed. %1\").arg(QString::fromUtf8(__ex)));",
+        f.name
+    )
+    .unwrap();
     writeln!(s, "      omc_abi_free_string(__ex);").unwrap();
     writeln!(s, "    }}").unwrap();
     writeln!(s, "  }} catch(std::exception &exception) {{").unwrap();
-    writeln!(s, "    emit throwException(QString(\"{} failed. %1\").arg(exception.what()));", f.name).unwrap();
+    writeln!(
+        s,
+        "    emit throwException(QString(\"{} failed. %1\").arg(exception.what()));",
+        f.name
+    )
+    .unwrap();
     writeln!(s, "  }}").unwrap();
     s.push('\n');
 
@@ -1105,7 +1155,12 @@ fn gen_qt_method(s: &mut String, f: &Func) {
         }
     }
     writeln!(s, "  double elapsed = (double)commandTime.elapsed() / 1000.0;").unwrap();
-    writeln!(s, "  emit logResponse(\"{}(\"+commandLog+\")\", responseLog, elapsed);", f.name).unwrap();
+    writeln!(
+        s,
+        "  emit logResponse(\"{}(\"+commandLog+\")\", responseLog, elapsed);",
+        f.name
+    )
+    .unwrap();
     if f.output != Ty::Unit {
         writeln!(s, "  return result;").unwrap();
     }
@@ -1276,7 +1331,12 @@ end OpenModelica;
 "#;
         let prog = parse_pkg(code);
         let m = extract_output_names(&prog);
-        assert_eq!(m.get("f1").map(|v| v.as_slice()), Some(["a".to_string(), "b".to_string()].as_slice()), "f1 = {:?}", m.get("f1"));
+        assert_eq!(
+            m.get("f1").map(|v| v.as_slice()),
+            Some(["a".to_string(), "b".to_string()].as_slice()),
+            "f1 = {:?}",
+            m.get("f1")
+        );
         assert_eq!(
             m.get("f2").map(|v| v.as_slice()),
             Some(["x".to_string(), "y".to_string(), "z".to_string()].as_slice()),

@@ -480,15 +480,7 @@ pub fn dgesl(a: &[f64], lda: i32, n: i32, ipvt: &[i32], b: &mut [f64], job: i32)
 ///
 /// `abd` is `lda * n`; the diagonals occupy rows `ml+1 .. 2*ml+mu+1`. On return
 /// `abd` holds the factors, `ipvt` the pivots, `info` a zero-pivot index or 0.
-pub fn dgbfa(
-    abd: &mut [f64],
-    lda: i32,
-    n: i32,
-    ml: i32,
-    mu: i32,
-    ipvt: &mut [i32],
-    info: &mut i32,
-) {
+pub fn dgbfa(abd: &mut [f64], lda: i32, n: i32, ml: i32, mu: i32, ipvt: &mut [i32], info: &mut i32) {
     let idx = |i: i32, j: i32| ((i - 1) + (j - 1) * lda) as usize;
     let m = ml + mu + 1;
     *info = 0;
@@ -569,16 +561,7 @@ pub fn dgbfa(
 
 /// `dgbsl`: solve `a*x = b` (`job == 0`) or `trans(a)*x = b` (`job != 0`) for a
 /// band matrix factored by [`dgbfa`].
-pub fn dgbsl(
-    abd: &[f64],
-    lda: i32,
-    n: i32,
-    ml: i32,
-    mu: i32,
-    ipvt: &[i32],
-    b: &mut [f64],
-    job: i32,
-) {
+pub fn dgbsl(abd: &[f64], lda: i32, n: i32, ml: i32, mu: i32, ipvt: &[i32], b: &mut [f64], job: i32) {
     let idx = |i: i32, j: i32| ((i - 1) + (j - 1) * lda) as usize;
     let m = mu + ml + 1;
     let nm1 = n - 1;

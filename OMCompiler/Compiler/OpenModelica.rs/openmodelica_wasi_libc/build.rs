@@ -31,7 +31,10 @@ fn main() {
 
     // The CI hand-over: with every side module already built there is nothing
     // here that needs a wasm toolchain or the sysroot.
-    if ![&libc_dest, &utilities_dest, &usertab_dest].iter().all(|d| prebuilt_in(d)) {
+    if ![&libc_dest, &utilities_dest, &usertab_dest]
+        .iter()
+        .all(|d| prebuilt_in(d))
+    {
         // PIC wasi sysroot: provided by CMake's rust_wasi_pic_sysroot target.
         let sysroot = ensure_pic_wasi_sysroot();
         copy(&sysroot.join("lib/wasm32-wasip1/libc.so"), &libc_dest);
@@ -43,7 +46,12 @@ fn main() {
         copy(&usertab, &usertab_dest);
     }
 
-    let published = [libc_dest.as_path(), utilities_dest.as_path(), usertab_dest.as_path(), adapter_dest.as_path()];
+    let published = [
+        libc_dest.as_path(),
+        utilities_dest.as_path(),
+        usertab_dest.as_path(),
+        adapter_dest.as_path(),
+    ];
     publish(&published);
 }
 
@@ -55,7 +63,9 @@ fn main() {
 /// `openmodelica_wasm_jit`'s blobs. Trusted, not checked.
 fn prebuilt_in(dest: &Path) -> bool {
     println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_IN");
-    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_IN") else { return false };
+    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_IN") else {
+        return false;
+    };
     let src = PathBuf::from(dir).join(dest.file_name().expect("a blob has a file name"));
     if !src.is_file() {
         return false;
@@ -95,8 +105,8 @@ fn provide_preview1_adapter(dest: &Path) {
 /// PIC wasi sysroot: `OMC_WASI_PIC_SYSROOT` from CMake's rust_wasi_pic_sysroot target.
 fn ensure_pic_wasi_sysroot() -> PathBuf {
     println!("cargo:rerun-if-env-changed=OMC_WASI_PIC_SYSROOT");
-    let p = std::env::var("OMC_WASI_PIC_SYSROOT")
-        .expect("OMC_WASI_PIC_SYSROOT not set — build via CMake which sets it");
+    let p =
+        std::env::var("OMC_WASI_PIC_SYSROOT").expect("OMC_WASI_PIC_SYSROOT not set — build via CMake which sets it");
     let p = PathBuf::from(p);
     let libc_so = p.join("lib/wasm32-wasip1/libc.so");
     println!("cargo:rerun-if-changed={}", libc_so.display());
@@ -120,10 +130,16 @@ fn build_utilities_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, trip
         .arg(format!("--sysroot={}", sysroot.display()))
         .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor"])
         .arg(&src)
-        .args(["-Wl,--experimental-pic", "-Wl,--shared", "-Wl,--no-entry",
-               "-Wl,--export-all", "-Wl,--allow-undefined"])
+        .args([
+            "-Wl,--experimental-pic",
+            "-Wl,--shared",
+            "-Wl,--no-entry",
+            "-Wl,--export-all",
+            "-Wl,--allow-undefined",
+        ])
         .arg(&builtins)
-        .arg("-o").arg(&raw)
+        .arg("-o")
+        .arg(&raw)
         .status()
         .map_err(|e| format!("spawn {clang}: {e}"))?;
     if !status.success() {
@@ -138,7 +154,9 @@ fn build_utilities_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, trip
 
 /// The C dummy `usertab` on its own, so the FMU link can put it behind a model's own.
 fn build_usertab_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result<PathBuf, String> {
-    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from)
+    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES")
+        .ok()
+        .map(PathBuf::from)
         .ok_or_else(|| "OMC_EXTERNAL_C_SOURCES not set".to_owned())?;
     let src = c_sources.join("ModelicaStandardTablesUsertab.c");
     if !src.exists() {
@@ -152,13 +170,26 @@ fn build_usertab_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result<
     let status = Command::new(&clang)
         .arg(format!("--target={triple}"))
         .arg(format!("--sysroot={}", sysroot.display()))
-        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor", "-DDUMMY_FUNCTION_USERTAB"])
-        .arg("-I").arg(&c_sources)
+        .args([
+            "-O2",
+            "-fPIC",
+            "-nodefaultlibs",
+            "-mexec-model=reactor",
+            "-DDUMMY_FUNCTION_USERTAB",
+        ])
+        .arg("-I")
+        .arg(&c_sources)
         .arg(&src)
-        .args(["-Wl,--experimental-pic", "-Wl,--shared", "-Wl,--no-entry",
-               "-Wl,--export=usertab", "-Wl,--allow-undefined"])
+        .args([
+            "-Wl,--experimental-pic",
+            "-Wl,--shared",
+            "-Wl,--no-entry",
+            "-Wl,--export=usertab",
+            "-Wl,--allow-undefined",
+        ])
         .arg(&builtins)
-        .arg("-o").arg(&raw)
+        .arg("-o")
+        .arg(&raw)
         .status()
         .map_err(|e| format!("spawn {clang}: {e}"))?;
     if !status.success() {
@@ -166,8 +197,7 @@ fn build_usertab_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result<
     }
     let bytes = std::fs::read(&raw).map_err(|e| format!("read raw usertab dylink: {e}"))?;
     let out = out_dir.join("usertab_dylink_stripped.wasm");
-    std::fs::write(&out, strip_wasm_export(&bytes, "_initialize"))
-        .map_err(|e| format!("write usertab dylink: {e}"))?;
+    std::fs::write(&out, strip_wasm_export(&bytes, "_initialize")).map_err(|e| format!("write usertab dylink: {e}"))?;
     Ok(out)
 }
 
@@ -178,17 +208,24 @@ fn strip_wasm_export(module: &[u8], name: &str) -> Vec<u8> {
         loop {
             let mut b = (v & 0x7f) as u8;
             v >>= 7;
-            if v != 0 { b |= 0x80; }
+            if v != 0 {
+                b |= 0x80;
+            }
             out.push(b);
-            if v == 0 { break; }
+            if v == 0 {
+                break;
+            }
         }
     }
     fn read_uleb(b: &[u8], i: &mut usize) -> u32 {
         let (mut r, mut s) = (0u32, 0u32);
         loop {
-            let x = b[*i]; *i += 1;
+            let x = b[*i];
+            *i += 1;
             r |= ((x & 0x7f) as u32) << s;
-            if x & 0x80 == 0 { break; }
+            if x & 0x80 == 0 {
+                break;
+            }
             s += 7;
         }
         r
@@ -197,7 +234,8 @@ fn strip_wasm_export(module: &[u8], name: &str) -> Vec<u8> {
     out.extend_from_slice(&module[..8]);
     let mut i = 8;
     while i < module.len() {
-        let id = module[i]; i += 1;
+        let id = module[i];
+        i += 1;
         let mut hdr = i;
         let size = read_uleb(module, &mut hdr) as usize;
         let body = &module[hdr..hdr + size];
@@ -213,8 +251,10 @@ fn strip_wasm_export(module: &[u8], name: &str) -> Vec<u8> {
         let mut kept: Vec<(&[u8], u8, u32)> = Vec::new();
         for _ in 0..count {
             let nl = read_uleb(body, &mut j) as usize;
-            let nm = &body[j..j + nl]; j += nl;
-            let kind = body[j]; j += 1;
+            let nm = &body[j..j + nl];
+            j += nl;
+            let kind = body[j];
+            j += 1;
             let idx = read_uleb(body, &mut j);
             if nm != name.as_bytes() {
                 kept.push((nm, kind, idx));
@@ -238,18 +278,21 @@ fn strip_wasm_export(module: &[u8], name: &str) -> Vec<u8> {
 fn find_wasm_builtins() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("OMC_WASM_BUILTINS") {
         let p = PathBuf::from(p);
-        if p.exists() { return Some(p); }
+        if p.exists() {
+            return Some(p);
+        }
     }
     let out = Command::new(std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned()))
-        .arg("-print-resource-dir").output().ok()?;
+        .arg("-print-resource-dir")
+        .output()
+        .ok()?;
     let dir = PathBuf::from(String::from_utf8(out.stdout).ok()?.trim());
     let cand = dir.join("lib/wasi/libclang_rt.builtins-wasm32.a");
     cand.exists().then_some(cand)
 }
 
 fn copy(from: &Path, to: &Path) {
-    std::fs::copy(from, to)
-        .unwrap_or_else(|e| panic!("copy {} -> {}: {e}", from.display(), to.display()));
+    std::fs::copy(from, to).unwrap_or_else(|e| panic!("copy {} -> {}: {e}", from.display(), to.display()));
 }
 
 fn env(key: &str) -> String {

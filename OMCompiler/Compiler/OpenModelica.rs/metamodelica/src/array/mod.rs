@@ -1,10 +1,10 @@
 //! Mutable (aliasing) `Array<T>` builtins. Read-only constant tables
 //! use [`static_array::StaticArray`].
 
-use std::rc::Rc;
-use std::cell::RefCell;
 use crate::Result;
 use crate::{Array, list::List};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub mod static_array;
 pub use static_array::*;
@@ -133,13 +133,15 @@ pub fn arrayAppend<A: Clone>(arr1: Array<A>, arr2: Array<A>) -> Array<A> {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod array_function_tests {
         use super::*;
 
-        fn arr<A>(v: Vec<A>) -> Array<A> { arrayFromVec(v) }
+        fn arr<A>(v: Vec<A>) -> Array<A> {
+            arrayFromVec(v)
+        }
 
         #[test]
         fn test_array_length() {

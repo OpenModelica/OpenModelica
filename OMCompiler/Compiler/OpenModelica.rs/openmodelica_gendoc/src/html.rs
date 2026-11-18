@@ -154,9 +154,7 @@ fn version_picker(versions: &[VersionLink]) -> String {
     if versions.len() < 2 {
         return String::new();
     }
-    let mut out = String::from(
-        "<select class=\"om-versions\" id=\"om-version\" aria-label=\"Version\">",
-    );
+    let mut out = String::from("<select class=\"om-versions\" id=\"om-version\" aria-label=\"Version\">");
     for version in versions {
         out.push_str(&format!(
             "<option value=\"{}\"{}>{}</option>",
@@ -201,7 +199,6 @@ fn breadcrumb(classes: &[ClassDoc], class: usize, versions: &[VersionLink]) -> S
     out
 }
 
-
 /// `__OpenModelica_infoHeader` belongs in `<head>`, and is inherited from the
 /// enclosing packages outwards, as OMEdit's documentation view does it.
 fn info_header(classes: &[ClassDoc], class: usize) -> String {
@@ -233,9 +230,7 @@ pub fn render_class(
     let mut resources = Vec::new();
     let name = doc.qualified_name();
     let index_name = doc.index_name();
-    let rewrite = |html: &str, resources: &mut Vec<Resource>| {
-        resolver.rewrite_in(&doc.tag, "", html, resources)
-    };
+    let rewrite = |html: &str, resources: &mut Vec<Resource>| resolver.rewrite_in(&doc.tag, "", html, resources);
     let library = index_name[..index_name.find('.').unwrap_or(index_name.len())].to_string();
     let mut body = String::with_capacity(4096);
 
@@ -414,16 +409,10 @@ fn extends_line(classes: &[ClassDoc], doc: &ClassDoc) -> String {
     for extends in &doc.extends {
         let text = escape(&extends.path);
         let link = match extends.base {
-            Some(base) => format!(
-                "<a href=\"{}\">{text}</a>",
-                page_link(&classes[base])
-            ),
+            Some(base) => format!("<a href=\"{}\">{text}</a>", page_link(&classes[base])),
             None => text,
         };
-        let comment = extends
-            .base
-            .map(|b| classes[b].comment.as_str())
-            .unwrap_or_default();
+        let comment = extends.base.map(|b| classes[b].comment.as_str()).unwrap_or_default();
         parts.push(if comment.is_empty() {
             link
         } else {
@@ -433,10 +422,7 @@ fn extends_line(classes: &[ClassDoc], doc: &ClassDoc) -> String {
     if parts.is_empty() {
         return String::new();
     }
-    format!(
-        "<p class=\"om-extends\">Extends from {}.</p>\n",
-        parts.join(", ")
-    )
+    format!("<p class=\"om-extends\">Extends from {}.</p>\n", parts.join(", "))
 }
 
 /// `type Angle = Real` — the base of a short class definition, linked.
@@ -446,10 +432,7 @@ fn derived_line(classes: &[ClassDoc], doc: &ClassDoc) -> String {
     };
     let text = escape(&derived.base);
     let base = match derived.base_class {
-        Some(target) => format!(
-            "<a href=\"{}\">{text}</a>",
-            page_link(&classes[target])
-        ),
+        Some(target) => format!("<a href=\"{}\">{text}</a>", page_link(&classes[target])),
         None => text,
     };
     format!(
@@ -530,8 +513,7 @@ fn member_tables(classes: &[ClassDoc], class: usize) -> String {
         ));
         return out;
     }
-    let is_parameter =
-        |m: &Member<'_>| matches!(m.component.kind, Kind::Parameter | Kind::Constant);
+    let is_parameter = |m: &Member<'_>| matches!(m.component.kind, Kind::Parameter | Kind::Constant);
     let is_connector = |m: &Member<'_>| {
         m.component
             .type_class
@@ -605,10 +587,7 @@ fn member_table(
         }
         let type_text = escape(&component.type_path);
         let type_cell = match component.type_class {
-            Some(target) => format!(
-                "<a href=\"{}\">{type_text}</a>",
-                page_link(&classes[target])
-            ),
+            Some(target) => format!("<a href=\"{}\">{type_text}</a>", page_link(&classes[target])),
             None => type_text,
         };
         let from = match member.inherited_from {
@@ -679,11 +658,7 @@ fn support_light(level: &str) -> String {
 /// `4.1.0+maint.om` is mostly build metadata; the hover has the whole of it.
 fn short_version(version: &str) -> String {
     match version.split_once('+') {
-        Some((release, _)) => format!(
-            "<abbr title=\"{}\">{}+</abbr>",
-            escape(version),
-            escape(release)
-        ),
+        Some((release, _)) => format!("<abbr title=\"{}\">{}+</abbr>", escape(version), escape(release)),
         None => escape(version),
     }
 }
@@ -716,11 +691,7 @@ fn support_filter(libraries: &[LibraryEntry<'_>]) -> String {
     out
 }
 
-pub fn render_index(
-    libraries: &[LibraryEntry<'_>],
-    playground: &Playground,
-    footer: &str,
-) -> String {
+pub fn render_index(libraries: &[LibraryEntry<'_>], playground: &Playground, footer: &str) -> String {
     let mut body = String::with_capacity(8192);
     body.push_str(&header(
         "<nav class=\"om-crumbs\"><span class=\"om-current\">Libraries</span></nav>",
@@ -801,9 +772,18 @@ fn source_host(url: &str) -> &str {
 /// Inline SVG has no `alt`; `role="img"` plus a `<title>` is its equivalent, and
 /// it names the link for a screen reader as well as being the hover tooltip.
 fn source_mark(host: &str) -> String {
-    const GITHUB: (&str, &str) = ("GitHub", r##"<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>"##);
-    const GITLAB: (&str, &str) = ("GitLab", r##"<path d="m23.6 9.6-.03-.08-3.26-8.5a.85.85 0 0 0-.34-.4.88.88 0 0 0-1 .05.88.88 0 0 0-.29.45l-2.2 6.73H7.52L5.32 1.12a.86.86 0 0 0-.3-.44.88.88 0 0 0-1-.06.86.86 0 0 0-.33.4L.42 9.52l-.03.08a6.05 6.05 0 0 0 2 7l.01.01.03.02 4.96 3.71 2.45 1.86 1.5 1.13a1.02 1.02 0 0 0 1.23 0l1.5-1.13 2.45-1.86 5-3.73.01-.01a6.05 6.05 0 0 0 2-7Z"/>"##);
-    const LINK: (&str, &str) = ("", r##"<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>"##);
+    const GITHUB: (&str, &str) = (
+        "GitHub",
+        r##"<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>"##,
+    );
+    const GITLAB: (&str, &str) = (
+        "GitLab",
+        r##"<path d="m23.6 9.6-.03-.08-3.26-8.5a.85.85 0 0 0-.34-.4.88.88 0 0 0-1 .05.88.88 0 0 0-.29.45l-2.2 6.73H7.52L5.32 1.12a.86.86 0 0 0-.3-.44.88.88 0 0 0-1-.06.86.86 0 0 0-.33.4L.42 9.52l-.03.08a6.05 6.05 0 0 0 2 7l.01.01.03.02 4.96 3.71 2.45 1.86 1.5 1.13a1.02 1.02 0 0 0 1.23 0l1.5-1.13 2.45-1.86 5-3.73.01-.01a6.05 6.05 0 0 0 2-7Z"/>"##,
+    );
+    const LINK: (&str, &str) = (
+        "",
+        r##"<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>"##,
+    );
 
     let (forge, path, box_size) = if host == "github.com" || host.ends_with(".github.com") {
         (GITHUB.0, GITHUB.1, 16)
@@ -834,10 +814,7 @@ fn build_picker(playground: &Playground) -> String {
          title=\"Which build of the compiler a class runs in\">",
     );
     for version in &playground.versions {
-        out.push_str(&format!(
-            "<option value=\"{0}\">{0}</option>",
-            escape(version)
-        ));
+        out.push_str(&format!("<option value=\"{0}\">{0}</option>", escape(version)));
     }
     out.push_str("</select></label>");
     out

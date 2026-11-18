@@ -65,13 +65,19 @@ fn with_reg<R>(f: impl FnOnce(&mut Registry) -> R) -> R {
 impl Registry {
     fn lib(&mut self, handle: i32) -> std::result::Result<&mut LibEntry, String> {
         let i = (handle - 1).max(-1) as usize;
-        self.libs.get_mut(i).and_then(|l| l.as_mut()).ok_or_else(|| "no such library handle".to_owned())
+        self.libs
+            .get_mut(i)
+            .and_then(|l| l.as_mut())
+            .ok_or_else(|| "no such library handle".to_owned())
     }
 
     fn of(&mut self, handle: i32) -> std::result::Result<(&mut Store, &Linked, &Function), String> {
         let i = (handle - 1).max(-1) as usize;
         let (lib, world) = {
-            let f = self.funcs.get(i).and_then(|f| f.as_ref())
+            let f = self
+                .funcs
+                .get(i)
+                .and_then(|f| f.as_ref())
                 .ok_or_else(|| "no such function handle".to_owned())?;
             (f.lib, f.world)
         };
@@ -98,15 +104,20 @@ fn libraries_for(sym: &str) -> std::result::Result<Vec<dylink_wasmer::Library<'s
         return Err("this omc carries no PIC libc, so no shared library can be loaded".to_owned());
     }
     // `libc.so` first and the rest dependency-first: see `dylink::libraries_for`.
-    let mut libs: Vec<dylink_wasmer::Library<'static>> =
-        vec![dylink_wasmer::Library { name: "libc.so", bytes: crate::LIBC_PIC() }];
+    let mut libs: Vec<dylink_wasmer::Library<'static>> = vec![dylink_wasmer::Library {
+        name: "libc.so",
+        bytes: crate::LIBC_PIC(),
+    }];
     for file in carried {
         match crate::ext_library(file) {
             Some(bytes) => libs.push(dylink_wasmer::Library { name: file, bytes }),
             None => return Err(format!("`{sym}` is in `{file}`, which this bundle does not have")),
         }
     }
-    libs.push(dylink_wasmer::Library { name: "usertab", bytes: crate::USERTAB_DYLINK() });
+    libs.push(dylink_wasmer::Library {
+        name: "usertab",
+        bytes: crate::USERTAB_DYLINK(),
+    });
     Ok(libs)
 }
 
@@ -132,7 +143,9 @@ fn open_library(path: &str, _lazy: bool) -> std::result::Result<i32, String> {
             .find(|d| openmodelica_wasi::fs::exists(&format!("{}/libc/libc.so", d.display())))
             .map(|d| d.to_path_buf())
     };
-    let key = bundle.as_ref().map_or_else(|| path.to_owned(), |b| b.display().to_string());
+    let key = bundle
+        .as_ref()
+        .map_or_else(|| path.to_owned(), |b| b.display().to_string());
     let mut modules: Vec<(String, Vec<u8>)> = Vec::new();
     if !path.is_empty() {
         let name = file.display().to_string();
@@ -165,22 +178,37 @@ fn open_library(path: &str, _lazy: bool) -> std::result::Result<i32, String> {
         if let Some(i) = reg.libs.iter().position(|l| l.as_ref().is_some_and(|l| l.key == key)) {
             return Ok(i as i32 + 1);
         }
-        let mut entry = LibEntry { key: key.clone(), worlds: Vec::new() };
+        let mut entry = LibEntry {
+            key: key.clone(),
+            worlds: Vec::new(),
+        };
         if !modules.is_empty() {
             if libc.is_none() && crate::LIBC_PIC().is_empty() {
                 return Err("this omc carries no PIC libc, so no shared library can be loaded".to_owned());
             }
             // `libc.so` first, what the modules link against next, then the one
             // asked for ahead of the rest, so its own symbols win.
-            let mut libs =
-                vec![dylink_wasmer::Library { name: "libc.so", bytes: libc.as_deref().unwrap_or(crate::LIBC_PIC()) }];
-            libs.extend(needed.iter().chain(&modules).map(|(name, bytes)| dylink_wasmer::Library { name, bytes }));
-            for file in crate::dylink::carried_libraries(std::iter::empty::<&str>(), modules.iter().map(|(_, b)| &b[..])) {
+            let mut libs = vec![dylink_wasmer::Library {
+                name: "libc.so",
+                bytes: libc.as_deref().unwrap_or(crate::LIBC_PIC()),
+            }];
+            libs.extend(
+                needed
+                    .iter()
+                    .chain(&modules)
+                    .map(|(name, bytes)| dylink_wasmer::Library { name, bytes }),
+            );
+            for file in
+                crate::dylink::carried_libraries(std::iter::empty::<&str>(), modules.iter().map(|(_, b)| &b[..]))
+            {
                 if let Some(bytes) = crate::ext_library(file) {
                     libs.push(dylink_wasmer::Library { name: file, bytes });
                 }
             }
-            libs.push(dylink_wasmer::Library { name: "usertab", bytes: crate::USERTAB_DYLINK() });
+            libs.push(dylink_wasmer::Library {
+                name: "usertab",
+                bytes: crate::USERTAB_DYLINK(),
+            });
             entry.worlds.push(dylink_wasmer::link(&mut reg.store, &libs)?);
         }
         reg.libs.push(Some(entry));
@@ -192,7 +220,7 @@ fn open_library(path: &str, _lazy: bool) -> std::result::Result<i32, String> {
 /// frontend asks for as `<dir>/wasm32-wasip1/<name>.wasm`: as that file, or as
 /// what the manifest aliases `<name>` to.
 fn bundled_path(path: &str) -> Option<std::path::PathBuf> {
-    use crate::dylink::{generation_of, GENERATION_PREFIX};
+    use crate::dylink::{GENERATION_PREFIX, generation_of};
     let path = std::path::Path::new(path);
     let dir = path.parent().filter(|d| d.ends_with("wasm32-wasip1"))?;
     let generation = openmodelica_wasi::fs::read_dir(&dir.display().to_string())
@@ -212,7 +240,9 @@ fn bundled_path(path: &str) -> Option<std::path::PathBuf> {
 /// so each binds directly to what it imports from the others.
 fn bundle_needs(bundle: &std::path::Path, bytes: &[u8], out: &mut Vec<(String, Vec<u8>)>) {
     for name in crate::dylink::parse(bytes).map(|d| d.needed).unwrap_or_default() {
-        let Some(path) = crate::dylink::bundle_alias(bundle, &name) else { continue };
+        let Some(path) = crate::dylink::bundle_alias(bundle, &name) else {
+            continue;
+        };
         let path = path.display().to_string();
         if out.iter().any(|(p, _)| *p == path) {
             continue;
@@ -236,7 +266,11 @@ fn lookup_function(lib: i32, name: &str) -> std::result::Result<i32, String> {
             .enumerate()
             .find_map(|(i, w)| w.func(name).cloned().map(|f| (i, f)));
         if let Some((world, func)) = found {
-            reg.funcs.push(Some(FuncEntry { lib: (lib - 1) as usize, world, func }));
+            reg.funcs.push(Some(FuncEntry {
+                lib: (lib - 1) as usize,
+                world,
+                func,
+            }));
             return Ok(reg.funcs.len() as i32);
         }
         if !reg.lib(lib)?.key.is_empty() {
@@ -253,7 +287,11 @@ fn lookup_function(lib: i32, name: &str) -> std::result::Result<i32, String> {
         let entry = reg.lib(lib)?;
         entry.worlds.push(world);
         let world = entry.worlds.len() - 1;
-        reg.funcs.push(Some(FuncEntry { lib: (lib - 1) as usize, world, func }));
+        reg.funcs.push(Some(FuncEntry {
+            lib: (lib - 1) as usize,
+            world,
+            func,
+        }));
         Ok(reg.funcs.len() as i32)
     })
 }
@@ -262,8 +300,10 @@ fn missing(name: &str) -> String {
     if crate::ondemand_index_read() {
         format!("no shared library this omc carries exports `{name}`")
     } else {
-        format!("no shared library this omc carries exports `{name}`, and the \
-                 bundle's `wasm-blobs/index.json` could not be read")
+        format!(
+            "no shared library this omc carries exports `{name}`, and the \
+                 bundle's `wasm-blobs/index.json` could not be read"
+        )
     }
 }
 
@@ -322,14 +362,22 @@ pub fn free(func: i32, off: u32) -> std::result::Result<(), String> {
 pub fn write_mem(func: i32, off: u32, bytes: &[u8]) -> std::result::Result<(), String> {
     with_reg(|reg| {
         let (store, linked, _) = reg.of(func)?;
-        linked.memory.view(&*store).write(off as u64, bytes).map_err(|e| format!("{e}"))
+        linked
+            .memory
+            .view(&*store)
+            .write(off as u64, bytes)
+            .map_err(|e| format!("{e}"))
     })
 }
 
 pub fn read_mem(func: i32, off: u32, out: &mut [u8]) -> std::result::Result<(), String> {
     with_reg(|reg| {
         let (store, linked, _) = reg.of(func)?;
-        linked.memory.view(&*store).read(off as u64, out).map_err(|e| format!("{e}"))
+        linked
+            .memory
+            .view(&*store)
+            .read(off as u64, out)
+            .map_err(|e| format!("{e}"))
     })
 }
 
@@ -345,16 +393,20 @@ pub fn read_cstring(func: i32, off: u32) -> std::result::Result<String, String> 
 /// library's own: passing the wrong number or kind of argument is an engine error
 /// here, which is what a mismatched `external "C"` declaration deserves.
 pub fn call(func: i32, args: &[Val]) -> std::result::Result<Option<Val>, String> {
-    let values: Vec<Value> = args.iter().map(|v| match v {
-        Val::I32(i) => Value::I32(*i),
-        Val::F64(f) => Value::F64(*f),
-    }).collect();
+    let values: Vec<Value> = args
+        .iter()
+        .map(|v| match v {
+            Val::I32(i) => Value::I32(*i),
+            Val::F64(f) => Value::F64(*f),
+        })
+        .collect();
     with_reg(|reg| {
         let (store, linked, f) = reg.of(func)?;
         let f = f.clone();
         // A `ModelicaError` the library raised is the reason the call trapped; the
         // trap itself cannot carry the message.
-        let out = f.call(&mut *store, &values)
+        let out = f
+            .call(&mut *store, &values)
             .map_err(|e| linked.take_error(store).unwrap_or_else(|| format!("{e}")))?;
         Ok(match out.first() {
             Some(Value::F64(v)) => Some(Val::F64(*v)),
@@ -369,7 +421,9 @@ pub fn call(func: i32, args: &[Val]) -> std::result::Result<Option<Val>, String>
 /// only as long as the call that produced it.
 pub fn free_call_temps(func: i32) {
     let temps = with_reg(|reg| {
-        let Ok((store, linked, _)) = reg.of(func) else { return Vec::new() };
+        let Ok((store, linked, _)) = reg.of(func) else {
+            return Vec::new();
+        };
         linked.take_temps(store)
     });
     for off in temps {

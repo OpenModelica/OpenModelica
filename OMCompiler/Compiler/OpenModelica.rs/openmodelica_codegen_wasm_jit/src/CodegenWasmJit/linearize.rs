@@ -7,8 +7,8 @@
 use metamodelica::List;
 use openmodelica_backend_types::BackendDAE;
 use openmodelica_frontend_types::DAE;
-use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::LinLanguage;
+use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use std::fmt::Write;
 
 use crate::CodegenWasmJit::{lst, svs};
@@ -26,14 +26,25 @@ pub(crate) struct Frames {
 fn cref_str(cr: &metamodelica::Ref<DAE::ComponentRef>) -> String {
     use DAE::ComponentRef as C;
     match &**cr {
-        C::CREF_IDENT { ident, subscriptLst, .. } => format!("{ident}{}", subscripts(subscriptLst, false)),
-        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$DER" => {
+        C::CREF_IDENT {
+            ident, subscriptLst, ..
+        } => format!("{ident}{}", subscripts(subscriptLst, false)),
+        C::CREF_QUAL {
+            ident, componentRef, ..
+        } if &**ident == "$DER" => {
             format!("der({})", cref_str(componentRef))
         }
-        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$CLKPRE" => {
+        C::CREF_QUAL {
+            ident, componentRef, ..
+        } if &**ident == "$CLKPRE" => {
             format!("previous({})", cref_str(componentRef))
         }
-        C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+        C::CREF_QUAL {
+            ident,
+            subscriptLst,
+            componentRef,
+            ..
+        } => {
             format!("{ident}{}.{}", subscripts(subscriptLst, false), cref_str(componentRef))
         }
         _ => "CREF_NOT_IDENT_OR_QUAL".to_string(),
@@ -44,15 +55,30 @@ fn cref_str(cr: &metamodelica::Ref<DAE::ComponentRef>) -> String {
 fn cref_str_safe(cr: &metamodelica::Ref<DAE::ComponentRef>) -> String {
     use DAE::ComponentRef as C;
     match &**cr {
-        C::CREF_IDENT { ident, subscriptLst, .. } => format!("{ident}{}", subscripts(subscriptLst, true)),
-        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$DER" => {
+        C::CREF_IDENT {
+            ident, subscriptLst, ..
+        } => format!("{ident}{}", subscripts(subscriptLst, true)),
+        C::CREF_QUAL {
+            ident, componentRef, ..
+        } if &**ident == "$DER" => {
             format!("der_{}", cref_str_safe(componentRef))
         }
-        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$CLKPRE" => {
+        C::CREF_QUAL {
+            ident, componentRef, ..
+        } if &**ident == "$CLKPRE" => {
             format!("pre_{}", cref_str_safe(componentRef))
         }
-        C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
-            format!("{ident}{}_{}", subscripts(subscriptLst, true), cref_str_safe(componentRef))
+        C::CREF_QUAL {
+            ident,
+            subscriptLst,
+            componentRef,
+            ..
+        } => {
+            format!(
+                "{ident}{}_{}",
+                subscripts(subscriptLst, true),
+                cref_str_safe(componentRef)
+            )
         }
         _ => "CREF_NOT_IDENT_OR_QUAL".to_string(),
     }
@@ -79,14 +105,11 @@ fn subscript_str(s: &DAE::Subscript) -> String {
     match &**exp {
         E::ICONST { integer } => integer.to_string(),
         E::BCONST { bool } => bool.to_string(),
-        E::ENUM_LITERAL { name, .. } => openmodelica_frontend_dump::AbsynUtil::pathString(
-            name.clone(),
-            arcstr::literal!("."),
-            true,
-            false,
-        )
-        .map(|p| p.to_string())
-        .unwrap_or_default(),
+        E::ENUM_LITERAL { name, .. } => {
+            openmodelica_frontend_dump::AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false)
+                .map(|p| p.to_string())
+                .unwrap_or_default()
+        }
         E::CREF { .. } => openmodelica_frontend_dump::ExpressionBasics::printExpStr(exp.clone())
             .map(|p| p.to_string())
             .unwrap_or_default(),
@@ -142,7 +165,10 @@ fn var_names_modelica(vars: &[&SimCodeVar::SimVar], array: &str) -> String {
 /// C's `getVarNameMatlab`/`Python`/`Julia`; Julia quotes with `"`.
 fn var_names_list(vars: &[&SimCodeVar::SimVar], lang: LinLanguage) -> String {
     let q = if lang == LinLanguage::Julia { '"' } else { '\'' };
-    vars.iter().map(|sv| format!("{q}{}{q}", cref_str_safe(&sv.name))).collect::<Vec<_>>().join(",")
+    vars.iter()
+        .map(|sv| format!("{q}{}{q}", cref_str_safe(&sv.name)))
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 /// C's `simulationFile_lnz`: `none`, an oversized system and `--daeMode` each
@@ -176,7 +202,9 @@ pub(crate) fn build_frames(
     };
     let max_size = Flags::getConfigInt(Flags::MAX_SIZE_LINEARIZATION.clone())?;
     if (n_states + n_in + n_out + n_alg) as i32 > max_size {
-        return Ok(disabled("System too big. Use compiler flag `--maxSizeLinearization` to change threshold."));
+        return Ok(disabled(
+            "System too big. Use compiler flag `--maxSizeLinearization` to change threshold.",
+        ));
     }
     if Flags::getConfigBool(Flags::DAE_MODE.clone())? {
         return Ok(disabled("Linearization not available with `--daeMode`."));
@@ -224,7 +252,9 @@ pub(crate) fn build_frames(
                     "{}  parameter Real x0[n] = %s;\n  parameter Real u0[m] = %s;\n  parameter Real z0[nz] = %s;\n\n\
                      {a}{b}{c}{d}{cz}{dz}\n{vec_x}{vec_u}{vec_y}{vec_z}\n{nm_x}{nm_u}{nm_y}{nm_z}\
                      equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linearized_model;\n",
-                    head(&format!("  parameter Integer nz = {n_alg} \"data recovery variables\";\n"))
+                    head(&format!(
+                        "  parameter Integer nz = {n_alg} \"data recovery variables\";\n"
+                    ))
                 ),
             )
         }
@@ -282,7 +312,12 @@ pub(crate) fn build_frames(
         LinLanguage::Julia => "Linearization with data recovery not implemented for Julia.".to_string(),
         LinLanguage::Python => "Linearization with data recovery not implemented for Python.".to_string(),
     };
-    Ok(Frames { language, frame, frame_datarec, disabled_reason: datarec_reason })
+    Ok(Frames {
+        language,
+        frame,
+        frame_datarec,
+        disabled_reason: datarec_reason,
+    })
 }
 
 /// Every row the sparsity pattern says can be nonzero has a `JAC_VAR` result to
@@ -315,7 +350,9 @@ pub(crate) fn symbolic_jacobians(
 ) -> [Option<(metamodelica::Ref<SimCode::JacobianMatrix>, u32, u32)>; 4] {
     let names = ["A", "B", "C", "D"];
     core::array::from_fn(|k| {
-        let jm = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == names[k])?.clone();
+        let jm = lst(&sim_code.jacobianMatrices)
+            .find(|j| &*j.matrixName == names[k])?
+            .clone();
         let cols = crate::CodegenWasmJit::count(&jm.seedVars) as u32;
         let rows = matrix_rows(&jm);
         if rows == 0 || cols == 0 {
@@ -326,8 +363,7 @@ pub(crate) fn symbolic_jacobians(
         let has_equations = lst(&jm.columns)
             .next()
             .is_some_and(|c| lst(&c.columnEqns).next().is_some());
-        let usable =
-            has_equations && covers_sparsity(&jm, rows) && crate::CodegenWasmJit::jac_lowerable(&jm);
+        let usable = has_equations && covers_sparsity(&jm, rows) && crate::CodegenWasmJit::jac_lowerable(&jm);
         usable.then_some((jm, rows, cols))
     })
 }

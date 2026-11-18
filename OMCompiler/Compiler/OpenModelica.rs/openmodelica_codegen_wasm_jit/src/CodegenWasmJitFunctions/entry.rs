@@ -29,7 +29,11 @@ pub fn translateFunctions(fnCode: SimCodeFunction::FunctionCode) {
 /// cannot compile `Include` sources.
 pub fn prebuiltExternalsABI() -> i32 {
     let wasm_jit = openmodelica_util::Config::simCodeTarget().is_ok_and(|t| &*t == "wasm-jit");
-    if wasm_jit || !crate::CodegenWasmJit::native_externals_allowed() { crate::CodegenWasmJit::PREBUILT_ABI as i32 } else { 0 }
+    if wasm_jit || !crate::CodegenWasmJit::native_externals_allowed() {
+        crate::CodegenWasmJit::PREBUILT_ABI as i32
+    } else {
+        0
+    }
 }
 
 /// `CodegenWasmJitFunctions.precompilePrebuiltModules`. Best effort.
@@ -39,12 +43,19 @@ pub fn precompilePrebuiltModules(libraryDirs: List<ArcStr>) {
     }
     let dirs: Vec<std::path::PathBuf> = libraryDirs.iter().map(|d| std::path::PathBuf::from(&**d)).collect();
     if let Err(e) = openmodelica_wasm_jit::sim_runtime::precompile_libraries(&dirs) {
-        let _ = openmodelica_util::Error::addCompilerWarning(ArcStr::from(format!("Could not precompile the prebuilt wasm modules: {e}")));
+        let _ = openmodelica_util::Error::addCompilerWarning(ArcStr::from(format!(
+            "Could not precompile the prebuilt wasm modules: {e}"
+        )));
     }
 }
 
 fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<()> {
-    let BuiltModule { bytes, in_sig, out_sig, ext_imports } = build_module(fn_code)?;
+    let BuiltModule {
+        bytes,
+        in_sig,
+        out_sig,
+        ext_imports,
+    } = build_module(fn_code)?;
     let base = fn_code.name.to_string();
     // Sidecar: input type codes, output type codes, then a `lib`/`ext` line per
     // external "C" library and per function called in one.
@@ -69,16 +80,27 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
             .map(|s| s.to_string())
             .chain(resolved.sources)
             .collect();
-        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
+        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes)
+            .map(|s| s.to_string())
+            .collect();
         // Installed prebuilt modules first, as `build_sim_model` takes them; a host
         // build compiles the rest the way the C target does and calls them through
         // libffi. The browser has no host library to call.
         let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &wasm_libs);
-        let fns: Vec<&SimCodeFunction::Function::Function> =
-            fn_code.mainFunction.iter().chain(fn_code.functions.iter()).map(|f| &**f).collect();
+        let fns: Vec<&SimCodeFunction::Function::Function> = fn_code
+            .mainFunction
+            .iter()
+            .chain(fn_code.functions.iter())
+            .map(|f| &**f)
+            .collect();
         let mut prebuilt_notes = Vec::new();
-        let prebuilt =
-            crate::CodegenWasmJit::prebuilt_include_libraries(&fns, &missing, false, resolved.generation, &mut prebuilt_notes);
+        let prebuilt = crate::CodegenWasmJit::prebuilt_include_libraries(
+            &fns,
+            &missing,
+            false,
+            resolved.generation,
+            &mut prebuilt_notes,
+        );
         if !crate::CodegenWasmJit::native_externals_allowed() {
             notes.extend(prebuilt_notes);
         }
@@ -91,7 +113,17 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         // The model's own code first: it shadows a same-named symbol in a `Library`
         // shared object, as the C target's own link order does.
         #[cfg(not(target_arch = "wasm32"))]
-        for lib in native_fallbacks(&base, fn_code, &resolved.native, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
+        for lib in native_fallbacks(
+            &base,
+            fn_code,
+            &resolved.native,
+            &resolved.archives,
+            &sources,
+            &dirs,
+            &ext_imports,
+            &wasm_libs,
+            &mut notes,
+        ) {
             sig.push_str(&format!("nlib\t{lib}\n"));
         }
         for lib in &resolved.native {
@@ -106,8 +138,10 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     }
     // Native writes the module + sidecar to disk; wasm has no OS filesystem, so
     // the facade stages them in the VFS where `load_and_execute` reads them back.
-    openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
-    openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes()).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
+    openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes)
+        .map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
+    openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes())
+        .map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
     Ok(())
 }
 
@@ -172,7 +206,11 @@ fn native_fallbacks(
 /// call the exported `main`, marshalling `args` in and the result out. Returns
 /// `Values.META_FAIL` on any failure (missing/invalid module, a wasm trap from
 /// a failed assertion or division by zero, …), mirroring `DynLoad.executeFunction`.
-pub fn loadAndExecute(fileName: ArcStr, name: ArcStr, args: List<metamodelica::Ref<Values::Value>>) -> metamodelica::Ref<Values::Value> {
+pub fn loadAndExecute(
+    fileName: ArcStr,
+    name: ArcStr,
+    args: List<metamodelica::Ref<Values::Value>>,
+) -> metamodelica::Ref<Values::Value> {
     match runtime::load_and_execute(&fileName, &name, &args) {
         Ok(v) => v,
         // Failure is a normal MetaModelica value the caller handles; no stderr.

@@ -34,8 +34,9 @@ fn dggev_every_job_on_small_pencils() {
             for (jl, jr) in [("N", "N"), ("V", "N"), ("N", "V"), ("V", "V")] {
                 let (mut ar, mut ai, mut be) = (vec![0.0; n], vec![0.0; n], vec![0.0; n]);
                 let (mut vl, mut vr) = (vec![0.0; n * n], vec![0.0; n * n]);
-                let info = om::gev::dggev(jl, jr, n, &a, n, &b, n, &mut ar, &mut ai, &mut be,
-                                          &mut vl, n, &mut vr, n);
+                let info = om::gev::dggev(
+                    jl, jr, n, &a, n, &b, n, &mut ar, &mut ai, &mut be, &mut vl, n, &mut vr, n,
+                );
                 assert_eq!(info, 0, "dggev {jl}/{jr} n={n} seed={seed}: INFO");
                 // beta*A*x = alpha*B*x for the right eigenvectors, so the small
                 // sizes are checked for correctness and not merely for not panicking.
@@ -58,9 +59,10 @@ fn dggev_every_job_on_small_pencils() {
                         }
                         let lre = ar[k] * bre - ai[k] * bim;
                         let lim = ar[k] * bim + ai[k] * bre;
-                        assert!((be[k] * are - lre).abs() <= 1e-9 * scale
-                                && (be[k] * aim - lim).abs() <= 1e-9 * scale,
-                            "dggev {jl}/{jr} n={n} seed={seed}: eigenvector {k} row {r}");
+                        assert!(
+                            (be[k] * are - lre).abs() <= 1e-9 * scale && (be[k] * aim - lim).abs() <= 1e-9 * scale,
+                            "dggev {jl}/{jr} n={n} seed={seed}: eigenvector {k} row {r}"
+                        );
                     }
                     k += if pair { 2 } else { 1 };
                 }
@@ -91,8 +93,9 @@ fn dhgeqz_on_small_pencils() {
                     z[i + i * n] = 1.0;
                 }
                 let (mut hw, mut tw) = (h.clone(), t.clone());
-                let info = om::eig::dhgeqz(job, cq, cz, n, &mut hw, n, &mut tw, n, &mut ar,
-                                           &mut ai, &mut be, &mut q, n, &mut z, n);
+                let info = om::eig::dhgeqz(
+                    job, cq, cz, n, &mut hw, n, &mut tw, n, &mut ar, &mut ai, &mut be, &mut q, n, &mut z, n,
+                );
                 assert_eq!(info, 0, "dhgeqz {job}/{cq}/{cz} n={n} seed={seed}: INFO");
             }
         }

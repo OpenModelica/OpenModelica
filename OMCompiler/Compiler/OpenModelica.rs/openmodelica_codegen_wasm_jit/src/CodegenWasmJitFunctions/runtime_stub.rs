@@ -16,5 +16,5 @@ pub(super) fn load_and_execute(
     _name: &str,
     _args: &List<metamodelica::Ref<Values::Value>>,
 ) -> Result<metamodelica::Ref<Values::Value>> {
-    return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
+    return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)");
 }

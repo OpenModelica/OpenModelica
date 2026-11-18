@@ -72,7 +72,10 @@ fn compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
     cfg.gc_heap_reservation_for_growth(16 << 20);
     cfg.gc_heap_guard_size(0);
     cfg.gc_heap_may_move(true);
-    cfg.target(triple).map_err(|e| format!("unknown target `{triple}`: {e}"))?;
+    cfg.target(triple)
+        .map_err(|e| format!("unknown target `{triple}`: {e}"))?;
     let engine = wasmtime::Engine::new(&cfg).map_err(|e| format!("engine: {e}"))?;
-    engine.precompile_component(component).map_err(|e| format!("compiling for {triple}: {e}"))
+    engine
+        .precompile_component(component)
+        .map_err(|e| format!("compiling for {triple}: {e}"))
 }

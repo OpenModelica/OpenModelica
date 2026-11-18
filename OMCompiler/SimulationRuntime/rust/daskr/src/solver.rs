@@ -34,10 +34,10 @@
     unused_mut
 )]
 
-use crate::auxiliary::{real_pow, real_sign, xerrwd};
-use crate::linpack;
 #[cfg(not(feature = "std"))]
 use crate::FloatShim;
+use crate::auxiliary::{real_pow, real_sign, xerrwd};
+use crate::linpack;
 use core::slice;
 
 /// 1-based element access mirroring f2c's `arr[i]` after a `--arr` adjustment:
@@ -236,13 +236,7 @@ pub(crate) unsafe fn ddatrp(
 
 /// `DDWNRM` — weighted RMS norm `sqrt((1/neq) * sum (v_i * rwt_i)^2)`, where
 /// `rwt` holds *reciprocal* weights, computed with scaling to avoid overflow.
-pub(crate) unsafe fn ddwnrm(
-    neq: i32,
-    v: *mut f64,
-    rwt: *mut f64,
-    _rpar: *mut f64,
-    _ipar: *mut i32,
-) -> f64 {
+pub(crate) unsafe fn ddwnrm(neq: i32, v: *mut f64, rwt: *mut f64, _rpar: *mut f64, _ipar: *mut i32) -> f64 {
     let mut vmax = 0.0f64;
     for i in 1..=neq {
         let a = (at!(v, i) * at!(rwt, i)).abs();
@@ -735,8 +729,8 @@ pub(crate) unsafe fn dnedd(
                 at!(iwm, 13) += 1;
                 *jcalc = 0;
                 dmatd(
-                    neq, x, y, yprime, delta, cj, h, &mut ierj, wt, e, wm, iwm, res, &mut ires,
-                    uround, jacd, rpar, ipar,
+                    neq, x, y, yprime, delta, cj, h, &mut ierj, wt, e, wm, iwm, res, &mut ires, uround, jacd, rpar,
+                    ipar,
                 );
                 *cjold = *cj;
                 *s = 100.0;
@@ -750,8 +744,27 @@ pub(crate) unsafe fn dnedd(
 
             let confac = 2.0 / (*cj / *cjold + 1.0);
             dnsd(
-                x, y, yprime, neq, res, wt, rpar, ipar, delta, e, wm, iwm, cj, epcon, s, confac,
-                tolnew, MULDEL, MAXIT, &mut ires, &mut iernew,
+                x,
+                y,
+                yprime,
+                neq,
+                res,
+                wt,
+                rpar,
+                ipar,
+                delta,
+                e,
+                wm,
+                iwm,
+                cj,
+                epcon,
+                s,
+                confac,
+                tolnew,
+                MULDEL,
+                MAXIT,
+                &mut ires,
+                &mut iernew,
             );
 
             if iernew > 0 && *jcalc != 0 {
@@ -976,9 +989,22 @@ pub(crate) unsafe fn dnedk(
                 *jcalc = 0;
                 let mut neqv = neq;
                 jack(
-                    res, &mut ires, &mut neqv, x, y, yprime, wt, delta, e, h, cj,
-                    wm.offset((lwp - 1) as isize), iwm.offset((liwp - 1) as isize), &mut ierpj,
-                    rpar, ipar,
+                    res,
+                    &mut ires,
+                    &mut neqv,
+                    x,
+                    y,
+                    yprime,
+                    wt,
+                    delta,
+                    e,
+                    h,
+                    cj,
+                    wm.offset((lwp - 1) as isize),
+                    iwm.offset((liwp - 1) as isize),
+                    &mut ierpj,
+                    rpar,
+                    ipar,
                 );
                 *cjold = *cj;
                 *s = 100.0;
@@ -988,8 +1014,32 @@ pub(crate) unsafe fn dnedk(
             }
             let mut eplin_v = eplin;
             dnsk(
-                x, y, yprime, neq, res, psol, wt, rpar, ipar, savr, delta, e, wm, iwm, cj, sqrtn,
-                rsqrtn, &mut eplin_v, epcon, s, 0.0, tolnew, MULDEL, MAXIT, &mut ires, &mut iersl,
+                x,
+                y,
+                yprime,
+                neq,
+                res,
+                psol,
+                wt,
+                rpar,
+                ipar,
+                savr,
+                delta,
+                e,
+                wm,
+                iwm,
+                cj,
+                sqrtn,
+                rsqrtn,
+                &mut eplin_v,
+                epcon,
+                s,
+                0.0,
+                tolnew,
+                MULDEL,
+                MAXIT,
+                &mut ires,
+                &mut iersl,
                 &mut iernew,
             );
             if iernew > 0 && *jcalc != 0 {
@@ -1193,15 +1243,73 @@ pub(crate) unsafe fn ddstp(
         let mut iernls = 0i32;
         if ntype == 0 {
             dnedd(
-                x, y, yprime, neq, res, jacd, h, wt, *jstart, idid, rpar, ipar, phi, gamma, delta,
-                e, wm, iwm, cj, cjold, &mut cjlast, s, uround, epcon, jcalc, kp1, nonneg, ntype,
+                x,
+                y,
+                yprime,
+                neq,
+                res,
+                jacd,
+                h,
+                wt,
+                *jstart,
+                idid,
+                rpar,
+                ipar,
+                phi,
+                gamma,
+                delta,
+                e,
+                wm,
+                iwm,
+                cj,
+                cjold,
+                &mut cjlast,
+                s,
+                uround,
+                epcon,
+                jcalc,
+                kp1,
+                nonneg,
+                ntype,
                 &mut iernls,
             );
         } else {
             dnedk(
-                x, y, yprime, neq, res, jack, psol, h, wt, *jstart, idid, rpar, ipar, phi, gamma,
-                savr, delta, e, wm, iwm, cj, cjold, &mut cjlast, s, uround, epli, sqrtn, rsqrtn,
-                epcon, jcalc, jflg, kp1, nonneg, ntype, &mut iernls,
+                x,
+                y,
+                yprime,
+                neq,
+                res,
+                jack,
+                psol,
+                h,
+                wt,
+                *jstart,
+                idid,
+                rpar,
+                ipar,
+                phi,
+                gamma,
+                savr,
+                delta,
+                e,
+                wm,
+                iwm,
+                cj,
+                cjold,
+                &mut cjlast,
+                s,
+                uround,
+                epli,
+                sqrtn,
+                rsqrtn,
+                epcon,
+                jcalc,
+                jflg,
+                kp1,
+                nonneg,
+                ntype,
+                &mut iernls,
             );
         }
 
@@ -1285,8 +1393,7 @@ pub(crate) unsafe fn ddstp(
                         for i in 1..=neq {
                             at!(delta, i) = at!(e, i) - at2!(phi, i, kp2, neq);
                         }
-                        let erkp1 =
-                            1.0 / ((*k + 2) as f64) * ddwnrm(neq, delta, vt, rpar, ipar);
+                        let erkp1 = 1.0 / ((*k + 2) as f64) * ddwnrm(neq, delta, vt, rpar, ipar);
                         let terkp1 = (*k + 2) as f64 * erkp1;
                         if *k > 1 {
                             if terkm1 <= terk.min(terkp1) {
@@ -1520,7 +1627,14 @@ pub(crate) unsafe fn dlinsd(
                 if kprin >= 2 {
                     xerrwd(
                         "------ CONSTRAINT VIOL., PNRM = (R1), INDEX = (I1)",
-                        902, 0, 1, ivar, 0, 1, *pnrm, 0.0,
+                        902,
+                        0,
+                        1,
+                        ivar,
+                        0,
+                        1,
+                        *pnrm,
+                        0.0,
                     );
                 }
                 if *pnrm <= *stptol {
@@ -1559,7 +1673,14 @@ pub(crate) unsafe fn dlinsd(
                 xerrwd("------ LAMBDA = (R1)", 904, 0, 0, 0, 0, 1, rl, 0.0);
                 xerrwd(
                     "------ NORM(F1) = (R1),  NORM(F1NEW) = (R2)",
-                    905, 0, 0, 0, 0, 2, f1nrm, f1nrmp,
+                    905,
+                    0,
+                    0,
+                    0,
+                    0,
+                    2,
+                    f1nrm,
+                    f1nrmp,
                 );
             }
             if f1nrmp > f1nrm + ALPHA * slpi * rl {
@@ -1586,7 +1707,14 @@ pub(crate) unsafe fn dlinsd(
             if kprin >= 1 {
                 xerrwd(
                     "------ LEAVING ROUTINE DLINSD, FNRM = (R1)",
-                    906, 0, 0, 0, 0, 1, *fnrm, 0.0,
+                    906,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    *fnrm,
+                    0.0,
                 );
             }
             return;
@@ -1644,8 +1772,32 @@ pub(crate) unsafe fn dnsid(
         at!(iwm, 19) += 1;
         let oldfnm = fnrm;
         dlinsd(
-            neq, y, x, yprime, cj, tscale, delta, &mut delnrm, wt, lsoff, stptol, &mut iret, res,
-            &mut ires, wm, iwm, &mut fnrm, icopt, id, r, yic, ypic, icnflg, icnstr, &mut rlx, rpar,
+            neq,
+            y,
+            x,
+            yprime,
+            cj,
+            tscale,
+            delta,
+            &mut delnrm,
+            wt,
+            lsoff,
+            stptol,
+            &mut iret,
+            res,
+            &mut ires,
+            wm,
+            iwm,
+            &mut fnrm,
+            icopt,
+            id,
+            r,
+            yic,
+            ypic,
+            icnflg,
+            icnstr,
+            &mut rlx,
+            rpar,
             ipar,
         );
         rate = fnrm / oldfnm;
@@ -1729,15 +1881,37 @@ pub(crate) unsafe fn ddasid(
         nj += 1;
         at!(iwm, 13) += 1;
         dmatd(
-            neq, x, y, yprime, delta, cj, h, &mut ierj, wt, r, wm, iwm, res, &mut ires, uround,
-            jacd, rpar, ipar,
+            neq, x, y, yprime, delta, cj, h, &mut ierj, wt, r, wm, iwm, res, &mut ires, uround, jacd, rpar, ipar,
         );
         if ires < 0 || ierj != 0 {
             l370!(ires);
         }
         dnsid(
-            x, y, yprime, neq, icopt, id, res, wt, rpar, ipar, delta, r, yic, ypic, wm, iwm, cj,
-            tscale, epcon, ratemx, mxnit, stptol, icnflg, icnstr, &mut iernew,
+            x,
+            y,
+            yprime,
+            neq,
+            icopt,
+            id,
+            res,
+            wt,
+            rpar,
+            ipar,
+            delta,
+            r,
+            yic,
+            ypic,
+            wm,
+            iwm,
+            cj,
+            tscale,
+            epcon,
+            ratemx,
+            mxnit,
+            stptol,
+            icnflg,
+            icnstr,
+            &mut iernew,
         );
         if iernew == 1 && nj < mxnj {
             at!(iwm, 12) += 1;
@@ -1829,8 +2003,21 @@ pub(crate) unsafe fn ddasik(
             at!(iwm, 13) += 1;
             let mut neqv = neq;
             jack(
-                res, &mut ires, &mut neqv, x, y, yprime, wt, delta, r, h, cj,
-                wm.offset((lwp - 1) as isize), iwm.offset((liwp - 1) as isize), &mut ierpj, rpar,
+                res,
+                &mut ires,
+                &mut neqv,
+                x,
+                y,
+                yprime,
+                wt,
+                delta,
+                r,
+                h,
+                cj,
+                wm.offset((lwp - 1) as isize),
+                iwm.offset((liwp - 1) as isize),
+                &mut ierpj,
+                rpar,
                 ipar,
             );
             if ires < 0 || ierpj != 0 {
@@ -1840,9 +2027,37 @@ pub(crate) unsafe fn ddasik(
         jskip_v = 0;
         let mut eplin_v = eplin;
         dnsik(
-            x, y, yprime, neq, icopt, id, res, psol, wt, rpar, ipar, savr, delta, r, yic, ypic,
-            pwk, wm, iwm, cj, tscale, sqrtn, rsqrtn, &mut eplin_v, epcon, ratemx, mxnit, stptol,
-            icnflg, icnstr, &mut iernew,
+            x,
+            y,
+            yprime,
+            neq,
+            icopt,
+            id,
+            res,
+            psol,
+            wt,
+            rpar,
+            ipar,
+            savr,
+            delta,
+            r,
+            yic,
+            ypic,
+            pwk,
+            wm,
+            iwm,
+            cj,
+            tscale,
+            sqrtn,
+            rsqrtn,
+            &mut eplin_v,
+            epcon,
+            ratemx,
+            mxnit,
+            stptol,
+            icnflg,
+            icnstr,
+            &mut iernew,
         );
         if iernew == 1 && nj < mxnj && *jflg == 1 {
             for i in 1..=neq {
@@ -1922,15 +2137,71 @@ pub(crate) unsafe fn ddasic(
         let mut iernls = 0i32;
         if ntype == 0 {
             ddasid(
-                x, y, yprime, neq, icopt, id, res, jacd, h, tscale, wt, rpar, ipar, delta, e, yic,
-                ypic, wm, iwm, &mut cj, uround, epconi, &mut ratemx, stptol, icnflg, icnstr,
+                x,
+                y,
+                yprime,
+                neq,
+                icopt,
+                id,
+                res,
+                jacd,
+                h,
+                tscale,
+                wt,
+                rpar,
+                ipar,
+                delta,
+                e,
+                yic,
+                ypic,
+                wm,
+                iwm,
+                &mut cj,
+                uround,
+                epconi,
+                &mut ratemx,
+                stptol,
+                icnflg,
+                icnstr,
                 &mut iernls,
             );
         } else {
             ddasik(
-                x, y, yprime, neq, icopt, id, res, jack, psol, h, tscale, wt, jskip, rpar, ipar,
-                savr, delta, e, yic, ypic, pwk, wm, iwm, &mut cj, uround, epli, sqrtn, rsqrtn,
-                epconi, &mut ratemx, stptol, jflg, icnflg, icnstr, &mut iernls,
+                x,
+                y,
+                yprime,
+                neq,
+                icopt,
+                id,
+                res,
+                jack,
+                psol,
+                h,
+                tscale,
+                wt,
+                jskip,
+                rpar,
+                ipar,
+                savr,
+                delta,
+                e,
+                yic,
+                ypic,
+                pwk,
+                wm,
+                iwm,
+                &mut cj,
+                uround,
+                epli,
+                sqrtn,
+                rsqrtn,
+                epconi,
+                &mut ratemx,
+                stptol,
+                jflg,
+                icnflg,
+                icnstr,
+                &mut iernls,
             );
         }
 
@@ -2309,7 +2580,9 @@ pub(crate) unsafe fn drchek(
         let mut st = DRoots::default();
         let mut xx = 0.0f64;
         loop {
-            droots(*nrt, hminr, &mut jflag, lt0, &mut t1, r0, r1, rx, &mut xx, jroot, &mut st);
+            droots(
+                *nrt, hminr, &mut jflag, lt0, &mut t1, r0, r1, rx, &mut xx, jroot, &mut st,
+            );
             if jflag > 1 {
                 break;
             }
@@ -2397,8 +2670,16 @@ pub unsafe fn ddaskr(
         }
         _ => {}
     }
-    let lenid = if at!(info, 11) == 1 || at!(info, 16) == 1 { neq } else { 0 };
-    let ncphi = if at!(info, 12) == 0 { (mxord + 1).max(4) } else { mxord + 1 };
+    let lenid = if at!(info, 11) == 1 || at!(info, 16) == 1 {
+        neq
+    } else {
+        0
+    };
+    let ncphi = if at!(info, 12) == 0 {
+        (mxord + 1).max(4)
+    } else {
+        mxord + 1
+    };
 
     // Working scalars (correspond to the f2c locals).
     let mut tn = 0.0f64;
@@ -2429,8 +2710,28 @@ pub unsafe fn ddaskr(
     macro_rules! l750 {
         () => {{
             if at!(info, 1) == -1 {
-                xerrwd("DASKR--  REPEATED OCCURRENCES OF ILLEGAL INPUT", 701, 0, 0, 0, 0, 0, 0.0, 0.0);
-                xerrwd("DASKR--  RUN TERMINATED. APPARENT INFINITE LOOP", 702, 2, 0, 0, 0, 0, 0.0, 0.0);
+                xerrwd(
+                    "DASKR--  REPEATED OCCURRENCES OF ILLEGAL INPUT",
+                    701,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
+                xerrwd(
+                    "DASKR--  RUN TERMINATED. APPARENT INFINITE LOOP",
+                    702,
+                    2,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
                 return;
             }
             at!(info, 1) = -1;
@@ -2443,12 +2744,52 @@ pub unsafe fn ddaskr(
             match -*idid {
                 1 => {
                     xerrwd("DASKR--  AT CURRENT T (=R1)  500 STEPS", 610, 0, 0, 0, 0, 1, tn, 0.0);
-                    xerrwd("DASKR--  TAKEN ON THIS CALL BEFORE REACHING TOUT", 611, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  TAKEN ON THIS CALL BEFORE REACHING TOUT",
+                        611,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                 }
                 2 => {
-                    xerrwd("DASKR--  AT T (=R1) TOO MUCH ACCURACY REQUESTED", 620, 0, 0, 0, 0, 1, tn, 0.0);
-                    xerrwd("DASKR--  FOR PRECISION OF MACHINE. RTOL AND ATOL", 621, 0, 0, 0, 0, 0, 0.0, 0.0);
-                    xerrwd("DASKR--  WERE INCREASED BY A FACTOR R (=R1)", 622, 0, 0, 0, 0, 1, r_acc, 0.0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) TOO MUCH ACCURACY REQUESTED",
+                        620,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        tn,
+                        0.0,
+                    );
+                    xerrwd(
+                        "DASKR--  FOR PRECISION OF MACHINE. RTOL AND ATOL",
+                        621,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
+                    xerrwd(
+                        "DASKR--  WERE INCREASED BY A FACTOR R (=R1)",
+                        622,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        r_acc,
+                        0.0,
+                    );
                 }
                 3 => {
                     xerrwd("DASKR--  AT T (=R1) SOME ELEMENT OF WT", 630, 0, 0, 0, 0, 1, tn, 0.0);
@@ -2456,47 +2797,217 @@ pub unsafe fn ddaskr(
                 }
                 4 => {}
                 5 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 655, 0, 0, 0, 0, 2, tn, h);
-                    xerrwd("DASKR--  PRECONDITIONER HAD REPEATED FAILURES.", 656, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        655,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h,
+                    );
+                    xerrwd(
+                        "DASKR--  PRECONDITIONER HAD REPEATED FAILURES.",
+                        656,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                 }
                 6 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 640, 0, 0, 0, 0, 2, tn, h);
-                    xerrwd("DASKR--  ERROR TEST FAILED REPEATEDLY OR WITH ABS(H)=HMIN", 641, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        640,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h,
+                    );
+                    xerrwd(
+                        "DASKR--  ERROR TEST FAILED REPEATEDLY OR WITH ABS(H)=HMIN",
+                        641,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                 }
                 7 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 650, 0, 0, 0, 0, 2, tn, h);
-                    xerrwd("DASKR--  NONLINEAR SOLVER FAILED TO CONVERGE", 651, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        650,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h,
+                    );
+                    xerrwd(
+                        "DASKR--  NONLINEAR SOLVER FAILED TO CONVERGE",
+                        651,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     xerrwd("DASKR--  REPEATEDLY OR WITH ABS(H)=HMIN", 652, 0, 0, 0, 0, 0, 0.0, 0.0);
                 }
                 8 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 660, 0, 0, 0, 0, 2, tn, h);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        660,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h,
+                    );
                     xerrwd("DASKR--  ITERATION MATRIX IS SINGULAR.", 661, 0, 0, 0, 0, 0, 0.0, 0.0);
                 }
                 9 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 670, 0, 0, 0, 0, 2, tn, h);
-                    xerrwd("DASKR--  NONLINEAR SOLVER COULD NOT CONVERGE.", 671, 0, 0, 0, 0, 0, 0.0, 0.0);
-                    xerrwd("DASKR--  ALSO, THE ERROR TEST FAILED REPEATEDLY.", 672, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        670,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h,
+                    );
+                    xerrwd(
+                        "DASKR--  NONLINEAR SOLVER COULD NOT CONVERGE.",
+                        671,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
+                    xerrwd(
+                        "DASKR--  ALSO, THE ERROR TEST FAILED REPEATEDLY.",
+                        672,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                 }
                 10 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 675, 0, 0, 0, 0, 2, tn, h);
-                    xerrwd("DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE", 676, 0, 0, 0, 0, 0, 0.0, 0.0);
-                    xerrwd("DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE", 677, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        675,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h,
+                    );
+                    xerrwd(
+                        "DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE",
+                        676,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
+                    xerrwd(
+                        "DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE",
+                        677,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                 }
                 11 => {
                     xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2)", 680, 0, 0, 0, 0, 2, tn, h);
                     xerrwd("DASKR--  IRES WAS EQUAL TO MINUS TWO", 681, 0, 0, 0, 0, 0, 0.0, 0.0);
                 }
                 12 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 685, 0, 0, 0, 0, 0, 0.0, 0.0);
-                    xerrwd("DASKR--  INITIAL (Y,YPRIME) COULD NOT BE COMPUTED", 686, 0, 0, 0, 0, 2, tn, h0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        685,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
+                    xerrwd(
+                        "DASKR--  INITIAL (Y,YPRIME) COULD NOT BE COMPUTED",
+                        686,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h0,
+                    );
                 }
                 13 => {
                     xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2)", 690, 0, 0, 0, 0, 2, tn, h);
                     xerrwd("DASKR--  IER WAS NEGATIVE FROM PSOL", 691, 0, 0, 0, 0, 0, 0.0, 0.0);
                 }
                 14 => {
-                    xerrwd("DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE", 695, 0, 0, 0, 0, 2, tn, h);
-                    xerrwd("DASKR--  LINEAR SYSTEM SOLVER COULD NOT CONVERGE.", 696, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE",
+                        695,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        tn,
+                        h,
+                    );
+                    xerrwd(
+                        "DASKR--  LINEAR SYSTEM SOLVER COULD NOT CONVERGE.",
+                        696,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                 }
                 _ => {}
             }
@@ -2512,30 +3023,80 @@ pub unsafe fn ddaskr(
         for i in 2..=9 {
             itemp = i;
             if at!(info, i) != 0 && at!(info, i) != 1 {
-                xerrwd("DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID", 1, 0, 1, itemp, 0, 0, 0.0, 0.0);
+                xerrwd(
+                    "DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID",
+                    1,
+                    0,
+                    1,
+                    itemp,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
                 l750!();
             }
         }
         itemp = 10;
         if at!(info, 10) < 0 || at!(info, 10) > 3 {
-            xerrwd("DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID", 1, 0, 1, itemp, 0, 0, 0.0, 0.0);
+            xerrwd(
+                "DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID",
+                1,
+                0,
+                1,
+                itemp,
+                0,
+                0,
+                0.0,
+                0.0,
+            );
             l750!();
         }
         itemp = 11;
         if at!(info, 11) < 0 || at!(info, 11) > 2 {
-            xerrwd("DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID", 1, 0, 1, itemp, 0, 0, 0.0, 0.0);
+            xerrwd(
+                "DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID",
+                1,
+                0,
+                1,
+                itemp,
+                0,
+                0,
+                0.0,
+                0.0,
+            );
             l750!();
         }
         for i in 12..=17 {
             itemp = i;
             if at!(info, i) != 0 && at!(info, i) != 1 {
-                xerrwd("DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID", 1, 0, 1, itemp, 0, 0, 0.0, 0.0);
+                xerrwd(
+                    "DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID",
+                    1,
+                    0,
+                    1,
+                    itemp,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
                 l750!();
             }
         }
         itemp = 18;
         if at!(info, 18) < 0 || at!(info, 18) > 2 {
-            xerrwd("DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID", 1, 0, 1, itemp, 0, 0, 0.0, 0.0);
+            xerrwd(
+                "DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID",
+                1,
+                0,
+                1,
+                itemp,
+                0,
+                0,
+                0.0,
+                0.0,
+            );
             l750!();
         }
         if neq <= 0 {
@@ -2558,19 +3119,59 @@ pub unsafe fn ddaskr(
                 at!(rwork, 10) = 0.05;
             } else {
                 if at!(iwork, 24) < 1 || at!(iwork, 24) > neq {
-                    xerrwd("DASKR--  MAXL (=I1) ILLEGAL. EITHER .LT. 1 OR .GT. NEQ", 20, 0, 1, at!(iwork, 24), 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  MAXL (=I1) ILLEGAL. EITHER .LT. 1 OR .GT. NEQ",
+                        20,
+                        0,
+                        1,
+                        at!(iwork, 24),
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
                 if at!(iwork, 25) < 1 || at!(iwork, 25) > at!(iwork, 24) {
-                    xerrwd("DASKR--  KMP (=I1) ILLEGAL. EITHER .LT. 1 OR .GT. MAXL", 21, 0, 1, at!(iwork, 25), 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  KMP (=I1) ILLEGAL. EITHER .LT. 1 OR .GT. MAXL",
+                        21,
+                        0,
+                        1,
+                        at!(iwork, 25),
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
                 if at!(iwork, 26) < 0 {
-                    xerrwd("DASKR--  NRMAX (=I1) ILLEGAL. .LT. 0", 22, 0, 1, at!(iwork, 26), 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  NRMAX (=I1) ILLEGAL. .LT. 0",
+                        22,
+                        0,
+                        1,
+                        at!(iwork, 26),
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
                 if at!(rwork, 10) <= 0.0 || at!(rwork, 10) >= 1.0 {
-                    xerrwd("DASKR--  EPLI (=R1) ILLEGAL. EITHER .LE. 0.D0 OR .GE. 1.D0", 23, 0, 0, 0, 0, 1, at!(rwork, 10), 0.0);
+                    xerrwd(
+                        "DASKR--  EPLI (=R1) ILLEGAL. EITHER .LE. 0.D0 OR .GE. 1.D0",
+                        23,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        at!(rwork, 10),
+                        0.0,
+                    );
                     l750!();
                 }
             }
@@ -2593,14 +3194,28 @@ pub unsafe fn ddaskr(
                     || lsoff > 1
                     || at!(rwork, 15) <= 0.0
                 {
-                    xerrwd("DASKR--  ONE OF THE INPUTS FOR INFO(17) = 1 IS ILLEGAL", 25, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  ONE OF THE INPUTS FOR INFO(17) = 1 IS ILLEGAL",
+                        25,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
             }
         }
 
         // Work-array length computation and checks.
-        let lenic = if at!(info, 10) == 1 || at!(info, 10) == 3 { neq } else { 0 };
+        let lenic = if at!(info, 10) == 1 || at!(info, 10) == 3 {
+            neq
+        } else {
+            0
+        };
         let lenpd;
         let lenrw;
         let leniw;
@@ -2612,11 +3227,31 @@ pub unsafe fn ddaskr(
                 at!(iwork, 4) = if at!(info, 5) == 0 { 2 } else { 1 };
             } else {
                 if at!(iwork, 1) < 0 || at!(iwork, 1) >= neq {
-                    xerrwd("DASKR--  ML (=I1) ILLEGAL. EITHER .LT. 0 OR .GT. NEQ", 17, 0, 1, at!(iwork, 1), 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  ML (=I1) ILLEGAL. EITHER .LT. 0 OR .GT. NEQ",
+                        17,
+                        0,
+                        1,
+                        at!(iwork, 1),
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
                 if at!(iwork, 2) < 0 || at!(iwork, 2) >= neq {
-                    xerrwd("DASKR--  MU (=I1) ILLEGAL. EITHER .LT. 0 OR .GT. NEQ", 18, 0, 1, at!(iwork, 2), 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  MU (=I1) ILLEGAL. EITHER .LT. 0 OR .GT. NEQ",
+                        18,
+                        0,
+                        1,
+                        at!(iwork, 2),
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
                 lenpd = ((at!(iwork, 1) << 1) + at!(iwork, 2) + 1) * neq;
@@ -2647,11 +3282,31 @@ pub unsafe fn ddaskr(
         at!(iwork, 22) = lenpd;
         at!(iwork, 29) = lenpd - lenwp + 1;
         if lrw < lenrw {
-            xerrwd("DASKR--  RWORK LENGTH NEEDED, LENRW (=I1), EXCEEDS LRW (=I2)", 4, 0, 2, lenrw, lrw, 0, 0.0, 0.0);
+            xerrwd(
+                "DASKR--  RWORK LENGTH NEEDED, LENRW (=I1), EXCEEDS LRW (=I2)",
+                4,
+                0,
+                2,
+                lenrw,
+                lrw,
+                0,
+                0.0,
+                0.0,
+            );
             l750!();
         }
         if liw < leniw {
-            xerrwd("DASKR--  IWORK LENGTH NEEDED, LENIW (=I1), EXCEEDS LIW (=I2)", 5, 0, 2, leniw, liw, 0, 0.0, 0.0);
+            xerrwd(
+                "DASKR--  IWORK LENGTH NEEDED, LENIW (=I1), EXCEEDS LIW (=I2)",
+                5,
+                0,
+                2,
+                leniw,
+                liw,
+                0,
+                0.0,
+                0.0,
+            );
             l750!();
         }
 
@@ -2660,14 +3315,34 @@ pub unsafe fn ddaskr(
             for i in 1..=neq {
                 let ici = at!(iwork, i + 40);
                 if ici < -2 || ici > 2 {
-                    xerrwd("DASKR--  ILLEGAL IWORK VALUE FOR INFO(10) .NE. 0", 26, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  ILLEGAL IWORK VALUE FOR INFO(10) .NE. 0",
+                        26,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
             }
             let mut iret = 0i32;
             dcnst0(neq, y, iw(41), &mut iret);
             if iret != 0 {
-                xerrwd("DASKR--  Y(I) AND IWORK(40+I) (I=I1) INCONSISTENT", 27, 0, 1, iret, 0, 0, 0.0, 0.0);
+                xerrwd(
+                    "DASKR--  Y(I) AND IWORK(40+I) (I=I1) INCONSISTENT",
+                    27,
+                    0,
+                    1,
+                    iret,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
                 l750!();
             }
         }
@@ -2677,7 +3352,17 @@ pub unsafe fn ddaskr(
             for i in 1..=neq {
                 let idi = at!(iwork, lid - 1 + i);
                 if idi != 1 && idi != -1 {
-                    xerrwd("DASKR--  ILLEGAL IWORK VALUE FOR INFO(11) .NE. 0", 24, 0, 0, 0, 0, 0, 0.0, 0.0);
+                    xerrwd(
+                        "DASKR--  ILLEGAL IWORK VALUE FOR INFO(11) .NE. 0",
+                        24,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                    );
                     l750!();
                 }
             }
@@ -2707,12 +3392,52 @@ pub unsafe fn ddaskr(
         *idid = 1;
     } else if at!(info, 1) != 1 {
         if at!(info, 1) != -1 {
-            xerrwd("DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID", 1, 0, 1, 1, 0, 0, 0.0, 0.0);
+            xerrwd(
+                "DASKR--  ELEMENT (=I1) OF INFO VECTOR IS NOT VALID",
+                1,
+                0,
+                1,
+                1,
+                0,
+                0,
+                0.0,
+                0.0,
+            );
             l750!();
         }
-        xerrwd("DASKR--  THE LAST STEP TERMINATED WITH A NEGATIVE", 201, 0, 0, 0, 0, 0, 0.0, 0.0);
-        xerrwd("DASKR--  VALUE (=I1) OF IDID AND NO APPROPRIATE", 202, 0, 1, *idid, 0, 0, 0.0, 0.0);
-        xerrwd("DASKR--  ACTION WAS TAKEN. RUN TERMINATED", 203, 2, 0, 0, 0, 0, 0.0, 0.0);
+        xerrwd(
+            "DASKR--  THE LAST STEP TERMINATED WITH A NEGATIVE",
+            201,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.0,
+            0.0,
+        );
+        xerrwd(
+            "DASKR--  VALUE (=I1) OF IDID AND NO APPROPRIATE",
+            202,
+            0,
+            1,
+            *idid,
+            0,
+            0,
+            0.0,
+            0.0,
+        );
+        xerrwd(
+            "DASKR--  ACTION WAS TAKEN. RUN TERMINATED",
+            203,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0.0,
+            0.0,
+        );
         return;
     }
 
@@ -2748,7 +3473,17 @@ pub unsafe fn ddaskr(
         }
     }
     if nzflg == 0 {
-        xerrwd("DASKR--  ALL ELEMENTS OF RTOL AND ATOL ARE ZERO", 8, 0, 0, 0, 0, 0, 0.0, 0.0);
+        xerrwd(
+            "DASKR--  ALL ELEMENTS OF RTOL AND ATOL ARE ZERO",
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.0,
+            0.0,
+        );
         l750!();
     }
 
@@ -2793,7 +3528,17 @@ pub unsafe fn ddaskr(
             if at!(info, 17) == 0 {
                 at!(rwork, 14) = real_pow(uround, 0.6667);
             } else if at!(rwork, 14) <= 0.0 {
-                xerrwd("DASKR--  ONE OF THE INPUTS FOR INFO(17) = 1 IS ILLEGAL", 25, 0, 0, 0, 0, 0, 0.0, 0.0);
+                xerrwd(
+                    "DASKR--  ONE OF THE INPUTS FOR INFO(17) = 1 IS ILLEGAL",
+                    25,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
                 l750!();
             }
         }
@@ -2805,7 +3550,17 @@ pub unsafe fn ddaskr(
 
         let tdist = (*tout - *t).abs();
         if tdist < hmin {
-            xerrwd("DASKR-- TOUT (=R1) TOO CLOSE TO T (=R2) TO START INTEGRATION", 14, 0, 0, 0, 0, 2, *tout, *t);
+            xerrwd(
+                "DASKR-- TOUT (=R1) TOO CLOSE TO T (=R2) TO START INTEGRATION",
+                14,
+                0,
+                0,
+                0,
+                0,
+                2,
+                *tout,
+                *t,
+            );
             l750!();
         }
 
@@ -2837,14 +3592,34 @@ pub unsafe fn ddaskr(
         if at!(info, 4) != 0 {
             tstop = at!(rwork, 1);
             if (tstop - *t) * h0 < 0.0 {
-                xerrwd("DASKR--  INFO(4)=1 AND TSTOP (=R1) BEHIND T (=R2)", 15, 0, 0, 0, 0, 2, tstop, *t);
+                xerrwd(
+                    "DASKR--  INFO(4)=1 AND TSTOP (=R1) BEHIND T (=R2)",
+                    15,
+                    0,
+                    0,
+                    0,
+                    0,
+                    2,
+                    tstop,
+                    *t,
+                );
                 l750!();
             }
             if (*t + h0 - tstop) * h0 > 0.0 {
                 h0 = tstop - *t;
             }
             if (tstop - *tout) * h0 < 0.0 {
-                xerrwd("DASKR--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)", 9, 0, 0, 0, 0, 2, tstop, *tout);
+                xerrwd(
+                    "DASKR--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)",
+                    9,
+                    0,
+                    0,
+                    0,
+                    0,
+                    2,
+                    tstop,
+                    *tout,
+                );
                 l750!();
             }
         }
@@ -2878,10 +3653,42 @@ pub unsafe fn ddaskr(
                 let mut tscale_v = tscale;
                 let mut epconi_v = epconi;
                 ddasic(
-                    &mut tn, y, yprime, neq, at!(info, 11), iw(lid), res, jacd, jack, psol,
-                    &mut h0v, &mut tscale_v, rw(lwt), nwt, idid, rpar, ipar, rw(lphi), rw(lsavr),
-                    rw(61), rw(le), rw(lyic), rw(lypic), rw(lpwk), rw(lwm), iworkbase(iwork), rw(9),
-                    rw(10), rw(11), rw(12), &mut epconi_v, rw(14), inf(15), icnflg, iw(41), ntype,
+                    &mut tn,
+                    y,
+                    yprime,
+                    neq,
+                    at!(info, 11),
+                    iw(lid),
+                    res,
+                    jacd,
+                    jack,
+                    psol,
+                    &mut h0v,
+                    &mut tscale_v,
+                    rw(lwt),
+                    nwt,
+                    idid,
+                    rpar,
+                    ipar,
+                    rw(lphi),
+                    rw(lsavr),
+                    rw(61),
+                    rw(le),
+                    rw(lyic),
+                    rw(lypic),
+                    rw(lpwk),
+                    rw(lwm),
+                    iworkbase(iwork),
+                    rw(9),
+                    rw(10),
+                    rw(11),
+                    rw(12),
+                    &mut epconi_v,
+                    rw(14),
+                    inf(15),
+                    icnflg,
+                    iw(41),
+                    ntype,
                 );
                 h0 = h0v;
                 if *idid < 0 {
@@ -2962,16 +3769,56 @@ pub unsafe fn ddaskr(
         at!(iwork, 8) = 1;
         if nrt != 0 {
             drchek(
-                1, rt, &mut nrt_l, &mut neq_l, t, tout, y, yprime, rw(lphi), rw(39), iw(8), rw(lr0),
-                rw(lr1), rw(lrx), jroot, &mut irt, rw(9), at!(info, 3), rwork, iwork, rpar, ipar,
+                1,
+                rt,
+                &mut nrt_l,
+                &mut neq_l,
+                t,
+                tout,
+                y,
+                yprime,
+                rw(lphi),
+                rw(39),
+                iw(8),
+                rw(lr0),
+                rw(lr1),
+                rw(lrx),
+                jroot,
+                &mut irt,
+                rw(9),
+                at!(info, 3),
+                rwork,
+                iwork,
+                rpar,
+                ipar,
             );
             if irt == IRT_ABORT {
                 *idid = IDID_RT_ABORT;
                 l590!();
             }
             if irt < 0 {
-                xerrwd("DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO", 31, 1, 0, 0, 0, 0, 0.0, 0.0);
-                xerrwd("         VERY CLOSE T VALUES, AT T = R1", 31, 1, 0, 0, 0, 1, at!(rwork, 51), 0.0);
+                xerrwd(
+                    "DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO",
+                    31,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
+                xerrwd(
+                    "         VERY CLOSE T VALUES, AT T = R1",
+                    31,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    at!(rwork, 51),
+                    0.0,
+                );
                 l750!();
             }
         }
@@ -2986,8 +3833,27 @@ pub unsafe fn ddaskr(
         h = at!(rwork, 3);
         if nrt != 0 {
             drchek(
-                2, rt, &mut nrt_l, &mut neq_l, &mut tn, tout, y, yprime, rw(lphi), rw(39), iw(8),
-                rw(lr0), rw(lr1), rw(lrx), jroot, &mut irt, rw(9), at!(info, 3), rwork, iwork, rpar,
+                2,
+                rt,
+                &mut nrt_l,
+                &mut neq_l,
+                &mut tn,
+                tout,
+                y,
+                yprime,
+                rw(lphi),
+                rw(39),
+                iw(8),
+                rw(lr0),
+                rw(lr1),
+                rw(lrx),
+                jroot,
+                &mut irt,
+                rw(9),
+                at!(info, 3),
+                rwork,
+                iwork,
+                rpar,
                 ipar,
             );
             if irt == IRT_ABORT {
@@ -2995,8 +3861,28 @@ pub unsafe fn ddaskr(
                 l590!();
             }
             if irt < 0 {
-                xerrwd("DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO", 31, 1, 0, 0, 0, 0, 0.0, 0.0);
-                xerrwd("         VERY CLOSE T VALUES, AT T = R1", 31, 1, 0, 0, 0, 1, at!(rwork, 51), 0.0);
+                xerrwd(
+                    "DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO",
+                    31,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.0,
+                    0.0,
+                );
+                xerrwd(
+                    "         VERY CLOSE T VALUES, AT T = R1",
+                    31,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    at!(rwork, 51),
+                    0.0,
+                );
                 l750!();
             }
             if irt == 1 {
@@ -3028,11 +3914,31 @@ pub unsafe fn ddaskr(
                 tstop = at!(rwork, 1);
                 if at!(info, 3) == 0 {
                     if (tn - tstop) * h > 0.0 {
-                        xerrwd("DASKR--  INFO(4)=1 AND TSTOP (=R1) BEHIND T (=R2)", 15, 0, 0, 0, 0, 2, tstop, *t);
+                        xerrwd(
+                            "DASKR--  INFO(4)=1 AND TSTOP (=R1) BEHIND T (=R2)",
+                            15,
+                            0,
+                            0,
+                            0,
+                            0,
+                            2,
+                            tstop,
+                            *t,
+                        );
                         l750!();
                     }
                     if (tstop - *tout) * h < 0.0 {
-                        xerrwd("DASKR--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)", 9, 0, 0, 0, 0, 2, tstop, *tout);
+                        xerrwd(
+                            "DASKR--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)",
+                            9,
+                            0,
+                            0,
+                            0,
+                            0,
+                            2,
+                            tstop,
+                            *tout,
+                        );
                         l750!();
                     }
                     if (tn - *tout) * h >= 0.0 {
@@ -3043,11 +3949,31 @@ pub unsafe fn ddaskr(
                     }
                 } else {
                     if (tn - tstop) * h > 0.0 {
-                        xerrwd("DASKR--  INFO(4)=1 AND TSTOP (=R1) BEHIND T (=R2)", 15, 0, 0, 0, 0, 2, tstop, *t);
+                        xerrwd(
+                            "DASKR--  INFO(4)=1 AND TSTOP (=R1) BEHIND T (=R2)",
+                            15,
+                            0,
+                            0,
+                            0,
+                            0,
+                            2,
+                            tstop,
+                            *t,
+                        );
                         l750!();
                     }
                     if (tstop - *tout) * h < 0.0 {
-                        xerrwd("DASKR--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)", 9, 0, 0, 0, 0, 2, tstop, *tout);
+                        xerrwd(
+                            "DASKR--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)",
+                            9,
+                            0,
+                            0,
+                            0,
+                            0,
+                            2,
+                            tstop,
+                            *tout,
+                        );
                         l750!();
                     }
                     if (tn - *t) * h <= 0.0 {
@@ -3140,16 +4066,76 @@ pub unsafe fn ddaskr(
                     if (lavl || lcfn || lcfl) && nwarn <= 10 {
                         nwarn += 1;
                         if lavl {
-                            xerrwd("DASKR-- Warning. Poor iterative algorithm performance   ", 501, 0, 0, 0, 0, 0, 0.0, 0.0);
-                            xerrwd("      at T = R1. Average no. of linear iterations = R2  ", 501, 0, 0, 0, 0, 2, tn, avlin);
+                            xerrwd(
+                                "DASKR-- Warning. Poor iterative algorithm performance   ",
+                                501,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0.0,
+                                0.0,
+                            );
+                            xerrwd(
+                                "      at T = R1. Average no. of linear iterations = R2  ",
+                                501,
+                                0,
+                                0,
+                                0,
+                                0,
+                                2,
+                                tn,
+                                avlin,
+                            );
                         }
                         if lcfn {
-                            xerrwd("DASKR-- Warning. Poor iterative algorithm performance   ", 502, 0, 0, 0, 0, 0, 0.0, 0.0);
-                            xerrwd("      at T = R1. Nonlinear convergence failure rate = R2", 502, 0, 0, 0, 0, 2, tn, rcfn);
+                            xerrwd(
+                                "DASKR-- Warning. Poor iterative algorithm performance   ",
+                                502,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0.0,
+                                0.0,
+                            );
+                            xerrwd(
+                                "      at T = R1. Nonlinear convergence failure rate = R2",
+                                502,
+                                0,
+                                0,
+                                0,
+                                0,
+                                2,
+                                tn,
+                                rcfn,
+                            );
                         }
                         if lcfl {
-                            xerrwd("DASKR-- Warning. Poor iterative algorithm performance   ", 503, 0, 0, 0, 0, 0, 0.0, 0.0);
-                            xerrwd("      at T = R1. Linear convergence failure rate = R2   ", 503, 0, 0, 0, 0, 2, tn, rcfl);
+                            xerrwd(
+                                "DASKR-- Warning. Poor iterative algorithm performance   ",
+                                503,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0.0,
+                                0.0,
+                            );
+                            xerrwd(
+                                "      at T = R1. Linear convergence failure rate = R2   ",
+                                503,
+                                0,
+                                0,
+                                0,
+                                0,
+                                2,
+                                tn,
+                                rcfl,
+                            );
                         }
                     }
                 }
@@ -3199,10 +4185,49 @@ pub unsafe fn ddaskr(
 
             // Call the one-step integrator.
             ddstp(
-                &mut tn, y, yprime, neq, res, jacd, jack, psol, &mut h, rw(lwt), rw(lvt), inf(1),
-                idid, rpar, ipar, rw(lphi), rw(lsavr), rw(61), rw(le), rw(lwm), iworkbase(iwork),
-                rw(21), rw(27), rw(33), rw(39), rw(45), rw(5), rw(6), rw(7), rw(8), &mut hmin, rw(9),
-                rw(10), rw(11), rw(12), rw(13), iw(6), iw(5), inf(15), iw(7), iw(8), iw(9), nonneg,
+                &mut tn,
+                y,
+                yprime,
+                neq,
+                res,
+                jacd,
+                jack,
+                psol,
+                &mut h,
+                rw(lwt),
+                rw(lvt),
+                inf(1),
+                idid,
+                rpar,
+                ipar,
+                rw(lphi),
+                rw(lsavr),
+                rw(61),
+                rw(le),
+                rw(lwm),
+                iworkbase(iwork),
+                rw(21),
+                rw(27),
+                rw(33),
+                rw(39),
+                rw(45),
+                rw(5),
+                rw(6),
+                rw(7),
+                rw(8),
+                &mut hmin,
+                rw(9),
+                rw(10),
+                rw(11),
+                rw(12),
+                rw(13),
+                iw(6),
+                iw(5),
+                inf(15),
+                iw(7),
+                iw(8),
+                iw(9),
+                nonneg,
                 info12,
             );
         }
@@ -3216,8 +4241,27 @@ pub unsafe fn ddaskr(
         let mut at_l530 = nrt == 0;
         if !at_l530 {
             drchek(
-                3, rt, &mut nrt_l, &mut neq_l, &mut tn, tout, y, yprime, rw(lphi), rw(39), iw(8),
-                rw(lr0), rw(lr1), rw(lrx), jroot, &mut irt, rw(9), at!(info, 3), rwork, iwork, rpar,
+                3,
+                rt,
+                &mut nrt_l,
+                &mut neq_l,
+                &mut tn,
+                tout,
+                y,
+                yprime,
+                rw(lphi),
+                rw(39),
+                iw(8),
+                rw(lr0),
+                rw(lr1),
+                rw(lrx),
+                jroot,
+                &mut irt,
+                rw(9),
+                at!(info, 3),
+                rwork,
+                iwork,
+                rpar,
                 ipar,
             );
             if irt == IRT_ABORT {
@@ -3478,7 +4522,9 @@ pub(crate) unsafe fn datv(
         at!(z, i) = at!(vtem, i) - at!(savr, i);
     }
     let mut neqv = neq;
-    psol(&mut neqv, tn, y, yprime, savr, yptem, cj, wght, wp, iwp, z, eplin, ier, rpar, ipar);
+    psol(
+        &mut neqv, tn, y, yprime, savr, yptem, cj, wght, wp, iwp, z, eplin, ier, rpar, ipar,
+    );
     *npsl += 1;
     if *ier != 0 {
         return;
@@ -3549,7 +4595,9 @@ pub(crate) unsafe fn dspigm(
 
     if nrsts == 0 {
         let mut neqv = neq;
-        psol(&mut neqv, tn, y, yprime, savr, wk, cj, wght, wp, iwp, r, eplin, &mut ier, rpar, ipar);
+        psol(
+            &mut neqv, tn, y, yprime, savr, wk, cj, wght, wp, iwp, r, eplin, &mut ier, rpar, ipar,
+        );
         *npsl = 1;
         if ier != 0 {
             l300!();
@@ -3585,8 +4633,28 @@ pub(crate) unsafe fn dspigm(
     for ll in 1..=maxl {
         *lgmr = ll;
         datv(
-            neq, y, tn, yprime, savr, col(ll), wght, z, res, ires, psol, col(ll + 1), wk, wp, iwp,
-            cj, eplin, &mut ier, nre, npsl, rpar, ipar,
+            neq,
+            y,
+            tn,
+            yprime,
+            savr,
+            col(ll),
+            wght,
+            z,
+            res,
+            ires,
+            psol,
+            col(ll + 1),
+            wk,
+            wp,
+            iwp,
+            cj,
+            eplin,
+            &mut ier,
+            nre,
+            npsl,
+            rpar,
+            ipar,
         );
         if *ires < 0 {
             return;
@@ -3768,12 +4836,38 @@ pub(crate) unsafe fn dslvk(
         let mut lgmr = 0i32;
         iflag = 0;
         dspigm(
-            neq, tn, y, yprime, savr, wm.offset((lr - 1) as isize), ewt, maxl, maxlp1, kmp, eplin,
-            cj, res, ires, &mut nres, psol, &mut npsl, wm.offset((lz - 1) as isize),
-            wm.offset((lv - 1) as isize), wm.offset((lhes - 1) as isize),
-            wm.offset((lq - 1) as isize), &mut lgmr, wm.offset((lwp - 1) as isize),
-            iwm.offset((liwp - 1) as isize), wm.offset((lwk - 1) as isize),
-            wm.offset((ldl - 1) as isize), rhok, &mut iflag, IRST, nrsts, rpar, ipar,
+            neq,
+            tn,
+            y,
+            yprime,
+            savr,
+            wm.offset((lr - 1) as isize),
+            ewt,
+            maxl,
+            maxlp1,
+            kmp,
+            eplin,
+            cj,
+            res,
+            ires,
+            &mut nres,
+            psol,
+            &mut npsl,
+            wm.offset((lz - 1) as isize),
+            wm.offset((lv - 1) as isize),
+            wm.offset((lhes - 1) as isize),
+            wm.offset((lq - 1) as isize),
+            &mut lgmr,
+            wm.offset((lwp - 1) as isize),
+            iwm.offset((liwp - 1) as isize),
+            wm.offset((lwk - 1) as isize),
+            wm.offset((ldl - 1) as isize),
+            rhok,
+            &mut iflag,
+            IRST,
+            nrsts,
+            rpar,
+            ipar,
         );
         nli += lgmr;
         nps += npsl;
@@ -3853,8 +4947,8 @@ pub(crate) unsafe fn dnsk(
         }
         let mut rhok = 0.0f64;
         dslvk(
-            neq, y, x, yprime, savr, delta, wt, wm, iwm, res, ires, psol, iersl, cj, eplin, sqrtn,
-            rsqrtn, &mut rhok, rpar, ipar,
+            neq, y, x, yprime, savr, delta, wt, wm, iwm, res, ires, psol, iersl, cj, eplin, sqrtn, rsqrtn, &mut rhok,
+            rpar, ipar,
         );
         if *ires != 0 || *iersl != 0 {
             *iernew = if *ires <= -2 || *iersl < 0 { -1 } else { 1 };
@@ -3936,7 +5030,9 @@ pub(crate) unsafe fn dfnrmk(
     linpack::dscal(neq, *rsqrtn, rslm(wt, neq), 1);
     *ier = 0;
     let mut neqv = neq;
-    psol(&mut neqv, t, y, yprime, savr, pwk, cj, wt, wp, iwp, r, eplin, ier, rpar, ipar);
+    psol(
+        &mut neqv, t, y, yprime, savr, pwk, cj, wt, wp, iwp, r, eplin, ier, rpar, ipar,
+    );
     linpack::dscal(neq, *sqrtn, rslm(wt, neq), 1);
     if *ier != 0 {
         return;
@@ -4012,7 +5108,14 @@ pub(crate) unsafe fn dlinsk(
                 if kprin >= 2 {
                     xerrwd(
                         "------ CONSTRAINT VIOL., PNRM = (R1), INDEX = (I1)",
-                        922, 0, 1, ivar, 0, 1, *pnrm, 0.0,
+                        922,
+                        0,
+                        1,
+                        ivar,
+                        0,
+                        1,
+                        *pnrm,
+                        0.0,
                     );
                 }
                 if *pnrm <= *stptol {
@@ -4036,8 +5139,8 @@ pub(crate) unsafe fn dlinsk(
         let mut fnrmp = 0.0f64;
         let mut ier = 0i32;
         dfnrmk(
-            neq, ynew, t, ypnew, savr, r, cj, tscale, wt, sqrtn, rsqrtn, res, ires, psol, 0,
-            &mut ier, &mut fnrmp, eplin, wp, iwp, pwk, rpar, ipar,
+            neq, ynew, t, ypnew, savr, r, cj, tscale, wt, sqrtn, rsqrtn, res, ires, psol, 0, &mut ier, &mut fnrmp,
+            eplin, wp, iwp, pwk, rpar, ipar,
         );
         at!(iwm, 12) += 1;
         if *ires >= 0 {
@@ -4055,7 +5158,14 @@ pub(crate) unsafe fn dlinsk(
                 xerrwd("------ LAMBDA = (R1)", 924, 0, 0, 0, 0, 1, rl, 0.0);
                 xerrwd(
                     "------ NORM(F1) = (R1),  NORM(F1NEW) = (R2)",
-                    925, 0, 0, 0, 0, 2, f1nrm, f1nrmp,
+                    925,
+                    0,
+                    0,
+                    0,
+                    0,
+                    2,
+                    f1nrm,
+                    f1nrmp,
                 );
             }
             if f1nrmp > f1nrm + ALPHA * slpi * rl {
@@ -4079,7 +5189,17 @@ pub(crate) unsafe fn dlinsk(
             }
             *fnrm = fnrmp;
             if kprin >= 1 {
-                xerrwd("------ LEAVING ROUTINE DLINSK, FNRM = (R1)", 926, 0, 0, 0, 0, 1, *fnrm, 0.0);
+                xerrwd(
+                    "------ LEAVING ROUTINE DLINSK, FNRM = (R1)",
+                    926,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    *fnrm,
+                    0.0,
+                );
             }
             return;
         }
@@ -4136,9 +5256,29 @@ pub(crate) unsafe fn dnsik(
     let mut ier = 0i32;
     let mut fnrm = 0.0f64;
     dfnrmk(
-        neq, y, x, yprime, savr, r, cj, tscale, wt, sqrtn, rsqrtn, res, &mut ires, psol, 1,
-        &mut ier, &mut fnrm, eplin, wm.offset((lwp - 1) as isize), iwm.offset((liwp - 1) as isize),
-        pwk, rpar, ipar,
+        neq,
+        y,
+        x,
+        yprime,
+        savr,
+        r,
+        cj,
+        tscale,
+        wt,
+        sqrtn,
+        rsqrtn,
+        res,
+        &mut ires,
+        psol,
+        1,
+        &mut ier,
+        &mut fnrm,
+        eplin,
+        wm.offset((lwp - 1) as isize),
+        iwm.offset((liwp - 1) as isize),
+        pwk,
+        rpar,
+        ipar,
     );
     at!(iwm, 21) += 1;
     if ier != 0 {
@@ -4156,8 +5296,8 @@ pub(crate) unsafe fn dnsik(
         at!(iwm, 19) += 1;
         let mut rhok = 0.0f64;
         dslvk(
-            neq, y, x, yprime, savr, delta, wt, wm, iwm, res, &mut ires, psol, &mut iersl, cj,
-            eplin, sqrtn, rsqrtn, &mut rhok, rpar, ipar,
+            neq, y, x, yprime, savr, delta, wt, wm, iwm, res, &mut ires, psol, &mut iersl, cj, eplin, sqrtn, rsqrtn,
+            &mut rhok, rpar, ipar,
         );
         if ires != 0 || iersl != 0 {
             *iernew = if ires <= -2 || iersl < 0 {
@@ -4175,10 +5315,42 @@ pub(crate) unsafe fn dnsik(
         }
         let oldfnm = fnrm;
         dlinsk(
-            neq, y, x, yprime, savr, cj, tscale, delta, &mut delnrm, wt, sqrtn, rsqrtn, lsoff,
-            stptol, &mut iret, res, &mut ires, psol, wm, iwm, &mut rhok, &mut fnrm, icopt, id,
-            wm.offset((lwp - 1) as isize), iwm.offset((liwp - 1) as isize), r, eplin, yic, ypic,
-            pwk, icnflg, icnstr, &mut rlx, rpar, ipar,
+            neq,
+            y,
+            x,
+            yprime,
+            savr,
+            cj,
+            tscale,
+            delta,
+            &mut delnrm,
+            wt,
+            sqrtn,
+            rsqrtn,
+            lsoff,
+            stptol,
+            &mut iret,
+            res,
+            &mut ires,
+            psol,
+            wm,
+            iwm,
+            &mut rhok,
+            &mut fnrm,
+            icopt,
+            id,
+            wm.offset((lwp - 1) as isize),
+            iwm.offset((liwp - 1) as isize),
+            r,
+            eplin,
+            yic,
+            ypic,
+            pwk,
+            icnflg,
+            icnstr,
+            &mut rlx,
+            rpar,
+            ipar,
         );
         rate = fnrm / oldfnm;
         if iret != 0 {

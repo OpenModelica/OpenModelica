@@ -9,7 +9,9 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 
-use arrow_array::{Array, ArrayRef, BooleanArray, Float64Array, Int32Array, Int64Array, RecordBatch, StringArray, UnionArray};
+use arrow_array::{
+    Array, ArrayRef, BooleanArray, Float64Array, Int32Array, Int64Array, RecordBatch, StringArray, UnionArray,
+};
 use arrow_ipc::reader::StreamReader;
 use arrow_schema::SchemaRef;
 use openmodelica_arrow_writer::{TABLE_KEY, TRAILER_MAGIC};
@@ -67,7 +69,15 @@ impl Reader {
             }
             drop(r);
         };
-        Ok(Reader { path: path.to_owned(), params_at, data_at, vars, params: None, n_vars, n_rows: 0 })
+        Ok(Reader {
+            path: path.to_owned(),
+            params_at,
+            data_at,
+            vars,
+            params: None,
+            n_vars,
+            n_rows: 0,
+        })
     }
 
     pub fn n_variables(&self) -> usize {
@@ -93,7 +103,11 @@ impl Reader {
         let r = StreamReader::try_new(BufReader::new(file), None).map_err(|e| e.to_string())?;
         for batch in r {
             let batch = batch.map_err(|e| e.to_string())?;
-            let col = batch.column(0).as_any().downcast_ref::<Int64Array>().ok_or("index column is not Int64")?;
+            let col = batch
+                .column(0)
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .ok_or("index column is not Int64")?;
             out.extend(col.values().iter().map(|v| *v as u64));
         }
         Ok(out)
@@ -101,7 +115,10 @@ impl Reader {
 
     /// The data-stream field indices `names` resolve to.
     fn projection(&self, names: &[String]) -> Vec<usize> {
-        let mut p: Vec<usize> = names.iter().filter_map(|n| self.vars.get(n).filter(|v| !v.parameter).map(|v| v.column)).collect();
+        let mut p: Vec<usize> = names
+            .iter()
+            .filter_map(|n| self.vars.get(n).filter(|v| !v.parameter).map(|v| v.column))
+            .collect();
         p.sort_unstable();
         p.dedup();
         p
@@ -141,7 +158,10 @@ impl Reader {
                     })
                 })
                 .collect();
-            handles.into_iter().map(|h| h.join().expect("reader thread").unwrap_or(0)).sum()
+            handles
+                .into_iter()
+                .map(|h| h.join().expect("reader thread").unwrap_or(0))
+                .sum()
         });
         Ok(total)
     }
@@ -204,10 +224,19 @@ impl Reader {
                 let r = StreamReader::try_new(BufReader::new(file), None).map_err(|e| e.to_string())?;
                 for batch in r {
                     let batch = batch.map_err(|e| e.to_string())?;
-                    let u = batch.column(0).as_any().downcast_ref::<UnionArray>().ok_or("parameter table is not a union")?;
-                    let children: HashMap<i8, Option<Vec<f64>>> = u.type_ids().iter().map(|&id| (id, as_f64(u.child(id)))).collect();
+                    let u = batch
+                        .column(0)
+                        .as_any()
+                        .downcast_ref::<UnionArray>()
+                        .ok_or("parameter table is not a union")?;
+                    let children: HashMap<i8, Option<Vec<f64>>> =
+                        u.type_ids().iter().map(|&id| (id, as_f64(u.child(id)))).collect();
                     for i in 0..u.len() {
-                        out.push(children[&u.type_id(i)].as_ref().map_or(f64::NAN, |c| c[u.value_offset(i)]));
+                        out.push(
+                            children[&u.type_id(i)]
+                                .as_ref()
+                                .map_or(f64::NAN, |c| c[u.value_offset(i)]),
+                        );
                     }
                 }
             }
@@ -233,7 +262,10 @@ impl Reader {
         let r = self.stream(Some(Vec::new()))?;
         let batches = r.map_while(Result::ok).count();
         if offsets.len() != batches {
-            return Err(format!("index names {} batches, the stream has {batches}", offsets.len()));
+            return Err(format!(
+                "index names {} batches, the stream has {batches}",
+                offsets.len()
+            ));
         }
         if offsets.first().is_some_and(|o| *o < self.data_at) {
             return Err("index points before the data stream".into());
