@@ -18,6 +18,10 @@ instantiateModel(WarnNonStandardModelica.ConditionalContext) <> ""; getErrorStri
 instantiateModel(WarnNonStandardModelica.EnumerationAsInteger) <> ""; getErrorString();
 instantiateModel(WarnNonStandardModelica.IntegerAsEnumeration) <> ""; getErrorString();
 instantiateModel(WarnNonStandardModelica.MultipleExternal) <> ""; getErrorString();
+instantiateModel(WarnNonStandardModelica.StringOfIntegerLiteral); getErrorString();
+instantiateModel(WarnNonStandardModelica.IntegerAsEnumerationOutOfRange); getErrorString();
+instantiateModel(WarnNonStandardModelica.EnumerationAsIntegerDimensions); getErrorString();
+instantiateModel(WarnNonStandardModelica.IntegerAsEnumerationMatrix); getErrorString();
 // --allowNonStandardModelica takes precedence.
 setCommandLineOptions("--allowNonStandardModelica=realEquality,protectedAccess"); getErrorString();
 instantiateModel(WarnNonStandardModelica.RealEquality) <> ""; getErrorString();
@@ -61,6 +65,31 @@ instantiateModel(WarnNonStandardModelica.ProtectedAccess) <> ""; getErrorString(
 // "
 // true
 // "[flattening/modelica/others/WarnNonStandardModelica.mo:72:3-75:9:writable] Warning: Function f1 has more than one algorithm section or external declaration. [Non-standard Modelica: --allowNonStandardModelica=nonStdMultipleExternalDeclarations]
+// "
+// "class WarnNonStandardModelica.StringOfIntegerLiteral
+//   parameter Real x[1] = 1.0;
+//   parameter Real x[2] = 2.0;
+//   parameter Real x[3] = 3.0;
+//   parameter String s1 = \"3\";
+//   parameter String s2 = \"3 \";
+// end WarnNonStandardModelica.StringOfIntegerLiteral;
+// "
+// ""
+// ""
+// "[flattening/modelica/others/WarnNonStandardModelica.mo:88:5-88:12:writable] Error: Type mismatch in binding e = 3, expected subtype of enumeration WarnNonStandardModelica.E(a, b), got type Integer.
+// "
+// ""
+// "Warning: Allowing usage of enumeration expression: {WarnNonStandardModelica.E.a, WarnNonStandardModelica.E.b} as Integer: {1, 2}. This is non-standard Modelica, use Integer({WarnNonStandardModelica.E.a, WarnNonStandardModelica.E.b}) instead! [Non-standard Modelica: --allowNonStandardModelica=nonStdEnumerationAsIntegers]
+// [flattening/modelica/others/WarnNonStandardModelica.mo:92:5-92:30:writable] Error: Type mismatch in binding 'i = {1, 2}', expected array dimensions [3], got [2].
+// "
+// "class WarnNonStandardModelica.IntegerAsEnumerationMatrix
+//   enumeration(a, b) e[1,1];
+//   enumeration(a, b) e[1,2];
+// equation
+//   e = {{WarnNonStandardModelica.E.b, WarnNonStandardModelica.E.a}};
+// end WarnNonStandardModelica.IntegerAsEnumerationMatrix;
+// "
+// "Warning: Allowing usage of Integer expression: {{1}} as enumeration: {{WarnNonStandardModelica.E.a}}. This is non-standard Modelica, use the actual enumeration instead! [Non-standard Modelica: --allowNonStandardModelica=nonStdIntegersAsEnumeration]
 // "
 // true
 // ""
