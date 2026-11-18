@@ -338,8 +338,14 @@ algorithm
           outEvaluated := false;
         else
           // Crefs can be evaluated even if they have non-evaluated subscripts.
-          outExp := evalCref(e.cref, e, EvalTarget.setEvalSubscripts(target, false));
-          outEvaluated := Expression.isLiteral(outExp);
+          ErrorExt.setCheckpoint(getInstanceName());
+          try
+            outExp := evalCref(e.cref, e, EvalTarget.setEvalSubscripts(target, false));
+            outEvaluated := Expression.isLiteral(outExp);
+          else
+            outExp := e;
+          end try;
+          ErrorExt.rollBack(getInstanceName());
         end if;
       then
         outExp;
@@ -432,7 +438,10 @@ algorithm
 
               // Evaluate the binding expression.
               try
-                exp := evalExp(binding.bindingExp, target);
+                // Evaluating the binding expression might not work if evalSubscripts is false
+                // (for example an expression such as a[n]*b[m]), so flip it to true here.
+                exp := evalExp(binding.bindingExp,
+                  if target.evalSubscripts then target else EvalTarget.setEvalSubscripts(target, true));
                 ErrorExt.delCheckpoint(getInstanceName());
               else
                 // Reset the flag if the evaluation failed.
