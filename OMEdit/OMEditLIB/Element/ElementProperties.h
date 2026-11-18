@@ -366,9 +366,8 @@ private:
   void addOrUpdateParametersScrollArea(Parameter *pParameter);
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
   void fetchModifiers(ModelInstance::Modifier *pModifier);
-  void fetchRootElementModifiers(ModelInstance::Element *pModelElement);
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
-  void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
+  void fetchParentElementsModifiers();
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
 public slots:
   void commentLinkClicked(QString link);
