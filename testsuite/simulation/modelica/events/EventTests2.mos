@@ -34,10 +34,8 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [4] (pre: false) false = time >= 0.2
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | time event at time=-0.2
-// LOG_EVENTS        | info    | state event at time=-0.1
-// |                 | |       | | [2] time <= -0.1
-// LOG_EVENTS        | info    | state event at time=0.1
-// |                 | |       | | [3] time > 0.1
+// LOG_EVENTS        | info    | time event at time=-0.1
+// LOG_EVENTS        | info    | time event at time=0.1
 // LOG_EVENTS        | info    | time event at time=0.2
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -58,10 +56,8 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [4] (pre: false) false = time >= 0.2
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | time event at time=-0.2
-// LOG_EVENTS        | info    | state event at time=-0.1
-// |                 | |       | | [2] time <= -0.1
-// LOG_EVENTS        | info    | state event at time=0.1
-// |                 | |       | | [3] time > 0.1
+// LOG_EVENTS        | info    | time event at time=-0.1
+// LOG_EVENTS        | info    | time event at time=0.1
 // LOG_EVENTS        | info    | time event at time=0.2
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

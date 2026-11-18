@@ -8,6 +8,7 @@ multiRate_01.mos \
 multiRateInternal_01.mos \
 RepeatedFlags.mos \
 RK_01.mos \
+TimeEventTinyStep.mos \
 
 FAILINGTESTFILES = \
 IRKGaussian_01.mos \

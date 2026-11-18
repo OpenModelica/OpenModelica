@@ -38,6 +38,7 @@ sample1.mos \
 sample2.mos \
 SampleTimeDrift.mos \
 ServerWithQueue.mos \
+StrictTimeEvents.mos \
 TestNoEventsFlags.mos \
 whenInAlgorithm.mos \
 whenTest1.mos \

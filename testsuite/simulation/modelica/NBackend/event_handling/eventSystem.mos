@@ -67,15 +67,13 @@ val(x3, 0.53);
 // |                 | |       | | [1] sample(0.1, 0.2)
 // LOG_EVENTS        | info    | time event at time=0.2
 // |                 | |       | | [0] sample(0.2, 8.7778e+304)
-// LOG_EVENTS        | info    | state event at time=0.2
-// |                 | |       | | [2] t < time
+// LOG_EVENTS        | info    | time event at time=0.2
 // LOG_EVENTS        | info    | time event at time=0.3
 // |                 | |       | | [1] sample(0.1, 0.2)
-// LOG_EVENTS        | info    | state event at time=0.4
-// |                 | |       | | [1] time > 2.0 * t
+// LOG_EVENTS        | info    | time event at time=0.4
 // LOG_EVENTS        | info    | time event at time=0.5
 // |                 | |       | | [1] sample(0.1, 0.2)
-// LOG_EVENTS        | info    | state event at time=0.523598775598
+// LOG_EVENTS        | info    | state event at time=0.523598775772
 // |                 | |       | | [3] z > 0.5
 // LOG_EVENTS        | info    | time event at time=0.7
 // |                 | |       | | [1] sample(0.1, 0.2)
