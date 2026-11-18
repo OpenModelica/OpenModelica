@@ -1916,7 +1916,8 @@ void PlainTextEdit::insertFromMimeData(const QMimeData *source)
     textCursor().insertFragment(QTextDocumentFragment::fromPlainText(className));
     ensureCursorVisible();
     setFocus(Qt::ActiveWindowFocusReason);
-  } else if (source->hasFormat(Helper::modelicaFileFormat)) {
+  } else if (source->hasFormat(Helper::modelicaFileFormat) && !source->urls().isEmpty()) {
+    // Qt for WebAssembly adds an empty text/uri-list to all pasted text.
     MainWindow::instance()->openDroppedFile(source);
   } else {
     QPlainTextEdit::insertFromMimeData(source);
