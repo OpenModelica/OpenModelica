@@ -42,12 +42,12 @@ val(mS, 1.0);
 //
 // [stateselection] State Order:
 // *******************************
-// 	(mS --d/dt--> bS)
 // 	(mA --d/dt--> bA)
+// 	(mS --d/dt--> bS)
 //
 // [stateselection] (0) State Derivatives Created by Differentiation
 // *******************************************************************
-//
+// 	
 //
 // [stateselection] (2) Selected Dummy States
 // ********************************************

@@ -1,0 +1,53 @@
+// name: partialStateOrder
+// keywords: NewBackend
+// status: correct
+// x = der(y) is a state order only if it holds for every element of y.
+
+loadString("
+  model partialStateOrder
+    Real y[3], x[3];
+  equation
+    for i in 1:2 loop x[i] = der(y[i]); end for;
+    x[1] = 1; x[2] = 1;
+    x[3] = 2*der(y[3]);
+    y[3] = sin(time);
+  end partialStateOrder;
+
+  model shiftedStateOrder
+    Real y[3], x[2];
+  equation
+    for i in 1:2 loop x[i] = der(y[i+1]); end for;
+    der(y[1]) = 1;
+    x[2] = 3;
+    y[2] = sin(time);
+  end shiftedStateOrder;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(partialStateOrder); getErrorString();
+val(x[3], 1.0);
+simulate(shiftedStateOrder); getErrorString();
+val(x[1], 1.0);
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "partialStateOrder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'partialStateOrder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0806046117362795
+// record SimulationResult
+//     resultFile = "shiftedStateOrder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'shiftedStateOrder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5403023058681398
+// endResult
