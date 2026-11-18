@@ -8617,6 +8617,10 @@ Das Python-Programm, in dem omuq installiert ist, unter Werkzeuge &gt; Optionen 
         <translation>Es gibt keine gültigen Kurven, die in der Modellannotation gespeichert werden können.</translation>
     </message>
     <message>
+        <source>Cannot save curve %1 in figure %2 because it is not a valid expression.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Cannot save figure %1 in model %2 because the model cannot be annotated.</source>
         <translation>Die Abbildung %1 kann nicht im Modell %2 gespeichert werden, weil das Modell keine Annotation erhalten kann.</translation>
     </message>

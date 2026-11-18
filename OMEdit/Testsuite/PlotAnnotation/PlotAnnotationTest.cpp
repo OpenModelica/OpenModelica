@@ -118,6 +118,17 @@ void PlotAnnotationTest::plotAndSaveDocumentationFigure()
   QCOMPARE(pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->getYVariable(), QStringLiteral("x"));
   QCOMPARE(pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->getCustomTitle(), QStringLiteral("State"));
 
+  auto curveLegend = [pModelWidget]() {
+    const ModelInstance::DocumentationAnnotation *pDocumentation = pModelWidget->getModelInstance()->getAnnotation()->getDocumentationAnnotation();
+    if (!pDocumentation || pDocumentation->getFigures().size() != 1 || pDocumentation->getFigures().at(0)->getPlots().size() != 1
+        || pDocumentation->getFigures().at(0)->getPlots().at(0)->getCurves().size() != 1) {
+      return QStringLiteral("<no single curve>");
+    }
+    return pDocumentation->getFigures().at(0)->getPlots().at(0)->getCurves().at(0)->getLegend();
+  };
+
+  // Change the plot so that the saved figure differs from the one in the model.
+  pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->setCustomTitle(QStringLiteral("Changed state"));
   // Activate the annotated plot because saveFigureInModel operates on the current MDI window.
   pPlotWindowContainer->setActiveSubWindow(pPlotSubWindow);
   const int previousUndoCount = pModelWidget->getUndoStack()->count();
@@ -130,7 +141,14 @@ void PlotAnnotationTest::plotAndSaveDocumentationFigure()
   const QString savedDocumentation = pDocumentation->toString();
   QVERIFY(savedDocumentation.contains(QStringLiteral("info=\"Figure test documentation\"")));
   QVERIFY(savedDocumentation.contains(QStringLiteral("Figure(title=\"Annotated decay\"")));
-  QVERIFY(savedDocumentation.contains(QStringLiteral("Curve(y=x,legend=\"State\")")));
+  QVERIFY(savedDocumentation.contains(QStringLiteral("Curve(y=x,legend=\"Changed state\")")));
+  // The next simulation plots these figures, so they must have the saved curve.
+  QCOMPARE(curveLegend(), QStringLiteral("Changed state"));
+
+  // Undo reloads the model instance with the figure from before the save.
+  pModelWidget->getUndoStack()->undo();
+  QApplication::processEvents();
+  QCOMPARE(curveLegend(), QStringLiteral("State"));
 }
 
 /*!

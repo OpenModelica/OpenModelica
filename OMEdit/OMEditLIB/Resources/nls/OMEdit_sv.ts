@@ -8617,6 +8617,10 @@ Ange vilken Python-tolk som har omuq installerat i Verktyg &gt; Alternativ &gt; 
         <translation>Det finns inga giltiga kurvor att spara i modellannoteringen.</translation>
     </message>
     <message>
+        <source>Cannot save curve %1 in figure %2 because it is not a valid expression.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Cannot save figure %1 in model %2 because the model cannot be annotated.</source>
         <translation>Kan inte spara figuren %1 i modellen %2 eftersom modellen inte kan annoteras.</translation>
     </message>
