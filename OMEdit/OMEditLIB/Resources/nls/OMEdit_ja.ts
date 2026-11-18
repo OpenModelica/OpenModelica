@@ -9236,10 +9236,6 @@ Can cause high overhead but values will not be missed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9359,6 +9355,10 @@ Can cause high overhead but values will not be missed.</source>
         <source>Root Finding</source>
         <translatorcomment>what is ROOT?</translatorcomment>
         <translation>ルートの検索</translation>
+    </message>
+    <message>
+        <source>Activates the internal root finding procedure of methods: dassl, ida and cvode.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restart After Event</source>

@@ -9255,6 +9255,10 @@ Der Wert 0 bedeutet keine Verzögerung.</translation>
         <translation>Nullstellensuche</translation>
     </message>
     <message>
+        <source>Activates the internal root finding procedure of methods: dassl, ida and cvode.</source>
+        <translation>Aktiviert die interne Nullstellensuche der Verfahren dassl, ida und cvode.</translation>
+    </message>
+    <message>
         <source>Restart After Event</source>
         <translation>Neustart nach Ereignis</translation>
     </message>
@@ -9353,10 +9357,6 @@ Kann hohen Mehraufwand verursachen, aber es gehen keine Werte verloren.</transla
     <message>
         <source>Specifies the embedded server port.</source>
         <translation>Legt den Port des eingebetteten Servers fest.</translation>
-    </message>
-    <message>
-        <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation>Aktiviert die interne Nullstellensuche der Verfahren dassl und ida.</translation>
     </message>
     <message>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>
