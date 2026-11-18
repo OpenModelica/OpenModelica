@@ -1,0 +1,50 @@
+// name:     TestSolve20
+// keywords: ExpressionSolve, if-expression #18133
+// status:   correct
+//
+// Each branch of an if-expression is solved on its own. The temporary
+// equations of a branch are evaluated only when the branch is active, and in
+// the order in which they depend on each other. The else-branch of the
+// equation for x1 has no real solution for x2 > 0.8333.
+
+loadString("
+model TestSolve20
+  Real x1;
+  Real x2(start = -0.5, fixed = true);
+  Real x3(start = 1);
+  Real y = 0.5 + 0.4*sin(10*time);
+equation
+  der(x2) = 2;
+  x2 = if x1 > 0 then x1 + 0.3*x1^2 else x1 - 0.3*x1^2;
+  y = if noEvent(time > -1) then cos(x3) else x3;
+end TestSolve20;
+"); getErrorString();
+simulate(TestSolve20); getErrorString();
+val(x1, 0.0);
+val(x1, 0.5);
+val(x1, 1.0);
+for t in 0:4 loop
+  print(String(abs(val(y, t/4) - cos(val(x3, t/4))) < 1e-8) + "\n");
+end for;
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestSolve20_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TestSolve20', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.44151844011225283
+// 0.4415184401122527
+// 1.1222000884469183
+// true
+// true
+// true
+// true
+// true
+//
+// endResult

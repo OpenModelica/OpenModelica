@@ -83,6 +83,7 @@ TestSolve16.mos \
 TestSolve17.mos \
 TestSolve18.mos \
 TestSolve19.mos \
+TestSolve20.mos \
 Ticket5129.mos \
 ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \

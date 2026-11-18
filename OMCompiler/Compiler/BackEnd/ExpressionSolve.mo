@@ -159,7 +159,7 @@ algorithm
   if (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
     e1 := inlineCallsWithRecordOfX(e1, varexp, SOME(shared.functionTree));
     e2 := inlineCallsWithRecordOfX(e2, varexp, SOME(shared.functionTree));
-    (e1, e2) := preprocessingSolve(e1, e2, varexp, NONE(), SOME(shared.functionTree), NONE(), 0,  false);
+    (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0,  false);
   end if;
 
   try
@@ -308,7 +308,7 @@ algorithm
   (outExp,outAsserts,dummy1, dummy2, dummyI) := matchcontinue inExp1
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
-    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), functions, NONE(), 0, false, false);
+    case _ then solveWork(inExp1, inExp2, inExp3, functions, NONE(), 0, false, false);
     else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionBasics.printExpStr(inExp3) + "\"", sourceInfo());
@@ -344,7 +344,7 @@ algorithm
   (outExp,outAsserts,eqnForNewVars,newVarsCrefs,dummyI) := matchcontinue inExp1
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
-    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), functions, uniqueEqIndex, 0, doInline, isContinuousIntegration);
+    case _ then solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0, doInline, isContinuousIntegration);
     else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionBasics.printExpStr(inExp3) + "\"", sourceInfo());
@@ -358,7 +358,6 @@ protected function solveWork
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  input Option<DAE.Exp> optCond "condition from an if expression";
   input Option<AvlTreePathFunction.Tree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
@@ -375,7 +374,7 @@ protected
   list<DAE.ComponentRef> newVarsCrefs1, newVarsCrefs2;
 algorithm
   (e1, e2, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue inExp1
-    case _ then preprocessingSolve(inExp1, inExp2, inExp3, optCond, functions, uniqueEqIndex, idepth, doInline);
+    case _ then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline);
     else
       algorithm
         if Flags.isSet(Flags.FAILTRACE) then
@@ -387,13 +386,13 @@ algorithm
   end matchcontinue;
 
   (outExp, outAsserts, eqnForNewVars2, newVarsCrefs2, depth) := matchcontinue e1
-    case _ then solveIfExp(e1, e2, inExp3, optCond, functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
+    case _ then solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
     case _ then solveSimple(e1, e2, inExp3, depth);
     case _ then solveLinearSystem(e1, e2, inExp3, functions, depth);
    end matchcontinue;
 
-  eqnForNewVars := listAppend(eqnForNewVars1, eqnForNewVars2);
-  newVarsCrefs := listAppend(newVarsCrefs1, newVarsCrefs2);
+  eqnForNewVars := listAppend(eqnForNewVars2, eqnForNewVars1);
+  newVarsCrefs := listAppend(newVarsCrefs2, newVarsCrefs1);
 end solveWork;
 
 protected function solveSimple
@@ -515,7 +514,6 @@ public function preprocessingSolve
   input output DAE.Exp x "lhs";
   input output DAE.Exp y "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  input Option<DAE.Exp> optCond "condition from an if expression";
   input Option<AvlTreePathFunction.Tree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
@@ -563,7 +561,7 @@ algorithm
      con := new_x or con;
      // TODO: use new defined function, which missing in the cpp runtime
      if isSome(uniqueEqIndex) and not stringEqual(Config.simCodeTarget(), "Cpp") then
-       (x, y, new_x, eqnForNewVars, newVarsCrefs, depth) := preprocessingSolveTmpVars(x, y, inExp3, optCond, Util.getOption(uniqueEqIndex), eqnForNewVars, newVarsCrefs, depth);
+       (x, y, new_x, eqnForNewVars, newVarsCrefs, depth) := preprocessingSolveTmpVars(x, y, inExp3, Util.getOption(uniqueEqIndex), eqnForNewVars, newVarsCrefs, depth);
        con := new_x or con;
      end if;
 
@@ -1439,7 +1437,6 @@ e.g. for solve abs
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
-  input Option<DAE.Exp> optCond "condition from an if expression";
   input Integer uniqueEqIndex "offset for tmp vars";
   input list<BackendDAE.Equation> ieqnForNewVars;
   input list<DAE.ComponentRef> inewVarsCrefs;
@@ -1466,20 +1463,8 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT(name = name),expLst = {arg})
       guard expHasCref(arg, inExp3) and not expHasCref(inExp2, inExp3)
       algorithm
-        (y, new_x, eqnForNewVars_, newVarsCrefs_, odepth) := preprocessingSolveFunctionCall(name, arg, inExp2, inExp3, optCond, uniqueEqIndex, idepth);
-
-        if listEmpty(eqnForNewVars_) then
-          eqnForNewVars_ := ieqnForNewVars;
-        else
-          eqnForNewVars_ := match optCond
-            local
-              DAE.Exp cond;
-            case SOME(cond)
-            then BackendDAE.IF_EQUATION({cond}, {eqnForNewVars_}, {}, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN) :: ieqnForNewVars;
-            else listAppend(eqnForNewVars_, ieqnForNewVars);
-          end match;
-        end if;
-      then (if new_x then arg else inExp1, y, new_x, eqnForNewVars_, listAppend(newVarsCrefs_, inewVarsCrefs), odepth);
+        (y, new_x, eqnForNewVars_, newVarsCrefs_, odepth) := preprocessingSolveFunctionCall(name, arg, inExp2, inExp3, uniqueEqIndex, idepth);
+      then (if new_x then arg else inExp1, y, new_x, listAppend(eqnForNewVars_, ieqnForNewVars), listAppend(newVarsCrefs_, inewVarsCrefs), odepth);
 
     // x^n = y -> x = y^(1/n)
     case DAE.BINARY(e1, DAE.POW(tp), e2)
@@ -1526,7 +1511,6 @@ protected function preprocessingSolveFunctionCall
   input DAE.Exp arg "ument of the function";
   input DAE.Exp rhs;
   input DAE.Exp inExp3 "solve for this";
-  input Option<DAE.Exp> optCond "condition from an if expression";
   input Integer uniqueEqIndex "offset for tmp vars";
   input Integer idepth "depth of tmp var";
   output DAE.Exp result;
@@ -1895,7 +1879,6 @@ protected function solveIfExp
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
-  input Option<DAE.Exp> inCond;
   input Option<AvlTreePathFunction.Tree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
@@ -1909,36 +1892,31 @@ protected function solveIfExp
 algorithm
   (outExp, outAsserts, eqnForNewVars, newVarsCrefs, odepth) := match inExp1
     local
-      DAE.Exp eCond, eThen, eElse, res, lhs, rhs, cond1, cond2;
-      list<DAE.Statement> asserts, asserts1;
-      list<BackendDAE.Equation> eqns, eqns1;
-      list<DAE.ComponentRef> var, var1;
+      DAE.Exp eCond, eThen, eElse, res, lhs, rhs;
+      list<DAE.Statement> asserts, asserts1, asserts2;
+      list<BackendDAE.Equation> eqns, eqns1, eqns2;
+      list<DAE.ComponentRef> var1, var2;
       Integer depth;
 
     //  f(a) if(g(b)) then f1(a) else f2(a) =>
     //  a1 = solve f(a),f1(a) for a
     //  a2 = solve f(a),f2(a) for a
     //  => a = if g(b) then a1 else a2
+    // The tmp equations and asserts of a branch are only valid in that branch.
     case DAE.IFEXP(eCond, eThen, eElse)
       guard
         isContinuousIntegration or not expHasCref(eCond, inExp3)
       algorithm
-
-        // nested if expressions need to combine their conditions
-        (cond1, cond2) := match inCond
-          local DAE.Exp theCond;
-          case SOME(theCond)
-            then (DAE.LBINARY(theCond, DAE.AND(Expression.typeof(eCond)), eCond), DAE.LBINARY(theCond, DAE.AND(Expression.typeof(eCond)), Expression.negate(eCond)));
-          else (eCond, Expression.negate(eCond));
-        end match;
-
-        (lhs, asserts1, eqns, var, depth) := solveWork(eThen, inExp2, inExp3, SOME(cond1), functions, uniqueEqIndex, idepth, doInline, isContinuousIntegration);
-        (rhs, _, eqns1, var1, depth) := solveWork(eElse, inExp2, inExp3, SOME(cond2), functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
+        (lhs, asserts1, eqns1, var1, depth) := solveWork(eThen, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline, isContinuousIntegration);
+        (rhs, asserts2, eqns2, var2, depth) := solveWork(eElse, inExp2, inExp3, functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
 
         res := DAE.IFEXP(eCond, lhs, rhs);
-        asserts := listAppend(asserts1, asserts1);
+        eqns := if listEmpty(eqns1) and listEmpty(eqns2) then {} else
+          {BackendDAE.IF_EQUATION({eCond}, {listReverse(eqns1)}, listReverse(eqns2), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)};
+        asserts := if listEmpty(asserts1) and listEmpty(asserts2) then {} else
+          {DAE.STMT_IF(eCond, asserts1, DAE.ELSE(asserts2), DAE.emptyElementSource)};
       then
-        (res, asserts, listAppend(eqns1, eqns), listAppend(var1, var), depth);
+        (res, asserts, eqns, listAppend(var2, var1), depth);
     else fail();
   end match;
 end solveIfExp;
