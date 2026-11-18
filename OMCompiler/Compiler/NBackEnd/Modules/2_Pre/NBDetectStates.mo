@@ -50,12 +50,14 @@ protected
   // New Frontend Imports
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import Function = NFFunction;
   import InstNode = NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
   import Algorithm = NFAlgorithm;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -73,6 +75,9 @@ protected
 
   // Util
   import StringUtil;
+  import UnorderedSet;
+
+  type ElementOrder = tuple<Option<ComponentRef>, UnorderedSet<Integer>, Integer> "alias (NONE() if ambiguous), covered flat indices, size";
 
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -145,6 +150,7 @@ protected
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
     list<Pointer<Equation>> aux_eqns;
     EqData newEqData;
+    UnorderedMap<ComponentRef, ElementOrder> element_order;
   algorithm
     // introduce sliced state alias before resolving the der() calls
     (varData, eqData) := FunctionAlias.introduceSlicedStateAlias(varData, eqData, NBPartition.Kind.ODE);
@@ -193,7 +199,9 @@ protected
         newEqData := EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false);
 
         // detect state order
-        EquationPointers.map(EqData.getEquations(newEqData), function stateOrder(state_order = varData.state_order));
+        element_order := UnorderedMap.new<ElementOrder>(ComponentRef.hash, ComponentRef.isEqual);
+        EquationPointers.map(eqData.continuous, function stateOrder(state_order = varData.state_order, element_order = element_order, iterators = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
+        addElementOrders(varData.state_order, element_order);
         if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not UnorderedMap.isEmpty(varData.state_order) then
           print(StringUtil.headline_4("[stateselection] State Order:"));
           print("\t" + UnorderedMap.toString(varData.state_order, ComponentRef.toString, ComponentRef.toString, "\n\t", " --d/dt--> ") + "\n\n");
@@ -680,30 +688,64 @@ protected
   end findDiscreteStatesFromWhenBody;
 
   function stateOrder
+    "Collects state orders a = der(b) that hold for every element of b."
     input output Equation eqn;
     input UnorderedMap<ComponentRef, ComponentRef> state_order;
+    input UnorderedMap<ComponentRef, ElementOrder> element_order;
+    input UnorderedMap<ComponentRef, Expression> iterators "ranges of the surrounding for-loops";
   protected
     Expression lhs, rhs;
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<Option<Iterator>> maps;
+    UnorderedMap<ComponentRef, Expression> body_iterators;
   algorithm
     () := match eqn
       case Equation.SCALAR_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
-        updateStateOrder(lhs.cref, rhs.cref, state_order);
+        updateStateOrder(lhs.cref, rhs.cref, iterators, state_order, element_order);
       then ();
 
-      // ToDo: sliced array/for-loops
       case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
-        updateStateOrder(lhs.cref, rhs.cref, state_order);
+        updateStateOrder(lhs.cref, rhs.cref, iterators, state_order, element_order);
       then ();
 
       case Equation.FOR_EQUATION() algorithm
-        for b in eqn.body loop
-          stateOrder(b, state_order);
-        end for;
+        (names, ranges, maps) := Iterator.getFrames(eqn.iter);
+        if List.all(maps, isNone) then
+          body_iterators := UnorderedMap.copy(iterators);
+          for frame in List.zip(names, ranges) loop
+            UnorderedMap.add(Util.tuple21(frame), Util.tuple22(frame), body_iterators);
+          end for;
+          for b in eqn.body loop
+            stateOrder(b, state_order, element_order, body_iterators);
+          end for;
+        end if;
       then ();
 
       else ();
     end match;
   end stateOrder;
+
+  function addElementOrders
+    "Adds the state orders that are given element by element and cover the whole state."
+    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+    input UnorderedMap<ComponentRef, ElementOrder> element_order;
+  protected
+    ComponentRef state, alias;
+    UnorderedSet<Integer> covered;
+    Integer total;
+  algorithm
+    for entry in UnorderedMap.toList(element_order) loop
+      () := match entry
+        case (state, (SOME(alias), covered, total)) algorithm
+          if UnorderedSet.size(covered) == total then
+            UnorderedMap.tryAdd(state, alias, state_order);
+          end if;
+        then ();
+        else ();
+      end match;
+    end for;
+  end addElementOrders;
 
   function promotePreferStates
     "Promotes StateSelect.prefer variables to states if the model has ANY der() calls.
@@ -757,24 +799,139 @@ protected
   end promotePreferStates;
 
   function updateStateOrder
+    "Adds a = der(b) if the subscripts of a and der(b) are equal and cover all elements.
+    Relations that cover only some elements are collected in element_order."
     input ComponentRef lhs;
     input ComponentRef rhs;
+    input UnorderedMap<ComponentRef, Expression> iterators;
     input UnorderedMap<ComponentRef, ComponentRef> state_order;
+    input UnorderedMap<ComponentRef, ElementOrder> element_order;
   protected
-    PointerWeak<Variable> state;
+    Pointer<Variable> alias_var, der_var;
+    ComponentRef alias, der_cref, state_cref;
+    list<Subscript> subs;
+    list<Dimension> dims;
+    list<list<Integer>> values;
+    Boolean found;
   algorithm
-    () := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
+    (alias, der_cref, found) := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)
-      case (_, VariableKind.STATE_DER(state = state)) algorithm
-        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(lhs), state_order);
-      then ();
+      case (_, VariableKind.STATE_DER()) then (lhs, rhs, true);
       // der(b) = a
-      case (VariableKind.STATE_DER(state = state), _) algorithm
-        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(rhs), state_order);
-      then ();
-      else ();
+      case (VariableKind.STATE_DER(), _) then (rhs, lhs, true);
+      else (lhs, rhs, false);
     end match;
+    if not found then
+      return;
+    end if;
+
+    alias_var := BVariable.getVarPointer(alias, sourceInfo());
+    der_var := BVariable.getVarPointer(der_cref, sourceInfo());
+    if not BVariable.isContinuous(alias_var, false) or BVariable.isTime(alias_var) then
+      return;
+    end if;
+
+    subs := ComponentRef.subscriptsAllWithWholeFlat(der_cref);
+    dims := Type.arrayDims(Variable.typeOf(Pointer.access(der_var)));
+    if not (List.isEqualOnTrue(subs, ComponentRef.subscriptsAllWithWholeFlat(alias), Subscript.isEqual)
+      and List.isEqualOnTrue(dims, Type.arrayDims(Variable.typeOf(Pointer.access(alias_var))), Dimension.isEqualKnown)
+      and listLength(subs) == listLength(dims) and distinctIterators(subs, iterators)) then
+      return;
+    end if;
+
+    state_cref := BVariable.getVarName(Util.getOption(BVariable.getVarState(der_var)));
+    alias := ComponentRef.stripSubscriptsAll(alias);
+    // iterators as slices of their ranges
+    subs := list(match sub
+        local
+          ComponentRef iter;
+        case Subscript.INDEX(index = Expression.CREF(cref = iter)) guard(UnorderedMap.contains(iter, iterators))
+        then Subscript.SLICE(UnorderedMap.getOrFail(iter, iterators));
+        else sub;
+      end match for sub in subs);
+
+    if List.all(List.zip(subs, dims), coversDim) then
+      UnorderedMap.tryAdd(state_cref, alias, state_order);
+    elseif List.all(subs, Subscript.isLiteral) and List.all(dims, isLiteralDim) then
+      values := list(Subscript.toIndexList(sub, Dimension.size(dim)) threaded for sub in subs, dim in dims);
+      () := match UnorderedMap.get(state_cref, element_order)
+        local
+          ComponentRef old_alias;
+        case NONE() algorithm
+          UnorderedMap.add(state_cref, (SOME(alias), UnorderedSet.new(Util.id, intEq), product(Dimension.size(d) for d in dims)), element_order);
+        then ();
+        case SOME((SOME(old_alias), _, _)) guard(ComponentRef.isEqual(alias, old_alias)) then ();
+        else algorithm
+          UnorderedMap.add(state_cref, (NONE(), UnorderedSet.new(Util.id, intEq), 0), element_order);
+        then ();
+      end match;
+      addElements(values, dims, Util.tuple32(UnorderedMap.getOrFail(state_cref, element_order)));
+    end if;
   end updateStateOrder;
+
+  function coversDim
+    input tuple<Subscript, Dimension> sub_dim;
+    output Boolean b;
+  protected
+    Expression slice;
+    Dimension dim;
+  algorithm
+    b := match sub_dim
+      case (Subscript.WHOLE(), _) then true;
+      case (Subscript.SLICE(slice = slice), dim) then Expression.isFullRange(slice, dim);
+      else false;
+    end match;
+  end coversDim;
+
+  function isLiteralDim
+    input Dimension dim;
+    output Boolean b = Dimension.isKnown(dim) and not Dimension.isResizable(dim) and Type.isInteger(Dimension.subscriptType(dim));
+  end isLiteralDim;
+
+  function distinctIterators
+    "false if an iterator is used for more than one dimension, e.g. x[i, i]."
+    input list<Subscript> subs;
+    input UnorderedMap<ComponentRef, Expression> iterators;
+    output Boolean b = true;
+  protected
+    UnorderedSet<ComponentRef> used = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for sub in subs loop
+      () := match sub
+        local
+          ComponentRef iter;
+        case Subscript.INDEX(index = Expression.CREF(cref = iter)) guard(UnorderedMap.contains(iter, iterators)) algorithm
+          if UnorderedSet.contains(iter, used) then
+            b := false;
+            return;
+          end if;
+          UnorderedSet.add(iter, used);
+        then ();
+        else ();
+      end match;
+    end for;
+  end distinctIterators;
+
+  function addElements
+    "Adds the flat indices of all combinations of the subscript values."
+    input list<list<Integer>> values;
+    input list<Dimension> dims;
+    input UnorderedSet<Integer> covered;
+    input Integer offset = 0;
+  protected
+    Integer size;
+  algorithm
+    if listEmpty(values) then
+      UnorderedSet.add(offset, covered);
+    else
+      size := Dimension.size(listHead(dims));
+      for v in listHead(values) loop
+        if v >= 1 and v <= size then
+          addElements(listRest(values), listRest(dims), covered, offset * size + v - 1);
+        end if;
+      end for;
+    end if;
+  end addElements;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBDetectStates;
