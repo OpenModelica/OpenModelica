@@ -5391,7 +5391,8 @@ void LibraryWidget::reDrawModelsToUpdate()
  * \brief LibraryWidget::libraryFileWatcherRootForItem
  * Returns the file or directory that LibraryFileWatcher should watch for a top
  * level library item. A package stored as a directory hierarchy is watched as
- * a directory so that files added to or removed from it are seen.
+ * a directory so that files added to or removed from it are seen. A relative
+ * path is a class name assigned to an unsaved item and is not watched.
  * \param pLibraryTreeItem
  * \return watched path
  */
@@ -5402,6 +5403,10 @@ QString LibraryWidget::libraryFileWatcherRootForItem(LibraryTreeItem *pLibraryTr
     return QString();
   }
   const QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+  // Absolute paths that no longer exist stay watched so deletions are detected.
+  if (fileInfo.isRelative()) {
+    return QString();
+  }
   if (pLibraryTreeItem->isModelica()) {
     if (fileInfo.fileName().compare(QStringLiteral("package.mo")) == 0) {
       return fileInfo.absolutePath();
