@@ -564,7 +564,7 @@ pub fn resample(time: &[f64], vals: &[f64], grid: &[f64]) -> Vec<f64> {
 }
 
 /// The tolerances of `diffSimulationResults`, with its defaults, plus the
-/// choice of comparison algorithm — `Ellipse2014` is what omc has always run.
+/// choice of comparison algorithm.
 #[derive(Clone, Copy, Debug)]
 pub struct Tolerances {
     pub reltol: f64,
@@ -581,7 +581,7 @@ impl Default for Tolerances {
             reltol: 1e-3,
             reltol_diff_min_max: 1e-4,
             range_delta: 0.002,
-            algorithm: Algorithm::Ellipse2014,
+            algorithm: Algorithm::Rectangle,
             nominal_value: cmp::DEFAULT_NOMINAL_VALUE,
         }
     }
