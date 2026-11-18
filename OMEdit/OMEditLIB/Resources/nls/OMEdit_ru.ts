@@ -9082,6 +9082,10 @@ Set the value to 0 if you don&apos;t want any delay.</source>
         <translation>Определение корней</translation>
     </message>
     <message>
+        <source>Activates the internal root finding procedure of methods: dassl, ida and cvode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Restart After Event</source>
         <translation>Перезапускать после события</translation>
     </message>
@@ -9179,10 +9183,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Specifies the embedded server port.</source>
         <translation>Указывает встроенный порт сервера.</translation>
-    </message>
-    <message>
-        <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation>Активирует работу внутренней процедуры определения корней: dassl и ida.</translation>
     </message>
     <message>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>
