@@ -909,8 +909,9 @@ impl StepRetry {
         self.hold
     }
 
-    /// C's `retrySimulationStep`: restore the last accepted point and settle the
-    /// discrete system over it. `None` ⇒ the throw ends the run.
+    /// C's `retrySimulationStep`: restore the last accepted point, settle the
+    /// discrete system over it and save the zero crossings as after an event.
+    /// `None` ⇒ the throw ends the run.
     fn undo(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Option<f64>> {
         // Only a model error the region absorbed reaches C's catch; a rethrown
         // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
@@ -959,6 +960,7 @@ impl StepRetry {
         }
         save_old_real(e, sim_data, layout)?; // C's `overwriteOldSimulationData`
         update_discrete_system(e, sim_data, layout)?;
+        save_zero_crossings_after_event(e, sim_data, layout)?;
         if first {
             omclog::warning(
                 omclog::STDOUT,
