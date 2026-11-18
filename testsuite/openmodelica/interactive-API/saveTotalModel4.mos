@@ -128,7 +128,7 @@ checkModel(SaveTotalBroken_total); getErrorString();
 // true
 // ""
 // "Check of SaveTotalPackage.Circuit completed successfully.
-// Class SaveTotalPackage.Circuit has 5 equation(s) and 5 variable(s).
+// The model is globally balanced with 5 equation(s) and variable(s).
 // 3 of these are trivial equation(s)."
 // ""
 // true

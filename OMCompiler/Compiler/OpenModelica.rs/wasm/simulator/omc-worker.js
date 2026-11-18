@@ -1,22 +1,22 @@
 // Simulator omc Web Worker.
 //
 // Hosts the omc wasm module off the UI thread so compile/simulate never freezes
-// the page. The simulator spawns two of these: a plain one that is ready fast
-// (no library), and a second that installs the MSL in the background and takes
-// over once ready (see index.html). Talks an id-correlated RPC:
+// the page. Talks an id-correlated RPC:
 //   page → { id, cmd, ... }         worker → { type:'reply', id, ok, result|error }
 // plus unsolicited { type:'status', id, text } for download progress.
 import init, {
   omc_set_env, omc_init, omc_eval, omc_simulate, omc_set_inwasm_driver,
   omc_enable_cancel_poll, omc_enable_fmu_aot, omc_fmu_platforms,
   omc_sim_start, omc_sim_advance, omc_sim_free, omc_sim_solver_options, omc_sim_log,
-  omc_fmu_cs_solvers,
+  omc_fmu_cs_solvers, omc_fmi_guide,
   omc_enable_wasm_blobs,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters, omc_sim_units,
   omc_sim_result_as,
 } from '../omc/OpenModelicaCompiler.js';
+import * as OmcModule from '../omc/OpenModelicaCompiler.js';
+import { openStore } from '../omc-store.js';
 // Shared MultiBody animation core (standalone wasm), the same module the FMI
 // simulator uses; fed here from the omc result store rather than an FMU.
 import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
@@ -34,6 +34,22 @@ let simCancel = false;
 // in a single synchronous omc call, since the page writes shared memory directly.
 let cancelFlag = null;
 function clearCancel() { if (cancelFlag) Atomics.store(cancelFlag, 0, 0); }
+
+// Installed libraries and the parse cache, kept between sessions (omc-store.js),
+// saved at the end of each command.
+let store = null;
+
+// One omc command at a time. A command waiting for a download gives up its turn
+// meanwhile, so the library download does not hold up the page.
+let tail = Promise.resolve();
+function turn() {
+  let release;
+  const done = new Promise((r) => { release = r; });
+  const ready = tail.then(() => release);
+  tail = tail.then(() => done);
+  return ready;
+}
+let lease = null;   // { release } of the command that has the turn
 
 // `?driver=` override (0 host, 1 in-wasm), applied once the module is up.
 let driverMode = null;
@@ -77,27 +93,34 @@ function base64(bytes) {
   return btoa(s);
 }
 
-async function fetchToVfs(urls, filename) {
+async function fetchBytes(urls) {
   for (const url of urls) {
-    try { const r = await fetch(url); if (!r.ok) continue;
-      wasi_write_file(filename, new Uint8Array(await r.arrayBuffer())); return true; } catch (_) {}
+    try { const r = await fetch(url); if (r.ok) return new Uint8Array(await r.arrayBuffer()); } catch (_) {}
   }
-  return false;
+  return null;
 }
 
 // Run `src`, satisfy any files it wanted, re-run until nothing new is needed.
 async function evalWithDownloads(src, onStatus) {
+  const mine = lease;
   const attempted = new Set();
   for (;;) {
     const result = oeval(src);
     const pending = (omc_take_pending_downloads() || []).filter((p) => !attempted.has(p.filename));
     if (pending.length === 0) return result;
     omc_eval('getErrorString()');
-    for (const item of pending) {
-      attempted.add(item.filename);
-      onStatus && onStatus('Downloading ' + (item.filename.split('/').pop() || item.filename) + '…');
-      await fetchToVfs(item.urls, item.filename);
+    const fetched = [];
+    mine?.release();
+    try {
+      for (const item of pending) {
+        attempted.add(item.filename);
+        onStatus && onStatus('Downloading ' + (item.filename.split('/').pop() || item.filename) + '…');
+        fetched.push([item.filename, await fetchBytes(item.urls)]);
+      }
+    } finally {
+      if (mine) { mine.release = await turn(); lease = mine; }
     }
+    for (const [filename, bytes] of fetched) if (bytes) wasi_write_file(filename, bytes);
   }
 }
 
@@ -176,6 +199,9 @@ function snapshot() {
   const units = prof('sim_units', () => omc_sim_units()) || {};
   return { snap: { ok: true, info, parameters, series, cols, time, units }, transfer };
 }
+
+// Why the last installPackage failed, for the loadLibrary that follows it.
+let installError = '';
 
 function simError(fallback) {
   return { ok: false, error: unquote(omc_eval('getErrorString()')) || fallback };
@@ -309,11 +335,14 @@ self.onmessage = async (ev) => {
     self.postMessage({ type: 'reply', id, ok: true, result }, transfer || []);
   };
   if (PROF) wlog('cmd ' + cmd + (a.name ? ' ' + a.name : ''));
+  const mine = { release: await turn() };
+  lease = mine;
   try {
     switch (cmd) {
       case 'init': {
         await init();
         omc_set_env('OPENMODELICAHOME', '/usr');
+        store = await openStore(OmcModule);
         if (!omc_init()) throw new Error('omc_init() failed');
         inited = true;
         // 0 (no cancel) until the page shares a control block, so it is a no-op then.
@@ -344,16 +373,36 @@ self.onmessage = async (ev) => {
         reply({ ok: true });
         break;
       }
-      case 'installLibrary': {
-        // A version pins both calls: installPackage puts that release in the
-        // VFS, loadModel makes it resolvable by name, and without the priority
-        // it would take whichever release is already there.
-        const name = a.name || 'Modelica';
+      // A version pins both calls: installPackage puts that release in the VFS,
+      // loadModel makes it resolvable by name, and without the priority it would
+      // take whichever release is already there.
+      case 'installPackage': {
         const exact = a.version ? `, "${esc(a.version)}", exactMatch=true` : '';
+        const install = async () => (await evalWithDownloads(`installPackage(${a.name}${exact})`, status)).trim() === 'true';
+        let ok = await install();
+        let message = unquote(omc_eval('getErrorString()'));
+        // The stored package index may be from before the library was added.
+        // A download finds the file in place, so the old index goes first.
+        if (!ok) {
+          status('Updating the package index…');
+          omc_eval('deleteFile(getHomeDirectoryPath() + "/.openmodelica/libraries/index.json")');
+          await evalWithDownloads('updatePackageIndex()', status);
+          omc_eval('getErrorString()');
+          ok = await install();
+          message = unquote(omc_eval('getErrorString()'));
+        }
+        installError = ok ? '' : message;
+        reply({ ok, message });
+        break;
+      }
+      case 'loadLibrary': {
         const priority = a.version ? `, {"${esc(a.version)}"}` : '';
-        await evalWithDownloads(`installPackage(${name}${exact})`, status);
-        status('Loading ' + name + '…');
-        await evalWithDownloads(`loadModel(${name}${priority})`, status);
+        status('Loading ' + a.name + '…');
+        if ((await evalWithDownloads(`loadModel(${a.name}${priority})`, status)).trim() !== 'true') {
+          const failed = simError('Could not load ' + a.name + '.');
+          if (installError) failed.error = installError + '\n' + failed.error;
+          return reply(failed);
+        }
         reply({ ok: true, message: omc_eval('getErrorString()').trim() });
         break;
       }
@@ -525,11 +574,19 @@ self.onmessage = async (ev) => {
       case 'eval':
         reply(await evalWithDownloads(a.src, status));
         break;
+      case 'fmiGuide':
+        reply({ ok: true, reply: omc_fmi_guide(a.request) });
+        break;
       default:
         throw new Error('unknown command: ' + cmd);
     }
   } catch (e) {
     wlog('EXCEPTION in ' + cmd + ': ' + (e && e.message || e));
     self.postMessage({ type: 'reply', id, ok: false, error: describeError(e, '' + (e && e.message || e)) });
+  }
+  try {
+    if (store) await store.flush();
+  } finally {
+    mine.release();
   }
 };

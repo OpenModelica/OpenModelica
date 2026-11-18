@@ -76,7 +76,6 @@ import SimCodeFunctionUtil;
 import SimCodeUtilShared;
 import StringUtil;
 import System;
-import UnitAbsyn;
 import UnitAbsynBuilder;
 import UnitParserExt;
 import UnorderedMap;
@@ -434,23 +433,33 @@ public function unitConversion
   output Boolean converts = false;
   output Real factor = 1.0;
   output Real offset = 0.0;
-protected
-  UnitAbsyn.Unit u1, u2;
-  Real factor1, factor2, offset1, offset2;
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
   try
     UnitParserExt.initSIUnits();
-    (u1, factor1, offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(to, NONE());
-    (u2, factor2, offset2) := UnitAbsynBuilder.str2unitWithScaleFactor(from, NONE());
-    true := valueEq(u1, u2);
-    factor := factor2/factor1;
-    offset := (offset2 - offset1)/factor1;
-    converts := true;
+    (converts, factor, offset) := UnitAbsynBuilder.convertUnits(to, from);
   else
   end try;
   ErrorExt.rollBack(getInstanceName());
+  if not converts then
+    factor := 1.0;
+    offset := 0.0;
+  end if;
 end unitConversion;
+
+public function radExponent
+  "The exponent of rad in a unit, or 0 where it cannot be parsed."
+  input String unit;
+  output Integer rad = 0;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    UnitParserExt.initSIUnits();
+    (rad, _) := UnitParserExt.angleExponents(unit);
+  else
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+end radExponent;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
  Create a hash table that maps all variable names (crefs) to the simVar objects."
@@ -2377,35 +2386,164 @@ algorithm
 end getSimCode;
 
 public function timeEventTrigger
-  "The e of a relation `time >= e` or `time < e` (or `e <= time`, `e > time`)
-   where e changes only at events. Such a relation switches exactly when time
-   reaches e, which the runtime schedules as a time event."
+  "The time at which a relation timeEventForm recognizes switches: e for
+   `time >= e` and `time < e`, the next number after e (true) for `time > e`
+   and `time <= e`, which still have their old value at time = e. The runtime
+   schedules the switch as a time event."
   input DAE.Exp rel;
-  output Option<DAE.Exp> trigger = NONE();
-protected
-  SimCode.SimCode simCode;
+  output Option<tuple<DAE.Exp, Boolean>> trigger;
 algorithm
-  if not isSimulationCodegen() then
-    return;
-  end if;
-  simCode := getSimCode();
-  trigger := match rel
-    case DAE.RELATION(exp1 = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")), optionExpisASUB = NONE())
-      guard rel.index >= 0 and (match rel.operator case DAE.GREATEREQ() then true; case DAE.LESS() then true; else false; end match)
-            and isEventConstantExp(rel.exp2, simCode)
-      then SOME(rel.exp2);
-    case DAE.RELATION(exp2 = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")), optionExpisASUB = NONE())
-      guard rel.index >= 0 and (match rel.operator case DAE.LESSEQ() then true; case DAE.GREATER() then true; else false; end match)
-            and isEventConstantExp(rel.exp1, simCode)
-      then SOME(rel.exp1);
+  trigger := match timeEventForm(rel)
+    local
+      DAE.Exp e;
+    case SOME((DAE.GREATEREQ(), e)) then SOME((e, false));
+    case SOME((DAE.LESS(), e)) then SOME((e, false));
+    case SOME((DAE.GREATER(), e)) then SOME((e, true));
+    case SOME((DAE.LESSEQ(), e)) then SOME((e, true));
     else NONE();
   end match;
 end timeEventTrigger;
 
 public function isTimeEventRelation
   input DAE.Exp rel;
-  output Boolean b = isSome(timeEventTrigger(rel));
+  output Boolean b = isSome(timeEventForm(rel));
 end isTimeEventRelation;
+
+public function timeEventRelation
+  "A relation timeEventForm recognizes as `time op e`, the form its exact
+   comparison takes so that it switches at its time event; else rel."
+  input DAE.Exp rel;
+  output DAE.Exp outRel;
+algorithm
+  outRel := match (rel, timeEventForm(rel))
+    local
+      DAE.Operator op;
+      DAE.Exp e;
+    case (DAE.RELATION(), SOME((op, e)))
+      then DAE.RELATION(DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT), op, e, rel.index, rel.optionExpisASUB);
+    else rel;
+  end match;
+end timeEventRelation;
+
+protected function timeEventForm
+  "An indexed relation between `time + c` and e, where c and e change only at
+   events, as `time op e - c`: `time + 1800 > pre(t)` is `time > pre(t) - 1800`
+   and `e < time` is `time > e`. A variable an equation `v = time + c` defines
+   counts as `time + c`."
+  input DAE.Exp rel;
+  output Option<tuple<DAE.Operator, DAE.Exp>> form = NONE();
+algorithm
+  if not isSimulationCodegen() then
+    return;
+  end if;
+  form := match rel
+    case DAE.RELATION(optionExpisASUB = NONE())
+      guard rel.index >= 0 and isOrderingOperator(rel.operator)
+      algorithm
+        form := timeSideForm(rel.operator, rel.exp1, rel.exp2);
+        if isNone(form) then
+          form := timeSideForm(mirrorOperator(rel.operator), rel.exp2, rel.exp1);
+        end if;
+      then form;
+    else NONE();
+  end match;
+end timeEventForm;
+
+protected function timeSideForm
+  "`t op e` as `time op e - c` when t is `time + c` and e changes only at events."
+  input DAE.Operator op;
+  input DAE.Exp t;
+  input DAE.Exp e;
+  output Option<tuple<DAE.Operator, DAE.Exp>> form = NONE();
+protected
+  SimCode.SimCode simCode = getSimCode();
+  Option<DAE.Exp> offset = timeOffset(t, simCode);
+  DAE.Exp c;
+algorithm
+  if isSome(offset) and isEventConstantExp(e, simCode) then
+    SOME(c) := offset;
+    form := SOME((op, if Expression.isZero(c) then e else
+      Expression.expSub(if Types.isRealOrSubTypeReal(Expression.typeof(e)) then e else DAE.CAST(DAE.T_REAL_DEFAULT, e), c)));
+  end if;
+end timeSideForm;
+
+protected function timeOffset
+  "SOME(c) if exp is `time + c` with c changing only at events."
+  input DAE.Exp exp;
+  input SimCode.SimCode simCode;
+  input Integer depth = 0;
+  output Option<DAE.Exp> offset;
+protected
+  Option<UnorderedMap<DAE.ComponentRef, DAE.Exp>> defs;
+algorithm
+  offset := match exp
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")) then SOME(DAE.RCONST(0.0));
+    case DAE.CREF() guard depth < 10
+      algorithm
+        defs := getGlobalRoot(Global.timeAliasVars);
+      then match defs
+        local
+          UnorderedMap<DAE.ComponentRef, DAE.Exp> m;
+          DAE.Exp rhs;
+        case SOME(m)
+          then match UnorderedMap.get(exp.componentRef, m)
+            case SOME(rhs) then timeOffset(rhs, simCode, depth + 1);
+            else NONE();
+          end match;
+        else NONE();
+      end match;
+    case DAE.BINARY(operator = DAE.ADD())
+      then if isEventConstantExp(exp.exp2, simCode) then
+             addOffset(timeOffset(exp.exp1, simCode, depth), exp.exp2, false)
+           elseif isEventConstantExp(exp.exp1, simCode) then
+             addOffset(timeOffset(exp.exp2, simCode, depth), exp.exp1, false)
+           else NONE();
+    case DAE.BINARY(operator = DAE.SUB()) guard isEventConstantExp(exp.exp2, simCode)
+      then addOffset(timeOffset(exp.exp1, simCode, depth), exp.exp2, true);
+    else NONE();
+  end match;
+end timeOffset;
+
+protected function addOffset
+  input Option<DAE.Exp> offset;
+  input DAE.Exp c;
+  input Boolean subtract;
+  output Option<DAE.Exp> outOffset;
+algorithm
+  outOffset := match offset
+    local
+      DAE.Exp o;
+    case SOME(o) then SOME(if subtract then Expression.expSub(o, c) else Expression.expAdd(o, c));
+    else NONE();
+  end match;
+end addOffset;
+
+protected function isOrderingOperator
+  input DAE.Operator op;
+  output Boolean b;
+algorithm
+  b := match op
+    case DAE.LESS() then true;
+    case DAE.LESSEQ() then true;
+    case DAE.GREATER() then true;
+    case DAE.GREATEREQ() then true;
+    else false;
+  end match;
+end isOrderingOperator;
+
+protected function mirrorOperator
+  "The operator of `b op' a` for `a op b`."
+  input DAE.Operator op;
+  output DAE.Operator outOp;
+algorithm
+  outOp := match op
+    case DAE.LESS() then DAE.GREATER(op.ty);
+    case DAE.LESSEQ() then DAE.GREATEREQ(op.ty);
+    case DAE.GREATER() then DAE.LESS(op.ty);
+    case DAE.GREATEREQ() then DAE.LESSEQ(op.ty);
+    else op;
+  end match;
+end mirrorOperator;
 
 protected function isTimeIndependentVar
   input DAE.ComponentRef cref;
@@ -3435,6 +3573,7 @@ public function getFMI3Terminals
    by their connector instance (the terminal), preserving the variable order. Used
    by CodegenFMU3 to emit terminalsAndIcons.xml."
   input SimCode.SimCode simCode;
+  input Boolean scalarize "a member per array element, as in FMI 2.0 ModelVariables";
   output list<SimCode.FmiTerminal> terminals = {};
 protected
   SimCodeVar.SimVars vars;
@@ -3461,8 +3600,11 @@ algorithm
     vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
     vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars,
     vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
-  for v in allVars loop
-    om := connectorMemberOf(v);
+  for v in scalarElements(allVars, scalarize) loop
+    om := match v.name
+      case DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix) then NONE();
+      else connectorMemberOf(v);
+    end match;
     if isSome(om) then
       flat := Util.getOption(om) :: flat;
     end if;
@@ -3504,8 +3646,16 @@ algorithm
   // flat model, no annotation/JSON needed) and make each top-level scalar its own
   // single-member terminal; structured connector members are qualified crefs and
   // are already grouped above, so they are skipped here.
-  terminals := listAppend(listReverse(terminals), simplePortTerminals(vars, names));
+  terminals := listAppend(listReverse(terminals), simplePortTerminals(vars, names, scalarize));
 end getFMI3Terminals;
+
+protected function scalarElements
+  input list<SimCodeVar.SimVar> vars;
+  input Boolean scalarize;
+  output list<SimCodeVar.SimVar> elements;
+algorithm
+  elements := if scalarize then List.flatten(list(getScalarElements(v) for v in vars)) else vars;
+end scalarElements;
 
 protected function simplePortTerminals
   "One single-member terminal per top-level scalar input/output variable (the FMU
@@ -3516,11 +3666,12 @@ protected function simplePortTerminals
    variables already part of a structured connector terminal (`taken`)."
   input SimCodeVar.SimVars vars;
   input list<String> taken;
+  input Boolean scalarize;
   output list<SimCode.FmiTerminal> terminals = {};
 protected
   list<String> seen = taken;
 algorithm
-  for v in listAppend(vars.inputVars, vars.outputVars) loop
+  for v in scalarElements(listAppend(vars.inputVars, vars.outputVars), scalarize) loop
     terminals := matchcontinue v
       local
         DAE.ComponentRef cr;
@@ -3556,7 +3707,7 @@ algorithm
       DAE.ComponentRef cref;
       String tname, member, tkind, kind;
       Boolean isExp;
-    case _ guard isSome(var.exportVar)
+    case _ guard isSome(var.exportVar) and isTerminalMemberCausality(var.causality)
       algorithm
         cref := Util.getOption(var.exportVar);
         (tname, member, isExp, tkind) := crefConnectorSplit(cref);
@@ -3569,6 +3720,22 @@ algorithm
     else NONE();
   end matchcontinue;
 end connectorMemberOf;
+
+protected function isTerminalMemberCausality
+  "FMI 3.0, 2.4.9: a terminal member variable is an input, output, parameter or
+   calculated parameter, so connectors of sub-components and, in FMI 2.0, acausal
+   connectors have no terminal."
+  input Option<SimCodeVar.Causality> causality;
+  output Boolean b;
+algorithm
+  b := match causality
+    case SOME(SimCodeVar.INPUT()) then true;
+    case SOME(SimCodeVar.OUTPUT()) then true;
+    case SOME(SimCodeVar.PARAMETER()) then true;
+    case SOME(SimCodeVar.CALCULATED_PARAMETER()) then true;
+    else false;
+  end match;
+end isTerminalMemberCausality;
 
 public function getFMI3VisualizationResource
   "The <name>_visual.xml resource -d=visxml exported, or \"\" if none. CodegenFMU3
@@ -3602,17 +3769,18 @@ algorithm
       DAE.ComponentRef rest;
       DAE.Type ity;
       String id, innerT, innerM, innerK;
+      list<DAE.Subscript> subs;
       Boolean isExp;
-    // the outermost qualifier is itself a connector: bus.a -> terminal bus, member a
-    case DAE.CREF_QUAL(ident = id, identType = ity, componentRef = rest)
+    // the outermost qualifier is itself a connector: bus.a[1] -> terminal bus, member a[1]
+    case DAE.CREF_QUAL(ident = id, identType = ity, subscriptLst = subs, componentRef = rest)
       guard Types.isConnector(ity)
-      then (id, ComponentReference.crefStr(rest), connectorIsExpandable(ity),
-            connectorTypePath(ity));
+      then (ComponentReferenceBasics.printComponentRef2Str(id, subs), ComponentReferenceBasics.printComponentRefStr(rest),
+            connectorIsExpandable(ity), connectorTypePath(ity));
     // a non-connector qualifier wrapping a connector deeper in: comp.bus.a
-    case DAE.CREF_QUAL(ident = id, componentRef = rest)
+    case DAE.CREF_QUAL(ident = id, subscriptLst = subs, componentRef = rest)
       algorithm
         (innerT, innerM, isExp, innerK) := crefConnectorSplit(rest);
-      then (id + "." + innerT, innerM, isExp, innerK);
+      then (ComponentReferenceBasics.printComponentRef2Str(id, subs) + "." + innerT, innerM, isExp, innerK);
   end match;
 end crefConnectorSplit;
 
@@ -4047,6 +4215,55 @@ algorithm
             else intReal(nnz) / intReal(size * size) < (if isLinear then maxDensityLinear else maxDensityNonlinear)
                  or size > minSize;
 end useSparseSolver;
+
+public function isCommonSubexpression
+  "A common subexpression temporary ($cse) holds a function call result. It is
+   no Modelica variable and does not count in pre(v) == v at the end of an event
+   iteration (#9598)."
+  input SimCodeVar.SimVar var;
+  output Boolean b = StringUtil.startsWith(ComponentReferenceBasics.crefFirstIdent(var.name), "$cse");
+end isCommonSubexpression;
+
+public function discreteChangeRanges
+  "The variables that checkForDiscreteChanges compares, as index ranges into
+   the modelData variable arrays: for the discrete Real, the Integer, the Boolean
+   and the String variables in turn the number of ranges, then each range as its
+   start and its end (exclusive)."
+  input SimCodeVar.SimVars vars;
+  output list<Integer> ranges;
+algorithm
+  ranges := List.flatten({
+    comparedRanges(vars.discreteAlgVars, listLength(vars.stateVars) + listLength(vars.derivativeVars) + listLength(vars.algVars)),
+    comparedRanges(vars.intAlgVars, 0),
+    comparedRanges(vars.boolAlgVars, 0),
+    comparedRanges(vars.stringAlgVars, 0)});
+end discreteChangeRanges;
+
+protected function comparedRanges
+  input list<SimCodeVar.SimVar> vars;
+  input Integer first "the index of the first of vars";
+  output list<Integer> ranges = {};
+protected
+  Integer i = first, n = 0, start = -1;
+algorithm
+  for var in vars loop
+    if isCommonSubexpression(var) then
+      if start >= 0 then
+        ranges := i :: start :: ranges;
+        n := n + 1;
+        start := -1;
+      end if;
+    elseif start < 0 then
+      start := i;
+    end if;
+    i := i + 1;
+  end for;
+  if start >= 0 then
+    ranges := i :: start :: ranges;
+    n := n + 1;
+  end if;
+  ranges := n :: listReverse(ranges);
+end comparedRanges;
 
 annotation(__OpenModelica_Interface="codegen_util");
 end SimCodeCodegenUtil;

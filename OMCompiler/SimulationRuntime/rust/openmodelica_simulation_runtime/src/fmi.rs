@@ -161,7 +161,8 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
         for i in 0..count as usize {
             let a = unsafe { &mut (*base.add(i)).attribute };
             alloc_scalar_real_array(&mut a.start);
-            alloc_scalar_real_array(&mut a.nominal);
+            alloc_scalar_real_array(&mut a.positiveNominal);
+            alloc_scalar_real_array(&mut a.nominalSign);
             alloc_scalar_real_array(&mut a.min);
             alloc_scalar_real_array(&mut a.max);
         }
@@ -373,8 +374,8 @@ pub extern "C" fn checkRelations(data: *mut DATA) -> modelica_boolean {
     0
 }
 
-/// Whether a discrete variable moved away from its `pre` value. `$cse` variables
-/// are the backend's common subexpressions, not discrete state, and C skips them.
+/// Whether a discrete variable moved away from its `pre` value, over the array
+/// indices `md.discreteChangeRanges` names.
 #[unsafe(no_mangle)]
 pub extern "C" fn checkForDiscreteChanges(data: *mut DATA, _thread_data: *mut threadData_t) -> modelica_boolean {
     let (md, si, sd) = unsafe { (&*(*data).modelData, &*(*data).simulationInfo, &**(*data).localData) };
@@ -389,13 +390,18 @@ pub extern "C" fn checkForDiscreteChanges(data: *mut DATA, _thread_data: *mut th
         );
     }
 
+    let mut r = md.discreteChangeRanges;
+    let mut ranges = || unsafe {
+        let n = *r as usize;
+        let pairs = core::slice::from_raw_parts(r.add(1), 2 * n);
+        r = r.add(1 + 2 * n);
+        pairs.chunks_exact(2).flat_map(|p| p[0] as usize..p[1] as usize)
+    };
+
     macro_rules! scan {
-        ($count:expr, $data:expr, $index:expr, $pre:expr, $live:expr, $first:expr) => {
-            for a in $first..$count as usize {
+        ($data:expr, $index:expr, $pre:expr, $live:expr) => {
+            for a in ranges() {
                 let var = unsafe { &*$data.add(a) };
-                if is_cse(var.info.name) {
-                    continue;
-                }
                 let base = unsafe { *$index.add(a) };
                 for k in 0..var.dimension.scalar_length {
                     let (v1, v2) = unsafe { (*$pre.add(base + k), *$live.add(base + k)) };
@@ -418,37 +424,22 @@ pub extern "C" fn checkForDiscreteChanges(data: *mut DATA, _thread_data: *mut th
         };
     }
 
-    let first_discrete_real = (md.nVariablesRealArray - md.nDiscreteRealArray).max(0) as usize;
+    scan!(md.realVarsData, si.realVarsIndex, si.realVarsPre, sd.realVars);
     scan!(
-        md.nVariablesRealArray,
-        md.realVarsData,
-        si.realVarsIndex,
-        si.realVarsPre,
-        sd.realVars,
-        first_discrete_real
-    );
-    scan!(
-        md.nVariablesIntegerArray,
         md.integerVarsData,
         si.integerVarsIndex,
         si.integerVarsPre,
-        sd.integerVars,
-        0
+        sd.integerVars
     );
     scan!(
-        md.nVariablesBooleanArray,
         md.booleanVarsData,
         si.booleanVarsIndex,
         si.booleanVarsPre,
-        sd.booleanVars,
-        0
+        sd.booleanVars
     );
 
-    for a in 0..md.nVariablesStringArray as usize {
+    for a in ranges() {
         let var = unsafe { &*md.stringVarsData.add(a) };
-        if is_cse(var.info.name) {
-            continue;
-        }
         let base = unsafe { *si.stringVarsIndex.add(a) };
         for k in 0..var.dimension.scalar_length {
             let (v1, v2) = unsafe { (*si.stringVarsPre.add(base + k), *sd.stringVars.add(base + k)) };
@@ -849,19 +840,6 @@ pub extern "C" fn OpenModelica_parseFmuResourcePath(path: *const c_char) -> *con
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/// C's `strncmp(name, "$cse", 4) == 0`.
-fn is_cse(name: *const c_char) -> bool {
-    if name.is_null() {
-        return false;
-    }
-    for (i, c) in b"$cse".iter().enumerate() {
-        if unsafe { *name.add(i) } as u8 != *c {
-            return false;
-        }
-    }
-    true
-}
 
 fn cstr(p: *const c_char) -> String {
     if p.is_null() {

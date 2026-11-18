@@ -48,6 +48,8 @@ pub struct omc_result_signal {
     pub negate: c_int,
     /// `OMC_RESULT_KIND_COLUMN` computed once at initialization: stored like a parameter.
     pub unvarying: c_int,
+    /// An alias of a variable or parameter.
+    pub alias: c_int,
     /// FMI's `relativeQuantity` (Modelica's `absoluteValue = false`).
     pub relative_quantity: c_int,
     /// An enumeration's type name and `n_literals` literals; null otherwise.
@@ -68,6 +70,7 @@ struct Signal {
     column: u32,
     negate: c_int,
     unvarying: bool,
+    alias: bool,
     /// The enumeration type's name and literals.
     enumeration: Option<(String, Vec<String>)>,
 }
@@ -160,6 +163,7 @@ impl Signal {
             column: if s.kind == OMC_RESULT_KIND_TIME { 0 } else { s.column },
             negate: s.negate,
             unvarying: s.unvarying != 0,
+            alias: s.alias != 0,
             enumeration: if s.declared_type.is_null() {
                 None
             } else {
@@ -236,8 +240,8 @@ impl openmodelica_mat_writer::Out for FileOut {
 enum Kind {
     Mat(Mat4Stream),
     Arrow(ArrowStream),
-    /// `(column, negation, integer-valued)` per written column, time first.
-    Csv(Vec<(usize, Neg, bool)>),
+    /// `(source, negation, integer-valued)` per written column, time first.
+    Csv(Vec<(CsvSrc, Neg, bool)>),
     Plt {
         rows: Vec<f64>,
         params: Vec<f64>,
@@ -359,47 +363,65 @@ impl Threaded {
     }
 }
 
-fn csv_columns(signals: &[Signal], col_types: &[ColTy]) -> Vec<(usize, Neg, bool)> {
-    // C's csv: time, every kept variable, then the aliases that are not of a parameter.
+#[derive(Clone, Copy)]
+enum CsvSrc {
+    Row(usize),
+    Value(f64),
+}
+
+/// Time, every kept variable, then the aliases. A parameter is written only
+/// when it is the value of an alias.
+fn csv_columns<'a>(signals: &'a [Signal], col_types: &[ColTy], params: &[f64]) -> Vec<(&'a str, CsvSrc, Neg, bool)> {
+    let mut p = params.iter();
     signals
         .iter()
-        .filter(|s| s.kind != OMC_RESULT_KIND_PARAMETER && s.ty != VarTy::String)
-        .map(|s| {
-            let col = if s.kind == OMC_RESULT_KIND_TIME {
-                0
-            } else {
-                s.column as usize
+        .filter_map(|s| {
+            let value = (s.kind == OMC_RESULT_KIND_PARAMETER).then(|| p.next().copied().unwrap_or(0.0));
+            if s.ty == VarTy::String || (value.is_some() && !s.alias) {
+                return None;
+            }
+            let (src, int) = match value {
+                Some(v) => (CsvSrc::Value(v), s.ty != VarTy::Real),
+                None => {
+                    let col = if s.kind == OMC_RESULT_KIND_TIME {
+                        0
+                    } else {
+                        s.column as usize
+                    };
+                    (
+                        CsvSrc::Row(col),
+                        matches!(col_types.get(col), Some(ColTy::I32 | ColTy::Bool)),
+                    )
+                }
             };
-            let int = matches!(col_types.get(col), Some(ColTy::I32 | ColTy::Bool));
-            (col, s.neg(), int)
+            Some((s.name.as_str(), src, s.neg(), int))
         })
         .collect()
 }
 
-fn csv_header(signals: &[Signal]) -> String {
+fn csv_header(cols: &[(&str, CsvSrc, Neg, bool)]) -> String {
     let mut line = String::new();
-    for (i, s) in signals
-        .iter()
-        .filter(|s| s.kind != OMC_RESULT_KIND_PARAMETER && s.ty != VarTy::String)
-        .enumerate()
-    {
+    for (i, (name, ..)) in cols.iter().enumerate() {
         if i > 0 {
             line.push(',');
         }
         line.push('"');
-        line.push_str(&s.name.replace('"', "\"\""));
+        line.push_str(&name.replace('"', "\"\""));
         line.push('"');
     }
     line.push('\n');
     line
 }
 
-fn csv_line(out: &mut String, row: &[f64], cols: &[(usize, Neg, bool)]) {
-    for (i, &(col, neg, int)) in cols.iter().enumerate() {
+fn csv_line(out: &mut String, row: &[f64], cols: &[(CsvSrc, Neg, bool)]) {
+    for (i, &(src, neg, int)) in cols.iter().enumerate() {
         if i > 0 {
             out.push(',');
         }
-        let v = neg.apply(row.get(col).copied().unwrap_or(0.0));
+        let v = neg.apply(match src {
+            CsvSrc::Row(col) => row.get(col).copied().unwrap_or(0.0),
+            CsvSrc::Value(v) => v,
+        });
         if int {
             out.push_str(&format!("{}", v as i64));
         } else {
@@ -559,8 +581,9 @@ fn open_where(
             Kind::Arrow(s)
         }
         "csv" => {
-            let _ = out.0.write_all(csv_header(&signals).as_bytes());
-            Kind::Csv(csv_columns(&signals, col_types))
+            let cols = csv_columns(&signals, col_types, params);
+            let _ = out.0.write_all(csv_header(&cols).as_bytes());
+            Kind::Csv(cols.into_iter().map(|(_, src, neg, int)| (src, neg, int)).collect())
         }
         "plt" => Kind::Plt {
             rows: Vec::new(),
@@ -783,6 +806,7 @@ mod tests {
                 column: i as u32,
                 negate: 0,
                 unvarying: false,
+                alias: false,
                 enumeration: None,
             })
             .collect()
@@ -838,6 +862,33 @@ mod tests {
             contains(&bytes[entry + 1..], b"P.Mode(").is_none(),
             "one entry per type"
         );
+    }
+
+    #[test]
+    fn csv_writes_an_alias_of_a_parameter() {
+        let mut sigs = signals();
+        let param = |name: &str, alias, negate| Signal {
+            name: name.to_owned(),
+            kind: OMC_RESULT_KIND_PARAMETER,
+            column: 0,
+            negate,
+            alias,
+            ..signals().remove(1)
+        };
+        sigs.push(param("p", false, OMC_RESULT_NEGATE_NONE));
+        sigs.push(param("a", true, OMC_RESULT_NEGATE_ARITHMETIC));
+        let path = std::env::temp_dir()
+            .join("omc_capi_csv_parameter_alias.csv")
+            .to_string_lossy()
+            .into_owned();
+        let row = [0.0, 1.0];
+        let types = [ColTy::F64, ColTy::F64];
+        let mut w = open_where(&path, "csv", sigs, &types, &[2.5, 2.5], &row, 0.0, 1.0, false, 0, false).expect("open");
+        w.emit(&row);
+        assert!(w.finish());
+        let text = std::fs::read_to_string(&path).expect("read back");
+        let _ = std::fs::remove_file(&path);
+        assert_eq!(text, "\"time\",\"x\",\"a\"\n0,1,-2.5\n");
     }
 
     /// The writer thread must leave byte for byte the file the direct path

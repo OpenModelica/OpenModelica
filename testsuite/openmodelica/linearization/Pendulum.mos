@@ -47,7 +47,7 @@ readFile("linearized_model.mo");
 // ""
 // record SimulationResult
 //     resultFile = "Pendulum_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=Pendulum.csv -l=0.02'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=Pendulum.csv -l=0.02'",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 0.020000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

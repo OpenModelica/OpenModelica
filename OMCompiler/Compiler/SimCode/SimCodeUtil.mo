@@ -201,6 +201,46 @@ algorithm
   setGlobalRoot(Global.timeIndependentVars, SOME(vars));
 end setTimeIndependentVars;
 
+protected function setTimeAliasVars
+  "Records the right-hand side of each equation `v = time` or `v = x + c`
+   (or `x - c`), from which SimCodeCodegenUtil.timeEventForm finds the
+   variables that are `time + c`."
+  input BackendDAE.EqSystems systems;
+protected
+  UnorderedMap<DAE.ComponentRef, DAE.Exp> defs = UnorderedMap.new<DAE.Exp>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  DAE.ComponentRef cr;
+  DAE.Exp rhs;
+algorithm
+  for syst in systems loop
+    if not BackendDAEUtil.isClockedSyst(syst) then
+      for eq in BackendEquation.equationList(syst.orderedEqs) loop
+        () := match eq
+          case BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = rhs) guard isTimeShift(rhs)
+            algorithm UnorderedMap.add(cr, rhs, defs); then ();
+          case BackendDAE.EQUATION(exp = rhs, scalar = DAE.CREF(componentRef = cr)) guard isTimeShift(rhs)
+            algorithm UnorderedMap.add(cr, rhs, defs); then ();
+          case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = rhs) guard isTimeShift(rhs)
+            algorithm UnorderedMap.add(cr, rhs, defs); then ();
+          else ();
+        end match;
+      end for;
+    end if;
+  end for;
+  setGlobalRoot(Global.timeAliasVars, SOME(defs));
+end setTimeAliasVars;
+
+protected function isTimeShift
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")) then true;
+    case DAE.BINARY(operator = DAE.ADD(ty = DAE.T_REAL())) then true;
+    case DAE.BINARY(operator = DAE.SUB(ty = DAE.T_REAL())) then true;
+    else false;
+  end match;
+end isTimeShift;
+
 public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
@@ -286,6 +326,7 @@ protected
   Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
   SimCode.SpatialDistributionInfo spatialInfo;
   BackendDAE.Variables emptyVars;
   HashTableSimCodeEqCache.HashTable eqCache;
@@ -349,6 +390,7 @@ algorithm
                                 symjacs=symJacs,
                                 eventInfo=eventInfo) := dlow.shared;
     setTimeIndependentVars(globalKnownVars);
+    setTimeAliasVars(dlow.eqs);
 
     removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 
@@ -415,7 +457,7 @@ algorithm
     discreteModelVars := BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
     if debug then execStat("simCode: extractDiscreteModelVars"); end if;
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
-    (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
+    (delayedExps, maxDelayedExpIndex, delayedLoops) := extractDelayedExpressions(dlow);
     spatialInfo := extractSpatialDistributionInfo(dlow);
     execStat("simCode: created of all other equations (e.g. parameter, nominal, assert, etc)");
 
@@ -702,7 +744,7 @@ algorithm
       discreteModelVars           = discreteModelVars,
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
-      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, {}),
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, delayedLoops),
       spatialInfo                 = spatialInfo,
       jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
@@ -931,6 +973,57 @@ algorithm
   end match;
 end collectClockedVars1;
 
+protected function addStateDerivativeAliases
+  "Adds der(v) as an alias of der(x) for each alias v = x or v = -x of a state x."
+  input array<list<SimCodeVar.SimVar>> simVars;
+  input Mutable<HashSet.HashSet> hs;
+protected
+  UnorderedMap<DAE.ComponentRef, SimCodeVar.SimVar> ders;
+  list<SimCodeVar.SimVar> aliases = {};
+  SimCodeVar.SimVar derVar;
+  DAE.ComponentRef name, state;
+  Option<SimCodeVar.SimVar> stateDer;
+algorithm
+  if Config.simCodeTarget() == "Cpp" then
+    return;
+  end if;
+  ders := UnorderedMap.new<SimCodeVar.SimVar>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for v in Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.derivative)) loop
+    UnorderedMap.add(v.name, v, ders);
+  end for;
+  for alias in Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.alias)) loop
+    stateDer := match alias.aliasvar
+      case SimCodeVar.ALIAS(varName = state) then UnorderedMap.get(ComponentReference.crefPrefixDer(state), ders);
+      case SimCodeVar.NEGATEDALIAS(varName = state) then UnorderedMap.get(ComponentReference.crefPrefixDer(state), ders);
+      else NONE();
+    end match;
+    name := ComponentReference.crefPrefixDer(alias.name);
+    if isSome(stateDer) and not StringUtil.startsWith(ComponentReferenceBasics.crefFirstIdent(alias.name), "$")
+       and not BaseHashSet.has(name, Mutable.access(hs)) then
+      SOME(derVar) := stateDer;
+      derVar.aliasvar := match alias.aliasvar
+        case SimCodeVar.NEGATEDALIAS() then SimCodeVar.NEGATEDALIAS(derVar.name);
+        else SimCodeVar.ALIAS(derVar.name);
+      end match;
+      derVar.name := name;
+      derVar.comment := if alias.comment == "" then "" else "der(" + alias.comment + ")";
+      derVar.varKind := BackendDAE.VARIABLE();
+      derVar.source := alias.source;
+      derVar.arrayCref := NONE();
+      derVar.numArrayElement := {};
+      derVar.isProtected := alias.isProtected;
+      derVar.hideResult := alias.hideResult;
+      derVar.isEncrypted := alias.isEncrypted;
+      derVar.exportVar := if isSome(alias.exportVar) then SOME(name) else NONE();
+      aliases := derVar :: aliases;
+      Mutable.update(hs, BaseHashSet.add(name, Mutable.access(hs)));
+    end if;
+  end for;
+  for v in aliases loop
+    addSimVar(v, SimVarsIndex.alias, simVars);
+  end for;
+end addStateDerivativeAliases;
+
 protected function addTempVars
   input array<list<SimCodeVar.SimVar>> simVars;
   input list<SimCodeVar.SimVar> tempVars;
@@ -1112,6 +1205,10 @@ algorithm
         Option<SimCode.LinearSystem> optLinearSyst;
         SimCode.SimEqSystem system;
         BackendDAE.EquationAttributes eqAttr;
+        DAE.Exp cond;
+        list<SimCode.SimEqSystem> branchEqns;
+        list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> branches;
+        list<SimCode.JacobianMatrix> branchSymJacs;
 
       // nonlinear case
       case SimCode.SES_NONLINEAR(nlSystem=nlSyst as SimCode.NONLINEARSYSTEM(), alternativeTearing=optNlSyst, eqAttr=eqAttr) algorithm
@@ -1146,6 +1243,21 @@ algorithm
         end if;
         system := SimCode.SES_LINEAR(linearSyst, optLinearSyst, eqAttr);
         modelInfo.linearSystems := system::modelInfo.linearSystems;
+      then system;
+
+      // The templates do not look for systems inside an if-equation, so these are always added to modelInfo.
+      case system as SimCode.SES_IFEQUATION() algorithm
+        branches := {};
+        for branch in system.ifbranches loop
+          (cond, branchEqns) := branch;
+          (branchEqns, modelInfo, branchSymJacs) := addAlgebraicLoopsModelInfo(branchEqns, modelInfo);
+          symJacs := listAppend(branchSymJacs, symJacs);
+          branches := (cond, branchEqns) :: branches;
+        end for;
+        system.ifbranches := listReverse(branches);
+        (branchEqns, modelInfo, branchSymJacs) := addAlgebraicLoopsModelInfo(system.elsebranch, modelInfo);
+        system.elsebranch := branchEqns;
+        symJacs := listAppend(branchSymJacs, symJacs);
       then system;
 
       else eqn;
@@ -2086,6 +2198,17 @@ algorithm
   end match;
 end partitionKindToClockIndex;
 
+protected function isMixedSystem
+  "True if a relation in the equations depends on the iteration variables."
+  input list<BackendDAE.Equation> eqns;
+  input list<BackendDAE.Var> vars;
+  output Boolean mixedSystem;
+algorithm
+  (mixedSystem, _) := BackendEquation.iterationVarsinRelations(
+    BackendEquation.replaceDerOpInEquationList(eqns),
+    BackendVariable.listVar1(list(BackendVariable.transformXToXd(v) for v in vars)));
+end isMixedSystem;
+
 protected function createEquation
   input Integer eqNum;
   input Integer varNum;
@@ -2251,7 +2374,7 @@ algorithm
           resEqs := fixNonlinearResidualIndices(resEqs);
           cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
           (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-          eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
+          eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, isMixedSystem({eqn}, {v}), false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
           uniqueEqIndex := uniqueEqIndex+1;
         end try;
       then (eqSystlst, uniqueEqIndex,tempvars);
@@ -4922,17 +5045,16 @@ algorithm
 end isSimEqSys;
 
 protected function collectDelayExpressions
-"Put expression into a list if it is a call to delay().
-Useable as a function parameter for Expression.traverseExpression."
-  input DAE.Exp e;
-  input list<DAE.Exp> acc;
-  output DAE.Exp outExp;
-  output list<DAE.Exp> outAcc;
+  "Collects the delay calls and the iterators of the enclosing reductions and
+   for-loops. Use with BackendDAEUtil.traverseBackendDAEExpsWithIterators."
+  input output DAE.Exp e;
+  input list<DAE.ReductionIterator> iters;
+  output Boolean cont = true;
+  input output list<tuple<DAE.Exp, list<DAE.ReductionIterator>>> acc;
 algorithm
-  (outExp,outAcc) := match e
-    case DAE.CALL(path = Absyn.IDENT("delay"))
-      then (e, e :: acc);
-    else (e,acc);
+  acc := match e
+    case DAE.CALL(path = Absyn.IDENT("delay")) then (e, iters) :: acc;
+    else acc;
   end match;
 end collectDelayExpressions;
 
@@ -4955,26 +5077,58 @@ algorithm
 end updateDelayExpressions;
 
 public function extractDelayedExpressions
+  "Returns the delay calls with a constant index, the number of buffers, and the
+   delay calls whose index depends on iterators. Equal calls share an index and
+   are returned once, so that each buffer is stored once per step."
   input BackendDAE.BackendDAE dlow;
-  output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
-  output Integer maxDelayedExpIndex;
+  output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps = {};
+  output Integer maxDelayedExpIndex = -1;
+  output list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops = {};
+protected
+  list<tuple<DAE.Exp, list<DAE.ReductionIterator>>> exps;
+  list<DAE.ReductionIterator> iters, delay_iters;
+  list<String> names;
+  DAE.Exp index, last, e, delay, delayMax, stop;
+  Integer i;
+  UnorderedSet<DAE.Exp> indices = UnorderedSet.new(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
 algorithm
-  (delayedExps, maxDelayedExpIndex) := matchcontinue dlow
-    local
-      list<DAE.Exp> exps;
-    case _
-      algorithm
-        (_,exps) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (collectDelayExpressions, {}));
-        delayedExps := List.map(exps, extractIdAndExpFromDelayExp);
-        maxDelayedExpIndex := List.applyAndFold(delayedExps, intMax, Util.tuple21, -1);
-      then
-        (delayedExps, maxDelayedExpIndex+1);
+  exps := BackendDAEUtil.traverseBackendDAEExpsWithIterators(dlow, collectDelayExpressions, {});
+  for tpl in exps loop
+    (DAE.CALL(expLst = {index, e, delay, delayMax}), iters) := tpl;
+    index := ExpressionSimplify.simplify(index);
+    if not UnorderedSet.add(index, indices) then
+      continue;
+    end if;
+    names := {};
+    delay_iters := {};
+    for it in iters loop
+      if not listMember(it.id, names) and Expression.expHasCrefName(index, it.id) then
+        names := it.id :: names;
+        delay_iters := it :: delay_iters;
+      end if;
+    end for;
+
+    if listEmpty(delay_iters) then
+      i := match index
+        case DAE.ICONST(i) then i;
+        else algorithm
+          Error.addInternalError(getInstanceName() + " failed for " + ExpressionBasics.printExpStr(Util.tuple21(tpl)), sourceInfo());
+        then fail();
+      end match;
+      delayedExps := (i, (e, delay, delayMax)) :: delayedExps;
     else
-      algorithm
-        Error.addInternalError("function extractDelayedExpressions failed", sourceInfo());
-      then
-        fail();
-  end matchcontinue;
+      delayedLoops := (index, (e, delay, delayMax), list(FindZeroCrossings.createIterator(it) for it in delay_iters)) :: delayedLoops;
+      last := index;
+      for it in delay_iters loop
+        DAE.RANGE(stop = stop) := it.exp;
+        last := Expression.replaceCrefBottomUp(last, ComponentReferenceBasics.makeCrefIdent(it.id, DAE.T_INTEGER_DEFAULT, {}), stop);
+      end for;
+      (DAE.ICONST(i), _) := ExpressionSimplify.simplify(last);
+    end if;
+    maxDelayedExpIndex := max(i, maxDelayedExpIndex);
+  end for;
+  delayedExps := listReverse(delayedExps);
+  maxDelayedExpIndex := maxDelayedExpIndex + 1;
 end extractDelayedExpressions;
 
 public function extractJacobianDelayedExpressions
@@ -5584,7 +5738,7 @@ algorithm
       (resEqs, uniqueEqIndex, tempvars, crefs) := createNonlinearResidualEquationsSingleComplex(e1, e2, source, eqAttr, iuniqueEqIndex, itempvars, crefs);
       resEqs := fixNonlinearResidualIndices(resEqs);
       (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, isMixedSystem({inEquation}, inVars), false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
     case BackendDAE.COMPLEX_EQUATION(attr=eqAttr) algorithm
       crefs := List.map(inVars, BackendVariable.varCref);
@@ -5600,7 +5754,7 @@ algorithm
       (resEqs, (uniqueEqIndex, _), tempvars) := createNonlinearResidualEquations({inEquation}, (iuniqueEqIndex, 0), itempvars, funcTree);
       resEqs := fixNonlinearResidualIndices(resEqs);
       (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, isMixedSystem({inEquation}, inVars), false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
     // failure
     case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2) algorithm
@@ -6171,7 +6325,7 @@ algorithm
       if not listEmpty(solvedVars) then
         result := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1,
                       {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, true, eqAttr)},
-                   solvedVars, 0, listLength(vars), NONE(), false, false, false, clockIndex), NONE(), eqAttr)};
+                   solvedVars, 0, listLength(vars), NONE(), false, isMixedSystem(eqns, vars), false, clockIndex), NONE(), eqAttr)};
         ouniqueEqIndex := iuniqueEqIndex+2;
       else
         result := {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, false, eqAttr)};
@@ -6563,7 +6717,7 @@ protected
   list<SimCode.SimEqSystem> simvarasserts;
   list<DAE.Algorithm> varasserts;
 algorithm
-  (outUniqueEqIndex, outParameterEquations, varasserts, nFixedParameters, _) := BackendVariable.traverseBackendDAEVars(globalKnownVars, createSimEqsForGlobalKnownVars, (outUniqueEqIndex, outParameterEquations, {}, 0, HashSetExp.emptyHashSetSized(Util.nextPrime(globalKnownVars.numberOfVars))));
+  (outUniqueEqIndex, outParameterEquations, varasserts, nFixedParameters, _) := BackendVariable.traverseBackendDAEVars(globalKnownVars, function createSimEqsForGlobalKnownVars(globalKnownVars = globalKnownVars), (outUniqueEqIndex, outParameterEquations, {}, 0, HashSetExp.emptyHashSetSized(Util.nextPrime(globalKnownVars.numberOfVars))));
 
   if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
     print("\nparameters in order (" + intString(listLength(outParameterEquations)) + ")\n" + UNDERLINE + "\n");
@@ -6586,6 +6740,7 @@ protected function createSimEqsForGlobalKnownVars
  author: ptaeuber"
   input output BackendDAE.Var globalKnownVar;
   input tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> inTuple;
+  input BackendDAE.Variables globalKnownVars;
   output tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> outTuple;
 protected
   Integer uniqueEqIndex, nFixedParameters;
@@ -6606,7 +6761,8 @@ algorithm
   // Create SimCode Equation for special globalKnownVars
   if (BackendVariable.isParam(globalKnownVar) and
          ((BackendVariable.varFixed(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
-      or (BackendVariable.varHasStartValue(globalKnownVar) and not BackendVariable.varHasConstantStartExp(globalKnownVar))))
+      or (BackendVariable.varHasStartValue(globalKnownVar) and not BackendVariable.varHasConstantStartExp(globalKnownVar)
+          and not isStartSolvedInInitialization(globalKnownVar, globalKnownVars))))
     or (BackendVariable.isVarAlg(globalKnownVar) and not BackendVariable.isInput(globalKnownVar)) and BackendVariable.varFixed(globalKnownVar)
     or (BackendVariable.isExtObj(globalKnownVar) and BackendVariable.varHasBindExp(globalKnownVar) and BackendVariable.varFixed(globalKnownVar))
    then
@@ -6662,6 +6818,17 @@ algorithm
 
   outTuple := (uniqueEqIndex, parameterEquations, varasserts, nFixedParameters, tplExpHT);
 end createSimEqsForGlobalKnownVars;
+
+protected function isStartSolvedInInitialization
+  "The guess of an unfixed parameter is computed in the initial system if it
+   depends on parameters computed there, see Initialization.collectInitialVars."
+  input BackendDAE.Var var;
+  input BackendDAE.Variables globalKnownVars;
+  output Boolean b;
+algorithm
+  b := not (BackendVariable.varFixed(var) or BackendVariable.varHasBindExp(var) or
+            BackendVariable.areAllCrefsPrimaryParameters(Expression.getAllCrefs(BackendVariable.varStartValue(var)), globalKnownVars));
+end isStartSolvedInInitialization;
 
 
 protected function createInitialAssignmentsFromStart
@@ -7488,7 +7655,7 @@ protected
   BackendDAE.EqSystems systs1, systs2;
   BackendDAE.Shared shared;
   Mutable<HashSet.HashSet> hs;
-  Unit.UnitToStringTable unitStrings = UnorderedMap.new<String>(Unit.hash, Unit.isEqual);
+  UnorderedMap<String, String> derivativeUnits = UnorderedMap.new<String>(stringHashDjb2, stringEq);
   array<list<SimCodeVar.SimVar>> simVars = arrayCreate(size(SimVarsIndex,1), {});
   Integer primeSize;
   list<DAE.ComponentRef> iterationVarsLst;
@@ -7523,55 +7690,56 @@ algorithm
 
   // ### simulation ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: variable list"); end if;
 
   // Extract from known variable list
-  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: known variable list"); end if;
 
   // Extract from localKnownVars variable list
-  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: local known variables list"); end if;
 
   // Extract from removed variable list
-  simVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: removed variables list"); end if;
 
   // Extract from external object list
-  simVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: external object list"); end if;
 
 
   // ### initialization ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=NONE(), iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=NONE(), iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: variable list (init)"); end if;
 
   // Extract from known variable list
-  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: known variable list (init)"); end if;
 
   // Extract from localKnownVars variable list
-  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: local known variables list (init)"); end if;
 
   // Extract from removed variable list
-  simVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: removed variables list (init)"); end if;
 
   // Extract from external object list
-  simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
   if debug then execStat("createVars: external object list (init)"); end if;
 
   // ### initialization at lambda = 0 ###
   // Its loops can be torn differently and introduce helper variables of their own.
   if isSome(inInitDAE_lambda0) then
     SOME(BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, aliasVars=aliasVars2))) := inInitDAE_lambda0;
-    simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=NONE(), iterationVars=iterationVars, unitStrings=unitStrings), simVars);
+    simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=NONE(), iterationVars=iterationVars, derivativeUnits=derivativeUnits), simVars);
     if debug then execStat("createVars: variable list (init lambda0)"); end if;
   end if;
 
+  addStateDerivativeAliases(simVars, hs);
   addTempVars(simVars, tempvars);
   if debug then execStat("createVars: addTempVars"); end if;
   //BaseHashSet.printHashSet(hs);
@@ -7636,11 +7804,11 @@ protected function extractVarsFromList
   input Mutable<HashSet.HashSet> hs;
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
   input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "optional set of iterationVars in InitializationMode";
-  input Unit.UnitToStringTable unitStrings;
+  input UnorderedMap<String, String> derivativeUnits;
 algorithm
   if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
     /* ignore variable, since they are treated by kind in the codegen */
-    extractVarFromVar(var, aliasVars, vars, simVars, hs, timeInterval, iterationVars, unitStrings);
+    extractVarFromVar(var, aliasVars, vars, simVars, hs, timeInterval, iterationVars, derivativeUnits);
   //  print("Added  " + ComponentReferenceBasics.printComponentRefStr(inVar.varName) + "\n");
   //else
   //  print("Skiped " + ComponentReferenceBasics.printComponentRefStr(inVar.varName) + "\n");
@@ -7657,7 +7825,7 @@ protected function extractVarFromVar
   input Mutable<HashSet.HashSet> hs "all processed crefs";
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
   input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "optional set of iterationVars in InitializationMode" ;
-  input Unit.UnitToStringTable unitStrings;
+  input UnorderedMap<String, String> derivativeUnits;
 protected
   list<DAE.ComponentRef> scalar_crefs;
   BackendDAE.Var scalarVar;
@@ -7699,11 +7867,11 @@ algorithm
         scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
         scalarVar.bindExp := binding_opt;
         scalarVar.varType := ComponentReference.crefTypeFull(cref);
-        extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars, unitStrings);
+        extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars, derivativeUnits);
       end for;
     else
       // extract the sim var
-      extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars, unitStrings);
+      extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars, derivativeUnits);
       // add expanded array elements to processed crefs to avoid their redeclaration
       // as they may appear again as algebraic variables of the initialization problem
       for cref in scalar_crefs loop
@@ -7712,7 +7880,7 @@ algorithm
     end if;
   else
     // extract the sim var
-    extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars, unitStrings);
+    extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars, derivativeUnits);
   end if;
 end extractVarFromVar;
 
@@ -7768,7 +7936,7 @@ protected function extractVarFromVar2
   input Mutable<HashSet.HashSet> hs "all processed crefs";
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
   input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "optional set of iterationVars in InitializationMode" ;
-  input Unit.UnitToStringTable unitStrings;
+  input UnorderedMap<String, String> derivativeUnits;
 protected
   SimCodeVar.SimVar simVar;
   SimCodeVar.SimVar derivSimvar;
@@ -7788,7 +7956,7 @@ algorithm
   // update HashSet
   Mutable.update(hs, BaseHashSet.add(simVar.name, Mutable.access(hs)));
   if (not isalias) and (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)) then
-    derivSimvar := derVarFromStateVar(simVar, timeInterval, unitStrings, iterationVars);
+    derivSimvar := derVarFromStateVar(simVar, timeInterval, derivativeUnits, iterationVars);
     Mutable.update(hs, BaseHashSet.add(derivSimvar.name, Mutable.access(hs)));
   else
     derivSimvar := simVar; // Just in case
@@ -7908,14 +8076,158 @@ algorithm
   Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(index), simVar::Dangerous.arrayGetNoBoundsChecking(simVars, Integer(index)));
 end addSimVar;
 
+protected function derivativeUnit
+  "The unit of der(x) for x in unit: unit divided by s, in the symbols of unit,
+   e.g. rad/s for rad and kg/(m3.s) for kg/m3. A rate has no offset, thus degC
+   gives K/s. Empty where the unit parser does not confirm the result."
+  input String unit;
+  input UnorderedMap<String, String> cache;
+  output String derUnit;
+protected
+  Boolean converts;
+  Real factor;
+algorithm
+  if unit == "" then
+    derUnit := "";
+  elseif UnorderedMap.contains(unit, cache) then
+    derUnit := UnorderedMap.getOrFail(unit, cache);
+  else
+    derUnit := match unit
+      case "1" then "1/s";
+      case "degC" then "K/s";
+      case "degF" then "degRk/s";
+      else
+        algorithm
+          derUnit := divideBySecond(unit);
+          (converts, factor, _) := SimCodeCodegenUtil.unitConversion("s." + derUnit, unit);
+        then if converts and realAbs(factor - 1.0) < 1e-10 then derUnit else "";
+    end match;
+    UnorderedMap.add(unit, derUnit, cache);
+  end if;
+end derivativeUnit;
+
+protected function divideBySecond
+  "unit/s for a unit expression of the Modelica grammar (MLS section 19.1)."
+  input String unit;
+  output String result;
+protected
+  Integer slash = 0, depth = 0;
+  String c, numerator, denominator;
+  list<String> factors;
+algorithm
+  for i in 1:stringLength(unit) loop
+    c := stringGetStringChar(unit, i);
+    if c == "(" then
+      depth := depth + 1;
+    elseif c == ")" then
+      depth := depth - 1;
+    elseif c == "/" and depth == 0 then
+      slash := i;
+      break;
+    end if;
+  end for;
+
+  if slash == 0 then
+    result := match changeSecondExponent(unitFactors(unit), -1)
+      case SOME({}) then "1";
+      case SOME(factors) then stringDelimitList(factors, ".");
+      else unit + "/s";
+    end match;
+  else
+    numerator := substring(unit, 1, slash - 1);
+    denominator := substring(unit, slash + 1, stringLength(unit));
+    if StringUtil.startsWith(denominator, "(") and StringUtil.endsWith(denominator, ")") then
+      denominator := substring(denominator, 2, stringLength(denominator) - 1);
+    end if;
+    factors := unitFactors(denominator);
+    factors := match changeSecondExponent(factors, 1)
+      case SOME(factors) then factors;
+      else listAppend(factors, {"s"});
+    end match;
+    result := match factors
+      case {} then numerator;
+      case {c} then numerator + "/" + c;
+      else numerator + "/(" + stringDelimitList(factors, ".") + ")";
+    end match;
+  end if;
+end divideBySecond;
+
+protected function unitFactors
+  "The factors of a product of units, e.g. {\"N\", \"m\"} for N.m. A single
+   factor that is not a plain product stays as it is."
+  input String unit;
+  output list<String> factors;
+algorithm
+  factors := if StringUtil.findChar(unit, stringCharInt("(")) <> StringUtil.NO_POS or
+                StringUtil.findChar(unit, stringCharInt("/")) <> StringUtil.NO_POS
+    then {"(" + unit + ")"}
+    else Util.stringSplitAtChar(unit, ".");
+end unitFactors;
+
+protected function changeSecondExponent
+  "factors with change added to the exponent of the first factor that is s.
+   NONE() where no factor is s."
+  input list<String> factors;
+  input Integer change;
+  output Option<list<String>> result = NONE();
+protected
+  list<String> acc = {};
+  Integer e;
+  Boolean found = false;
+algorithm
+  for f in factors loop
+    e := if found then 0 else secondExponent(f);
+    if e <> 0 then
+      found := true;
+      e := e + change;
+      if e == 1 then
+        acc := "s" :: acc;
+      elseif e <> 0 then
+        acc := ("s" + intString(e)) :: acc;
+      end if;
+    else
+      acc := f :: acc;
+    end if;
+  end for;
+  if found then
+    result := SOME(listReverse(acc));
+  end if;
+end changeSecondExponent;
+
+protected function secondExponent
+  "The exponent of a unit factor that is s, e.g. 2 for s2; 0 for other factors."
+  input String factor;
+  output Integer exponent = 0;
+protected
+  String digits;
+  Integer c;
+algorithm
+  if factor == "s" then
+    exponent := 1;
+  elseif stringLength(factor) > 1 and stringGetStringChar(factor, 1) == "s" then
+    digits := substring(factor, 2, stringLength(factor));
+    if StringUtil.startsWith(digits, "+") then
+      digits := substring(digits, 2, stringLength(digits));
+    end if;
+    for i in 1:stringLength(digits) loop
+      c := stringCharInt(stringGetStringChar(digits, i));
+      if not (c >= 48 and c <= 57 or i == 1 and c == 45 and stringLength(digits) > 1) then
+        return;
+      end if;
+    end for;
+    if digits <> "" then
+      exponent := stringInt(digits);
+    end if;
+  end if;
+end secondExponent;
+
 protected function derVarFromStateVar
   input SimCodeVar.SimVar state;
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
-  input Unit.UnitToStringTable unitStrings "filled by Unit.addKnownUnitsInverse on first use";
+  input UnorderedMap<String, String> derivativeUnits "derivativeUnit by unit";
   input Option<UnorderedSet<DAE.ComponentRef>> iterationVars = NONE() "optional set of iterationVars in InitializationMode";
   output SimCodeVar.SimVar deriv = state;
 protected
-  Unit.Unit unit;
   DAE.Exp nominal;
 algorithm
   deriv.arrayCref := Util.applyOption(deriv.arrayCref, ComponentReference.crefPrefixDer);
@@ -7924,16 +8236,7 @@ algorithm
   if deriv.comment <> "" then
     deriv.comment := "der(" + deriv.comment + ")";
   end if;
-  try
-    unit := Unit.parseUnitString(deriv.unit);
-    unit := Unit.unitDiv(unit, NFUnit.SECOND);
-    if UnorderedMap.isEmpty(unitStrings) then
-      Unit.addKnownUnitsInverse(unitStrings);
-    end if;
-    deriv.unit := Unit.unitString(unit, unitStrings);
-  else
-    deriv.unit := "";
-  end try;
+  deriv.unit := derivativeUnit(deriv.unit, derivativeUnits);
   deriv.displayUnit := "";
   deriv.minValue := NONE();
   deriv.maxValue := NONE();
@@ -8822,12 +9125,14 @@ protected function getFmiUnitDefinitions
   output list<SimCode.UnitDefinition> unitDefinitions = {};
 protected
   HashSetString.HashSet unitNameKeys;
+  list<tuple<String, SimCode.DisplayUnit>> nested = {};
 algorithm
   //special order for fmi: real => intger => boolean => string => external
   unitNameKeys := HashSetString.emptyHashSet();
   for i in SimVarsIndex.state : SimVarsIndex.stringConst loop
-    (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys);
+    (unitDefinitions, unitNameKeys, nested) := getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys, nested);
   end for;
+  unitDefinitions := list(nestDisplayUnits(u, nested) for u in unitDefinitions);
   //print("\n Final Units List :" + anyString(unitDefinitions));
 end getFmiUnitDefinitions;
 
@@ -8836,8 +9141,11 @@ protected function getFmiUnitDefinitionsHelper
   input list<SimCodeVar.SimVar> inVars;
   input output list<SimCode.UnitDefinition> unitDefinitions;
   input output HashSetString.HashSet unitNameKeys;
+  input output list<tuple<String, SimCode.DisplayUnit>> nested "display units of one unit only";
 protected
   Unit.Unit unit;
+  Boolean converts;
+  Real factor, offset;
 algorithm
   for var in inVars loop
     if isSome(var.exportVar) then
@@ -8846,21 +9154,58 @@ algorithm
         unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
         try
           unit := Unit.parseUnitString(var.unit); // get the SI- units information
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit, SimCodeCodegenUtil.radExponent(var.unit)), {}) :: unitDefinitions;
         else
           // catch the units which are not calculated
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT(), {}) :: unitDefinitions;
         end try;
       end if;
-      // A variable may only name a display unit that is itself declared.
-      if not stringEq(var.displayUnit, "") and not stringEq(var.displayUnit, var.unit)
-         and not BaseHashSet.has(var.displayUnit, unitNameKeys) then
-        unitNameKeys := BaseHashSet.add(var.displayUnit, unitNameKeys);
-        unitDefinitions := displayUnitDefinition(var.unit, var.displayUnit) :: unitDefinitions;
+      if not stringEq(var.displayUnit, "") and not stringEq(var.displayUnit, var.unit) then
+        if SimCodeCodegenUtil.radExponent(var.displayUnit) <> SimCodeCodegenUtil.radExponent(var.unit) then
+          // Hz of an angular unit: a unit of its own would clash with Hz as frequency.
+          if not List.isMemberOnTrue((var.unit, var.displayUnit), nested, isNestedDisplayUnit) then
+            (converts, factor, offset) := SimCodeCodegenUtil.unitConversion(var.displayUnit, var.unit);
+            if converts then
+              nested := (var.unit, SimCode.DISPLAYUNIT(var.displayUnit, factor, offset)) :: nested;
+            end if;
+          end if;
+        elseif not BaseHashSet.has(var.displayUnit, unitNameKeys) then
+          // A variable may only name a display unit that is itself declared.
+          unitNameKeys := BaseHashSet.add(var.displayUnit, unitNameKeys);
+          unitDefinitions := displayUnitDefinition(var.unit, var.displayUnit) :: unitDefinitions;
+        end if;
       end if;
     end if;
   end for;
 end getFmiUnitDefinitionsHelper;
+
+protected function isNestedDisplayUnit
+  input tuple<String, String> unitAndDisplayUnit;
+  input tuple<String, SimCode.DisplayUnit> nested;
+  output Boolean b;
+protected
+  String unit, displayUnit, nestedUnit;
+  SimCode.DisplayUnit nestedDisplayUnit;
+algorithm
+  (unit, displayUnit) := unitAndDisplayUnit;
+  (nestedUnit, nestedDisplayUnit) := nested;
+  b := stringEq(unit, nestedUnit) and stringEq(displayUnit, nestedDisplayUnit.name);
+end isNestedDisplayUnit;
+
+protected function nestDisplayUnits
+  input output SimCode.UnitDefinition definition;
+  input list<tuple<String, SimCode.DisplayUnit>> nested;
+protected
+  String unit;
+  SimCode.DisplayUnit displayUnit;
+algorithm
+  for n in nested loop
+    (unit, displayUnit) := n;
+    if stringEq(unit, definition.name) then
+      definition.displayUnits := displayUnit :: definition.displayUnits;
+    end if;
+  end for;
+end nestDisplayUnits;
 
 protected function displayUnitDefinition
   "The display unit as a unit in its own right: the dimensions of the unit it
@@ -8869,36 +9214,38 @@ protected function displayUnitDefinition
   input String displayUnit;
   output SimCode.UnitDefinition definition;
 protected
-  Integer s, m, kg, A, K, mol, cd;
+  Integer s, m, kg, A, K, mol, cd, rad;
   Real factor, offset, toUnit, toUnitOffset;
   Boolean converts;
 algorithm
   try
-    SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor, offset) :=
-      transformUnitToBaseUnit(Unit.parseUnitString(unit));
+    SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, rad, factor, offset) :=
+      transformUnitToBaseUnit(Unit.parseUnitString(unit), SimCodeCodegenUtil.radExponent(unit));
     // Compose value_unit = toUnit*value_display + toUnitOffset with the unit's
     // own value_SI = factor*value_unit + offset.
     (converts, toUnit, toUnitOffset) := SimCodeCodegenUtil.unitConversion(unit, displayUnit);
     true := converts;
     definition := SimCode.UNITDEFINITION(displayUnit,
-      SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*toUnit, factor*toUnitOffset + offset));
+      SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, rad, factor*toUnit, factor*toUnitOffset + offset), {});
   else
     // No dimensions, so nothing nests it and no variable may name it.
-    definition := SimCode.UNITDEFINITION(displayUnit, SimCode.NOBASEUNIT());
+    definition := SimCode.UNITDEFINITION(displayUnit, SimCode.NOBASEUNIT(), {});
   end try;
 end displayUnitDefinition;
 
 public function transformUnitToBaseUnit
   "translate Unit.UNIT to SimCode.BASEUNIT. NFUnit counts mass in grams, so the
-   factor picks up 10^-3 per kg; the offset is already in SI."
+   factor picks up 10^-3 per kg; the offset is already in SI. NFUnit counts rad
+   as 1, so its exponent comes from the unit parser."
   input Unit.Unit unit;
+  input Integer rad;
   output SimCode.BaseUnit baseUnit;
 protected
   Integer mol, cd, m, s, A, K, kg;
   Real factor, offset;
 algorithm
   Unit.UNIT(s, m, kg, A, K, mol, cd, factor, offset) := unit;
-  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), offset);
+  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, rad, factor*10^(-3*kg), offset);
 end transformUnitToBaseUnit;
 
 protected function getAliasVar
@@ -13672,7 +14019,7 @@ algorithm
     return;
   end if;
   nameMap := buildFmiFigureNameMap(simCode);
-  terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode);
+  terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode, false);
   for e in figExps loop
     fig := fmiFigureFromExp(e, nameMap, terminals);
     if not listEmpty(fig.plots) then
@@ -14149,6 +14496,16 @@ algorithm
   end if;
 end aliasSimEq;
 
+protected function isInstallationDirectory
+  "Whether dir is one of the OpenModelica directories that
+   SimCodeFunctionUtil.getLinkerLibraryPaths adds."
+  input String installDir;
+  input String dir;
+  output Boolean b = dir == installDir + "/lib/" or
+                     StringUtil.startsWith(dir, installDir + "/bin") or
+                     StringUtil.startsWith(dir, installDir + "/lib/" + Autoconf.triple + "/omc");
+end isInstallationDirectory;
+
 public function generateRunnerBatScript
   "Always succeeds in order to clean-up external objects.
 
@@ -14164,7 +14521,7 @@ algorithm
     local
       String str, omdevPath, msysPath, mingwDir, installDir;
       Boolean isMSVC;
-      list<String> locations_lst;
+      list<String> locations_lst, omDirs, libDirs;
     case SimCode.SIMCODE()
       algorithm
         fileName := code.fileNamePrefix + ".bat";
@@ -14173,6 +14530,10 @@ algorithm
         (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
 
         installDir := Settings.getInstallationDirectoryPath();
+        // After listReverse below, the directories of the libraries come first, in
+        // the order the linker searched them, and then those of OpenModelica.
+        (omDirs, libDirs) := List.splitOnTrue(locations_lst, function isInstallationDirectory(installDir = installDir));
+        locations_lst := listAppend(omDirs, listReverse(libDirs));
         locations_lst := (installDir + "/bin") :: locations_lst;
         locations_lst := (installDir + "/lib/" + Config.targetTriple() + "/omc") :: locations_lst;
 
@@ -14328,41 +14689,6 @@ algorithm
     end if;
   end for;
 end getCmakeLinkLibrariesCode;
-
-public function cvodeFmiFlagIsSet
-  "Checks if s:cvode is part of FMI_FLAGS.
-   If a *.json exists we don't check and assume cvode will be needed at some point."
-  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
-  output Boolean needsCvode = false;
-algorithm
-  () := match fmiSimulationFlags
-    local
-      list<tuple<String,String>> nameValueTuples;
-      String setting, value;
-      String configFile;
-      String fileContent;
-    case SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples))
-      algorithm
-        if not listEmpty(nameValueTuples) then
-          for tpl in nameValueTuples loop
-            (setting, value) := tpl;
-            if stringEqual(setting, "s") and stringEqual(value, "cvode") then
-              needsCvode := true;
-              break;
-            end if;
-          end for;
-        end if;
-      then();
-    case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(configFile))
-      algorithm
-        fileContent := System.readFile(configFile);
-        if not -1 == System.stringFind(fileContent, "\"cvode\"") then
-          needsCvode := true;
-        end if;
-      then();
-    else then();
-  end match;
-end cvodeFmiFlagIsSet;
 
 public function stripIncludeFlag
   "Directory of a makefileParams include entry, which is of the form \"-I<directory>\",

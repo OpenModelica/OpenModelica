@@ -1528,7 +1528,9 @@ public
                 dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
                 rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
                 (iter_names, _, _) := Iterator.getFrames(eqn_iter);
-                own_iters := UnorderedSet.fromList(iter_names, ComponentRef.hash, ComponentRef.isEqual);
+                // the rows of an algebraic loop are its variables, not the iterations of this equation
+                own_iters := if StrongComponent.isAlgebraicLoop(comp) then no_iters
+                  else UnorderedSet.fromList(iter_names, ComponentRef.hash, ComponentRef.isEqual);
                 for tpl in local_deps loop
                   // this might lead to duplicate occurrences. can and should not be optimized here
                   // as dependency information might not be combinable. optimize afterwards!
@@ -4327,7 +4329,7 @@ public
     input UnorderedSet<ComponentRef> rep_set;
     output UnorderedSet<ComponentRef> occurrences;
   protected
-    list<ComponentRef> inputs, outputs;
+    list<ComponentRef> inputs, outputs, conditions;
   algorithm
     occurrences := match eqn
       local
@@ -4353,16 +4355,23 @@ public
       case Equation.ALGORITHM() algorithm
         // filter inputs for solvable (not occuring only in conditions)
         inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
+        // inputs in conditions are unsolvable
+        occ1 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        collectAlgorithmConditionCrefs(eqn.alg.statements, occ1);
+        (conditions, inputs) := List.splitOnTrue(inputs, function UnorderedSet.contains(set = occ1));
         // collect all crefs expanding potential records
         inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in inputs));
+        conditions := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in conditions));
         outputs := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
+        Dependency.addListFull(conditions, 0, dep_map, rep_set);
         Dependency.addListFull(outputs, 0, dep_map, rep_set);
         // make inputs unsolvable and outputs solvable (maybe check if algorithm can be reversed)
         Solvability.updateList(inputs, Solvability.IMPLICIT(), sol_map);
+        Solvability.updateList(conditions, Solvability.UNSOLVABLE(), sol_map);
         Solvability.updateList(outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
-      then UnorderedSet.fromList(listAppend(inputs, outputs), ComponentRef.hash, ComponentRef.isEqual);
+      then UnorderedSet.fromList(List.flatten({inputs, outputs, conditions}), ComponentRef.hash, ComponentRef.isEqual);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
         // gather solvables from body
@@ -4942,6 +4951,53 @@ public
       else ();
     end match;
   end collectDependenciesAlgorithmStatement;
+
+  function collectAlgorithmConditionCrefs
+    "collects the variables of if, when and while conditions in algorithm statements"
+    input list<Statement> stmts;
+    input UnorderedSet<ComponentRef> crefs;
+  algorithm
+    for stmt in stmts loop
+      () := match stmt
+        case Statement.IF() algorithm
+          for branch in stmt.branches loop
+            Expression.apply(Util.tuple21(branch), function collectConditionCref(crefs = crefs));
+            collectAlgorithmConditionCrefs(Util.tuple22(branch), crefs);
+          end for;
+        then ();
+
+        case Statement.WHEN() algorithm
+          for branch in stmt.branches loop
+            Expression.apply(Util.tuple21(branch), function collectConditionCref(crefs = crefs));
+            collectAlgorithmConditionCrefs(Util.tuple22(branch), crefs);
+          end for;
+        then ();
+
+        case Statement.WHILE() algorithm
+          Expression.apply(stmt.condition, function collectConditionCref(crefs = crefs));
+          collectAlgorithmConditionCrefs(stmt.body, crefs);
+        then ();
+
+        case Statement.FOR() algorithm
+          collectAlgorithmConditionCrefs(stmt.body, crefs);
+        then ();
+
+        else ();
+      end match;
+    end for;
+  end collectAlgorithmConditionCrefs;
+
+  function collectConditionCref
+    input Expression exp;
+    input UnorderedSet<ComponentRef> crefs;
+  algorithm
+    () := match exp
+      case Expression.CREF() guard(not (ComponentRef.isTime(exp.cref) or ComponentRef.isIterator(exp.cref))) algorithm
+        UnorderedSet.add(ComponentRef.stripSubscriptsAll(exp.cref), crefs);
+      then ();
+      else ();
+    end match;
+  end collectConditionCref;
 
   function updateConditionCrefs
     "variables in conditions are unsolvable, reduced and get their skips removed"

@@ -4,24 +4,27 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica (wasm) — interactive</title>
+<script src="../theme.js"></script>
 <link rel="stylesheet" href="../theme.css" />
 <style>
+  :root { --cmd: #569cd6; --prompt: #608b4e; }
+  :root[data-theme="light"] { --cmd: #0b62c4; --prompt: #3b7a2a; }
     body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   header b { color: var(--teal); }
   #log { flex: 1 1 auto; overflow-y: auto; padding: 12px; white-space: pre-wrap; word-break: break-word; }
-  .cmd { color: #569cd6; }
-  .cmd::before { content: ">>> "; color: #608b4e; }
+  .cmd { color: var(--cmd); }
+  .cmd::before { content: ">>> "; color: var(--prompt); }
   .reply { color: var(--fg); }
   .err { color: var(--err); }
   .meta { color: var(--muted); font-style: italic; }
   .plot { background: #fff; border-radius: 4px; padding: 8px; margin: 8px 0; max-width: 100%; overflow: auto; }
   .plot svg { display: block; max-width: 100%; height: auto; }
   header .hint { color: var(--muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  header code { color: #ce9178; }
+  header code { color: var(--code); }
   /* Compact, monospace buttons rather than theme.css's roomier default. */
   button { border-radius: 3px; padding: 5px 12px; font-size: inherit; }
   form { display: flex; flex: 0 0 auto; border-top: 1px solid var(--border); background: var(--panel); }
-  #prompt { color: #608b4e; padding: 8px 4px 8px 12px; }
+  #prompt { color: var(--prompt); padding: 8px 4px 8px 12px; }
   #input { flex: 1; background: transparent; border: 0; border-radius: 0; color: var(--fg); font: inherit; padding: 8px 12px 8px 4px; outline: none; }
 </style>
 </head>
@@ -42,12 +45,18 @@ import init, {
   omc_set_env, omc_init, omc_eval, omc_enable_wasm_blobs,
   omc_take_pending_downloads, omc_take_plot_commands, wasi_write_file,
 } from '../omc/OpenModelicaCompiler.js';
+import * as omc from '../omc/OpenModelicaCompiler.js';
+import { openStore } from '../omc-store.js';
 import { installWasmBlobs } from '../wasm-blobs.js';
 import { describeError, setErrorText } from '../wasm-stack.js';
 
 const log = document.getElementById('log');
 const input = document.getElementById('input');
 const form = document.getElementById('form');
+// Installed libraries and parsed files, kept between sessions (omc-store.js).
+let store = null;
+let saving = Promise.resolve();
+const save = () => { if (store) saving = saving.then(() => store.flush()); };
 
 function line(text, cls) {
   const div = document.createElement('div');
@@ -96,6 +105,7 @@ async function evalWithDownloads(src) {
   line('Loading wasm module…', 'meta');
   await init();                                   // fetch + instantiate the wasm
   omc_set_env('OPENMODELICAHOME', '/usr');         // builtins resolve by basename
+  store = await openStore(omc);
   if (!omc_init()) {
     line('omc_init() failed — see the devtools console.', 'err');
     return;
@@ -106,6 +116,7 @@ async function evalWithDownloads(src) {
   // is immediately usable (mirrors the worker-hosted terminals' init).
   line('Installing Modelica library…', 'meta');
   await evalWithDownloads('installPackage(Modelica)');
+  save();
   const msg = omc_eval('getErrorString()').trim();
   if (msg && msg !== '""') line(msg, 'meta');
   line('Ready. ' + omc_eval('getVersion()'), 'meta');
@@ -122,9 +133,11 @@ form.addEventListener('submit', async (ev) => {
   line(cmd, 'cmd');
   if (cmd === 'quit()' || cmd === 'exit') { input.disabled = true; line('session closed', 'meta'); return; }
   input.disabled = true;
+  await saving;
   let reply;
   try { reply = await evalWithDownloads(cmd); }
   catch (e) { line(describeError(e), 'err'); input.disabled = false; input.focus(); return; }
+  save();
   line(reply, reply.startsWith('Error:') ? 'err' : 'reply');
   input.disabled = false;
   input.focus();

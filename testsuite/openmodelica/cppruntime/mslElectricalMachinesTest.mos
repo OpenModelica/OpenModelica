@@ -19,7 +19,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Modelica.Electrical.Machines.Examples.Transformers.IMC_Transformer_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.IMC_Transformer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.IMC_Transformer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // 173.2163683768672

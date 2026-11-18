@@ -97,10 +97,21 @@ extern "C"
                                       enum var_kind kind,
                                       size_t scalar_idx);
 
-  modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
-                                        const MODEL_DATA *modelData,
-                                        enum var_kind kind,
-                                        size_t scalar_idx);
+  modelica_real getPositiveNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                                const MODEL_DATA *modelData,
+                                                enum var_kind kind,
+                                                size_t scalar_idx);
+
+  modelica_real getNominalSignFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                            const MODEL_DATA *modelData,
+                                            enum var_kind kind,
+                                            size_t scalar_idx);
+
+  void setPositiveNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                       MODEL_DATA *modelData,
+                                       enum var_kind kind,
+                                       size_t scalar_idx,
+                                       modelica_real positiveNominal);
 
   modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                                     const MODEL_DATA *modelData,

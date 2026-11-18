@@ -298,7 +298,8 @@ typedef struct REAL_ATTRIBUTE
   real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
-  real_array nominal;                  /* = {1.0} */
+  real_array positiveNominal;          /* = {1.0}; |nominal|, or 1.0 if that is 0, inf or NaN */
+  real_array nominalSign;              /* = {1.0}; -1.0 for a negative nominal */
   real_array start;                    /* = {0.0} */
 } REAL_ATTRIBUTE;
 
@@ -424,7 +425,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   /* attributes of iteration variables */
   modelica_real *min;
   modelica_real *max;
-  modelica_real *nominal;
+  modelica_real *positiveNominal;
+  modelica_real *nominalSign;
 
   /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
    * can be produced with the help of analyticalJacobianColumnn function pointer
@@ -508,7 +510,7 @@ typedef struct LINEAR_SYSTEM_DATA
   /* attributes of iteration variables */
   modelica_real *min;
   modelica_real *max;
-  modelica_real *nominal;
+  modelica_real *positiveNominal;
 
   modelica_integer nnz;                /* number of nonzero entries */
   modelica_integer size;
@@ -732,6 +734,7 @@ typedef struct MODEL_DATA
 
   size_t nEnumerationTypes;
   ENUMERATION_TYPE *enumerationTypes;  /* of the enumeration variables, from the init XML */
+  const long *discreteChangeRanges;    /* what checkForDiscreteChanges compares, see SimCodeCodegenUtil.discreteChangeRanges */
 } MODEL_DATA;
 
 /**

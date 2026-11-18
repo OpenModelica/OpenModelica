@@ -1,15 +1,13 @@
-//! A small, self-contained WebGPU demo shared by every OMShell front-end: an
+//! A small, self-contained WebGPU demo for the egui OMShell: an
 //! animated raymarched gyroid with a cosine colour palette and volumetric glow.
 //! It draws a single full-screen triangle and does all the work in the fragment
 //! shader (no vertex/index buffers), so the only thing a front-end must supply is
 //! a `wgpu::Device`/`Queue`, the target texture format, and a render pass.
 //!
-//! - egui (native + web): built from `cc.wgpu_render_state` and driven by an
-//!   `egui_wgpu` paint callback.
-//! - dioxus web: built on a `wgpu::Surface` created from a `<canvas>` and driven
-//!   by a `requestAnimationFrame` loop.
+//! It is built from `cc.wgpu_render_state` and driven by an `egui_wgpu` paint
+//! callback, natively and on the web.
 //!
-//! The wgpu API here mirrors the egui_wgpu (eframe 0.34 / wgpu 29) call shapes so
+//! The wgpu API here mirrors the egui_wgpu (eframe 0.37 / wgpu 30) call shapes so
 //! the same types flow through the egui callback.
 
 use bytemuck::{Pod, Zeroable};

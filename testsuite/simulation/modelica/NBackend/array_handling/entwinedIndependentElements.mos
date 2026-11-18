@@ -1,0 +1,100 @@
+// name: entwinedIndependentElements
+// keywords: NewBackend entwined for-equation resizable
+// status: correct
+//
+// A scalar equation entwines a resizable for-equation whose other elements
+// are independent. Sorting can call them in any order, the entwined component
+// needs the order of the iterations.
+
+loadString("
+model entwinedStart
+  parameter Integer N = 8;
+  Real x[N], y[N];
+equation
+  x[1] = 10*time;
+  x[2] = 10;
+  x[3] = y[2];
+  for i in 4:N loop
+    x[i] = time*i;
+  end for;
+  for i in 1:N loop
+    y[i] = 10*x[i];
+  end for;
+end entwinedStart;
+
+model entwinedEnd
+  parameter Integer N = 8;
+  Real x[N], y[N];
+equation
+  x[N] = 10*time;
+  x[N - 1] = 10;
+  x[N - 2] = y[N - 1];
+  for i in 1:N-3 loop
+    x[i] = time*i;
+  end for;
+  for i in 1:N loop
+    y[i] = 10*x[i];
+  end for;
+end entwinedEnd;
+"); getErrorString();
+setCommandLineOptions("--newBackend --resizableArrays"); getErrorString();
+
+simulate(entwinedStart, stopTime = 1); getErrorString();
+val(y[3], 1);
+val(y[8], 1);
+simulate(entwinedStart, stopTime = 1, simflags = "-override=N=12"); getErrorString();
+val(y[3], 1);
+val(y[12], 1);
+
+simulate(entwinedEnd, stopTime = 1); getErrorString();
+val(y[6], 1);
+val(y[1], 1);
+simulate(entwinedEnd, stopTime = 1, simflags = "-override=N=12"); getErrorString();
+val(y[10], 1);
+val(y[1], 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "entwinedStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'entwinedStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1000.0
+// 80.0
+// record SimulationResult
+//     resultFile = "entwinedStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'entwinedStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=12'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1000.0
+// 120.0
+// record SimulationResult
+//     resultFile = "entwinedEnd_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'entwinedEnd', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1000.0
+// 10.0
+// record SimulationResult
+//     resultFile = "entwinedEnd_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'entwinedEnd', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=12'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1000.0
+// 10.0
+// endResult

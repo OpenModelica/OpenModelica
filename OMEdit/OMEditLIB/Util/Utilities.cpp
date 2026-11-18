@@ -42,6 +42,8 @@
 #include "Helper.h"
 #if defined(__EMSCRIPTEN__)
 #include "PersistentStorage.h"
+// Defined in OMC/OMCProxy.cpp.
+QList<qint64> omcWorkerFileSizes(const QStringList &paths);
 #endif
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
@@ -101,6 +103,8 @@ namespace WasmSplash
     // Pure HTML/DOM, no Qt at all: Qt drawing/resource access before the event
     // loop stalls the async library install on wasm. The image is referenced by
     // URL (served beside the page) rather than read through a Qt resource.
+    // The colors are those of the page (assistant.css), which OMEditApplication
+    // has already set to OMEdit's color scheme.
     sVisible = true;
     EM_ASM({
       if (document.getElementById('omedit-splash')) return;
@@ -108,11 +112,11 @@ namespace WasmSplash
       style.id = 'omedit-splash-style';
       style.textContent =
         '#omedit-splash{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;'
-        + 'align-items:center;justify-content:center;background:#ffffff;font-family:sans-serif;'
+        + 'align-items:center;justify-content:center;background:var(--as-panel,#ffffff);font-family:sans-serif;'
         + 'transition:opacity .4s ease;}'
         + '#omedit-splash img{max-width:80%;max-height:60%;box-shadow:0 6px 28px rgba(0,0,0,.25);}'
-        + '#omedit-splash .msg{margin-top:20px;font-size:15px;color:#333;min-height:20px;text-align:center;}'
-        + '#omedit-splash .bar{margin-top:16px;width:280px;height:6px;background:#e2e2e2;border-radius:3px;overflow:hidden;}'
+        + '#omedit-splash .msg{margin-top:20px;font-size:15px;color:var(--as-text,#333);min-height:20px;text-align:center;}'
+        + '#omedit-splash .bar{margin-top:16px;width:280px;height:6px;background:var(--as-hover,#e2e2e2);border-radius:3px;overflow:hidden;}'
         + '#omedit-splash .bar > div{height:100%;width:40%;background:#e87424;border-radius:3px;'
         + 'animation:omedit-splash-slide 1.2s ease-in-out infinite;}'
         // transform (not margin-left) so the compositor animates it smoothly even
@@ -836,6 +840,41 @@ QString& Utilities::tempDirectory()
     }
   }
   return tmpPath;
+}
+
+/*!
+ * \brief Utilities::existingFilePaths
+ * Returns the file names that are absolute paths that exist.
+ * On the web, this is one round-trip to the omc worker.
+ * \param fileNames
+ * \return
+ */
+QSet<QString> Utilities::existingFilePaths(const QStringList &fileNames)
+{
+  QStringList absoluteFileNames;
+  for (const QString &fileName : fileNames) {
+    if (!fileName.isEmpty() && !QFileInfo(fileName).isRelative()) {
+      absoluteFileNames.append(fileName);
+    }
+  }
+#if defined(__EMSCRIPTEN__)
+  const QList<qint64> sizes = omcWorkerFileSizes(absoluteFileNames);
+#endif
+  QSet<QString> existingFileNames;
+  for (int i = 0; i < absoluteFileNames.size(); ++i) {
+    const QString &fileName = absoluteFileNames.at(i);
+#if defined(__EMSCRIPTEN__)
+    // A path that is not a file of the omc worker can still be a directory or a file of the page.
+    if (sizes.value(i, -1) >= 0) {
+      existingFileNames.insert(fileName);
+      continue;
+    }
+#endif
+    if (QFileInfo::exists(fileName)) {
+      existingFileNames.insert(fileName);
+    }
+  }
+  return existingFileNames;
 }
 
 /*

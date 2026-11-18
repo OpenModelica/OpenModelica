@@ -44,8 +44,6 @@ val(x[3], 1);
 // 	Constant/Parameter Binding: [ARRY] (3) b = -c; ($RES_SIM_2)
 // 	###<No Set Equations>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	b	 ==> 	-c
@@ -59,16 +57,10 @@ val(x[3], 1);
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "LiteralArrayAlias_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'LiteralArrayAlias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'LiteralArrayAlias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -391,13 +391,12 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
   for(i = 0; i < nx; ++i){
     min = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i);
     max = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i);
-    nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
-    nominalWasSet = data->modelData->realVarsData[i].attribute.useNominal;
+    nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
+    nominalWasSet = data->modelData->realVarsData[data->simulationInfo->realVarsReverseIndex[i].array_idx].attribute.useNominal;
     x0 = data->localData[1]->realVars[i];
 
     check_nominal(bounds, min, max, nominal, nominalWasSet, i, x0);
-    array_index_t* revIndex = &data->simulationInfo->realVarsReverseIndex[i];
-    put_real_element(bounds->vnom[i], revIndex->dim_idx, &data->modelData->realVarsData[revIndex->array_idx].attribute.nominal);
+    setPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i, bounds->vnom[i]);
     bounds->scalF[i] = 1.0/bounds->vnom[i];
     bounds->vmin[i] = min * bounds->scalF[i];
     bounds->vmax[i] = max * bounds->scalF[i];
@@ -433,7 +432,7 @@ static inline void check_nominal(OptDataBounds * bounds, const double min, const
                                  const double nominal, const modelica_boolean set, const int i, const double x0){
 
   if(set){
-    bounds->vnom[i] = fmax(fabs(nominal),1e-16);
+    bounds->vnom[i] = fmax(nominal,1e-16);
   }else{
     double amax, amin;
 

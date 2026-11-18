@@ -48,11 +48,16 @@
 #define SET_DISCRETE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete)
 #define FMU_STATE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
 #define FMU_STATE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
+#define FMU_STATE_STR "FMUstate"
+#define DESERIALIZE_STR "DeSerialize"
 #else
 #define SET_DISCRETE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode)
 #define SET_DISCRETE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_event_mode)
-#define FMU_STATE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated)
-#define FMU_STATE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_event_mode|model_state_terminated)
+/* FMI 3.0.2, 2.3.1: after fmi3Error the FMU is in Terminated, where the FMU state calls are allowed. */
+#define FMU_STATE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
+#define FMU_STATE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_event_mode|model_state_terminated|model_state_error)
+#define FMU_STATE_STR "FMUState"
+#define DESERIALIZE_STR "Deserialize"
 #endif
 
 /* FMI 3.0 Configuration Mode and Co-Simulation Event Mode, for the calls that are
@@ -86,6 +91,7 @@
 #define SET_REAL_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE)
 #define GET_OUTPUT_DERIVATIVES_CS_STATES (model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
 
+#ifdef OMC_FMI_CO_SIMULATION
 /**
   * @brief Skips to a given character or end of string.
  *
@@ -131,6 +137,7 @@ static inline const char* setSolverMethod(SOLVER_INFO *solverInfo, const char *s
   /* Variables */
   int i;
   char* value;
+  solverInfo->solverMethod = S_UNKNOWN;
   for(i=1; i<S_MAX; i++)
   {
     value = quote(SOLVER_METHOD_NAME[i]);
@@ -196,7 +203,7 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
  * @brief Initialize solver data.
  *
  * Reads optional FMU simulation flags from <fmiPrefix>.fmu/resources/<fmiPrefix>_flags.json.
- * Initialize solver euler or CVODE.
+ * Initialize solver euler or CVODE (the default).
  *
  * @param comp          FMU component.
  * @return int          Return 0 on success and -1 when an error occurred.
@@ -220,7 +227,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
   solverInfo->currentTime = 0;
   solverInfo->currentStepSize = 0;
   solverInfo->laststep = 0;
-  solverInfo->solverMethod = 0;
+  solverInfo->solverMethod = S_CVODE;
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = FALSE;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -248,7 +255,6 @@ int fmuInitializeSolverData(ModelInstance* comp)
   else
   {
     FILTERED_LOG(comp, fmiXOK, LOG_ALL, FMIX_STR "Instantiate: Using default simulation settings.")
-    solverInfo->solverMethod = S_EULER;
   }
 
 #ifdef OMC_FMI_HAVE_IDA
@@ -272,9 +278,8 @@ int fmuInitializeSolverData(ModelInstance* comp)
       /* Needs no initialization */
       retValue = 0;
       break;
-      case S_CVODE:
-#ifdef OMC_FMI_HAVE_CVODE
-      omc_useStream[OMC_LOG_SOLVER] = 1;
+    case S_CVODE:
+    {
       CVODE_SOLVER* cvodeData = NULL;
       FILTERED_LOG(comp, fmiXOK, LOG_ALL, "Initializing CVODE ODE Solver")
       cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
@@ -288,12 +293,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
         retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData);
       }
       solverInfo->solverData = cvodeData;
-      omc_useStream[OMC_LOG_SOLVER] = 0;
-#else
-      solverInfo->solverData = NULL;
-      FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
-      retValue = -1;
-#endif /* OMC_FMI_HAVE_CVODE */
+    }
       break;
     case S_IDA:
 #ifdef OMC_FMI_HAVE_IDA
@@ -359,14 +359,8 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
       retValue = 0;
       break;
     case S_CVODE:
-#ifdef OMC_FMI_HAVE_CVODE
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
-#else
-      FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
-      retValue = -1;
-      break;
-#endif /* OMC_FMI_HAVE_CVODE */
     case S_IDA:
 #ifdef OMC_FMI_HAVE_IDA
       ida_solver_deinitial(solverInfo->solverData);
@@ -387,6 +381,20 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
 
   return retValue;
 }
+
+/* As updateSolverNominals: the solver gets the nominals and the tolerance. */
+static void fmuSetSolverNominals(ModelInstance* comp)
+{
+  if (comp->solverInfo && comp->solverInfo->solverMethod == S_CVODE) {
+    cvode_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
+  }
+#ifdef OMC_FMI_HAVE_IDA
+  if (comp->solverInfo && comp->solverInfo->solverMethod == S_IDA) {
+    ida_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
+  }
+#endif
+}
+#endif /* OMC_FMI_CO_SIMULATION */
 
 /* An FMI 3.0 Model Exchange FMU of a --daeMode model serves fmi-ls-dae. */
 #if OMC_FMI_VERSION == 3 && defined(OMC_FMI_DAE_MODE)
@@ -827,8 +835,17 @@ static fmiXBoolean settableNow(ModelInstance *comp, long slot)
     return (f & (OMC_PARAMDEPS_INITIAL_EXACT | OMC_PARAMDEPS_INITIAL_APPROX | OMC_PARAMDEPS_INPUT)) != 0;
   case model_state_initialization_mode:
     return (f & (OMC_PARAMDEPS_INITIAL_EXACT | OMC_PARAMDEPS_INPUT)) != 0;
-  case model_state_me_event_mode:
   case model_state_cs_step_complete:
+#if OMC_FMI_VERSION != 2
+    /* FMI 3.0 2.4.7: with Event Mode, only Event Mode changes discrete inputs
+     * and tunable parameters. */
+    if (comp->_event_mode_used) {
+      return (f & OMC_PARAMDEPS_INPUT) && (f & OMC_PARAMDEPS_CONTINUOUS);
+    }
+    /* fall through */
+  case model_state_cs_event_mode:
+#endif
+  case model_state_me_event_mode:
     return (f & (OMC_PARAMDEPS_INPUT | OMC_PARAMDEPS_TUNABLE)) != 0;
   case model_state_me_continuous_time_mode:
     return (f & OMC_PARAMDEPS_INPUT) && (f & OMC_PARAMDEPS_CONTINUOUS);
@@ -867,6 +884,29 @@ static fmiXStatus recordSet(ModelInstance *comp, const char *func, int ty, fmiXV
   return fmiXOK;
 }
 
+/* Without Event Mode (FMI 2.0 2.2.7, FMI 3.0 2.4.7 and 4.1.1) a discrete input
+ * or tunable parameter that changes at a communication point is an event that
+ * the FMU handles, a changed continuous input is not. With Event Mode only
+ * Event Mode may change them. This assumes no set during a step: revisit it if
+ * the FMU ever declares providesIntermediateUpdate="true". The discrete Real
+ * variables are the first ranges of modelData->discreteChangeRanges. */
+static void noteStepModeChange(ModelInstance *comp, int ty, fmiXValueReference vr)
+{
+  const long *r = comp->fmuData->modelData->discreteChangeRanges;
+  const size_t *index = comp->fmuData->simulationInfo->realVarsIndex;
+  long slot = variableSlot(comp, ty, vr);
+  long k, n;
+  if (slot >= 0 && slot % 8 == OMC_SLOT_REAL && !isParameterSlot(comp, slot)) {
+    for (n = *r++, k = 0; k < n; k++, r += 2) {
+      if ((long) index[r[0]] <= slot / 8 && slot / 8 < (long) index[r[1]]) {
+        comp->_step_event = 1;
+      }
+    }
+    return;
+  }
+  comp->_step_event = 1;
+}
+
 /* Evaluates the parameter equations that depend on the tunable parameters set
  * since the last call. */
 static void applyTunableParameters(ModelInstance *comp)
@@ -902,6 +942,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
 
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, "internalEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
 
+  comp->_step_event = 0;
   setThreadData(comp);
   /* try */
   OMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -1122,15 +1163,35 @@ size_t copyStringArray(char* destination, const modelica_string *stringArray, in
     return copiedBytes;
 }
 
-/* The dual of copyStringArray: rebuild counted strings the state buffer owns. */
-size_t readStringArray(modelica_string *destination, const char *bytes, int elements) {
-    size_t readBytes = 0;
-    for (int j = 0; j < elements; j++) {
-        const char *str = bytes + readBytes;
-        omc_string_move(destination + j, omc_string_new(str));
-        readBytes += strlen(str) + 1;
+/* Reads a serialized FMU state. After a read past the end, ok is 0 and nothing more is read. */
+typedef struct {
+    const char *p;
+    size_t left;
+    int ok;
+} STATE_READER;
+
+static void readStateBytes(STATE_READER *r, void *destination, size_t n) {
+    if (!r->ok || r->left < n) {
+        r->ok = 0;
+        return;
     }
-    return readBytes;
+    memcpy(destination, r->p, n);
+    r->p += n;
+    r->left -= n;
+}
+
+/* The dual of copyStringArray: rebuild counted strings the state buffer owns. */
+static void readStateStrings(STATE_READER *r, modelica_string *destination, int elements) {
+    for (int j = 0; j < elements && r->ok; j++) {
+        const char *end = (const char *) memchr(r->p, '\0', r->left);
+        if (!end) {
+            r->ok = 0;
+            return;
+        }
+        omc_string_move(destination + j, omc_string_new_len(r->p, end - r->p));
+        r->left -= end - r->p + 1;
+        r->p = end + 1;
+    }
 }
 
 /**
@@ -1319,11 +1380,8 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   if (!functions->logger) {
     return NULL;
   }
-#else
-  if (!logMessage) {
-    return NULL;
-  }
 #endif
+  /* FMI 3.0 allows logMessage = NULL; the FMI 3.0 log helpers then log nothing. */
   mmc_init_nogc();
   omc_alloc_interface.init();
 
@@ -1336,6 +1394,12 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
     INSTANTIATE_ERROR(FMIX_STR "Instantiate: Wrong GUID %s. Expected %s.", fmuGUID, MODEL_GUID);
     return NULL;
   }
+#ifndef OMC_FMI_CO_SIMULATION
+  if (fmuType == FMIX_CS) {
+    INSTANTIATE_ERROR(FMIX_STR "Instantiate: The FMU has no Co-Simulation interface.");
+    return NULL;
+  }
+#endif
   comp = (ModelInstance *)calloc(1, sizeof(ModelInstance));
   if (!comp) {
     INSTANTIATE_ERROR(FMIX_STR "Instantiate: Out of memory.");
@@ -1572,12 +1636,11 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   comp->_need_update = 1;
   DAE_MODE_CHANGED(comp);
 
-  /* Initialize solverInfo */
+#ifdef OMC_FMI_CO_SIMULATION
   if (isCoSimulation(comp)) {
     fmuInitializeSolverData(comp);
-  } else {
-    comp->solverInfo = NULL;
   }
+#endif
 
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "Instantiate: GUID=%s", fmuGUID)
   return comp;
@@ -1594,11 +1657,13 @@ void FMIX(FreeInstance)(fmiXComponent c)
     return;
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "FreeInstance...")
 
+#ifdef OMC_FMI_CO_SIMULATION
   /* Free CS simulator (CVODE & co) first, while the model data it references
    * (e.g. the states array wrapped by the solver's N_Vector y) is still alive. */
   if (comp->solverInfo) {
     fmuDeInitializeSolverData(comp);
   }
+#endif
 
   setThreadData(comp);
   /* call external objects destructors */
@@ -1753,16 +1818,9 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
     }
   }
 
-#ifdef OMC_FMI_HAVE_CVODE
-  /* As updateSolverNominals: the nominals and the tolerance are known now. */
-  if (comp->solverInfo && comp->solverInfo->solverMethod == S_CVODE) {
-    cvode_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
-  }
-#endif
-#ifdef OMC_FMI_HAVE_IDA
-  if (comp->solverInfo && comp->solverInfo->solverMethod == S_IDA) {
-    ida_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
-  }
+#ifdef OMC_FMI_CO_SIMULATION
+  /* The nominals and the tolerance are known now. */
+  fmuSetSolverNominals(comp);
 #endif
 
   /* use defined stopTime, if stopTimeDefined is given to calculate the sample events beforehand.
@@ -1781,15 +1839,15 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
   {
     comp->eventInfo.nextEventTimeDefined = fmiXTrue;
     comp->eventInfo.nextEventTime = nextSampleEvent;
-    internalEventUpdate(comp, &(comp->eventInfo));
+    res = internalEventUpdate(comp, &(comp->eventInfo));
   }
   else
   {
     comp->eventInfo.nextEventTimeDefined = fmiXFalse;
+    res = fmiXOK;
   }
-  res = fmiXOK;
 
-  done = 1;
+  done = res == fmiXOK;
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
@@ -1803,6 +1861,8 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
+  /* Only an event update schedules the first clock tick. */
+  comp->_step_event = isCoSimulation(comp);
 
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "ExitInitializationMode: succeed")
   return res;
@@ -1840,12 +1900,14 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "Reset")
 
   setThreadData(comp);
+#ifdef OMC_FMI_CO_SIMULATION
   /* Free CS simulator (CVODE & co) first, while the model data it references
    * (e.g. the states array wrapped by the solver's N_Vector y) is still alive,
    * see #16319/#14074/#8615. */
   if (comp->solverInfo) {
     fmuDeInitializeSolverData(comp);
   }
+#endif
 
   /* Free modelData */
   if (!(comp->state & model_state_terminated)) {
@@ -1930,12 +1992,11 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
 #endif
 
-  /* Initialize solverInfo */
+#ifdef OMC_FMI_CO_SIMULATION
   if (isCoSimulation(comp)) {
     fmuInitializeSolverData(comp);
-  } else {
-    comp->solverInfo = NULL;
   }
+#endif
 
   comp->_need_update = 1;
   DAE_MODE_CHANGED(comp);
@@ -1944,6 +2005,7 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   memset(comp->slotSetBeforeInit, 0, comp->paramDeps->nSlots);
   comp->_tunable_dirty = 0;
   comp->_tunable_applied = 0;
+  comp->_step_event = 0;
 #if OMC_FMI_VERSION == 2
   comp->terminated = fmiXFalse;
 #endif
@@ -2134,6 +2196,8 @@ fmiXStatus FMIX(SetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetReal: #r%u# = %.16g", vr[i], value[i])
     if (recordSet(comp, FMIX_STR "SetReal", OMC_SLOT_REAL, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete && getReal(comp, vr[i]) != value[i])
+      noteStepModeChange(comp, OMC_SLOT_REAL, vr[i]);
     if (setReal(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -2164,6 +2228,8 @@ fmiXStatus FMIX(SetInteger)(fmiXComponent c, const fmiXValueReference vr[], size
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetInteger: #i%u# = %d", vr[i], value[i])
     if (recordSet(comp, FMIX_STR "SetInteger", OMC_SLOT_INTEGER, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete && getInteger(comp, vr[i]) != value[i])
+      noteStepModeChange(comp, OMC_SLOT_INTEGER, vr[i]);
     if (setInteger(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -2193,6 +2259,8 @@ fmiXStatus FMIX(SetBoolean)(fmiXComponent c, const fmiXValueReference vr[], size
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetBoolean: #b%u# = %s", vr[i], value[i] ? "true" : "false")
     if (recordSet(comp, FMIX_STR "SetBoolean", OMC_SLOT_BOOLEAN, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete && !getBoolean(comp, vr[i]) != !value[i])
+      noteStepModeChange(comp, OMC_SLOT_BOOLEAN, vr[i]);
     if (setBoolean(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -2223,6 +2291,11 @@ fmiXStatus FMIX(SetString)(fmiXComponent c, const fmiXValueReference vr[], size_
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetString: #s%u# = '%s'", vr[i], value[i])
     if (recordSet(comp, FMIX_STR "SetString", OMC_SLOT_STRING, vr[i]) != fmiXOK)
       return fmiXError;
+    if (comp->state == model_state_cs_step_complete) {
+      fmiXString old = getString(comp, vr[i]);
+      if (strcmp(old ? old : "", value[i] ? value[i] : ""))
+        noteStepModeChange(comp, OMC_SLOT_STRING, vr[i]);
+    }
     if (setString(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -2239,18 +2312,21 @@ fmiXStatus FMIX(GetFMUstate)(fmiXComponent c, fmiXFMUstate* FMUstate)
   int meStates = FMU_STATE_ME_STATES;
   int csStates = FMU_STATE_CS_STATES;
 
-  if (invalidState(comp, FMIX_STR "GetFMUstate", meStates, csStates))
+  if (invalidState(comp, FMIX_STR "Get" FMU_STATE_STR, meStates, csStates))
+    return fmiXError;
+  if (nullPointer(comp, FMIX_STR "Get" FMU_STATE_STR, FMU_STATE_STR, FMUstate))
     return fmiXError;
   if (comp->_tunable_dirty) {
     comp->_need_update = 1;
     DAE_MODE_CHANGED(comp);
-    if (updateIfNeeded(comp, FMIX_STR "GetFMUstate") != fmiXOK)
+    if (updateIfNeeded(comp, FMIX_STR "Get" FMU_STATE_STR) != fmiXOK)
       return fmiXError;
   }
   /* Restoring a state this instance saved restores all its parameters. */
   memset(comp->slotSetBeforeInit, 0, comp->paramDeps->nSlots);
 
   INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) calloc(1, sizeof(INTERNAL_FMU_STATE));
+  internal_state->mode = comp->state;
   internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
 
   DATA* fmudata = (DATA *) comp->fmuData;
@@ -2336,7 +2412,9 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
   int meStates = FMU_STATE_ME_STATES;
   int csStates = FMU_STATE_CS_STATES;
 
-  if (invalidState(comp, FMIX_STR "SetFMUstate", meStates, csStates))
+  if (invalidState(comp, FMIX_STR "Set" FMU_STATE_STR, meStates, csStates))
+    return fmiXError;
+  if (nullPointer(comp, FMIX_STR "Set" FMU_STATE_STR, FMU_STATE_STR, FMUstate))
     return fmiXError;
 
   INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;
@@ -2377,8 +2455,8 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
   }
 
   {
-    long k = setDelayStateWords(fmudata, internal_state->history, internal_state->nHistory);
-    if (k < 0 || setSpatialDistributionStateWords(fmudata, internal_state->history + k, internal_state->nHistory - k) < 0) {
+    long k = setDelayStateWords(fmudata, internal_state->history, internal_state->nHistory, 1);
+    if (k < 0 || setSpatialDistributionStateWords(fmudata, internal_state->history + k, internal_state->nHistory - k, 1) < 0) {
       status = fmiXError;
       goto cleanup;
     }
@@ -2414,21 +2492,28 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
   comp->_tunable_dirty = 1;
   comp->_need_update = 1;
   DAE_MODE_CHANGED(comp);
+  /* After an error the instance continues in the mode the state was taken in. */
+  if (comp->state == model_state_error && (internal_state->mode & (isCoSimulation(comp) ? csStates : meStates))) {
+    comp->state = internal_state->mode;
+#if OMC_FMI_VERSION == 2
+    comp->terminated = fmiXFalse;
+#endif
+  }
   if (!(comp->state & (model_state_instantiated | model_state_initialization_mode)) &&
-      updateIfNeeded(comp, FMIX_STR "SetFMUstate") != fmiXOK) {
+      updateIfNeeded(comp, FMIX_STR "Set" FMU_STATE_STR) != fmiXOK) {
     status = fmiXError;
     goto cleanup;
   }
 
-  // After restoring the FMU state, the internal solver (CVODE/Euler) has
-  // outdated step history, Jacobians, and time.  Reinitialize it so that the
-  // next doStep starts from a clean solver state.
+#ifdef OMC_FMI_CO_SIMULATION
+  /* The next step restarts the solver from the restored states, as after an event. */
   if (status == fmiXOK && isCoSimulation(comp) && comp->solverInfo) {
-    FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetFMUstate: reinitialising solver")
-    fmuDeInitializeSolverData(comp);
-    fmuInitializeSolverData(comp);
     comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
+    comp->solverInfo->didEventStep = 1;
+    listClear(comp->solverInfo->eventLst);
+    fmuSetSolverNominals(comp);
   }
+#endif
 
 cleanup:
   free(keep);
@@ -2447,38 +2532,41 @@ cleanup:
   return status;
 }
 
+static void freeInternalState(ModelInstance *comp, INTERNAL_FMU_STATE *internal_state)
+{
+  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
+  {
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+    free(sdata->realVars);
+    free(sdata->integerVars);
+    free(sdata->booleanVars);
+    omc_string_slots_release(sdata->stringVars, comp->fmuData->modelData->nVariablesString);
+    free(sdata->stringVars);
+  }
+  freeRingBuffer(internal_state->simulationData);
+  free(internal_state->realParameter);
+  free(internal_state->integerParameter);
+  free(internal_state->booleanParameter);
+  omc_string_slots_release(internal_state->stringParameter, comp->fmuData->modelData->nParametersString);
+  free(internal_state->stringParameter);
+  free(internal_state->history);
+  free(internal_state);
+}
+
 fmiXStatus FMIX(FreeFMUstate)(fmiXComponent c, fmiXFMUstate* FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
   int meStates = FMU_STATE_ME_STATES;
   int csStates = FMU_STATE_CS_STATES;
 
-  if (invalidState(comp, FMIX_STR "FreeFMUstate", meStates, csStates))
+  /* A null pointer is ignored (FMI 2.0, 2.1.8). */
+  if (FMUstate == NULL || *FMUstate == NULL)
+    return fmiXOK;
+  if (invalidState(comp, FMIX_STR "Free" FMU_STATE_STR, meStates, csStates))
     return fmiXError;
 
-  if (*FMUstate)
-  {
-    INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) *FMUstate;
-    // free the SIMULATION_DATA variable buffers
-    for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
-    {
-      SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
-      free(sdata->realVars);
-      free(sdata->integerVars);
-      free(sdata->booleanVars);
-      omc_string_slots_release(sdata->stringVars, comp->fmuData->modelData->nVariablesString);
-      free(sdata->stringVars);
-    }
-    freeRingBuffer(internal_state->simulationData);
-    free(internal_state->realParameter);
-    free(internal_state->integerParameter);
-    free(internal_state->booleanParameter);
-    omc_string_slots_release(internal_state->stringParameter, comp->fmuData->modelData->nParametersString);
-    free(internal_state->stringParameter);
-    free(internal_state->history);
-    free(*FMUstate);
-    *FMUstate = NULL;
-  }
+  freeInternalState(comp, (INTERNAL_FMU_STATE*) *FMUstate);
+  *FMUstate = NULL;
   return fmiXOK;
 }
 
@@ -2488,10 +2576,13 @@ fmiXStatus FMIX(SerializedFMUstateSize)(fmiXComponent c, fmiXFMUstate FMUstate, 
   /* TODO: make serialization format architecture- & endianness-independent */
 
   ModelInstance *comp = (ModelInstance *) c;
+  if (!comp || nullPointer(comp, FMIX_STR "Serialized" FMU_STATE_STR "Size", FMU_STATE_STR, FMUstate) ||
+      nullPointer(comp, FMIX_STR "Serialized" FMU_STATE_STR "Size", "size", size))
+    return fmiXError;
   DATA *fmudata = (DATA *) comp->fmuData;
   INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
 
-  size_t stateSize = 0;
+  size_t stateSize = sizeof(ModelState);
 
   /* space for ringbuffer / simulation data contents */
   stateSize += ringBufferLength(internal_state->simulationData)    /* timeValue */
@@ -2531,16 +2622,24 @@ fmiXStatus FMIX(SerializeFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate, fmiXB
   /* TODO: make serialization format architecture- & endianness-independent */
 
   ModelInstance *comp = (ModelInstance *) c;
+  size_t needed = 0;
+  if (!comp || nullPointer(comp, FMIX_STR "Serialize" FMU_STATE_STR, FMU_STATE_STR, FMUstate) ||
+      nullPointer(comp, FMIX_STR "Serialize" FMU_STATE_STR, "serializedState", serializedState) ||
+      FMIX(SerializedFMUstateSize)(c, FMUstate, &needed) != fmiXOK)
+    return fmiXError;
+  if (size != needed) {
+    comp->state = model_state_error;
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "Serialize" FMU_STATE_STR ": Invalid argument size = %zu. Expected %zu.", size, needed)
+    return fmiXError;
+  }
   DATA *fmudata = (DATA *) comp->fmuData;
   INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
 
   /* assumption sizeof(fmiXByte) == sizeof(char) */
   /* probably true for most modern platforms     */
-  fmiXByte *serialVec = serializedState;
-
-  fmiXByte *currElement = serialVec;
-  char *currStr;
-  int currStrLen;
+  fmiXByte *currElement = serializedState;
+  memcpy(currElement, &internal_state->mode, sizeof(ModelState));
+  currElement += sizeof(ModelState);
   for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++) {
     SIMULATION_DATA *sdata =
                         (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
@@ -2583,74 +2682,62 @@ fmiXStatus FMIX(DeSerializeFMUstate)(fmiXComponent c, const fmiXByte serializedS
   /* TODO: make serialization format architecture- & endianness-independent */
 
   ModelInstance *comp = (ModelInstance *) c;
+  if (!comp || nullPointer(comp, FMIX_STR DESERIALIZE_STR FMU_STATE_STR, "serializedState", serializedState) ||
+      nullPointer(comp, FMIX_STR DESERIALIZE_STR FMU_STATE_STR, FMU_STATE_STR, FMUstate))
+    return fmiXError;
+  DATA *fmudata = (DATA *) comp->fmuData;
+  MODEL_DATA *md = fmudata->modelData;
+  STATE_READER r = {(const char *) serializedState, size, 1};
   INTERNAL_FMU_STATE *internal_state =
             (INTERNAL_FMU_STATE *) calloc(1, sizeof(INTERNAL_FMU_STATE));
   internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
-  DATA *fmudata = (DATA *) comp->fmuData;
 
-  fmiXByte *currElement = (fmiXByte *) serializedState;
+  readStateBytes(&r, &internal_state->mode, sizeof(ModelState));
+  if ((internal_state->mode & (internal_state->mode - 1)) || !(internal_state->mode & (FMU_STATE_ME_STATES | FMU_STATE_CS_STATES)))
+    r.ok = 0;
 
   SIMULATION_DATA tmpSimData = {0};
   for (int i = 0; i < SIZERINGBUFFER; i++) {
-
-    /* timeValue */
-    memcpy(&(tmpSimData.timeValue), currElement, sizeof(modelica_real));
-    currElement += sizeof(modelica_real);
-
-    /* realVars */
-    tmpSimData.realVars = (modelica_real *) calloc(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
-    memcpy(tmpSimData.realVars, currElement,
-                                sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
-    currElement += sizeof(modelica_real)*fmudata->modelData->nVariablesReal;
-
-    /* integerVars */
-    tmpSimData.integerVars = (modelica_integer *) calloc(fmudata->modelData->nVariablesInteger, sizeof(modelica_integer));
-    memcpy(tmpSimData.integerVars, currElement,
-                                   sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
-    currElement += sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger;
-
-    /* booleanVars */
-    tmpSimData.booleanVars = (modelica_boolean *) calloc(fmudata->modelData->nVariablesBoolean, sizeof(modelica_boolean));
-    memcpy(tmpSimData.booleanVars, currElement,
-                                   sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
-    currElement += sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean;
-
-    /* stringVars */
-    tmpSimData.stringVars = (modelica_string *) calloc(fmudata->modelData->nVariablesString, sizeof(modelica_string));
-    currElement += readStringArray(tmpSimData.stringVars, (const char *)currElement,
-                                   fmudata->modelData->nVariablesString);
-
+    tmpSimData.realVars = (modelica_real *) calloc(md->nVariablesReal, sizeof(modelica_real));
+    tmpSimData.integerVars = (modelica_integer *) calloc(md->nVariablesInteger, sizeof(modelica_integer));
+    tmpSimData.booleanVars = (modelica_boolean *) calloc(md->nVariablesBoolean, sizeof(modelica_boolean));
+    tmpSimData.stringVars = (modelica_string *) calloc(md->nVariablesString, sizeof(modelica_string));
+    readStateBytes(&r, &tmpSimData.timeValue, sizeof(modelica_real));
+    readStateBytes(&r, tmpSimData.realVars, sizeof(modelica_real) * md->nVariablesReal);
+    readStateBytes(&r, tmpSimData.integerVars, sizeof(modelica_integer) * md->nVariablesInteger);
+    readStateBytes(&r, tmpSimData.booleanVars, sizeof(modelica_boolean) * md->nVariablesBoolean);
+    readStateStrings(&r, tmpSimData.stringVars, md->nVariablesString);
     appendRingData(internal_state->simulationData, &tmpSimData);
   }
 
-  /* realParameter */
-  internal_state->realParameter = (modelica_real *) calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
-  memcpy(internal_state->realParameter, currElement,
-                                        sizeof(modelica_real)*fmudata->modelData->nParametersReal);
-  currElement += sizeof(modelica_real)*fmudata->modelData->nParametersReal;
-
-  /* integerParameter */
-  internal_state->integerParameter = (modelica_integer *) calloc(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
-  memcpy(internal_state->integerParameter, currElement,
-                                   sizeof(modelica_integer)*fmudata->modelData->nParametersInteger);
-  currElement += sizeof(modelica_integer)*fmudata->modelData->nParametersInteger;
-
-  /* booleanParameter */
-  internal_state->booleanParameter = (modelica_boolean *) calloc(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
-  memcpy(internal_state->booleanParameter, currElement,
-                                   sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean);
-  currElement += sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean;
-
-  /* stringParameter */
-  internal_state->stringParameter = (modelica_string *) calloc(fmudata->modelData->nParametersString, sizeof(modelica_string));
-  currElement += readStringArray(internal_state->stringParameter, (const char *)currElement,
-                                 fmudata->modelData->nParametersString);
+  internal_state->realParameter = (modelica_real *) calloc(md->nParametersReal, sizeof(modelica_real));
+  internal_state->integerParameter = (modelica_integer *) calloc(md->nParametersInteger, sizeof(modelica_integer));
+  internal_state->booleanParameter = (modelica_boolean *) calloc(md->nParametersBoolean, sizeof(modelica_boolean));
+  internal_state->stringParameter = (modelica_string *) calloc(md->nParametersString, sizeof(modelica_string));
+  readStateBytes(&r, internal_state->realParameter, sizeof(modelica_real) * md->nParametersReal);
+  readStateBytes(&r, internal_state->integerParameter, sizeof(modelica_integer) * md->nParametersInteger);
+  readStateBytes(&r, internal_state->booleanParameter, sizeof(modelica_boolean) * md->nParametersBoolean);
+  readStateStrings(&r, internal_state->stringParameter, md->nParametersString);
 
   /* delay() and spatialDistribution() histories */
-  memcpy(&internal_state->nHistory, currElement, sizeof(size_t));
-  currElement += sizeof(size_t);
+  readStateBytes(&r, &internal_state->nHistory, sizeof(size_t));
+  if (internal_state->nHistory > r.left / sizeof(double)) {
+    r.ok = 0;
+    internal_state->nHistory = 0;
+  }
   internal_state->history = (double*) calloc(internal_state->nHistory ? internal_state->nHistory : 1, sizeof(double));
-  memcpy(internal_state->history, currElement, internal_state->nHistory * sizeof(double));
+  readStateBytes(&r, internal_state->history, internal_state->nHistory * sizeof(double));
+
+  if (r.ok && r.left == 0) {
+    long k = setDelayStateWords(fmudata, internal_state->history, internal_state->nHistory, 0);
+    r.ok = k >= 0 && setSpatialDistributionStateWords(fmudata, internal_state->history + k, internal_state->nHistory - k, 0) == (long) (internal_state->nHistory - k);
+  }
+  if (!r.ok || r.left != 0) {
+    freeInternalState(comp, internal_state);
+    comp->state = model_state_error;
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR DESERIALIZE_STR FMU_STATE_STR ": The serialized state does not match size = %zu or this model.", size)
+    return fmiXError;
+  }
 
   *FMUstate = (fmiXFMUstate) internal_state;
   return fmiXOK;
@@ -3151,9 +3238,7 @@ fmiXStatus internalGetNominalsOfContinuousStates(fmiXComponent c, fmiXReal x_nom
   DATA* fmudata = (DATA *) comp->fmuData;
   for (i = 0; i < nx; i++)
   {
-    /* Floored as ida_solver_setNominals floors it. */
-    modelica_real nominal = getNominalFromScalarIdx(fmudata->simulationInfo, fmudata->modelData, VAR_KIND_STATE, i);
-    x_nominal[i] = fmax(fabs(nominal), 1e-32);
+    x_nominal[i] = getPositiveNominalFromScalarIdx(fmudata->simulationInfo, fmudata->modelData, VAR_KIND_STATE, i);
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetNominalsOfContinuousStates: x_nominal[%d] = %.16g", i, x_nominal[i])
   }
 #endif
@@ -3245,6 +3330,7 @@ fmiXStatus FMIX(GetRealOutputDerivatives)(fmiXComponent c, const fmiXValueRefere
   return fmiXOK;
 }
 
+#ifdef OMC_FMI_CO_SIMULATION
 /**
  * @brief Internal Co-Simulation step, called from fmi2DoStep and fmi3DoStep.
  *
@@ -3317,8 +3403,8 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   eventInfo.terminateSimulation               = fmiXFalse;
   eventInfo.nominalsOfContinuousStatesChanged = fmiXFalse;
   eventInfo.valuesOfContinuousStatesChanged   = fmiXTrue;
-  eventInfo.nextEventTimeDefined              = fmiXFalse;
-  eventInfo.nextEventTime                     = 0.0;
+  eventInfo.nextEventTimeDefined              = comp->eventInfo.nextEventTimeDefined;
+  eventInfo.nextEventTime                     = comp->eventInfo.nextEventTime;
 
   comp->fmuData->localData[0]->timeValue = currentCommunicationPoint;
   tEnd = currentCommunicationPoint + communicationStepSize;
@@ -3336,16 +3422,18 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   }
 #endif
 
-  status = internalEventIteration(c, &eventInfo);
-  if (eventInfo.terminateSimulation) {
-    term = fmiXTrue;
-    done = 1;
-    goto doStep_cleanup;
-  }
-  if (status != fmiXOK) goto doStep_cleanup;
-  if (comp->_tunable_applied) {
-    comp->_tunable_applied = 0;
-    comp->solverInfo->didEventStep = 1;
+  if (comp->_step_event || comp->_tunable_dirty || comp->_tunable_applied) {
+    status = internalEventIteration(c, &eventInfo);
+    if (eventInfo.terminateSimulation) {
+      term = fmiXTrue;
+      done = 1;
+      goto doStep_cleanup;
+    }
+    if (status != fmiXOK) goto doStep_cleanup;
+    if (comp->_tunable_applied || comp->_event_found) {
+      comp->_tunable_applied = 0;
+      comp->solverInfo->didEventStep = 1;
+    }
   }
 
   /* Integration loop */
@@ -3417,7 +3505,6 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
         }
         break;
       case S_CVODE:
-#ifdef OMC_FMI_HAVE_CVODE
         comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
         comp->solverInfo->currentStepSize = tNext - comp->solverInfo->currentTime;
         flag = cvode_solver_step(comp->fmuData, comp->threadData, comp->solverInfo);
@@ -3434,11 +3521,6 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
           tNext = comp->solverInfo->currentTime;
           time_event = 0;
         }
-#else
-        FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
-        status = fmiXFatal;
-        goto doStep_cleanup;
-#endif /* OMC_FMI_HAVE_CVODE */
         break;
       case S_IDA:
 #ifdef OMC_FMI_HAVE_IDA
@@ -3614,6 +3696,8 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
     }
   }
 
+  comp->eventInfo.nextEventTimeDefined = eventInfo.nextEventTimeDefined;
+  comp->eventInfo.nextEventTime = eventInfo.nextEventTime;
   done = 1;
 
   /* catch */
@@ -3642,3 +3726,4 @@ doStep_cleanup:
 
   return status;
 }
+#endif /* OMC_FMI_CO_SIMULATION */

@@ -1,0 +1,57 @@
+// name:     fmi2_fmustate_bounds
+// keywords: FMI 2.0 export FMU state serialization NULL
+// status:   correct
+// teardown_command: rm -rf fmi2_fmustate_bounds*.fmu fmi2_fmustate_bounds*.fmutmp/ fmi2_fmustate_bounds*.log fmi2_fmustate_bounds*_out.txt
+//
+// fmi2SerializeFMUstate must refuse a size other than the one from
+// fmi2SerializedFMUstateSize, and fmi2DeSerializeFMUstate or the fmi2SetFMUstate
+// after it must refuse a byte vector that does not fit size or this model. After
+// such an error, a stored state restored with fmi2SetFMUstate continues the
+// simulation. The FMU state calls must return fmi2Error for a NULL argument, and
+// fmi2FreeFMUstate must ignore a NULL pointer.
+
+loadString("
+model fmi2_fmustate_bounds
+  parameter String s = \"abc\";
+  parameter Real k = 2;
+  Real x(start = 1, fixed = true);
+  Real y = delay(x, 0.1);
+equation
+  der(x) = -k*x;
+end fmi2_fmustate_bounds;
+"); getErrorString();
+buildModelFMU(fmi2_fmustate_bounds, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_fmustate_bounds.py fmi2_fmustate_bounds.fmu fmi2_fmustate_bounds_out.txt > fmi2_fmustate_bounds.log 2>&1"); getErrorString();
+readFile("fmi2_fmustate_bounds_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi2_fmustate_bounds.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "serialize, size half of the state: fmi2Error
+// serialize, size 0: fmi2Error
+// serialize, size one byte too many: fmi2Error
+// deserialize, exact size, then set: fmi2OK, fmi2SetFMUstate: fmi2OK
+// deserialize and set, one byte short: fmi2Error
+// deserialize and set, one byte too many: fmi2Error
+// deserialize and set, all bytes 0xFF: fmi2Error
+// deserialize and set, delay() buffer longer than the state: fmi2Error
+// serialize with a wrong size, then fmi2FreeFMUstate, fmi2SetFMUstate, fmi2EnterContinuousTimeMode: fmi2Error, fmi2OK, fmi2OK, fmi2OK
+// deserialize and set a damaged state, then fmi2FreeFMUstate, fmi2SetFMUstate, fmi2EnterContinuousTimeMode: fmi2Error, fmi2OK, fmi2OK, fmi2OK
+// fmi2FreeFMUstate(c, NULL): fmi2OK
+// fmi2FreeFMUstate(c, &NULL): fmi2OK
+// fmi2GetFMUstate(c, NULL): fmi2Error
+// fmi2SetFMUstate(c, NULL): fmi2Error
+// fmi2SerializedFMUstateSize(c, NULL, &size): fmi2Error
+// fmi2SerializedFMUstateSize(c, s, NULL): fmi2Error
+// fmi2SerializeFMUstate(c, NULL, buffer, size): fmi2Error
+// fmi2SerializeFMUstate(c, s, NULL, size): fmi2Error
+// fmi2DeSerializeFMUstate(c, NULL, size, &s): fmi2Error
+// fmi2DeSerializeFMUstate(c, buffer, size, NULL): fmi2Error
+// "
+// ""
+// endResult

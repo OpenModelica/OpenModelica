@@ -423,6 +423,7 @@ algorithm
     end if;
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.timeAliasVars, NONE());
     setGlobalRoot(Global.jacobianOffsets, {});
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
@@ -754,6 +755,7 @@ algorithm
       // translateModel records the lowering error and fails, so the message
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
+      writeExternalFunctionsFile(simCode);
       // The wasm module carries its own metadata; *_init.xml is only read by
       // OMEdit's variable browser and *_info.json only by its transformational
       // debugger, so the latter is written only when debugging is asked for
@@ -792,6 +794,23 @@ algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
 
+protected function writeExternalFunctionsFile
+  "Writes <prefix>_external_functions.json, the names of the external functions
+   the model calls, as the C target does. OMEdit checks it before a run."
+  input SimCode.SimCode simCode;
+protected
+  list<String> names = {};
+algorithm
+  for fn in simCode.modelInfo.functions loop
+    names := match fn
+      case SimCodeFunction.EXTERNAL_FUNCTION() then ("\"" + fn.extName + "\"") :: names;
+      else names;
+    end match;
+  end for;
+  System.writeFile(simCode.fileNamePrefix + "_external_functions.json",
+                   "[\n" + stringDelimitList(listReverse(names), ",\n") + "\n]");
+end writeExternalFunctionsFile;
+
 protected function callTargetTemplatesCPP
   input SimCode.SimCode iSimCode;
 algorithm
@@ -823,7 +842,7 @@ algorithm
       low := System.tolower(tok);
       if StringUtil.endsWith(low, ".dxf") or StringUtil.endsWith(low, ".stl") or
          StringUtil.endsWith(low, ".obj") or StringUtil.endsWith(low, ".3ds") then
-        if System.stringFind(tok, "modelica://") == 0 then
+        if StringUtil.startsWith(low, "modelica:/") then
           path := ProgramUtil.getFullPathFromUri(program, tok, true);
         elseif System.stringFind(tok, "file://") == 0 then
           path := substring(tok, 8, stringLength(tok));
@@ -973,7 +992,7 @@ public function emitWasmFMU
 protected
   String guid, modelDescriptionStr, simulationFlagsJson;
   String lsDaeManifestStr = "";
-  String fmutmp = "", terminalsDir = "", documentationDir = "";
+  String fmutmp = "", terminalsDir = "", documentationDir = "", modelIcon = "";
   list<SimCode.FmiTerminal> terminals;
   // `--fmuDirectory`: an export for an OpenModelica importer, which reads the
   // model description and the artifact and nothing else.
@@ -1011,22 +1030,25 @@ algorithm
         {SimCodeCodegenUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
       ExecStat.execStat("FMU fmi-ls-manifest.xml");
     end if;
-    // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
-    // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
-    if not bareExport then
-      terminalsDir := fmutmp + "/terminalsAndIcons/";
-      terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode);
-      if not listEmpty(terminals) then
-        Util.createDirectoryTree(terminalsDir);
-        System.writeFile(terminalsDir + "terminalsAndIcons.xml",
-                         Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals)));
-      end if;
-      CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix);
-      if not System.directoryExists(terminalsDir) then
-        terminalsDir := "";
-      end if;
-      ExecStat.execStat("FMU terminalsAndIcons.xml");
+  end if;
+  // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
+  // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
+  if not bareExport then
+    terminalsDir := fmutmp + "/terminalsAndIcons/";
+    terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode, FMI.isFMIVersion20(FMUVersion));
+    if not listEmpty(terminals) then
+      Util.createDirectoryTree(terminalsDir);
+      System.writeFile(terminalsDir + "terminalsAndIcons.xml",
+                       Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals)));
     end if;
+    CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix, modelPng = FMI.isFMIVersion20(FMUVersion));
+    if not System.directoryExists(terminalsDir) then
+      terminalsDir := "";
+    end if;
+    if System.regularFileExists(fmutmp + "/model.png") then
+      modelIcon := fmutmp + "/model.png";
+    end if;
+    ExecStat.execStat("FMU terminalsAndIcons.xml");
   end if;
   // After the icons, so the page references the one terminalsAndIcons/ holds.
   if not bareExport and writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
@@ -1036,11 +1058,11 @@ algorithm
   System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_TEMPLATES);
   simulationFlagsJson := wasmFMUSimulationFlagsJson(simCode);
   if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, modelIcon, simulationFlagsJson);
   elseif FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, modelIcon, simulationFlagsJson);
   else
-    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, modelIcon, simulationFlagsJson);
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end emitWasmFMU;
@@ -1075,7 +1097,7 @@ algorithm
       Boolean needSundials = false;
       String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
-      String cmakelistsStr, needCvode;
+      String cmakelistsStr;
       Boolean daeModeFmu, needIda;
       String modelDefinesHeaderStr;
       String fmu_dummy_include_defines;
@@ -1086,7 +1108,7 @@ algorithm
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       list<String> rust_crate_roots;
       list<String> simrt_c_sources;
-      Boolean rustRuntime, rustFmi;
+      Boolean rustRuntime, rustFmi, coSimulation;
       Boolean withFMI2 = Flags.getConfigBool(Flags.FMU_WITH_FMI2);
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
@@ -1256,26 +1278,28 @@ algorithm
           cminpack_sources := RuntimeSources.cminpack_sources;
         end if;
 
-        // The in-FMU CVODE integrator (s:cvode) is a Co-Simulation feature, and
-        // OpenModelica exports FMI 1.0 as Model Exchange only.
-        if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion == "1.0" then
-          Error.addCompilerWarning("OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.");
-        end if;
-
         // An FMU of a --daeMode model evaluates the residual form with dae_mode.c, which in
         // fmi-ls-dae's ODE mode hands it to the nonlinear solvers (initDAEModeExplicitNLS).
         // Only its Co-Simulation part integrates the residual form, with IDA.
         daeModeFmu := isSome(simCode.daeModeData) and not rustRuntime;
         needIda := daeModeFmu and FMI.isFMICSType(FMUType);
+        // The C Co-Simulation interface; it has CVODE also with s:euler, so that
+        // _flags.json can select CVODE without a rebuild.
+        coSimulation := FMUVersion <> "1.0" and not rustFmi and FMI.isFMICSType(FMUType);
 
         // The linear and non-linear solvers of the C runtime use SuiteSparse, SUNDIALS
         // and Lis, as in a simulation.
         if rustRuntime then
           simrt_c_sundials_sources := {};
           solver_library_sources := {};
+          // A rebuild of the runtime with cargo builds SUNDIALS and KLU from these.
+          if not listEmpty(rust_crate_roots) then
+            copyFiles(RuntimeSources.solver_library_files, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+            copyFiles(RuntimeSources.solver_library_ida_files, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          end if;
         else
           simrt_c_sundials_sources := List.flatten({RuntimeSources.simrt_c_sundials_sources,
-            if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0" then RuntimeSources.simrt_c_cvode_sources else {},
+            if coSimulation then RuntimeSources.simrt_c_cvode_sources else {},
             if daeModeFmu then RuntimeSources.simrt_c_dae_mode_sources else {},
             if needIda then RuntimeSources.simrt_c_ida_sources else {}});
           copyFiles(simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
@@ -1289,7 +1313,7 @@ algorithm
           // <SourceFiles> are compiled without definitions: omc_simulation_settings.h
           // carries them, and omc_config.h for a runtime source that includes it first.
           fmu_solver_defines := "#define WITH_SUITESPARSE 1" +
-            (if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0" then "\n#define OMC_FMI_HAVE_CVODE 1" else "") +
+            (if coSimulation then "\n#define OMC_FMI_CO_SIMULATION 1" else "") +
             (if daeModeFmu then "\n#define OMC_FMI_DAE_MODE 1" else "") +
             (if needIda then "\n#define OMC_FMI_HAVE_IDA 1" else "");
           System.writeFile(fmu_tmp_sources_dir + "omc_config.h", "#include \"omc_simulation_settings.h\"\n");
@@ -1345,15 +1369,16 @@ algorithm
         fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
         copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
 
+        // FMI 3.0 Terminals, also in FMI 2.0.4: create the terminalsAndIcons/
+        // directory (the CodegenFMU3 template writes terminalsAndIcons.xml into it)
+        // when the model has connector-derived terminals.
+        if FMUVersion <> "1.0" and not listEmpty(SimCodeCodegenUtil.getFMI3Terminals(simCode, FMUVersion == "2.0")) then
+          Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
+        end if;
+
         // For FMI 3.0 also copy the FMI 3.0 reference headers into the FMU sources.
         if FMUVersion == "3.0" then
           copyFiles({"fmi/fmi3Functions.h","fmi/fmi3FunctionTypes.h","fmi/fmi3PlatformTypes.h"}, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          // FMI 3.0 Terminals: create the terminalsAndIcons/ directory (the
-          // CodegenFMU3 template writes terminalsAndIcons.xml into it) when the
-          // model has connector-derived terminals.
-          if not listEmpty(SimCodeCodegenUtil.getFMI3Terminals(simCode)) then
-            Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
-          end if;
           // fmi-ls-dae: create extra/org.fmi-standard.fmi-ls-dae/ for a --daeMode
           // Model Exchange model; the CodegenFMU3 template writes the manifest into it.
           if isSome(simCode.daeModeData) and FMI.isFMIMEType(FMUType) then
@@ -1408,11 +1433,13 @@ algorithm
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
 
-        // FMI 3.0 graphical user annotations (issue #15686 task 9): the template
-        // above wrote terminalsAndIcons.xml, this adds the icons beside it. Before
-        // the documentation, which shows the icon it produced.
-        if FMUVersion == "3.0" then
-          CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix);
+        // FMI 3.0 graphical user annotations (issue #15686 task 9), also in FMI
+        // 2.0.4: the template above wrote terminalsAndIcons.xml, this adds the
+        // icons beside it. Before the documentation, which shows the icon it produced.
+        if FMUVersion == "1.0" then
+          CevalScriptBackend.generateFMI1ModelIcon(simCode.modelInfo.name, fmutmp);
+        else
+          CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix, modelPng = FMUVersion == "2.0");
         end if;
         if writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
           ExecStat.execStat("FMU documentation");
@@ -1482,8 +1509,6 @@ algorithm
 
         // Add external libraries and includes
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMI_INTERFACE_HEADER_FILES_DIRECTORY@", "\"" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + "\"");
-        needCvode := if FMUVersion <> "1.0" and not rustFmi and SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then "ON" else "OFF";
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_DAE_MODE@", if daeModeFmu then "ON" else "OFF");
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_IDA@", if needIda then "ON" else "OFF");
         // --simCodeTarget=C+Rust: name the installed archive, which is what this
@@ -1521,12 +1546,14 @@ algorithm
               if FMUVersion == "3.0"
               then {"fmi-export/fmu3_model_interface.c"}
               else {"fmi-export/fmu2_model_interface.c"}) loop
-            modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + fmuModelInterfaceFile);
+            // readFile keeps CRLF but writeFile translates \n to \r\n on Windows,
+            // giving \r\r\n, which breaks backslash line continuations in macros.
+            modelDefinesHeaderStr := System.stringReplace(System.readFile(fmu_tmp_sources_dir + fmuModelInterfaceFile), "\r\n", "\n");
             modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, fmu_dummy_include_defines, "../" + simCode.fileNamePrefix + "_FMU.h");
             System.writeFile(fmu_tmp_sources_dir + fmuModelInterfaceFile, modelDefinesHeaderStr);
           end for;
           if withFMI2 then
-            modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+            modelDefinesHeaderStr := System.stringReplace(System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c"), "\r\n", "\n");
             modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU2.h");
             System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
           end if;
@@ -1582,7 +1609,7 @@ protected function writeFMUDocumentation
                                  revisions=\"<html> </html>\",
                                  __OpenModelica_infoHeader = \"<html> </html>\"))
   plus the modelica:// images it references, so the page needs nothing outside the
-  FMU. FMI 3.0 pages also show the icon rendered to terminalsAndIcons/.
+  FMU. FMI 2.0 and 3.0 pages also show the icon rendered to terminalsAndIcons/.
   False when the model carries no such annotation and nothing was written."
   input Absyn.Program program;
   input SimCode.SimCode simCode;
@@ -1599,9 +1626,9 @@ algorithm
   end if;
 
   name := Util.escapeModelicaStringToXmlString(AbsynUtil.pathString(simCode.modelInfo.name));
-  // terminalsAndIcons/ is FMI 3.0 only, and holds an icon only for a model whose
-  // icon layer had something to draw.
-  icon := if FMUVersion == "3.0" and System.regularFileExists(fmutmp + "/terminalsAndIcons/icon.svg")
+  // terminalsAndIcons/ holds an icon only for a model whose icon layer had
+  // something to draw.
+  icon := if System.regularFileExists(fmutmp + "/terminalsAndIcons/icon.svg")
           then "<img class=\"svgiconhead\" src=\"../terminalsAndIcons/icon.svg\" alt=\"\"> " else "";
 
   page := "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
@@ -1670,7 +1697,7 @@ protected
 algorithm
   // A URI cannot contain any of these unencoded, so tokenizing on them lifts the
   // URIs out of the markup without needing to parse it.
-  uris := List.uniqueOnTrue(list(u for u guard StringUtil.startsWith(u, "modelica://")
+  uris := List.uniqueOnTrue(list(u for u guard StringUtil.startsWith(System.tolower(u), "modelica:/")
                                  in System.strtok(page, "\"'<> \t\n\r")), stringEq);
   for uri in uris loop
     try
@@ -2203,7 +2230,7 @@ algorithm
   nf_api := FlagsUtil.set(Flags.NF_API, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-  bdae := NBackendDAE.lower(inFlatModel, funcMap);
+  bdae := NBackendDAE.lower(inFlatModel, funcMap, inFileNamePrefix, simSettingsSimflags(inSimSettingsOpt), SymbolTable.getAbsyn());
   if Flags.isSet(Flags.OPT_DAE_DUMP) then
     print(NBackendDAE.toString(bdae, "(After Lowering)"));
   end if;
@@ -2257,6 +2284,7 @@ protected
   SimCodeFunction.MakefileParams makefileParams;
   SimCode.SpatialDistributionInfo spatialInfo;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
   Integer maxDelayedExpIndex;
   Integer uniqueEqIndex = 1;
   Boolean tmpB;
@@ -2335,7 +2363,7 @@ algorithm
     // create make file params
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
     //create delay exps
-    (delayedExps, maxDelayedExpIndex) := SimCodeUtil.extractDelayedExpressions(inBackendDAE);
+    (delayedExps, maxDelayedExpIndex, delayedLoops) := SimCodeUtil.extractDelayedExpressions(inBackendDAE);
     spatialInfo := SimCodeUtil.extractSpatialDistributionInfo(inBackendDAE);
 
     // created event suff e.g. zeroCrossings, samples, ...
@@ -2545,6 +2573,7 @@ algorithm
     end if;
 
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.timeAliasVars, NONE());
     setGlobalRoot(Global.jacobianOffsets, {});
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
@@ -2578,7 +2607,7 @@ algorithm
       discreteModelVars           = discreteModelVars,
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
-      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, {}),
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, delayedLoops),
       spatialInfo                 = spatialInfo,
       jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,

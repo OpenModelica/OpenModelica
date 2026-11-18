@@ -2391,15 +2391,14 @@ algorithm
     then ();
   case(, _,_)
     algorithm
-      libPaths := {uri,
-                   uri + "/" + System.modelicaPlatform(),
-                   uri + "/" + System.openModelicaPlatform(),
+      libPaths := listAppend(uri :: uri + "/" + System.modelicaPlatform() :: msvcLibraryDirectoryPaths(uri + "/" + System.modelicaPlatform()),
+                  {uri + "/" + System.openModelicaPlatform(),
                    uri + "/" + System.openModelicaPlatformAlternative(),
                    (Settings.getHomeDir(false) + "/.openmodelica/binaries/" + AbsynUtil.pathFirstIdent(path)),
                    // Where an MSL-shaped build project forces its CMAKE_INSTALL_LIBDIR.
                    (userCompiledBinariesDirectory(path) + "/Library/" + System.modelicaPlatform()),
                    (installationDir + "/lib/"),
-                   (installationDir + "/lib/" + Autoconf.triple + "/omc")};
+                   (installationDir + "/lib/" + Autoconf.triple + "/omc")});
 
       // A build project run for a wasm target installs beside, not over, the host build.
       if isWasmSimCodeTarget() then
@@ -2481,6 +2480,17 @@ protected function getGerneralTarget
 algorithm
   generalTarget := if (System.stringFind(target, "msvc") == 0) then "msvc" else target;
 end getGerneralTarget;
+
+protected function msvcLibraryDirectoryPaths
+  "The existing compiler directories of platformDir for an MSVC target, least
+   preferred first."
+  input String platformDir;
+  output list<String> dirs = {};
+algorithm
+  if getGerneralTarget(Flags.getConfigString(Flags.TARGET)) == "msvc" then
+    dirs := list(platformDir + "/" + d for d guard System.directoryExists(platformDir + "/" + d) in listReverse(Util.msvcLibraryDirectories()));
+  end if;
+end msvcLibraryDirectoryPaths;
 
 
 protected function userCompiledBinariesDirectory
@@ -2589,6 +2599,9 @@ algorithm
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs := generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
+        for dir in msvcLibraryDirectoryPaths(str + "/" + platform3) loop
+          libs := generateExtFunctionLibraryDirectoryPaths2(true, dir, isLinux, libs);
+        end for;
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(isWasmSimCodeTarget(), str + "/wasm32-wasip1", isLinux, libs);
@@ -2604,6 +2617,9 @@ algorithm
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs := generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
+        for dir in msvcLibraryDirectoryPaths(str + "/" + platform3) loop
+          libs := generateExtFunctionLibraryDirectoryPaths2(true, dir, isLinux, libs);
+        end for;
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(isWasmSimCodeTarget(), str + "/wasm32-wasip1", isLinux, libs);

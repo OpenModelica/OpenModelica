@@ -291,12 +291,12 @@ template rustSourceFileSet(list<String> sourceFiles)
   >>
 end rustSourceFileSet;
 
-template fmiTerminalsAndIconsFile(SimCode simCode, String fileNamePrefixHash)
+template fmiTerminalsAndIconsFile(SimCode simCode, String fileNamePrefixHash, Boolean scalarize)
  "Writes terminalsAndIcons/terminalsAndIcons.xml into the FMU when the model has
   connector-derived terminals. Returns the empty string (the content is written to
   a file). The terminalsAndIcons/ directory is created in SimCodeMain beforehand."
 ::=
-match SimCodeCodegenUtil.getFMI3Terminals(simCode)
+match SimCodeCodegenUtil.getFMI3Terminals(simCode, scalarize)
 case {} then ''
 case terminals then
   let()= textFile(fmiTerminalsAndIcons(terminals), '<%fileNamePrefixHash%>.fmutmp/terminalsAndIcons/terminalsAndIcons.xml')
@@ -307,7 +307,8 @@ template fmiTerminalsAndIcons(list<FmiTerminal> terminals)
  "Generates the terminalsAndIcons.xml content (FMI 3.0 Terminals): one <Terminal>
   per connector instance, grouping its member variables. The connector membership
   is detected from the flat-model component type (a connector-typed cref qualifier)
-  in SimCodeCodegenUtil.getFMI3Terminals."
+  in SimCodeCodegenUtil.getFMI3Terminals. An FMI 2.0 FMU also has fmiVersion=\"3.0\",
+  the version that defines the file (FMI 3.0, 2.4.9)."
 ::=
   <<
   <?xml version="1.0" encoding="UTF-8"?>
@@ -649,7 +650,7 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
   else
   match arrayElementType
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%>><%Dimensions3(simVar)%></Float64>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar, simCode)%><%relativeQuantity(simVar)%>><%Dimensions3(simVar)%></Float64>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>><%Dimensions3(simVar)%></Int32>'
     case T_BOOL(__) then
@@ -673,7 +674,7 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then

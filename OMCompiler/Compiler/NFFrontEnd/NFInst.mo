@@ -385,6 +385,7 @@ algorithm
   System.setUsesCardinality(false);
   System.setHasOverconstrainedConnectors(false);
   System.setHasStreamConnectors(false);
+  System.setHasPartialInstances(false);
 end resetGlobalFlags;
 
 function clearCaches
@@ -533,8 +534,8 @@ algorithm
     functions := Flatten.flattenFunction(fn, functions);
   end for;
 
-  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), {}, {}, {}, {}, {}, {}, {},
-    ElementSource.createElementSource(InstNode.info(funcNode)));
+  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), InstNode.restriction(funcNode),
+    InstNode.isPartial(funcNode), {}, {}, {}, {}, {}, {}, {}, ElementSource.createElementSource(InstNode.info(funcNode)));
 end instantiateRootFunction;
 
 function instantiate
@@ -2418,12 +2419,17 @@ algorithm
         {AbsynUtil.pathString(InstNode.scopePath(clsNode))}, info);
       fail();
     end if;
-  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER and not InstContext.inRelaxed(context) then
-    // The type of a component may not be a partial class.
-    Error.addMultiSourceMessage(Error.PARTIAL_COMPONENT_TYPE,
-      {AbsynUtil.pathString(InstNode.scopePath(compNode)), InstNode.name(clsNode)},
-      {InstNode.info(clsNode), info});
-    fail();
+  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER then
+    if InstContext.inRelaxed(context) and (InstNode.isReplaceable(compNode) or InstNode.isReplaceable(clsNode)) then
+      // Used by checkModel.
+      System.setHasPartialInstances(true);
+    else
+      // The type of a component may not be a partial class.
+      Error.addMultiSourceMessage(Error.PARTIAL_COMPONENT_TYPE,
+        {AbsynUtil.pathString(InstNode.scopePath(compNode)), InstNode.name(clsNode)},
+        {InstNode.info(clsNode), info});
+      fail();
+    end if;
   end if;
 end checkPartialComponent;
 
@@ -3891,7 +3897,10 @@ algorithm
 
     // allow non standard Modelica on a flag
     case(SCode.PARTS(externalDecl = SOME(ext_decl)), Sections.EXTERNAL())
-      guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdMultipleExternalDeclarations")
+      guard Error.nonStandardAccepted("nonStdMultipleExternalDeclarations")
+      algorithm
+        Error.addNonStandardWarning("nonStdMultipleExternalDeclarations",
+          Error.MULTIPLE_SECTIONS_IN_FUNCTION, {InstNode.name(scope)}, InstNode.info(scope));
       then
         instExternalDecl(ext_decl, scope, context);
 
@@ -4345,8 +4354,7 @@ algorithm
 
     case SCode.Statement.ALG_REINIT(info = info)
       algorithm
-        if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "reinitInAlgorithms") then
-          Error.addSourceMessage(Error.REINIT_IN_ALGORITHM, {}, info);
+        if not Error.addNonStandardMessage("reinitInAlgorithms", Error.REINIT_IN_ALGORITHM, {}, info) then
           fail();
         end if;
 
@@ -4582,12 +4590,11 @@ algorithm
     node := Lookup.lookupSimpleName(name, scope, context);
 
     if InstNode.isInner(node) then
-      is_error := not (InstContext.inRelaxed(context) or Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdTopLevelOuter"));
-
-      if is_error then
-        Error.addSourceMessageAsError(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
-      else
+      if InstContext.inRelaxed(context) then
         Error.addSourceMessage(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
+        is_error := false;
+      else
+        is_error := not Error.addNonStandardMessage("nonStdTopLevelOuter", Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
       end if;
     else
       Error.addMultiSourceMessage(Error.MISSING_INNER_NAME_CONFLICT,

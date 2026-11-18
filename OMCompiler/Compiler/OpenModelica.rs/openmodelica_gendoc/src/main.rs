@@ -22,13 +22,19 @@ mod icons;
 mod index;
 mod links;
 mod packages;
+mod rst;
 
 use doc::ClassDoc;
 
 const USAGE: &str = "\
 usage: omgendoc [options] LIBRARY...
+       omgendoc --scripting-api DIR
 
   LIBRARY              a library name, optionally NAME/VERSION
+      --scripting-api DIR
+                         write only the scripting API chapter of the User's
+                         Guide: DIR/interface.inc, and the documentation of
+                         each function as DIR/interface/<class>.html
 
   -o, --output-dir DIR   where to write the documentation (default: .)
       --icons-dir DIR    pre-rendered icons, named <Class>.svg, as a path
@@ -88,6 +94,7 @@ struct Options {
     skip_diagrams: Vec<String>,
     max_memory: u64,
     stats: bool,
+    scripting_api: Option<PathBuf>,
 }
 
 fn parse_args() -> Result<Options, String> {
@@ -108,6 +115,7 @@ fn parse_args() -> Result<Options, String> {
         skip_diagrams: Vec::new(),
         max_memory: 24,
         stats: false,
+        scripting_api: None,
     };
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -126,6 +134,7 @@ fn parse_args() -> Result<Options, String> {
             "--chunk" => options.chunk = value()?.parse().map_err(|_| "--chunk needs a number")?,
             "--max-memory" => options.max_memory = value()?.parse().map_err(|_| "--max-memory needs a number")?,
             "--stats" => options.stats = true,
+            "--scripting-api" => options.scripting_api = Some(PathBuf::from(value()?)),
             "--modelica-path" => options.modelica_path = Some(value()?),
             "--package-index" => options.package_index = Some(PathBuf::from(value()?)),
             "--testing-conf" => options.testing_conf = Some(PathBuf::from(value()?)),
@@ -150,7 +159,7 @@ fn parse_args() -> Result<Options, String> {
             }
         }
     }
-    if options.libraries.is_empty() {
+    if options.libraries.is_empty() && options.scripting_api.is_none() {
         return Err("no library given".to_string());
     }
     Ok(options)
@@ -774,6 +783,10 @@ fn run() -> Result<(), String> {
     let options = parse_args()?;
     let _ = thread_pool(&options, "omgendoc").build_global();
     init_compiler().map_err(|e| e.to_string())?;
+    if let Some(dir) = &options.scripting_api {
+        let program = load_builtin("OpenModelica").map_err(|e| e.to_string())?;
+        return rst::scripting_api(&program, dir);
+    }
     std::fs::create_dir_all(&options.output_dir).map_err(|e| e.to_string())?;
 
     let path = modelica_path(&options);

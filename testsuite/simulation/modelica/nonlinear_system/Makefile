@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 kinsolBoundStart.mos \
+negativeNominal.mos \
 bug_2841.mos \
 bug_3527.mos \
 externalErrorThenThrow.mos \
@@ -11,6 +12,7 @@ nonlinear.mos \
 nonlinear_kinsol.mos \
 kinsolSignConstraint.mos \
 kinsolStatistics.mos \
+mixedSingleEquation.mos \
 nonlinearDelayTest.mos \
 nonlinearFailed.mos \
 nonlinearFailed_kinsol.mos \

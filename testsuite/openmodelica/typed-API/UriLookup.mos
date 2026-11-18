@@ -7,11 +7,15 @@ setModelicaPath("./UriLookup");getErrorString();
 loadModel(A);getErrorString();
 OpenModelica.Scripting.testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("modelica://A.B.C/D.jpeg"));getErrorString();
 OpenModelica.Scripting.testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("Modelica://A.B.C/Resources/Icons/D.jpeg"));getErrorString();
-OpenModelica.Scripting.uriToFilename("Modelica:///A.B.C/Resources/Icons/D.jpeg");getErrorString();
+OpenModelica.Scripting.testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("modelica://A.B.C/a+b%20c.jpeg"));getErrorString();
+OpenModelica.Scripting.testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("modelica:/A.B.C/D.jpeg"));getErrorString();
+OpenModelica.Scripting.testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("Modelica:///A.B.C/Resources/Icons/D.jpeg"));getErrorString();
+OpenModelica.Scripting.uriToFilename("modelica:A.B.C/D.jpeg");getErrorString();
 OpenModelica.Scripting.uriToFilename("modelica://X.B.C/D.jpeg");getErrorString();
 OpenModelica.Scripting.uriToFilename("file:///tmp/D%20E.jpeg");getErrorString();
-regexBool(OpenModelica.Scripting.testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("FilE://D%20.jpeg")),"^openmodelica/typed-API/([A-Za-z0-9._-]*/)?D%20.jpeg");getErrorString();
-regexBool(OpenModelica.Scripting.testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("FilE://localhost/D%20.jpeg")),"^openmodelica/typed-API/([A-Za-z0-9._-]*/)?localhost/D%20.jpeg");getErrorString();
+OpenModelica.Scripting.uriToFilename("file:/tmp/D%20E.jpeg");getErrorString();
+OpenModelica.Scripting.uriToFilename("FilE://localhost/tmp/D+E.jpeg");getErrorString();
+OpenModelica.Scripting.uriToFilename("FilE://D%20.jpeg");getErrorString();
 OpenModelica.Scripting.uriToFilename("Modelicax://A.B.C/Resources/Icons/D.jpeg");getErrorString();
 
 // Result:
@@ -23,18 +27,27 @@ OpenModelica.Scripting.uriToFilename("Modelicax://A.B.C/Resources/Icons/D.jpeg")
 // ""
 // "openmodelica/typed-API/UriLookup/A/Resources/Icons/D.jpeg"
 // ""
+// "openmodelica/typed-API/UriLookup/A/a+b c.jpeg"
 // ""
-// "Error: Malformed URI (couldn't get a class name): Modelica:///A.B.C/Resources/Icons/D.jpeg
+// "openmodelica/typed-API/UriLookup/A/D.jpeg"
+// ""
+// "openmodelica/typed-API/UriLookup/A/Resources/Icons/D.jpeg"
+// ""
+// ""
+// "Error: Malformed URI (couldn't get a class name): modelica:A.B.C/D.jpeg
 // "
 // ""
 // "Error: Failed to lookup URI (is the package loaded?) modelica://X.B.C/D.jpeg
 // "
-// "/tmp/D%20E.jpeg"
+// "/tmp/D E.jpeg"
 // ""
-// true
+// "/tmp/D E.jpeg"
 // ""
-// true
+// "/tmp/D+E.jpeg"
 // ""
+// ""
+// "Error: File URI using hostnames is not supported: FilE://D%20.jpeg
+// "
 // ""
 // "Error: Unknown URI schema: Modelicax://A.B.C/Resources/Icons/D.jpeg
 // "

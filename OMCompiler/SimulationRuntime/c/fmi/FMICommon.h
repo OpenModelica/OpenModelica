@@ -35,5 +35,6 @@
 #include "../ModelicaUtilities.h"
 
 void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message);
+void fmi2importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message);
 
 #endif

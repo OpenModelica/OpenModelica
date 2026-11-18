@@ -206,7 +206,7 @@ mod imp {
     pub fn download(items: Vec<Item>, _max_parallel: usize) -> (bool, Vec<Message>) {
         let mut all_present = true;
         for item in items {
-            if openmodelica_wasi::read(&item.file).is_some() {
+            if openmodelica_wasi::exists(&item.file) {
                 continue;
             }
             all_present = false;

@@ -19,13 +19,13 @@ checkModel(ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.D
 // true
 // ""
 // "Check of ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 completed successfully.
-// Class ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 has 8189 equation(s) and 8189 variable(s).
+// The model is globally balanced with 8189 equation(s) and variable(s).
 // 1648 of these are trivial equation(s)."
 // ""
 // true
 // ""
 // "Check of ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 completed successfully.
-// Class ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 has 8189 equation(s) and 8189 variable(s).
+// The model is globally balanced with 8189 equation(s) and variable(s).
 // 1648 of these are trivial equation(s)."
 // ""
 // endResult

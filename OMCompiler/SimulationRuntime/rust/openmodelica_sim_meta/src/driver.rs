@@ -1355,6 +1355,9 @@ mod alarm_store {
         pub fn get() -> f64 {
             DEADLINE.with(|d| d.get())
         }
+        pub fn swap(v: &mut f64) {
+            *v = DEADLINE.replace(*v);
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -1372,6 +1375,8 @@ mod alarm_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{get, set};
 }
 
@@ -1830,7 +1835,6 @@ fn homotopy_steps() -> i32 {
 // computed start). Set per run by the host before `drive`.
 mod overrides_store {
     use super::WTy;
-    use alloc::vec::Vec;
 
     #[cfg(feature = "std")]
     mod imp {
@@ -1856,6 +1860,12 @@ mod overrides_store {
         }
         pub fn strings() -> Vec<(u32, String)> {
             STRINGS.with(|o| o.borrow().clone())
+        }
+        pub type Groups = (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>, Vec<(u32, String)>);
+        pub fn swap(v: &mut Groups) {
+            PARAM.with_borrow_mut(|o| core::mem::swap(o, &mut v.0));
+            START.with_borrow_mut(|o| core::mem::swap(o, &mut v.1));
+            STRINGS.with_borrow_mut(|o| core::mem::swap(o, &mut v.2));
         }
     }
 
@@ -1884,6 +1894,8 @@ mod overrides_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::{Groups, swap};
     pub use imp::{params, set, starts, strings};
 }
 
@@ -1939,6 +1951,42 @@ pub struct StartImports {
     pub file: String,
     pub time: f64,
     pub values: Vec<(u32, f64)>,
+    /// The time range of the file when `time` lies outside of it: only the
+    /// parameters are imported then, as in C.
+    pub out_of_range: Option<(f64, f64)>,
+}
+
+/// Look up every quantity of the [`SimMeta::import_roster`] with `value(name)`,
+/// except those `-override` names. `range` is the time range of the file; outside
+/// of it only the parameters are looked up.
+pub fn collect_start_imports(
+    model: &SimMeta,
+    file: String,
+    time: f64,
+    range: (f64, f64),
+    overridden: impl Fn(&str) -> bool,
+    mut value: impl FnMut(&str) -> Option<f64>,
+) -> StartImports {
+    let out_of_range = (!(time >= range.0 && time <= range.1)).then_some(range);
+    let mut values = Vec::new();
+    let mut flat = 0u32;
+    for (group, entries) in crate::IMPORT_GROUP.iter().zip(model.import_roster()) {
+        let skip = out_of_range.is_some() && group.ends_with("variables");
+        for (name, _, _) in entries {
+            if !skip && !overridden(name) {
+                if let Some(v) = value(name) {
+                    values.push((flat, v));
+                }
+            }
+            flat += 1;
+        }
+    }
+    StartImports {
+        file,
+        time,
+        values,
+        out_of_range,
+    }
 }
 
 mod imports_store {
@@ -1956,6 +2004,9 @@ mod imports_store {
         }
         pub fn get() -> Option<StartImports> {
             IMPORTS.with(|o| o.borrow().clone())
+        }
+        pub fn swap(v: &mut Option<StartImports>) {
+            IMPORTS.with_borrow_mut(|o| core::mem::swap(o, v));
         }
     }
 
@@ -1975,6 +2026,8 @@ mod imports_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{get, set};
 }
 
@@ -2010,6 +2063,17 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
         imports.file,
         format_g(imports.time, 6),
     );
+    if let Some((start, stop)) = imports.out_of_range {
+        omclog::warning!(
+            omclog::STDOUT,
+            false,
+            "Initialization time {} is outside of the time range [{}, {}] of input-file <{}>. Only parameters are imported.",
+            format_g(imports.time, 6),
+            format_g(start, 6),
+            format_g(stop, 6),
+            imports.file,
+        );
+    }
     // `values` is in roster order, so one cursor walks both.
     let mut next = 0usize;
     let mut flat = 0u32;
@@ -2018,6 +2082,10 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
         // C's headers are plural, its per-quantity lines singular.
         let one = group.trim_end_matches('s');
         let variables = group.ends_with("variables");
+        if variables && imports.out_of_range.is_some() {
+            flat += entries.len() as u32;
+            continue;
+        }
         for (i, (name, off, wty)) in entries.into_iter().enumerate() {
             let found = imports.values.get(next).filter(|(i, _)| *i == flat).map(|&(_, v)| v);
             if found.is_some() {
@@ -2149,6 +2217,9 @@ mod solver_fail_store {
             let t = AT.with(|a| a.replace(f64::NAN));
             t.is_finite().then_some(t)
         }
+        pub fn swap(v: &mut f64) {
+            *v = AT.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2164,6 +2235,8 @@ mod solver_fail_store {
             t.is_finite().then_some(t)
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, take};
 }
 
@@ -2186,6 +2259,9 @@ mod failed_stats {
         pub fn take() -> Option<Box<SolveStats>> {
             STATS.with(|c| c.borrow_mut().take())
         }
+        pub fn swap(v: &mut Option<Box<SolveStats>>) {
+            STATS.with_borrow_mut(|c| core::mem::swap(c, v));
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2201,6 +2277,8 @@ mod failed_stats {
             unsafe { (*STATS.0.get()).take() }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, take};
 }
 
@@ -2224,6 +2302,9 @@ mod chatter_store {
         pub fn abort() -> bool {
             ABORT.with(|a| a.get())
         }
+        pub fn swap(v: &mut bool) {
+            *v = ABORT.replace(*v);
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -2241,6 +2322,8 @@ mod chatter_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{abort, set_abort};
 }
 
@@ -2325,6 +2408,9 @@ mod term_report {
         pub fn mark() -> bool {
             DONE.with(|d| !d.replace(true))
         }
+        pub fn swap(v: &mut bool) {
+            *v = DONE.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2339,6 +2425,8 @@ mod term_report {
             unsafe { !core::mem::replace(&mut *DONE.0.get(), true) }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{mark, reset};
 }
 
@@ -2360,6 +2448,9 @@ mod steady_report {
         pub fn hit() -> bool {
             HIT.with(|d| d.get())
         }
+        pub fn swap(v: &mut bool) {
+            *v = HIT.replace(*v);
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2377,6 +2468,8 @@ mod steady_report {
             unsafe { *HIT.0.get() }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{hit, mark, reset};
 }
 
@@ -2577,6 +2670,13 @@ mod rethrow_store {
                 NOTED.with(|n| n.replace(false)),
             )
         }
+        pub type Window = (Option<AssertInfo>, bool, bool, Option<String>);
+        pub fn swap(v: &mut Window) {
+            PENDING.with_borrow_mut(|p| core::mem::swap(p, &mut v.0));
+            v.1 = EVENT.replace(v.1);
+            v.2 = NOTED.replace(v.2);
+            REASON.with_borrow_mut(|r| core::mem::swap(r, &mut v.3));
+        }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
@@ -2620,6 +2720,8 @@ mod rethrow_store {
             }
         }
     }
+    #[cfg(feature = "std")]
+    pub use imp::{Window, swap};
     pub use imp::{arm, note, note_event, note_reason, take, take_reason};
 }
 
@@ -2734,6 +2836,12 @@ pub fn set_abort_slow(v: bool) {
     chatter_store::set_abort(v);
 }
 
+/// What the event iteration compares and logs, for a caller that initializes
+/// through [`run_initialization`]; [`run_initialization_model`] installs it itself.
+pub fn install_event_dump(model: &SimMeta) {
+    event_dump_store::set(EventDump::new(model));
+}
+
 /// Solve the initial system: `functionParameters`, then `functionInitialEquations`
 /// with the relations fresh (init mode) — directly, or through the global
 /// equidistant homotopy continuation (C's `solveWithGlobalHomotopy`), see
@@ -2815,9 +2923,9 @@ fn init_model(
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
-    // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
+    // C's `read_input_xml` and `initializeNonlinearSystems` report these.
     if let Some(m) = model {
-        for w in &m.nls_warnings {
+        for w in &m.startup_warnings {
             omclog::warning(omclog::STDOUT, false, w);
         }
     }
@@ -3195,10 +3303,21 @@ fn update_bound_values(
 /// attribute-log region. A group's header appears even when it is empty, as C's
 /// unconditional `infoStreamPrint` in that function gives.
 fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, model: Option<&SimMeta>) {
+    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
+    let nominal_kind = crate::ATTR_NAME.iter().position(|n| *n == "nominal");
+    for (i, a) in entries
+        .iter()
+        .enumerate()
+        .filter(|(_, a)| Some(a.kind as usize) == nominal_kind)
+    {
+        let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(1.0);
+        if let Some(w) = crate::nominal_warning(&a.name, v) {
+            omclog::warning(omclog::STDOUT, false, &w);
+        }
+    }
     if !omclog::active(omclog::INIT) {
         return;
     }
-    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
     for (kind, name) in crate::ATTR_NAME.iter().enumerate() {
         let header = match *name {
             "start" => "primary start-values".to_string(),
@@ -3208,6 +3327,11 @@ fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, 
         if omclog::active(omclog::INIT_V) {
             for (i, a) in entries.iter().enumerate().filter(|(_, a)| a.kind as usize == kind) {
                 let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(0.0);
+                let v = if *name == "nominal" {
+                    crate::positive_nominal(v)
+                } else {
+                    v
+                };
                 let line = match *name {
                     "start" => format!("updated start value: {}(start={})", a.name, format_g(v, 6)),
                     _ => format!("{}({name}={})", a.name, format_g(v, 6)),
@@ -3238,7 +3362,7 @@ fn print_parameters(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
             .unwrap_or(v)
     };
     omclog::info(omclog::INIT_V, true, "parameter values");
-    let mut group = |header: &str, lines: alloc::vec::Vec<String>| {
+    let group = |header: &str, lines: alloc::vec::Vec<String>| {
         if lines.is_empty() {
             return;
         }
@@ -3548,7 +3672,7 @@ pub mod rt_sync {
     use std::cell::Cell;
 
     #[derive(Clone, Copy)]
-    struct State {
+    pub(crate) struct State {
         scaling: f64,
         t0: f64,
         start_ms: f64,
@@ -3558,6 +3682,10 @@ pub mod rt_sync {
 
     std::thread_local! {
         static STATE: Cell<Option<State>> = const { Cell::new(None) };
+    }
+
+    pub(super) fn swap(v: &mut Option<State>) {
+        *v = STATE.replace(*v);
     }
 
     pub(super) fn arm(t0: f64, step: f64) {
@@ -4409,6 +4537,9 @@ pub(crate) struct EventDump {
     reals: Vec<(String, u32, u32)>,
     ints: Vec<(String, u32, u32)>,
     bools: Vec<(String, u32, u32)>,
+    /// The live slots of `bools`, `ints` and `reals` as `(offset, bytes)` runs. The
+    /// Booleans come first: a changed when condition then ends the comparison early.
+    runs: Vec<(u32, u32)>,
     /// Every real variable in index order, for [`log_reinits`].
     real_names: Vec<String>,
     real_off: u32,
@@ -4417,25 +4548,53 @@ pub(crate) struct EventDump {
 impl EventDump {
     fn new(model: &SimMeta) -> Self {
         let l = &model.layout;
-        let n_real = 2 * l.n_states + l.n_real_alg;
-        let first = n_real.saturating_sub(model.soti.n_discrete_real) as usize;
-        let slots = |names: &[String], live: u32, pre: u32, w: u32, from: usize| -> Vec<(String, u32, u32)> {
+        let slots = |names: &[String], checked: &[bool], live: u32, pre: u32, w: u32| -> Vec<(String, u32, u32)> {
             names
                 .iter()
+                .zip(checked)
                 .enumerate()
-                .skip(from)
-                // C skips common-subexpression temporaries.
-                .filter(|(_, n)| !n.starts_with("$cse"))
-                .map(|(i, n)| (n.clone(), live + i as u32 * w, pre + i as u32 * w))
+                .filter(|(_, (_, c))| **c)
+                .map(|(i, (n, _))| (n.clone(), live + i as u32 * w, pre + i as u32 * w))
                 .collect()
         };
         let named = |v: &[(String, i32)]| v.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>();
+        let reals = slots(
+            &model.soti.reals,
+            &model.soti.checked_reals,
+            l.real_off,
+            l.pre_real_off,
+            8,
+        );
+        let ints = slots(
+            &named(&model.soti.ints),
+            &model.soti.checked_ints,
+            l.int_off,
+            l.pre_int_off,
+            4,
+        );
+        let bools = slots(
+            &named(&model.soti.bools),
+            &model.soti.checked_bools,
+            l.bool_off,
+            l.pre_bool_off,
+            4,
+        );
+        let mut runs: Vec<(u32, u32)> = Vec::new();
+        for (list, w) in [(&bools, 4), (&ints, 4), (&reals, 8)] {
+            for &(_, live, _) in list {
+                match runs.last_mut() {
+                    Some((off, len)) if *off + *len == live => *len += w,
+                    _ => runs.push((live, w)),
+                }
+            }
+        }
         EventDump {
             rel_desc: model.rel_desc.clone(),
             zc_desc: model.zc_desc.clone(),
-            reals: slots(&model.soti.reals, l.real_off, l.pre_real_off, 8, first),
-            ints: slots(&named(&model.soti.ints), l.int_off, l.pre_int_off, 4, 0),
-            bools: slots(&named(&model.soti.bools), l.bool_off, l.pre_bool_off, 4, 0),
+            reals,
+            ints,
+            bools,
+            runs,
             real_names: model.soti.reals.clone(),
             real_off: model.layout.real_off,
         }
@@ -4458,6 +4617,9 @@ pub(crate) mod event_dump_store {
         pub fn with<R>(f: impl FnOnce(&EventDump) -> R) -> R {
             DUMP.with(|c| f(&c.borrow()))
         }
+        pub fn swap(v: &mut EventDump) {
+            DUMP.with_borrow_mut(|c| core::mem::swap(c, v));
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -4477,7 +4639,73 @@ pub(crate) mod event_dump_store {
         }
     }
 
+    #[cfg(feature = "std")]
+    pub use imp::swap;
     pub use imp::{set, with};
+}
+
+/// The run's per-thread stores. FMI lets the importer call an instance from a
+/// different thread each time, so an FMU moves them with the instance.
+#[cfg(feature = "std")]
+pub struct ThreadState {
+    alarm: f64,
+    overrides: overrides_store::Groups,
+    imports: Option<StartImports>,
+    solver_fail: f64,
+    failed_stats: Option<Box<SolveStats>>,
+    abort_slow: bool,
+    terminated: bool,
+    steady: bool,
+    rethrow: rethrow_store::Window,
+    rt_sync: Option<rt_sync::State>,
+    event_dump: EventDump,
+    profiler: Option<crate::profiling::Profiler>,
+    flags: crate::simflags::SimFlags,
+    nls: openmodelica_nls::ThreadState,
+}
+
+/// What a thread starts with.
+#[cfg(feature = "std")]
+impl Default for ThreadState {
+    fn default() -> Self {
+        ThreadState {
+            alarm: f64::INFINITY,
+            overrides: Default::default(),
+            imports: None,
+            solver_fail: f64::NAN,
+            failed_stats: None,
+            abort_slow: false,
+            terminated: false,
+            steady: false,
+            rethrow: Default::default(),
+            rt_sync: None,
+            event_dump: EventDump::default(),
+            profiler: None,
+            flags: Default::default(),
+            nls: Default::default(),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl ThreadState {
+    /// Exchange with the calling thread's stores.
+    pub fn swap(&mut self) {
+        alarm_store::swap(&mut self.alarm);
+        overrides_store::swap(&mut self.overrides);
+        imports_store::swap(&mut self.imports);
+        solver_fail_store::swap(&mut self.solver_fail);
+        failed_stats::swap(&mut self.failed_stats);
+        chatter_store::swap(&mut self.abort_slow);
+        term_report::swap(&mut self.terminated);
+        steady_report::swap(&mut self.steady);
+        rethrow_store::swap(&mut self.rethrow);
+        rt_sync::swap(&mut self.rt_sync);
+        event_dump_store::swap(&mut self.event_dump);
+        crate::profiling::swap(&mut self.profiler);
+        crate::simflags::swap_flags(&mut self.flags);
+        self.nls.swap();
+    }
 }
 
 /// C's `printRelations` + `printZeroCrossings` (`model_help.c`): `initializeModel`
@@ -4546,7 +4774,7 @@ fn discrete_pre_values(e: &dyn SimEngine, sim_data: u32) -> Result<(Vec<f64>, Ve
 }
 
 /// C's `checkForDiscreteChanges` printing half; the detection half is
-/// [`discrete_snapshot`], which compares the same regions in bulk.
+/// [`discrete_snapshot`], which compares the same slots in bulk.
 fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Vec<i32>)) -> Result<()> {
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
     omclog::info!(omclog::EVENTS_V, true, "check for discrete changes at time={time}");
@@ -4710,19 +4938,17 @@ fn locate_zc_root(
     Ok((a, b))
 }
 
-/// Snapshot of the discrete state — boolean/integer algebraics, held relations and
-/// discrete Reals — used to detect when an event's discrete update has reached a fixed point.
+/// Snapshot of the discrete state — the held relations and the discrete variables
+/// C's `checkForDiscreteChanges` compares — used to detect when an event's
+/// discrete update has reached a fixed point.
 pub fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
-    let mut buf = vec![0u8; ((layout.n_bool_alg() + layout.n_int_alg()) * 4 + layout.n_rel * 4) as usize];
-    let (bools, rest) = buf.split_at_mut((layout.n_bool_alg() * 4) as usize);
-    let (ints, rels) = rest.split_at_mut((layout.n_int_alg() * 4) as usize);
-    e.read_bytes(sim_data + layout.bool_off, bools)?;
-    e.read_bytes(sim_data + layout.int_off, ints)?;
-    e.read_bytes(sim_data + layout.relations_off, rels)?;
-    // C's `checkForDiscreteChanges` walks the discrete Reals first.
+    let mut buf = vec![0u8; (layout.n_rel * 4) as usize];
+    e.read_bytes(sim_data + layout.relations_off, &mut buf)?;
     event_dump_store::with(|d| {
-        for (_, live, _) in &d.reals {
-            buf.extend_from_slice(&read_f64(e, sim_data + live)?.to_bits().to_ne_bytes());
+        for &(off, len) in &d.runs {
+            let at = buf.len();
+            buf.resize(at + len as usize, 0);
+            e.read_bytes(sim_data + off, &mut buf[at..])?;
         }
         Ok(())
     })?;
@@ -4780,8 +5006,8 @@ fn iterate_discrete_from(
     // evaluation lets an already-settled system stop after a single evaluation.
     let max = max_event_iter();
     let mut iter = 0usize;
+    let mut prev = discrete_snapshot(e, sim_data, layout)?;
     loop {
-        let prev = discrete_snapshot(e, sim_data, layout)?;
         // C's `updateDiscreteSystem` `storePreValues`: make this pass's discrete
         // values visible as `pre()` to the next (e.g. a clutch's `pre(mode)`).
         if iter > 0 || evaluated {
@@ -4805,9 +5031,11 @@ fn iterate_discrete_from(
         if let Some(before) = &before {
             log_discrete_changes(e, sim_data, before)?;
         }
-        if discrete_snapshot(e, sim_data, layout)? == prev {
+        let now = discrete_snapshot(e, sim_data, layout)?;
+        if now == prev {
             return Ok(());
         }
+        prev = now;
         iter += 1;
         if iter > max {
             omclog::debug!(
@@ -5076,9 +5304,12 @@ pub fn fmi_handle_timers(
 /// Output point `row` of the equidistant grid, as C's `perform_simulation`
 /// computes it: `row*(stop-start)/numSteps + start`, *not* `start + row*h` —
 /// the two round differently and the result files must agree bit for bit.
+/// The last point is `stop`, which the formula can round below.
 fn grid_time(row: u32, start: f64, stop: f64, n_steps: u32) -> f64 {
     if n_steps == 0 {
         start
+    } else if row >= n_steps {
+        stop
     } else {
         row as f64 * (stop - start) / n_steps as f64 + start
     }
@@ -5214,6 +5445,7 @@ pub fn set_zc_tolerance(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout
 /// startup rather than let them silently run as DASSL.
 pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     match crate::simflags::with_flags(|f| f.solver) {
+        Some(crate::simflags::Solver::Auto) => "auto",
         Some(crate::simflags::Solver::Euler) => "euler",
         Some(crate::simflags::Solver::Dassl) => "dassl",
         Some(crate::simflags::Solver::Cvode) => "cvode",
@@ -5259,21 +5491,36 @@ fn check_method(method: &str) -> bool {
         || method == "optimization"
 }
 
-/// Resolve the solver method: apply `-s=`, then default DAE-mode models to IDA
-/// (matching C's `simulation_runtime.cpp` solver override), then validate.
-fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str> {
-    let method = effective_method(method);
-    // C: if the model is compiled in daeMode, overwrite the solver to IDA
-    let method = if dae_mode && method != "ida" {
-        omclog::info(
-            omclog::SIMULATION,
-            false,
-            "overwrite solver method: ida [DAEmode works only with IDA solver]",
-        );
-        "ida"
-    } else {
-        method
-    };
+/// Apply `-s=` and reject an unknown method (C's `readSolverMethod`). The empty
+/// method is `auto`.
+fn read_solver_method(method: &str) -> Result<&str> {
+    match effective_method(method) {
+        "" => Ok("auto"),
+        m if crate::simflags::is_solver_name(m) || is_dassl(m) => Ok(m),
+        _ => Err(UNSUPPORTED_METHOD),
+    }
+}
+
+/// Choose a method for `auto` (C's `resolveAutoSolver`). An explicit method is
+/// returned as it is.
+fn choose_solver_method(method: &str, dae_mode: bool, no_states: bool) -> &str {
+    match method {
+        "auto" => {
+            let (chosen, reason) = if no_states {
+                ("euler", ", because the model has no states.")
+            } else if dae_mode {
+                ("ida", ", because the model was compiled with --daeMode.")
+            } else {
+                ("dassl", ", the default ODE solver.")
+            };
+            omclog::info!(omclog::SOLVER, false, "-s=auto chooses solver method {chosen}{reason}");
+            chosen
+        }
+        m => m,
+    }
+}
+
+fn validate_solver_method(method: &str) -> Result<&str> {
     if method == "gbode" {
         return Err(crate::simflags::GBODE_DISABLED);
     }
@@ -5286,25 +5533,38 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
     Ok(method)
 }
 
-/// [`resolve_solver_method`] plus C's "no states present" swap, which lives in
-/// `startNonInteractiveSimulation` — an FMU steps with the method it was exported
-/// with, so only a standalone run applies it.
+/// The Co-Simulation method. As C's `fmu_model_interface.c.inc`, a --daeMode FMU
+/// integrates with IDA whatever its `s` says.
+fn resolve_solver_method(method: &str, dae_mode: bool) -> Result<&str> {
+    validate_solver_method(if dae_mode {
+        "ida"
+    } else {
+        choose_solver_method(read_solver_method(method)?, false, false)
+    })
+}
+
+/// The method of a standalone run. As C's `callSolver`, a model with nothing to
+/// integrate runs with euler, except `optimization` in ODE mode.
 fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
-    let method = resolve_solver_method(method, layout.compiled_dae_mode)?;
-    // C exempts `optimization` in ODE mode only.
-    let nothing_to_solve = match layout.compiled_dae_mode {
+    let no_states = match layout.compiled_dae_mode {
         true => layout.n_dae_res + layout.n_dae_alg < 1,
-        false => layout.n_states < 1 && method != "optimization",
+        false => layout.n_states < 1,
     };
-    if nothing_to_solve {
-        omclog::info(
-            omclog::SOLVER,
-            false,
-            "No states present, continuing without ODE solver.",
-        );
+    let method = choose_solver_method(read_solver_method(method)?, layout.compiled_dae_mode, no_states);
+    if no_states && (layout.compiled_dae_mode || method != "optimization") {
+        if method != "euler" {
+            omclog::info!(
+                omclog::SOLVER,
+                false,
+                "The model has no states, solver method {method} is replaced by euler."
+            );
+        }
         return Ok("euler");
     }
-    Ok(method)
+    if layout.compiled_dae_mode && method != "ida" {
+        return Err(dae_mode_needs_ida());
+    }
+    validate_solver_method(method)
 }
 
 /// C allocates the solver before initializing the model, and gbode logs its setup
@@ -5452,6 +5712,14 @@ fn csv_input_given() -> bool {
     return crate::simflags::with_flags(|f| f.csv_input.is_some());
     #[cfg(not(feature = "std"))]
     false
+}
+
+/// Reported by the driver, as C's `throwStreamPrint`.
+pub const DAE_MODE_NEEDS_IDA: &str = "The model was compiled with --daeMode, which works only with -s=ida or -s=auto.";
+
+fn dae_mode_needs_ida() -> &'static str {
+    omclog::debug(omclog::ASSERT, false, DAE_MODE_NEEDS_IDA);
+    DAE_MODE_NEEDS_IDA
 }
 
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
@@ -7019,18 +7287,17 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// C's `realVarsData[i].attribute.nominal` for the states, which scales a
+/// C's `realVarsData[i].attribute.positiveNominal` for the states, which scales a
 /// solver's absolute tolerance and is what `fmi3GetNominalsOfContinuousStates`
-/// answers. Floored as `ida_solver_setNominals` does: read before
-/// `initializeModel` has floored them, a zero nominal is an infinite error
-/// weight.
+/// answers. Before `functionUpdateBoundVariableAttributes` has written them,
+/// the slots are 0, which [`crate::positive_nominal`] makes 1.0.
 pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
     (0..layout.n_states)
         .map(|i| {
-            Ok(fmath::fmax(
-                fmath::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?),
-                1e-32,
-            ))
+            Ok(crate::positive_nominal(read_f64(
+                e,
+                sim_data + layout.state_nom_off + i * 8,
+            )?))
         })
         .collect()
 }
@@ -7042,7 +7309,7 @@ fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
         let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
-        nominals.push(fmath::fmax(fmath::fabs(n), 1e-32));
+        nominals.push(crate::positive_nominal(n));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -7204,7 +7471,7 @@ impl DasslDriver {
             info[4] = 1; // INFO(5)=1: a user Jacobian routine
         }
         // Per-state tolerances scaled by nominal, matching the C runtime
-        // (`dassl.c`: INFO(2)=1, atol[i]=tol·max(|nominal_i|,1e-32)).
+        // (`dassl.c`: INFO(2)=1, atol[i]=tol·nominal_i).
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
         if n_states > 0 {
@@ -8742,6 +9009,8 @@ struct EventsDriver {
     /// Where a retried step ends, short of this row's grid point.
     pending_tout: Option<f64>,
     retry: StepRetry,
+    /// Set when an event step reached the last grid point.
+    terminal_at: Option<f64>,
 }
 
 impl SolverCore {
@@ -9548,7 +9817,6 @@ impl SolverCore {
     ) -> Result<Step> {
         let layout = &model.layout;
         let sim_data = self.sim_data;
-        let n_states = self.n_states;
         let span = model.stop_time - model.start_time;
         let eps = reached_eps(tout, span);
         let step_eps = small_step_eps(span);
@@ -9768,11 +10036,12 @@ impl SolverCore {
                     }
                     continue;
                 }
-            } else if target > self.t && !self.dae {
-                // `dassl.c`'s "Desired step size too small": one Euler step instead.
+            } else if target > self.t {
+                // `dassl.c`'s "Desired step size too small": one Euler step instead,
+                // which `ida_solver.c` takes over the DAE-mode algebraic unknowns too.
                 let h = target - self.t;
-                for i in 0..n_states {
-                    self.y[i] += self.yp[i] * h;
+                for (y, yp) in self.y.iter_mut().zip(&self.yp) {
+                    *y += yp * h;
                 }
                 self.t = target;
                 self.write_states(e)?;
@@ -9937,6 +10206,18 @@ pub fn set_schedule_words(samp: Option<&mut Samples>, sync: Option<&mut crate::s
     true
 }
 
+/// Whether [`set_schedule_words`] takes `w`; changes nothing. Without the clocks
+/// (before initialization) only the layout is checked.
+pub fn schedule_words_fit(sync: Option<&crate::sync::Sync>, w: &[f64]) -> bool {
+    let Some((&n, rest)) = w.split_first() else {
+        return false;
+    };
+    let Some((&m, timers)) = rest.get(n as usize..).and_then(|r| r.split_first()) else {
+        return false;
+    };
+    m as usize == timers.len() && sync.map_or(timers.len() % 3 == 0, |s| s.timer_words_fit(timers))
+}
+
 /// Co-Simulation: the FMU owns the integration, the importer picks the
 /// communication points. Unlike [`EventsDriver`] there is no output grid and no
 /// rows. [`step_to`](CsDriver::step_to) takes a [`CsDefer`] saying which events it
@@ -9996,8 +10277,7 @@ pub enum CsStep {
 }
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
-/// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way. IDA's
+/// `fmi2Instantiate`, where CVODE logs its configuration to `LOG_SOLVER`. IDA's
 /// `ida_solver_initial` warns there when it changes the Jacobian method.
 pub fn log_cs_solver_setup(model: &SimModel) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
@@ -10016,15 +10296,12 @@ pub fn log_cs_solver_setup(model: &SimModel) {
     #[cfg(sundials)]
     {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        let mask = omclog::mask();
-        omclog::set_mask(mask | (1 << omclog::SOLVER));
         log_cvode_configuration(
             tol,
             true,
             crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
             cvode_jacobian_method(cvode_jac_a(model)),
         );
-        omclog::set_mask(mask);
     }
 }
 
@@ -10100,6 +10377,10 @@ impl CsDriver {
 
     pub fn set_schedule_words(&mut self, w: &[f64]) -> bool {
         set_schedule_words(Some(&mut self.samp), Some(&mut self.sync), w)
+    }
+
+    pub fn schedule_words_fit(&self, w: &[f64]) -> bool {
+        schedule_words_fit(Some(&self.sync), w)
     }
 
     /// A sample or clock is due at `time`: the event the master stopped on is a time event.
@@ -10214,11 +10495,19 @@ impl CsDriver {
                 self.samp.refresh(e, sim_data, self.core.t)?;
                 let te = self.samp.next_time();
                 let tc = self.sync.next_time();
-                let mut subtarget = t_target;
+                // A sample pulled in just past the target has carried `t` beyond it.
+                let mut subtarget = t_target.max(self.core.t);
                 if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
                     subtarget = tc;
                 }
-                if te >= self.core.t && te <= subtarget + sample_pull_eps(model) {
+                // A relation that switches after the communication point belongs to
+                // the next step: this one ends at `t_target`.
+                let pull_eps = if self.samp.next_is_relation() {
+                    0.0
+                } else {
+                    sample_pull_eps(model)
+                };
+                if te >= self.core.t && te <= subtarget + pull_eps {
                     subtarget = te;
                 }
                 let mut troot = None;
@@ -10280,7 +10569,7 @@ impl CsDriver {
                         self.after_walk_event(e, layout)?;
                     }
                 }
-                if te <= subtarget + sample_pull_eps(model) {
+                if te <= subtarget + pull_eps {
                     self.core.t = te;
                     log_time_event(e, te, &self.samp, model);
                     if defers(te) {
@@ -10615,7 +10904,18 @@ impl EventsDriver {
             finished: false,
             pending_tout: None,
             retry,
+            terminal_at: None,
         })
+    }
+
+    /// C's skip of an output point an event step reached. At the last point the
+    /// event was at `stop` up to rounding, so the run ends at `stop`.
+    fn skip_row(&mut self, n_steps: u32, stop: f64) {
+        self.row += 1;
+        if self.row > n_steps {
+            self.reached = stop;
+            self.terminal_at = Some(stop);
+        }
     }
 }
 
@@ -10647,6 +10947,7 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| if no_grid { stop } else { grid(row) };
+        // C ends on `currentTime >= stopTime`, not on a row count.
         let more = |row: u32, t: f64| {
             if no_grid || n_steps == 0 {
                 row < n_rows
@@ -10674,7 +10975,7 @@ impl Driver for EventsDriver {
             }
             while more(self.row, self.reached) {
                 if skip_grid(self.row, self.reached, self.did_event_step) {
-                    self.row += 1;
+                    self.skip_row(n_steps, stop);
                     continue;
                 }
                 if did_step && past_deadline(deadline) {
@@ -10706,7 +11007,8 @@ impl Driver for EventsDriver {
                     self.samp.refresh(e, sim_data, self.core.t)?;
                     let te = self.samp.next_time();
                     let tc = self.sync.next_time();
-                    let mut subtarget = tout;
+                    // A time event pulled in just past `tout` has carried `t` beyond it.
+                    let mut subtarget = tout.max(self.core.t);
                     if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
                         subtarget = tc;
                     }
@@ -10895,7 +11197,7 @@ impl Driver for EventsDriver {
                 break Advance::Done;
             }
             if !self.mid_row && skip_grid(self.row, self.reached, self.did_event_step) {
-                self.row += 1;
+                self.skip_row(n_steps, stop);
                 continue;
             }
             if did_step && past_deadline(deadline) {
@@ -11040,6 +11342,10 @@ impl Driver for EventsDriver {
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
+    }
+
+    fn terminal_time(&self) -> Option<f64> {
+        self.terminal_at
     }
 }
 
@@ -12713,7 +13019,7 @@ pub fn dae_solve_explicit(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
         .collect();
     let mut nominal = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             nominal[ns + k] = nom;
         }
@@ -12832,14 +13138,14 @@ fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, da
         .collect();
     let mut scale = vec![1.0; n];
     for k in 0..dae.alg_offs.len() {
-        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?;
         if nom > 0.0 && nom.is_finite() {
             scale[ns + k] = nom;
         }
     }
     let mut u: Vec<f64> = offs.iter().map(|&o| read_f64(e, sim_data + o)).collect::<Result<_>>()?;
     let res_base = sim_data + layout.dae_res_off;
-    let mut residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
+    let residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
         for (&o, &v) in offs.iter().zip(u) {
             write_f64(e, sim_data + o, v)?;
         }

@@ -466,7 +466,8 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
 /// hands them over: `n_params: u32`, that many `(off: u32, wty: u32, val: f64)`, then
 /// `n_starts: u32` and the same again (`wty` 0 = f64, 1 = i32); then the imports as
 /// `n_values: u32`, `time: f64`, `file_len: u32`, the file name's UTF-8 bytes and
-/// that many `(roster index: u32, val: f64)`. No imports is `n_values` absent.
+/// that many `(roster index: u32, val: f64)`, then `out_of_range: u32` and the
+/// file's `(start: f64, stop: f64)`. No imports is `n_values` absent.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
@@ -501,7 +502,14 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
         for _ in 0..n {
             values.push((u32_at(p)?, f64_at(p)?));
         }
-        Some(openmodelica_sim_meta::driver::StartImports { file, time, values })
+        let out_of_range = u32_at(p)? != 0;
+        let range = (f64_at(p)?, f64_at(p)?);
+        Some(openmodelica_sim_meta::driver::StartImports {
+            file,
+            time,
+            values,
+            out_of_range: out_of_range.then_some(range),
+        })
     };
     let strings = |p: &mut usize| -> Option<Vec<(u32, alloc::string::String)>> {
         let n = u32_at(p)? as usize;

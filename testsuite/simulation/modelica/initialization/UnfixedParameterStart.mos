@@ -1,0 +1,37 @@
+// name: UnfixedParameterStart
+// keywords: initialization, parameter, start
+// status: correct
+// teardown_command: rm -rf UnfixedParameterStart_* UnfixedParameterStart UnfixedParameterStart.c UnfixedParameterStart.o UnfixedParameterStart.exe UnfixedParameterStart.libs UnfixedParameterStart.log UnfixedParameterStart.makefile output.log
+//
+// The start value of a parameter with fixed = false can depend on parameters
+// that are computed during the initialization (#10980).
+
+loadString("
+model UnfixedParameterStart
+  parameter Real p0(fixed = false);
+  parameter Real q = 2*p0;
+  parameter Real p(start = -7/q, fixed = false);
+initial equation
+  p0 = 3;
+  p^3 = p;
+end UnfixedParameterStart;
+"); getErrorString();
+
+simulate(UnfixedParameterStart, stopTime = 0); getErrorString();
+val(q, 0);
+val(p, 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "UnfixedParameterStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'UnfixedParameterStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 6.0
+// -1.0
+// endResult

@@ -169,10 +169,10 @@ MessageWidget::MessageWidget(QWidget *pParent)
   mpCopyAction->setStatusTip(tr("Copy the Message"));
   connect(mpCopyAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(copy()));
   mpClearThisTabAction = new QAction(tr("Clear This Tab"), this);
-  mpClearThisTabAction->setStatusTip(tr("clears the messages from this tab"));
+  mpClearThisTabAction->setStatusTip(tr("Clears the messages from this tab"));
   connect(mpClearThisTabAction, SIGNAL(triggered()), SLOT(clearThisTabMessages()));
   mpClearAllTabsAction = new QAction(tr("Clear All Tabs"), this);
-  mpClearAllTabsAction->setStatusTip(tr("clears the messages from all tabs"));
+  mpClearAllTabsAction->setStatusTip(tr("Clears the messages from all tabs"));
   connect(mpClearAllTabsAction, SIGNAL(triggered()), SLOT(clearAllTabsMessages()));
   // Main Layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
@@ -609,17 +609,18 @@ void MessagesWidget::closeSimulationOutputWidgets(const QString &className)
  */
 bool MessagesWidget::closeTab(int index)
 {
-#if !defined(__EMSCRIPTEN__)
   // Close SimulationOutputWidget
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pSimulationOutputWidget
       && !pSimulationOutputWidget->isCompilationProcessRunning()
       && !pSimulationOutputWidget->isPostCompilationProcessRunning()
-      && !pSimulationOutputWidget->isSimulationProcessRunning()) {
+      && !pSimulationOutputWidget->isSimulationProcessRunning()
+      && !pSimulationOutputWidget->isWasmJitSimulationRunning()) {
     mpMessagesTabWidget->removeTab(index);
     emit messageTabClosed(index);
     return true;
   }
+#if !defined(__EMSCRIPTEN__)
   // Close OMSSimulationOutputWidget
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {

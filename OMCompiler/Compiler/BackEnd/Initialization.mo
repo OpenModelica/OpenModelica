@@ -456,11 +456,14 @@ algorithm
     then (eqns, leftCrs);
 
     // algorithm
-    case BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) algorithm
+    case BackendDAE.ALGORITHM(size=size, alg=alg, source=source, expand=crefExpand) algorithm
       DAE.ALGORITHM_STMTS(statementLst=stmts) := alg;
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
-      alg := DAE.ALGORITHM_STMTS(stmts);
-      size := listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
+      // the size of an algorithm differentiated by the index reduction is not the number of its outputs
+      if List.any(stmts, isWhenStatement) then
+        (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
+        alg := DAE.ALGORITHM_STMTS(stmts);
+        size := listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
+      end if;
       eqns := List.consOnTrue(not listEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), accEq);
     then (eqns, leftCrs);
 
@@ -567,6 +570,16 @@ algorithm
     else outEqns;
   end match;
 end inlineWhenForInitializationWhenEquation;
+
+protected function isWhenStatement
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match stmt
+    case DAE.STMT_WHEN() then true;
+    else false;
+  end match;
+end isWhenStatement;
 
 protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
@@ -2781,8 +2794,23 @@ algorithm
     then (var, (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon));
 
     // secondary parameter
-    case (var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) algorithm
+    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM()), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) algorithm
       //true = BackendVariable.varFixed(var);
+      // the guess of an unfixed parameter may depend on parameters solved here
+      if not (BackendVariable.varFixed(var) or BackendVariable.varHasBindExp(var) or BackendVariable.varHasConstantStartExp(var)) then
+        startExp := BackendVariable.varStartValue(var);
+        parameters := Expression.getAllCrefs(startExp);
+        if not min(UnorderedSet.contains(p, allPrimaryParameters) for p in parameters) then
+          startCR := ComponentReference.crefPrefixStart(cr);
+          startVar := BackendVariable.copyVarNewName(startCR, var);
+          startVar := BackendVariable.setVarDirection(startVar, DAE.BIDIR());
+          startVar := BackendVariable.setVarFixed(startVar, false);
+          startVar := BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
+          startVar := BackendVariable.setVarStartValueOption(startVar, NONE());
+          vars := BackendVariable.addVar(startVar, vars);
+          eqns := BackendEquation.add(BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+        end if;
+      end if;
       var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars := BackendVariable.addVar(var, vars);
     then (var, (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon));

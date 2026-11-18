@@ -49,6 +49,7 @@ typedef struct DASSL_DATA{
 
   int idid;
   int tinySteps;                /* consecutive steps too short to move time */
+  int rootFailed;               /* the root function raised an error in this step */
   int* ipar;
   double** rpar;
   /* size of work arrays for DASSL */
@@ -59,7 +60,7 @@ typedef struct DASSL_DATA{
   double *rwork;
   double *rtol;
   double *atol;
-  double *nominal;              /* |nominal| per state, floored at 1e-32; atol is tolerance times it */
+  double *nominal;              /* |nominal| per state; atol is tolerance times it */
   double jacNominalFactor;      /* -jacobianNominalFactor */
 
   int ng;

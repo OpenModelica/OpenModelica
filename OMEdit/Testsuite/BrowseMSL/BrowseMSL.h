@@ -62,6 +62,11 @@ private slots:
    * Browses the Modelica.Media.Air
    */
   void mediaAir();
+  /*!
+   * \brief saveContentsType
+   * Checks which classes are saved as a folder structure.
+   */
+  void saveContentsType();
   void cleanupTestCase();
 };
 

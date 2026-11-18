@@ -1,0 +1,60 @@
+// Name:     StateSetDerivativeCandidate
+// keywords: index reduction, dynamic state selection, #13295
+// status:   correct
+//
+// a = der(d) with d = der(m2) needs the second derivative of m2 = v1*m1.
+// The dynamic state selection then makes a state set with the candidates v2
+// and der(m1), and switches between them. ExplicitODE is the same model with
+// the constraint solved by hand.
+
+loadString("
+model StateSetDerivativeCandidate
+  Real m1, v1(start = 1, fixed = true), m2(start = 1, fixed = true), v2(start = 1, fixed = true), p, d, a;
+equation
+  v1*der(m1) = 10 - p - m1^2;
+  der(v1) = -m1;
+  v2*der(m2) = p - 1 - m2^2;
+  der(v2) = -m2;
+  m2 = v1*m1;
+  d = der(m2);
+  a = der(d);
+end StateSetDerivativeCandidate;
+
+model ExplicitODE
+  Real m1(start = 1, fixed = true), v1(start = 1, fixed = true), v2(start = 1, fixed = true), m2, p, d, a;
+equation
+  m2 = v1*m1;
+  p = (1 + m2^2 + v2*(10 - 2*m1^2))/(1 + v2);
+  v1*der(m1) = 10 - p - m1^2;
+  der(v1) = -m1;
+  der(v2) = -m2;
+  d = 10 - p - 2*m1^2;
+  a = der(d);
+end ExplicitODE;
+"); getErrorString();
+simulate(StateSetDerivativeCandidate, stopTime = 0.3); getErrorString();
+simulate(ExplicitODE, stopTime = 0.3); getErrorString();
+diffSimulationResults("StateSetDerivativeCandidate_res.mat", "ExplicitODE_res.mat", "StateSetDerivativeCandidate_diff", vars = {"m1", "v1", "m2", "v2", "p", "d", "a"}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StateSetDerivativeCandidate_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.3, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'StateSetDerivativeCandidate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "ExplicitODE_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.3, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ExplicitODE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// ""
+// endResult

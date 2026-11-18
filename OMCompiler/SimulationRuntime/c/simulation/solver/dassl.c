@@ -160,8 +160,8 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i<dasslData->N; ++i)
   {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    dasslData->nominal[i] = fmax(fabs(nominal), 1e-32);
+    const modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    dasslData->nominal[i] = nominal;
     dasslData->rtol[i] = data->simulationInfo->tolerance;
     dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
@@ -501,6 +501,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   dasslData->rpar[0] = (double*) (void*) data;
   dasslData->rpar[1] = (double*) (void*) dasslData;
   dasslData->rpar[2] = (double*) (void*) threadData;
+  dasslData->rootFailed = 0;
 
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_INTEGRATOR;
@@ -677,7 +678,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
     states = dasslData->states;
   }
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
+  /* After a failed root function, DDASKR searches on stale values and its root
+   * is none: the step fails and performSimulation retries it. */
+  if (OMC_ERROR_RAISED() && !dasslData->rootFailed) { OMC_ERROR_CLEAR(); }
 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;
@@ -932,6 +935,7 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
   data->callback->function_ZeroCrossingsEquations(data, threadData);
 
   data->callback->function_ZeroCrossings(data, threadData, gout);
+  dasslData->rootFailed |= OMC_ERROR_RAISED();
 
   threadData->currentErrorStage = saveJumpState;
   data->localData[0]->timeValue = timeBackup;

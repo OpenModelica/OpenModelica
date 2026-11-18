@@ -1,7 +1,7 @@
 // name: ParametricInitialArrayEquationBug
 // status: correct
 // teardown_command: rm -rf PEM* TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2*
-// cflags: --allowNonStandardModelica="nonStdMultipleExternalDeclarations"
+// cflags: --allowNonStandardModelica="nonStdMultipleExternalDeclarations,realEquality"
 // suite: disabled
 
 loadFile("ParametricInitialArrayEquationBug.mo"); getErrorString();
@@ -30,7 +30,6 @@ buildModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2, f
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:31789:5-31789:84:writable] Warning: Connector heatFlowCollector is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:31791:5-31791:89:writable] Warning: Connector costsCollector is not balanced: The number of potential variables (0) is not equal to the number of flow variables (6).
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:7060:15-7064:30:writable] Warning: Pure function 'TILMedia.Internals.VLEFluidConfigurations.FullyMixtureCompatible.VLEFluidFunctions.specificEnthalpy_pTxi' contains a call to impure function 'TILMedia.Internals.VLEFluidFunctions.specificEnthalpy_pTxi'.
-// [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:28578:17-28582:23:writable] Warning: In relation EM.i_dens_a == 0.0, == on Real operands is deprecated in non-function contexts.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:19607:9-19689:22:writable] Warning: Pure function 'TransiEnt.Basics.Functions.GasProperties.verboseXi' contains a call to impure function 'Modelica.Utilities.Streams.print'.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:27896:63-27896:94:writable] Error: Variable simCenter.expertMode not found in scope GwpEmissionsStatistics.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:27900:63-27900:94:writable] Error: Variable simCenter.expertMode not found in scope GwpEmissionsStatistics.
@@ -243,7 +242,6 @@ buildModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2, f
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:31789:5-31789:84:writable] Warning: Connector heatFlowCollector is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:31791:5-31791:89:writable] Warning: Connector costsCollector is not balanced: The number of potential variables (0) is not equal to the number of flow variables (6).
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:7060:15-7064:30:writable] Warning: Pure function 'TILMedia.Internals.VLEFluidConfigurations.FullyMixtureCompatible.VLEFluidFunctions.specificEnthalpy_pTxi' contains a call to impure function 'TILMedia.Internals.VLEFluidFunctions.specificEnthalpy_pTxi'.
-// [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:28578:17-28582:23:writable] Warning: In relation EM.i_dens_a == 0.0, == on Real operands is deprecated in non-function contexts.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:19607:9-19689:22:writable] Warning: Pure function 'TransiEnt.Basics.Functions.GasProperties.verboseXi' contains a call to impure function 'Modelica.Utilities.Streams.print'.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:27896:63-27896:94:writable] Error: Variable simCenter.expertMode not found in scope GwpEmissionsStatistics.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:27900:63-27900:94:writable] Error: Variable simCenter.expertMode not found in scope GwpEmissionsStatistics.

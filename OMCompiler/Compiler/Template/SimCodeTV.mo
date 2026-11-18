@@ -879,9 +879,17 @@ end SparsityRow;
     record UNITDEFINITION
       String name;
       BaseUnit baseUnit;
-      //TODO DisplayUnit
+      list<DisplayUnit> displayUnits "besides the other units of the same dimensions";
     end UNITDEFINITION;
   end UnitDefinition;
+
+  uniontype DisplayUnit
+    record DISPLAYUNIT "value_display = factor*value_unit + offset"
+      String name;
+      Real factor;
+      Real offset;
+    end DISPLAYUNIT;
+  end DisplayUnit;
 
   uniontype BaseUnit
     record BASEUNIT
@@ -892,6 +900,7 @@ end SparsityRow;
       Integer K   "exponent";
       Integer mol "exponent";
       Integer cd  "exponent";
+      Integer rad "exponent";
       Real factor "prefix";
       Real offset "offset";
     end BASEUNIT;
@@ -1340,6 +1349,11 @@ end SimCodeFunction;
 
 package SimCodeCodegenUtil
 
+  function discreteChangeRanges
+    input SimCodeVar.SimVars vars;
+    output list<Integer> ranges;
+  end discreteChangeRanges;
+
   function linearSystemMatrixFormat
     input SimCode.LinearSystem ls;
     output String format;
@@ -1650,6 +1664,7 @@ package SimCodeCodegenUtil
 
   function getFMI3Terminals
     input SimCode.SimCode simCode;
+    input Boolean scalarize;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
 
@@ -1796,13 +1811,18 @@ package SimCodeCodegenUtil
 
   function timeEventTrigger
     input DAE.Exp rel;
-    output Option<DAE.Exp> trigger;
+    output Option<tuple<DAE.Exp, Boolean>> trigger;
   end timeEventTrigger;
 
   function isTimeEventRelation
     input DAE.Exp rel;
     output Boolean b;
   end isTimeEventRelation;
+
+  function timeEventRelation
+    input DAE.Exp rel;
+    output DAE.Exp outRel;
+  end timeEventRelation;
 
   function cref2simvar
     input DAE.ComponentRef cref;

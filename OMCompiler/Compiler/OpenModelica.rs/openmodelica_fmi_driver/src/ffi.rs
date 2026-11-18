@@ -771,17 +771,12 @@ impl Fmi3CoSimulation for FmuInstance<'_> {
                 &mut last,
             )
         };
-        // `fmi3Discard` leaves the outputs valid: the FMU stands at `last`.
-        let discarded = Status::from_raw(raw) == Status::Discard;
-        if !discarded {
-            check("fmi3DoStep", raw)?;
-        }
+        check("fmi3DoStep", raw)?;
         Ok(DoStep {
             event_handling_needed: event,
             terminate: term,
             early_return: early,
             last_successful_time: last,
-            discarded,
         })
     }
 }

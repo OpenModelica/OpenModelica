@@ -44,7 +44,7 @@ import ComponentRef = NFComponentRef;
 import NFFlatten.FunctionTree;
 import Class = NFClass;
 import NFInstNode.InstNode;
-  import NFInstNode;
+import NFInstNode;
 import NFFunction.Function;
 import Sections = NFSections;
 import Binding = NFBinding;
@@ -63,6 +63,7 @@ import ElementSource;
 import Util;
 import NFPrefixes.Variability;
 import Ceval = NFCeval;
+import NFCeval.EvalTarget;
 import Package = NFPackage;
 import SimplifyExp = NFSimplifyExp;
 import ErrorExt;
@@ -417,7 +418,7 @@ algorithm
         if variability > Variability.CONSTANT or InstContext.inRelaxed(context) then
           eexp := Ceval.tryEvalExp(eexp);
         else
-          eexp := Ceval.evalExp(eexp, Ceval.EvalTarget.new(info, context));
+          eexp := Ceval.evalExp(eexp, EvalTarget.new(info, context));
         end if;
       end if;
 
@@ -480,11 +481,12 @@ algorithm
         var := ComponentRef.nodeVariability(cref);
 
         if var <= Variability.STRUCTURAL_PARAMETER and not Type.isExternalObject(ty) then
+
           // Evaluate all constants and structural parameters.
           if var > Variability.CONSTANT then
             ErrorExt.setCheckpoint(getInstanceName());
             try
-              e := Ceval.evalCref(cref, outExp, NFCeval.noTarget, evalSubscripts = false);
+              e := Ceval.evalCref(cref, outExp, EvalTarget.new(Absyn.dummyInfo, evalSubscripts = false));
               e := Flatten.flattenExp(e, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
               outExp := e;
               outChanged := true;
@@ -492,7 +494,7 @@ algorithm
             end try;
             ErrorExt.rollBack(getInstanceName());
           else
-            outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.new(info), evalSubscripts = false);
+            outExp := Ceval.evalCref(cref, outExp, EvalTarget.new(info, evalSubscripts = false));
             outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
             outChanged := true;
           end if;
@@ -881,7 +883,7 @@ algorithm
         if evaluateAll or not isLocalFunctionVariable(e.cref, fnNode) then
           ErrorExt.setCheckpoint(getInstanceName());
           try
-            outExp := Ceval.evalCref(e.cref, e, NFCeval.noTarget, evalSubscripts = false);
+            outExp := Ceval.evalCref(e.cref, e, EvalTarget.new(Absyn.dummyInfo, evalSubscripts = false));
           else
             outExp := e;
           end try;

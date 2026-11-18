@@ -1,0 +1,58 @@
+// name: whenTupleInit
+// keywords: NewBackend, initialization, when, tuple
+// status: correct
+// teardown_command: rm -f WhenTupleInit WhenTupleInit_* WhenTupleInit.*
+//
+// The outputs of a function call in a when-equation that is not active
+// at initialization keep their pre values, also Integer and String outputs
+// and with omitted outputs.
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+loadString("
+model WhenTupleInit
+  function f
+    input Real x;
+    output Real y;
+    output Integer k;
+    output String s;
+  algorithm
+    y := x;
+    k := integer(10 * x);
+    s := String(x);
+  end f;
+  discrete Real d;
+  Integer n;
+  discrete String str;
+  discrete Real e;
+equation
+  when sample(0.1, 0.1) then
+    (d, n, str) = f(time);
+  end when;
+  when sample(0.1, 0.1) then
+    (e, , ) = f(2 * time);
+  end when;
+end WhenTupleInit;
+"); getErrorString();
+
+simulate(WhenTupleInit, stopTime = 1); getErrorString();
+val(d, 0.05);
+val(n, 0.55);
+val(e, 0.55);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "WhenTupleInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'WhenTupleInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 5.0
+// 1.0
+// endResult

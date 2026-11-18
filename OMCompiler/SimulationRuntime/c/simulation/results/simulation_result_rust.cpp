@@ -247,6 +247,7 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
   }
 
   /* Aliases share their target's column (or repeat its parameter value). */
+  const size_t firstAlias = d->signals.size();
   for (int i = 0; i < mData->nAliasRealArray; i++) {
     const DATA_REAL_ALIAS *a = &mData->realAlias[i];
     if (a->filterOutput) continue;
@@ -337,6 +338,7 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
       throwStreamPrint(threadData, "rust_result_init: Unknown alias type for string alias.");
     }
   }
+  for (size_t i = firstAlias; i < d->signals.size(); i++) d->signals[i].alias = 1;
   for (size_t i = 0; i < d->signals.size(); i++) {
     d->signals[i].name = d->strings[4 * i].c_str();
     d->signals[i].description = d->strings[4 * i + 1].c_str();

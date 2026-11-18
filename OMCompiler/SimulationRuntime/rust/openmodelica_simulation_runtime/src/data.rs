@@ -736,6 +736,7 @@ unsafe extern "C" {
     fn omc_rc_release(obj: *mut c_void);
     fn omc_array_release(a: *mut base_array_t);
     fn omc_string_array_release(a: *mut base_array_t);
+    fn freeVarInfo(info: *mut VAR_INFO);
 }
 
 #[cfg(feature = "fmi")]
@@ -764,6 +765,30 @@ fn each<T>(p: *mut T, n: c_long, mut f: impl FnMut(&mut T)) {
 }
 
 #[cfg(feature = "fmi")]
+/// C's `freeModelDataVars`: the names, comments and file names of the variables,
+/// which `omc_fmu_init.c` allocates when it reads `_init.bin`.
+pub(crate) fn free_var_infos(md: &mut MODEL_DATA) {
+    let info = |i: &mut VAR_INFO| unsafe { freeVarInfo(i) };
+    each(md.realVarsData, md.nVariablesRealArray, |v| info(&mut v.info));
+    each(md.integerVarsData, md.nVariablesIntegerArray, |v| info(&mut v.info));
+    each(md.booleanVarsData, md.nVariablesBooleanArray, |v| info(&mut v.info));
+    each(md.stringVarsData, md.nVariablesStringArray, |v| info(&mut v.info));
+    each(md.realParameterData, md.nParametersRealArray, |v| info(&mut v.info));
+    each(md.integerParameterData, md.nParametersIntegerArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.booleanParameterData, md.nParametersBooleanArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.stringParameterData, md.nParametersStringArray, |v| info(&mut v.info));
+    each(md.realSensitivityData, md.nSensitivityVars, |v| info(&mut v.info));
+    each(md.realAlias, md.nAliasRealArray, |a| info(&mut a.info));
+    each(md.integerAlias, md.nAliasIntegerArray, |a| info(&mut a.info));
+    each(md.booleanAlias, md.nAliasBooleanArray, |a| info(&mut a.info));
+    each(md.stringAlias, md.nAliasStringArray, |a| info(&mut a.info));
+}
+
+#[cfg(feature = "fmi")]
 /// C's `freeModelDataVarArrays` up to the blocks themselves: the refcounted
 /// attribute arrays and unit strings that hang off them.
 fn release_var_attributes(md: &mut MODEL_DATA) {
@@ -772,7 +797,8 @@ fn release_var_attributes(md: &mut MODEL_DATA) {
         omc_array_release(&mut a.start);
         omc_array_release(&mut a.min);
         omc_array_release(&mut a.max);
-        omc_array_release(&mut a.nominal);
+        omc_array_release(&mut a.positiveNominal);
+        omc_array_release(&mut a.nominalSign);
         release_string(&mut a.unit);
         release_string(&mut a.displayUnit);
     };
@@ -1103,7 +1129,7 @@ fn layout_for(
         (0..md.nNonLinearSystems as usize).any(|i| unsafe { (*_si.nonlinearSystemData.add(i)).homotopySupport != 0 });
     let n_states = md.nStates as u32;
     let n_real_alg = (md.nVariablesReal - 2 * md.nStates).max(0) as u32;
-    let dae = unsafe { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
+    let dae = { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
     let compiled_dae_mode =
         dae.is_some_and(|d| d.evaluateDAEResiduals.is_some()) && unsafe { crate::support::compiledInDAEMode } != 0;
     let (n_dae_res, n_dae_aux, n_dae_alg) = match dae {
@@ -1230,7 +1256,7 @@ pub fn build_regions(rt: &mut RtData) {
     direct(l.relations_pre_off, l.n_rel * 4, si.relationsPre as *mut c_void);
     direct(l.mathevents_off, l.n_math * 8, si.mathEventsValuePre as *mut c_void);
     direct(l.zctol_off, 8, &raw mut crate::support::tolZC as *mut c_void);
-    direct(l.nls_fail_off, 4, &raw mut crate::nls::nls_fail_slot as *mut c_void);
+    direct(l.nls_fail_off, 4, &raw mut crate::nls::NLS_FAIL_SLOT as *mut c_void);
     // Past the layout: C's `currentContext`, which the driver's `setContext`
     // writes and both `solve_linear_system` (`reuseMatrixJac`) and the nonlinear
     // solver's `updateInitialGuessDB` read.

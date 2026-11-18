@@ -1071,7 +1071,12 @@ void updateNextSampleEvent(DATA *data, threadData_t *threadData)
     next = fmin(next, data->simulationInfo->nextSampleTimes[i]);
   }
   if (data->callback->function_nextTimeEvent) {
-    next = fmin(next, data->callback->function_nextTimeEvent(data, threadData));
+    double t = data->callback->function_nextTimeEvent(data, threadData);
+    /* As in the Rust driver, a simulation schedules no relation event at or
+       after stopTime: `time > stopTime` switches after the run. */
+    if (!data->simulationInfo->useStopTime || t < data->simulationInfo->stopTime) {
+      next = fmin(next, t);
+    }
   }
   data->simulationInfo->nextSampleEvent = next;
 }
@@ -1273,7 +1278,8 @@ static void freeRealVarAttributes(STATIC_REAL_DATA *vars, long n)
     omc_array_release(&vars[i].attribute.start);
     omc_array_release(&vars[i].attribute.min);
     omc_array_release(&vars[i].attribute.max);
-    omc_array_release(&vars[i].attribute.nominal);
+    omc_array_release(&vars[i].attribute.positiveNominal);
+    omc_array_release(&vars[i].attribute.nominalSign);
     omc_string_move(&vars[i].attribute.unit, NULL);
     omc_string_move(&vars[i].attribute.displayUnit, NULL);
   }
@@ -1387,7 +1393,8 @@ void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
   // Variables
   for(i = 0; i < modelData->nVariablesRealArray; i++) {
     simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.start, 1);
-    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.nominal, 1);
+    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.positiveNominal, 1);
+    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.nominalSign, 1);
     simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.min, 1);
     simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.max, 1);
   }
@@ -1409,7 +1416,8 @@ void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
   // Parameter
   for(i = 0; i < modelData->nParametersRealArray; i++) {
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.start, 1);
-    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.nominal, 1);
+    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.positiveNominal, 1);
+    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.nominalSign, 1);
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.min, 1);
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.max, 1);
   }

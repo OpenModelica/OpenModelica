@@ -40,7 +40,7 @@ val(out1, 2.0, "StandingStillJitter2_res.mat");
 // ""
 // record SimulationResult
 //     resultFile = "StandingStill_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StandingStill', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'StandingStill', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -53,7 +53,7 @@ val(out1, 2.0, "StandingStillJitter2_res.mat");
 // 0.7279894445553151
 // record SimulationResult
 //     resultFile = "StandingStillJitter1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StandingStillJitter1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=a=1e-12 -lv=-LOG_STDOUT'",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'StandingStillJitter1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=a=1e-12 -lv=-LOG_STDOUT'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -62,7 +62,7 @@ val(out1, 2.0, "StandingStillJitter2_res.mat");
 // 0.7279894445553142
 // record SimulationResult
 //     resultFile = "StandingStillJitter2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StandingStillJitter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=a=1e-10 -lv=-LOG_STDOUT'",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'StandingStillJitter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=a=1e-10 -lv=-LOG_STDOUT'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

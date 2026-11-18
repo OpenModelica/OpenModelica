@@ -35,7 +35,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD
 // {"aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.idq_sr[1]", "aimc.idq_sr[2]", "aimc.is[1]", "aimc.is[2]", "loadInertia.phi", "loadInertia.w"}
 // true
-// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|aimc.is.1.|aimc.is.2.|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|aimc.is.1.|aimc.is.2.|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

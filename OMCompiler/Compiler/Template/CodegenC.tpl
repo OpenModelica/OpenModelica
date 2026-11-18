@@ -967,6 +967,7 @@ template simulationFile_jac_header(SimCode simCode)
     static struct { mmc_uint_t rc; _index_t d[1]; } one_dim_lit = { OMC_RC_IMMORTAL, { 1 } };
     #define one_dim (one_dim_lit.d)
     static modelica_real nominal_data[1] = { 1.0 };
+    static modelica_real nominal_sign_data[1] = { 1.0 };
     static modelica_real start_data[1]   = { 0.0 };
     static modelica_real min_data[1]   = { -DBL_MAX };
     static modelica_real max_data[1]   = { DBL_MAX };
@@ -988,10 +989,16 @@ template simulationFile_jac_header(SimCode simCode)
       },
       .fixed = FALSE,
       .useNominal = FALSE,
-      .nominal = {
+      .positiveNominal = {
         .ndims     = 1,
         .dim_size  = one_dim,
         .data      = (void*) nominal_data,
+        .flexible  = FALSE
+      },
+      .nominalSign = {
+        .ndims     = 1,
+        .dim_size  = one_dim,
+        .data      = (void*) nominal_sign_data,
         .flexible  = FALSE
       },
       .start = {
@@ -1597,6 +1604,10 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
     data->modelData->nStatesArray = <%varInfo.numStateVars%>;
     data->modelData->nDiscreteRealArray = <%varInfo.numDiscreteReal%>;
+    {
+      static const long discreteChangeRanges[] = {<%SimCodeCodegenUtil.discreteChangeRanges(vars) ;separator=", "%>};
+      data->modelData->discreteChangeRanges = discreteChangeRanges;
+    }
     data->modelData->nVariablesRealArray = <%nVariablesReal(varInfo)%>;
     data->modelData->nVariablesIntegerArray = <%varInfo.numIntAlgVars%>;
     data->modelData->nVariablesBooleanArray = <%varInfo.numBoolAlgVars%>;
@@ -2056,7 +2067,7 @@ let &sub = buffer ""
     {
       if(data->simulationInfo->extObjs)
       {
-        <%listReverse(extObjInfo.vars) |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name, &sub)%>);' ;separator="\n"%>
+        <%listReverse(extObjInfo.vars) |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'if (<%cref(var.name, &sub)%>) { omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name, &sub)%>); }' ;separator="\n"%>
         free(data->simulationInfo->extObjs);
         data->simulationInfo->extObjs = 0;
       }
@@ -3739,7 +3750,8 @@ template staticArrayElementData(ComponentRef cr)
           let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(cr))), listReverse(crefSubs(crefArrayGetFirstCref(cr))), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           let idx = '<%simVarIndex("real", values, index)%> + (<%offset%>)'
           <<
-          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
+          sysData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
+          sysData->nominalSign[i] = getNominalSignFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
           sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
           sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
           >>
@@ -3761,7 +3773,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           <<
           <%cComment%>
           for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
-            sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%first%> + k_);
+            sysData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%first%> + k_);
+            sysData->nominalSign[i] = getNominalSignFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%first%> + k_);
             sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%first%> + k_);
             sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%first%> + k_);
           }
@@ -3770,7 +3783,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           <<
           <%cComment%>
           for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
-            sysData->nominal[i] = 1.0;
+            sysData->positiveNominal[i] = 1.0;
             sysData->min[i]     = -DBL_MAX;
             sysData->max[i++]   = DBL_MAX;
           }
@@ -3786,21 +3799,22 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           <<
           <%cComment%>
           /* Use default scaling/bounds for unresolved temporary indices (e.g. symbolic-adjoint loop vars). */
-          sysData->nominal[i] = 1.0;
+          sysData->positiveNominal[i] = 1.0;
           sysData->min[i]     = -DBL_MAX;
           sysData->max[i++]   = DBL_MAX;
           >>
         else
           <<
           <%cComment%>
-          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->nominalSign[i] = getNominalSignFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
           sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           >>
       case SIMVAR(type_=T_INTEGER(__)) then
         <<
         <%cComment%>
-        sysData->nominal[i] = 1.0;
+        sysData->positiveNominal[i] = 1.0;
         sysData->min[i]     = integer_get(<%crefAttributes(cr)%>.min, 0);
         sysData->max[i++]   = integer_get(<%crefAttributes(cr)%>.max, 0);
         >>
@@ -3814,7 +3828,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
         else
           <<
           <%cComment%>
-          sysData->nominal[i] = 1.0;
+          sysData->positiveNominal[i] = 1.0;
           sysData->min[i]     = -DBL_MAX;
           sysData->max[i++]   = DBL_MAX;
           >>
@@ -4101,9 +4115,10 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         >>
 
       let ty = crefShortType(cref)
+      let field = if stringEq(attribute, "nominal") then "positiveNominal" else attribute
       // An array expression sets one value per array element, a scalar
       // expression (e.g. `each min = p`) the value of all elements.
-      let attr = '<%crefAttributes(cref)%>.<%attribute%>'
+      let attr = '<%crefAttributes(cref)%>.<%field%>'
       let len = if isArrayType(typeof(exp)) then 'base_array_nr_of_elements(<%expPart%>)' else '1'
       let setAttribute =
         <<
@@ -4114,6 +4129,7 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         <%if isArrayType(typeof(exp))
           then 'copy_<%ty%>_array_data_mem(<%expPart%>, (modelica_<%ty%>*) <%attr%>.data);'
           else 'put_<%ty%>_element(<%expPart%>, 0, &<%attr%>);'%>
+        <%if stringEq(attribute, "nominal") then 'normalizeNominal(&<%crefAttributes(cref)%>, <%crefVarInfo(cref)%>.name);'%>
         >>
       let updateEqs = match attribute
         case "nominal"
@@ -4124,7 +4140,7 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
 
           if (omc_useStream[OMC_LOG_INIT_V]) {
             char <%attribute%>_buffer[2048];
-            <%ty%>_vector_to_string(&<%crefAttributes(cref)%>.<%attribute%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
+            <%ty%>_vector_to_string(&<%attr%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
             infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=%s)",
               <%crefVarInfo(cref)%>.name,
               <%attribute%>_buffer);
@@ -5824,12 +5840,12 @@ template functionNextTimeEvent(list<ZeroCrossing> relations, String modelNamePre
   let &varFrees = buffer ""
   let triggers = (relations |> ZERO_CROSSING(iter = NONE()) =>
     match timeEventTrigger(relation_)
-    case SOME(trigger) then
+    case SOME((trigger, after)) then
       let &preExp = buffer ""
       let e = daeExp(trigger, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
-      tEvent = <%e%>;
+      tEvent = <%if after then 'nextafter(<%e%>, DBL_MAX)' else e%>;
       if (tEvent > tNow && tEvent < tNext) tNext = tEvent;
       >>
     ;separator="\n")
@@ -7032,6 +7048,24 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
                 <%col%> = (modelica_integer)(<%jacobianVarOffset(v, context)%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
                 if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) {
                   addSparsePair(&_sp_pairs, <%col%>, <%rowExpr%>);
+                }
+              }
+            }
+            >>
+          case SLICE(exp=sliceExp) :: {WHOLEDIM()} then
+            // reversed [SLICE, WHOLEDIM] = original [WHOLEDIM, SLICE]: outer WHOLE, inner SLICE
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wo<%v.index%>, _sc<%v.index%>;
+              for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
+                for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
+                  addSparsePair(&_sp_pairs, <%jacobianVarOffset(v, context)%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1), <%rowExpr%>);
                 }
               }
             }
@@ -8484,7 +8518,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       <<
       <%preExp%>
       FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
-      omc_terminate(info, omc_string_data(<%msgVar%>));
+      omc_terminate(info, "%s", omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
       assertCommon(condition, List.fill(message,1), level, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction, info)
@@ -8514,23 +8548,16 @@ match ty
     <%assign%>
     >>
   case T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)) then
-    error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
-    // let &preExp = buffer ""
-    // let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
-    // let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    // <<
-    // <%preExp%>
-    // <%tmp%> = <%exp%>;
-    // <% varLst |> var as TYPES_VAR(__) =>
-    //   match var.ty
-    //   case T_ARRAY(__) then
-    //     copyArrayData(var.ty, '<%tmp%>._<%var.name%>', appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
-    //   else
-    //     let varPart = contextCref(appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
-    //     '<%varPart%> = <%tmp%>._<%var.name%>;'
-    // ; separator="\n"
-    // %>
-    // >>
+    match left
+      case CREF(componentRef=cr) then
+        let &preExp = buffer ""
+        let assign = assignRhsExpToRecordCref(cr, right, ty, context, &preExp, &varDecls, &varFrees, &auxFunction)
+        <<
+        <%preExp%>
+        <%assign%>
+        >>
+      else
+        error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
   else
     let &preExp = buffer ""
     let varPart = daeExp(left, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -9012,7 +9039,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                 start[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
                 min[<%i0%>] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
                 max[<%i0%>] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
-                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(name)%>);
+                nominal[<%i0%>] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(name)%>);
                 useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
                 name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
                 >>

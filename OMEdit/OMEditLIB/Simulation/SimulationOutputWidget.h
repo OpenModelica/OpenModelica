@@ -94,6 +94,8 @@ public:
   ~SimulationOutputWidget();
   void start();
   void runWasmJitSimulation(const QString &simulationParameters);
+  bool isWasmJit() const {return mIsWasmJit;}
+  bool isWasmJitSimulationSucceeded() const {return mWasmJitSimulationSucceeded;}
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   bool isDebugInfoAvailable() const {return mDebugInfoAvailable;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
@@ -114,6 +116,7 @@ public:
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
+  bool isWasmJitSimulationRunning() const {return mIsWasmJitSimulationRunning;}
   QString getCompilationStandardError();
   QString getSimulationStandardOutput() {return mSimulationStandardOutput;}
   QString getSimulationStandardError() {return mSimulationStandardError;}
@@ -153,10 +156,13 @@ private:
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
-  // wasm-jit in-process run (no QProcess): whether a cancellable simulate() is in
-  // flight, and whether the user asked to cancel it (shared-flag cooperative cancel).
+  // wasm-jit in-process run (no QProcess): whether simulate() is in flight, and
+  // whether the user asked to cancel it (shared-flag cooperative cancel).
   bool mIsWasmJitSimulationRunning = false;
   bool mWasmJitCancelled = false;
+  bool mIsWasmJit = false;
+  bool mWasmJitSimulationSucceeded = false;
+  QString mWasmJitSimulationParameters;
   // Whether <model>_info.json is there for "Debug more". A wasm-jit run writes it
   // only under -d=infoXmlOperations; the C target always does.
   bool mDebugInfoAvailable = true;
@@ -172,7 +178,8 @@ private:
   void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
 #endif
-  void deleteIntermediateCompilationFiles();
+  bool usesEncryptedLibrary() const;
+  void deleteIntermediateCompilationFiles(bool force = false);
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinishedHelper();
 private slots:

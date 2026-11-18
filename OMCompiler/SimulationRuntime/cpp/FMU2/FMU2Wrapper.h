@@ -70,11 +70,16 @@ class FMU2Wrapper;
 class FMU2Logger: public Logger
 {
  public:
-  static void initialize(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled);
-
- protected:
   FMU2Logger(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled);
 
+  // Logger is a process-global singleton. Each FMU instance has its own
+  // logger and makes it the active one when it is called.
+  void activate() { _instance = this; }
+  void deactivate() { if (_instance == this) _instance = NULL; }
+  // for an instance without a logger; does not write the global if it is NULL
+  static void activateNone() { if (_instance != NULL) _instance = NULL; }
+
+ protected:
   virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
                              LogStructure ls);
   FMU2Wrapper *_wrapper;
@@ -90,6 +95,14 @@ class FMU2Wrapper
   FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
               const fmi2CallbackFunctions *functions, fmi2Boolean loggingOn);
   virtual ~FMU2Wrapper();
+
+  // make the logger of this instance receive the model messages
+  void activateLogger() {
+    if (_logger != NULL)
+      _logger->activate();
+    else
+      FMU2Logger::activateNone();
+  }
 
   // Debug logging
   virtual fmi2Status setDebugLogging(fmi2Boolean loggingOn,
@@ -172,7 +185,7 @@ class FMU2Wrapper
 
  private:
   FMU2GlobalSettings _globalSettings;
-  Logger *_logger;
+  FMU2Logger *_logger;
   MODEL_CLASS *_model;
   std::vector<string> _stringBuffer;
   bool *_clockTick;

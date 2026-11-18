@@ -57,6 +57,7 @@ struct SysState {
     has_stream: bool,
     uses_cardinality: bool,
     has_inner_outer: bool,
+    has_partial_instances: bool,
 
     // tmpTick / tmpTickIndex counters. Index 0 is the unindexed `tmpTick`.
     // The C runtime keeps an array `tmp_tick_no[NUM_TICKS]`; we lazily grow
@@ -911,52 +912,16 @@ pub fn pwd() -> ArcStr {
     }
 }
 
-// The wasm build has no OS environment — `std::env::set_var` *panics* on
-// wasm32-unknown-unknown — so `setEnv`/`readEnv` keep an in-process map instead
-// (wasm is single-threaded, hence a `thread_local`). The JS host seeds it (e.g.
-// OPENMODELICAHOME) before init.
-#[cfg(target_arch = "wasm32")]
-thread_local! {
-    static WASM_ENV: std::cell::RefCell<std::collections::HashMap<String, String>> =
-        std::cell::RefCell::new(std::collections::HashMap::new());
-}
-
 pub fn readEnv(inString: ArcStr) -> Result<ArcStr> {
-    #[cfg(target_arch = "wasm32")]
-    if let Some(v) = WASM_ENV.with(|e| e.borrow().get(inString.as_str()).cloned()) {
-        return Ok(ArcStr::from(v));
-    }
-    match std::env::var(inString.as_str()) {
-        Ok(v) => Ok(ArcStr::from(v)),
-        Err(_) => return Err("System.readEnv: variable {inString} not set"),
+    match openmodelica_wasi::env::var(inString.as_str()) {
+        Some(v) => Ok(ArcStr::from(v)),
+        None => return Err("System.readEnv: variable {inString} not set"),
     }
 }
 
 pub fn setEnv(varName: ArcStr, value: ArcStr, overwrite: bool) -> i32 {
-    #[cfg(target_arch = "wasm32")]
-    {
-        WASM_ENV.with(|e| {
-            let mut m = e.borrow_mut();
-            if overwrite || !m.contains_key(varName.as_str()) {
-                m.insert(varName.to_string(), value.to_string());
-            }
-        });
-        return 0;
-    }
-    // SAFETY: std::env::set_var is `unsafe` under edition 2024 because it
-    // races with concurrent getenv calls in other threads. The C runtime
-    // accepts the same hazard; we mirror the behavior here and rely on
-    // callers using this only during startup configuration.
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        if !overwrite && std::env::var_os(varName.as_str()).is_some() {
-            return 0;
-        }
-        unsafe {
-            std::env::set_var(varName.as_str(), value.as_str());
-        }
-        0
-    }
+    openmodelica_wasi::env::set_var(varName.as_str(), value.as_str(), overwrite);
+    0
 }
 
 pub fn subDirectories(inString: ArcStr) -> List<ArcStr> {
@@ -1242,6 +1207,7 @@ flag_pair!(
     getHasInnerOuterDefinitions,
     has_inner_outer
 );
+flag_pair!(setHasPartialInstances, getHasPartialInstances, has_partial_instances);
 
 // ───────────────────────────────── tmpTick ────────────────────────────────────
 
@@ -1632,15 +1598,14 @@ pub fn realIsNaN(r: metamodelica::Real) -> bool {
 // ───────────────────────────────── URI / platform info ───────────────────────
 
 /// Percent-decode a URI component, mirroring `decodeUri2` in
-/// systemimpl.c: `+` becomes a space, `%XX` a hex-decoded byte, and a
-/// malformed escape is kept literally.
+/// systemimpl.c: `%XX` becomes a hex-decoded byte and a malformed escape is
+/// kept literally. A `+` is a `+` (RFC 3986).
 fn decode_uri_component(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
     while i < bytes.len() {
         match bytes[i] {
-            b'+' => out.push(b' '),
             b'%' if i + 2 < bytes.len() && bytes[i + 1].is_ascii_hexdigit() && bytes[i + 2].is_ascii_hexdigit() => {
                 let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap();
                 out.push(u8::from_str_radix(hex, 16).unwrap());
@@ -1685,7 +1650,7 @@ fn io_error_text(e: &std::io::Error) -> String {
     }
 }
 
-/// Split `modelica://Pkg.Sub/dir/file` / `file:///some/path` URIs into
+/// Split `modelica:/Pkg.Sub/dir/file` / `file:///some/path` URIs into
 /// `(scheme, classname, pathname)`. Port of
 /// `SystemImpl__uriToClassAndPath`; sets the error buffer and fails on
 /// malformed or unknown URIs like the C version (which MMC_THROWs).
@@ -1697,16 +1662,38 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
         }
     }
     let lower = uri.to_ascii_lowercase();
-    if let Some(rest) = lower.strip_prefix("modelica://").map(|r| &uri[uri.len() - r.len()..]) {
-        let (name, path) = split_name_path(rest);
+    if lower.starts_with("modelica:") {
+        // modelica:/A.B/x, modelica:///A.B/x and the deprecated modelica://A.B/x
+        let after = &uri[9..];
+        let rest = after
+            .strip_prefix("///")
+            .or_else(|| after.strip_prefix("//"))
+            .or_else(|| after.strip_prefix('/'));
+        let (name, path) = rest.map_or((String::new(), String::new()), split_name_path);
         if name.is_empty() {
             add_scripting_error("Modelica URI lacks classname: %s", &uri);
             return Err("Modelica URI lacks classname: {uri}");
         }
         return Ok((literal!("modelica://"), ArcStr::from(name), ArcStr::from(path)));
     }
-    if let Some(rest) = lower.strip_prefix("file://").map(|r| &uri[uri.len() - r.len()..]) {
-        let (name, path) = split_name_path(rest);
+    if lower.starts_with("file:") {
+        // RFC 8089: file:/p, file:///p and file://localhost/p name /p, and file://C:/p names C:/p
+        let rest = &uri[5..];
+        let (mut name, mut path) = match rest.strip_prefix("//") {
+            Some(r) => split_name_path(r),
+            None => (String::new(), decode_uri_component(rest)),
+        };
+        let b = name.as_bytes();
+        if b.len() == 2 && b[0].is_ascii_alphabetic() && b[1] == b':' {
+            path = std::format!("{name}{path}");
+            name.clear();
+        } else if name.eq_ignore_ascii_case("localhost") {
+            name.clear();
+        }
+        let p = path.as_bytes();
+        if Autoconf::isWindows && p.len() > 2 && p[0] == b'/' && p[1].is_ascii_alphabetic() && p[2] == b':' {
+            path.remove(0);
+        }
         if path.is_empty() {
             add_scripting_error("File URI has no path: %s", &uri);
             return Err("File URI has no path: {uri}");

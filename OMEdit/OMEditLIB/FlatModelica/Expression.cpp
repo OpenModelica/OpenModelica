@@ -42,6 +42,8 @@
 #include <array>
 #include <vector>
 #include <utility>
+#include <limits>
+#include <unordered_map>
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -495,6 +497,159 @@ namespace FlatModelica
       OpType _op;
   };
 
+  class Expression::IteratorBase
+  {
+    public:
+      virtual ~IteratorBase() = default;
+
+      virtual Expression dereference() const = 0;
+      virtual void increment() = 0;
+      virtual bool equal(const IteratorBase &other) const = 0;
+      virtual std::unique_ptr<IteratorBase> clone() const = 0;
+  };
+
+  class NullIterator : public Expression::IteratorBase
+  {
+    public:
+      Expression dereference() const override
+      {
+        throw std::runtime_error("dereferenced NullIterator");
+      }
+
+      void increment() override {}
+      bool equal(const IteratorBase &other) const override { return dynamic_cast<const NullIterator*>(&other); }
+      std::unique_ptr<IteratorBase> clone() const override { return std::make_unique<NullIterator>(); }
+  };
+
+  class ArrayIterator : public Expression::IteratorBase
+  {
+    public:
+      ArrayIterator(const Expression *owner, size_t index)
+        : _owner(owner), _index(index) {}
+
+      Expression dereference() const override
+      {
+        const auto &elements = _owner->elements();
+        if (_index >= elements.size()) {
+          throw std::runtime_error("dereferenced end ArrayIterator");
+        }
+        return elements[_index];
+      }
+
+      void increment() override
+      {
+        if (_index < _owner->elements().size()) {
+          ++_index;
+        }
+      }
+
+      bool equal(const IteratorBase &other) const override
+      {
+        const auto *iterator = dynamic_cast<const ArrayIterator*>(&other);
+        return iterator && _owner == iterator->_owner && _index == iterator->_index;
+      }
+
+      std::unique_ptr<IteratorBase> clone() const override { return std::make_unique<ArrayIterator>(*this); }
+
+    private:
+      const Expression *_owner;
+      size_t _index;
+  };
+
+  class RangeIterator : public Expression::IteratorBase
+  {
+    public:
+      RangeIterator(const Expression *owner, Expression start, Expression step, Expression stop)
+        : _owner(owner), _current(std::move(start)), _step(std::move(step)), _stop(std::move(stop))
+      {
+        if (!_current.isNumber() || !_step.isNumber() || !_stop.isNumber()) {
+          _atEnd = true;
+          return;
+        }
+
+        const auto increment = _step.realValue();
+        if (increment == 0) {
+          throw std::runtime_error("RangeIterator: range step is zero");
+        }
+        if (!std::isfinite(_current.realValue()) || !std::isfinite(increment) ||
+            !std::isfinite(_stop.realValue())) {
+          _atEnd = true;
+          return;
+        }
+
+        _integer = _current.isInteger() && _step.isInteger() && _stop.isInteger();
+        _atEnd = _integer
+          ? (increment > 0 ? _current.intValue() > _stop.intValue() : _current.intValue() < _stop.intValue())
+          : (increment > 0 ? _current.realValue() > _stop.realValue() : _current.realValue() < _stop.realValue());
+      }
+
+      RangeIterator(const Expression *owner, bool atEnd)
+        : _owner(owner), _atEnd(atEnd) {}
+
+      Expression dereference() const override
+      {
+        if (_atEnd) {
+          throw std::runtime_error("dereferenced end RangeIterator");
+        }
+        return _current;
+      }
+
+      void increment() override
+      {
+        if (_atEnd) {
+          return;
+        }
+
+        if (_integer) {
+          const auto current = _current.intValue();
+          const auto increment = _step.intValue();
+          if ((increment > 0 && current > std::numeric_limits<int64_t>::max() - increment) ||
+              (increment < 0 && current < std::numeric_limits<int64_t>::min() - increment)) {
+            _atEnd = true;
+            return;
+          }
+
+          const auto next = current + increment;
+          _atEnd = increment > 0 ? next > _stop.intValue() : next < _stop.intValue();
+          if (!_atEnd) {
+            _current = Expression(next);
+          }
+        } else {
+          const auto current = _current.realValue();
+          const auto increment = _step.realValue();
+          const auto next = current + increment;
+          if (!std::isfinite(next) || next == current) {
+            _atEnd = true;
+            return;
+          }
+
+          _atEnd = increment > 0 ? next > _stop.realValue() : next < _stop.realValue();
+          if (!_atEnd) {
+            _current = Expression(next);
+          }
+        }
+        ++_position;
+      }
+
+      bool equal(const IteratorBase &other) const override
+      {
+        const auto *iterator = dynamic_cast<const RangeIterator*>(&other);
+        return iterator && _owner == iterator->_owner && _atEnd == iterator->_atEnd &&
+          (_atEnd || _position == iterator->_position);
+      }
+
+      std::unique_ptr<IteratorBase> clone() const override { return std::make_unique<RangeIterator>(*this); }
+
+    private:
+      const Expression *_owner;
+      Expression _current;
+      Expression _step;
+      Expression _stop;
+      size_t _position = 0;
+      bool _integer = false;
+      bool _atEnd = false;
+  };
+
   class ExpressionBase
   {
     public:
@@ -509,6 +664,7 @@ namespace FlatModelica
       virtual bool isBooleanish() const { return false; }
       virtual bool isString()     const { return false; }
       virtual bool isArray()      const { return false; }
+      virtual bool isRange()      const { return false; }
       virtual bool isCall()       const { return false; }
       virtual bool isEnum()       const { return false; }
       virtual bool isLiteral() const = 0;
@@ -519,6 +675,9 @@ namespace FlatModelica
 
       virtual std::unique_ptr<ExpressionBase> clone() const = 0;
       virtual Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level = 0) const = 0;
+
+      virtual Expression::Iterator begin(const Expression * /*owner*/) const { return Expression::Iterator(); }
+      virtual Expression::Iterator end(const Expression * /*owner*/) const { return Expression::Iterator(); }
 
       virtual void print(std::ostream &os) const = 0;
   };
@@ -660,6 +819,8 @@ namespace FlatModelica
 
     private:
       std::string _name;
+      std::string _subscriptedName;
+      std::vector<Expression> _iteratorSubscripts;
   };
 
   class Array : public ExpressionBase
@@ -676,6 +837,14 @@ namespace FlatModelica
       bool isArray() const override { return true; }
       bool isLiteral() const override;
       const std::vector<Expression>& elements() const { return _elements; }
+      Expression::Iterator begin(const Expression *owner) const override
+      {
+        return Expression::Iterator(std::make_unique<ArrayIterator>(owner, 0));
+      }
+      Expression::Iterator end(const Expression *owner) const override
+      {
+        return Expression::Iterator(std::make_unique<ArrayIterator>(owner, _elements.size()));
+      }
 
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
@@ -697,7 +866,10 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Range>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
+      bool isRange() const override { return true; }
       bool isLiteral() const override;
+      Expression::Iterator begin(const Expression *owner) const override;
+      Expression::Iterator end(const Expression *owner) const override;
 
       int priority(bool) const override { return 10; }
 
@@ -1551,7 +1723,8 @@ namespace FlatModelica
 
     auto const parts_array = parts.toArray();
 
-    for (const auto &part: parts_array) {
+    for (qsizetype partIndex = 0; partIndex < parts_array.size(); ++partIndex) {
+      const auto &part = parts_array.at(partIndex);
       auto part_obj = part.toObject();
       auto name = part_obj["name"];
 
@@ -1569,6 +1742,8 @@ namespace FlatModelica
 
       if (!subs.empty()) {
         std::string subs_str;
+        std::vector<Expression> subscriptExpressions;
+        bool hasIteratorSubscript = false;
 
         for (const auto& sub: subs) {
           if (!subs_str.empty()) {
@@ -1577,11 +1752,25 @@ namespace FlatModelica
 
           if (sub.isString()) {
             subs_str += sub.toString().toStdString();
+            subscriptExpressions.emplace_back(sub.toString());
           } else {
             Expression sub_exp;
             sub_exp.deserialize(sub);
-            subs_str += sub_exp.toString();
+            const auto subscript = sub_exp.toString();
+            subs_str += subscript;
+            hasIteratorSubscript |= subscript.rfind("$i", 0) == 0;
+            subscriptExpressions.emplace_back(std::move(sub_exp));
           }
+        }
+
+        /*
+         * Vectorized annotation expressions encode generated iterator variables
+         * inside cref subscripts. Keep the unindexed name so eval can fetch the
+         * array before resolving those indexes in the iterator scope.
+         */
+        if (hasIteratorSubscript && partIndex == parts_array.size() - 1) {
+          _subscriptedName = _name;
+          _iteratorSubscripts = std::move(subscriptExpressions);
         }
 
         _name += '[' + subs_str + ']';
@@ -1593,6 +1782,32 @@ namespace FlatModelica
   {
     if (recursion_level > 100) {
       throw std::runtime_error("Recursion limit reached");
+    }
+
+    /*
+     * The model variable evaluator resolves names such as `color`, not a cref
+     * containing a generated iterator subscript such as `color[$i1]`. Resolve
+     * the base array first, then evaluate the indexes with the same callback,
+     * which can see the comprehension's iterator bindings.
+     */
+    if (!_iteratorSubscripts.empty()) {
+      auto exp = var_eval(_subscriptedName).evaluate(var_eval, recursion_level + 1);
+
+      for (const auto &subscript : _iteratorSubscripts) {
+        auto index = subscript.evaluate(var_eval, recursion_level);
+        if (!index.isInteger() || !exp.isArray()) {
+          return Expression(clone());
+        }
+
+        const auto i = index.intValue();
+        const auto &elements = exp.elements();
+        if (i < 1 || static_cast<size_t>(i) > elements.size()) {
+          throw std::runtime_error("Cref::eval: subscript out of bounds");
+        }
+        exp = elements[static_cast<size_t>(i - 1)];
+      }
+
+      return exp;
     }
 
     return var_eval(_name).evaluate(var_eval, recursion_level + 1);
@@ -1749,7 +1964,7 @@ namespace FlatModelica
 
   bool Range::isLiteral() const
   {
-    return _start.isLiteral() && _step.isLiteral() && _stop.isLiteral();
+    return _start.isLiteral() && (_step.isNull() || _step.isLiteral()) && _stop.isLiteral();
   }
 
   void Range::print(std::ostream &os) const
@@ -1777,6 +1992,17 @@ namespace FlatModelica
 
     obj.insert("stop", _stop.serialize());
     return obj;
+  }
+
+  Expression::Iterator Range::begin(const Expression *owner) const
+  {
+    auto step = _step.isNull() ? Expression(1) : _step;
+    return Expression::Iterator(std::make_unique<RangeIterator>(owner, _start, std::move(step), _stop));
+  }
+
+  Expression::Iterator Range::end(const Expression *owner) const
+  {
+    return Expression::Iterator(std::make_unique<RangeIterator>(owner, true));
   }
 
   Call::Call(const QJsonObject &value, bool isRecord)
@@ -1988,11 +2214,84 @@ namespace FlatModelica
     }
   }
 
+  /*!
+   * `$array` iterator calls represent array constructors generated for
+   * vectorized expressions. Expand them only when their iterator domains can
+   * be resolved to arrays or numeric ranges. Each iterator is visible while
+   * evaluating later domains and the body. If a domain is unresolved, retain
+   * the original call instead of returning a partial array.
+   *
+   * Other iterator-call forms are not evaluated here.
+   */
   Expression IteratorCall::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
-    Q_UNUSED(var_eval);
-    Q_UNUSED(recursion_level);
-    return Expression(std::make_unique<IteratorCall>(*this));
+    if (_name != "$array") {
+      return Expression(std::make_unique<IteratorCall>(*this));
+    }
+
+    std::unordered_map<std::string, Expression> iteratorValues;
+    const Expression::VariableEvaluator scopedVarEval = [&] (const std::string &name) {
+      auto it = iteratorValues.find(name);
+      // Comprehension locals shadow model variables with the same name.
+      return it != iteratorValues.end() ? it->second : var_eval(name);
+    };
+
+    const auto getDomainValues = [&] (const Expression &domain, std::vector<Expression> &values) {
+      // Evaluate each domain in the current scope, since it may use earlier iterators.
+      const auto evaluatedDomain = domain.evaluate(scopedVarEval, recursion_level);
+      if (!evaluatedDomain.isArray() && !evaluatedDomain.isRange()) {
+        return false;
+      }
+      if (evaluatedDomain.isRange() && !evaluatedDomain.isLiteral()) {
+        return false;
+      }
+
+      for (auto value : evaluatedDomain) {
+        values.emplace_back(std::move(value));
+      }
+      return true;
+    };
+
+    std::vector<Expression> elements;
+    bool canEvaluate = true;
+    /*
+     * Walk domains from left to right. Save and restore each binding so later
+     * domains can use earlier iterators, and a repeated name can shadow safely.
+     * Reaching the end of the iterator list produces one element of the result.
+     */
+    std::function<void(size_t)> evaluateIterators = [&] (size_t iteratorIndex) {
+      if (iteratorIndex == _iterators.size()) {
+        elements.emplace_back(_exp.evaluate(scopedVarEval, recursion_level));
+        return;
+      }
+
+      const auto &iterator = _iterators[iteratorIndex];
+      std::vector<Expression> values;
+      if (!getDomainValues(iterator.range(), values)) {
+        canEvaluate = false;
+        return;
+      }
+
+      for (const auto &value : values) {
+        const auto previous = iteratorValues.find(iterator.name());
+        const bool hadPrevious = previous != iteratorValues.end();
+        Expression previousValue = hadPrevious ? previous->second : Expression();
+        iteratorValues[iterator.name()] = value;
+        evaluateIterators(iteratorIndex + 1);
+        if (hadPrevious) {
+          iteratorValues[iterator.name()] = std::move(previousValue);
+        } else {
+          iteratorValues.erase(iterator.name());
+        }
+        if (!canEvaluate) {
+          return;
+        }
+      }
+    };
+
+    evaluateIterators(0);
+    // Do not expose a partially evaluated comprehension if any domain is unknown.
+    return canEvaluate ? Expression(std::move(elements)) : Expression(std::make_unique<IteratorCall>(*this));
   }
 
   void IteratorCall::print(std::ostream &os) const
@@ -2334,6 +2633,75 @@ namespace FlatModelica
    */
   Expression::Expression() = default;
 
+  Expression::Iterator::Iterator()
+    : _it(std::make_unique<NullIterator>())
+  {
+  }
+
+  Expression::Iterator::Iterator(std::unique_ptr<IteratorBase> it)
+    : _it(std::move(it))
+  {
+    if (!_it) {
+      _it = std::make_unique<NullIterator>();
+    }
+  }
+
+  Expression::Iterator::~Iterator() = default;
+
+  Expression::Iterator::Iterator(const Iterator &other)
+    : _it(other._it ? other._it->clone() : nullptr)
+  {
+  }
+
+  Expression::Iterator& Expression::Iterator::operator=(const Iterator &other)
+  {
+    if (this != &other) {
+      _it = other._it ? other._it->clone() : nullptr;
+    }
+    return *this;
+  }
+
+  Expression::Iterator::Iterator(Iterator &&other) noexcept = default;
+
+  Expression::Iterator& Expression::Iterator::operator=(Iterator &&other) noexcept = default;
+
+  Expression::Iterator::value_type Expression::Iterator::operator*() const
+  {
+    if (!_it) {
+      throw std::runtime_error("dereferenced moved-from Expression::Iterator");
+    }
+    return _it->dereference();
+  }
+
+  Expression::Iterator& Expression::Iterator::operator++()
+  {
+    if (!_it) {
+      throw std::runtime_error("incremented moved-from Expression::Iterator");
+    }
+    _it->increment();
+    return *this;
+  }
+
+  Expression::Iterator Expression::Iterator::operator++(int)
+  {
+    auto iterator = *this;
+    ++(*this);
+    return iterator;
+  }
+
+  bool operator== (const Expression::Iterator &i1, const Expression::Iterator &i2)
+  {
+    if (!i1._it || !i2._it) {
+      return !i1._it && !i2._it;
+    }
+    return i1._it->equal(*i2._it);
+  }
+
+  bool operator!= (const Expression::Iterator &i1, const Expression::Iterator &i2)
+  {
+    return !(i1 == i2);
+  }
+
   /*!
    * \brief Expression::Expression
    * Constructs an Integer expression.
@@ -2538,6 +2906,16 @@ namespace FlatModelica
     return _value ? Expression(_value->eval(var_eval, recursion_level)) : Expression();
   }
 
+  Expression::Iterator Expression::begin() const
+  {
+    return _value ? _value->begin(this) : Iterator();
+  }
+
+  Expression::Iterator Expression::end() const
+  {
+    return _value ? _value->end(this) : Iterator();
+  }
+
   /*!
    * \brief Expression::isNull
    * Checks if the Expression contains a value or not.
@@ -2638,6 +3016,16 @@ namespace FlatModelica
   bool Expression::isArray() const
   {
     return _value && _value->isArray();
+  }
+
+  /*!
+   * \brief Expression::isRange
+   * Checks if the Expression is a range.
+   * \return true if the Expression is a range, otherwise false.
+   */
+  bool Expression::isRange() const
+  {
+    return _value && _value->isRange();
   }
 
   /*!

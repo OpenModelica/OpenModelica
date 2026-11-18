@@ -1,0 +1,40 @@
+// name: UserDllCompilerDirectory
+// keywords: external functions, LibraryDirectory, MSVC, shared library
+// status: correct
+// setup_command: L=UserDllCompilerDirectory/Resources/Library && mkdir -p $L && cp UserDllCompilerDirectory.mo UserDllCompilerDirectory/package.mo && case "$OMC_NATIVE_CC" in *cl|*cl.exe) mkdir -p $L/win64/vs2022 && $OMC_NATIVE_CC -nologo -LD $OMC_NATIVE_CFLAGS UserDllCompilerDirectory-lib.c -Fe$L/win64/vs2022/UserDllCompilerDirectory.dll && $OMC_NATIVE_CC -nologo -LD $OMC_NATIVE_CFLAGS -DVALUE=2.0 UserDllCompilerDirectory-lib.c -Fe$L/win64/UserDllCompilerDirectory.dll;; *) case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) $OMC_NATIVE_CC -shared -o $L/libUserDllCompilerDirectory.dll UserDllCompilerDirectory-lib.c;; *) $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -shared -o $L/libUserDllCompilerDirectory.so UserDllCompilerDirectory-lib.c;; esac;; esac
+// teardown_command: rm -rf UserDllCompilerDirectory UserDllCompilerDirectory-lib.obj UserDllCompilerDirectory.Test* output.log
+// depends: UserDllCompilerDirectory.mo
+// depends: UserDllCompilerDirectory-lib.c
+// suite: smoke
+// suite: nativeSharedLib
+// suite: nfScripting
+//
+// MLS 12.9.4: a compiler directory such as win64/vs2022 is used instead of
+// win64. With MSVC, the library in win64/vs2022 returns 1 and the one in
+// win64 returns 2, for the function that omc calls and for the simulation.
+// The other toolchains only have the library that returns 1. The package is
+// copied, not linked, so that its Resources are those of the test directory.
+// The old frontend's script loop does not call f before a simulation without
+// -d=gen.
+//
+
+loadFile("UserDllCompilerDirectory/package.mo"); getErrorString();
+UserDllCompilerDirectory.f(0.0); getErrorString();
+simulate(UserDllCompilerDirectory.Test); getErrorString();
+val(y, 1.0);
+
+// Result:
+// true
+// ""
+// 1.0
+// ""
+// record SimulationResult
+//     resultFile = "UserDllCompilerDirectory.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'UserDllCompilerDirectory.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// endResult

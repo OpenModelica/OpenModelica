@@ -947,8 +947,8 @@ public constant ErrorTypes.Message SETTING_FIXED_ATTRIBUTE = ErrorTypes.MESSAGE(
   "Using over-determined solver for initialization. Setting fixed=false to the following variables: %s.");
 public constant ErrorTypes.Message FAILED_TO_EVALUATE_FUNCTION = ErrorTypes.MESSAGE(506, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Failed to evaluate function: %s.");
-public constant ErrorTypes.Message WARNING_RELATION_ON_REAL = ErrorTypes.MESSAGE(509, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  "In relation %s, %s on Real operands is deprecated in non-function contexts.");
+public constant ErrorTypes.Message REAL_EQUALITY_RELATION_ERROR = ErrorTypes.MESSAGE(509, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "In relation %s, %s on Real operands is not allowed in non-function contexts. Use --allowNonStandardModelica=realEquality to ignore this error.");
 public constant ErrorTypes.Message OUTER_MODIFICATION = ErrorTypes.MESSAGE(512, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "Ignoring the modification on outer element: %s.");
 public constant ErrorTypes.Message DERIVATIVE_NON_REAL = ErrorTypes.MESSAGE(514, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1106,6 +1106,8 @@ public constant ErrorTypes.Message NON_CAUSAL_BLOCK_CONNECTOR = ErrorTypes.MESSA
   "Public connector %s in a block may only have variables that are input or output, but the following are neither: %s.");
 public constant ErrorTypes.Message OLD_FRONTEND_DEPRECATED = ErrorTypes.MESSAGE(634, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.");
+public constant ErrorTypes.Message POST_OPT_MODULE_DISCARDED_TEARING = ErrorTypes.MESSAGE(635, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
+  "The post-optimization module %s discarded the tearing of %s strong component(s), which are now solved without tearing. Run modules that change the equations before tearingSystem.");
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid dimensions %s in %s, no more than one dimension may have size > 1.");
 public constant ErrorTypes.Message NF_ARRAY_TYPE_MISMATCH = ErrorTypes.MESSAGE(587, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1545,6 +1547,48 @@ algorithm
     addSourceMessage(msg, tokens, info);
   end if;
 end addStrictMessage;
+
+function nonStandardAccepted
+  "True if --allowNonStandardModelica=option or --warnNonStandardModelica is set."
+  input String option;
+  output Boolean accepted = Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, option) or
+                            Flags.getConfigBool(Flags.WARN_NON_STANDARD_MODELICA);
+end nonStandardAccepted;
+
+function addNonStandardWarning
+  "Adds the message as the warning --warnNonStandardModelica gives, unless
+   --allowNonStandardModelica=option is set."
+  input String option;
+  input ErrorTypes.Message errorMsg;
+  input ErrorTypes.MessageTokens tokens;
+  input SourceInfo info;
+protected
+  ErrorTypes.Message msg = errorMsg;
+algorithm
+  if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, option) then
+    msg.severity := ErrorTypes.WARNING();
+    msg.message := msg.message + " [Non-standard Modelica: --allowNonStandardModelica=" + option + "]";
+    addSourceMessage(msg, tokens, info);
+  end if;
+end addNonStandardWarning;
+
+function addNonStandardMessage
+  "Reports a construct that --allowNonStandardModelica=option allows: nothing
+   with the option, a warning with --warnNonStandardModelica, else an error.
+   Returns false for an error."
+  input String option;
+  input ErrorTypes.Message errorMsg;
+  input ErrorTypes.MessageTokens tokens;
+  input SourceInfo info;
+  output Boolean accepted = true;
+algorithm
+  if nonStandardAccepted(option) then
+    addNonStandardWarning(option, errorMsg, tokens, info);
+  else
+    addSourceMessageAsError(errorMsg, tokens, info);
+    accepted := false;
+  end if;
+end addNonStandardMessage;
 
 public function addSourceMessageAndFail
   "Same as addSourceMessage, but fails after adding the error."

@@ -31,7 +31,7 @@
 #include "sundials_error.h"
 #include <kinsol/kinsol.h>
 #include <sunmatrix/sunmatrix_sparse.h>
-#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_CO_SIMULATION)
 #include <cvode/cvode.h>
 #endif
 #if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
@@ -41,7 +41,7 @@
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
 /* Internal function prototypes */
-#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_CO_SIMULATION)
 static void checkReturnFlag_CV(int flag, const char *functionName);
 static void checkReturnFlag_CVLS(int flag, const char *functionName);
 #endif
@@ -74,7 +74,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
       throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %i occurred in function %s.", flag, functionName);
     }
     break;
-#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_CO_SIMULATION)
   case SUNDIALS_CV_FLAG:
     checkReturnFlag_CV(flag, functionName);
     break;
@@ -107,7 +107,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
   }
 }
 
-#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_CO_SIMULATION)
 /**
  * @brief Checks given CVODE flag and reports potential error.
  *

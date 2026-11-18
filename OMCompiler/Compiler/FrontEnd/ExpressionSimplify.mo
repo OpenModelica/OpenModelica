@@ -2151,6 +2151,7 @@ algorithm
       list<DAE.Exp> lstConstExp, lstExp;
       Operator op;
       Boolean hasConst;
+      Real r;
 
     // global simplify ADD and SUB
     case DAE.BINARY(operator = op) /* multiple terms simplifications */
@@ -2177,6 +2178,12 @@ algorithm
         e2 := simplify2(e2, false, true);
       then
         DAE.BINARY(e1,op,e2);
+
+    // x*(1/r) rounds differently from x/r unless 1/r is exact
+    case DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2 as DAE.RCONST(real = r))
+      guard simplifyMulOrDiv and not hasExactReciprocal(r)
+      then
+        DAE.BINARY(simplify2(e1),op,e2);
 
     //global simplify MUL and DIV
      case DAE.BINARY(operator = op) /* multiple factors simplifications */
@@ -2230,6 +2237,26 @@ algorithm
 
   end match;
 end simplify2;
+
+protected function hasExactReciprocal
+  "True if |r| is a power of two and 1/r is finite."
+  input Real r;
+  output Boolean b;
+protected
+  Real m = realAbs(r);
+algorithm
+  if not (m >= 2.2250738585072014e-308 and m <= 1.7976931348623157e308) then
+    b := false;
+    return;
+  end if;
+  while m >= 2.0 loop
+    m := m / 2.0;
+  end while;
+  while m < 1.0 loop
+    m := m * 2.0;
+  end while;
+  b := m == 1.0;
+end hasExactReciprocal;
 
 protected function simplifyBinaryArrayOp
   input Operator inOperator;

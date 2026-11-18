@@ -1,0 +1,53 @@
+// name:     cseEventIteration
+// keywords: cse event iteration
+// status:   correct
+// teardown_command: rm -rf TestBogusEventIteration TestBogusEventIteration_* TestBogusEventIteration.*
+//
+// A common subexpression temporary ($cse) is no Modelica variable. Its change
+// does not continue the event iteration, so the terminal event checks for
+// discrete changes once (#9598).
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model TestBogusEventIteration
+  package Medium = Modelica.Media.Water.StandardWater;
+  Medium.AbsolutePressure p(start = 1.01e5, fixed = true);
+  Medium.AbsolutePressure p0 = 1e5;
+  Medium.Density rho;
+  Medium.Temperature T;
+  Medium.SpecificEnthalpy h, hv;
+  Medium.MassFlowRate w;
+equation
+  der(p) = 1e3;
+  p - p0 = w^2/rho;
+  hv = Medium.dewEnthalpy(Medium.setSat_p(p));
+  T = Medium.temperature_ph(p,h);
+  rho = Medium.density_ph(p,h);
+  if terminal() then
+    h = hv + 1e-6;
+  else
+    h = hv;
+  end if;
+end TestBogusEventIteration;
+"); getErrorString();
+echo(false);
+res := simulate(TestBogusEventIteration, simflags = "-lv=LOG_EVENTS_V");
+messages := res.messages;
+resultFile := res.resultFile;
+echo(true);
+getErrorString();
+regexBool(messages, "check for discrete changes at time=1");
+regexBool(messages, "check for discrete changes at time=1.*check for discrete changes at time=1");
+resultFile <> "";
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// false
+// true
+// endResult

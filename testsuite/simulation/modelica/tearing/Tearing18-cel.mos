@@ -28,7 +28,7 @@ val(x8,0.08); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Tearing18_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.08, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Tearing18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.08, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Tearing18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -99,6 +99,7 @@ QPalette Style::darkPalette()
   palette.setColor(QPalette::Dark, QColor(24, 24, 27));
   palette.setColor(QPalette::Shadow, Qt::black);
   palette.setColor(QPalette::Disabled, QPalette::WindowText, disabledText);
+  palette.setColor(QPalette::Disabled, QPalette::Base, alternateBase);
   palette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
   palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledText);
   palette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(55, 65, 81));

@@ -85,6 +85,7 @@ FAILINGTESTFILES= \
 DEPENDENCIES = \
 *.mos \
 Makefile \
+NBackendTests \
 
 CLEAN = `ls | grep -x -v -f deps.tmp`
 

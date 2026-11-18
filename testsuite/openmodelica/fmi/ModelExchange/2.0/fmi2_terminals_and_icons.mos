@@ -1,0 +1,118 @@
+// name: fmi2_terminals_and_icons.mos
+// keywords: FMI 2.0 export terminalsAndIcons terminals icon
+// status: correct
+// teardown_command: rm -rf Term2.fmu Term2.fmutmp/ Term2.log Term2_info.json Term2_FMU.libs Term2_FMU.makefile Term2_me_FMU* Term2_term.xml binaries sources documentation modelDescription.xml model.png terminalsAndIcons resources
+//
+// FMI 2.0.4 takes the optional directory terminalsAndIcons from FMI 3.0 (#18168).
+// fmiVersion is "3.0", the FMI version that defines the file (FMI 3.0, 2.4.9).
+// The terminal members are the FMI 2.0 scalar variables. Members must be inputs,
+// outputs or parameters, so the acausal p and the connector of sub get no terminal.
+// FMI Library rejects that fmiVersion in an FMI 2.0 FMU, so the import ignores
+// what it reports on the file.
+
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+
+loadString("
+connector In = input Real annotation(Icon(graphics = {
+  Polygon(points = {{-100,100},{100,0},{-100,-100}}, lineColor = {0,0,127}, fillColor = {0,0,127}, fillPattern = FillPattern.Solid)}));
+connector Out = output Real annotation(Icon(graphics = {
+  Polygon(points = {{-100,100},{100,0},{-100,-100}}, lineColor = {0,0,127}, fillColor = {255,255,255}, fillPattern = FillPattern.Solid)}));
+connector Bus
+  input Real a[2];
+  input Real b;
+end Bus;
+connector Pin
+  Real v;
+  flow Real i;
+end Pin;
+model Sub
+  Bus bus;
+  output Real z = bus.a[1];
+end Sub;
+
+model Term2
+  In u annotation(Placement(transformation(extent = {{-120,-10},{-100,10}})));
+  Out y annotation(Placement(transformation(extent = {{100,-10},{120,10}})));
+  Bus bus;
+  Pin p;
+  Sub sub(bus(a = {1, 2}, b = 3));
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = u + bus.a[1] + bus.a[2] + bus.b + sub.z - x;
+  y = x;
+  p.v = x;
+  annotation(Icon(coordinateSystem(extent = {{-100,-100},{100,100}}), graphics = {
+    Rectangle(extent = {{-100,-100},{100,100}}, lineColor = {0,0,127}, fillColor = {255,255,255}, fillPattern = FillPattern.Solid)}));
+end Term2;
+"); getErrorString();
+
+buildModelFMU(Term2, version = "2.0", fmuType = "me"); getErrorString();
+
+system("unzip -cqq Term2.fmu terminalsAndIcons/terminalsAndIcons.xml > Term2_term.xml"); getErrorString();
+readFile("Term2_term.xml"); getErrorString();
+system("unzip -Z1 Term2.fmu | grep -E \"^(model.png|terminalsAndIcons/.+)$\" | sort"); getErrorString();
+
+importFMU("Term2.fmu"); getErrorString();
+loadFile("Term2_me_FMU.mo"); getErrorString();
+simulate(Term2_me_FMU, stopTime = 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Term2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiTerminalsAndIcons fmiVersion=\"3.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd\">
+//   <GraphicalRepresentation>
+//     <CoordinateSystem x1=\"-100\" y1=\"-100\" x2=\"100\" y2=\"100\" suggestedScalingFactorTo_mm=\"0.5\"/>
+//     <Icon x1=\"-100\" y1=\"-100\" x2=\"100\" y2=\"100\"/>
+//   </GraphicalRepresentation>
+//   <Terminals>
+//     <Terminal name=\"bus\" matchingRule=\"plug\" terminalKind=\"Bus\">
+//       <TerminalMemberVariable variableName=\"bus.a[1]\" memberName=\"a[1]\" variableKind=\"signal\"/>
+//       <TerminalMemberVariable variableName=\"bus.a[2]\" memberName=\"a[2]\" variableKind=\"signal\"/>
+//       <TerminalMemberVariable variableName=\"bus.b\" memberName=\"b\" variableKind=\"signal\"/>
+//     </Terminal>
+//     <Terminal name=\"u\" matchingRule=\"plug\">
+//       <TerminalMemberVariable variableName=\"u\" memberName=\"u\" variableKind=\"signal\"/>
+//       <TerminalGraphicalRepresentation x1=\"-120\" y1=\"-10\" x2=\"-100\" y2=\"10\" iconBaseName=\"In.png\"/>
+//     </Terminal>
+//     <Terminal name=\"y\" matchingRule=\"plug\">
+//       <TerminalMemberVariable variableName=\"y\" memberName=\"y\" variableKind=\"signal\"/>
+//       <TerminalGraphicalRepresentation x1=\"100\" y1=\"-10\" x2=\"120\" y2=\"10\" iconBaseName=\"Out.png\"/>
+//     </Terminal>
+//   </Terminals>
+// </fmiTerminalsAndIcons>"
+// ""
+// model.png
+// terminalsAndIcons/In.png
+// terminalsAndIcons/In.svg
+// terminalsAndIcons/Out.png
+// terminalsAndIcons/Out.svg
+// terminalsAndIcons/icon.png
+// terminalsAndIcons/icon.svg
+// terminalsAndIcons/terminalsAndIcons.xml
+// 0
+// ""
+// "Term2_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Term2_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Term2_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
+// "
+// endResult

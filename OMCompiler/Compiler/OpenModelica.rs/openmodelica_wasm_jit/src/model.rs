@@ -793,6 +793,10 @@ pub fn encode_overrides() -> Vec<u8> {
             b.extend_from_slice(&idx.to_le_bytes());
             b.extend_from_slice(&val.to_le_bytes());
         }
+        let (flag, (start, stop)) = i.out_of_range.map_or((0u32, (0.0, 0.0)), |r| (1, r));
+        b.extend_from_slice(&flag.to_le_bytes());
+        b.extend_from_slice(&start.to_le_bytes());
+        b.extend_from_slice(&stop.to_le_bytes());
     }
     b
 }

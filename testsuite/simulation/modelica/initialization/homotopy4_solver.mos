@@ -116,7 +116,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -169,7 +169,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -221,7 +221,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -274,7 +274,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -326,7 +326,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -379,7 +379,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -431,7 +431,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -484,7 +484,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -536,7 +536,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -589,7 +589,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -648,7 +648,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -703,7 +703,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -757,7 +757,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -812,7 +812,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -866,7 +866,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -921,7 +921,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -975,7 +975,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -1030,7 +1030,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -1084,7 +1084,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -1139,7 +1139,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -1199,7 +1199,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -1267,7 +1267,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -1334,142 +1334,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
-// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
-// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
-// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -1537,7 +1402,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -1604,142 +1469,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
-// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
-// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
-// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -1807,7 +1537,277 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
+// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
+// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
+// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT_HOMOTOPY | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve lambda0-system
+// LOG_INIT_HOMOTOPY | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 local homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -1880,7 +1880,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -1948,7 +1948,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=hybrid -homotopyOnFirstTry'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -2015,142 +2015,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
-// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
-// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
-// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -2218,7 +2083,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=kinsol -homotopyOnFirstTry'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -2285,142 +2150,7 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
-// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
-// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
-//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
-// LOG_INIT_HOMOTOPY | info    | homotopy process
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
-// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
-// |                 | |       | ---------------------------
-// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
-// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
-// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
-// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
-// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
-// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | real parameters
-// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | other real variables
-// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
-// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
-// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
-// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
-// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
-// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
-// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
-// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
-// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
-// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
-// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
-// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
-// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
-// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
-// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
-// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// record SimulationResult
-//     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -2488,7 +2218,277 @@ simulate(initializationTests.homotopy4_solver, simflags="-lv=LOG_INIT_V -stopTim
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_solver_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=newton -homotopyOnFirstTry'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
+// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
+// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=homotopy -homotopyOnFirstTry'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
+// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT_HOMOTOPY | info    | Global homotopy with adaptive step size started.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | solve simplified lambda0-DAE
+// LOG_INIT_HOMOTOPY | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | run along the homotopy path and solve the actual system
+// LOG_INIT_HOMOTOPY | info    | Homotopy run:  1
+// LOG_INIT_HOMOTOPY | info    | startDirection =    1.0000000000e+00
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | Total number of lambda steps for this homotopy loop: 14
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 14 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_solver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'initializationTests.homotopy4_solver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -stopTime=0.0 -stepSize=0.0 -nls=mixed -homotopyOnFirstTry'",
 //     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values

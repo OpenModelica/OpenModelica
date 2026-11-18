@@ -338,6 +338,8 @@ protected
   FlattenSettings settings;
   DeletedVariables deleted_vars;
   Prefix prefix;
+  Restriction restr;
+  Boolean is_partial;
 algorithm
   settings := FlattenSettings.SETTINGS(
     Flags.isSet(Flags.NF_SCALARIZE),
@@ -347,7 +349,7 @@ algorithm
     Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
     Flags.isSet(Flags.VECTORIZE_BINDINGS),
-    Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute"),
+    Error.nonStandardAccepted("implicitParameterStartAttribute"),
     Flags.getConfigString(Flags.EVALUATE_STRUCTURAL_PARAMETERS) <> "all"
   );
 
@@ -369,6 +371,9 @@ algorithm
     Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
   vars := listReverseInPlace(vars);
 
+  restr := InstNode.restriction(classInst);
+  is_partial := InstNode.isPartial(classInst);
+
   flatModel := match sections
     case Sections.SECTIONS()
       algorithm
@@ -377,9 +382,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, {}, {}, src);
+        FlatModel.FLAT_MODEL(classPath, restr, is_partial, vars, eql, ieql, alg, ialg, {}, {}, src);
 
-      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(classPath, restr, is_partial, vars, {}, {}, {}, {}, {}, {}, src);
   end match;
 
   // get inputs and outputs for algorithms now that types are computed
@@ -416,15 +421,17 @@ function flattenConnection
 protected
   FlatModel flatModel;
   DeletedVariables deleted_vars;
+  list<Equation> eql;
 algorithm
   flatModel := flatten(classInst, classPath, false);
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
   // get the connections from the model
-  (flatModel, conns) := Connections.collectConnections(flatModel, function isDeletedCref(deletedVars = deleted_vars));
+  (eql, conns) := Connections.collectConnections(flatModel.equations, function isDeletedCref(deletedVars = deleted_vars));
+  flatModel.equations := eql;
   // Elaborate expandable connectors.
   (_, conns) := ExpandableConnectors.elaborate(flatModel, conns);
-  conns := Connections.collectFlows(flatModel, conns);
+  conns := Connections.collectFlows(flatModel.variables, conns);
 end flattenConnection;
 
 function collectFunctions
@@ -866,12 +873,13 @@ algorithm
 
       if Binding.isUnbound(start_binding) then
         // Fixed parameters must have a binding equation or a start attribute.
-        Error.addSourceMessage(Error.UNBOUND_PARAMETER_ERROR,
+        Error.addNonStandardMessage("implicitParameterStartAttribute", Error.UNBOUND_PARAMETER_ERROR,
           {ComponentRef.toString(var.name)}, var.info);
 
         if settings.implicitStartAttribute then
           // Create a start attribute if it's missing and
-          // --allowNonStandardModelica=implicitParameterStartAttribute is used
+          // --allowNonStandardModelica=implicitParameterStartAttribute or
+          // --warnNonStandardModelica is used
           min_exp_opt := eval_binding(Variable.lookupTypeAttribute("min", var));
           max_exp_opt := eval_binding(Variable.lookupTypeAttribute("max", var));
           start_exp := Expression.makeDefaultValue(var.ty, min_exp_opt, max_exp_opt);
@@ -1017,7 +1025,7 @@ algorithm
         name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
         eq := Equation.makeEquality(Expression.CREF(ty, name),  binding_exp, ty,
           ElementSource.createElementSource(info));
-        sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
+        sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.NON_STRUCTURAL_PARAMETER);
       end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
     else
@@ -2704,7 +2712,7 @@ function resolveConnections
   input FlattenSettings settings;
 protected
   Connections conns;
-  list<Equation> conn_eql, stream_eql, ec_eql, tlio_eql;
+  list<Equation> eql, conn_eql, stream_eql, ec_eql, tlio_eql;
   list<Variable> tlio_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
@@ -2725,8 +2733,9 @@ algorithm
   end for;
 
   // Collect connections from the model.
-  (flatModel, conns) := Connections.collectConnections(flatModel,
+  (eql, conns) := Connections.collectConnections(flatModel.equations,
     function isDeletedCref(deletedVars = deletedVars));
+  flatModel.equations := eql;
   ctable := CardinalityTable.fromConnections(conns);
 
   // Elaborate expandable connectors.
@@ -2735,7 +2744,7 @@ algorithm
 
   // Collect flow variables from the model, which needs to be done after
   // elaborating expandable connectors to get all of them.
-  conns := Connections.collectFlows(flatModel, conns);
+  conns := Connections.collectFlows(flatModel.variables, conns);
 
   // handle overconstrained connections
   // - build the graph
@@ -3048,8 +3057,8 @@ function resolveArrayConnections
 protected
   Connections conns;
   Connections.BrokenEdges broken;
-  FlatModel unrolled;
   Boolean symbolic_oc;
+  list<Equation> unrolled_eql;
 algorithm
   // the array handlers do not know about deleted conditional components
   flatModel.equations := removeDeletedConnects(flatModel.equations, deletedVars);
@@ -3067,9 +3076,9 @@ algorithm
   if System.getHasOverconstrainedConnectors() and not symbolic_oc then
     // the graph needs the single connections, roots and branches: unroll the
     // for loops of a copy of the equations for it
-    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, {}, {}, flatModel.source);
-    (_, conns) := Connections.collectConnections(unrolled, function isDeletedCref(deletedVars = deletedVars));
-    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedArrayConnections(flatModel, unrolled.equations, conns,
+    unrolled_eql := unrollForGraph(flatModel.equations);
+    (_, conns) := Connections.collectConnections(unrolled_eql, function isDeletedCref(deletedVars = deletedVars));
+    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedArrayConnections(flatModel, unrolled_eql, conns,
       function isDeletedCref(deletedVars = deletedVars));
     if not listEmpty(broken) then
       Error.addInternalError(getInstanceName() + ": overconstrained connection graphs with loops (broken connections) are not supported with array connections yet.", sourceInfo());
@@ -4033,10 +4042,9 @@ algorithm
     case Expression.CREF()
       guard isDeletedCref(exp.cref, deletedVars)
       algorithm
-        Error.addSourceMessage(Error.INVALID_DELETED_COMPONENT_CONTEXT,
-          {ComponentRef.toString(exp.cref)}, info);
-
-        if not settings.relaxedErrorChecking then
+        if not Error.addNonStandardMessage("illegalConditionalContext",
+                 Error.INVALID_DELETED_COMPONENT_CONTEXT, {ComponentRef.toString(exp.cref)}, info) and
+           not settings.relaxedErrorChecking then
           fail();
         end if;
       then

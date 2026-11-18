@@ -15,7 +15,7 @@ function(omc_result_reader_library)
   set(_workspace ${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/SimulationRuntime/rust)
   set(_crate ${_workspace}/openmodelica_result_capi)
   set(_target_dir ${CMAKE_CURRENT_BINARY_DIR}/rust-result-target)
-  omc_rust_cargo_command(${_target_dir} omc_result)
+  omc_rust_cargo_command(${_target_dir})
   if(WIN32 OR RUST_OMC_TARGET MATCHES "windows")
     set(_lib ${_out}/omc_result.dll)
     if(MSVC OR RUST_OMC_TARGET MATCHES "msvc$")
@@ -25,11 +25,15 @@ function(omc_result_reader_library)
     endif()
   elseif(APPLE OR RUST_OMC_TARGET MATCHES "apple-darwin$")
     set(_lib ${_out}/libomc_result.dylib)
+    # The install name build.rs gives it. CMake cannot read it from a dylib that
+    # does not exist yet at configure time, and without it the build tree rpath of
+    # bomc and omc misses the directory of the dylib.
+    set(_soname @rpath/libomc_result.dylib)
   else()
     set(_lib ${_out}/libomc_result.so)
   endif()
   file(GLOB_RECURSE _rust_srcs CONFIGURE_DEPENDS
-       ${_crate}/src/*.rs ${_crate}/Cargo.toml ${_crate}/include/omc_result.h
+       ${_crate}/src/*.rs ${_crate}/build.rs ${_crate}/Cargo.toml ${_crate}/include/omc_result.h
        ${_workspace}/openmodelica_result_files/src/*.rs
        ${_workspace}/openmodelica_result_diff/src/*.rs
        ${_workspace}/openmodelica_mat_reader/src/*.rs
@@ -49,8 +53,12 @@ function(omc_result_reader_library)
   add_library(omc::result SHARED IMPORTED GLOBAL)
   set_target_properties(omc::result PROPERTIES
     IMPORTED_LOCATION ${_lib}
-    IMPORTED_NO_SONAME TRUE
     INTERFACE_INCLUDE_DIRECTORIES ${_crate}/include)
+  if(_soname)
+    set_target_properties(omc::result PROPERTIES IMPORTED_SONAME ${_soname})
+  else()
+    set_target_properties(omc::result PROPERTIES IMPORTED_NO_SONAME TRUE)
+  endif()
   # Component omc: omcruntime links this PUBLIC, so omc itself does not run without it. That
   # also puts it below OMPlot, OMEdit and the simulation runtime, which link it too -- they all
   # depend on the omc component already. This function is called from the top-level

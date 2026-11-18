@@ -63,6 +63,13 @@ public function str2unit "Translate a unit string to a unit"
   external "C" UnitParserExt_str2unit(res,noms,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) annotation(Library = "omcruntime");
 end str2unit;
 
+public function angleExponents "The exponents of rad and Hz in a unit, which str2unit counts as 1 and s-1"
+  input String unit;
+  output Integer rad;
+  output Integer hz;
+  external "C" UnitParserExt_angleExponents(unit,rad,hz) annotation(Library = "omcruntime");
+end angleExponents;
+
 public function allUnitSymbols
   output list<String> unitSymbols;
   external "C" unitSymbols = UnitParserExtImpl__allUnitSymbols() annotation(Library = "omcruntime");

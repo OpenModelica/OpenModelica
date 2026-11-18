@@ -40,7 +40,7 @@ simulate(AlgLinearSystem, stopTime=0.2, numberOfIntervals=20, simflags="-jacobia
 // ""
 // record SimulationResult
 //     resultFile = "AlgNonlinearSystemAnalytic_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AlgNonlinearSystemAnalytic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AlgNonlinearSystemAnalytic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -50,7 +50,7 @@ simulate(AlgLinearSystem, stopTime=0.2, numberOfIntervals=20, simflags="-jacobia
 // ""
 // record SimulationResult
 //     resultFile = "AlgNonlinearSystemNumeric_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AlgNonlinearSystemNumeric', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AlgNonlinearSystemNumeric', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -60,7 +60,7 @@ simulate(AlgLinearSystem, stopTime=0.2, numberOfIntervals=20, simflags="-jacobia
 // ""
 // record SimulationResult
 //     resultFile = "AlgLinearSystem_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AlgLinearSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AlgLinearSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

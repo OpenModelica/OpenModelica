@@ -158,8 +158,9 @@ double omc_result_script_delta(const omc_result_messages *m, const char *filenam
                                const char *method, const char *const *vars, size_t n);
 char **omc_result_script_diff(const omc_result_messages *m, int running_testsuite, const char *filename,
                               const char *reffilename, const char *prefix, double reltol,
-                              double reltol_diff_max_min, double range_delta, const char *const *vars, size_t n,
-                              int keep_equal_results, int *success, size_t *n_out);
+                              double reltol_diff_max_min, double range_delta, int algorithm,
+                              const char *const *vars, size_t n, int keep_equal_results, int *success,
+                              size_t *n_out);
 /* NULL when the files cannot be compared. */
 char *omc_result_script_diff_html(const omc_result_messages *m, int running_testsuite, const char *var,
                                   const char *filename, const char *reffilename, double reltol,
@@ -177,7 +178,9 @@ enum { OMC_RESULT_NEGATE_NONE = 0, OMC_RESULT_NEGATE_ARITHMETIC = 1, OMC_RESULT_
 /* One result variable. A kind-COLUMN signal reads row column `column`; several
  * signals on one column are aliases (`negate` for a negated one); `unvarying`
  * marks a column constant after initialization, stored like a parameter. A
- * kind-PARAMETER signal takes the next value of the `params` array. */
+ * kind-PARAMETER signal takes the next value of the `params` array. `alias`
+ * marks an alias of a variable or parameter: .csv has no place for a parameter,
+ * but writes an alias of one as a constant column. */
 typedef struct omc_result_signal {
   const char *name;
   const char *description;
@@ -189,6 +192,7 @@ typedef struct omc_result_signal {
   unsigned column;
   int negate;
   int unvarying;
+  int alias;
   /* FMI's relativeQuantity (Modelica absoluteValue=false): the value is a
    * difference in its unit, so a conversion scales it but adds no offset. */
   int relative_quantity;

@@ -47,6 +47,8 @@
 #include "FlatModelica/Expression.h"
 
 #include <QApplication>
+#include <QDir>
+#include <QFileInfo>
 #include <QMenu>
 #include <QWidgetAction>
 #include <QButtonGroup>
@@ -240,15 +242,20 @@ ArrayParameterEditorDialog::ArrayParameterEditorDialog(const QString &arrayValue
   connect(mpArrayTableWidget, &QTableWidget::itemChanged, this, &ArrayParameterEditorDialog::updateExpressionFromTable);
   mpArrayTableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
   mpArrayTableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(mpArrayTableWidget, &QTableWidget::customContextMenuRequested,
-          this, &ArrayParameterEditorDialog::showTableContextMenu);
+  connect(mpArrayTableWidget, &QTableWidget::customContextMenuRequested, this, &ArrayParameterEditorDialog::showTableContextMenu);
   Label *pExpressionLabel = new Label(tr("Expression:"));
   mpExpressionLineEdit = new QLineEdit;
   mpExpressionLineEdit->setPlaceholderText(defaultValue);
   connect(mpExpressionLineEdit, &QLineEdit::textEdited, this, &ArrayParameterEditorDialog::expressionTextEdited);
-  QDialogButtonBox *pButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  connect(pButtonBox, &QDialogButtonBox::accepted, this, &ArrayParameterEditorDialog::okClicked);
-  connect(pButtonBox, &QDialogButtonBox::rejected, this, &ArrayParameterEditorDialog::reject);
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, &QPushButton::clicked, this, &ArrayParameterEditorDialog::okClicked);
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, &QPushButton::clicked, this, &ArrayParameterEditorDialog::reject);
+  QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  pButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  pButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->addWidget(pRowsLabel, 0, 0);
   pMainLayout->addWidget(mpRowsSpinBox, 0, 1);
@@ -1168,8 +1175,14 @@ void Parameter::setEnabled(bool enable)
       mpValueTextBox->setEnabled(enable);
       break;
   }
+  // enable/disable array editor button
+  if (mpArrayEditorButton) {
+    mpArrayEditorButton->setEnabled(enable);
+  }
   // enable/disable final each menu button
   mpFinalEachMenuButton->setEnabled(enable);
+  // enable/disable file selector button
+  mpFileSelectorButton->setEnabled(enable);
   // enable/disable unit combobox
   mpUnitComboBox->setEnabled(enable);
   // if enable is true then enable/disable the unit combobox based on value
@@ -1627,6 +1640,10 @@ void Parameter::fileSelectorButtonClicked()
 {
   QString filter, caption = "";
   QString fileName;
+  QString initialDirectory;
+  QString resourcesDirectory;
+  QString packageName;
+  bool loadSelector = false;
   /* saveSelector is given precedence if present.
    * There is nothing about it in the specification but we do so to keep consistant with Dymola.
    */
@@ -1648,13 +1665,44 @@ void Parameter::fileSelectorButtonClicked()
     if (mLoadSelectorCaption.compare("-") != 0) {
       caption = mLoadSelectorCaption;
     }
-    fileName = StringHandler::getOpenFileName(MainWindow::instance(), caption, NULL, filter, NULL);
+    loadSelector = true;
+    QString *pInitialDirectory = nullptr;
+    LibraryTreeItem *pLibraryTreeItem = mpElementParameters->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
+    while (pLibraryTreeItem && !pLibraryTreeItem->isTopLevel()) {
+      pLibraryTreeItem = pLibraryTreeItem->parent();
+    }
+    if (pLibraryTreeItem && pLibraryTreeItem->getRestriction() == StringHandler::Package
+        && !pLibraryTreeItem->getFileName().isEmpty()) {
+      QDir packageDirectory(QFileInfo(pLibraryTreeItem->getFileName()).absolutePath());
+      if (packageDirectory.exists("Resources")) {
+        initialDirectory = packageDirectory.filePath("Resources");
+        resourcesDirectory = QFileInfo(initialDirectory).canonicalFilePath();
+        packageName = pLibraryTreeItem->getNameStructure();
+        pInitialDirectory = &initialDirectory;
+      }
+    }
+    fileName = StringHandler::getOpenFileName(MainWindow::instance(), caption, pInitialDirectory, filter, NULL);
   }
   // if user press ESC
   if (fileName.isEmpty()) {
     return;
   }
-  setValueWidget(QString("\"%1\"").arg(fileName), false, mUnit, true);
+  QString value;
+  if (loadSelector && !resourcesDirectory.isEmpty() && !packageName.isEmpty()) {
+    const QString selectedFilePath = QFileInfo(fileName).canonicalFilePath();
+    if (!selectedFilePath.isEmpty()) {
+      QString relativeFileName = QDir(resourcesDirectory).relativeFilePath(selectedFilePath);
+      relativeFileName = QDir::fromNativeSeparators(relativeFileName);
+      if (relativeFileName != ".." && !relativeFileName.startsWith("../") && !QDir::isAbsolutePath(relativeFileName)) {
+        const QString resourceURI = QString("modelica://%1/Resources/%2").arg(packageName, relativeFileName);
+        value = QString("Modelica.Utilities.Files.loadResource(\"%1\")").arg(StringHandler::escapeString(resourceURI));
+      }
+    }
+  }
+  if (value.isEmpty()) {
+    value = QString("\"%1\"").arg(StringHandler::escapeString(QFileInfo(fileName).absoluteFilePath()));
+  }
+  setValueWidget(value, false, mUnit, true);
 }
 
 /*!
@@ -1665,9 +1713,7 @@ void Parameter::fileSelectorButtonClicked()
 void Parameter::arrayEditorButtonClicked()
 {
   const ModelInstance::Dimensions &dimensions = mpModelInstanceElement->getDimensions();
-  ArrayParameterEditorDialog dialog(getValue(), mDefaultValue, mName,
-                                    dimensions.getAbsynDimensions(), dimensions.getTypedDimensions(),
-                                    MainWindow::instance());
+  ArrayParameterEditorDialog dialog(getValue(), mDefaultValue, mName, dimensions.getAbsynDimensions(), dimensions.getTypedDimensions(), MainWindow::instance());
   if (dialog.exec() == QDialog::Accepted) {
     const QString arrayValue = dialog.getArrayValue();
     if (arrayValue.compare(getValue()) != 0) {

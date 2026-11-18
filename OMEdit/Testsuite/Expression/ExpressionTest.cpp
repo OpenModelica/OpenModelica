@@ -42,6 +42,8 @@
 #include "MainWindow.h"
 #include "FlatModelica/Expression.h"
 
+#include <stdexcept>
+
 OMEDITTEST_MAIN(ExpressionTest)
 
 QString evalString(const QString &str)
@@ -347,6 +349,102 @@ void ExpressionTest::functions_data()
   QTest::newRow("diagonal")
     << "diagonal({1, 2, 3})"
     << "{{1,0,0},{0,2,0},{0,0,3}}";
+}
+
+void ExpressionTest::evaluateIteratorCall()
+{
+  /*
+   * This is the getModelInstance form of integer(color) after the frontend
+   * vectorizes the scalar function over color[$i1]. It checks that the
+   * comprehension binds $i1 while resolving each source-array subscript.
+   */
+  QJsonObject expressionJson{
+    {"$kind", "iterator_call"},
+    {"name", "$array"},
+    {"exp", QJsonObject{
+      {"$kind", "call"},
+      {"name", "integer"},
+      {"arguments", QJsonArray{
+        QJsonObject{
+          {"$kind", "cref"},
+          {"parts", QJsonArray{
+            QJsonObject{
+              {"name", "color"},
+              {"subscripts", QJsonArray{
+                QJsonObject{
+                  {"$kind", "cref"},
+                  {"parts", QJsonArray{
+                    QJsonObject{{"name", "$i1"}}
+                  }}
+                }
+              }}
+            }
+          }}
+        }
+      }}
+    }},
+    {"iterators", QJsonArray{
+      QJsonObject{
+        {"name", "$i1"},
+        {"range", QJsonObject{{"$kind", "range"}, {"start", 1}, {"stop", 3}}}
+      }
+    }}
+  };
+
+  FlatModelica::Expression expression;
+  expression.deserialize(expressionJson);
+  const auto result = expression.evaluate([] (const std::string &name) {
+    if (name == "color") {
+      // The callback supplies the parameter value used by the annotation.
+      return FlatModelica::Expression(std::vector<FlatModelica::Expression>{
+        FlatModelica::Expression(128),
+        FlatModelica::Expression(0),
+        FlatModelica::Expression(0)
+      });
+    }
+    throw std::runtime_error("Unexpected variable: " + name);
+  });
+  QCOMPARE(result.toQString(), QString("{128,0,0}"));
+
+  // Array-valued iterator domains use the same Expression iteration interface.
+  FlatModelica::Expression arrayComprehension;
+  arrayComprehension.deserialize(QJsonObject{
+    {"$kind", "iterator_call"},
+    {"name", "$array"},
+    {"exp", QJsonObject{
+      {"$kind", "cref"},
+      {"parts", QJsonArray{QJsonObject{{"name", "$i1"}}}}
+    }},
+    {"iterators", QJsonArray{
+      QJsonObject{
+        {"name", "$i1"},
+        {"range", QJsonArray{10, 20}}
+      }
+    }}
+  });
+  const auto arrayResult = arrayComprehension.evaluate([] (const std::string &name) -> FlatModelica::Expression {
+    throw std::runtime_error("Unexpected variable: " + name);
+  });
+  QCOMPARE(arrayResult.toQString(), QString("{10,20}"));
+
+  auto iterator = arrayResult.begin();
+  auto iteratorCopy = iterator;
+  ++iterator;
+  QVERIFY(iterator != iteratorCopy);
+  QCOMPARE((*iteratorCopy).toQString(), QString("10"));
+
+  FlatModelica::Expression descendingRange;
+  descendingRange.deserialize(QJsonObject{
+    {"$kind", "range"},
+    {"start", 3},
+    {"step", -1},
+    {"stop", 1}
+  });
+  std::vector<FlatModelica::Expression> descendingValues;
+  for (auto value : descendingRange) {
+    descendingValues.emplace_back(std::move(value));
+  }
+  QCOMPARE(FlatModelica::Expression(std::move(descendingValues)).toQString(), QString("{3,2,1}"));
 }
 
 void ExpressionTest::parseJSON()

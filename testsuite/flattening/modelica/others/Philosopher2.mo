@@ -333,7 +333,7 @@ end Philosopher_DiningTable;
 //   while not my_break loop
 //     (u1, s2) := Philosopher.Random.random({s1[1], s1[2], s1[3]});
 //     (u2, s1) := Philosopher.Random.random({s2[1], s2[2], s2[3]});
-//     z := 1.715527769921414 * (-0.5 + u1) / u2;
+//     z := 1.7155277699214135 * (-0.5 + u1) / u2;
 //     zz := 0.25 * z ^ 2.0;
 //     my_break := zz <= (-log(u2));
 //   end while;
@@ -358,7 +358,7 @@ end Philosopher_DiningTable;
 //   if so[3] <= 0.0 and so[3] >= 0.0 then
 //     so[3] := 1.0;
 //   end if;
-//   x := 3.303710066404573e-05 * so[1] + 3.299567756623883e-05 * so[2] + 0.0003307972213033411 * so[3] - div(3.303710066404573e-05 * so[1] + 3.299567756623883e-05 * so[2] + 0.0003307972213033411 * so[3], 1.0);
+//   x := so[1] / 30269.0 + so[2] / 30307.0 + so[3] / 3023.0 - div(so[1] / 30269.0 + so[2] / 30307.0 + so[3] / 3023.0, 1.0);
 // end Philosopher.Random.random;
 //
 // class Philosopher_DiningTable

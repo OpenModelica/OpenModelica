@@ -20,7 +20,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Trans
 // true
 // record SimulationResult
 //     resultFile = "Modelica.Mechanics.Translational.Examples.Accelerate_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""

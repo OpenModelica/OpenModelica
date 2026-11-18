@@ -224,6 +224,7 @@ CevalRecordArray8.mo \
 CevalRecordArray9.mo \
 CevalRecordArray10.mo \
 CevalRecordArray11.mo \
+CevalRecordReduction1.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -397,6 +398,7 @@ DimUnknown16.mo \
 DimUnknown17.mo \
 DimUnknown18.mo \
 DimUnknown19.mo \
+DimUnknown20.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -989,6 +991,8 @@ OperationPow2.mo \
 OperationPow3.mo \
 OperationPowEW1.mo \
 OperationRelational1.mo \
+OperationRelational2.mo \
+OperationRelational3.mo \
 OperationSub1.mo \
 OperationSubEW1.mo \
 OperationSubEW2.mo \
@@ -1078,6 +1082,7 @@ RecordBinding16.mo \
 RecordBinding17.mo \
 RecordBinding18.mo \
 RecordBinding19.mo \
+RecordBinding20.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \

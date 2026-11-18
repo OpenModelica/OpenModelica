@@ -51,6 +51,7 @@ protected
   import ConvertDAE = NFConvertDAE;
   import DAE;
   import DAEUtil;
+  import OldComponentReference = ComponentReference;
   import OldExpression = Expression;
   import Expression = NFExpression;
   import Operator = NFOperator;
@@ -564,7 +565,7 @@ public
         case SIM_BRANCH_STMT() algorithm
           old_condition := match branch.condition
             case Expression.END() then NONE();
-            else SOME(Expression.toDAE(branch.condition));
+            else SOME(whenEdge(Expression.toDAE(branch.condition)));
           end match;
 
         then OldSimCode.SIM_BRANCH_STMT(
@@ -574,6 +575,24 @@ public
         else fail();
       end match;
     end convert;
+
+    function whenEdge
+      "a when branch is active if one of its conditions became true"
+      input output DAE.Exp cond;
+    algorithm
+      cond := match cond
+        local
+          DAE.ComponentRef cr;
+          DAE.Type ty;
+          list<DAE.Exp> conds;
+        case DAE.CREF(componentRef = cr, ty = ty)
+          then DAE.LBINARY(cond, DAE.AND(DAE.T_BOOL_DEFAULT), DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT), DAE.CREF(OldComponentReference.crefPrefixPre(cr), ty)));
+        case DAE.ARRAY(array = conds) algorithm
+          conds := list(whenEdge(c) for c in conds);
+        then OldExpression.makeLBinary(conds, DAE.OR(DAE.T_BOOL_DEFAULT));
+        else cond;
+      end match;
+    end whenEdge;
   end SimBranch;
 
   annotation(__OpenModelica_Interface="nbackend");

@@ -304,9 +304,15 @@ public
         aliasStr := aliasStr + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
       end if;
     end for;
-    str := str + StringUtil.headline_4("[dumprepl] Constant Replacements:") + constStr;
-    str := str + StringUtil.headline_4("[dumprepl] Trivial Alias Replacements:") + aliasStr;
-    str := str + StringUtil.headline_4("[dumprepl] Nontrivial Alias Replacements:") + nonTrivialStr;
+    if constStr <> "" then
+      str := str + StringUtil.headline_4("[dumprepl] Constant Replacements:") + constStr;
+    end if;
+    if aliasStr <> "" then
+      str := str + StringUtil.headline_4("[dumprepl] Trivial Alias Replacements:") + aliasStr;
+    end if;
+    if nonTrivialStr <> "" then
+      str := str + StringUtil.headline_4("[dumprepl] Nontrivial Alias Replacements:") + nonTrivialStr;
+    end if;
   end simpleToString;
 
 // =========================================================================

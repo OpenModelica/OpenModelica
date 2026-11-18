@@ -89,6 +89,7 @@ pub fn emitMeFmu(
     ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
+    model_icon: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
     emit_fmu(
@@ -98,6 +99,7 @@ pub fn emitMeFmu(
         ls_dae_manifest,
         documentation_dir,
         terminals_dir,
+        model_icon,
         simulation_flags_json,
         FMI3_ME_ADAPTER(),
         "ME",

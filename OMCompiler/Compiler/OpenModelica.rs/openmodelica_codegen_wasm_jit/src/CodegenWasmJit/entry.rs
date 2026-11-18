@@ -126,12 +126,14 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
         Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_seg}{sim_output}"),
-        // A failed assertion, initialization or integrator has logged its own
-        // reason (`LOG_ASSERT` / `LOG_INIT` / `model terminate`).
+        // A failed assertion, initialization or integrator, or a --daeMode model
+        // with a method other than IDA, has logged its own reason (`LOG_ASSERT` /
+        // `LOG_INIT` / `model terminate`).
         Err(e)
             if *e == sim_driver::ASSERT_ERR
                 || *e == sim_driver::INIT_FAILED_ERR
-                || *e == sim_driver::SOLVER_FAILED_ERR =>
+                || *e == sim_driver::SOLVER_FAILED_ERR
+                || *e == sim_driver::DAE_MODE_NEEDS_IDA =>
         {
             format!("{init_seg}{sim_output}")
         }

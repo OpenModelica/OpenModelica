@@ -5,6 +5,7 @@ world.mos \
 noemit.mos \
 resultFileFlag.mos \
 resultFileFlagRealTime.mos \
+resultFileMissingDir.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
@@ -24,6 +25,7 @@ Bug3687.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
 CombiTimeTableTest.mos \
+CombiTimeTableTimeScale.mos \
 ComplexAlgebraicLoop.mos \
 ComplexFun.mos \
 DiscreteVectorStateSpace.mos \
@@ -84,11 +86,15 @@ TestSolve19.mos \
 Ticket5129.mos \
 ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \
+StateDerivativeAliases.mos \
 FilterSimulationResultsCsvTime.mos \
+DiffSimulationResultsAlgorithm.mos \
+DiffSimulationResultsOneRow.mos \
 FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \
+CsvParameterAlias.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \
 localKnownVars.mos \

@@ -4,6 +4,7 @@
 use std::ffi::{CString, c_char, c_double, c_int, c_void};
 use std::ptr;
 
+use openmodelica_result_files::cmp::Algorithm;
 use openmodelica_result_files::scripting::{self, Messages, Severity};
 
 use crate::{cstr, guard, malloc_str, names};
@@ -183,6 +184,7 @@ pub extern "C" fn omc_result_script_diff(
     reltol: c_double,
     reltol_diff_max_min: c_double,
     range_delta: c_double,
+    algorithm: c_int,
     vars: *const *const c_char,
     n: usize,
     keep_equal_results: c_int,
@@ -202,6 +204,7 @@ pub extern "C" fn omc_result_script_diff(
             reltol,
             reltol_diff_max_min,
             range_delta,
+            Algorithm::from_index(algorithm),
             &names(vars, n),
             keep_equal_results != 0,
         );

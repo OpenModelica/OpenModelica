@@ -182,12 +182,12 @@ option(RUST_OMC_PREBUILT_GENERATED_SRC
   "Assume the mmtorust-generated *.rs are already present (e.g. unstashed from an earlier CI stage) and skip the transpile."
   OFF)
 
-# Each client is a separate cargo build resolving the workspace to a different
+# The client is a separate cargo build resolving the workspace to a different
 # feature set than the cdylib, sharing one target directory: cargo cannot reuse
-# the fingerprints, so every compiler crate is rebuilt per client, every build.
-# The browser OMShell pages come from the wasm target and are not affected.
+# the fingerprints, so every compiler crate is rebuilt for it, every build.
+# The browser OMShell page comes from the wasm target and is not affected.
 option(RUST_OMC_OMSHELL_CLIENTS
-  "Build the desktop egui + dioxus/Blitz OMShell clients. Off by default: each is a separate cargo feature resolution and rebuilds every compiler crate."
+  "Build the desktop egui OMShell client. Off by default: it is a separate cargo feature resolution and rebuilds every compiler crate."
   OFF)
 
 # The target always exists (`--target rust_omgendoc`); this adds it to ALL and
@@ -693,7 +693,6 @@ set(RUST_OMC_REVISION_FILE ${CMAKE_CURRENT_BINARY_DIR}/omc-revision.txt)
 file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_RUST}\n")
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
-     "OMC_RT_LDFLAGS_GENERATED_CODE_MMC=${RT_LDFLAGS_GENERATED_CODE_MMC}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST=${RT_LDFLAGS_GENERATED_CODE_SIM_RUST}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
@@ -1434,21 +1433,6 @@ function(omc_rust_setup_codegen)
       VERBATIM)
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-egui${RUST_OMC_EXE_SUFFIX}
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
-
-    # The native dioxus client uses Blitz (dioxus-native), not a webview, so the
-    # Help -> WebGPU test can composite a real wgpu scene. Drop the default `web`
-    # feature, select `native`. Same in-process compiler link as egui, so it also
-    # DEPENDS on rust_codegen.
-    add_custom_target(rust_omshell_dioxus ALL
-      WORKING_DIRECTORY ${RUST_OMC_DIR}
-      ${OMC_JOB_SERVER_AWARE}
-      COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
-              -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features native
-      DEPENDS rust_codegen rust_omshell_egui
-      COMMENT "Rust: building OMShell-dioxus (native/Blitz, ${RUST_OMC_PROFILE})"
-      VERBATIM)
-    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus${RUST_OMC_EXE_SUFFIX}
-            DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
   endif()
   # The library-documentation generator. Frontend-only, so it does not link the
   # cdylib and only DEPENDS on the transpile.
@@ -1593,8 +1577,8 @@ endfunction()
 # already built it alongside the compiler (see _wasm_common). This step only runs
 # wasm-bindgen + assembly, so it just waits for rust_wasm, not a second cargo build.
 #
-# `_label` is a clean token for the cmake target name (egui/dioxus); `_binname`
-# is the GUI's bin/artifact name (OMShell-egui/OMShell-dioxus), which is also the
+# `_label` is a clean token for the cmake target name (egui); `_binname`
+# is the GUI's bin/artifact name (OMShell-egui), which is also the
 # web dir and <name>.html so the page paths are self-consistent.
 #
 # Called from inside omc_rust_setup_wasm, so it reads that function's locals
@@ -1704,7 +1688,7 @@ function(omc_rust_fmi_driver_module)
   endif()
 endfunction()
 
-# Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the
+# Assemble the Qt OMShell web page. Unlike the egui page (a Rust crate the
 # rust_wasm cargo invocation already built), this is the C++ Qt OMShell compiled
 # with Qt for WebAssembly — a separate toolchain, so it is a nested cmake build
 # (OMShellGUI/wasm) driven here. The result is staged in web/OMShell-qt/ next to
@@ -1884,6 +1868,54 @@ function(omc_rust_omedit_qt_web_page)
     endif()
   endif()
 
+  # Markdown and math in the assistant panel: markdown-it and KaTeX (both MIT),
+  # from their pinned npm tarballs. Without them the panel shows plain text.
+  set(_assistant_vendor_copy "")
+  set(_assistant_vendor_dirs "")
+  foreach(_pkg IN ITEMS
+          "markdown-it|15.0.3|98a7453983ab0e268c17dbd5260bf7190ba46b4cca912327fc1c1a2578e4b56d"
+          "katex|0.19.1|24da5a599eb2fcede2e270b99a6ff48bca816beecc95feeb84e8cccbd1bb34fd")
+    string(REPLACE "|" ";" _p ${_pkg})
+    list(GET _p 0 _p_name)
+    list(GET _p 1 _p_ver)
+    list(GET _p 2 _p_hash)
+    set(_p_dir ${CMAKE_CURRENT_BINARY_DIR}/omedit-vendor/${_p_name}-${_p_ver})
+    if(NOT EXISTS ${_p_dir}/package/LICENSE)
+      set(_p_tgz ${OM_DOWNLOADS_DIR}/${_p_name}-${_p_ver}.tgz)
+      omc_download(https://registry.npmjs.org/${_p_name}/-/${_p_name}-${_p_ver}.tgz ${_p_tgz} ${_p_hash} _p_dl)
+      if(NOT _p_dl)
+        file(MAKE_DIRECTORY ${_p_dir})
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_p_tgz}
+                        WORKING_DIRECTORY ${_p_dir} RESULT_VARIABLE _p_dl)
+        if(_p_dl EQUAL 0)
+          set(_p_dl "")
+        else()
+          file(REMOVE_RECURSE ${_p_dir})
+        endif()
+      endif()
+      if(_p_dl)
+        message(WARNING "Could not get ${_p_name} ${_p_ver}: ${_p_dl}. "
+                        "The assistant in the OMEdit web page will show plain text.")
+        continue()
+      endif()
+    endif()
+    list(APPEND _assistant_vendor_dirs ${_p_dir}/package)
+  endforeach()
+  list(LENGTH _assistant_vendor_dirs _assistant_vendor_count)
+  if(_assistant_vendor_count EQUAL 2)
+    list(GET _assistant_vendor_dirs 0 _mdit)
+    list(GET _assistant_vendor_dirs 1 _katex)
+    file(GLOB _katex_fonts ${_katex}/dist/fonts/*.woff2)
+    set(_assistant_vendor_copy
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}/vendor/markdown-it ${_qt_pkgdir}/vendor/katex/fonts
+      COMMAND ${CMAKE_COMMAND} -E copy ${_mdit}/dist/browser/markdown-it.umd.min.js
+              ${_qt_pkgdir}/vendor/markdown-it/markdown-it.min.js
+      COMMAND ${CMAKE_COMMAND} -E copy ${_mdit}/LICENSE ${_qt_pkgdir}/vendor/markdown-it/
+      COMMAND ${CMAKE_COMMAND} -E copy ${_katex}/dist/katex.min.js ${_katex}/dist/katex.min.css ${_katex}/LICENSE
+              ${_qt_pkgdir}/vendor/katex/
+      COMMAND ${CMAKE_COMMAND} -E copy ${_katex_fonts} ${_qt_pkgdir}/vendor/katex/fonts/)
+  endif()
+
   add_custom_target(rust_omedit_qt_web ${_qt_web_all}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_bld}
     COMMAND ${_em_cache_env} ${CMAKE_COMMAND} -G "Unix Makefiles" -S ${_qt_src} -B ${_qt_bld}
@@ -1892,10 +1924,12 @@ function(omc_rust_omedit_qt_web_page)
             -DSCRIPTING_API_QT_DIR=${OMC_SCRIPTING_API_QT_DIR}
     COMMAND ${_em_cache_env} ${CMAKE_COMMAND} --build ${_qt_bld} --parallel
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
+    # The page is our own (OMEditGUI/wasm/OMEdit-qt.html), not Qt's shell: it
+    # has the assistant panel next to the application.
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${_qt_bld}/OMEdit-qt.html ${_qt_bld}/OMEdit-qt.js
-            ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
-            ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
+            ${_qt_bld}/OMEdit-qt.js ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
+            ${_qt_src}/OMEdit-qt.html ${_qt_src}/assistant.js ${_qt_src}/assistant.css
+            ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${_qt_bld}/share ${_qt_pkgdir}/share
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     # The OAuth callback goes at the web ROOT, not in the versioned page directory:
@@ -1908,6 +1942,7 @@ function(omc_rust_omedit_qt_web_page)
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_SOURCE_DIR}/OMEdit/OMEditLIB/Resources/icons/omedit_splashscreen.png ${_qt_pkgdir}/
     ${_crml_web_copy}
+    ${_assistant_vendor_copy}
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
   # Cloud storage OAuth client registrations. Kept out of the source tree so that one
@@ -1994,11 +2029,11 @@ function(omc_rust_setup_wasm)
   # description templates only, not `codegen_fmu_c`/`codegen_c` -- the wasm-jit
   # target emits the model itself.
   #
-  # When the OMShell web pages are wanted (GUI clients on, browser host) their
-  # crates are added to this *same* cargo invocation, so eframe/dioxus and their
-  # deps compile in parallel with the compiler rather than serially after it.
+  # When the OMShell web page is wanted (GUI clients on, browser host) its
+  # crate is added to this *same* cargo invocation, so eframe and its deps
+  # compile in parallel with the compiler rather than serially after it.
   # --no-default-features then applies to all selected packages, so the features
-  # are package-qualified (omshell_egui has none; omshell_dioxus needs `web`).
+  # are package-qualified.
   set(_build_omshell_web FALSE)
   if(OM_ENABLE_GUI_CLIENTS AND _host STREQUAL "web")
     set(_build_omshell_web TRUE)
@@ -2023,9 +2058,9 @@ function(omc_rust_setup_wasm)
   endif()
   if(_build_omshell_web)
     set(_wasm_common --target ${_wasm_target}
-                     -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus ${_anim_pkg}
+                     -p libopenmodelica_compiler -p omshell_egui ${_anim_pkg}
                      --no-default-features
-                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu,omshell_dioxus/web${_wasm_scripting_feature}${_wasm_sundials_feature})
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu${_wasm_scripting_feature}${_wasm_sundials_feature})
   else()
     set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler ${_anim_pkg}
                      --no-default-features
@@ -2049,7 +2084,6 @@ function(omc_rust_setup_wasm)
   #   web/home/index.html                             (default client: getVersion() splash)
   #   web/omc-terminal/index.html                     (the omc REPL, one OMShell variant)
   #   web/omshell_egui.html      + web/omshell_egui/*   (added by the page helper)
-  #   web/omshell_dioxus.html    + web/omshell_dioxus/*
   # index.html is an SPA that loads each client in an iframe (hash-routed for
   # shareable links). The browser launcher imports ./omc/; Node keeps
   # pkg-nodejs/ + omc-cli.js.
@@ -2111,15 +2145,23 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/simulator/config.json
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
         ${RUST_OMC_DIR}/wasm/simulator/examples/DistrictHeating.mo
+        ${RUST_OMC_DIR}/wasm/fmi-guide/dialog.js
         ${RUST_OMC_DIR}/wasm/plot.js
         ${RUST_OMC_DIR}/wasm/units.js
         ${RUST_OMC_DIR}/wasm/theme.css
+        ${RUST_OMC_DIR}/wasm/theme.js
         ${RUST_OMC_DIR}/wasm/ui.js
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
         ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
         ${RUST_OMC_DIR}/wasm/wasm-blobs.js
         ${RUST_OMC_DIR}/wasm/wasm-stack.js
+        ${RUST_OMC_DIR}/wasm/omc-store.js
+        ${RUST_OMC_DIR}/wasm/storage/index.html
+        ${RUST_OMC_DIR}/wasm/storage/worker.js
+        ${RUST_OMC_DIR}/wasm/storage/upload.js
         ${RUST_OMC_DIR}/wasm/symbolize.html
+        ${RUST_OMC_DIR}/wasm/README.md
+        ${RUST_OMC_DIR}/wasm/coi_server.py
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -2162,13 +2204,23 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/plot.js
                 ${RUST_OMC_DIR}/wasm/units.js
                 ${RUST_OMC_DIR}/wasm/theme.css
+                ${RUST_OMC_DIR}/wasm/theme.js
                 ${RUST_OMC_DIR}/wasm/ui.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
                 ${RUST_OMC_DIR}/wasm/wasm-blobs.js
                 ${RUST_OMC_DIR}/wasm/wasm-stack.js
+                ${RUST_OMC_DIR}/wasm/omc-store.js
                 ${RUST_OMC_DIR}/wasm/symbolize.html
+                ${RUST_OMC_DIR}/wasm/README.md
+                ${RUST_OMC_DIR}/wasm/coi_server.py
                 ${_web_dir}/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/storage
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/storage/index.html
+                ${RUST_OMC_DIR}/wasm/storage/worker.js
+                ${RUST_OMC_DIR}/wasm/storage/upload.js
+                ${_web_dir}/storage/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/omc-terminal/index.html ${_web_dir}/omc-terminal/
@@ -2183,6 +2235,10 @@ function(omc_rust_setup_wasm)
                 ${_web_dir}/simulator/
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/simulator/examples ${_web_dir}/simulator/examples
+        # The dialog of the FMI settings guide, which the simulator opens.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-guide
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/fmi-guide/dialog.js ${_web_dir}/fmi-guide/
         # Shared anim/ module: the wasm-bindgen'd anim wasm plus the renderer/panel
         # JS and three.js, imported by both simulator pages as ../anim/*.
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/anim
@@ -2294,7 +2350,7 @@ function(omc_rust_setup_wasm)
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/web
           COMPONENT web)
 
-  # OMShell web GUIs (egui + dioxus): in the wasm build the GUI-clients flag
+  # OMShell web GUI (egui): in the wasm build the GUI-clients flag
   # (OM_ENABLE_GUI_CLIENTS, the Qt clients being unavailable here) selects the
   # OMShell web pages instead. Each is assembled next to a copy of the omc module
   # above so the page drives omc in-browser, and installed to
@@ -2308,8 +2364,7 @@ function(omc_rust_setup_wasm)
 
   if(OM_ENABLE_GUI_CLIENTS)
     if(_host STREQUAL "web")
-      omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)
-      omc_rust_omshell_web_page(dioxus OMShell-dioxus ${RUST_OMC_DIR}/omshell_dioxus/web/index.html)
+      omc_rust_omshell_web_page(egui OMShell-egui ${RUST_OMC_DIR}/omshell_egui/web/index.html)
       if(RUST_OMC_WEB_QT OR RUST_OMC_WEB_QT_STANDALONE)
         omc_rust_omshell_qt_web_page()
         omc_rust_omnotebook_qt_web_page()

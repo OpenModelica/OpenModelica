@@ -763,6 +763,18 @@ public function getHasInnerOuterDefinitions
   external "C" hasInnerOuterDefinitions=System_getHasInnerOuterDefinitions() annotation(Library = "omcruntime");
 end getHasInnerOuterDefinitions;
 
+public function setHasPartialInstances
+  "Sets the external flag for whether a class is partial or contains instances of partial classes."
+  input Boolean hasPartialInstances;
+  external "C" System_setHasPartialInstances(hasPartialInstances) annotation(Library = "omcruntime");
+end setHasPartialInstances;
+
+public function getHasPartialInstances
+  "Retrieves the external flag for whether a class is partial or contains instances of partial classes."
+  output Boolean hasPartialInstances;
+  external "C" hasPartialInstances=System_getHasPartialInstances() annotation(Library = "omcruntime");
+end getHasPartialInstances;
+
 public function tmpTick
   "returns a tick that can be reset"
   output Integer tickNo;

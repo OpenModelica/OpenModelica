@@ -1,7 +1,6 @@
-# omc_rust_cargo_command(<target-dir> [<dylib-name>]): sets _cargo_cmd,
-# _target_flag, _out (the profile output directory) and _env for a release
-# cargo build of a library the C/C++ side links. <dylib-name> names a macOS
-# dylib after @rpath.
+# omc_rust_cargo_command(<target-dir>): sets _cargo_cmd, _target_flag, _out
+# (the profile output directory) and _env for a release cargo build of a
+# library the C/C++ side links.
 macro(omc_rust_cargo_command _rcc_target_dir)
   # Cross-compiling (RUST_OMC_TARGET): the same drivers as
   # SimulationRuntime/rust/CMakeLists.txt uses for libSimulationRuntimeRust.
@@ -19,11 +18,6 @@ macro(omc_rust_cargo_command _rcc_target_dir)
       # zig ships no Apple frameworks, so the link needs the SDK (CoreFoundation,
       # via chrono's iana-time-zone).
       list(APPEND _env "SDKROOT=${CMAKE_OSX_SYSROOT}")
-      if(${ARGC} GREATER 1)
-        # ld64 would otherwise name the dylib by its path in this build tree;
-        # @rpath defers that to whoever loads it.
-        list(APPEND _env "RUSTFLAGS=-Clink-arg=-Wl,-install_name,@rpath/lib${ARGV1}.dylib")
-      endif()
     elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
       # Plain `cargo build` is right for another Linux architecture, but the
       # linker has to be named or rustc calls the host `cc` -- which rejects the

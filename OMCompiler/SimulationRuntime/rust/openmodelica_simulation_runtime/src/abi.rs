@@ -262,7 +262,8 @@ pub struct REAL_ATTRIBUTE {
     pub max: real_array,
     pub fixed: modelica_boolean,
     pub useNominal: modelica_boolean,
-    pub nominal: real_array,
+    pub positiveNominal: real_array,
+    pub nominalSign: real_array,
     pub start: real_array,
 }
 
@@ -361,7 +362,8 @@ pub struct NONLINEAR_SYSTEM_DATA {
     pub mixedSystem: modelica_boolean,
     pub min: *mut modelica_real,
     pub max: *mut modelica_real,
-    pub nominal: *mut modelica_real,
+    pub positiveNominal: *mut modelica_real,
+    pub nominalSign: *mut modelica_real,
     pub analyticalJacobianColumn: jacobianColumn_func_ptr,
     pub initialAnalyticalJacobian: initialAnalyticalJacobian_func_ptr,
     pub jacobianIndex: modelica_integer,
@@ -427,7 +429,7 @@ pub struct LINEAR_SYSTEM_DATA {
     pub checkConstraints: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
     pub min: *mut modelica_real,
     pub max: *mut modelica_real,
-    pub nominal: *mut modelica_real,
+    pub positiveNominal: *mut modelica_real,
     pub nnz: modelica_integer,
     pub size: modelica_integer,
     pub equationIndex: modelica_integer,
@@ -634,6 +636,7 @@ pub struct MODEL_DATA {
 
     pub nEnumerationTypes: usize,
     pub enumerationTypes: *mut ENUMERATION_TYPE,
+    pub discreteChangeRanges: *const c_long,
 }
 
 #[repr(C)]
@@ -1041,7 +1044,7 @@ pub const LSS_KLU: c_int = 3;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 /// The `*_MAX` sizes of the name/description tables `-help` prints.
-pub const S_MAX: c_int = 14;
+pub const S_MAX: c_int = 15;
 pub const IIM_MAX: c_int = 3;
 pub const LS_MAX: c_int = 6;
 pub const LSS_MAX: c_int = 4;

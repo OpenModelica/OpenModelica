@@ -41,22 +41,15 @@ interface co-simulation {
 
   /// Result of a fmi3DoStep call.
   record do-step-result {
-    /// How far the FMU integrated. Equal to the requested end point unless the
-    /// step returned early, in which case it is where the FMU stopped.
+    /// The FMU completed the step up to (at least) the requested time.
+    /// When early-return is enabled this may be less than end-point.
     last-successful-time: f64,
-    /// True if the FMU met an event it has not resolved: the master drives
-    /// fmi3EnterEventMode / fmi3UpdateDiscreteStates / fmi3EnterStepMode. Only
-    /// possible when the instance was created with event-mode-used.
+    /// True if the FMU returned early (canReturnEarlyAfterIntermediateUpdate).
     event-handling-needed: bool,
     /// True if the FMU requests termination.
     terminate-simulation:  bool,
-    /// True if the step stopped before the requested end point. Only possible
-    /// when the instance was created with early-return-allowed.
+    /// True if the step was entirely discarded and must be retried.
     early-return:          bool,
-    /// True if the FMU could not reach the requested end point and stands at
-    /// last-successful-time instead (fmi3Discard with its outputs written): the
-    /// master resumes from there.
-    discarded:             bool,
   }
 
   resource co-simulation-instance {

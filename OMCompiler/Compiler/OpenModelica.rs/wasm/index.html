@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — Web</title>
+<script src="theme.js"></script>
 <link rel="stylesheet" href="theme.css" />
 <style>
     :root { --rail: 84px; }
@@ -28,6 +29,7 @@
   }
   .nav-btn .ic { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
   .nav-btn .ic img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .nav-btn .ic svg { width: 100%; height: 100%; display: block; }
   /* The FMI logo is the Modelica Association's, dark artwork that may not be
      recoloured; its usage terms ask for a white background, which also makes it
      legible here. */
@@ -36,8 +38,8 @@
     font-size: 10px; line-height: 1.1; width: 100%; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .nav-btn:hover { background: #2d2d30; color: var(--fg); }
-  .nav-btn.active { color: #fff; background: #37373d; }
+  .nav-btn:hover { background: var(--hover); color: var(--fg); }
+  .nav-btn.active { color: var(--fg); background: var(--active); }
   .nav-btn.active::before {
     content: ""; position: absolute; left: -6px; top: 8px; bottom: 8px;
     width: 3px; border-radius: 3px; background: var(--accent);
@@ -52,8 +54,8 @@
     border-bottom: 1px solid var(--border);
   }
   .brand { display: flex; align-items: center; height: 100%; cursor: pointer; flex: 0 0 auto; }
-  .brand img { height: 20px; display: block; }
-  .brand img.narrow { display: none; height: 19px; }
+  .brand svg { height: 20px; display: block; }
+  .brand svg.narrow { display: none; height: 19px; }
 
   /* Hamburger toggles the sidebar drawer on narrow screens. */
   .hamburger {
@@ -62,7 +64,7 @@
     background: transparent; border: 1px solid var(--border); border-radius: 6px;
     color: var(--fg); cursor: pointer;
   }
-  .hamburger:hover { background: #2d2d30; }
+  .hamburger:hover { background: var(--hover); }
   .hamburger svg { width: 18px; height: 18px; }
   .nav-backdrop { display: none; }
   .topbar .name { font-weight: 600; color: var(--teal); white-space: nowrap; }
@@ -74,7 +76,7 @@
     font-size: 13px; transition: background .12s, color .12s, border-color .12s;
   }
   /* Only the outline lights up; the fill is reserved for the active variant. */
-  .pill:hover { background: transparent; color: var(--fg); border-color: #555; }
+  .pill:hover { background: transparent; color: var(--fg); border-color: var(--strong); }
   .pill.active { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
   .pill.missing { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
   .spacer { flex: 1; }
@@ -84,8 +86,9 @@
     background: transparent; color: var(--fg); cursor: pointer; font: inherit; font-size: 13px;
     text-decoration: none;
   }
-  .tool:hover { background: #2d2d30; border-color: #555; }
+  .tool:hover { background: var(--hover); border-color: var(--strong); }
   .tool svg { width: 15px; height: 15px; }
+  .tool.icon { padding: 6px; }
 
   .stage { flex: 1 1 auto; position: relative; min-height: 0; background: var(--bg); }
   iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
@@ -97,7 +100,7 @@
   .overlay.show { display: grid; }
   .overlay .box { max-width: 460px; }
   .overlay h2 { color: var(--fg); margin: 0 0 8px; font-weight: 600; }
-  .overlay code { color: #ce9178; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .overlay code { color: var(--code); font-family: ui-monospace, Menlo, Consolas, monospace; }
 
   /* --- Mobile: sidebar becomes a slide-in drawer behind a hamburger ---- */
   @media (max-width: 640px) {
@@ -120,8 +123,8 @@
     .nav-btn.active::before { left: 0; }
 
     .hamburger { display: inline-flex; }
-    .brand img.wide { display: none; }
-    .brand img.narrow { display: block; }
+    .brand svg.wide { display: none; }
+    .brand svg.narrow { display: block; }
     .topbar { gap: 8px; padding: 0 8px; }
     /* "Open in new tab" shrinks to just its icon. */
     .tool .lbl { display: none; }
@@ -141,8 +144,8 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <a class="brand" href="#" title="OpenModelica — home" data-home>
-      <img class="wide" src="icons/openmodelica-logo.svg" alt="OpenModelica" />
-      <img class="narrow" src="icons/om.svg" alt="OpenModelica" />
+      <svg class="wide" viewBox="0 0 983.287 131.968" role="img" aria-label="OpenModelica"><use href="icons/openmodelica-logo.svg#layer1"/></svg>
+      <svg class="narrow" viewBox="-8 55 232 114" role="img" aria-label="OpenModelica"><use href="icons/om.svg#om"/></svg>
     </a>
     <span class="sep"></span>
     <span class="name" id="clientName"></span>
@@ -152,10 +155,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
       <span class="lbl">Open in new tab</span>
     </a>
+    <button class="tool icon" id="scheme" type="button"></button>
   </div>
 
   <div class="stage">
-    <iframe id="frame" title="client" allow="cross-origin-isolated; clipboard-read; clipboard-write; fullscreen" style="display:none"></iframe>
+    <iframe id="frame" title="client" allow="cross-origin-isolated; clipboard-read; clipboard-write; fullscreen; tools" style="display:none"></iframe>
     <div class="overlay" id="overlay">
       <div class="box">
         <h2 id="ovTitle">Not available</h2>
@@ -168,13 +172,12 @@
 <script type="module">
 // --- Client model ----------------------------------------------------------
 const CLIENTS = [
-  { id: 'home', name: 'Home', icon: 'icons/om.svg',
+  { id: 'home', name: 'Home', icon: 'icons/om.svg#om', viewBox: '-8 55 232 114',
     src: 'home/index.html' },
   { id: 'omshell', name: 'OMShell', icon: 'icons/omshell.svg',
     variants: [
       { id: 'terminal', name: 'Terminal', src: 'omc-terminal/index.html' },
       { id: 'egui',     name: 'egui',     src: 'OMShell-egui.html' },
-      { id: 'dioxus',   name: 'dioxus',   src: 'OMShell-dioxus.html' },
       { id: 'qt',       name: 'Qt',       src: 'OMShell-qt/OMShell-qt.html' },
     ] },
   { id: 'simulator', name: 'Simulator', icon: 'icons/simulator.svg',
@@ -187,6 +190,8 @@ const CLIENTS = [
     src: 'OMNotebook-qt/OMNotebook-qt.html' },
   { id: 'omedit', name: 'OMEdit', icon: 'icons/omedit.png',
     src: 'OMEdit-qt/OMEdit-qt.html' },
+  { id: 'storage', name: 'Storage', icon: 'icons/storage.svg',
+    src: 'storage/index.html' },
 ];
 
 const variantsOf = (c) => c.variants || [{ id: '', name: c.name, src: c.src }];
@@ -217,7 +222,10 @@ for (const c of CLIENTS) {
   const btn = document.createElement('button');
   btn.className = 'nav-btn';
   btn.id = 'nav-' + c.id;
-  btn.innerHTML = '<span class="ic"><img src="' + c.icon + '" alt=""></span><span class="lbl">' + c.name + '</span>';
+  const icon = c.viewBox
+    ? '<svg viewBox="' + c.viewBox + '"><use href="' + c.icon + '"/></svg>'
+    : '<img src="' + c.icon + '" alt="">';
+  btn.innerHTML = '<span class="ic">' + icon + '</span><span class="lbl">' + c.name + '</span>';
   btn.onclick = () => go(c.id);
   nav.appendChild(btn);
 }
@@ -299,6 +307,25 @@ async function render() {
       + '<code>web</code> target when its toolchain is available.';
   }
 }
+
+// --- Color scheme (theme.js), which every client follows -------------------
+const SCHEMES = {
+  system: { name: 'System', icon: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>' },
+  light: { name: 'Light', icon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>' },
+  dark: { name: 'Dark', icon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>' },
+};
+const schemeBtn = document.getElementById('scheme');
+const nextScheme = (s) => { const k = Object.keys(SCHEMES); return k[(k.indexOf(s) + 1) % k.length]; };
+function showScheme() {
+  const s = omTheme.get();
+  schemeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + SCHEMES[s].icon + '</svg>';
+  schemeBtn.title = 'Color scheme: ' + SCHEMES[s].name + ' (click for ' + SCHEMES[nextScheme(s)].name + ')';
+  schemeBtn.setAttribute('aria-label', schemeBtn.title);
+}
+schemeBtn.onclick = () => { omTheme.set(nextScheme(omTheme.get())); showScheme(); };
+window.addEventListener('storage', showScheme);
+showScheme();
 
 // --- Wiring ----------------------------------------------------------------
 window.addEventListener('hashchange', render);

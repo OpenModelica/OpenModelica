@@ -630,7 +630,7 @@ public
     if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size
        and not solvesInsideReduction(eqn_ptr, cref_to_solve) then
       comp := RESIZABLE_COMPONENT(
-        var_cref  = subscriptConstantDimensions(cref_to_solve, var_slice),
+        var_cref  = subscriptConstantDimensions(cref_to_solve, var_slice, eqn_slice),
         var       = var_slice,
         eqn       = eqn_slice,
         order     = order,
@@ -641,7 +641,8 @@ public
   end createPseudoSlice;
 
   function createPseudoEntwined
-    input list<Integer> eqn_indices;
+    "uses the first call order with a periodic order, otherwise the last one"
+    input list<list<Integer>> candidates "valid call orders of the same scalar equations";
     input array<Integer> eqn_to_var;
     input Mapping mapping;
     input VariablePointers vars;
@@ -650,7 +651,8 @@ public
     output StrongComponent entwined;
   protected
     UnorderedMap<Integer, ComponentRef> cref_map = UnorderedMap.new<ComponentRef>(Util.id, intEq);
-    Option<StrongComponent> opt_entwined;
+    Option<StrongComponent> opt_entwined = NONE();
+    list<Integer> eqn_indices = listHead(candidates);
   algorithm
     // collect crefs to solve for
     for node in nodes loop
@@ -661,7 +663,10 @@ public
         else ();
       end match;
     end for;
-    opt_entwined := tryPseudoEntwined(eqn_indices, eqn_to_var, mapping, vars, eqns, cref_map);
+    for order in candidates loop
+      opt_entwined := tryPseudoEntwined(order, eqn_to_var, mapping, vars, eqns, cref_map);
+      if hasPeriodicOrder(opt_entwined) then break; end if;
+    end for;
     if isNone(opt_entwined) then
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because the order of the entwined equations could not be resolved for every size of the resizable arrays:\n"
         + stringDelimitList(list(Equation.pointerToString(EquationPointers.getEqnAt(eqns, e), "\t") for e in List.unique(list(mapping.eqn_StA[i] for i in eqn_indices))), "\n")});
@@ -669,6 +674,16 @@ public
     end if;
     SOME(entwined) := opt_entwined;
   end createPseudoEntwined;
+
+  function hasPeriodicOrder
+    input Option<StrongComponent> comp;
+    output Boolean b;
+  algorithm
+    b := match comp
+      case SOME(ENTWINED_COMPONENT(periodic_order = SOME(_))) then true;
+      else false;
+    end match;
+  end hasPeriodicOrder;
 
   function tryPseudoEntwined
     "the entwined component for the scalar equations in call order, none if it has resizable
@@ -1523,7 +1538,7 @@ public
         status    = NBSolve.Status.UNPROCESSED);
     else
       comp := SLICED_COMPONENT(
-        var_cref  = subscriptConstantDimensions(cref, var_slice),
+        var_cref  = subscriptConstantDimensions(cref, var_slice, eqn_slice),
         var       = var_slice,
         eqn       = eqn_slice,
         status    = NBSolve.Status.UNPROCESSED);
@@ -1532,9 +1547,11 @@ public
 
   function subscriptConstantDimensions
     "subscripts the non-scalar dimensions of the cref in which all elements of the variable slice
-    have the same index, e.g. x[$i1].y for the slice {x[1].y[2], x[2].y[2]} -> x[$i1].y[2]"
+    have the same index, e.g. x[$i1].y for the slice {x[1].y[2], x[2].y[2]} -> x[$i1].y[2].
+    only for for-equations, an array equation is solved for the whole cref"
     input output ComponentRef cref;
     input Slice<VariablePointer> var_slice;
+    input Slice<EquationPointer> eqn_slice;
   protected
     list<Subscript> subs, new_subs = {};
     list<Dimension> dims;
@@ -1543,7 +1560,7 @@ public
     Integer value;
     Boolean changed = false;
   algorithm
-    if listEmpty(var_slice.indices) then return; end if;
+    if listEmpty(var_slice.indices) or not Equation.isForEquation(Slice.getT(eqn_slice)) then return; end if;
     subs := ComponentRef.subscriptsAllWithWholeFlat(cref);
     dims := Type.arrayDims(Variable.typeOf(Pointer.access(Slice.getT(var_slice))));
     sizes := list(Dimension.size(dim, true) for dim in dims);

@@ -41,9 +41,9 @@ equation
  tank_p_e = (gravity * volume) * liquid_density;
  level = volume / area;
  valve_puddle = 8 * sqrt (valve_outflow_int);
- valve_powerOut_e = if (valvecontrol <> 0.0) then tank_p_e else 0.0;
+ valve_powerOut_e = if abs(valvecontrol) > 0.0 then tank_p_e else 0.0;
  drain_p_f = valve_powerOut_e / drain_r;
- valve_powerIn_phi = if (valvecontrol <> 0.0) then drain_p_f else 0.0;
+ valve_powerIn_phi = if abs(valvecontrol) > 0.0 then drain_p_f else 0.0;
  valve_outflow = if drain_p_f < 0.0 then 0 else 0.1 * abs (drain_p_f);
  tank_p_f = fs_p_phi - valve_powerIn_phi;
  

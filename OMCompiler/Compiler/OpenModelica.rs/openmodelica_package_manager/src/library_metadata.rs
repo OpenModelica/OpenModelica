@@ -60,9 +60,14 @@ pub(crate) struct Cache {
 }
 
 impl Cache {
-    /// Without a home directory (as in the testsuite), only in memory.
+    /// Without a home directory (as in the testsuite), only in memory, unless
+    /// the store keeps a tree across sessions (the web omc).
     pub fn new(home: &str) -> Cache {
-        let dir = (!home.is_empty() && home != "/").then(|| format!("{home}/.openmodelica/cache/library-metadata/"));
+        let dir = if !home.is_empty() && home != "/" {
+            Some(format!("{home}/.openmodelica/cache/library-metadata/"))
+        } else {
+            openmodelica_wasi::persistent_root().map(|root| format!("{root}/cache/library-metadata/"))
+        };
         Cache { dir }
     }
 

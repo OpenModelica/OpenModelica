@@ -273,6 +273,41 @@ fn compile_function_body(
     Ok(func)
 }
 
+/// MLS 3.7, 12.9.8: an external object constructor returns a null pointer to
+/// indicate failure. Only the constructor may return an external object.
+fn emit_constructor_null_check(
+    ctx: &mut FnCtx,
+    outVars: &metamodelica::List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>,
+    info: &metamodelica::SourceInfo,
+) -> Result<()> {
+    let mut outs = (&**outVars).into_iter();
+    let (Some(out), None) = (outs.next(), outs.next()) else {
+        return Ok(());
+    };
+    let SimCodeFunction::Variable::Variable::VARIABLE { ty, .. } = &**out else {
+        return Ok(());
+    };
+    let DAE::Type::T_COMPLEX {
+        complexClassType: ClassInf::State::EXTERNAL_OBJ { path },
+        ..
+    } = &**ty
+    else {
+        return Ok(());
+    };
+    let class = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false).unwrap_or_default();
+    let (out_idx, _) = ctx.outputs[0].clone();
+    ctx.emit(we::Instruction::LocalGet(out_idx));
+    ctx.emit(we::Instruction::I32Eqz);
+    emit_unlikely_if(ctx, we::BlockType::Empty);
+    emit_function_assert(
+        ctx,
+        &format!("The constructor of external object {class} failed."),
+        info,
+    )?;
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
 /// Lower an `external "C"`/`"builtin"`/`"FORTRAN 77"` function to the wasm
 /// equivalent of C's `functionBodyExternalFunction`: allocate and bind the
 /// outputs and the protected `biVars` locals, call `extName` over `extArgs`,
@@ -291,6 +326,7 @@ fn compile_external_function(
         extName,
         extArgs,
         extReturn,
+        info,
         ..
     } = f
     else {
@@ -441,6 +477,7 @@ fn compile_external_function(
         // (`call_external_in_wasm`) are emitted here instead.
         if EXTERNALS_SHARED.with(|c| c.get()) {
             emit_shared_external_call(&mut ctx, &sig, extArgs, extReturn, &fn_path)?;
+            emit_constructor_null_check(&mut ctx, outVars, info)?;
             release_heap_locals(&mut ctx)?;
             push_outputs(&mut ctx)?;
             ctx.emit(we::Instruction::End);
@@ -512,6 +549,7 @@ fn compile_external_function(
             }
             ctx.emit(we::Instruction::LocalSet(out_idx));
         }
+        emit_constructor_null_check(&mut ctx, outVars, info)?;
     }
     // Release heap parameters (e.g. a String input consumed by the callee), as a
     // normal function body would; the outputs are excluded and moved out.

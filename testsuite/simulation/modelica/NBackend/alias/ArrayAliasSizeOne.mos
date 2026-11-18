@@ -65,7 +65,7 @@ val(l[1,1,1].i, 1); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "ArrayAliasSizeOne.Vector_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayAliasSizeOne.Vector', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayAliasSizeOne.Vector', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -77,7 +77,7 @@ val(l[1,1,1].i, 1); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "ArrayAliasSizeOne.Array3D_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayAliasSizeOne.Array3D', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayAliasSizeOne.Array3D', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

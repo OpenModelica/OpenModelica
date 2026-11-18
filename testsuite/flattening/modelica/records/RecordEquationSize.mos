@@ -41,6 +41,6 @@ checkModel(RecordEquationSize);
 // Result:
 // true
 // "Check of RecordEquationSize completed successfully.
-// Class RecordEquationSize has 8 equation(s) and 8 variable(s).
+// The model is globally balanced with 8 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // endResult

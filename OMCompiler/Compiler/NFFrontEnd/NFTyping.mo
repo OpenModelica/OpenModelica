@@ -406,8 +406,13 @@ algorithm
   // be equal to the number of variables that are neither parameter, constant,
   // input, output, stream nor flow.
   if pots <> flows and not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "unbalancedModel") then
-    Error.addStrictMessage(Error.UNBALANCED_CONNECTOR,
-      {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+    if Flags.getConfigBool(Flags.WARN_NON_STANDARD_MODELICA) then
+      Error.addNonStandardWarning("unbalancedModel", Error.UNBALANCED_CONNECTOR,
+        {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+    else
+      Error.addStrictMessage(Error.UNBALANCED_CONNECTOR,
+        {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+    end if;
   end if;
 
   // Modelica 3.2 section 15.1:
@@ -781,7 +786,7 @@ algorithm
               exp := Ceval.tryEvalExp(exp);
             else
               target := Ceval.EvalTarget.new(info, context,
-                SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+                extra = SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
               exp := Ceval.tryEvalExpResizable(exp, target);
             end if;
           elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
@@ -884,7 +889,7 @@ algorithm
                 exp := Ceval.tryEvalExp(exp);
               else
                 target := Ceval.EvalTarget.new(info, context,
-                  SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+                  extra = SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
                 exp := Ceval.evalExp(exp, target);
               end if;
 
@@ -960,7 +965,7 @@ algorithm
       e := Ceval.tryEvalExp(e);
     else
       e := Ceval.evalExp(e, Ceval.EvalTarget.new(info, context,
-        SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, e))));
+        extra = SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, e))));
     end if;
 
     (dim, error) := nthDimensionBoundsChecked(Expression.typeOf(e), dim_index);
@@ -1944,6 +1949,7 @@ algorithm
     case Expression.IF() guard Type.isConditionalArray(exp.ty)
       algorithm
         cond := Ceval.evalExp(exp.condition, target);
+        cond := simplifyDimExp(cond);
 
         if Expression.isTrue(cond) then
           outExp := exp.trueBranch;

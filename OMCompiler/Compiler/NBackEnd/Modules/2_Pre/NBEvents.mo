@@ -1899,8 +1899,9 @@ protected
       end if;
     else
       // state/composite events require at least one continuous real variable;
-      // skip purely discrete/integer conditions like (m == 1) with iterator m
-      if not BackendUtil.containsContinuousVar(exp) then
+      // skip purely discrete/integer conditions like (m == 1) with iterator m,
+      // but not discrete conditions combined with sample(), e.g. (b and sample(t0, dt))
+      if not (BackendUtil.containsContinuousVar(exp) or Expression.contains(exp, isSampleCall)) then
         return;
       end if;
       (exp, bucket, failed) := CompositeEvent.create(exp, bucket, iter, createEqn);
@@ -1945,6 +1946,9 @@ protected
     Equation eqn = Pointer.access(eqn_ptr);
     Equation body_eqn;
     Algorithm alg;
+    UnorderedSet<ComponentRef> pre_set;
+    list<Statement> stmts;
+    list<ComponentRef> outputs;
   algorithm
     eqn := match eqn
       case Equation.WHEN_EQUATION() algorithm
@@ -1958,7 +1962,22 @@ protected
 
       // when statements of algorithms need a plain condition variable for the edge detection
       case Equation.ALGORITHM(alg = alg) algorithm
-        alg.statements := list(simplifyWhenConditionStmt(stmt, idx, cnt, vars_ptr, eqns_ptr) for stmt in alg.statements);
+        // discrete outputs not yet assigned have their pre value (MLS 11.1.2)
+        pre_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        for cref in alg.outputs loop
+          if BVariable.hasPre(BVariable.getVarPointer(cref, sourceInfo())) then
+            UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), pre_set);
+          end if;
+        end for;
+        stmts := {};
+        for stmt in alg.statements loop
+          stmts := simplifyWhenConditionStmt(stmt, idx, cnt, vars_ptr, eqns_ptr, pre_set) :: stmts;
+          (_, outputs) := Algorithm.getInputsOutputs({stmt});
+          for cref in outputs loop
+            UnorderedSet.remove(ComponentRef.stripSubscriptsAll(cref), pre_set);
+          end for;
+        end for;
+        alg.statements := listReverse(stmts);
         eqn.alg := Equation.setAlgorithmInputsOutputs(alg);
       then eqn;
 
@@ -1978,6 +1997,7 @@ protected
     input Pointer<Integer> cnt;
     input Pointer<list<Pointer<Variable>>> vars_ptr;
     input Pointer<list<Pointer<Equation>>> eqns_ptr;
+    input UnorderedSet<ComponentRef> pre_set "variables that are read as pre() in conditions";
   algorithm
     stmt := match stmt
       local
@@ -1988,7 +2008,7 @@ protected
       case Statement.WHEN() algorithm
         for branch in stmt.branches loop
           (cond, body) := branch;
-          cond := simplifyWhenConditionExp(cond, idx, cnt, vars_ptr, eqns_ptr);
+          cond := simplifyWhenConditionExp(cond, idx, cnt, vars_ptr, eqns_ptr, pre_set = SOME(pre_set));
           branches := (cond, body) :: branches;
         end for;
         stmt.branches := listReverse(branches);
@@ -1997,7 +2017,7 @@ protected
       case Statement.IF() algorithm
         for branch in stmt.branches loop
           (cond, body) := branch;
-          body := list(simplifyWhenConditionStmt(s, idx, cnt, vars_ptr, eqns_ptr) for s in body);
+          body := list(simplifyWhenConditionStmt(s, idx, cnt, vars_ptr, eqns_ptr, pre_set) for s in body);
           branches := (cond, body) :: branches;
         end for;
         stmt.branches := listReverse(branches);
@@ -2030,6 +2050,7 @@ protected
     input Pointer<list<Pointer<Variable>>> vars_ptr;
     input Pointer<list<Pointer<Equation>>> eqns_ptr;
     input Iterator iter = Iterator.EMPTY() "surrounding for-loop iterator";
+    input Option<UnorderedSet<ComponentRef>> pre_set = NONE() "variables that are read as pre()";
   protected
     Pointer<Variable> aux_var;
     ComponentRef aux_cref;
@@ -2044,7 +2065,7 @@ protected
       // array of conditions (e.g. when {c1, c2} then) – recurse per element
       case Expression.ARRAY() algorithm
         cond.elements := Array.map(cond.elements,
-          function simplifyWhenConditionExp(idx = idx, cnt = cnt, vars_ptr = vars_ptr, eqns_ptr = eqns_ptr, iter = iter));
+          function simplifyWhenConditionExp(idx = idx, cnt = cnt, vars_ptr = vars_ptr, eqns_ptr = eqns_ptr, iter = iter, pre_set = pre_set));
       then cond;
 
       // initial() is a special built-in allowed in when-conditions – leave it
@@ -2052,6 +2073,9 @@ protected
 
       // any other expression: extract into $WC_n
       else algorithm
+        if isSome(pre_set) then
+          cond := Expression.map(cond, function replacePreCref(pre_set = Util.getOption(pre_set)));
+        end if;
         i := Pointer.access(cnt);
         Pointer.update(cnt, i + 1);
         // a condition depending on the for-loop iterator needs one auxiliary per iteration
@@ -2067,6 +2091,17 @@ protected
       then cond;
     end match;
   end simplifyWhenConditionExp;
+
+  function replacePreCref
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> pre_set;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(UnorderedSet.contains(ComponentRef.stripSubscriptsAll(exp.cref), pre_set))
+        then Expression.fromCref(BVariable.getPartnerCref(exp.cref, BVariable.getVarPre));
+      else exp;
+    end match;
+  end replacePreCref;
 
   function containsTimeTraverseExp
     input output Expression exp;

@@ -1544,15 +1544,20 @@ end getVar;
 protected type StateSets = list<tuple<Integer,Integer,Integer,Integer,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> "Level,nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
 
 protected function reduceStateSets
+  "Replaces the state sets with fixed dummy states for the dummy derivatives
+   method: removes the state candidates of the sets from the dummy states
+   and adds the dummy states selected from each set."
   input StateSets iTplLst;
-  input list<BackendDAE.Var> idummyStates;
-  output list<BackendDAE.Var> odummyStates;
+  input list<BackendDAE.Var> idummyStates "static dummy states and all state candidates of the sets";
+  output list<BackendDAE.Var> odummyStates = idummyStates;
+protected
+  list<BackendDAE.Var> stateCandidates;
 algorithm
-  if not listEmpty(iTplLst) then
-    odummyStates := reduceStateSets2(iTplLst);
-  else
-    odummyStates := idummyStates;
-  end if;
+  for tpl in iTplLst loop
+    (_,_,_,_,stateCandidates,_,_,_) := tpl;
+    odummyStates := List.setDifferenceOnTrue(odummyStates, stateCandidates, BackendVariable.varEqual);
+  end for;
+  odummyStates := listAppend(reduceStateSets2(iTplLst), odummyStates);
 end reduceStateSets;
 
 protected function reduceStateSets2
@@ -4351,7 +4356,7 @@ algorithm
         try
           e := BaseHashTable.get((cr,1),ht);
         else
-          e := exp;
+          e := if ComponentReference.crefIsScalarWithVariableSubs(cr) then replaceDummyDerivativeVariableSubs(exp, cr, ht) else exp;
         end try;
       then e;
     case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_)
@@ -4361,6 +4366,39 @@ algorithm
     else exp;
   end match;
 end replaceDummyDerivativesExp;
+
+protected function replaceDummyDerivativeVariableSubs
+  "der(x[i]) with variable indices is $DER.x[i] if all the elements x[i] can
+   refer to are dummy states."
+  input DAE.Exp exp;
+  input DAE.ComponentRef cr;
+  input HashTableCrIntToExp.HashTable ht;
+  output DAE.Exp outExp = exp;
+protected
+  list<DAE.ComponentRef> crs;
+  Integer dummies;
+algorithm
+  try
+    crs := BackendVariable.expandVariableSubscripts(cr);
+  else
+    return;
+  end try;
+  dummies := 0;
+  for c in crs loop
+    if BaseHashTable.hasKey((c,1), ht) then
+      if not ExpressionBasics.expEqual(BaseHashTable.get((c,1), ht), Expression.crefExp(ComponentReference.crefPrefixDer(c))) then
+        warnDummyDerivativeFailed(exp);
+        return;
+      end if;
+      dummies := dummies + 1;
+    end if;
+  end for;
+  if dummies > 0 and dummies == listLength(crs) then
+    outExp := Expression.crefExp(ComponentReference.crefPrefixDer(cr));
+  elseif dummies > 0 then
+    warnDummyDerivativeFailed(exp);
+  end if;
+end replaceDummyDerivativeVariableSubs;
 
 protected function warnDummyDerivativeFailed
   input DAE.Exp exp;

@@ -18,6 +18,7 @@ implicitEquation.mos \
 minArr.mos \
 parameterIndex.mos \
 parameterSystem.mos \
+externalObjectEquations.mos \
 partitioning.mos \
 promotePreferStates.mos \
 simpleForLoop.mos \
@@ -26,6 +27,8 @@ solveSingleEquation.mos \
 underdetermined_init.mos \
 variability.mos \
 loadResource.mos \
+ifBranchFunctionCalls.mos \
+iteratorNameClash.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

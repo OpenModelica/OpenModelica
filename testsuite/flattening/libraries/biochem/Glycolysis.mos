@@ -351,7 +351,7 @@ getErrorString();
 // end BioChem.Examples.Glycolysis;
 // "
 // "Check of BioChem.Examples.Glycolysis completed successfully.
-// Class BioChem.Examples.Glycolysis has 170 equation(s) and 170 variable(s).
+// The model is globally balanced with 170 equation(s) and variable(s).
 // 117 of these are trivial equation(s)."
 // ""
 // endResult

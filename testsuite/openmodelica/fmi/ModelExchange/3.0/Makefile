@@ -26,6 +26,9 @@ fmi3_directional_derivatives.mos \
 fmi3_directional_derivatives_unlisted.mos \
 fmi3_documentation.mos \
 fmi3_fmustate.mos \
+fmi3_fmustate_bounds.mos \
+fmi3_fmustate_recover.mos \
+fmi3_instantiate_args.mos \
 fmi3_me_exitinit_assert.mos \
 fmi3_graphics.mos \
 fmi3_graphics_inherited.mos \

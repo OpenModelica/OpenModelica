@@ -1,0 +1,75 @@
+// name: EndAtStopTime
+// keywords: simulation, stopTime, event, #8359
+// status: correct
+// teardown_command: rm -rf EndAtStopTimeEvent* EndAtStopTimeGrid* output.log
+//
+// The last output point is at stopTime, also when an event is a few ulp
+// before stopTime or the grid formula rounds the last point below it.
+//
+
+loadString("
+model EndAtStopTimeEvent
+  Real x(start = 0, fixed = true);
+  discrete Real d(start = 0, fixed = true);
+  Boolean done(start = false, fixed = true);
+equation
+  der(x) = 1;
+  when time >= -5.55e-17 then
+    d = pre(d) + 1;
+  end when;
+  when terminal() then
+    done = true;
+  end when;
+end EndAtStopTimeEvent;
+
+model EndAtStopTimeGrid
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+end EndAtStopTimeGrid;
+"); getErrorString();
+
+simulate(EndAtStopTimeEvent, startTime = -1, stopTime = 0, numberOfIntervals = 500); getErrorString();
+echo(false);
+n := readSimulationResultSize("EndAtStopTimeEvent_res.mat");
+r := readSimulationResult("EndAtStopTimeEvent_res.mat", {time, d, done}, n);
+echo(true);
+r[1, n] == 0.0;
+r[2, n];
+r[3, n];
+
+simulate(EndAtStopTimeGrid, startTime = -1, stopTime = 7.7, numberOfIntervals = 10); getErrorString();
+echo(false);
+n := readSimulationResultSize("EndAtStopTimeGrid_res.mat");
+r := readSimulationResult("EndAtStopTimeGrid_res.mat", {time}, n);
+echo(true);
+r[1, n] == 7.7;
+r[1, n - 1] <= 7.7;
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EndAtStopTimeEvent_res.mat",
+//     simulationOptions = "startTime = -1.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'EndAtStopTimeEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// 1.0
+// 1.0
+// record SimulationResult
+//     resultFile = "EndAtStopTimeGrid_res.mat",
+//     simulationOptions = "startTime = -1.0, stopTime = 7.7, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'EndAtStopTimeGrid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// true
+// endResult

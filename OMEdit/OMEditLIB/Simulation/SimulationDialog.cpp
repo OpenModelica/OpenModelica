@@ -1192,6 +1192,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setCflags(mpCflagsTextBox->text());
   simulationOptions.setNumberOfProcessors(mpNumberOfProcessorsSpinBox->value());
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
+  simulationOptions.setTargetLanguage(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText());
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
 #if !defined(WITHOUT_ANIMATION)
@@ -2351,7 +2352,7 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
 void SimulationDialog::enableDisableOptions(int index)
 {
   const QString method = mpMethodComboBox->itemText(index);
-  if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
+  if (method.compare(QStringLiteral("auto")) == 0 || method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
     mpOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
     // gbode doesn't handle following options yet
@@ -2425,7 +2426,7 @@ void SimulationDialog::browseModelSetupFile()
  */
 void SimulationDialog::browseEquationSystemInitializationFile()
 {
-  mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::matFileTypes, NULL));
+  mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::omResultFileTypes, NULL));
 }
 
 /*!

@@ -779,7 +779,8 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
   attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
-  read_array_var_real(&attribute->nominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
+  read_array_var_real(&attribute->positiveNominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
+  normalizeNominal(attribute, findHashStringString(var_map, "name"));
   read_array_var_real(&attribute->min, findHashStringStringEmpty(var_map, "min"), REAL_MIN);
   read_array_var_real(&attribute->max, findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
@@ -798,7 +799,7 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
     assertStreamPrint(NULL, max_buffer != NULL, "Out of memory.");
 
     real_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
-    real_vector_to_string(&attribute->nominal, isScalar, nominal_buffer, buff_size);
+    real_vector_to_string(&attribute->positiveNominal, isScalar, nominal_buffer, buff_size);
     real_vector_to_string(&attribute->min, isScalar, min_buffer, buff_size);
     real_vector_to_string(&attribute->max, isScalar, max_buffer, buff_size);
 

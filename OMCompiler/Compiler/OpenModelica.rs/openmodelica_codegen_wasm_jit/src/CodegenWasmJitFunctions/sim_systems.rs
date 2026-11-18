@@ -2446,7 +2446,7 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
             ctx.emit(I::I32Const(plain_off(job.nominal_off)? as i32));
             ctx.emit(I::I32Add);
             ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
-            ctx.emit(I::I32Const(2 * plain_off(job.nominal_off)? as i32));
+            ctx.emit(I::I32Const(plain_off(job.nominal_off)? as i32));
             ctx.emit(I::I32Add);
         }
     }

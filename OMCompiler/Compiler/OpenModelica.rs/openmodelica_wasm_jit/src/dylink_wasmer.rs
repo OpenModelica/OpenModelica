@@ -234,7 +234,7 @@ fn link_with(
     let mut relocs: Vec<(String, Function)> = Vec::new();
     let mut inits: Vec<(String, Function)> = Vec::new();
 
-    let wasi_env = FunctionEnv::new(store, crate::wasi_shim::Env::new(&cwd()));
+    let wasi_env = FunctionEnv::new(store, crate::wasi_shim::Env::new("/"));
     wasi_env.as_mut(store).set_memory(memory.clone());
 
     for (lib, module) in libs.iter().zip(&modules) {
@@ -342,10 +342,6 @@ fn typed(store: &mut Store, funcs: &HashMap<String, Function>, name: &str) -> Re
         .ok_or_else(|| format!("dylink: the linked libraries define no `{name}`"))?
         .typed(&*store)
         .map_err(|e| format!("dylink: `{name}` has an unexpected signature: {e}"))
-}
-
-fn cwd() -> String {
-    openmodelica_wasi::fs::cwd().unwrap_or_else(|_| "/".to_owned())
 }
 
 /// Give libc the process's own working directory: `__wasilibc_find_relpath`

@@ -82,6 +82,7 @@ static inline FMU3CppInstance* fmu3RequireInstance(fmi3Instance instance)
   FMU3CppInstance *inst = FMU3_W(instance);
   if (inst == NULL || inst->wrapper == NULL)
     return NULL;
+  inst->wrapper->activateLogger();
   return inst;
 }
 

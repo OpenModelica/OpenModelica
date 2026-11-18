@@ -13,6 +13,9 @@ use std::ops::Range;
 
 pub const MANIFEST_PATH: &str = "extra/org.modelica.fmi-ls-wasm/manifest.xml";
 pub const LS_NAME: &str = "org.modelica.fmi-ls-wasm";
+/// The draft OpenModelica implements: modelica/fmi-ls-wasm `main` at the last
+/// commit that changed `wit/` or `docs/`. The exporter writes the same string.
+pub const LS_VERSION: &str = "0.1.0-draft+1804e6c";
 /// The WIT package the worlds live in.
 pub const WIT_PACKAGE: &str = "fmi:fmi3";
 
@@ -27,7 +30,11 @@ impl Manifest {
     pub fn parse(xml: &str) -> Result<Manifest> {
         let doc = roxmltree::Document::parse(xml).map_err(|e| Error::Xml(e.to_string()))?;
         let root = doc.root_element();
-        let a = |n| root.attribute(n).map(str::to_string);
+        let a = |n| {
+            root.attribute(("http://fmi-standard.org/fmi-ls-manifest", n))
+                .or_else(|| root.attribute(n))
+                .map(str::to_string)
+        };
         Ok(Manifest {
             name: a("fmi-ls-name").unwrap_or_default(),
             version: a("fmi-ls-version").unwrap_or_default(),
@@ -86,7 +93,10 @@ impl CoreModule {
     /// The exports that carry an FMI function, i.e. the canonical-ABI lowering
     /// of one of the `fmi:fmi3/*` interfaces.
     pub fn fmi_exports(&self) -> impl Iterator<Item = &str> {
-        self.exports.iter().map(String::as_str).filter(|e| e.starts_with("fmi:fmi3/"))
+        self.exports
+            .iter()
+            .map(String::as_str)
+            .filter(|e| e.starts_with("fmi:fmi3/"))
     }
 
     /// The imports the module expects an FMI host to satisfy (the callbacks).
@@ -138,7 +148,11 @@ pub fn inspect(component: &[u8]) -> Result<Component> {
     if interfaces.is_empty() {
         return Err(Error::Component(format!(
             "the component exports no fmi:fmi3 interface (it exports {})",
-            if exports.is_empty() { "nothing".to_string() } else { exports.join(", ") }
+            if exports.is_empty() {
+                "nothing".to_string()
+            } else {
+                exports.join(", ")
+            }
         )));
     }
     let wasi = if core_modules.iter().any(|m| m.is_wasi_adapter) {
@@ -148,30 +162,39 @@ pub fn inspect(component: &[u8]) -> Result<Component> {
     } else {
         Wasi::None
     };
-    Ok(Component { interfaces, exports, imports, wasi, core_modules })
+    Ok(Component {
+        interfaces,
+        exports,
+        imports,
+        wasi,
+        core_modules,
+    })
 }
 
 /// `fmi:fmi3/co-simulation@3.0.0` is the `co-simulation` interface.
 fn interface_is(wit_name: &str, interface: &str) -> bool {
-    let Some((pkg, rest)) = wit_name.split_once('/') else { return false };
+    let Some((pkg, rest)) = wit_name.split_once('/') else {
+        return false;
+    };
     pkg == WIT_PACKAGE && rest.split('@').next() == Some(interface)
 }
 
 /// The WIT world the component's type section declares.
 fn world(component: &[u8]) -> Result<(Vec<String>, Vec<String>)> {
-    let decoded = wit_component::decode(component)
-        .map_err(|e| Error::Component(format!("not a WebAssembly component: {e}")))?;
+    let decoded =
+        wit_component::decode(component).map_err(|e| Error::Component(format!("not a WebAssembly component: {e}")))?;
     let wit_component::DecodedWasm::Component(resolve, world) = decoded else {
         return Err(Error::Component("the binary is a WIT package, not a component".into()));
     };
     let name = |key: &wit_parser::WorldKey| match key {
         wit_parser::WorldKey::Name(n) => n.clone(),
-        wit_parser::WorldKey::Interface(id) => {
-            resolve.id_of(*id).unwrap_or_else(|| format!("{id:?}"))
-        }
+        wit_parser::WorldKey::Interface(id) => resolve.id_of(*id).unwrap_or_else(|| format!("{id:?}")),
     };
     let w = &resolve.worlds[world];
-    Ok((w.exports.keys().map(name).collect(), w.imports.keys().map(name).collect()))
+    Ok((
+        w.exports.keys().map(name).collect(),
+        w.imports.keys().map(name).collect(),
+    ))
 }
 
 /// The core modules a component embeds, with the imports and exports of each.
@@ -193,7 +216,10 @@ fn core_modules(component: &[u8]) -> Result<Vec<CoreModule>> {
         };
         offset += consumed;
         match payload {
-            Payload::ModuleSection { parser, unchecked_range } => {
+            Payload::ModuleSection {
+                parser,
+                unchecked_range,
+            } => {
                 ranges.push(unchecked_range.start as usize..unchecked_range.end as usize);
                 stack.push(cur);
                 cur = parser;

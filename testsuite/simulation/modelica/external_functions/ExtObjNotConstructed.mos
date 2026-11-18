@@ -1,0 +1,64 @@
+// name:     ExtObjNotConstructed
+// keywords: ExternalObject
+// status:   correct
+// setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ExtObjNotConstructed.ext$OMC_EXTLIB_EXT ExtObjNotConstructed.ext.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -rf ExtObjNotConstructed.DivisionByZero* ExtObjNotConstructed.ConstructorFails* ExtObjNotConstructed.ext$OMC_EXTLIB_EXT output.log
+// depends: ExtObjNotConstructed.ext.c
+//
+// The destructor is not called for an external object that was not
+// constructed, because the initialization failed before or because the
+// constructor returned a null pointer. The null pointer is an error
+// (MLS 3.7, 12.9.8, #10980).
+
+loadString("
+package ExtObjNotConstructed
+  class Obj
+    extends ExternalObject;
+    function constructor
+      input Real x;
+      output Obj o;
+      external \"C\" o = obj_new(x) annotation(Library = \"ExtObjNotConstructed.ext.o\");
+    end constructor;
+    function destructor
+      input Obj o;
+      external \"C\" obj_free(o) annotation(Library = \"ExtObjNotConstructed.ext.o\");
+    end destructor;
+  end Obj;
+  model DivisionByZero
+    parameter Real z = 0;
+    parameter Real w = 1/z;
+    Obj o = Obj(w);
+  end DivisionByZero;
+  model ConstructorFails
+    parameter Real x = -1;
+    Obj o = Obj(x);
+  end ConstructorFails;
+end ExtObjNotConstructed;
+"); getErrorString();
+
+simulate(ExtObjNotConstructed.DivisionByZero); getErrorString();
+simulate(ExtObjNotConstructed.ConstructorFails); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ExtObjNotConstructed.DivisionByZero', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: ExtObjNotConstructed.DivisionByZero
+// LOG_ASSERT        | debug   | division by zero at time 0, (a=1) / (b=0), where divisor b expression is: z
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ExtObjNotConstructed.ConstructorFails', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: ExtObjNotConstructed.ConstructorFails
+// LOG_ASSERT        | error   | [<interactive>:5:5-9:20:writable]
+// |                 | |       | The constructor of external object ExtObjNotConstructed.Obj failed.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

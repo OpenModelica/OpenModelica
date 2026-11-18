@@ -53,7 +53,7 @@
 #include <emscripten/em_js.h>
 
 // The omc compiler runs as a separate wasm module in a dedicated Web Worker
-// (omc_worker.js), the same one the egui/dioxus web clients use. The bridge
+// (omc_worker.js), the same one the egui web client uses. The bridge
 // spawns it and round-trips one command at a time. To keep the Qt UI responsive
 // (repaint/resize) while a command runs, evalExpression does NOT block the call
 // stack on the reply: it posts the command and spins a nested QEventLoop,

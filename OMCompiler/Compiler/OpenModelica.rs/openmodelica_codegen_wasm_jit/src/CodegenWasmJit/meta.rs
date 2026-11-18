@@ -24,10 +24,11 @@ pub(super) fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVa
                     K,
                     mol,
                     cd,
+                    rad,
                     factor,
                     offset,
                 } => Some(BaseUnit {
-                    exponents: [kg, m, s, A, K, mol, cd, 0],
+                    exponents: [kg, m, s, A, K, mol, cd, rad],
                     factor: factor.into_inner(),
                     offset: offset.into_inner(),
                 }),
@@ -91,7 +92,7 @@ pub(super) fn build_sim_meta(
     params: openmodelica_sim_meta::ParamVars,
     attr_log: Vec<openmodelica_sim_meta::AttrLog>,
     removed_init_desc: Vec<String>,
-    nls_warnings: Vec<String>,
+    startup_warnings: Vec<String>,
     sample_index: Vec<i32>,
     soti: openmodelica_sim_meta::SotiVars,
     sens_params: Vec<u32>,
@@ -132,7 +133,7 @@ pub(super) fn build_sim_meta(
         params,
         attr_log,
         removed_init_desc,
-        nls_warnings,
+        startup_warnings,
         sample_index,
         soti,
         sens_params,
@@ -162,11 +163,20 @@ pub(super) fn soti_vars(
     runs: &ArrayRuns,
     dynv: &DynVars,
 ) -> Result<(openmodelica_sim_meta::SotiVars, Vec<Vec<Sz>>)> {
+    use openmodelica_codegen_util::SimCodeCodegenUtil;
     let named = |sv: &SimCodeVar::SimVar| cref_display(&sv.name);
     let brackets = !openmodelica_util::Config::modelicaOutput()?;
     let mut reals = Vec::new();
     let mut real_arrays = Vec::new();
     let mut soti_dims = Vec::new();
+    // What C's `checkForDiscreteChanges` compares, as `discreteChangeRanges` has it.
+    let mut compared = HashSet::default();
+    for sv in lst(&vars.discreteAlgVars) {
+        if !SimCodeCodegenUtil::isCommonSubexpression(sv)? {
+            compared.insert(run_key(sv));
+        }
+    }
+    let mut checked_reals = Vec::new();
     let sections: [(Vec<&SimCodeVar::SimVar>, Vec<DynVar>); 3] = [
         (svs(&vars.stateVars).collect(), dynv.states.clone()),
         (svs(&vars.derivativeVars).collect(), dynv.ders.clone()),
@@ -190,11 +200,13 @@ pub(super) fn soti_vars(
                     });
                     soti_dims.push(Vec::new());
                     reals.push(template);
+                    checked_reals.push(compared.contains(&run_key(sv)));
                     skip = run.len - 1;
                     continue;
                 }
             }
             reals.push(name);
+            checked_reals.push(compared.contains(&run_key(sv)));
         }
         for dv in dyns {
             let ones = vec![1; dv.dims.len()];
@@ -209,21 +221,28 @@ pub(super) fn soti_vars(
             });
             soti_dims.push(dv.dims.clone());
             reals.push(template);
+            checked_reals.push(
+                dynv.discrete_algs.iter().any(|d| run_key(&d.sv) == run_key(&dv.sv))
+                    && !SimCodeCodegenUtil::isCommonSubexpression(&dv.sv)?,
+            );
         }
     }
     let mut ints = Vec::new();
+    let mut checked_ints = Vec::new();
     for sv in lst(&vars.intAlgVars) {
         ints.push((named(sv)?, const_int(&sv.initialValue).unwrap_or(0)));
+        checked_ints.push(!SimCodeCodegenUtil::isCommonSubexpression(sv)?);
     }
     let mut bools = Vec::new();
+    let mut checked_bools = Vec::new();
     for sv in lst(&vars.boolAlgVars) {
         bools.push((named(sv)?, const_int(&sv.initialValue).unwrap_or(0)));
+        checked_bools.push(!SimCodeCodegenUtil::isCommonSubexpression(sv)?);
     }
     let mut strings = Vec::new();
     for sv in lst(&vars.stringAlgVars) {
         strings.push((named(sv)?, const_str(&sv.initialValue).unwrap_or_default()));
     }
-    let n_discrete_real = lst(&vars.discreteAlgVars).count() as u32;
     Ok((
         openmodelica_sim_meta::SotiVars {
             reals,
@@ -231,7 +250,9 @@ pub(super) fn soti_vars(
             ints,
             bools,
             strings,
-            n_discrete_real,
+            checked_reals,
+            checked_ints,
+            checked_bools,
         },
         soti_dims,
     ))

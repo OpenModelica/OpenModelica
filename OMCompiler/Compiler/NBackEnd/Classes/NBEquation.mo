@@ -2570,6 +2570,30 @@ public
       b := attr.exclusively_initial;
     end isInitial;
 
+    function setInitial
+      input output Equation eq;
+    protected
+      EquationAttributes attr = getAttributes(eq);
+    algorithm
+      attr.exclusively_initial := true;
+      eq := setAttributes(eq, attr);
+    end setInitial;
+
+    function isExternalObject
+      "true for an equation between external objects"
+      extends checkEqn;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+    algorithm
+      b := match eqn
+        case SCALAR_EQUATION() then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case ARRAY_EQUATION()  then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case RECORD_EQUATION() then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case FOR_EQUATION()    then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        else false;
+      end match;
+    end isExternalObject;
+
     function isWhenEquation extends checkEqn;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
@@ -2839,25 +2863,77 @@ public
     end splitIterators;
 
     function renameIterators
+      "renames the for-loop iterators to newBaseName + index and the iterators
+      of array constructors and reductions to newBaseName + _ + name, so that
+      they cannot have the name of a variable"
       input Pointer<Equation> eqn_ptr;
       input String newBaseName;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
+      UnorderedMap<ComponentRef, Expression> replacements;
     algorithm
-      () := match eqn
-        local
-          UnorderedMap<ComponentRef, Expression> replacements;
-
+      eqn := match eqn
         case FOR_EQUATION() algorithm
           replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
           eqn.iter := Iterator.rename(eqn.iter, newBaseName, replacements);
           eqn.body := list(map(body_eqn, function Replacements.applySimpleExp(replacements = replacements)) for body_eqn in eqn.body);
-          Pointer.update(eqn_ptr, eqn);
-        then ();
-
-        else ();
+        then eqn;
+        else eqn;
       end match;
+      eqn := map(eqn, function renameCallIterators(prefix = newBaseName + "_"));
+      Pointer.update(eqn_ptr, eqn);
     end renameIterators;
+
+    function renameCallIterators
+      input output Expression exp;
+      input String prefix;
+    algorithm
+      exp := match exp
+        local
+          Call call;
+          list<tuple<InstNode, Expression>> iters;
+        case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+          (exp, iters) := renameCallIteratorList(call.exp, call.iters, prefix);
+          call.exp := exp;
+          call.iters := iters;
+        then Expression.CALL(call);
+        case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+          (exp, iters) := renameCallIteratorList(call.exp, call.iters, prefix);
+          call.exp := exp;
+          call.iters := iters;
+        then Expression.CALL(call);
+        else exp;
+      end match;
+    end renameCallIterators;
+
+    function renameCallIteratorList
+      input output Expression exp;
+      input output list<tuple<InstNode, Expression>> iters;
+      input String prefix;
+    protected
+      UnorderedMap<String, Expression> values = UnorderedMap.new<Expression>(stringHashDjb2, stringEq);
+      list<tuple<InstNode, Expression>> new_iters = {};
+      InstNode node;
+      Expression range;
+      String name;
+      Type ty;
+    algorithm
+      for iter in iters loop
+        (node, range) := iter;
+        range := Expression.replaceIteratorsByName(range, values);
+        name := InstNode.name(node);
+        if not StringUtil.startsWith(name, "$") then
+          ty := Type.arrayElementType(Expression.typeOf(range));
+          node := InstNode.newIterator(prefix + name, ty, InstNode.info(node));
+          UnorderedMap.add(name, Expression.fromCref(ComponentRef.makeIterator(node, ty)), values);
+        end if;
+        new_iters := (node, range) :: new_iters;
+      end for;
+      iters := listReverse(new_iters);
+      if not UnorderedMap.isEmpty(values) then
+        exp := Expression.replaceIteratorsByName(exp, values);
+      end if;
+    end renameCallIteratorList;
 
     function entwine
       input list<Equation> eqn_lst        "has to be for-loops with combinable ranges";
@@ -4188,7 +4264,10 @@ public
         assigned := match stmt
           local
             ComponentRef lhs;
+            list<Expression> elements;
           case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs)) then lhs :: assigned;
+          case WhenStatement.ASSIGN(lhs = Expression.TUPLE(elements = elements))
+          then listAppend(list(Expression.toCref(e) for e guard(Expression.isCref(e) and not ComponentRef.isWild(Expression.toCref(e))) in elements), assigned);
           else assigned;
         end match;
       end for;

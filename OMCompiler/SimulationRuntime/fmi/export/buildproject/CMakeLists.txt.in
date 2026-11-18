@@ -28,10 +28,6 @@ set(RUNTIME_DEPENDENCIES_LEVEL
     @RUNTIME_DEPENDENCIES_LEVEL@
     CACHE STRING
     "Add modelica runtime dependencies to FMU if set to 'modelica'. Add system runtime dependencies as well if set to 'all'.")
-set(NEED_CVODE
-    @NEED_CVODE@
-    CACHE BOOL
-    "FMU needs to link to SUNDIALS CVODE if 'ON'. Used for CoSimulation FMUs that want to use CVODE as integrator. Use 'OFF' otherwise.")
 set(NEED_DAE_MODE
     @NEED_DAE_MODE@
     CACHE BOOL
@@ -200,9 +196,6 @@ elseif(${COMPILE_MODELICA_EXTERNAL_C})
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/snprintf.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaIO.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c)
-endif()
-if(NOT ${NEED_CVODE})
-  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
 endif()
 if(NOT ${NEED_DAE_MODE})
   list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/dae_mode.c)
@@ -474,6 +467,32 @@ if(OMC_RUST_SIMULATION_RUNTIME)
     else()
       set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/release/${OM_RUST_SIM_RUNTIME_ARCHIVE}")
     endif()
+    # CVODE, IDA and KINSOL: the runtime archive takes in SUNDIALS and KLU, built
+    # from the sources the FMU carries.
+    file(GLOB_RECURSE _om_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/sundials/*.c
+                                           ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/SuiteSparse/*.c)
+    if(_om_sundials_sources)
+      set(_om_sundials_dir "${CMAKE_BINARY_DIR}/rust-sundials")
+      add_library(omc_fmu_sundials STATIC ${_om_sundials_sources})
+      target_include_directories(omc_fmu_sundials PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+      # $<0:> keeps multi-config generators from adding a subdirectory.
+      set_target_properties(omc_fmu_sundials PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden
+                            ARCHIVE_OUTPUT_DIRECTORY "${_om_sundials_dir}/lib$<0:>")
+      # The name cargo looks for, which the empty CMAKE_STATIC_LIBRARY_PREFIX above changes.
+      if(NOT MSVC)
+        set_target_properties(omc_fmu_sundials PROPERTIES PREFIX "lib")
+      endif()
+      file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/sundials/sundials_config.h _om_sundials_int64
+           REGEX "^#define SUNDIALS_INT64_T")
+      if(_om_sundials_int64)
+        set(_om_sundials_index_size 64)
+      else()
+        set(_om_sundials_index_size 32)
+      endif()
+      list(APPEND OM_RUST_CARGO_ENV "OMC_SUNDIALS_NATIVE_DIR=${_om_sundials_dir}"
+                                    "OMC_SUNDIALS_NATIVE_LIBS=omc_fmu_sundials"
+                                    "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${_om_sundials_index_size}")
+    endif()
     # Only the archive: the crate's cdylib cannot link on Windows without the C half.
     # Always run: cargo knows what changed, and a rebuild after nothing did is quick.
     add_custom_target(om_rust_simulation_runtime
@@ -488,6 +507,9 @@ if(OMC_RUST_SIMULATION_RUNTIME)
       BYPRODUCTS "${RUST_SIM_RUNTIME_LIBRARY}"
       COMMENT "Rust: building the FMU's simulation runtime"
       VERBATIM)
+    if(TARGET omc_fmu_sundials)
+      add_dependencies(om_rust_simulation_runtime omc_fmu_sundials)
+    endif()
     add_dependencies(${FMU_NAME_HASH} om_rust_simulation_runtime)
   endif()
 
@@ -571,9 +593,6 @@ if(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES)
 endif()
 
 if(NOT OMC_RUST_SIMULATION_RUNTIME)
-  if(${NEED_CVODE})
-    set(OMC_FMI_HAVE_CVODE ";OMC_FMI_HAVE_CVODE")
-  endif()
   if(${NEED_DAE_MODE})
     set(OMC_FMI_DAE_MODE ";OMC_FMI_DAE_MODE")
   endif()
@@ -589,10 +608,7 @@ if(NOT OMC_RUST_SIMULATION_RUNTIME)
     endif()
 
     message(STATUS "SOLVER_LIBRARY_DIRECTORY: ${SOLVER_LIBRARY_DIRECTORY}")
-    set(_om_solver_libs sundials_kinsol)
-    if(${NEED_CVODE})
-      list(APPEND _om_solver_libs sundials_cvode)
-    endif()
+    set(_om_solver_libs sundials_kinsol sundials_cvode)
     if(${NEED_IDA})
       list(APPEND _om_solver_libs sundials_idas)
     endif()
@@ -625,7 +641,7 @@ if(NOT OMC_RUST_SIMULATION_RUNTIME)
     set(SOLVER_LIBRARIES omc_fmu_solvers)
   endif()
   target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SOLVER_LIBRARIES})
-  set(OMC_FMI_SOLVER_DEFINITIONS ";WITH_SUITESPARSE${OMC_FMI_HAVE_CVODE}${OMC_FMI_DAE_MODE}${OMC_FMI_HAVE_IDA}")
+  set(OMC_FMI_SOLVER_DEFINITIONS ";WITH_SUITESPARSE${OMC_FMI_DAE_MODE}${OMC_FMI_HAVE_IDA}")
   message(STATUS "Solver libraries: ${SOLVER_LIBRARIES}")
 endif()
 

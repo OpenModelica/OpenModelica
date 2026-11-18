@@ -37,6 +37,4 @@ end ConnectArrays4;
 //   c2[1].f = 0.0;
 //   c2[2].f = 0.0;
 // end ConnectArrays4;
-// Warning: Allowing usage of enumeration expression: E.a as Integer: 1. This is non-standard Modelica, use Integer(E.a) instead!
-//
 // endResult

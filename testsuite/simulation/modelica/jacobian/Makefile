@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES=\
+algorithmSliceInForLoop.mos \
 reuseConstantPartsJac1.mos
 
 # test that currently fail. Move up when fixed.

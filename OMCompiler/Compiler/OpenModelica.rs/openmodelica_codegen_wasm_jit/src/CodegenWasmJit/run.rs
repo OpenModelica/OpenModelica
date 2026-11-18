@@ -161,34 +161,28 @@ pub(super) fn resolve_overrides(
 /// (the start time by default). Only the host can open the file — the browser reaches
 /// it through the VFS — so the driver applies the values where C's
 /// `importStartValues` does. A quantity `-override` names is left out so the command
-/// line wins (ticket #15807); the driver reports the skip.
-pub(super) fn resolve_start_imports(meta: &SimMeta, flags: &simflags::SimFlags) -> Option<sim_driver::StartImports> {
-    let file = flags.init_file.as_ref()?;
-    let time = flags.init_time.unwrap_or(meta.start_time);
-    let mut reader = match openmodelica_mat_reader::MatReader::open(file) {
-        Ok(r) => r,
-        Err(e) => {
-            record_error(format!("wasm-jit: unable to read input-file <{file}> [{e}]"));
-            return None;
-        }
+/// line wins (ticket #15807); the driver reports the skip. A file that cannot be
+/// read fails the run, as it fails C's initialization.
+pub(super) fn resolve_start_imports(
+    meta: &SimMeta,
+    flags: &simflags::SimFlags,
+) -> std::result::Result<Option<sim_driver::StartImports>, String> {
+    let Some(file) = flags.init_file.as_ref() else {
+        return Ok(None);
     };
+    let time = flags.init_time.unwrap_or(meta.start_time);
+    let mut reader = openmodelica_result_files::ResultFile::open(file)
+        .map_err(|e| format!("unable to read input-file <{file}> [{e}]"))?;
+    let range = (reader.start_time(), reader.stop_time());
     let overridden = |n: &str| flags.overrides.iter().any(|(o, _)| o == n);
-    let values = meta
-        .import_roster()
-        .iter()
-        .flatten()
-        .enumerate()
-        .filter(|(_, (name, _, _))| !overridden(name))
-        .filter_map(|(i, (name, _, _))| {
-            let v = reader.find_var(name).and_then(|idx| reader.val(idx, time))?;
-            Some((i as u32, v))
-        })
-        .collect();
-    Some(sim_driver::StartImports {
-        file: file.clone(),
+    Ok(Some(sim_driver::collect_start_imports(
+        meta,
+        file.clone(),
         time,
-        values,
-    })
+        range,
+        overridden,
+        |name| reader.value_at(name, time),
+    )))
 }
 
 /// The driver's [`sim_driver::ResultFileReader`]: C's `importStartValues` for the
@@ -382,7 +376,7 @@ fn perform_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, 
     openmodelica_wasi::wasi::start_stdout_capture();
     let (param_ov, start_ov, string_ov) = resolve_overrides(model, &meta, flags);
     sim_driver::set_param_overrides(param_ov, start_ov, string_ov);
-    sim_driver::set_start_imports(resolve_start_imports(&meta, flags));
+    let imports = resolve_start_imports(&meta, flags);
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(flags.abort_slow);
     // The hard `-alarm`, if asked for: set before the modules are instantiated.
@@ -391,6 +385,7 @@ fn perform_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, 
     let mut post = String::new();
     let mut captured = None;
     let res = (|| -> std::result::Result<(), String> {
+        sim_driver::set_start_imports(imports?);
         // `empty` (and `-noemit`) runs the integration but writes no result file —
         // useful for benchmarking the solver in isolation from the `.mat` writer.
         let target = result_target(model, &meta, flags, result_file);

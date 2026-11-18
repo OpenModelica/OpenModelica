@@ -41,7 +41,7 @@ simulate(ArrayLinearSystem, stopTime=0.2, numberOfIntervals=20, simflags="-jacob
 // ""
 // record SimulationResult
 //     resultFile = "ArrayNonlinearSystemAnalytic_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayNonlinearSystemAnalytic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayNonlinearSystemAnalytic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -51,7 +51,7 @@ simulate(ArrayLinearSystem, stopTime=0.2, numberOfIntervals=20, simflags="-jacob
 // ""
 // record SimulationResult
 //     resultFile = "ArrayNonlinearSystemNumeric_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayNonlinearSystemNumeric', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayNonlinearSystemNumeric', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -61,7 +61,7 @@ simulate(ArrayLinearSystem, stopTime=0.2, numberOfIntervals=20, simflags="-jacob
 // ""
 // record SimulationResult
 //     resultFile = "ArrayLinearSystem_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayLinearSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayLinearSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

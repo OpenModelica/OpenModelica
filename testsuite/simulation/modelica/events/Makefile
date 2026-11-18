@@ -20,6 +20,7 @@ cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
 derInWhenCondition.mos \
 discreteRelations.mos \
+EndAtStopTime.mos \
 EventDelay.mos \
 EventIteration.mos \
 EventLoop.mos \
@@ -30,12 +31,14 @@ IntegerZeroCrossings.mos \
 MathEventFuncs1.mos \
 MathEventFuncs2.mos \
 noEventEmit.mos \
+noEventIfType.mos \
 noEventNotRespected.mos \
 Reinit.mos \
 sample1.mos \
 sample2.mos \
 SampleTimeDrift.mos \
 ServerWithQueue.mos \
+StrictTimeEvents.mos \
 TestNoEventsFlags.mos \
 whenInAlgorithm.mos \
 whenTest1.mos \

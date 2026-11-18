@@ -13,7 +13,7 @@ readFile("VariableFilter_res.csv");
 // true
 // record SimulationResult
 //     resultFile = "VariableFilter_res.csv",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VariableFilter', options = '', outputFormat = 'csv', variableFilter = 'r\\\\[[1-2]*\\\\]|r\\\\[.\\\\]', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'VariableFilter', options = '', outputFormat = 'csv', variableFilter = 'r\\\\[[1-2]*\\\\]|r\\\\[.\\\\]', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

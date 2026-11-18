@@ -10,6 +10,7 @@ TESTFILES = \
 	overrideParamStartFromFile_alg.mos \
 	overrideParamStartFromFile_param.mos \
 	overrideParamWithIif.mos \
+	importStartValuesResultFormats.mos \
 
 
 # test that currently fail. Move up when fixed.

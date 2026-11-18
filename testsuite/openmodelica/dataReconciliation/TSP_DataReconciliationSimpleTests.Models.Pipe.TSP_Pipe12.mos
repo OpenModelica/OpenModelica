@@ -1651,7 +1651,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe12_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe12_Inputs.csv'",
 //     messages = "Simulation execution failed for model: TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12
 // LOG_ASSERT        | debug   | division by zero at time 0, (a=1.006009) / (b=0), where divisor b expression is: singularPressureLoss1.deltaP
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization

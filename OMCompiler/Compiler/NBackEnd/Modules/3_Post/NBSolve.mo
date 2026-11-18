@@ -2166,9 +2166,34 @@ protected
         elements  := expandArraySumExpDim(sizes, arrayCref, elemTy);
         new_exp   := Expression.MULTARY(listReverse(elements), {}, Operator.makeAdd(elemTy));
       then new_exp;
+
+      // a*x and x*a with vectors a and x -> a[1]*x[1] + ... + a[n]*x[n]
+      case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.SCALAR_PRODUCT))
+      guard(isCrefExp(exp.exp1, arrayCref) or isCrefExp(exp.exp2, arrayCref)) algorithm
+        elemTy    := Operator.typeOf(exp.operator);
+        elements  := {};
+        for i in 1:Dimension.size(listHead(Type.arrayDims(Expression.typeOf(exp.exp1)))) loop
+          elements := Expression.BINARY(
+            SimplifyExp.simplify(Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, exp.exp1)),
+            Operator.makeMul(elemTy),
+            SimplifyExp.simplify(Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, exp.exp2))) :: elements;
+        end for;
+      then Expression.MULTARY(listReverse(elements), {}, Operator.makeAdd(elemTy));
+
       else exp;
     end match;
   end expandArraySumExp;
+
+  function isCrefExp
+    input Expression exp;
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then ComponentRef.isEqual(exp.cref, cref);
+      else false;
+    end match;
+  end isCrefExp;
 
   function expandArraySumExpDim
     input list<Integer> sizes;

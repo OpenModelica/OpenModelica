@@ -631,12 +631,12 @@ simulate(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();
 // "
 // ""
 // "Check of PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv completed successfully.
-// Class PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv has 214 equation(s) and 214 variable(s).
+// The model is globally balanced with 214 equation(s) and variable(s).
 // 149 of these are trivial equation(s)."
 // ""
 // record SimulationResult
 //     resultFile = "PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

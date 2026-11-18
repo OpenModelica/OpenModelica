@@ -2,6 +2,8 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 sumRecordArraySlice.mos \
+arrayEquationRowLoop.mos \
+scalarProductSlice.mos \
 nlsArrayElementNominal.mos \
 resizableAliasMin.mos \
 reductionSkips.mos \
@@ -44,6 +46,7 @@ arrayConnectRooted.mos \
 entwinedOrder.mos \
 entwinedScalarAnchors.mos \
 entwinedOrderResizable.mos \
+entwinedIndependentElements.mos \
 resizableOverride.mos \
 resizableSizeDimension.mos \
 resizableDiffIteratorArray.mos \

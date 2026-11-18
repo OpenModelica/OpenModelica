@@ -47,7 +47,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->JMCallbacks.calloc = calloc;
   FMI2ME->JMCallbacks.realloc = realloc;
   FMI2ME->JMCallbacks.free = free;
-  FMI2ME->JMCallbacks.logger = importlogger;
+  FMI2ME->JMCallbacks.logger = fmi2importlogger;
   FMI2ME->JMCallbacks.log_level = FMI2ME->FMILogLevel;
   FMI2ME->JMCallbacks.context = 0;
   FMI2ME->FMIImportContext = fmi_import_allocate_context(&FMI2ME->JMCallbacks);
