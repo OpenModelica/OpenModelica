@@ -175,3 +175,7 @@ add_omedit_test(Utilities "${OMEDIT_TEST_UTILITIES_SOURCES}")
 set(OMEDIT_TEST_VARIABLEVALUE_SOURCES VariableValue/VariableValueTest.cpp
                                       VariableValue/VariableValueTest.h)
 add_omedit_test(VariableValue "${OMEDIT_TEST_VARIABLEVALUE_SOURCES}")
+
+set(OMEDIT_TEST_WORKINGDIRECTORY_SOURCES WorkingDirectory/WorkingDirectoryTest.cpp
+                                         WorkingDirectory/WorkingDirectoryTest.h)
+add_omedit_test(WorkingDirectory "${OMEDIT_TEST_WORKINGDIRECTORY_SOURCES}")

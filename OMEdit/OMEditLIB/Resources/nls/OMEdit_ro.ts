@@ -4281,6 +4281,18 @@ You can choose between waiting longer or abort debugging.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>%1 Change it in &lt;b&gt;%2-&gt;General-&gt;Working Directory&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The working directory %1 is not an absolute path. OMEdit uses %2 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The working directory %1 does not exist. OMEdit uses %2 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>(%1 minute(s))</source>
         <translation type="unfinished"></translation>
     </message>

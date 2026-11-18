@@ -189,6 +189,24 @@ QColor Style::infoBarTextColor()
 }
 
 /*!
+ * \brief Style::warningBackgroundColor
+ * Background of an inline warning, e.g., below an input field.
+ */
+QColor Style::warningBackgroundColor()
+{
+  return pick(QColor(255, 243, 205), QColor(51, 39, 1));
+}
+
+/*!
+ * \brief Style::warningTextColor
+ * Text of an inline warning.
+ */
+QColor Style::warningTextColor()
+{
+  return pick(QColor(102, 77, 3), QColor(255, 218, 106));
+}
+
+/*!
  * \brief Style::messagesCommandColor
  * Color of an echoed command in a messages/output window.\n
  * The other message colors are user configurable via the Messages options page.

@@ -1257,6 +1257,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
 
   simulationOptions.setLinearizationDumpLanguage(mpLinearizationDumpLanguageComboBox->currentText());
+  OptionsDialog::instance()->getGeneralSettingsPage()->warnIfWorkingDirectoryUnusable();
   // create a folder with model name to dump the files in it.
   QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
   if (!QDir().exists(modelDirectoryPath)) {
