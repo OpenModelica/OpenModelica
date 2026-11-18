@@ -20,6 +20,7 @@ simulate(BuiltinMath, stopTime=1);
 {val(x[11],0.0),val(x[11],1.0)};
 {val(x[12],0.0),val(x[12],1.0)};
 {val(x[13],0.0),val(x[13],1.0)};
+{val(x[14],0.0),val(x[14],1.0)};
 // Result:
 // true
 // record SimulationResult
@@ -42,4 +43,5 @@ simulate(BuiltinMath, stopTime=1);
 // {1.0,2.718281828459045}
 // {-2.302585092994045,0.0}
 // {-1.0,0.0}
+// {3.141592653589793,3.141592653589793}
 // endResult
