@@ -443,90 +443,6 @@ void debugPrintSparsePattern(const SPARSE_PATTERN* sp) {
 }
 
 /**
- * @brief Append one (column, row) entry to a pair buffer.
- *
- * @param pairs   Buffer, zero initialized before the first call.
- * @param col     Column index.
- * @param row     Row index.
- */
-void addSparsePair(SPARSE_PAIRS* pairs, unsigned int col, unsigned int row)
-{
-  if (pairs->size == pairs->capacity) {
-    pairs->capacity = pairs->capacity ? 2 * pairs->capacity : 64;
-    pairs->cols = (unsigned int*) realloc(pairs->cols, pairs->capacity * sizeof(unsigned int));
-    pairs->rows = (unsigned int*) realloc(pairs->rows, pairs->capacity * sizeof(unsigned int));
-    assertStreamPrint(NULL, pairs->cols && pairs->rows, "addSparsePair: out of memory");
-  }
-  pairs->cols[pairs->size] = col;
-  pairs->rows[pairs->size] = row;
-  pairs->size++;
-}
-
-/**
- * @brief Build a CSC pattern from (column, row) entries and free the entries.
- *
- * Row indices keep the order in which they were added to their column.
- *
- * @param pairs   Entries, all columns < nCols. Empty afterwards.
- * @param nCols   Number of columns.
- * @return SPARSE_PATTERN*   CSC pattern without coloring.
- */
-SPARSE_PATTERN* sparsePatternFromPairs(SPARSE_PAIRS* pairs, unsigned int nCols)
-{
-  size_t i;
-  unsigned int col;
-  SPARSE_PATTERN* sp = allocSparsePattern(nCols, (unsigned int) pairs->size, 0);
-  unsigned int* next = (unsigned int*) calloc(nCols + 1, sizeof(unsigned int));
-
-  for (i = 0; i < pairs->size; i++) {
-    next[pairs->cols[i] + 1]++;
-  }
-  for (col = 0; col < nCols; col++) {
-    next[col + 1] += next[col];
-  }
-  memcpy(sp->leadindex, next, (nCols + 1) * sizeof(unsigned int));
-  for (i = 0; i < pairs->size; i++) {
-    sp->index[next[pairs->cols[i]]++] = pairs->rows[i];
-  }
-
-  free(next);
-  free(pairs->cols);
-  free(pairs->rows);
-  memset(pairs, 0, sizeof(SPARSE_PAIRS));
-  return sp;
-}
-
-static int compareUnsigned(const void* a, const void* b)
-{
-  const unsigned int x = *(const unsigned int*) a, y = *(const unsigned int*) b;
-  return (x > y) - (x < y);
-}
-
-/**
- * @brief Sorts the rows of every column and removes duplicates in place.
- *
- * Runtime built patterns can contain the same entry twice, e.g. an array seed
- * over a whole dimension and one of its elements in the same row.
- */
-static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols)
-{
-  unsigned int col, nz, start, end, out = 0;
-  for (col = 0; col < nCols; col++) {
-    start = sp->leadindex[col];
-    end = sp->leadindex[col + 1];
-    qsort(sp->index + start, end - start, sizeof(unsigned int), compareUnsigned);
-    sp->leadindex[col] = out;
-    for (nz = start; nz < end; nz++) {
-      if (nz == start || sp->index[nz] != sp->index[nz - 1]) {
-        sp->index[out++] = sp->index[nz];
-      }
-    }
-  }
-  sp->leadindex[nCols] = out;
-  sp->nnz = out;
-}
-
-/**
  * @brief Distance-two star bicoloring of a sparsity pattern for bidirectional
  *        (forward + adjoint) Jacobian evaluation.
  *
@@ -583,6 +499,8 @@ static int computeStarBicoloring(SPARSE_PATTERN* fwdSp, SPARSE_PATTERN* rowSp, u
   return 0;
 }
 
+/* forward declaration */
+static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols);
 
 /**
  * @brief Initialize bidirectional recovery masks for star bicoloring.
@@ -1007,6 +925,60 @@ SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows)
 }
 
 /**
+ * @brief Append one (column, row) entry to a pair buffer.
+ *
+ * @param pairs   Buffer, zero initialized before the first call.
+ * @param col     Column index.
+ * @param row     Row index.
+ */
+void addSparsePair(SPARSE_PAIRS* pairs, unsigned int col, unsigned int row)
+{
+  if (pairs->size == pairs->capacity) {
+    pairs->capacity = pairs->capacity ? 2 * pairs->capacity : 64;
+    pairs->cols = (unsigned int*) realloc(pairs->cols, pairs->capacity * sizeof(unsigned int));
+    pairs->rows = (unsigned int*) realloc(pairs->rows, pairs->capacity * sizeof(unsigned int));
+    assertStreamPrint(NULL, pairs->cols && pairs->rows, "addSparsePair: out of memory");
+  }
+  pairs->cols[pairs->size] = col;
+  pairs->rows[pairs->size] = row;
+  pairs->size++;
+}
+
+/**
+ * @brief Build a CSC pattern from (column, row) entries and free the entries.
+ *
+ * Row indices keep the order in which they were added to their column.
+ *
+ * @param pairs   Entries, all columns < nCols. Empty afterwards.
+ * @param nCols   Number of columns.
+ * @return SPARSE_PATTERN*   CSC pattern without coloring.
+ */
+SPARSE_PATTERN* sparsePatternFromPairs(SPARSE_PAIRS* pairs, unsigned int nCols)
+{
+  size_t i;
+  unsigned int col;
+  SPARSE_PATTERN* sp = allocSparsePattern(nCols, (unsigned int) pairs->size, 0);
+  unsigned int* next = (unsigned int*) calloc(nCols + 1, sizeof(unsigned int));
+
+  for (i = 0; i < pairs->size; i++) {
+    next[pairs->cols[i] + 1]++;
+  }
+  for (col = 0; col < nCols; col++) {
+    next[col + 1] += next[col];
+  }
+  memcpy(sp->leadindex, next, (nCols + 1) * sizeof(unsigned int));
+  for (i = 0; i < pairs->size; i++) {
+    sp->index[next[pairs->cols[i]]++] = pairs->rows[i];
+  }
+
+  free(next);
+  free(pairs->cols);
+  free(pairs->rows);
+  memset(pairs, 0, sizeof(SPARSE_PAIRS));
+  return sp;
+}
+
+/**
  * @brief Get the column oriented (CSC of J) sparsity pattern of a Jacobian.
  *
  * Forward Jacobians already store their pattern in CSC. Row evaluated (adjoint)
@@ -1079,6 +1051,35 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
   }
 }
 
+static int compareUnsigned(const void* a, const void* b)
+{
+  const unsigned int x = *(const unsigned int*) a, y = *(const unsigned int*) b;
+  return (x > y) - (x < y);
+}
+
+/**
+ * @brief Sorts the rows of every column and removes duplicates in place.
+ *
+ * Runtime built patterns can contain the same entry twice, e.g. an array seed
+ * over a whole dimension and one of its elements in the same row.
+ */
+static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols)
+{
+  unsigned int col, nz, start, end, out = 0;
+  for (col = 0; col < nCols; col++) {
+    start = sp->leadindex[col];
+    end = sp->leadindex[col + 1];
+    qsort(sp->index + start, end - start, sizeof(unsigned int), compareUnsigned);
+    sp->leadindex[col] = out;
+    for (nz = start; nz < end; nz++) {
+      if (nz == start || sp->index[nz] != sp->index[nz - 1]) {
+        sp->index[out++] = sp->index[nz];
+      }
+    }
+  }
+  sp->leadindex[nCols] = out;
+  sp->nnz = out;
+}
 
 /**
  * @brief Distance-1 column coloring of a CSC sparse pattern.
