@@ -11160,21 +11160,30 @@ fn is_const_str_cref<'a>(
     ctx: &GenCtx,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
 ) -> bool {
+    package_const_ty(name, segments, ctx, top_level) == Some(Ty::Str)
+}
+
+/// The type of the package-level `constant` that `name` refers to, if it
+/// refers to one.
+fn package_const_ty<'a>(
+    name: &str,
+    segments: &[CrefSegment],
+    ctx: &GenCtx,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> Option<Ty> {
     // Local-scope short-circuit: a bare name that's an entry in `fn_env_vars`
     // is a function-local binding, not a package-level pub const.
     if segments.len() <= 1 {
         let first: &str = segments.first().map(|s| s.name.as_str()).unwrap_or(name);
         if ctx.fn_env_vars.contains_key(first) {
-            return false;
+            return None;
         }
     }
-    let Some(node) = resolve_fully_qualified(name, ctx, top_level) else {
-        return false;
-    };
+    let node = resolve_fully_qualified(name, ctx, top_level)?;
     let NodeKind::Component(comp) = &node.kind else {
-        return false;
+        return None;
     };
-    comp.variability == Absyn::Variability::CONST && node.ty == Ty::Str
+    (comp.variability == Absyn::Variability::CONST).then(|| node.ty.clone())
 }
 
 /// Fold a `TypedExp` to a literal `String` at codegen time when it is a chain of
@@ -12071,6 +12080,17 @@ fn emit_exp<'a>(
                 {
                     format!("*{var_str}")
                 }
+                // A dereferenced reference is a place: reading it copies.
+                _ if copy && is_plain_local && var_str.starts_with("(*") => var_str,
+                // A package constant of a primitive type is a `const`.
+                _ if !has_borrow_guard
+                    && matches!(
+                        package_const_ty(name, segments, ctx, top_level),
+                        Some(Ty::I32 | Ty::F64 | Ty::Bool)
+                    ) =>
+                {
+                    var_str
+                }
                 // An enumeration literal.
                 _ if matches!(effective_ty, Ty::Enumeration(_))
                     && !is_plain_local
@@ -12079,12 +12099,10 @@ fn emit_exp<'a>(
                 {
                     var_str
                 }
-                // A field path, `(*x)` or array element of a local of a `Copy`
-                // type is a place: reading it copies. (A package constant may
-                // be a `LazyLock` and still needs its `.clone()`.)
-                _ if copy && ctx.place_mode.contains_key(&base) && (!is_plain_local || var_str.starts_with("(*")) => {
-                    var_str
-                }
+                // A field path or array element of a local of a `Copy` type is
+                // a place: reading it copies. (A package constant may be a
+                // `LazyLock` and still needs its `.clone()`.)
+                _ if copy && !is_plain_local && ctx.place_mode.contains_key(&base) => var_str,
                 // Final read of an owned, non-`Copy` plain local: move the value
                 // instead of cloning it (the marquee win — no `Arc` refcount bump
                 // or `Vec`/`String`/record deep copy). `node_last_use` is set by
@@ -12146,9 +12164,14 @@ fn emit_exp<'a>(
             // const context, where no `RefCell` access can occur anyway.
             // Parenthesised so the block stays an expression even when
             // directly followed by a binary operator (`{..} == 0` would
-            // otherwise parse as a block statement).
+            // otherwise parse as a block statement). A read of a whole element
+            // calls `array_element` instead, which drops the guard itself (a
+            // package constant table is a `StaticArray`, not an `Array`).
             let emitted = if has_borrow_guard && !is_const {
-                format!("({{let __elt = {emitted}; __elt}})")
+                match whole_array_element(&emitted).filter(|(arr, _)| !arr.contains("::")) {
+                    Some((arr, idx)) => format!("metamodelica::array_element(&{arr}, {idx})?"),
+                    None => format!("({{let __elt = {emitted}; __elt}})"),
+                }
             } else {
                 emitted
             };
@@ -20624,7 +20647,8 @@ fn emit_match<'a>(
                 // formal parameter type expects. (Wildcard: same reasoning,
                 // but no name needs to keep the Arc, so `.as_ref()` is fine.)
                 let bind_arc_directly = input_is_arc && matches!(&case.pattern, TypedPat::Var(_));
-                if arm_needs_match_deref {
+                let wildcard = pat.trim() == "_";
+                if arm_needs_match_deref && !wildcard {
                     // Wrap the arm in `::match_deref::match_deref!{ match &__mc_input { … } }`.
                     // Inside the macro, `Deref @ <inner>` derefs an `Arc<T>` /
                     // `ArcStr` binding into its target so that patterns like
@@ -20660,7 +20684,7 @@ fn emit_match<'a>(
                         s.push_str(&format!(
                             "            let {mut_prefix}{var_name} = __mc_input.clone();\n"
                         ));
-                    } else {
+                    } else if !wildcard {
                         let src = if input_is_arc && !mc_uses_tuple_rewrite {
                             "__mc_input.as_ref()"
                         } else {
@@ -23099,6 +23123,40 @@ fn try_emit_reference_eq<'a>(
         }
         _ => None,
     }
+}
+
+/// The array and index of `(*metamodelica::index_checked(&a.borrow(), i)?)`,
+/// optionally followed by `.clone()`: a read of one whole element.
+fn whole_array_element(s: &str) -> Option<(&str, &str)> {
+    let s = s.strip_suffix(".clone()").unwrap_or(s);
+    let args = s.strip_prefix("(*metamodelica::index_checked(&")?.strip_suffix(")?)")?;
+    let mut depth = 0i32;
+    for (k, c) in args.char_indices() {
+        match c {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth -= 1,
+            '.' if depth == 0 && args[k..].starts_with(".borrow(), ") => {
+                let idx = &args[k + ".borrow(), ".len()..];
+                let mut d = 0i32;
+                for c in idx.chars() {
+                    match c {
+                        '(' | '[' | '{' => d += 1,
+                        ')' | ']' | '}' => d -= 1,
+                        _ => {}
+                    }
+                    if d < 0 {
+                        return None;
+                    }
+                }
+                return (d == 0).then_some((&args[..k], idx));
+            }
+            _ => {}
+        }
+        if depth < 0 {
+            return None;
+        }
+    }
+    None
 }
 
 /// Whether `s` is one macro call, `name!(…)`, with nothing after it.
@@ -31406,4 +31464,32 @@ fn collect_external_arg_names(args: &metamodelica::List<metamodelica::Ref<Absyn:
         cur = tail.clone();
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn whole_array_elements() {
+        let read = "(*metamodelica::index_checked(&a.borrow(), i + 1)?)";
+        assert_eq!(whole_array_element(read), Some(("a", "i + 1")));
+        assert_eq!(whole_array_element(&format!("{read}.clone()")), Some(("a", "i + 1")));
+        let nested = "(*metamodelica::index_checked(&(*metamodelica::index_checked(&a.borrow(), i)?).borrow(), j)?)";
+        assert_eq!(
+            whole_array_element(nested),
+            Some(("(*metamodelica::index_checked(&a.borrow(), i)?)", "j"))
+        );
+        assert_eq!(whole_array_element(&format!("{read}.f.clone()")), None);
+        assert_eq!(
+            whole_array_element("(*metamodelica::index_checked(&a.borrow(), i).unwrap())"),
+            None
+        );
+    }
+
+    #[test]
+    fn whole_macro_calls() {
+        assert!(is_whole_macro_call("var_field!((*x).f, V)"));
+        assert!(!is_whole_macro_call("var_field!((*x).f, V).g"));
+    }
 }

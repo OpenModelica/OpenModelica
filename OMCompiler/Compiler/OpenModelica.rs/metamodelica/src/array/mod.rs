@@ -1,10 +1,10 @@
 //! Mutable (aliasing) `Array<T>` builtins. Read-only constant tables
 //! use [`static_array::StaticArray`].
 
-use std::rc::Rc;
-use std::cell::RefCell;
 use crate::Result;
 use crate::{Array, list::List};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub mod static_array;
 pub use static_array::*;
@@ -108,6 +108,13 @@ pub fn index_checked<A>(v: &[A], index: i32) -> Result<&A> {
     v.get((index - 1) as usize).ok_or("array index out of bounds")
 }
 
+/// A copy of the element at the 1-based `index`; the array's borrow ends
+/// before this returns, so the caller may borrow it mutably right after.
+#[inline(always)]
+pub fn array_element<A: Clone>(arr: &Array<A>, index: i32) -> Result<A> {
+    index_checked(&arr.borrow(), index).cloned()
+}
+
 /// [`index_checked`] for a subscripted assignment (`a[i] := v`).
 #[inline(always)]
 pub fn index_mut_checked<A>(v: &mut [A], index: i32) -> Result<&mut A> {
@@ -133,13 +140,15 @@ pub fn arrayAppend<A: Clone>(arr1: Array<A>, arr2: Array<A>) -> Array<A> {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod array_function_tests {
         use super::*;
 
-        fn arr<A>(v: Vec<A>) -> Array<A> { arrayFromVec(v) }
+        fn arr<A>(v: Vec<A>) -> Array<A> {
+            arrayFromVec(v)
+        }
 
         #[test]
         fn test_array_length() {
