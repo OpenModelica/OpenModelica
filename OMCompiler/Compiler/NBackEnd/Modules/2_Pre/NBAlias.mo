@@ -485,7 +485,10 @@ protected
           if not Expression.isLiteral(elem_exp) then return; end if;
           // flat index of the target element, or its parameter subscripts (e.g. x[n] of a resizable array)
           target_elem := SimplifyExp.simplify(Expression.map(Expression.fromCref(target), function Replacements.applySimpleExp(replacements = repl)));
-          index := flatIndex(target_elem);
+          index := match target_elem
+            case Expression.CREF() then BVariable.flatIndex(target_elem.cref);
+            else NONE();
+          end match;
           if isSome(index) then
             elems := (Util.getOption(index), elem_exp) :: elems;
           else
@@ -529,7 +532,7 @@ protected
         SOME(start_exp) := BVariable.getStartAttribute(BVariable.getVarPointer(source, sourceInfo()));
         elem_exp := BVariable.startElement(ComponentRef.subscriptsAllFlat(source), start_exp, Variable.typeOf(Pointer.access(BVariable.getVarPointer(source, sourceInfo()))));
         if Expression.isEmpty(elem_exp) or not (Expression.isLiteral(elem_exp) or isParameterExpression(elem_exp)) then return; end if;
-        index := flatIndex(Expression.fromCref(target));
+        index := BVariable.flatIndex(target);
         if isSome(index) then
           target := ComponentRef.stripSubscriptsAll(target);
           elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
@@ -565,34 +568,6 @@ protected
       else false;
     end match;
   end isNonParameterCref;
-
-  function flatIndex
-    "zero based flat index of a cref with literal subscripts in its variable"
-    input Expression exp;
-    output Option<Integer> index = NONE();
-  protected
-    list<Subscript> subs;
-    list<Integer> sizes;
-    Integer idx = 0;
-  algorithm
-    () := match exp
-      case Expression.CREF() algorithm
-        subs := ComponentRef.subscriptsAllFlat(exp.cref);
-        sizes := list(Dimension.size(dim) for dim in Type.arrayDims(Variable.typeOf(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo())))));
-        if listLength(subs) <> listLength(sizes) then return; end if;
-        for tpl in List.zip(subs, sizes) loop
-          () := match tpl
-            case (Subscript.INDEX(index = Expression.INTEGER()), _) algorithm
-              idx := idx * Util.tuple22(tpl) + Expression.integerValue(Subscript.toExp(Util.tuple21(tpl))) - 1;
-            then ();
-            else algorithm return; then ();
-          end match;
-        end for;
-        index := SOME(idx);
-      then ();
-      else ();
-    end match;
-  end flatIndex;
 
   function reshapeStart
     "nested array of the flat elements for the dimension sizes"

@@ -1,0 +1,66 @@
+// name: partialStateOrderPartner
+// keywords: NewBackend, index reduction
+// status: correct
+// v1[1] = der(x[1]) is a state order only for the first element of x. The
+// constraint v2 = der(x[1]) becomes v2 = v1[1] without an alias for der(x).
+// $DUM_0 is the alias of the unconstrained element v1[2].
+
+loadString("
+model partialStateOrderPartner
+  Real x[2](each stateSelect = StateSelect.prefer, each start = 1, each fixed = true);
+  Real v1[2](each start = 0, each fixed = true);
+  Real v2, a1, a2;
+equation
+  v1[1] = der(x[1]);
+  v2 = der(x[1]);
+  a1 = der(v1[1]);
+  a2 = der(v2);
+  a1 + a2 = -x[1];
+  der(x[2]) = -x[2];
+  der(v1[2]) = x[2] - v1[2];
+end partialStateOrderPartner;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=stateselection"); getErrorString();
+simulate(partialStateOrderPartner); getErrorString();
+val(x[1], 1);
+val(v1[2], 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
+// [stateselection] (3) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real v2
+// 	[STAT] (2) Real[2] x (fixed = {true for $f2 in 1:2}, start = {1.0 for $f3 in 1:2}, StateSelect = prefer)
+// 	[STAT] (2) Real[2] v1 (fixed = {true for $f1 in 1:2}, start = {0.0 for $f2 in 1:2})
+//
+// [stateselection] State Order:
+// *******************************
+// 	(v2 --d/dt--> a2)
+// 	(x --d/dt--> v1 (flat elements 1))
+//
+// [stateselection] (1) State Derivatives Created by Differentiation
+// *******************************************************************
+// 	[DER-] (1) Real $DER.$DUM_0
+//
+// [stateselection] (1) Selected Dummy States
+// ********************************************
+// [DSTA] (2) Real[2] v1 (fixed = {true for $f1 in 1:2}, start = {0.0 for $f2 in 1:2})
+//
+// record SimulationResult
+//     resultFile = "partialStateOrderPartner_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'partialStateOrderPartner', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.7602445220621866
+// 0.36788268906830895
+// endResult

@@ -1406,7 +1406,12 @@ public
     UnorderedMap<ComponentRef, StateOrder> map;
   algorithm
     b := match state_order
-      case SOME(map) then UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), map);
+      case SOME(map) then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), map)
+        local
+          StateOrder order;
+        case SOME(order) then StateOrder.covers(order, cref);
+        else false;
+      end match;
       else false;
     end match;
   end hasStateOrder;

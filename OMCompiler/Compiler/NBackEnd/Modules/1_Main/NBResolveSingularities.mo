@@ -786,7 +786,7 @@ protected
         (alias_var, alias_cref) := BVariable.makeAuxVar(NBVariable.DUMMY_ALIAS_STR, Pointer.access(uniqueIndex), Variable.typeOf(Pointer.access(der_var)), false);
         Pointer.update(uniqueIndex, Pointer.access(uniqueIndex) + 1);
         alias_eqns := Equation.makeAssignment(Expression.fromCref(alias_cref), Expression.fromCref(der_cref), uniqueIndex, "DUM", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: alias_eqns;
-        UnorderedMap.add(der_cref, StateOrder.STATE_ORDER(alias_cref, NONE()), subst);
+        UnorderedMap.add(der_cref, StateOrder.STATE_ORDER(alias_cref, NONE(), NONE()), subst);
         aliases := alias_var :: aliases;
       end if;
     end for;
@@ -846,7 +846,8 @@ protected
       case SOME((der_cref, alias, coefficients)) then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(der_cref), subst)
         local
           StateOrder order;
-        case SOME(order) then StateOrder.isEqual(order, StateOrder.STATE_ORDER(ComponentRef.stripSubscriptsAll(alias), coefficients))
+        case SOME(order) then StateOrder.isEqual(order, StateOrder.STATE_ORDER(ComponentRef.stripSubscriptsAll(alias), coefficients, NONE()))
+          and StateOrder.covers(order, der_cref)
           and List.isEqualOnTrue(ComponentRef.subscriptsAllWithWholeFlat(der_cref), ComponentRef.subscriptsAllWithWholeFlat(alias), Subscript.isEqual);
         else false;
       end match;
@@ -857,10 +858,14 @@ protected
   function substituteDerivativeAlias
     input output Expression exp;
     input UnorderedMap<ComponentRef, StateOrder> subst;
+  protected
+    StateOrder order;
   algorithm
     exp := match exp
-      case Expression.CREF() guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), subst))
-      then StateOrder.derivative(UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(exp.cref), subst, sourceInfo()), exp.cref);
+      case Expression.CREF() then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(exp.cref), subst)
+        case SOME(order) guard(StateOrder.covers(order, exp.cref)) then StateOrder.derivative(order, exp.cref);
+        else exp;
+      end match;
       else exp;
     end match;
   end substituteDerivativeAlias;
@@ -938,9 +943,13 @@ protected
     leave the dependent states x1 = x4."
     extends BVariable.checkVar;
     input UnorderedMap<ComponentRef, StateOrder> state_order;
+  protected
+    StateOrder order;
   algorithm
-    b := BVariable.isStateSelect(var_ptr, StateSelect.DEFAULT)
-      and not UnorderedMap.contains(BVariable.getVarName(var_ptr), state_order);
+    b := BVariable.isStateSelect(var_ptr, StateSelect.DEFAULT) and (match UnorderedMap.get(BVariable.getVarName(var_ptr), state_order)
+      case SOME(order) then isSome(order.elements);
+      else true;
+    end match);
   end isDefaultWithoutStateOrder;
 
   function orderCandidates

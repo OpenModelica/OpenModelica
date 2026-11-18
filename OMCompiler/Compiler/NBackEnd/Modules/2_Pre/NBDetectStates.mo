@@ -688,7 +688,7 @@ protected
   end findDiscreteStatesFromWhenBody;
 
   function stateOrder
-    "Collects state orders x = k*der(y) + c that hold for every element of y."
+    "Collects state orders x = k*der(y) + c of y or of elements of y."
     input output Equation eqn;
     input UnorderedMap<ComponentRef, StateOrder> state_order;
     input UnorderedMap<ComponentRef, ElementOrder> element_order;
@@ -726,7 +726,7 @@ protected
   end stateOrder;
 
   function addElementOrders
-    "Adds the state orders that are given element by element and cover the whole state."
+    "Adds the state orders that are given element by element."
     input UnorderedMap<ComponentRef, StateOrder> state_order;
     input UnorderedMap<ComponentRef, ElementOrder> element_order;
   protected
@@ -739,6 +739,9 @@ protected
       () := match entry
         case (state, (SOME(order), covered, total)) algorithm
           if UnorderedSet.size(covered) == total then
+            addStateOrder(state, order, state_order);
+          elseif not UnorderedSet.isEmpty(covered) then
+            order.elements := SOME(covered);
             addStateOrder(state, order, state_order);
           end if;
         then ();
@@ -932,7 +935,7 @@ protected
     end if;
 
     state_cref := BVariable.getVarName(Util.getOption(BVariable.getVarState(der_var)));
-    order := StateOrder.STATE_ORDER(ComponentRef.stripSubscriptsAll(alias), coefficients);
+    order := StateOrder.STATE_ORDER(ComponentRef.stripSubscriptsAll(alias), coefficients, NONE());
     if ComponentRef.isEqual(state_cref, order.partner) then
       return;
     end if;
@@ -965,19 +968,18 @@ protected
   end updateStateOrder;
 
   function addStateOrder
-    "Adds the order if the state has none yet. x = der(y) replaces x = k*der(y) + c."
+    "Adds the order if the state has none yet or if it replaces a worse one, see StateOrder.rank."
     input ComponentRef state;
     input StateOrder order;
     input UnorderedMap<ComponentRef, StateOrder> state_order;
+  protected
+    StateOrder old_order;
   algorithm
-    () := match (UnorderedMap.get(state, state_order), order)
-      case (NONE(), _) algorithm
+    () := match UnorderedMap.get(state, state_order)
+      case SOME(old_order) guard(StateOrder.rank(old_order) >= StateOrder.rank(order)) then ();
+      else algorithm
         UnorderedMap.add(state, order, state_order);
       then ();
-      case (SOME(StateOrder.STATE_ORDER(coefficients = SOME(_))), StateOrder.STATE_ORDER(coefficients = NONE())) algorithm
-        UnorderedMap.add(state, order, state_order);
-      then ();
-      else ();
     end match;
   end addStateOrder;
 
