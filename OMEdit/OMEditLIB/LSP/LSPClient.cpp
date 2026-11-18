@@ -72,8 +72,8 @@ LSPClient::LSPClient(QObject *pParent)
     mIntentionalStop(false)
 {
   qRegisterMetaType<LSP::Location>("LSP::Location");
-  connect(mpFileWatcher, &LSPFileWatcher::filesChanged, this, &LSPClient::onWatchedFilesChanged);
-  connect(mpFileWatcher, &LSPFileWatcher::watchLimitReached, this, &LSPClient::onWatchLimitReached);
+  connect(mpFileWatcher, &LSPFileWatcher::eventsChanged, this, &LSPClient::onWatchedFilesChanged);
+  connect(mpFileWatcher, &RecursiveFileWatcher::watchLimitReached, this, &LSPClient::onWatchLimitReached);
 #if QT_CONFIG(process)
   // The server logs to stderr. Nothing here reads that channel, and an unread
   // channel accumulates in QProcess for the life of the process, so hand it to

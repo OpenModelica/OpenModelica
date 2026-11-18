@@ -325,6 +325,7 @@ public:
   void setShowHiddenClasses(bool value) {mpShowHiddenClasses->setChecked(value);}
   bool getShowHiddenClasses() {return mpShowHiddenClasses->isChecked();}
   QCheckBox* getSynchronizeWithModelWidgetCheckBox() {return mpSynchronizeWithModelWidgetCheckBox;}
+  QCheckBox* getReloadLibraryOnFileChangeCheckBox() {return mpReloadLibraryOnFileChangeCheckBox;}
   QGroupBox* getEnableAutoSaveGroupBox() {return mpEnableAutoSaveGroupBox;}
   SpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
   int getWelcomePageView();
@@ -367,6 +368,7 @@ private:
   QCheckBox *mpShowProtectedClasses;
   QCheckBox *mpShowHiddenClasses;
   QCheckBox *mpSynchronizeWithModelWidgetCheckBox;
+  QCheckBox *mpReloadLibraryOnFileChangeCheckBox;
   QGroupBox *mpEnableAutoSaveGroupBox;
   Label *mpAutoSaveIntervalLabel;
   SpinBox *mpAutoSaveIntervalSpinBox;
