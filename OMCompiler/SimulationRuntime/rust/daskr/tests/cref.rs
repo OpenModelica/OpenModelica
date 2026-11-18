@@ -13,22 +13,10 @@ use daskr::linpack;
 #[allow(non_snake_case)]
 unsafe extern "C" {
     fn _daskr_idamax_(n: *const i32, dx: *const f64, incx: *const i32) -> i32;
-    fn _daskr_ddot_(
-        n: *const i32,
-        dx: *const f64,
-        incx: *const i32,
-        dy: *const f64,
-        incy: *const i32,
-    ) -> f64;
+    fn _daskr_ddot_(n: *const i32, dx: *const f64, incx: *const i32, dy: *const f64, incy: *const i32) -> f64;
     fn _daskr_dnrm2_(n: *const i32, dx: *const f64, incx: *const i32) -> f64;
     fn _daskr_dscal_(n: *const i32, da: *const f64, dx: *mut f64, incx: *const i32) -> i32;
-    fn _daskr_dcopy_(
-        n: *const i32,
-        sx: *const f64,
-        incx: *const i32,
-        sy: *mut f64,
-        incy: *const i32,
-    ) -> i32;
+    fn _daskr_dcopy_(n: *const i32, sx: *const f64, incx: *const i32, sy: *mut f64, incy: *const i32) -> i32;
     fn _daskr_daxpy_(
         n: *const i32,
         da: *const f64,
@@ -37,13 +25,7 @@ unsafe extern "C" {
         dy: *mut f64,
         incy: *const i32,
     ) -> i32;
-    fn _daskr_dgefa_(
-        a: *mut f64,
-        lda: *const i32,
-        n: *const i32,
-        ipvt: *mut i32,
-        info: *mut i32,
-    ) -> i32;
+    fn _daskr_dgefa_(a: *mut f64, lda: *const i32, n: *const i32, ipvt: *mut i32, info: *mut i32) -> i32;
     fn _daskr_dgesl_(
         a: *const f64,
         lda: *const i32,
@@ -249,18 +231,14 @@ fn dgbfa_dgbsl_matches() {
             let (mut ir, mut ic) = (vec![0i32; n as usize], vec![0i32; n as usize]);
             let (mut infor, mut infoc) = (0i32, 0i32);
             linpack::dgbfa(&mut ar, lda, n, ml, mu, &mut ir, &mut infor);
-            unsafe {
-                _daskr_dgbfa_(ac.as_mut_ptr(), &lda, &n, &ml, &mu, ic.as_mut_ptr(), &mut infoc)
-            };
+            unsafe { _daskr_dgbfa_(ac.as_mut_ptr(), &lda, &n, &ml, &mu, ic.as_mut_ptr(), &mut infoc) };
             assert!(bits_eq(&ar, &ac), "dgbfa factors n={n} ml={ml} mu={mu}");
             assert_eq!(ir, ic, "dgbfa ipvt n={n} ml={ml} mu={mu}");
             assert_eq!(infor, infoc, "dgbfa info n={n} ml={ml} mu={mu}");
 
             let (mut br, mut bc) = (b0.clone(), b0.clone());
             linpack::dgbsl(&ar, lda, n, ml, mu, &ir, &mut br, job);
-            unsafe {
-                _daskr_dgbsl_(ac.as_ptr(), &lda, &n, &ml, &mu, ic.as_ptr(), bc.as_mut_ptr(), &job)
-            };
+            unsafe { _daskr_dgbsl_(ac.as_ptr(), &lda, &n, &ml, &mu, ic.as_ptr(), bc.as_mut_ptr(), &job) };
             assert!(bits_eq(&br, &bc), "dgbsl solution n={n} ml={ml} mu={mu} job={job}");
         }
     }

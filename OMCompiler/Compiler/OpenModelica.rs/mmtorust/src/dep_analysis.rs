@@ -13,9 +13,9 @@
 
 #![allow(unused)]
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
 use crate::MM;
 use openmodelica_ast::Absyn;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 // ── Path helper ──────────────────────────────────────────────────────────────
 
@@ -79,10 +79,7 @@ struct TarjanState<'a> {
     sccs: Vec<Vec<String>>,
 }
 
-fn tarjan_scc(
-    nodes: &[&str],
-    adj: &BTreeMap<String, BTreeSet<String>>,
-) -> Vec<Vec<String>> {
+fn tarjan_scc(nodes: &[&str], adj: &BTreeMap<String, BTreeSet<String>>) -> Vec<Vec<String>> {
     let mut state = TarjanState {
         index_counter: 0,
         stack: Vec::new(),
@@ -99,11 +96,7 @@ fn tarjan_scc(
     state.sccs
 }
 
-fn strongconnect<'a>(
-    v: &'a str,
-    adj: &'a BTreeMap<String, BTreeSet<String>>,
-    state: &mut TarjanState<'a>,
-) {
+fn strongconnect<'a>(v: &'a str, adj: &'a BTreeMap<String, BTreeSet<String>>, state: &mut TarjanState<'a>) {
     let idx = state.index_counter;
     state.index.insert(v, idx);
     state.lowlink.insert(v, idx);
@@ -147,10 +140,7 @@ fn strongconnect<'a>(
 /// Maps a package to its crate label.  Packages without an annotation end up
 /// in `"openmodelica"` (the default crate).
 fn package_crate(class: &MM::Class) -> String {
-    class
-        .crate_name
-        .clone()
-        .unwrap_or_else(|| "openmodelica".to_owned())
+    class.crate_name.clone().unwrap_or_else(|| "openmodelica".to_owned())
 }
 
 pub struct DepAnalysis {
@@ -174,14 +164,20 @@ impl DepAnalysis {
             package_imports.insert(class.name.clone(), imports);
         }
 
-        DepAnalysis { package_to_crate, package_imports }
+        DepAnalysis {
+            package_to_crate,
+            package_imports,
+        }
     }
 }
 
 // ── Text report ───────────────────────────────────────────────────────────────
 
 pub fn print_report(analysis: &DepAnalysis) {
-    let DepAnalysis { package_to_crate, package_imports } = analysis;
+    let DepAnalysis {
+        package_to_crate,
+        package_imports,
+    } = analysis;
 
     // Invert: crate → packages
     let mut crate_packages: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
@@ -195,12 +191,13 @@ pub fn print_report(analysis: &DepAnalysis) {
         let src_crate = &package_to_crate[pkg];
         for imported_pkg in imports {
             if let Some(dst_crate) = package_to_crate.get(imported_pkg.as_str())
-                && dst_crate != src_crate {
-                    crate_deps
-                        .entry(src_crate.clone())
-                        .or_default()
-                        .insert(dst_crate.clone());
-                }
+                && dst_crate != src_crate
+            {
+                crate_deps
+                    .entry(src_crate.clone())
+                    .or_default()
+                    .insert(dst_crate.clone());
+            }
         }
     }
 
@@ -252,8 +249,7 @@ pub fn print_report(analysis: &DepAnalysis) {
 
         // SCCs on intra-crate graph
         let sccs = tarjan_scc(&pkg_vec, &intra_adj);
-        let non_trivial_sccs: Vec<&Vec<String>> =
-            sccs.iter().filter(|s| s.len() > 1).collect();
+        let non_trivial_sccs: Vec<&Vec<String>> = sccs.iter().filter(|s| s.len() > 1).collect();
 
         // Leaf packages: no intra-crate imports AND no packages in this crate import them
         let packages_with_intra_imports: BTreeSet<&str> = intra_adj
@@ -262,28 +258,20 @@ pub fn print_report(analysis: &DepAnalysis) {
             .map(|(pkg, _)| pkg.as_str())
             .collect();
 
-        let imported_by_others_in_crate: BTreeSet<String> = intra_adj
-            .values()
-            .flat_map(|deps| deps.iter().cloned())
-            .collect();
+        let imported_by_others_in_crate: BTreeSet<String> =
+            intra_adj.values().flat_map(|deps| deps.iter().cloned()).collect();
 
         let leaf_packages: BTreeSet<&str> = pkg_vec
             .iter()
             .copied()
-            .filter(|p| {
-                !packages_with_intra_imports.contains(p)
-                    && !imported_by_others_in_crate.contains(*p)
-            })
+            .filter(|p| !packages_with_intra_imports.contains(p) && !imported_by_others_in_crate.contains(*p))
             .collect();
 
         // Packages that import nothing from the same crate but ARE imported by others
         let no_intra_imports_but_used: Vec<&str> = pkg_vec
             .iter()
             .copied()
-            .filter(|p| {
-                !packages_with_intra_imports.contains(p)
-                    && imported_by_others_in_crate.contains(*p)
-            })
+            .filter(|p| !packages_with_intra_imports.contains(p) && imported_by_others_in_crate.contains(*p))
             .collect();
 
         println!("  Crate: {crate_name}");
@@ -312,9 +300,7 @@ pub fn print_report(analysis: &DepAnalysis) {
                     .get(*p)
                     .unwrap_or(&empty)
                     .iter()
-                    .filter_map(|dep| {
-                        package_to_crate.get(dep.as_str()).map(|cr| format!("{dep} ({cr})"))
-                    })
+                    .filter_map(|dep| package_to_crate.get(dep.as_str()).map(|cr| format!("{dep} ({cr})")))
                     .collect();
                 if cross.is_empty() {
                     println!("      · {p}  (no external deps either)");
@@ -327,16 +313,16 @@ pub fn print_report(analysis: &DepAnalysis) {
         if !no_intra_imports_but_used.is_empty() {
             let mut sorted = no_intra_imports_but_used.clone();
             sorted.sort();
-            println!("    Packages with no intra-crate imports (used by others in crate, but could move to a lower crate):");
+            println!(
+                "    Packages with no intra-crate imports (used by others in crate, but could move to a lower crate):"
+            );
             for p in &sorted {
                 let empty = BTreeSet::new();
                 let cross: Vec<String> = package_imports
                     .get(*p)
                     .unwrap_or(&empty)
                     .iter()
-                    .filter_map(|dep| {
-                        package_to_crate.get(dep.as_str()).map(|cr| format!("{dep} ({cr})"))
-                    })
+                    .filter_map(|dep| package_to_crate.get(dep.as_str()).map(|cr| format!("{dep} ({cr})")))
                     .collect();
                 if cross.is_empty() {
                     println!("      · {p}  (no external deps)");
@@ -379,19 +365,23 @@ pub fn print_report(analysis: &DepAnalysis) {
 
 /// Write a Graphviz `.dot` file for the **crate-level** dependency graph.
 pub fn write_crate_dot(analysis: &DepAnalysis, path: &str) -> std::io::Result<()> {
-    let DepAnalysis { package_to_crate, package_imports } = analysis;
+    let DepAnalysis {
+        package_to_crate,
+        package_imports,
+    } = analysis;
 
     let mut crate_deps: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for (pkg, imports) in package_imports {
         let src_crate = &package_to_crate[pkg];
         for imported_pkg in imports {
             if let Some(dst_crate) = package_to_crate.get(imported_pkg.as_str())
-                && dst_crate != src_crate {
-                    crate_deps
-                        .entry(src_crate.clone())
-                        .or_default()
-                        .insert(dst_crate.clone());
-                }
+                && dst_crate != src_crate
+            {
+                crate_deps
+                    .entry(src_crate.clone())
+                    .or_default()
+                    .insert(dst_crate.clone());
+            }
         }
     }
 
@@ -419,7 +409,10 @@ pub fn write_crate_dot(analysis: &DepAnalysis, path: &str) -> std::io::Result<()
 /// Write a Graphviz `.dot` file for the **package-level** dependency graph,
 /// with clusters grouping packages by crate.
 pub fn write_package_dot(analysis: &DepAnalysis, path: &str) -> std::io::Result<()> {
-    let DepAnalysis { package_to_crate, package_imports } = analysis;
+    let DepAnalysis {
+        package_to_crate,
+        package_imports,
+    } = analysis;
 
     let mut crate_packages: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for (pkg, cr) in package_to_crate {
@@ -456,9 +449,7 @@ pub fn write_package_dot(analysis: &DepAnalysis, path: &str) -> std::io::Result<
                 let dst_crate = &package_to_crate[dep.as_str()];
                 let cross = src_crate != dst_crate;
                 if cross {
-                    out.push_str(&format!(
-                        "  {src_id} -> {dst_id} [color=red, style=dashed];\n"
-                    ));
+                    out.push_str(&format!("  {src_id} -> {dst_id} [color=red, style=dashed];\n"));
                 } else {
                     out.push_str(&format!("  {src_id} -> {dst_id};\n"));
                 }

@@ -23,11 +23,17 @@ static TABLE: Cell = Cell(UnsafeCell::new(None));
 static LOCK: AtomicBool = AtomicBool::new(false);
 
 fn with<R>(f: impl FnOnce(&mut Table) -> R) -> R {
-    while LOCK.compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {
+    while LOCK
+        .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
+        .is_err()
+    {
         core::hint::spin_loop();
     }
     let table = unsafe { &mut *TABLE.0.get() };
-    let r = f(table.get_or_insert_with(|| Table { by_id: Vec::new(), ids: BTreeMap::new() }));
+    let r = f(table.get_or_insert_with(|| Table {
+        by_id: Vec::new(),
+        ids: BTreeMap::new(),
+    }));
     LOCK.store(false, Ordering::Release);
     r
 }

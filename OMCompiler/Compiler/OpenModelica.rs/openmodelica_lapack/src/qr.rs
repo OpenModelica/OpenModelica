@@ -5,7 +5,6 @@
 //! as `TAU(k)` plus `V(k+2:m)` below the diagonal of column `k` (`V(k+1)` is
 //! implicitly 1).
 
-
 use crate::blas::{at, dlarf_left, dlarf_right, dlarfg, dnrm2, set};
 use crate::{abs, opt};
 
@@ -50,14 +49,7 @@ fn reflect_column(m: usize, j: usize, a: &mut [f64], lda: usize) -> (f64, f64) {
 /// `A*P = Q*R` with column pivoting (`DGEQP3`). `jpvt` is LAPACK's: a nonzero
 /// entry on input moves that column to the front, a zero leaves it free; on output
 /// it holds the 1-based permutation.
-pub fn dgeqp3(
-    m: usize,
-    n: usize,
-    a: &mut [f64],
-    lda: usize,
-    jpvt: &mut [i32],
-    tau: &mut [f64],
-) -> i32 {
+pub fn dgeqp3(m: usize, n: usize, a: &mut [f64], lda: usize, jpvt: &mut [i32], tau: &mut [f64]) -> i32 {
     #[cfg(feature = "faer-backend")]
     if let Some(r) = crate::faer_backend::dgeqp3(m, n, a, lda, jpvt, tau) {
         return r;
@@ -66,14 +58,7 @@ pub fn dgeqp3(
 }
 
 /// The port of `DGEQP3`, and the only path when `JPVT` pins a column.
-pub fn dgeqp3_ref(
-    m: usize,
-    n: usize,
-    a: &mut [f64],
-    lda: usize,
-    jpvt: &mut [i32],
-    tau: &mut [f64],
-) -> i32 {
+pub fn dgeqp3_ref(m: usize, n: usize, a: &mut [f64], lda: usize, jpvt: &mut [i32], tau: &mut [f64]) -> i32 {
     let mut perm: Vec<usize> = Vec::with_capacity(n);
     for j in 0..n {
         if jpvt[j] != 0 {
@@ -213,7 +198,11 @@ pub fn dormqr_ref(
     let left = opt(side) == b'L';
     let notran = opt(trans) == b'N';
     // Q = H(1)…H(k), so Q*C applies them in reverse and Q'*C in order.
-    let order: Vec<usize> = if notran == left { (0..k).rev().collect() } else { (0..k).collect() };
+    let order: Vec<usize> = if notran == left {
+        (0..k).rev().collect()
+    } else {
+        (0..k).collect()
+    };
     let rows = if left { m } else { n };
     for j in order {
         let v: Vec<f64> = a[j + 1 + j * lda..rows + j * lda].to_vec();
@@ -289,14 +278,7 @@ pub fn dgels(
 /// `DGEQPF`: LAPACK's deprecated unblocked pivoted QR, the predecessor of
 /// [`dgeqp3`]. Same factorization, same output; MSL 3.2.3's `Matrices.QR` still
 /// calls it.
-pub fn dgeqpf(
-    m: usize,
-    n: usize,
-    a: &mut [f64],
-    lda: usize,
-    jpvt: &mut [i32],
-    tau: &mut [f64],
-) -> i32 {
+pub fn dgeqpf(m: usize, n: usize, a: &mut [f64], lda: usize, jpvt: &mut [i32], tau: &mut [f64]) -> i32 {
     dgeqp3(m, n, a, lda, jpvt, tau)
 }
 

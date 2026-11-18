@@ -35,7 +35,14 @@ unsafe extern "C" {
 /// Write `data` to `name`, relative to the working directory as C's executable does.
 #[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
 pub(crate) fn write_file(name: &str, data: &str) {
-    unsafe { rt_host_write_file(name.as_ptr() as u32, name.len() as u32, data.as_ptr() as u32, data.len() as u32) };
+    unsafe {
+        rt_host_write_file(
+            name.as_ptr() as u32,
+            name.len() as u32,
+            data.as_ptr() as u32,
+            data.len() as u32,
+        )
+    };
 }
 
 #[cfg(all(target_arch = "wasm32", feature = "standalone"))]
@@ -43,5 +50,8 @@ pub(crate) fn write_file(name: &str, data: &str) {
     let _ = std::fs::write(name, data);
 }
 
-#[cfg(not(all(target_arch = "wasm32", any(feature = "standalone", all(feature = "host_log", not(feature = "standalone"))))))]
+#[cfg(not(all(
+    target_arch = "wasm32",
+    any(feature = "standalone", all(feature = "host_log", not(feature = "standalone")))
+)))]
 pub(crate) fn write_file(_name: &str, _data: &str) {}

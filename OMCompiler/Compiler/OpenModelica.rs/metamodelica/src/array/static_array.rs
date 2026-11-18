@@ -1,8 +1,8 @@
 //! `StaticArray<T>` — `Sync` read-only storage for module-level tables.
 
-use std::sync::Arc;
 use crate::Array;
 use crate::array::arrayFromVec;
+use std::sync::Arc;
 
 /// Storage for module-level immutable arrays (lexer/parser tables built from
 /// `MetaModelica.Dangerous.listArrayLiteral` and similar constant
@@ -65,7 +65,9 @@ impl<T> StaticArray<T> {
     /// mutable `Array<T>`.
     #[inline]
     pub fn share(&self) -> StaticArray<T> {
-        StaticArray { inner: Arc::clone(&self.inner) }
+        StaticArray {
+            inner: Arc::clone(&self.inner),
+        }
     }
 }
 

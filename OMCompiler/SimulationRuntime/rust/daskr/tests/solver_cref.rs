@@ -12,12 +12,56 @@ use daskr::solver::{self, JacFn, PsolFn, ResFn, RtFn};
 
 // C callback ABIs (Fortran-style, all by pointer).
 type CRes = unsafe extern "C" fn(*mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut i32, *mut f64, *mut i32);
-type CJac = unsafe extern "C" fn(*mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut i32);
-type CPsol = unsafe extern "C" fn(*mut i32, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut i32, *mut f64, *mut f64, *mut i32, *mut f64, *mut i32);
+type CJac = unsafe extern "C" fn(
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut i32,
+);
+type CPsol = unsafe extern "C" fn(
+    *mut i32,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut i32,
+    *mut f64,
+    *mut f64,
+    *mut i32,
+    *mut f64,
+    *mut i32,
+);
 type CRt = unsafe extern "C" fn(*mut i32, *mut f64, *mut f64, *mut f64, *mut i32, *mut f64, *mut f64, *mut i32);
 // Krylov preconditioner-setup `jac`: (res, ires, neq, t, y, yprime, rewt, savr,
 // wk, h, cj, wp, iwp, ier, rpar, ipar).
-type CJacK = unsafe extern "C" fn(CRes, *mut i32, *mut i32, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut i32, *mut i32, *mut f64, *mut i32);
+type CJacK = unsafe extern "C" fn(
+    CRes,
+    *mut i32,
+    *mut i32,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut f64,
+    *mut i32,
+    *mut i32,
+    *mut f64,
+    *mut i32,
+);
 
 unsafe extern "C" {
     fn _daskr_xsetf_(mflag: *const i32);
@@ -107,17 +151,51 @@ fn compare(
     for (kk, &tout) in touts.iter().enumerate() {
         unsafe {
             _daskr_ddaskr_(
-                res_c, &neq, &mut tc, yc.as_mut_ptr(), ypc.as_mut_ptr(), &tout, infoc.as_mut_ptr(),
-                rtolc.as_mut_ptr(), atolc.as_mut_ptr(), &mut ididc, rworkc.as_mut_ptr(), &lrw,
-                iworkc.as_mut_ptr(), &liw, rparc.as_mut_ptr(), iparc.as_mut_ptr(), jac_c, psol_c,
-                rt_c, &nrt, jrootc.as_mut_ptr(),
+                res_c,
+                &neq,
+                &mut tc,
+                yc.as_mut_ptr(),
+                ypc.as_mut_ptr(),
+                &tout,
+                infoc.as_mut_ptr(),
+                rtolc.as_mut_ptr(),
+                atolc.as_mut_ptr(),
+                &mut ididc,
+                rworkc.as_mut_ptr(),
+                &lrw,
+                iworkc.as_mut_ptr(),
+                &liw,
+                rparc.as_mut_ptr(),
+                iparc.as_mut_ptr(),
+                jac_c,
+                psol_c,
+                rt_c,
+                &nrt,
+                jrootc.as_mut_ptr(),
             );
             let mut toutr = tout;
             solver::ddaskr(
-                res_r, neq, &mut tr, yr.as_mut_ptr(), ypr.as_mut_ptr(), &mut toutr,
-                infor.as_mut_ptr(), rtolr.as_mut_ptr(), atolr.as_mut_ptr(), &mut ididr,
-                rworkr.as_mut_ptr(), lrw, iworkr.as_mut_ptr(), liw, rparr.as_mut_ptr(),
-                iparr.as_mut_ptr(), jac_r, solver::dummy_jack, psol_r, rt_r, nrt,
+                res_r,
+                neq,
+                &mut tr,
+                yr.as_mut_ptr(),
+                ypr.as_mut_ptr(),
+                &mut toutr,
+                infor.as_mut_ptr(),
+                rtolr.as_mut_ptr(),
+                atolr.as_mut_ptr(),
+                &mut ididr,
+                rworkr.as_mut_ptr(),
+                lrw,
+                iworkr.as_mut_ptr(),
+                liw,
+                rparr.as_mut_ptr(),
+                iparr.as_mut_ptr(),
+                jac_r,
+                solver::dummy_jack,
+                psol_r,
+                rt_r,
+                nrt,
                 jrootr.as_mut_ptr(),
             );
         }
@@ -125,14 +203,24 @@ fn compare(
         assert_eq!(ididc, ididr, "idid mismatch step {kk} tout={tout}");
         assert_eq!(bits(tc), bits(tr), "t mismatch step {kk}: C={tc} R={tr}");
         for i in 0..neq as usize {
-            assert_eq!(bits(yc[i]), bits(yr[i]), "y[{i}] mismatch step {kk}: C={} R={}", yc[i], yr[i]);
+            assert_eq!(
+                bits(yc[i]),
+                bits(yr[i]),
+                "y[{i}] mismatch step {kk}: C={} R={}",
+                yc[i],
+                yr[i]
+            );
             assert_eq!(bits(ypc[i]), bits(ypr[i]), "yp[{i}] mismatch step {kk}");
         }
         for j in 0..nrt as usize {
             assert_eq!(jrootc[j], jrootr[j], "jroot[{j}] mismatch step {kk}");
         }
         for &s in &[11i32, 12, 13, 14, 15, 7, 8] {
-            assert_eq!(iworkc[(s - 1) as usize], iworkr[(s - 1) as usize], "iwork[{s}] mismatch step {kk}");
+            assert_eq!(
+                iworkc[(s - 1) as usize],
+                iworkr[(s - 1) as usize],
+                "iwork[{s}] mismatch step {kk}"
+            );
         }
         if ididc == 5 || ididc < 0 {
             break; // root reached, or a (matching) error: stop before re-calling
@@ -149,10 +237,28 @@ fn osc_res(y: *const f64, yp: *const f64, d: *mut f64) {
         *d.add(1) = *yp.add(1) + *y.add(0) + 0.1 * *y.add(1);
     }
 }
-unsafe extern "C" fn res_c(_t: *mut f64, y: *mut f64, yp: *mut f64, _cj: *mut f64, d: *mut f64, _i: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe extern "C" fn res_c(
+    _t: *mut f64,
+    y: *mut f64,
+    yp: *mut f64,
+    _cj: *mut f64,
+    d: *mut f64,
+    _i: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     osc_res(y, yp, d);
 }
-unsafe fn res_r(_t: *mut f64, y: *mut f64, yp: *mut f64, _cj: *mut f64, d: *mut f64, _i: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe fn res_r(
+    _t: *mut f64,
+    y: *mut f64,
+    yp: *mut f64,
+    _cj: *mut f64,
+    d: *mut f64,
+    _i: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     osc_res(y, yp, d);
 }
 
@@ -163,32 +269,143 @@ unsafe fn osc_jac(pd: *mut f64, cj: f64) {
     *pd.add(2) = -1.0;
     *pd.add(3) = 0.1 + cj;
 }
-unsafe extern "C" fn jac_c(_t: *mut f64, _y: *mut f64, _yp: *mut f64, pd: *mut f64, _d: *mut f64, cj: *mut f64, _h: *mut f64, _wt: *mut f64, _rp: *mut f64, _ip: *mut i32) {
+unsafe extern "C" fn jac_c(
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    pd: *mut f64,
+    _d: *mut f64,
+    cj: *mut f64,
+    _h: *mut f64,
+    _wt: *mut f64,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     osc_jac(pd, *cj);
 }
-unsafe fn jac_r(_t: *mut f64, _y: *mut f64, _yp: *mut f64, pd: *mut f64, _d: *mut f64, cj: *mut f64, _h: *mut f64, _wt: *mut f64, _rp: *mut f64, _ip: *mut i32) {
+unsafe fn jac_r(
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    pd: *mut f64,
+    _d: *mut f64,
+    cj: *mut f64,
+    _h: *mut f64,
+    _wt: *mut f64,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     osc_jac(pd, *cj);
 }
 
-unsafe extern "C" fn rt_c(_neq: *mut i32, _t: *mut f64, y: *mut f64, _yp: *mut f64, _nrt: *mut i32, rval: *mut f64, _rp: *mut f64, _ip: *mut i32) {
+unsafe extern "C" fn rt_c(
+    _neq: *mut i32,
+    _t: *mut f64,
+    y: *mut f64,
+    _yp: *mut f64,
+    _nrt: *mut i32,
+    rval: *mut f64,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     *rval.add(0) = *y.add(0);
 }
-unsafe fn rt_r(_neq: *mut i32, _t: *mut f64, y: *mut f64, _yp: *mut f64, _nrt: *mut i32, rval: *mut f64, _rp: *mut f64, _ip: *mut i32) -> i32 {
+unsafe fn rt_r(
+    _neq: *mut i32,
+    _t: *mut f64,
+    y: *mut f64,
+    _yp: *mut f64,
+    _nrt: *mut i32,
+    rval: *mut f64,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) -> i32 {
     *rval.add(0) = *y.add(0);
     0
 }
 
 // C dummies matching the typed ABIs.
-unsafe extern "C" fn dummy_jac_c(_t: *mut f64, _y: *mut f64, _yp: *mut f64, _pd: *mut f64, _d: *mut f64, _cj: *mut f64, _h: *mut f64, _wt: *mut f64, _rp: *mut f64, _ip: *mut i32) {}
-unsafe extern "C" fn dummy_rt_c(_neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _nrt: *mut i32, _rval: *mut f64, _rp: *mut f64, _ip: *mut i32) {}
-unsafe extern "C" fn dummy_psol_c(_neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _savr: *mut f64, _wk: *mut f64, _cj: *mut f64, _wt: *mut f64, _wp: *mut f64, _iwp: *mut i32, _b: *mut f64, _eplin: *mut f64, _ier: *mut i32, _rp: *mut f64, _ip: *mut i32) {}
+unsafe extern "C" fn dummy_jac_c(
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _pd: *mut f64,
+    _d: *mut f64,
+    _cj: *mut f64,
+    _h: *mut f64,
+    _wt: *mut f64,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
+}
+unsafe extern "C" fn dummy_rt_c(
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _nrt: *mut i32,
+    _rval: *mut f64,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
+}
+unsafe extern "C" fn dummy_psol_c(
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _savr: *mut f64,
+    _wk: *mut f64,
+    _cj: *mut f64,
+    _wt: *mut f64,
+    _wp: *mut f64,
+    _iwp: *mut i32,
+    _b: *mut f64,
+    _eplin: *mut f64,
+    _ier: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
+}
 
 // Identity left preconditioner P = I for the Krylov path: solving P*x = b
 // leaves `b` untouched. INFO(15)=0 means JAC is never called, so no setup.
-unsafe extern "C" fn id_psol_c(_neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _savr: *mut f64, _wk: *mut f64, _cj: *mut f64, _wt: *mut f64, _wp: *mut f64, _iwp: *mut i32, _b: *mut f64, _eplin: *mut f64, ier: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe extern "C" fn id_psol_c(
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _savr: *mut f64,
+    _wk: *mut f64,
+    _cj: *mut f64,
+    _wt: *mut f64,
+    _wp: *mut f64,
+    _iwp: *mut i32,
+    _b: *mut f64,
+    _eplin: *mut f64,
+    ier: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     *ier = 0;
 }
-unsafe fn id_psol_r(_neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _savr: *mut f64, _wk: *mut f64, _cj: *mut f64, _wt: *mut f64, _wp: *mut f64, _iwp: *mut i32, _b: *mut f64, _eplin: *mut f64, ier: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe fn id_psol_r(
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _savr: *mut f64,
+    _wk: *mut f64,
+    _cj: *mut f64,
+    _wt: *mut f64,
+    _wp: *mut f64,
+    _iwp: *mut i32,
+    _b: *mut f64,
+    _eplin: *mut f64,
+    ier: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     *ier = 0;
 }
 
@@ -205,19 +422,85 @@ unsafe fn diag_solve(wp: *const f64, b: *mut f64) {
     *b.add(0) /= *wp.add(0);
     *b.add(1) /= *wp.add(1);
 }
-unsafe extern "C" fn jack_c(_res: CRes, _ires: *mut i32, _neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _rewt: *mut f64, _savr: *mut f64, _wk: *mut f64, _h: *mut f64, cj: *mut f64, wp: *mut f64, _iwp: *mut i32, ier: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe extern "C" fn jack_c(
+    _res: CRes,
+    _ires: *mut i32,
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _rewt: *mut f64,
+    _savr: *mut f64,
+    _wk: *mut f64,
+    _h: *mut f64,
+    cj: *mut f64,
+    wp: *mut f64,
+    _iwp: *mut i32,
+    ier: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     diag_jac(*cj, wp);
     *ier = 0;
 }
-unsafe fn jack_r(_res: ResFn, _ires: *mut i32, _neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _rewt: *mut f64, _savr: *mut f64, _wk: *mut f64, _h: *mut f64, cj: *mut f64, wp: *mut f64, _iwp: *mut i32, ier: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe fn jack_r(
+    _res: ResFn,
+    _ires: *mut i32,
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _rewt: *mut f64,
+    _savr: *mut f64,
+    _wk: *mut f64,
+    _h: *mut f64,
+    cj: *mut f64,
+    wp: *mut f64,
+    _iwp: *mut i32,
+    ier: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     diag_jac(*cj, wp);
     *ier = 0;
 }
-unsafe extern "C" fn pre_psol_c(_neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _savr: *mut f64, _wk: *mut f64, _cj: *mut f64, _wt: *mut f64, wp: *mut f64, _iwp: *mut i32, b: *mut f64, _eplin: *mut f64, ier: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe extern "C" fn pre_psol_c(
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _savr: *mut f64,
+    _wk: *mut f64,
+    _cj: *mut f64,
+    _wt: *mut f64,
+    wp: *mut f64,
+    _iwp: *mut i32,
+    b: *mut f64,
+    _eplin: *mut f64,
+    ier: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     diag_solve(wp, b);
     *ier = 0;
 }
-unsafe fn pre_psol_r(_neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, _savr: *mut f64, _wk: *mut f64, _cj: *mut f64, _wt: *mut f64, wp: *mut f64, _iwp: *mut i32, b: *mut f64, _eplin: *mut f64, ier: *mut i32, _rp: *mut f64, _ip: *mut i32) {
+unsafe fn pre_psol_r(
+    _neq: *mut i32,
+    _t: *mut f64,
+    _y: *mut f64,
+    _yp: *mut f64,
+    _savr: *mut f64,
+    _wk: *mut f64,
+    _cj: *mut f64,
+    _wt: *mut f64,
+    wp: *mut f64,
+    _iwp: *mut i32,
+    b: *mut f64,
+    _eplin: *mut f64,
+    ier: *mut i32,
+    _rp: *mut f64,
+    _ip: *mut i32,
+) {
     diag_solve(wp, b);
     *ier = 0;
 }
@@ -261,28 +544,72 @@ fn krylov_preconditioned() {
     for (kk, &tout) in touts.iter().enumerate() {
         unsafe {
             _daskr_ddaskr_(
-                res_c, &neq, &mut tc, yc.as_mut_ptr(), ypc.as_mut_ptr(), &tout, infoc.as_mut_ptr(),
-                rtolc.as_mut_ptr(), atolc.as_mut_ptr(), &mut ididc, rworkc.as_mut_ptr(), &lrw,
-                iworkc.as_mut_ptr(), &liw, rparc.as_mut_ptr(), iparc.as_mut_ptr(),
-                std::mem::transmute::<CJacK, CJac>(jack_c), pre_psol_c, dummy_rt_c, &nrt, jrootc.as_mut_ptr(),
+                res_c,
+                &neq,
+                &mut tc,
+                yc.as_mut_ptr(),
+                ypc.as_mut_ptr(),
+                &tout,
+                infoc.as_mut_ptr(),
+                rtolc.as_mut_ptr(),
+                atolc.as_mut_ptr(),
+                &mut ididc,
+                rworkc.as_mut_ptr(),
+                &lrw,
+                iworkc.as_mut_ptr(),
+                &liw,
+                rparc.as_mut_ptr(),
+                iparc.as_mut_ptr(),
+                std::mem::transmute::<CJacK, CJac>(jack_c),
+                pre_psol_c,
+                dummy_rt_c,
+                &nrt,
+                jrootc.as_mut_ptr(),
             );
             let mut toutr = tout;
             solver::ddaskr(
-                res_r, neq, &mut tr, yr.as_mut_ptr(), ypr.as_mut_ptr(), &mut toutr,
-                infor.as_mut_ptr(), rtolr.as_mut_ptr(), atolr.as_mut_ptr(), &mut ididr,
-                rworkr.as_mut_ptr(), lrw, iworkr.as_mut_ptr(), liw, rparr.as_mut_ptr(),
-                iparr.as_mut_ptr(), solver::dummy_jacd, jack_r, pre_psol_r, solver::dummy_rt, nrt,
+                res_r,
+                neq,
+                &mut tr,
+                yr.as_mut_ptr(),
+                ypr.as_mut_ptr(),
+                &mut toutr,
+                infor.as_mut_ptr(),
+                rtolr.as_mut_ptr(),
+                atolr.as_mut_ptr(),
+                &mut ididr,
+                rworkr.as_mut_ptr(),
+                lrw,
+                iworkr.as_mut_ptr(),
+                liw,
+                rparr.as_mut_ptr(),
+                iparr.as_mut_ptr(),
+                solver::dummy_jacd,
+                jack_r,
+                pre_psol_r,
+                solver::dummy_rt,
+                nrt,
                 jrootr.as_mut_ptr(),
             );
         }
         assert_eq!(ididc, ididr, "idid mismatch step {kk} tout={tout}");
         assert_eq!(bits(tc), bits(tr), "t mismatch step {kk}: C={tc} R={tr}");
         for i in 0..neq as usize {
-            assert_eq!(bits(yc[i]), bits(yr[i]), "y[{i}] mismatch step {kk}: C={} R={}", yc[i], yr[i]);
+            assert_eq!(
+                bits(yc[i]),
+                bits(yr[i]),
+                "y[{i}] mismatch step {kk}: C={} R={}",
+                yc[i],
+                yr[i]
+            );
             assert_eq!(bits(ypc[i]), bits(ypr[i]), "yp[{i}] mismatch step {kk}");
         }
         for &s in &[11i32, 12, 13, 14, 15, 7, 8] {
-            assert_eq!(iworkc[(s - 1) as usize], iworkr[(s - 1) as usize], "iwork[{s}] mismatch step {kk}");
+            assert_eq!(
+                iworkc[(s - 1) as usize],
+                iworkr[(s - 1) as usize],
+                "iwork[{s}] mismatch step {kk}"
+            );
         }
         if ididc < 0 {
             break;
@@ -297,34 +624,120 @@ fn touts() -> Vec<f64> {
 
 #[test]
 fn dense_numerical() {
-    compare([0; 24], 2, 0, &[1.0, 0.0], &[0.0, -1.0], res_c, res_r, dummy_jac_c, solver::dummy_jacd, dummy_rt_c, solver::dummy_rt, dummy_psol_c, solver::dummy_psol, |_| {}, &touts());
+    compare(
+        [0; 24],
+        2,
+        0,
+        &[1.0, 0.0],
+        &[0.0, -1.0],
+        res_c,
+        res_r,
+        dummy_jac_c,
+        solver::dummy_jacd,
+        dummy_rt_c,
+        solver::dummy_rt,
+        dummy_psol_c,
+        solver::dummy_psol,
+        |_| {},
+        &touts(),
+    );
 }
 
 #[test]
 fn dense_analytic_jacobian() {
     let mut info = [0; 24];
     info[4] = 1; // INFO(5)=1
-    compare(info, 2, 0, &[1.0, 0.0], &[0.0, -1.0], res_c, res_r, jac_c, jac_r, dummy_rt_c, solver::dummy_rt, dummy_psol_c, solver::dummy_psol, |_| {}, &touts());
+    compare(
+        info,
+        2,
+        0,
+        &[1.0, 0.0],
+        &[0.0, -1.0],
+        res_c,
+        res_r,
+        jac_c,
+        jac_r,
+        dummy_rt_c,
+        solver::dummy_rt,
+        dummy_psol_c,
+        solver::dummy_psol,
+        |_| {},
+        &touts(),
+    );
 }
 
 #[test]
 fn banded_numerical() {
     let mut info = [0; 24];
     info[5] = 1; // INFO(6)=1
-    compare(info, 2, 0, &[1.0, 0.0], &[0.0, -1.0], res_c, res_r, dummy_jac_c, solver::dummy_jacd, dummy_rt_c, solver::dummy_rt, dummy_psol_c, solver::dummy_psol, |iw| { iw[0] = 1; iw[1] = 1; }, &touts());
+    compare(
+        info,
+        2,
+        0,
+        &[1.0, 0.0],
+        &[0.0, -1.0],
+        res_c,
+        res_r,
+        dummy_jac_c,
+        solver::dummy_jacd,
+        dummy_rt_c,
+        solver::dummy_rt,
+        dummy_psol_c,
+        solver::dummy_psol,
+        |iw| {
+            iw[0] = 1;
+            iw[1] = 1;
+        },
+        &touts(),
+    );
 }
 
 #[test]
 fn initial_condition_calc() {
     let mut info = [0; 24];
     info[10] = 1; // INFO(11)=1
-    let idid = compare(info, 2, 0, &[1.0, 0.0], &[5.0, 5.0], res_c, res_r, dummy_jac_c, solver::dummy_jacd, dummy_rt_c, solver::dummy_rt, dummy_psol_c, solver::dummy_psol, |iw| { iw[40] = 1; iw[41] = 1; }, &touts());
+    let idid = compare(
+        info,
+        2,
+        0,
+        &[1.0, 0.0],
+        &[5.0, 5.0],
+        res_c,
+        res_r,
+        dummy_jac_c,
+        solver::dummy_jacd,
+        dummy_rt_c,
+        solver::dummy_rt,
+        dummy_psol_c,
+        solver::dummy_psol,
+        |iw| {
+            iw[40] = 1;
+            iw[41] = 1;
+        },
+        &touts(),
+    );
     assert_eq!(idid, 3);
 }
 
 #[test]
 fn root_finding() {
-    let idid = compare([0; 24], 2, 1, &[1.0, 0.0], &[0.0, -1.0], res_c, res_r, dummy_jac_c, solver::dummy_jacd, rt_c, rt_r, dummy_psol_c, solver::dummy_psol, |_| {}, &touts());
+    let idid = compare(
+        [0; 24],
+        2,
+        1,
+        &[1.0, 0.0],
+        &[0.0, -1.0],
+        res_c,
+        res_r,
+        dummy_jac_c,
+        solver::dummy_jacd,
+        rt_c,
+        rt_r,
+        dummy_psol_c,
+        solver::dummy_psol,
+        |_| {},
+        &touts(),
+    );
     assert_eq!(idid, 5);
 }
 
@@ -336,7 +749,23 @@ fn root_finding() {
 fn krylov_numerical() {
     let mut info = [0; 24];
     info[11] = 1; // INFO(12)=1 -> Krylov method
-    compare(info, 2, 0, &[1.0, 0.0], &[0.0, -1.0], res_c, res_r, dummy_jac_c, solver::dummy_jacd, dummy_rt_c, solver::dummy_rt, id_psol_c, id_psol_r, |_| {}, &touts());
+    compare(
+        info,
+        2,
+        0,
+        &[1.0, 0.0],
+        &[0.0, -1.0],
+        res_c,
+        res_r,
+        dummy_jac_c,
+        solver::dummy_jacd,
+        dummy_rt_c,
+        solver::dummy_rt,
+        id_psol_c,
+        id_psol_r,
+        |_| {},
+        &touts(),
+    );
 }
 
 /// Krylov path combined with the initial-condition calculation (INFO(11)=1),
@@ -346,6 +775,25 @@ fn krylov_initial_condition_calc() {
     let mut info = [0; 24];
     info[10] = 1; // INFO(11)=1 -> compute consistent initial conditions
     info[11] = 1; // INFO(12)=1 -> Krylov method
-    let idid = compare(info, 2, 0, &[1.0, 0.0], &[5.0, 5.0], res_c, res_r, dummy_jac_c, solver::dummy_jacd, dummy_rt_c, solver::dummy_rt, id_psol_c, id_psol_r, |iw| { iw[40] = 1; iw[41] = 1; }, &touts());
+    let idid = compare(
+        info,
+        2,
+        0,
+        &[1.0, 0.0],
+        &[5.0, 5.0],
+        res_c,
+        res_r,
+        dummy_jac_c,
+        solver::dummy_jacd,
+        dummy_rt_c,
+        solver::dummy_rt,
+        id_psol_c,
+        id_psol_r,
+        |iw| {
+            iw[40] = 1;
+            iw[41] = 1;
+        },
+        &touts(),
+    );
     assert_eq!(idid, 3);
 }

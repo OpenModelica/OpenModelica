@@ -34,9 +34,14 @@ fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("wasi") {
         return;
     }
-    let Some(dir) = std::env::var_os("OMC_SUNDIALS_WASM_DIR") else { return };
+    let Some(dir) = std::env::var_os("OMC_SUNDIALS_WASM_DIR") else {
+        return;
+    };
     let lib = Path::new(&dir).join("lib");
-    let missing: Vec<_> = LIBS.iter().filter(|l| !lib.join(format!("lib{l}.a")).exists()).collect();
+    let missing: Vec<_> = LIBS
+        .iter()
+        .filter(|l| !lib.join(format!("lib{l}.a")).exists())
+        .collect();
     if !missing.is_empty() {
         panic!(
             "OMC_SUNDIALS_WASM_DIR={} is missing {missing:?}; the sundials wasm \

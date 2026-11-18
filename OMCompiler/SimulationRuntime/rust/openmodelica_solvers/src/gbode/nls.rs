@@ -23,7 +23,7 @@ use alloc::vec::Vec;
 use super::linsol::{GbLinSys, NlsPattern, OdePattern};
 use super::tableau::{TTransform, Tableau};
 use crate::gbode::math::{abs, pow, sqrt};
-use crate::{eval_caught, eval_caught_fast, Ode, Result};
+use crate::{Ode, Result, eval_caught, eval_caught_fast};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
@@ -60,7 +60,9 @@ enum At {
 /// `f(t, x)` for the system's unknowns: directly, or scattered into the full
 /// state vector at `at` with the fast entries read back.
 fn eval_at(fast: &mut Option<Fast>, ode: &mut dyn Ode, t: f64, at: At, x: &[f64], f: &mut [f64]) -> Result<bool> {
-    let Some(m) = fast.as_mut() else { return eval_caught(ode, t, x, f) };
+    let Some(m) = fast.as_mut() else {
+        return eval_caught(ode, t, x, f);
+    };
     let full = match at {
         At::Left => &mut m.left,
         At::Stage(j) => &mut m.stages[j],
@@ -144,8 +146,7 @@ impl GbNls {
             target_alpha = pow(safety_newt, 1.0 / order_quot);
         }
         let fnewt = (DBL_ABSORPTION / tol).max(alpha_maximal.min(target_alpha));
-        let eta_initial_damping =
-            gb_number("gbnls_internal_damping", 0.8, |v| (0.0..=1.0).contains(&v));
+        let eta_initial_damping = gb_number("gbnls_internal_damping", 0.8, |v| (0.0..=1.0).contains(&v));
         let theta_keep = gb_number("gbnls_internal_jackeep", -1.0, |v| v > 0.0);
         let theta_keep = if theta_keep > 0.0 {
             theta_keep
@@ -537,9 +538,7 @@ impl GbNls {
                 }
                 jac_called = true;
             }
-            if (jac_called || step_size != last_step_size)
-                && self.factor_dirk(step_size * t.a_at(stage, stage)) < 0
-            {
+            if (jac_called || step_size != last_step_size) && self.factor_dirk(step_size * t.a_at(stage, stage)) < 0 {
                 return Ok(Solved::Failed);
             }
         }
@@ -588,7 +587,16 @@ impl GbNls {
         if event_happened {
             self.etas[0] = f64::MAX;
         }
-        self.newton_scalar(ode, 0, At::Stage(0), stage_time, step_size * gamma, t.c[last], res_const, x)
+        self.newton_scalar(
+            ode,
+            0,
+            At::Stage(0),
+            stage_time,
+            step_size * gamma,
+            t.c[last],
+            res_const,
+            x,
+        )
     }
 
     /// The simplified Newton iteration of `gbInternalSolveNls_DIRK`, over the
@@ -615,7 +623,10 @@ impl GbNls {
             for i in 0..n {
                 self.res[i] = res_const[i] - c_scale * x[i] + fac * self.f[i];
             }
-            self.sys.as_mut().expect("solve before factor").solve_real(0, &mut self.res[..n]);
+            self.sys
+                .as_mut()
+                .expect("solve before factor")
+                .solve_real(0, &mut self.res[..n]);
             for i in 0..n {
                 x[i] -= self.res[i];
             }
@@ -631,8 +642,7 @@ impl GbNls {
                 }
                 self.etas[stage] = theta / (1.0 - theta);
             } else {
-                self.etas[stage] =
-                    pow(self.etas[stage].max(f64::EPSILON), self.eta_initial_damping);
+                self.etas[stage] = pow(self.etas[stage].max(f64::EPSILON), self.eta_initial_damping);
             }
             if !self.etas[stage].is_finite() || !nrm_delta.is_finite() {
                 return Ok(Solved::Failed);
@@ -642,8 +652,7 @@ impl GbNls {
                 return Ok(Solved::Ok);
             }
             if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
+                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta > self.fnewt)
             {
                 break;
             }
@@ -725,7 +734,14 @@ impl GbNls {
                     self.probe[i] = y_old[i] + self.tz[j * n + i];
                 }
                 let at = At::Stage(j + off);
-                if !eval_at(&mut self.fast, ode, st, at, &self.probe, &mut self.fw[j * n..(j + 1) * n])? {
+                if !eval_at(
+                    &mut self.fast,
+                    ode,
+                    st,
+                    at,
+                    &self.probe,
+                    &mut self.fw[j * n..(j + 1) * n],
+                )? {
                     return Ok(Solved::Failed);
                 }
             }
@@ -776,8 +792,7 @@ impl GbNls {
                 return self.finish_firk(ode, t, tr, step_size, y_old, z, k);
             }
             if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
+                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta > self.fnewt)
             {
                 break;
             }

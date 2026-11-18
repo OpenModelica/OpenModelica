@@ -32,19 +32,27 @@ impl Manifest {
         let doc = roxmltree::Document::parse(xml).map_err(|e| Error::Xml(e.to_string()))?;
         let root = doc.root_element();
         if root.tag_name().name() != "fmiDAEManifest" {
-            return Err(Error::Xml(format!("root element is <{}>, not <fmiDAEManifest>", root.tag_name().name())));
+            return Err(Error::Xml(format!(
+                "root element is <{}>, not <fmiDAEManifest>",
+                root.tag_name().name()
+            )));
         }
         let enable = child(root, "EnableDAEParameter")
             .ok_or_else(|| Error::Xml("<fmiDAEManifest> has no <EnableDAEParameter>".into()))?;
         let enable_vr = u32_attr(enable, "valueReference")
             .ok_or_else(|| Error::Xml("<EnableDAEParameter> has no valueReference".into()))?;
         let algebraic_variables = child(root, "AlgebraicVariables")
-            .map(|a| children(a, "AlgebraicVariable").filter_map(|v| u32_attr(v, "valueReference")).collect())
+            .map(|a| {
+                children(a, "AlgebraicVariable")
+                    .filter_map(|v| u32_attr(v, "valueReference"))
+                    .collect()
+            })
             .unwrap_or_default();
         let ms = child(root, "ModelStructure");
         let unknowns = |tag| ms.map(|ms| crate::parse::unknowns3(ms, tag)).unwrap_or_default();
         Ok(Manifest {
-            version: root.attribute(("http://fmi-standard.org/fmi-ls-manifest", "fmi-ls-version"))
+            version: root
+                .attribute(("http://fmi-standard.org/fmi-ls-manifest", "fmi-ls-version"))
                 .or_else(|| root.attribute("fmi-ls-version"))
                 .unwrap_or_default()
                 .to_string(),

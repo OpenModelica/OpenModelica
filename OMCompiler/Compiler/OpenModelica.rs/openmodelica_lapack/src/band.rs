@@ -10,15 +10,7 @@ use crate::{abs, lu};
 ///
 /// Gaussian elimination with partial pivoting over the two candidate rows, which
 /// is what LAPACK does; the fill-in it creates lives in `du2`.
-pub fn dgtsv(
-    n: usize,
-    nrhs: usize,
-    dl: &mut [f64],
-    d: &mut [f64],
-    du: &mut [f64],
-    b: &mut [f64],
-    ldb: usize,
-) -> i32 {
+pub fn dgtsv(n: usize, nrhs: usize, dl: &mut [f64], d: &mut [f64], du: &mut [f64], b: &mut [f64], ldb: usize) -> i32 {
     if n == 0 {
         return 0;
     }
@@ -70,9 +62,7 @@ pub fn dgtsv(
             b[n - 2 + j * ldb] = (at(b, ldb, n - 2, j) - du[n - 2] * x) / d[n - 2];
         }
         for i in (0..n.saturating_sub(2)).rev() {
-            let acc = at(b, ldb, i, j)
-                - du[i] * at(b, ldb, i + 1, j)
-                - du2[i] * at(b, ldb, i + 2, j);
+            let acc = at(b, ldb, i, j) - du[i] * at(b, ldb, i + 1, j) - du2[i] * at(b, ldb, i + 2, j);
             b[i + j * ldb] = acc / d[i];
         }
     }

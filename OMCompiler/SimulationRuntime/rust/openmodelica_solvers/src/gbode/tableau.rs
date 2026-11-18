@@ -183,7 +183,10 @@ impl Tableau {
             contractive_filter: None,
             two_step: None,
             two_step_weights: None,
-            active: Estimator { kind: ErrMethod::Default, order: 0 },
+            active: Estimator {
+                kind: ErrMethod::Default,
+                order: 0,
+            },
             error_method: ErrMethod::Default,
             gm_type: GmType::Explicit,
         }
@@ -248,7 +251,10 @@ pub(super) fn set_butcher(t: &mut Tableau, c: &[f64], a: &[f64], b: &[f64], bt: 
     t.t_transform = None;
     // C's `setEmbeddedErrorEstimator`.
     if t.bt.is_some() {
-        t.embedded = Some(Estimator { kind: ErrMethod::Embedded, order: t.order_b.min(t.order_bt) });
+        t.embedded = Some(Estimator {
+            kind: ErrMethod::Embedded,
+            order: t.order_b.min(t.order_bt),
+        });
     }
 }
 
@@ -270,8 +276,25 @@ pub(super) fn set_t_transform(
     rho: Option<&[f64]>,
 ) {
     set_t_transform_lower(
-        t, a_part_inv, tm, t_inv, gamma, alpha, beta, first_row_zero, last_column_zero, n_real,
-        n_cmplx, n_real, n_cmplx, None, None, None, None, phi, rho,
+        t,
+        a_part_inv,
+        tm,
+        t_inv,
+        gamma,
+        alpha,
+        beta,
+        first_row_zero,
+        last_column_zero,
+        n_real,
+        n_cmplx,
+        n_real,
+        n_cmplx,
+        None,
+        None,
+        None,
+        None,
+        phi,
+        rho,
     );
 }
 
@@ -358,14 +381,18 @@ pub(super) fn set_contractive_defect(t: &mut Tableau, dt_a: Option<&[f64]>, only
     }
     if only_filter {
         if t.bt.is_some() {
-            t.contractive_filter =
-                Some(Estimator { kind: ErrMethod::Filter, order: t.order_b.min(t.order_bt) });
+            t.contractive_filter = Some(Estimator {
+                kind: ErrMethod::Filter,
+                order: t.order_b.min(t.order_bt),
+            });
         }
         return;
     }
     t.contractive_dt_a = dt_a.map(|v| v[..t.n_stages].to_vec());
-    t.contractive_defect =
-        Some(Estimator { kind: ErrMethod::Contractive, order: t.n_stages as i32 });
+    t.contractive_defect = Some(Estimator {
+        kind: ErrMethod::Contractive,
+        order: t.n_stages as i32,
+    });
 }
 
 /// C's `setTwoStepErrorEstimator`, in the spirit of Gonzalez-Pinto et al.,
@@ -382,16 +409,14 @@ pub(super) fn set_contractive_defect(t: &mut Tableau, dt_a: Option<&[f64]>, only
 /// property of the estimate, which is scaled before the controller sees it.
 pub(super) fn set_two_step(t: &mut Tableau, order: i32, weights: TwoStepWeightsFn) {
     t.two_step_weights = Some(weights);
-    t.two_step = Some(Estimator { kind: ErrMethod::TwoStep, order });
+    t.two_step = Some(Estimator {
+        kind: ErrMethod::TwoStep,
+        order,
+    });
 }
 
 /// C's `setStageValuePredictors`.
-pub(super) fn set_svp(
-    t: &mut Tableau,
-    a_pred: &[f64],
-    types: &[SvpType],
-    dense_pred: Option<DenseOutputFn>,
-) {
+pub(super) fn set_svp(t: &mut Tableau, a_pred: &[f64], types: &[SvpType], dense_pred: Option<DenseOutputFn>) {
     t.svp = Some(Svp {
         a_predictor: a_pred[..t.n_stages * t.n_stages].to_vec(),
         types: types[..t.n_stages].to_vec(),
@@ -422,20 +447,12 @@ pub(super) fn two_step_rational_weights(
     let q = horner(&denominator[..denominator_size], r);
     for stage in 0..n_stages {
         d_old[stage] = horner(&numerators[stage][..numerator_sizes[stage]], r) / q;
-        g_new[stage] =
-            horner(&numerators[n_stages + stage][..numerator_sizes[n_stages + stage]], r) / q;
+        g_new[stage] = horner(&numerators[n_stages + stage][..numerator_sizes[n_stages + stage]], r) / q;
     }
 }
 
 /// C's `evaluateTwoStepMu`.
-pub(super) fn two_step_mu(
-    r: f64,
-    scale: f64,
-    num: &[f64],
-    num_size: usize,
-    den: &[f64],
-    den_size: usize,
-) -> f64 {
+pub(super) fn two_step_mu(r: f64, scale: f64, num: &[f64], num_size: usize, den: &[f64], den_size: usize) -> f64 {
     let n = horner(&num[..num_size], r);
     let d = horner(&den[..den_size], r);
     if !n.is_finite() || !d.is_finite() || abs(n) < 1e-300 {
@@ -486,17 +503,17 @@ pub(super) fn init(method: GbMethod, err_method: ErrMethod, n_states: usize) -> 
 /// C's `finalizeButcherTableauError`: pick the estimator `-gberr` asked for, after
 /// the NLS method is known (the contractive ones need the internal solver).
 /// Returns the fallback the two-step estimator uses when it has no history.
-pub(super) fn finalize_error(
-    t: &mut Tableau,
-    internal_nls: bool,
-) -> Result<Option<Estimator>, &'static str> {
+pub(super) fn finalize_error(t: &mut Tableau, internal_nls: bool) -> Result<Option<Estimator>, &'static str> {
     // C's `ensureContractiveFilterError`.
     if internal_nls
         && t.contractive_filter.is_none()
         && let Some(emb) = t.embedded
         && t.t_transform.as_ref().is_some_and(|tr| tr.n_real_eigenvalues > 0)
     {
-        t.contractive_filter = Some(Estimator { kind: ErrMethod::Filter, order: emb.order });
+        t.contractive_filter = Some(Estimator {
+            kind: ErrMethod::Filter,
+            order: emb.order,
+        });
     }
     let best_non_two_step = |t: &Tableau| -> Option<Estimator> {
         if internal_nls && t.contractive_defect.is_some() {
@@ -516,7 +533,10 @@ pub(super) fn finalize_error(
             }
         }
         ErrMethod::Richardson => {
-            t.active = Estimator { kind: ErrMethod::Richardson, order: t.order_b };
+            t.active = Estimator {
+                kind: ErrMethod::Richardson,
+                order: t.order_b,
+            };
             t.error_order = t.order_b;
             return Ok(None);
         }
@@ -542,7 +562,9 @@ pub(super) fn finalize_error(
     if selected.kind == ErrMethod::TwoStep {
         fallback = best_non_two_step(t);
         if fallback.is_none() {
-            return Err("Two-step error estimator requires an embedded, contractive defect, or contractive filter fallback.");
+            return Err(
+                "Two-step error estimator requires an embedded, contractive defect, or contractive filter fallback.",
+            );
         }
     }
     t.active = selected;

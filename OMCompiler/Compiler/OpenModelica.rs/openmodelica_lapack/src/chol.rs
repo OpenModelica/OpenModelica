@@ -52,15 +52,7 @@ pub fn dpotrf_ref(uplo: &str, n: usize, a: &mut [f64], lda: usize) -> i32 {
 
 /// Solve `A*X = B` from a `dpotrf` factorization (`DPOTRS`).
 #[allow(clippy::too_many_arguments)]
-pub fn dpotrs(
-    uplo: &str,
-    n: usize,
-    nrhs: usize,
-    a: &[f64],
-    lda: usize,
-    b: &mut [f64],
-    ldb: usize,
-) -> i32 {
+pub fn dpotrs(uplo: &str, n: usize, nrhs: usize, a: &[f64], lda: usize, b: &mut [f64], ldb: usize) -> i32 {
     #[cfg(feature = "faer-backend")]
     return crate::faer_backend::dpotrs(uplo, n, nrhs, a, lda, b, ldb);
     #[cfg(not(feature = "faer-backend"))]
@@ -69,15 +61,7 @@ pub fn dpotrs(
 
 /// The port of `DPOTRS`, kept as the faer-free fallback.
 #[allow(clippy::too_many_arguments)]
-pub fn dpotrs_ref(
-    uplo: &str,
-    n: usize,
-    nrhs: usize,
-    a: &[f64],
-    lda: usize,
-    b: &mut [f64],
-    ldb: usize,
-) -> i32 {
+pub fn dpotrs_ref(uplo: &str, n: usize, nrhs: usize, a: &[f64], lda: usize, b: &mut [f64], ldb: usize) -> i32 {
     if opt(uplo) == b'U' {
         crate::blas::dtrsm("L", "U", "T", "N", n, nrhs, 1.0, a, lda, b, ldb);
         crate::blas::dtrsm("L", "U", "N", "N", n, nrhs, 1.0, a, lda, b, ldb);

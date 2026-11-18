@@ -55,9 +55,7 @@ impl Reader {
         Ok(match (format, access) {
             (Format::Mat, _) => Reader::Mat(MatReader::open(path)?),
             (Format::ArrowJson, Access::PerVar) => Reader::ArrowJson(ArrowJsonReader::open(path)?),
-            (Format::ArrowJson, Access::Bulk | Access::List) => {
-                Reader::ArrowProjected(ProjectedArrow::open(path)?)
-            }
+            (Format::ArrowJson, Access::Bulk | Access::List) => Reader::ArrowProjected(ProjectedArrow::open(path)?),
             (Format::Arrow, _) => Reader::Arrow(crate::arrow_modelica::Reader::open(path)?),
             #[cfg(feature = "minarrow")]
             (Format::Minarrow, _) => Reader::Minarrow(crate::minarrow::Reader::open(path)?),
@@ -200,7 +198,11 @@ impl ProjectedArrow {
         }
         for _ in reader.map_while(Result::ok) {}
         let entries = entries.max(columns.len());
-        Ok(ProjectedArrow { path: path.to_owned(), columns, entries })
+        Ok(ProjectedArrow {
+            path: path.to_owned(),
+            columns,
+            entries,
+        })
     }
 
     fn n_variables(&self) -> usize {
@@ -267,7 +269,9 @@ fn variable_columns(json: &str) -> (Vec<(String, usize)>, usize) {
 /// can start cold. Best effort: it is advisory, and only clean pages go.
 pub fn evict(path: &str) {
     use std::os::unix::ffi::OsStrExt;
-    let Ok(c) = std::ffi::CString::new(std::path::Path::new(path).as_os_str().as_bytes()) else { return };
+    let Ok(c) = std::ffi::CString::new(std::path::Path::new(path).as_os_str().as_bytes()) else {
+        return;
+    };
     unsafe {
         let fd = libc::open(c.as_ptr(), libc::O_RDONLY);
         if fd < 0 {

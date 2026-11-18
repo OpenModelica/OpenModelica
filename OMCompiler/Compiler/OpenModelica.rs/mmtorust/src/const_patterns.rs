@@ -41,9 +41,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use openmodelica_ast::Absyn;
 
-use crate::hierarchy::{extract_default_exp, InstanceHierarchy, NameNode, NodeKind};
-use crate::typedexp::{cref_to_dotted, walk_dotted_with_imports};
 use crate::MM;
+use crate::hierarchy::{InstanceHierarchy, NameNode, NodeKind, extract_default_exp};
+use crate::typedexp::{cref_to_dotted, walk_dotted_with_imports};
 
 /// One constant-reference pattern found in a match case.
 pub struct Finding {
@@ -77,7 +77,11 @@ fn collect_functions<'a>(
     out: &mut Vec<(String, &'a NameNode<'a>)>,
 ) {
     for (name, node) in nodes {
-        let qname = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        let qname = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}.{name}")
+        };
         if let NodeKind::Class(c) = &node.kind
             && matches!(c.restriction, Absyn::Restriction::R_FUNCTION { .. })
         {
@@ -88,14 +92,17 @@ fn collect_functions<'a>(
 }
 
 /// Pull the declared component names out of a `localDecls` list.
-fn collect_local_names(
-    decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
-    out: &mut BTreeSet<String>,
-) {
+fn collect_local_names(decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>, out: &mut BTreeSet<String>) {
     for item in (&**decls).into_iter() {
-        let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
-        let Absyn::Element::ELEMENT { specification, .. } = &**element else { continue };
-        let Absyn::ElementSpec::COMPONENTS { components, .. } = &**specification else { continue };
+        let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
+            continue;
+        };
+        let Absyn::Element::ELEMENT { specification, .. } = &**element else {
+            continue;
+        };
+        let Absyn::ElementSpec::COMPONENTS { components, .. } = &**specification else {
+            continue;
+        };
         for comp_item in (&**components).into_iter() {
             let Absyn::ComponentItem { component, .. } = comp_item.as_ref();
             out.insert(component.name.to_string());
@@ -123,9 +130,15 @@ fn resolve_const(
         }
     }
     for cand in &candidates {
-        let Some((qname, node)) = walk_dotted_with_imports(cand, top_level, 0) else { continue };
-        let NodeKind::Component(comp) = &node.kind else { continue };
-        if comp.variability != Absyn::Variability::CONST { continue; }
+        let Some((qname, node)) = walk_dotted_with_imports(cand, top_level, 0) else {
+            continue;
+        };
+        let NodeKind::Component(comp) = &node.kind else {
+            continue;
+        };
+        if comp.variability != Absyn::Variability::CONST {
+            continue;
+        }
         return Some((qname.clone(), fold_const_value(&qname, top_level, 0)));
     }
     None
@@ -135,24 +148,24 @@ fn resolve_const(
 /// following chains of `constant X = Y` references. Mirrors the fold in
 /// `typedexp::const_ref_to_lit_pat`; returns `None` when the value is not a
 /// plain literal.
-fn fold_const_value(
-    dotted: &str,
-    top_level: &BTreeMap<String, NameNode<'_>>,
-    depth: u32,
-) -> Option<String> {
-    if depth > 16 { return None; }
+fn fold_const_value(dotted: &str, top_level: &BTreeMap<String, NameNode<'_>>, depth: u32) -> Option<String> {
+    if depth > 16 {
+        return None;
+    }
     let (_, node) = walk_dotted_with_imports(dotted, top_level, 0)?;
-    let NodeKind::Component(comp) = &node.kind else { return None };
-    if comp.variability != Absyn::Variability::CONST { return None; }
+    let NodeKind::Component(comp) = &node.kind else {
+        return None;
+    };
+    if comp.variability != Absyn::Variability::CONST {
+        return None;
+    }
     let default = extract_default_exp(&comp.modification)?;
     match default {
         Absyn::Exp::STRING { value } => Some(format!("{value:?}")),
         Absyn::Exp::INTEGER { value } => Some(value.to_string()),
         Absyn::Exp::BOOL { value } => Some(value.to_string()),
         Absyn::Exp::REAL { value } => Some(value.to_string()),
-        Absyn::Exp::CREF { componentRef } => {
-            fold_const_value(&cref_to_dotted(componentRef), top_level, depth + 1)
-        }
+        Absyn::Exp::CREF { componentRef } => fold_const_value(&cref_to_dotted(componentRef), top_level, depth + 1),
         _ => None,
     }
 }
@@ -167,13 +180,7 @@ struct Scan<'a> {
 impl<'a> Scan<'a> {
     /// Walk a pattern expression, recording any sub-pattern that resolves to a
     /// constant. `env` is the set of names bound in this case's scope.
-    fn walk_pattern(
-        &mut self,
-        pat: &Absyn::Exp,
-        env: &BTreeSet<String>,
-        info: &Absyn::Info,
-        kind: &'static str,
-    ) {
+    fn walk_pattern(&mut self, pat: &Absyn::Exp, env: &BTreeSet<String>, info: &Absyn::Info, kind: &'static str) {
         use Absyn::Exp::*;
         match pat {
             CREF { componentRef } => {
@@ -186,9 +193,7 @@ impl<'a> Scan<'a> {
                         if first == "_" || env.contains(first) {
                             return;
                         }
-                        if let Some((resolved, value)) =
-                            resolve_const(&written, &self.pkg_prefix, self.top_level)
-                        {
+                        if let Some((resolved, value)) = resolve_const(&written, &self.pkg_prefix, self.top_level) {
                             self.findings.push(Finding {
                                 function: self.function.clone(),
                                 file: info.fileName.to_string(),
@@ -280,7 +285,12 @@ impl<'a> Scan<'a> {
                     self.walk_class_part(classPart, &case_env);
                     self.walk_exp(result, &case_env);
                 }
-                Absyn::Case::ELSE { localDecls, classPart, result, .. } => {
+                Absyn::Case::ELSE {
+                    localDecls,
+                    classPart,
+                    result,
+                    ..
+                } => {
                     let mut case_env = match_env.clone();
                     collect_local_names(localDecls, &mut case_env);
                     self.walk_class_part(classPart, &case_env);
@@ -308,53 +318,89 @@ impl<'a> Scan<'a> {
                 self.walk_exp(assignComponent, env);
                 self.walk_exp(value, env);
             }
-            Absyn::Algorithm::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => {
+            Absyn::Algorithm::ALG_IF {
+                ifExp,
+                trueBranch,
+                elseIfAlgorithmBranch,
+                elseBranch,
+            } => {
                 self.walk_exp(ifExp, env);
-                for it in &**trueBranch { self.walk_algorithm_item(it, env); }
+                for it in &**trueBranch {
+                    self.walk_algorithm_item(it, env);
+                }
                 for (cond, branch) in &**elseIfAlgorithmBranch {
                     self.walk_exp(cond, env);
-                    for it in &**branch { self.walk_algorithm_item(it, env); }
+                    for it in &**branch {
+                        self.walk_algorithm_item(it, env);
+                    }
                 }
-                for it in &**elseBranch { self.walk_algorithm_item(it, env); }
+                for it in &**elseBranch {
+                    self.walk_algorithm_item(it, env);
+                }
             }
             Absyn::Algorithm::ALG_FOR { iterators, forBody }
-            | Absyn::Algorithm::ALG_PARFOR { iterators, parforBody: forBody } => {
+            | Absyn::Algorithm::ALG_PARFOR {
+                iterators,
+                parforBody: forBody,
+            } => {
                 // A loop iterator binds a fresh name visible in the body, so any
                 // nested-match pattern referencing it is a binder, not a constant.
                 let mut body_env = env.clone();
                 for it in &**iterators {
-                    let Absyn::ForIterator { name, range, guardExp, .. } = &**it;
+                    let Absyn::ForIterator {
+                        name, range, guardExp, ..
+                    } = &**it;
                     body_env.insert(name.to_string());
-                    if let Some(r) = range.as_deref() { self.walk_exp(r, env); }
-                    if let Some(g) = guardExp.as_deref() { self.walk_exp(g, env); }
+                    if let Some(r) = range.as_deref() {
+                        self.walk_exp(r, env);
+                    }
+                    if let Some(g) = guardExp.as_deref() {
+                        self.walk_exp(g, env);
+                    }
                 }
-                for it in &**forBody { self.walk_algorithm_item(it, &body_env); }
+                for it in &**forBody {
+                    self.walk_algorithm_item(it, &body_env);
+                }
             }
             Absyn::Algorithm::ALG_WHILE { boolExpr, whileBody } => {
                 self.walk_exp(boolExpr, env);
-                for it in &**whileBody { self.walk_algorithm_item(it, env); }
+                for it in &**whileBody {
+                    self.walk_algorithm_item(it, env);
+                }
             }
-            Absyn::Algorithm::ALG_WHEN_A { boolExpr, whenBody, elseWhenAlgorithmBranch } => {
+            Absyn::Algorithm::ALG_WHEN_A {
+                boolExpr,
+                whenBody,
+                elseWhenAlgorithmBranch,
+            } => {
                 self.walk_exp(boolExpr, env);
-                for it in &**whenBody { self.walk_algorithm_item(it, env); }
+                for it in &**whenBody {
+                    self.walk_algorithm_item(it, env);
+                }
                 for (e, branch) in &**elseWhenAlgorithmBranch {
                     self.walk_exp(e, env);
-                    for it in &**branch { self.walk_algorithm_item(it, env); }
+                    for it in &**branch {
+                        self.walk_algorithm_item(it, env);
+                    }
                 }
             }
             Absyn::Algorithm::ALG_NORETCALL { functionArgs, .. } => {
                 self.walk_function_args(functionArgs, env);
             }
             Absyn::Algorithm::ALG_FAILURE { equ } => {
-                for it in &**equ { self.walk_algorithm_item(it, env); }
+                for it in &**equ {
+                    self.walk_algorithm_item(it, env);
+                }
             }
             Absyn::Algorithm::ALG_TRY { body, elseBody } => {
-                for it in &**body { self.walk_algorithm_item(it, env); }
-                for it in &**elseBody { self.walk_algorithm_item(it, env); }
+                for it in &**body {
+                    self.walk_algorithm_item(it, env);
+                }
+                for it in &**elseBody {
+                    self.walk_algorithm_item(it, env);
+                }
             }
-            Absyn::Algorithm::ALG_RETURN
-            | Absyn::Algorithm::ALG_BREAK
-            | Absyn::Algorithm::ALG_CONTINUE => {}
+            Absyn::Algorithm::ALG_RETURN | Absyn::Algorithm::ALG_BREAK | Absyn::Algorithm::ALG_CONTINUE => {}
         }
     }
 
@@ -369,7 +415,12 @@ impl<'a> Scan<'a> {
                 self.walk_exp(exp2, env);
             }
             UNARY { exp, .. } | LUNARY { exp, .. } => self.walk_exp(exp, env),
-            IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => {
+            IFEXP {
+                ifExp,
+                trueBranch,
+                elseBranch,
+                elseIfBranch,
+            } => {
                 self.walk_exp(ifExp, env);
                 self.walk_exp(trueBranch, env);
                 self.walk_exp(elseBranch, env);
@@ -382,27 +433,41 @@ impl<'a> Scan<'a> {
                 self.walk_function_args(functionArgs, env);
             }
             ARRAY { arrayExp } | LIST { exps: arrayExp } => {
-                for e in &**arrayExp { self.walk_exp(e, env); }
+                for e in &**arrayExp {
+                    self.walk_exp(e, env);
+                }
             }
             MATRIX { matrix } => {
                 for row in &**matrix {
-                    for e in &**row { self.walk_exp(e, env); }
+                    for e in &**row {
+                        self.walk_exp(e, env);
+                    }
                 }
             }
             RANGE { start, step, stop } => {
                 self.walk_exp(start, env);
-                if let Some(s) = step.as_deref() { self.walk_exp(s, env); }
+                if let Some(s) = step.as_deref() {
+                    self.walk_exp(s, env);
+                }
                 self.walk_exp(stop, env);
             }
             TUPLE { expressions } => {
-                for e in &**expressions { self.walk_exp(e, env); }
+                for e in &**expressions {
+                    self.walk_exp(e, env);
+                }
             }
             AS { exp, .. } => self.walk_exp(exp, env),
             CONS { head, rest } => {
                 self.walk_exp(head, env);
                 self.walk_exp(rest, env);
             }
-            MATCHEXP { matchTy, inputExp, localDecls, cases, .. } => {
+            MATCHEXP {
+                matchTy,
+                inputExp,
+                localDecls,
+                cases,
+                ..
+            } => {
                 self.process_match(matchTy, localDecls, inputExp, cases, env);
             }
             DOT { exp, index } => {
@@ -417,7 +482,9 @@ impl<'a> Scan<'a> {
     fn walk_function_args(&mut self, fa: &Absyn::FunctionArgs, env: &BTreeSet<String>) {
         match fa {
             Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } => {
-                for e in &**args { self.walk_exp(e, env); }
+                for e in &**args {
+                    self.walk_exp(e, env);
+                }
                 for na in &**argNames {
                     let Absyn::NamedArg { argValue, .. } = &**na;
                     self.walk_exp(argValue, env);
@@ -427,8 +494,12 @@ impl<'a> Scan<'a> {
                 self.walk_exp(exp, env);
                 for it in &**iterators {
                     let Absyn::ForIterator { range, guardExp, .. } = &**it;
-                    if let Some(r) = range.as_deref() { self.walk_exp(r, env); }
-                    if let Some(g) = guardExp.as_deref() { self.walk_exp(g, env); }
+                    if let Some(r) = range.as_deref() {
+                        self.walk_exp(r, env);
+                    }
+                    if let Some(g) = guardExp.as_deref() {
+                        self.walk_exp(g, env);
+                    }
                 }
             }
         }
@@ -474,7 +545,10 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
             .then(a.written.cmp(&b.written))
     });
 
-    Report { findings, functions_scanned }
+    Report {
+        findings,
+        functions_scanned,
+    }
 }
 
 pub fn print_report(report: &Report) {
@@ -497,15 +571,24 @@ pub fn print_report(report: &Report) {
 
     // The not-foldable findings are the actionable ones, so lead with them.
     let mut groups: [(&str, Vec<&Finding>); 2] = [
-        ("NOT foldable to a literal (constructor/binder path — likely wrong)", Vec::new()),
+        (
+            "NOT foldable to a literal (constructor/binder path — likely wrong)",
+            Vec::new(),
+        ),
         ("foldable to a literal (lowered to a value-equality match)", Vec::new()),
     ];
     for f in &report.findings {
-        if f.value.is_some() { groups[1].1.push(f); } else { groups[0].1.push(f); }
+        if f.value.is_some() {
+            groups[1].1.push(f);
+        } else {
+            groups[0].1.push(f);
+        }
     }
 
     for (heading, items) in &groups {
-        if items.is_empty() { continue; }
+        if items.is_empty() {
+            continue;
+        }
         println!("── {heading} ──");
         for f in items {
             let value = match &f.value {

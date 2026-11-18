@@ -44,10 +44,7 @@ mod native {
     }
 
     impl Driver {
-        pub fn spawn(
-            mut backend: Box<dyn OmcBackend + Send>,
-            repaint: impl Fn() + Send + 'static,
-        ) -> Self {
+        pub fn spawn(mut backend: Box<dyn OmcBackend + Send>, repaint: impl Fn() + Send + 'static) -> Self {
             let (tx_in, rx_in) = channel::<String>();
             let (tx_out, rx_out) = channel::<DriverMsg>();
             thread::Builder::new()
@@ -71,10 +68,7 @@ mod native {
                     }
                 })
                 .expect("failed to spawn omc worker thread");
-            Driver {
-                tx: tx_in,
-                rx: rx_out,
-            }
+            Driver { tx: tx_in, rx: rx_out }
         }
 
         pub fn submit(&mut self, cmd: String) {
@@ -161,18 +155,14 @@ mod wasm {
     }
 
     impl Driver {
-        pub fn spawn(
-            _backend: Box<dyn OmcBackend + Send>,
-            repaint: impl Fn() + Send + 'static,
-        ) -> Self {
+        pub fn spawn(_backend: Box<dyn OmcBackend + Send>, repaint: impl Fn() + Send + 'static) -> Self {
             // omc lives in a dedicated Web Worker, so the passed-in backend is
             // unused on wasm (it is an inert placeholder; see omshell_omc). The
             // worker script is staged at the web root next to the omc module it
             // imports, so the URL is relative to the GUI page.
             let opts = WorkerOptions::new();
             opts.set_type(WorkerType::Module);
-            let worker = Worker::new_with_options("omc_worker.js", &opts)
-                .expect("failed to spawn omc Web Worker");
+            let worker = Worker::new_with_options("omc_worker.js", &opts).expect("failed to spawn omc Web Worker");
 
             let queue: Rc<RefCell<VecDeque<DriverMsg>>> = Rc::new(RefCell::new(VecDeque::new()));
             let q = queue.clone();

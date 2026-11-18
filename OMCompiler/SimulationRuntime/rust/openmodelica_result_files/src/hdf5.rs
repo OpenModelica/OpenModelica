@@ -10,8 +10,8 @@
 
 #![allow(non_snake_case)]
 
-use openmodelica_hdf5_result::{mtsf, sdf, VarTy};
-use openmodelica_mat_reader::{find_closest_points, find_var_in, iws_cmp, MatVariable, ResultTable};
+use openmodelica_hdf5_result::{VarTy, mtsf, sdf};
+use openmodelica_mat_reader::{MatVariable, ResultTable, find_closest_points, find_var_in, iws_cmp};
 
 /// `(unit, displayUnit, type, relativeQuantity)` per `allInfo` entry.
 type VarMeta = (String, String, &'static str, bool);
@@ -34,7 +34,9 @@ struct Cache {
 
 impl Cache {
     fn with_len(n: usize) -> Cache {
-        Cache { cols: (0..n).map(|_| None).collect() }
+        Cache {
+            cols: (0..n).map(|_| None).collect(),
+        }
     }
 }
 
@@ -73,15 +75,35 @@ impl SdfReader {
                     (false, columns.len() as i32)
                 }
             };
-            allInfo.push(MatVariable { name: v.name.clone(), descr: v.comment.clone(), isParam, index });
-            meta.push((v.unit.clone(), v.display_unit.clone(), type_name(v.ty), v.relative_quantity));
+            allInfo.push(MatVariable {
+                name: v.name.clone(),
+                descr: v.comment.clone(),
+                isParam,
+                index,
+            });
+            meta.push((
+                v.unit.clone(),
+                v.display_unit.clone(),
+                type_name(v.ty),
+                v.relative_quantity,
+            ));
         }
         sort_by_name(&mut allInfo, &mut meta);
 
         let nvar = columns.len();
         let nparam = params.len();
         let nrows = file.n_rows;
-        Ok(SdfReader { file, allInfo, params, nrows, nvar, nparam, columns, meta, cache: Cache::with_len(nvar) })
+        Ok(SdfReader {
+            file,
+            allInfo,
+            params,
+            nrows,
+            nvar,
+            nparam,
+            columns,
+            meta,
+            cache: Cache::with_len(nvar),
+        })
     }
 
     fn column(&mut self, col: usize) -> Option<&[f64]> {
@@ -137,7 +159,11 @@ impl MtsfReader {
             let key = (v.matrix, v.column);
             let index = if is_fixed {
                 let slot = *fixed.entry(key).or_insert_with(|| {
-                    let value = fixed_rows.get(&v.matrix).and_then(|r| r.get(v.column)).copied().unwrap_or(0.0);
+                    let value = fixed_rows
+                        .get(&v.matrix)
+                        .and_then(|r| r.get(v.column))
+                        .copied()
+                        .unwrap_or(0.0);
                     params.push(value);
                     params.len() as i32
                 });
@@ -149,15 +175,35 @@ impl MtsfReader {
                 });
                 if v.negated { -slot } else { slot }
             };
-            allInfo.push(MatVariable { name: v.name.clone(), descr: v.comment.clone(), isParam: is_fixed, index });
-            meta.push((v.unit.clone(), v.display_unit.clone(), type_name(v.ty), v.relative_quantity));
+            allInfo.push(MatVariable {
+                name: v.name.clone(),
+                descr: v.comment.clone(),
+                isParam: is_fixed,
+                index,
+            });
+            meta.push((
+                v.unit.clone(),
+                v.display_unit.clone(),
+                type_name(v.ty),
+                v.relative_quantity,
+            ));
         }
         sort_by_name(&mut allInfo, &mut meta);
 
         let nvar = columns.len();
         let nparam = params.len();
         let nrows = file.n_rows;
-        Ok(MtsfReader { file, allInfo, params, nrows, nvar, nparam, columns, meta, cache: Cache::with_len(nvar) })
+        Ok(MtsfReader {
+            file,
+            allInfo,
+            params,
+            nrows,
+            nvar,
+            nparam,
+            columns,
+            meta,
+            cache: Cache::with_len(nvar),
+        })
     }
 
     fn column(&mut self, col: usize) -> Option<&[f64]> {
@@ -188,7 +234,9 @@ impl MtsfReader {
             let block = match blocks.entry(*matrix) {
                 std::collections::hash_map::Entry::Occupied(e) => e.into_mut(),
                 std::collections::hash_map::Entry::Vacant(e) => {
-                    let Ok(b) = self.file.read_matrix(*matrix) else { continue };
+                    let Ok(b) = self.file.read_matrix(*matrix) else {
+                        continue;
+                    };
                     e.insert(b)
                 }
             };
@@ -280,7 +328,9 @@ macro_rules! result_table {
                 true
             }
             fn unit(&self, idx: usize) -> (&str, &str) {
-                self.meta.get(idx).map_or(("", ""), |m| (m.0.as_str(), m.1.as_str()))
+                self.meta
+                    .get(idx)
+                    .map_or(("", ""), |m| (m.0.as_str(), m.1.as_str()))
             }
             fn var_type(&self, idx: usize) -> &str {
                 self.meta.get(idx).map_or("Real", |m| m.2)

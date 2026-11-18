@@ -101,9 +101,9 @@ fn record_size(code: &str) -> Result<u32, String> {
     let body = code.trim_start_matches('{').trim_end_matches('}');
     let (mut off, mut align) = (0u32, 1u32);
     for member in body.split(';').skip(1) {
-        let (name, ty) = member.split_once(':').ok_or_else(|| {
-            format!("native externals: record member `{member}` has no type in `{code}`")
-        })?;
+        let (name, ty) = member
+            .split_once(':')
+            .ok_or_else(|| format!("native externals: record member `{member}` has no type in `{code}`"))?;
         let size = match ty {
             "R" => 8,
             "I" | "B" => 4,
@@ -111,7 +111,7 @@ fn record_size(code: &str) -> Result<u32, String> {
                 return Err(format!(
                     "native externals: record member `{name}` of type `{ty}` cannot be copied to C \
                      - only Real, Integer and Boolean members can"
-                ))
+                ));
             }
         };
         off = off.next_multiple_of(size) + size;
@@ -133,7 +133,11 @@ fn record_size(code: &str) -> Result<u32, String> {
 /// each argument, `*` marking an `_Out_`. Types are the wasm-jit `SigTy` codes.
 pub fn parse(text: &str) -> Result<Table, String> {
     let mut t = Table::default();
-    for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
         let mut words = line.split_whitespace();
         match words.next() {
             Some("lib") => t.libs.push(words.collect::<Vec<_>>().join(" ")),
@@ -151,9 +155,17 @@ pub fn parse(text: &str) -> Result<Table, String> {
                         Some(c) => (true, c),
                         None => (false, w),
                     };
-                    args.push(Arg { ty: parse_ty(code)?, out });
+                    args.push(Arg {
+                        ty: parse_ty(code)?,
+                        out,
+                    });
                 }
-                t.fns.push(Sig { name, fortran, args, ret });
+                t.fns.push(Sig {
+                    name,
+                    fortran,
+                    args,
+                    ret,
+                });
             }
             Some(other) => return Err(format!("native externals: unknown line `{other}`")),
             None => {}
@@ -228,7 +240,11 @@ fn read_array(g: &dyn Guest, h: u32, elem: Scalar, fortran: bool) -> Vec<u8> {
     }
     let esz = Ty::elem_size(elem);
     let bytes = g.read(g.array_data(h), g.array_total(h) * esz);
-    if fortran { reorder(&bytes, &g.array_dims(h), esz as usize, true) } else { bytes }
+    if fortran {
+        reorder(&bytes, &g.array_dims(h), esz as usize, true)
+    } else {
+        bytes
+    }
 }
 
 /// The host's argument list, read out of the frame.
@@ -247,7 +263,11 @@ pub fn gather(sig: &Sig, frame: u32, g: &dyn Guest) -> Result<Vec<Value>, String
             Ty::Ptr => Value::Handle(g.load_i32(slot) as u32),
             Ty::Str => {
                 let h = g.load_i32(slot) as u32;
-                let bytes = if h == 0 { Vec::new() } else { g.read(g.str_data(h), g.str_len(h)) };
+                let bytes = if h == 0 {
+                    Vec::new()
+                } else {
+                    g.read(g.str_data(h), g.str_len(h))
+                };
                 Value::Str(String::from_utf8_lossy(&bytes).into_owned())
             }
             Ty::Array(elem) => Value::Bytes(read_array(g, g.load_i32(slot) as u32, *elem, sig.fortran)),
@@ -264,9 +284,19 @@ pub fn gather(sig: &Sig, frame: u32, g: &dyn Guest) -> Result<Vec<Value>, String
 /// Put the host's results where the kernel reads them: return value, `_Out_`
 /// and Fortran cells, `_Out_` array elements. A `char*` the kernel copies out of
 /// is allocated here and listed in `scratch` for the caller to free at the next call.
-pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scratch: &mut Vec<u32>) -> Result<(), String> {
+pub fn scatter(
+    sig: &Sig,
+    frame: u32,
+    results: &[Value],
+    g: &mut dyn Guest,
+    scratch: &mut Vec<u32>,
+) -> Result<(), String> {
     let mut results = results.iter();
-    let mut next = |what: &str| results.next().ok_or_else(|| format!("native externals: `{}` returned no {what}", sig.name));
+    let mut next = |what: &str| {
+        results
+            .next()
+            .ok_or_else(|| format!("native externals: `{}` returned no {what}", sig.name))
+    };
     let cstr = |g: &mut dyn Guest, s: &str, scratch: &mut Vec<u32>| -> u32 {
         let p = g.alloc(s.len() as u32 + 1);
         g.write(p, s.as_bytes());
@@ -283,7 +313,12 @@ pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scra
                 let p = cstr(g, s, scratch);
                 g.store_i32(at, p as i32);
             }
-            _ => return Err(format!("native externals: `{}` returned a value of the wrong type", sig.name)),
+            _ => {
+                return Err(format!(
+                    "native externals: `{}` returned a value of the wrong type",
+                    sig.name
+                ));
+            }
         }
         Ok(())
     };
@@ -312,7 +347,10 @@ pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scra
             _ => continue,
         };
         let Value::Bytes(bytes) = next(&format!("output {what}"))? else {
-            return Err(format!("native externals: `{}` returned a non-{what} for an output {what}", sig.name));
+            return Err(format!(
+                "native externals: `{}` returned a non-{what} for an output {what}",
+                sig.name
+            ));
         };
         if bytes.len() as u32 != len {
             return Err(format!(
@@ -324,7 +362,10 @@ pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scra
         match &a.ty {
             Ty::Array(elem) if sig.fortran => {
                 let h = g.load_i32(frame + 8 * j as u32) as u32;
-                g.write(at, &reorder(bytes, &g.array_dims(h), Ty::elem_size(*elem) as usize, false));
+                g.write(
+                    at,
+                    &reorder(bytes, &g.array_dims(h), Ty::elem_size(*elem) as usize, false),
+                );
             }
             _ => g.write(at, bytes),
         }
@@ -406,7 +447,9 @@ mod tests {
             h + ((16 + 4 * self.load_i32(h + 8) as u32 + 7) & !7)
         }
         fn array_dims(&self, h: u32) -> Vec<u32> {
-            (0..self.load_i32(h + 8) as u32).map(|k| self.load_i32(h + 16 + 4 * k) as u32).collect()
+            (0..self.load_i32(h + 8) as u32)
+                .map(|k| self.load_i32(h + 16 + 4 * k) as u32)
+                .collect()
         }
         fn alloc(&mut self, len: u32) -> u32 {
             let p = self.next + 1024;
@@ -418,7 +461,8 @@ mod tests {
 
     #[test]
     fn table_round_trip() {
-        let t = parse("# libs\nlib libfoo.so\nextlib libpython3.8.so\nfn wa_split C - R *R *I\nfn greet C S S I [R\n").unwrap();
+        let t = parse("# libs\nlib libfoo.so\nextlib libpython3.8.so\nfn wa_split C - R *R *I\nfn greet C S S I [R\n")
+            .unwrap();
         assert_eq!(t.system_libs, ["libpython3.8.so"]);
         assert_eq!(t.libs, vec!["libfoo.so".to_string()]);
         assert_eq!(t.fns.len(), 2);
@@ -451,7 +495,13 @@ mod tests {
         m.store_i32(frame + 16, cell_i as i32);
         m.store_i32(frame + 24, arr as i32);
         let args = gather(&sig, frame, &m).unwrap();
-        assert_eq!(args, vec![Value::Str("hi".into()), Value::Bytes([1.0f64, 2.0].iter().flat_map(|x| x.to_le_bytes()).collect())]);
+        assert_eq!(
+            args,
+            vec![
+                Value::Str("hi".into()),
+                Value::Bytes([1.0f64, 2.0].iter().flat_map(|x| x.to_le_bytes()).collect())
+            ]
+        );
         let mut scratch = Vec::new();
         let results = [
             Value::Str("out".into()),
@@ -485,14 +535,30 @@ mod tests {
         m.store_i32(frame + 8, a as i32);
         m.store_i32(frame + 16, info as i32);
         let args = gather(&sig, frame, &m).unwrap();
-        let col: Vec<u8> = [1.0f64, 4.0, 2.0, 5.0, 3.0, 6.0].iter().flat_map(|x| x.to_le_bytes()).collect();
+        let col: Vec<u8> = [1.0f64, 4.0, 2.0, 5.0, 3.0, 6.0]
+            .iter()
+            .flat_map(|x| x.to_le_bytes())
+            .collect();
         assert_eq!(args, vec![Value::Int(3), Value::Bytes(col.clone()), Value::Int(0)]);
         let mut scratch = Vec::new();
-        let back: Vec<u8> = [10.0f64, 40.0, 20.0, 50.0, 30.0, 60.0].iter().flat_map(|x| x.to_le_bytes()).collect();
-        scatter(&sig, frame, &[Value::Int(3), Value::Int(7), Value::Bytes(back)], &mut m, &mut scratch).unwrap();
+        let back: Vec<u8> = [10.0f64, 40.0, 20.0, 50.0, 30.0, 60.0]
+            .iter()
+            .flat_map(|x| x.to_le_bytes())
+            .collect();
+        scatter(
+            &sig,
+            frame,
+            &[Value::Int(3), Value::Int(7), Value::Bytes(back)],
+            &mut m,
+            &mut scratch,
+        )
+        .unwrap();
         assert_eq!(m.load_i32(info), 7);
         let d = m.array_data(a);
-        assert_eq!((0..6).map(|k| m.load_f64(d + 8 * k)).collect::<Vec<_>>(), [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]);
+        assert_eq!(
+            (0..6).map(|k| m.load_f64(d + 8 * k)).collect::<Vec<_>>(),
+            [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+        );
         assert!(scratch.is_empty());
     }
 }

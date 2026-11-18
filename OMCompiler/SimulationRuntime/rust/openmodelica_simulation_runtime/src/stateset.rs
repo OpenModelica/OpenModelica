@@ -85,7 +85,11 @@ pub fn initialize_state_sets(data: *mut DATA, thread_data: *mut threadData_t) {
 fn a_base(data: *mut DATA, set: &STATE_SET_DATA) -> usize {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &*(*data).simulationInfo };
-    let a = array_index(set.A, md.integerVarsData.cast(), core::mem::size_of::<STATIC_INTEGER_DATA>());
+    let a = array_index(
+        set.A,
+        md.integerVarsData.cast(),
+        core::mem::size_of::<STATIC_INTEGER_DATA>(),
+    );
     unsafe { *si.integerVarsIndex.add(a) }
 }
 

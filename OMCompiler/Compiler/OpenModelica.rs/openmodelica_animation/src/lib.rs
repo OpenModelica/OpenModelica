@@ -10,8 +10,8 @@ pub mod dxf;
 mod math;
 mod scene;
 
-use math::{add, cross, dot, len, mat3_mul_mat3, normalize, scale, v3_mul_mat3, Mat3, Vec3};
-pub use dxf::{parse_dxf, CadMesh};
+pub use dxf::{CadMesh, parse_dxf};
+use math::{Mat3, Vec3, add, cross, dot, len, mat3_mul_mat3, normalize, scale, v3_mul_mat3};
 pub use scene::{Attr, Scene, Shape, ShapeKind};
 
 /// Looks up a result variable's value at time `t`. Values are expected already
@@ -64,14 +64,7 @@ fn fix_directions(l_dir: Vec3, w_dir: Vec3) -> Directions {
 
 /// OMEdit `rotateModelica2OSG`: base-frame (T, r) plus shape offset/directions
 /// → the shape's world rotation and position.
-fn rotate_modelica_to_osg(
-    t: Mat3,
-    r: Vec3,
-    r_shape: Vec3,
-    l_dir: Vec3,
-    w_dir: Vec3,
-    cad: bool,
-) -> (Mat3, Vec3) {
+fn rotate_modelica_to_osg(t: Mat3, r: Vec3, r_shape: Vec3, l_dir: Vec3, w_dir: Vec3, cad: bool) -> (Mat3, Vec3) {
     let d = fix_directions(l_dir, w_dir);
     let h = cross(d.l, d.w);
     let t0: Mat3 = if cad {

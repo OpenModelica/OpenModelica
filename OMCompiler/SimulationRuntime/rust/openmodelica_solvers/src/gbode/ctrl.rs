@@ -121,15 +121,11 @@ pub(super) fn generic_controller_with(
         CtrlMethod::Const => 1.0,
         CtrlMethod::I => pow(1. / err_n, 1. / k),
         CtrlMethod::Pi33 | CtrlMethod::Pi34 | CtrlMethod::Pi42 => pi_controller(err, err_order, m),
-        CtrlMethod::PidH312 | CtrlMethod::PidSoederlind | CtrlMethod::PidStiff => {
-            pid_controller(err, err_order, m)
-        }
+        CtrlMethod::PidH312 | CtrlMethod::PidSoederlind | CtrlMethod::PidStiff => pid_controller(err, err_order, m),
         CtrlMethod::PiPc | CtrlMethod::PiPcHybrid | CtrlMethod::PiH211 | CtrlMethod::PiH0211 => {
             predictive_pi(err, step, err_order, m)
         }
-        CtrlMethod::PidH0312 | CtrlMethod::PidH0321 | CtrlMethod::Ppid => {
-            predictive_pid(err, step, err_order, m)
-        }
+        CtrlMethod::PidH0312 | CtrlMethod::PidH0321 | CtrlMethod::Ppid => predictive_pid(err, step, err_order, m),
     };
     if fhr && h_n1 > DBL_EPSILON {
         let gamma = compute_gamma(err_n, err_n1, h_n, h_n1, 0.1);

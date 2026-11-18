@@ -2,7 +2,7 @@
 
 use crate::dqds::dlasq1;
 use crate::hqr::{dlartg, drot};
-use crate::{abs, opt, sqrt, EPS, SAFMIN};
+use crate::{EPS, SAFMIN, abs, opt, sqrt};
 
 /// `DLAS2`: the singular values `(ssmin, ssmax)` of the 2x2 upper triangular
 /// matrix `[f g; 0 h]`.
@@ -96,7 +96,11 @@ pub(crate) fn dlasv2(f: f64, g: f64, h: f64) -> (f64, f64, f64, f64, f64, f64) {
         slt = (ht / ft) * srt / a;
     }
 
-    let (csl, snl, csr, snr) = if swap { (srt, crt, slt, clt) } else { (clt, slt, crt, srt) };
+    let (csl, snl, csr, snr) = if swap {
+        (srt, crt, slt, clt)
+    } else {
+        (clt, slt, crt, srt)
+    };
     // The largest entry decides the sign the singular values must carry.
     let tsign = match pmax {
         1 => sign(1.0, csr) * sign(1.0, csl) * sign(1.0, f),
@@ -410,8 +414,7 @@ pub fn dbdsqr(
                 }
             }
         } else if idir == 1 {
-            let mut f =
-                (abs(d[ll - 1]) - shift) * (sign(1.0, d[ll - 1]) + shift / d[ll - 1]);
+            let mut f = (abs(d[ll - 1]) - shift) * (sign(1.0, d[ll - 1]) + shift / d[ll - 1]);
             let mut g = e[ll - 1];
             for i in ll..m {
                 let (cosr, sinr, r) = dlartg(f, g);

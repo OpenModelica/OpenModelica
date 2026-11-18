@@ -1,13 +1,13 @@
 //! `referenceEq` (free fn + trait) and the `ReferenceEq`/`MetaCmp`
 //! derive re-exports; plus `reference{Pointer,Debug}String`.
 
-use std::sync::Arc;
-use std::rc::Rc;
-use crate::Result;
-use arcstr::{ArcStr, format};
 use crate::Real;
-use crate::list::List;
+use crate::Result;
 use crate::SourceInfo;
+use crate::list::List;
+use arcstr::{ArcStr, format};
+use std::rc::Rc;
+use std::sync::Arc;
 
 /// Reference equality check.
 /// In Rust, this checks pointer equality for reference-counted types.
@@ -73,23 +73,33 @@ pub trait ReferenceEq {
 }
 
 impl ReferenceEq for i32 {
-    fn reference_eq(&self, other: &Self) -> bool { self == other }
+    fn reference_eq(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 impl ReferenceEq for i64 {
-    fn reference_eq(&self, other: &Self) -> bool { self == other }
+    fn reference_eq(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 impl ReferenceEq for bool {
-    fn reference_eq(&self, other: &Self) -> bool { self == other }
+    fn reference_eq(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 impl ReferenceEq for () {
-    fn reference_eq(&self, _other: &Self) -> bool { true }
+    fn reference_eq(&self, _other: &Self) -> bool {
+        true
+    }
 }
 /// MM `Real`. MMC boxes reals, so its referenceEq can distinguish equal
 /// values in distinct boxes; an unboxed `f64` cannot. Value equality is the
 /// observational-identity choice (`OrderedFloat` makes NaN equal itself,
 /// so the relation stays reflexive like pointer identity is).
 impl ReferenceEq for Real {
-    fn reference_eq(&self, other: &Self) -> bool { self == other }
+    fn reference_eq(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 /// MM `String`: identity of the shared `str` allocation, like the
 /// `referenceEq(&*s1, &*s2)` the concrete lowering emits.
@@ -101,12 +111,16 @@ impl ReferenceEq for ArcStr {
 /// Shared handles: allocation identity. Covers
 /// Arc-boxed uniontype values, and `Arc<dyn Fn(...)>` callbacks (`?Sized`).
 impl<T: ?Sized> ReferenceEq for Arc<T> {
-    fn reference_eq(&self, other: &Self) -> bool { Arc::ptr_eq(self, other) }
+    fn reference_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(self, other)
+    }
 }
 /// `Rc` handles: covers `Array<T>` (= `Rc<RefCell<Vec<T>>>`), whose MM
 /// semantics are reference (aliasing) semantics — identity of the storage.
 impl<T: ?Sized> ReferenceEq for Rc<T> {
-    fn reference_eq(&self, other: &Self) -> bool { Rc::ptr_eq(self, other) }
+    fn reference_eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(self, other)
+    }
 }
 /// `NONE()` is a runtime singleton in MMC, so two NONEs are identical;
 /// SOME payloads compare recursively (same shape the concrete lowering

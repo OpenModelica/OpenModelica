@@ -13,9 +13,9 @@
 //!
 //! See `--help` for the knobs, and README.md for what each column means.
 
+mod arrow_modelica;
 mod bench;
 mod dataset;
-mod arrow_modelica;
 mod html;
 #[cfg(feature = "minarrow")]
 mod minarrow;
@@ -118,7 +118,10 @@ fn main() {
         }
     };
     let out = if cfg.out.is_empty() {
-        std::env::temp_dir().join("omc_result_bench").to_string_lossy().into_owned()
+        std::env::temp_dir()
+            .join("omc_result_bench")
+            .to_string_lossy()
+            .into_owned()
     } else {
         cfg.out.clone()
     };
@@ -154,9 +157,17 @@ fn main() {
         // grows, which is what separates the fixed cost from the per-row cost
         // by measurement rather than by construction.
         for &scale in &cfg.scales {
-            let data = if scale > 1 { source.with_rows_scaled(scale) } else { source.clone() };
+            let data = if scale > 1 {
+                source.with_rows_scaled(scale)
+            } else {
+                source.clone()
+            };
             if scale > 1 {
-                eprintln!("  x{scale}: {} rows ({:.1} MB payload)", data.n_rows, data.payload_bytes() as f64 / 1e6);
+                eprintln!(
+                    "  x{scale}: {} rows ({:.1} MB payload)",
+                    data.n_rows,
+                    data.payload_bytes() as f64 / 1e6
+                );
             }
             report.add_dataset(&data);
             for &format in Format::ALL {
@@ -203,7 +214,10 @@ pub struct Compression {
 }
 
 impl Compression {
-    pub const NONE: Compression = Compression { level: None, shuffle: false };
+    pub const NONE: Compression = Compression {
+        level: None,
+        shuffle: false,
+    };
 
     pub fn label(self) -> String {
         match (self.level, self.shuffle) {
@@ -229,8 +243,13 @@ impl Compression {
             Some(d) => (d, true),
             None => (s, false),
         };
-        let level = digits.parse().map_err(|_| "--deflate wants `none`, 0-9, or 0-9 with a trailing `s`".to_owned())?;
-        Ok(Compression { level: Some(level), shuffle })
+        let level = digits
+            .parse()
+            .map_err(|_| "--deflate wants `none`, 0-9, or 0-9 with a trailing `s`".to_owned())?;
+        Ok(Compression {
+            level: Some(level),
+            shuffle,
+        })
     }
 }
 
@@ -259,8 +278,16 @@ fn settings_for(cfg: &Config, format: Format) -> Vec<Setting> {
                     },
                     // A `.mat` is one matrix, written row by row, with no block
                     // of any kind.
-                    block_rows: if format == Format::Mat { cfg.block_rows[0] } else { block_rows },
-                    chunk_cols: if format == Format::Mtsf { chunk_cols } else { cfg.chunk_cols[0] },
+                    block_rows: if format == Format::Mat {
+                        cfg.block_rows[0]
+                    } else {
+                        block_rows
+                    },
+                    chunk_cols: if format == Format::Mtsf {
+                        chunk_cols
+                    } else {
+                        cfg.chunk_cols[0]
+                    },
                 };
                 if !out.contains(&s) {
                     out.push(s);
@@ -329,7 +356,11 @@ fn control_pass(data: &Dataset, spinner: &Spinner, delay_ns: u64) -> Control {
         }
         sum
     });
-    Control { clock_ns, wall_ms: span.ms(), sys_ms: span.sys_ms() }
+    Control {
+        clock_ns,
+        wall_ms: span.ms(),
+        sys_ms: span.sys_ms(),
+    }
 }
 
 /// Every (format, setting, writer, delay) cell, repeated round-robin: a thermal
@@ -366,8 +397,11 @@ fn run_writes(data: &Dataset, out: &str, cfg: &Config, spinner: &Spinner, report
     // The first pass pays for the file system's first allocation of each file
     // and for HDF5's one-time initialisation.
     for rep in 0..cfg.reps + 1 {
-        let control: HashMap<u64, Control> =
-            cfg.delays.iter().map(|&d| (d, control_pass(data, spinner, d))).collect();
+        let control: HashMap<u64, Control> = cfg
+            .delays
+            .iter()
+            .map(|&d| (d, control_pass(data, spinner, d)))
+            .collect();
         for run in &mut runs {
             let path = file_path(out, &data.name, run.format, run.setting, cfg);
             let opts = cfg.opts(run.setting, data.n_rows);
@@ -400,7 +434,12 @@ fn write_sample(
 ) {
     let delay_ns = run.delay_ns;
     let (writer, begin) = timed(|| {
-        writers::Sink::new(writers::begin(run.format, path, data, opts), run.mode, cfg.handoff, cfg.queue)
+        writers::Sink::new(
+            writers::begin(run.format, path, data, opts),
+            run.mode,
+            cfg.handoff,
+            cfg.queue,
+        )
     });
     let mut writer = writer;
     let (measured_ns, full) = timed(|| {
@@ -421,11 +460,13 @@ fn write_sample(
         return;
     }
     run.begin.push(begin.ms());
-    run.emit.push((measured_ns as f64 - control.clock_ns as f64).max(0.0) / 1e6);
+    run.emit
+        .push((measured_ns as f64 - control.clock_ns as f64).max(0.0) / 1e6);
     run.stall.push(stall.as_secs_f64() * 1e3);
     run.finish.push(finish.ms());
     run.fsync.push(fsync.ms());
-    run.sys.push((begin.sys_ms() + full.sys_ms() + finish.sys_ms() + fsync.sys_ms() - control.sys_ms).max(0.0));
+    run.sys
+        .push((begin.sys_ms() + full.sys_ms() + finish.sys_ms() + fsync.sys_ms() - control.sys_ms).max(0.0));
     run.baseline.push(control.wall_ms);
     run.file_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
 }
@@ -514,8 +555,11 @@ fn read_sample(path: &str, names: &[String], run: &mut ReadRun, record: bool) {
     if run.cold {
         readers::evict(path);
     }
-    let picked =
-        if run.access == Access::List { Vec::new() } else { pick(names, run.n_read_request) };
+    let picked = if run.access == Access::List {
+        Vec::new()
+    } else {
+        pick(names, run.n_read_request)
+    };
     let measured = if run.threads > 1 {
         readers::read_parallel(run.format, path, &picked, run.access, run.threads)
     } else {
@@ -691,14 +735,26 @@ fn structure(data: &Dataset, format: Format, setting: Setting, opts: &WriteOpts)
                 series.insert(s);
                 matrices.insert((s, v.ty.category()));
             }
-            let col_blocks = if opts.chunk_cols == 0 { 1 } else { data.n_cols.div_ceil(opts.chunk_cols) };
+            let col_blocks = if opts.chunk_cols == 0 {
+                1
+            } else {
+                data.n_cols.div_ceil(opts.chunk_cols)
+            };
             let time_varying = matrices.iter().filter(|(s, _)| *s != "Fixed").count();
             // /ModelDescription and its three tables, /Results, one group per
             // series, one dataset per (series, element type).
-            (4 + 1 + series.len() + matrices.len(), time_varying * row_blocks * col_blocks + (matrices.len() - time_varying))
+            (
+                4 + 1 + series.len() + matrices.len(),
+                time_varying * row_blocks * col_blocks + (matrices.len() - time_varying),
+            )
         }
     };
-    Structure { format, setting, objects, blocks }
+    Structure {
+        format,
+        setting,
+        objects,
+        blocks,
+    }
 }
 
 /// `k` names spread evenly over the file rather than the first `k`: a run of
@@ -717,17 +773,11 @@ fn pick(names: &[String], k: usize) -> Vec<String> {
 /// The delay dominates everything else: it is paid once per row, once per cell
 /// and once more per repetition for the control pass every cell subtracts.
 fn estimate(data: &Dataset, cfg: &Config) -> String {
-    let cells: usize = Format::ALL
-        .iter()
-        .map(|&f| settings_for(cfg, f).len())
-        .sum::<usize>()
-        * cfg.modes.len();
+    let cells: usize = Format::ALL.iter().map(|&f| settings_for(cfg, f).len()).sum::<usize>() * cfg.modes.len();
     let scale_rows: usize = cfg.scales.iter().sum();
     // One control pass per delay per repetition on top of the cells themselves.
     let delay_total: f64 = cfg.delays.iter().map(|&d| d as f64).sum();
-    let secs = delay_total * (cells + 1) as f64 * (data.n_rows * scale_rows) as f64
-        * (cfg.reps + 1) as f64
-        / 1e9;
+    let secs = delay_total * (cells + 1) as f64 * (data.n_rows * scale_rows) as f64 * (cfg.reps + 1) as f64 / 1e9;
     format!(
         "{cells} write cells x {} delays x {} repetitions: at least {} of busy-wait alone",
         cfg.delays.len(),
@@ -764,7 +814,13 @@ fn parse_args() -> Result<Config, String> {
             "--reads" => {
                 cfg.reads = value()?
                     .split(',')
-                    .map(|s| if s == "all" { Ok(usize::MAX) } else { s.parse().map_err(|_| "--reads wants numbers or `all`".to_owned()) })
+                    .map(|s| {
+                        if s == "all" {
+                            Ok(usize::MAX)
+                        } else {
+                            s.parse().map_err(|_| "--reads wants numbers or `all`".to_owned())
+                        }
+                    })
                     .collect::<Result<_, _>>()?;
             }
             "--block-rows" => cfg.block_rows = numbers(&value()?, "--block-rows")?,
@@ -808,7 +864,11 @@ fn numbers(s: &str, flag: &str) -> Result<Vec<usize>, String> {
         .split(',')
         .map(|s| s.trim().parse().map_err(|_| format!("{flag} wants numbers")))
         .collect::<Result<_, _>>()?;
-    if out.is_empty() { Err(format!("{flag} needs a value")) } else { Ok(out) }
+    if out.is_empty() {
+        Err(format!("{flag} needs a value"))
+    } else {
+        Ok(out)
+    }
 }
 
 /// A `.mat` path, or a directory whose `*.mat` files are all taken.

@@ -27,15 +27,13 @@ impl Gbode {
     }
 
     /// C's `evaluateError`, dispatching on the estimator kind.
-    fn evaluate_error(
-        &mut self,
-        ode: &mut dyn Ode,
-        estimator: Option<Estimator>,
-    ) -> Result<Option<i32>> {
+    fn evaluate_error(&mut self, ode: &mut dyn Ode, estimator: Option<Estimator>) -> Result<Option<i32>> {
         let Some(est) = estimator else { return Ok(None) };
         match est.kind {
             ErrMethod::Embedded => {
-                let Some(bt) = self.tableau.bt.clone() else { return Ok(None) };
+                let Some(bt) = self.tableau.bt.clone() else {
+                    return Ok(None);
+                };
                 self.embedded_estimate(&bt);
                 for v in &mut self.errest {
                     *v = abs(*v);
@@ -55,7 +53,9 @@ impl Gbode {
             }
             ErrMethod::Contractive => self.contractive_defect_estimate(ode).map(|()| Some(est.order)),
             ErrMethod::Filter => {
-                let Some(bt) = self.tableau.bt.clone() else { return Ok(None) };
+                let Some(bt) = self.tableau.bt.clone() else {
+                    return Ok(None);
+                };
                 self.embedded_estimate(&bt);
                 let step_size = self.step_size;
                 let Some(nls) = self.nls.as_mut() else { return Ok(None) };
@@ -77,8 +77,7 @@ impl Gbode {
         for i in 0..n {
             let mut acc = 0.0;
             for stage in 0..n_stages {
-                acc += self.step_size * (self.tableau.b[stage] - weights[stage])
-                    * self.k[stage * n + i];
+                acc += self.step_size * (self.tableau.b[stage] - weights[stage]) * self.k[stage * n + i];
             }
             self.errest[i] = acc;
         }
@@ -98,7 +97,9 @@ impl Gbode {
         {
             return false;
         }
-        let Some(weights) = self.tableau.two_step_weights else { return false };
+        let Some(weights) = self.tableau.two_step_weights else {
+            return false;
+        };
         let r = self.step_size / self.last_step_size;
         let mut d_old = vec![0.0; n_stages];
         let mut g_new = vec![0.0; n_stages];
@@ -113,8 +114,7 @@ impl Gbode {
         for i in 0..n {
             let mut y_emb = self.y_old[i];
             for stage in 0..n_stages {
-                y_emb += d_old[stage] * self.k_last[stage * n + i]
-                    + g_new[stage] * self.k[stage * n + i];
+                y_emb += d_old[stage] * self.k_last[stage * n + i] + g_new[stage] * self.k[stage * n + i];
             }
             self.errest[i] = abs(mu * (self.y[i] - y_emb));
         }
@@ -157,8 +157,7 @@ impl Gbode {
             && !self.did_fast_step
             && !self.event_happened
             && self.extrapolation_base_time != f64::INFINITY;
-        let f_left = (self.tableau.k_right && sr_valid)
-            .then(|| &self.k_last[(n_stages - 1) * n..n_stages * n]);
+        let f_left = (self.tableau.k_right && sr_valid).then(|| &self.k_last[(n_stages - 1) * n..n_stages * n]);
         let Some(nls) = self.nls.as_mut() else {
             return Err("Selected contractive defect error estimator is only available with -gbnls=internal.");
         };

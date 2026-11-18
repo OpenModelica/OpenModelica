@@ -25,7 +25,11 @@ impl Span {
 impl std::ops::Add for Span {
     type Output = Span;
     fn add(self, o: Span) -> Span {
-        Span { wall: self.wall + o.wall, user: self.user + o.user, sys: self.sys + o.sys }
+        Span {
+            wall: self.wall + o.wall,
+            user: self.user + o.user,
+            sys: self.sys + o.sys,
+        }
     }
 }
 
@@ -44,7 +48,11 @@ pub struct Stopwatch {
 impl Stopwatch {
     pub fn start() -> Stopwatch {
         let (user, sys) = cpu_time();
-        Stopwatch { wall: Instant::now(), user, sys }
+        Stopwatch {
+            wall: Instant::now(),
+            user,
+            sys,
+        }
     }
 
     pub fn stop(self) -> Span {
