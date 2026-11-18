@@ -20,6 +20,7 @@ Matrix.mos \
 MDD_test.mos \
 ModelicaIOMatrix.mos \
 ModelicaIOMatrix73.mos \
+ModelicaIOMatrixAppend.mos \
 ModelicaUtilities.mos \
 PrebuiltWasmExternals.mos \
 QualifiedCrefArg.mos \

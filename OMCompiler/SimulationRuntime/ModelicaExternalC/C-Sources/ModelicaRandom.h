@@ -1,6 +1,6 @@
 /* ModelicaRandom.h - External functions header for Modelica.Math.Random library
 
-   Copyright (C) 2015-2020, Modelica Association and contributors
+   Copyright (C) 2015-2025, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -69,14 +69,14 @@
 #define _Out_
 #endif
 
-MODELICA_EXPORT void ModelicaRandom_xorshift64star(_In_ int* state_in,
+MODELICA_EXPORT void ModelicaRandom_xorshift64star(_In_ const int* state_in,
     _Out_ int* state_out, _Out_ double* y) MODELICA_NONNULLATTR;
-MODELICA_EXPORT void ModelicaRandom_xorshift128plus(_In_ int* state_in,
+MODELICA_EXPORT void ModelicaRandom_xorshift128plus(_In_ const int* state_in,
     _Out_ int* state_out, _Out_ double* y) MODELICA_NONNULLATTR;
-MODELICA_EXPORT void ModelicaRandom_xorshift1024star(_In_ int* state_in,
+MODELICA_EXPORT void ModelicaRandom_xorshift1024star(_In_ const int* state_in,
     _Out_ int* state_out, _Out_ double* y) MODELICA_NONNULLATTR;
 MODELICA_EXPORT void ModelicaRandom_setInternalState_xorshift1024star(
-    _In_ int* state, size_t nState, int id) MODELICA_NONNULLATTR;
+    _In_ const int* state, size_t nState, int id) MODELICA_NONNULLATTR;
 MODELICA_EXPORT double ModelicaRandom_impureRandom_xorshift1024star(int id);
 MODELICA_EXPORT int ModelicaRandom_automaticGlobalSeed(double dummy);
 MODELICA_EXPORT void ModelicaRandom_convertRealToIntegers(double d,

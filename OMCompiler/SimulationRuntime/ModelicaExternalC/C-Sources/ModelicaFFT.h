@@ -1,6 +1,6 @@
 /* ModelicaFFT.h - FFT functions header
 
-   Copyright (C) 2015-2020, Modelica Association and contributors
+   Copyright (C) 2015-2025, Modelica Association and contributors
    Copyright (C) 2003-2010, Mark Borgerding
    All rights reserved.
 
@@ -69,7 +69,7 @@
 #define _Out_
 #endif
 
-MODELICA_EXPORT int ModelicaFFT_kiss_fftr(_In_ double* u, size_t nu, _In_ double* work, size_t nwork,
+MODELICA_EXPORT int ModelicaFFT_kiss_fftr(_In_ const double* u, size_t nu, _In_ double* work, size_t nwork,
     _Out_ double *amplitudes, _Out_ double *phases) MODELICA_NONNULLATTR;
 
 #endif

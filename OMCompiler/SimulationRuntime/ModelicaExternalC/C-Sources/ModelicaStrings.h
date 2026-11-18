@@ -1,6 +1,6 @@
 /* ModelicaStrings.h - External functions header for Modelica.Utilities.Strings
 
-   Copyright (C) 2002-2020, Modelica Association and contributors
+   Copyright (C) 2002-2025, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without

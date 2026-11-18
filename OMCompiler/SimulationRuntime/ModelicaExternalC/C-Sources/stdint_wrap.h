@@ -1,6 +1,6 @@
 /* stdint_wrap.h - Wrapper for stdint.h not being available with C89
 
-   Copyright (C) 2020, Modelica Association and contributors
+   Copyright (C) 2020-2025, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,7 @@
 #if defined(_WIN32)
 #if defined(_MSC_VER) && _MSC_VER >= 1600
 #define HAVE_MODELICA_STDINT_H 1
-#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__) || defined(__LCC__)
 #define HAVE_MODELICA_STDINT_H 1
 #else
 #undef HAVE_MODELICA_STDINT_H
