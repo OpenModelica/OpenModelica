@@ -1,0 +1,25 @@
+// name:     CheckEventsCvode
+// keywords: events assert cvode
+// status: correct
+// teardown_command: rm -rf CheckSqrtCvode CheckSqrtCvode.exe CheckSqrtCvode.log CheckSqrtCvode.libs CheckSqrtCvode.makefile CheckSqrtCvode_* output.log
+//
+// sqrt(u) fails for u < 0 after the event at time = 1. CVODE stops there, as
+// DASSL does, instead of failing at the same time again for thousands of steps.
+//
+
+loadFile("CheckEvents.mo"); getErrorString();
+echo(false);
+res := simulate(CheckSqrt, stopTime = 2.0, method = "cvode", fileNamePrefix = "CheckSqrtCvode");
+echo(true);
+regexBool(res.messages, "A Modelica assert prevents the integrator to continue");
+regexBool(res.messages, "Simulation terminated at time 1([^.0-9]|$)");
+size(OpenModelica.Scripting.stringSplit(res.messages, "violated"), 1) < 100;
+
+// Result:
+// true
+// ""
+// true
+// true
+// true
+//
+// endResult
