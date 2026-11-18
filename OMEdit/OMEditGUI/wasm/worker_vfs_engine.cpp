@@ -52,6 +52,8 @@
 // (QDir) is served via the worker's WASI fd_readdir (omcWorkerListDir).
 #if defined(__EMSCRIPTEN__)
 
+#include "Util/PersistentStorage.h"
+
 #include <QtCore/private/qabstractfileengine_p.h>
 #include <QByteArray>
 #include <QString>
@@ -312,7 +314,7 @@ public:
     // Page-local tree: settings, the cloud sync manifests, the session list. These
     // are the main thread's own and are mirrored to IndexedDB, so they must stay in
     // MEMFS — the "already exists" test below cannot see a file being created.
-    if (fileName.startsWith(QLatin1String("/persist/"))) return nullptr;
+    if (fileName.startsWith(PersistentStorage::root() + QLatin1Char('/'))) return nullptr;
     if (omeditFetchWebAsset(fileName)) return nullptr;
     if (omedit_memfs_exists(fileName.toUtf8().constData())) return nullptr;
     return std::make_unique<WorkerVfsFileEngine>(fileName);

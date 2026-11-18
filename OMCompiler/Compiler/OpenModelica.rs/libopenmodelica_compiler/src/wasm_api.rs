@@ -318,13 +318,15 @@ fn set(obj: &js_sys::Object, key: &str, value: JsValue) {
     let _ = js_sys::Reflect::set(obj, &JsValue::from_str(key), &value);
 }
 
-/// Persist `<home>/.openmodelica` in the host's segment files (`wasm/omc-store.js`),
-/// read through `globalThis.__omcStoreRead`, but not the package manager's
-/// downloads in its `cache/`. Returns that root.
+/// Persist `<home>/.openmodelica` and the user's files in `/persist` in the host's
+/// segment files (`wasm/omc-store.js`), read through `globalThis.__omcStoreRead`,
+/// but not the package manager's downloads in `.openmodelica/cache/`. Returns the
+/// `.openmodelica` root.
 #[wasm_bindgen]
 pub fn omc_store_enable() -> String {
     let root = format!("{}/.openmodelica", openmodelica_util::Settings::getHomeDir(false));
     openmodelica_wasi::set_persistent_root(&root, &["cache"], store_read);
+    openmodelica_wasi::add_persistent_root("/persist");
     root
 }
 
@@ -341,7 +343,26 @@ pub fn omc_store_mount(paths: &str, nums: &[f64]) -> usize {
     mounted
 }
 
-/// What changed below the root since the last commit, or `undefined`:
+/// Take a segment that another client stored: mount its files, given as for
+/// [`omc_store_mount`], and drop the NUL-separated `removed` paths, except those
+/// this instance changed and did not store yet. Returns how many were applied.
+#[wasm_bindgen]
+pub fn omc_store_apply(paths: &str, nums: &[f64], removed: &str) -> usize {
+    let mut applied = 0;
+    if !paths.is_empty() {
+        for (path, f) in paths.split('\0').zip(nums.chunks_exact(5)) {
+            let mtime = std::time::Duration::new(f[1] as u64, f[2] as u32);
+            applied +=
+                openmodelica_wasi::mount_unless_changed(path, mtime, f[0] as u32, f[3] as u64, f[4] as u64) as usize;
+        }
+    }
+    for path in removed.split('\0').filter(|p| !p.is_empty()) {
+        applied += openmodelica_wasi::unmount_unless_changed(path) as usize;
+    }
+    applied
+}
+
+/// What changed below the roots since the last commit, or `undefined`:
 /// `{ paths, nums, data, removed }`, with NUL-separated `paths` and `removed`,
 /// `[mtime seconds, mtime nanoseconds, length]` for each file in `nums`, and the
 /// files' bytes one after the other in `data`.

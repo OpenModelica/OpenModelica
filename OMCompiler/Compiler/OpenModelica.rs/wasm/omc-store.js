@@ -1,6 +1,7 @@
 // Keeps omc's <home>/.openmodelica (installed libraries, the package index, the
 // parse cache) across sessions, in segment files of the origin private file
-// system. A segment is written once and never changed:
+// system, and the user's files in /persist. A segment is written once and never
+// changed:
 //
 //   [file bytes][index, UTF-8 JSON][index length, u32 LE]["OMCSTOR1"]
 //
@@ -9,12 +10,14 @@
 // replaces or removes files of an earlier one; one that supersedes others
 // replaces them whole (a compaction). omc reads a file when it needs it, through
 // a synchronous access handle on its segment. A page, which has no such handles,
-// holds the segments in memory instead.
+// holds the segments in memory instead. A client that adds a segment announces
+// it on a BroadcastChannel, and the other clients take it at once.
 
 const DIR = 'omc-store';
 const MAGIC = 'OMCSTOR1';
 const TRAILER = 12;
 const LOCK = 'omc-store';
+const CHANNEL = 'omc-store';
 const MB = 1 << 20;
 
 const utf8 = new TextEncoder();
@@ -108,12 +111,19 @@ function newName(names) {
   return `${String(next).padStart(12, '0')}-${random}.seg`;
 }
 
+let channel = null;
+
+function announce() {
+  if (typeof BroadcastChannel === 'undefined') return;
+  (channel ||= new BroadcastChannel(CHANNEL)).postMessage('changed');
+}
+
 // `body(out)` writes the file bytes from offset 0 and returns where they end.
 async function writeSegment(backend, name, index, body) {
   const out = await backend.create(name);
   let complete = false;
   try {
-    const at = body(out);
+    const at = await body(out);
     const json = utf8.encode(JSON.stringify(index));
     out.write(json, at);
     out.write(trailer(json.length), at + json.length);
@@ -129,6 +139,8 @@ export class Store {
     this.segments = [];
     // path -> [segment, mtime s, mtime ns, offset, length]
     this.files = new Map();
+    // Names of the segments this store has seen, also those it did not open.
+    this.known = new Set();
     this.failed = false;
   }
 
@@ -138,10 +150,11 @@ export class Store {
 
   // Open every segment and work out which files are live. Under the lock, so
   // a segment without a trailer is one whose writer died, not one being written.
-  async loadLocked() {
+  async loadLocked(compact = true) {
     const found = [];
     const broken = [];
     for (const name of (await this.backend.list()).sort()) {
+      this.known.add(name);
       const handle = await this.backend.open(name);
       const index = readIndex(handle);
       if (index) {
@@ -164,7 +177,53 @@ export class Store {
       s.index = null;
     }
     for (const name of broken) await this.backend.remove(name).catch(() => {});
-    if (this.needsCompaction()) await this.compactLocked();
+    if (compact && this.needsCompaction()) await this.compactLocked();
+  }
+
+  sync() {
+    return this.backend.lock(() => this.syncLocked());
+  }
+
+  // Open the segments that other clients added since this store last looked, in
+  // the order they were written, and return what each changed. A segment that
+  // supersedes others holds every live file, so what it lacks was removed.
+  async syncLocked() {
+    const changes = [];
+    for (const name of (await this.backend.list()).sort()) {
+      if (this.known.has(name)) continue;
+      this.known.add(name);
+      let handle;
+      try {
+        handle = await this.backend.open(name);
+      } catch {
+        continue;
+      }
+      const index = readIndex(handle);
+      if (!index) {
+        handle.close();
+        continue;
+      }
+      const id = this.segments.push({ name, handle }) - 1;
+      const kept = index.supersedes.length ? new Set(index.files.map((f) => f[0])) : null;
+      const removed = kept ? [...this.files.keys()].filter((p) => !kept.has(p)) : index.removed;
+      for (const path of removed) this.files.delete(path);
+      for (const [path, sec, nsec, off, len] of index.files) this.files.set(path, [id, sec, nsec, off, len]);
+      changes.push({ id, files: index.files, removed });
+    }
+    return changes;
+  }
+
+  // Call `onChange` with each segment that another client adds, as it is added.
+  follow(onChange) {
+    if (typeof BroadcastChannel === 'undefined') return;
+    let busy = Promise.resolve();
+    this.channel = new BroadcastChannel(CHANNEL);
+    this.channel.onmessage = () => {
+      busy = busy
+        .then(() => this.sync())
+        .then((changes) => changes.forEach(onChange))
+        .catch((e) => console.warn('[omc-store] cannot read what another client stored', e));
+    };
   }
 
   size() {
@@ -207,6 +266,7 @@ export class Store {
       }
       return at;
     });
+    this.known.add(name);
     const handle = await this.backend.open(name);
     for (const s of old) s.handle.close();
     this.segments = [{ name, handle }];
@@ -216,21 +276,49 @@ export class Store {
 
   // Store what changed as a new segment: `data` holds the files' bytes at the
   // offsets in `files`. Returns the segment's id.
-  async appendLocked(files, data, removed) {
-    const name = newName(await this.backend.list());
-    await writeSegment(this.backend, name, { files, removed }, (out) => {
+  appendLocked(files, data, removed) {
+    return this.addLocked(files, removed, (out) => {
       out.write(data, 0);
       return data.length;
     });
+  }
+
+  // Store `entries`, [path, Blob, mtime ms], as a new segment that also removes
+  // `removed`. Returns the segment's id.
+  appendBlobsLocked(entries, removed = []) {
+    const files = [];
+    let at = 0;
+    for (const [path, blob, ms] of entries) {
+      const sec = Math.floor(ms / 1000);
+      files.push([path, sec, Math.min(999999999, Math.round((ms - sec * 1000) * 1e6)), at, blob.size]);
+      at += blob.size;
+    }
+    return this.addLocked(files, removed, async (out) => {
+      for (let i = 0; i < entries.length; i++) {
+        const blob = entries[i][1];
+        for (let pos = 0; pos < blob.size; pos += 8 * MB) {
+          out.write(new Uint8Array(await blob.slice(pos, pos + 8 * MB).arrayBuffer()), files[i][3] + pos);
+        }
+      }
+      return at;
+    });
+  }
+
+  async addLocked(files, removed, body) {
+    const name = newName(await this.backend.list());
+    await writeSegment(this.backend, name, { files, removed }, body);
+    this.known.add(name);
     const id = this.segments.push({ name, handle: await this.backend.open(name) }) - 1;
     for (const path of removed) this.files.delete(path);
     for (const [path, sec, nsec, off, len] of files) this.files.set(path, [id, sec, nsec, off, len]);
+    announce();
     return id;
   }
 
   close() {
     for (const s of this.segments) s?.handle.close();
     this.segments = [];
+    this.channel?.close();
   }
 
   // ── an omc instance ────────────────────────────────────────────────────────
@@ -248,6 +336,12 @@ export class Store {
       nums.set(f, 5 * i++);
     }
     omc.omc_store_mount(paths.join('\0'), nums);
+    if (typeof omc.omc_store_apply !== 'function') return;
+    this.follow(({ id, files, removed }) => {
+      const nums = new Float64Array(files.length * 5);
+      files.forEach(([, sec, nsec, off, len], i) => nums.set([id, sec, nsec, off, len], 5 * i));
+      omc.omc_store_apply(files.map((f) => f[0]).join('\0'), nums, removed.join('\0'));
+    });
   }
 
   // Save what omc changed below the root since the last call.

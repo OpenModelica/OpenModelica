@@ -771,6 +771,9 @@ wasm/anim/anim-core.js
 wasm/anim/anim-view.js
 wasm/anim/animation.js
 wasm/coi_server.py
+wasm/files/index.html
+wasm/files/worker.js
+wasm/files/zip.js
 wasm/fmi-guide/dialog.js
 wasm/fmi-simulator/.gitignore
 wasm/fmi-simulator/README.md
@@ -785,6 +788,7 @@ wasm/fmi-simulator/wasi.js
 wasm/fmu-aot-worker.js
 wasm/fmu-aot.js
 wasm/home/index.html
+wasm/icons/files.svg
 wasm/icons/fmi.svg
 wasm/icons/om.svg
 wasm/icons/omedit.png
