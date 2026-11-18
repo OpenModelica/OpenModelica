@@ -1531,17 +1531,41 @@ end isWholeArrayCref;
 
 public function isDimensionParameter
   "true for a size parameter $DIM_k of a derived dimension of a resizable array,
-   see NBResizable.addDimensionParameters. Its start value is the expression of
-   the dimension."
+   see NBResizable.addDimensionParameters, and for a resizable parameter with a
+   binding of other parameters (s.N = N), see NBResizable.setSizeParameterStart.
+   Its start value is the expression of the dimension or the binding."
   input SimCodeVar.SimVar var;
   output Boolean b;
+protected
+  DAE.Exp e;
 algorithm
   b := match var
-    case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM(), initialValue = SOME(_))
-      then StringUtil.startsWith(ComponentReferenceBasics.printComponentRefStr(var.name), "$DIM_");
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM(), initialValue = SOME(e))
+      then StringUtil.startsWith(ComponentReferenceBasics.printComponentRefStr(var.name), "$DIM_")
+        or (Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and not Expression.isConst(e) and isStructuralParameterExp(e));
     else false;
   end match;
 end isDimensionParameter;
+
+protected function isStructuralParameterExp
+  "true for an Integer expression that the template structuralParameterExp can
+   compute from the start values of parameters."
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.ICONST() then true;
+    case DAE.CREF(ty = DAE.T_INTEGER()) then true;
+    case DAE.BINARY(operator = DAE.ADD()) then isStructuralParameterExp(exp.exp1) and isStructuralParameterExp(exp.exp2);
+    case DAE.BINARY(operator = DAE.SUB()) then isStructuralParameterExp(exp.exp1) and isStructuralParameterExp(exp.exp2);
+    case DAE.BINARY(operator = DAE.MUL()) then isStructuralParameterExp(exp.exp1) and isStructuralParameterExp(exp.exp2);
+    case DAE.UNARY(operator = DAE.UMINUS()) then isStructuralParameterExp(exp.exp);
+    case DAE.CALL(path = Absyn.IDENT(name = "max"), expLst = {_, _}) then List.all(exp.expLst, isStructuralParameterExp);
+    case DAE.CALL(path = Absyn.IDENT(name = "min"), expLst = {_, _}) then List.all(exp.expLst, isStructuralParameterExp);
+    case DAE.CALL(path = Absyn.IDENT(name = "div"), expLst = {_, _}) then List.all(exp.expLst, isStructuralParameterExp);
+    else false;
+  end match;
+end isStructuralParameterExp;
 
 public function jacobianResultVars
   "The result variables of a Jacobian with the resizable sparsity pattern of the

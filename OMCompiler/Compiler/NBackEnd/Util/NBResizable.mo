@@ -262,6 +262,7 @@ public
   algorithm
     varData := match varData
       case VarData.VAR_DATA_SIM() algorithm
+        varData.resizables := VariablePointers.mapPtr(varData.resizables, setSizeParameterStart);
         // all lists: e.g. the function alias variables of the initialization are not in variables
         for v in List.flatten(list(VariablePointers.toList(l) for l in {varData.variables, varData.unknowns,
             varData.knowns, varData.initials, varData.auxiliaries, varData.aliasVars, varData.nonTrivialAlias})) loop
@@ -294,6 +295,24 @@ public
       else varData;
     end match;
   end addDimensionParameters;
+
+  function setSizeParameterStart
+    "A resizable parameter with a binding of other parameters (s.N = N) gets the
+    binding as start value, so that updateStructuralParameters computes it before
+    the runtime sizes the systems and Jacobians."
+    input Pointer<Variable> var_ptr;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    () := match Binding.getExpOpt(var.binding)
+      local
+        Expression b;
+      case SOME(b) guard BVariable.isParamOrConst(var_ptr) and not Expression.isLiteral(b) algorithm
+        Pointer.update(var_ptr, BVariable.setStartAttribute(var, Expression.map(b, resolveSizeParameter), true));
+      then ();
+      else ();
+    end match;
+  end setSizeParameterStart;
 
   function resolveSizeParameters
     "replaces Integer parameters with a non-literal binding in a resizable
