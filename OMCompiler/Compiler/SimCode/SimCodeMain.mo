@@ -1019,13 +1019,6 @@ algorithm
   if FMI.isFMIVersion20(FMUVersion) then
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU2.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
-    if not bareExport then
-      Util.createDirectoryTree(fmutmp);
-      CevalScriptBackend.generateFMI2ModelIcon(simCode.modelInfo.name, fmutmp);
-      if System.regularFileExists(fmutmp + "/model.png") then
-        modelIcon := fmutmp + "/model.png";
-      end if;
-    end if;
   else
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
@@ -1037,22 +1030,25 @@ algorithm
         {SimCodeCodegenUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
       ExecStat.execStat("FMU fmi-ls-manifest.xml");
     end if;
-    // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
-    // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
-    if not bareExport then
-      terminalsDir := fmutmp + "/terminalsAndIcons/";
-      terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode);
-      if not listEmpty(terminals) then
-        Util.createDirectoryTree(terminalsDir);
-        System.writeFile(terminalsDir + "terminalsAndIcons.xml",
-                         Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals)));
-      end if;
-      CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix);
-      if not System.directoryExists(terminalsDir) then
-        terminalsDir := "";
-      end if;
-      ExecStat.execStat("FMU terminalsAndIcons.xml");
+  end if;
+  // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
+  // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
+  if not bareExport then
+    terminalsDir := fmutmp + "/terminalsAndIcons/";
+    terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode, FMI.isFMIVersion20(FMUVersion));
+    if not listEmpty(terminals) then
+      Util.createDirectoryTree(terminalsDir);
+      System.writeFile(terminalsDir + "terminalsAndIcons.xml",
+                       Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals)));
     end if;
+    CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix, modelPng = FMI.isFMIVersion20(FMUVersion));
+    if not System.directoryExists(terminalsDir) then
+      terminalsDir := "";
+    end if;
+    if System.regularFileExists(fmutmp + "/model.png") then
+      modelIcon := fmutmp + "/model.png";
+    end if;
+    ExecStat.execStat("FMU terminalsAndIcons.xml");
   end if;
   // After the icons, so the page references the one terminalsAndIcons/ holds.
   if not bareExport and writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
@@ -1373,15 +1369,16 @@ algorithm
         fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
         copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
 
+        // FMI 3.0 Terminals, also in FMI 2.0.4: create the terminalsAndIcons/
+        // directory (the CodegenFMU3 template writes terminalsAndIcons.xml into it)
+        // when the model has connector-derived terminals.
+        if FMUVersion <> "1.0" and not listEmpty(SimCodeCodegenUtil.getFMI3Terminals(simCode, FMUVersion == "2.0")) then
+          Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
+        end if;
+
         // For FMI 3.0 also copy the FMI 3.0 reference headers into the FMU sources.
         if FMUVersion == "3.0" then
           copyFiles({"fmi/fmi3Functions.h","fmi/fmi3FunctionTypes.h","fmi/fmi3PlatformTypes.h"}, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          // FMI 3.0 Terminals: create the terminalsAndIcons/ directory (the
-          // CodegenFMU3 template writes terminalsAndIcons.xml into it) when the
-          // model has connector-derived terminals.
-          if not listEmpty(SimCodeCodegenUtil.getFMI3Terminals(simCode)) then
-            Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
-          end if;
           // fmi-ls-dae: create extra/org.fmi-standard.fmi-ls-dae/ for a --daeMode
           // Model Exchange model; the CodegenFMU3 template writes the manifest into it.
           if isSome(simCode.daeModeData) and FMI.isFMIMEType(FMUType) then
@@ -1436,13 +1433,13 @@ algorithm
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
 
-        // FMI 3.0 graphical user annotations (issue #15686 task 9): the template
-        // above wrote terminalsAndIcons.xml, this adds the icons beside it. Before
-        // the documentation, which shows the icon it produced.
-        if FMUVersion == "3.0" then
-          CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix);
+        // FMI 3.0 graphical user annotations (issue #15686 task 9), also in FMI
+        // 2.0.4: the template above wrote terminalsAndIcons.xml, this adds the
+        // icons beside it. Before the documentation, which shows the icon it produced.
+        if FMUVersion == "1.0" then
+          CevalScriptBackend.generateFMI1ModelIcon(simCode.modelInfo.name, fmutmp);
         else
-          CevalScriptBackend.generateFMI2ModelIcon(simCode.modelInfo.name, fmutmp);
+          CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix, modelPng = FMUVersion == "2.0");
         end if;
         if writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
           ExecStat.execStat("FMU documentation");
@@ -1612,7 +1609,7 @@ protected function writeFMUDocumentation
                                  revisions=\"<html> </html>\",
                                  __OpenModelica_infoHeader = \"<html> </html>\"))
   plus the modelica:// images it references, so the page needs nothing outside the
-  FMU. FMI 3.0 pages also show the icon rendered to terminalsAndIcons/.
+  FMU. FMI 2.0 and 3.0 pages also show the icon rendered to terminalsAndIcons/.
   False when the model carries no such annotation and nothing was written."
   input Absyn.Program program;
   input SimCode.SimCode simCode;
@@ -1629,9 +1626,9 @@ algorithm
   end if;
 
   name := Util.escapeModelicaStringToXmlString(AbsynUtil.pathString(simCode.modelInfo.name));
-  // terminalsAndIcons/ is FMI 3.0 only, and holds an icon only for a model whose
-  // icon layer had something to draw.
-  icon := if FMUVersion == "3.0" and System.regularFileExists(fmutmp + "/terminalsAndIcons/icon.svg")
+  // terminalsAndIcons/ holds an icon only for a model whose icon layer had
+  // something to draw.
+  icon := if System.regularFileExists(fmutmp + "/terminalsAndIcons/icon.svg")
           then "<img class=\"svgiconhead\" src=\"../terminalsAndIcons/icon.svg\" alt=\"\"> " else "";
 
   page := "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"

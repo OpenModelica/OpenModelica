@@ -4,12 +4,13 @@
 // teardown_command: rm -rf Inertia2.fmu Inertia2.fmutmp/ Inertia2_term.xml Inertia2.log Inertia2_info.json index.html Inertia2_FMU.libs Inertia2_FMU.makefile Inertia2_external_functions.json resources
 //
 // New-backend (--newBackend) counterpart of fmi3_terminals_alias.mos. The FMI 3.0
-// terminals, variableKind (inflow for the flow member, signal for the potential),
-// terminalKind and matchingRule, plus the FMI 3.0 <Alias> emission, all work the
-// same on the new backend. The flange CAUSALIZATION (flow -> input, potential ->
-// output) is intentionally NOT applied on the new backend (its initialization
-// cannot yet balance the model with boundary inputs), so the unconnected flow
-// stays a parameter and the potential is kept as an <Alias> of the state.
+// terminals, variableKind (inflow for the flow member), terminalKind and
+// matchingRule, plus the FMI 3.0 <Alias> emission, all work the same on the new
+// backend. The flange CAUSALIZATION (flow -> input, potential -> output) is
+// intentionally NOT applied on the new backend (its initialization cannot yet
+// balance the model with boundary inputs), so the unconnected flow stays a
+// parameter and the potential is kept as an <Alias> of the state. As a local
+// variable, the potential is no terminal member (FMI 3.0, 2.4.9).
 
 setCommandLineOptions("--newBackend"); getErrorString();
 
@@ -72,11 +73,9 @@ getErrorString();
 //   <Terminals>
 //     <Terminal name=\"flange_b\" matchingRule=\"plug\" terminalKind=\"Flange\">
 //       <TerminalMemberVariable variableName=\"flange_b.tau\" memberName=\"tau\" variableKind=\"inflow\"/>
-//       <TerminalMemberVariable variableName=\"flange_b.phi\" memberName=\"phi\" variableKind=\"signal\"/>
 //     </Terminal>
 //     <Terminal name=\"flange_a\" matchingRule=\"plug\" terminalKind=\"Flange\">
 //       <TerminalMemberVariable variableName=\"flange_a.tau\" memberName=\"tau\" variableKind=\"inflow\"/>
-//       <TerminalMemberVariable variableName=\"flange_a.phi\" memberName=\"phi\" variableKind=\"signal\"/>
 //     </Terminal>
 //   </Terminals>
 // </fmiTerminalsAndIcons>"

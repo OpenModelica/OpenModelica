@@ -582,7 +582,7 @@
     {
       "id": "terminals", "group": "features",
       "label": "Terminals",
-      "relevantWhen": { "fmiVersion": "3.0", "topology": ["component", "multi"] },
+      "relevantWhen": { "fmiVersion": ["2.0", "3.0"], "topology": ["component", "multi"] },
       "options": [
         { "value": "off", "label": "Not needed", "default": true },
         { "value": "on", "label": "Terminals from the connectors of the model", "support": "experimental",

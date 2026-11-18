@@ -291,12 +291,12 @@ template rustSourceFileSet(list<String> sourceFiles)
   >>
 end rustSourceFileSet;
 
-template fmiTerminalsAndIconsFile(SimCode simCode, String fileNamePrefixHash)
+template fmiTerminalsAndIconsFile(SimCode simCode, String fileNamePrefixHash, Boolean scalarize)
  "Writes terminalsAndIcons/terminalsAndIcons.xml into the FMU when the model has
   connector-derived terminals. Returns the empty string (the content is written to
   a file). The terminalsAndIcons/ directory is created in SimCodeMain beforehand."
 ::=
-match SimCodeCodegenUtil.getFMI3Terminals(simCode)
+match SimCodeCodegenUtil.getFMI3Terminals(simCode, scalarize)
 case {} then ''
 case terminals then
   let()= textFile(fmiTerminalsAndIcons(terminals), '<%fileNamePrefixHash%>.fmutmp/terminalsAndIcons/terminalsAndIcons.xml')
@@ -307,7 +307,8 @@ template fmiTerminalsAndIcons(list<FmiTerminal> terminals)
  "Generates the terminalsAndIcons.xml content (FMI 3.0 Terminals): one <Terminal>
   per connector instance, grouping its member variables. The connector membership
   is detected from the flat-model component type (a connector-typed cref qualifier)
-  in SimCodeCodegenUtil.getFMI3Terminals."
+  in SimCodeCodegenUtil.getFMI3Terminals. An FMI 2.0 FMU also has fmiVersion=\"3.0\",
+  the version that defines the file (FMI 3.0, 2.4.9)."
 ::=
   <<
   <?xml version="1.0" encoding="UTF-8"?>

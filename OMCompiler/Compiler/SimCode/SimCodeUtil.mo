@@ -14019,7 +14019,7 @@ algorithm
     return;
   end if;
   nameMap := buildFmiFigureNameMap(simCode);
-  terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode);
+  terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode, false);
   for e in figExps loop
     fig := fmiFigureFromExp(e, nameMap, terminals);
     if not listEmpty(fig.plots) then
