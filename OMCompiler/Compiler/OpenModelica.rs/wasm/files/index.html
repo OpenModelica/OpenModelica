@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica — Files</title>
+<script src="../theme.js"></script>
+<link rel="stylesheet" href="../theme.css" />
+<style>
+  main { flex:1 1 auto; overflow-y:auto; padding:16px; }
+  .wrap { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
+  .note { color:var(--muted); font-size:13px; margin:0; }
+  .note code { color:var(--code); }
+  nav { display:flex; flex-wrap:wrap; align-items:center; gap:2px; font-size:15px; }
+  nav a { color:var(--fg); text-decoration:none; padding:2px 7px; border-radius:4px; overflow-wrap:anywhere; }
+  nav a:hover, nav a.drop { background:var(--hover); }
+  nav a.drop { outline:2px dashed var(--accent); }
+  nav a:last-of-type { font-weight:600; }
+  nav .sep { color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; color:var(--muted); font-weight:500; font-size:12px; padding:6px 8px;
+    border-bottom:1px solid var(--border); white-space:nowrap; }
+  td { padding:5px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  th.num, td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  td.num, td.date { color:var(--muted); }
+  td.name { width:100%; max-width:0; overflow:hidden; text-overflow:ellipsis; }
+  tr.row:hover { background:var(--hover); }
+  tr.row.drop { background:var(--active); outline:2px dashed var(--accent); outline-offset:-2px; }
+  a.entry { color:var(--fg); text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+    max-width:100%; vertical-align:middle; cursor:pointer; }
+  a.entry span { overflow:hidden; text-overflow:ellipsis; }
+  a.entry:hover span { text-decoration:underline; }
+  a.entry svg { width:18px; height:18px; flex:none; }
+  td.act { padding:2px 4px; text-align:right; }
+  td.act .icon-btn { padding:4px 6px; visibility:hidden; }
+  td.act .icon-btn svg { width:16px; height:16px; display:block; }
+  tr.row:hover .icon-btn, tr.row:focus-within .icon-btn { visibility:visible; }
+  @media (hover:none) { td.act .icon-btn { visibility:visible; } }
+  td.act button.cancel { padding:2px 10px; font-size:13px; }
+  .empty { color:var(--muted); text-align:center; padding:32px 16px; white-space:normal; }
+  @media (max-width:560px) { td.date, th.date { display:none; } }
+  #overlay { position:fixed; inset:6px; z-index:40; border:3px dashed var(--accent); border-radius:10px;
+    pointer-events:none; display:none; }
+  body.dragging #overlay { display:block; }
+  #droplabel { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); max-width:calc(100% - 32px);
+    background:var(--accent-2); color:#fff; padding:7px 16px; border-radius:999px; font-size:14px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 6px 20px var(--shadow); }
+  .modal-body { grid-template-columns:1fr; }
+  .modal-body p { margin:0; color:var(--muted); font-size:14px; overflow-wrap:anywhere; }
+  .modal-body ul { margin:0; padding-left:18px; max-height:160px; overflow:auto; font-size:13px; overflow-wrap:anywhere; }
+</style>
+</head>
+<body>
+<header>
+  <span class="title">Files</span>
+  <span class="status" id="status">Reading browser storage…</span>
+  <button class="ghost" id="newFolder">New folder</button>
+  <button class="ghost" id="addFiles">Add files…</button>
+  <button class="ghost" id="addFolder">Add a folder…</button>
+  <button class="ghost" id="saveFolder" hidden>Save folder to…</button>
+</header>
+<main>
+  <div class="wrap">
+    <nav id="crumbs"></nav>
+    <table>
+      <thead><tr><th>Name</th><th class="num">Size</th><th class="date">Changed</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="note">These files are kept in this browser, and omc sees them in every client as
+      <code>/persist/…</code>, for example <code>fileName="/persist/table.txt"</code> in a table block.
+      Drop files or folders on this page to add them. Drag a file to your desktop to save it, or onto a folder
+      to move it. <span id="saveHint"></span></p>
+  </div>
+</main>
+<input type="file" id="pickFiles" multiple hidden />
+<input type="file" id="pickFolder" webkitdirectory hidden />
+<div id="overlay"><div id="droplabel"></div></div>
+<div class="modal-backdrop" id="dialog" hidden>
+  <form class="modal" id="dlgForm">
+    <div class="modal-head"><span id="dlgTitle"></span><button type="button" class="icon-btn" data-close aria-label="Close">✕</button></div>
+    <div class="modal-body" id="dlgBody"></div>
+    <div class="modal-foot">
+      <button type="button" class="ghost" data-close>Cancel</button>
+      <button type="submit" id="dlgOk">OK</button>
+    </div>
+  </form>
+</div>
+
+<script type="module">
+import { bindModal } from '../ui.js';
+import { crc32, zipBlob, readZip, entryData } from './zip.js';
+
+const ROOT = '/persist';
+const INTERNAL = 'application/x-omc-persist-path';
+const ICON = {
+  dir: '<svg viewBox="0 0 24 24"><path fill="#d29922" d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.6l2 2h8.4A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>',
+  file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" style="color:var(--muted)"><path d="M6.5 3h7.5l4.5 4.5V21h-12zM14 3v4.5h4.5"/></svg>',
+  save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0-4.5-4.5M12 16l4.5-4.5M5 20h14"/></svg>',
+  rename: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-4-4L4 16zM14 6l4 4"/></svg>',
+  extract: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16v10.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5zM4 9l2-4.5h12L20 9M12 12v5.5M9.5 15l2.5 2.5 2.5-2.5"/></svg>',
+  remove: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15M10 7V4.5h4V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></svg>',
+};
+const MB = 1 << 20;
+const TEXT = /\.(mo|mos|txt|csv|tsv|json|xml|log|md|m|py|jl|c|h|cpp|hpp|ini|cfg|yaml|yml|toml|html|svg)$/i;
+
+const $ = (id) => document.getElementById(id);
+const worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+let nextId = 0;
+const call = (msg) => new Promise((resolve, reject) => {
+  const id = ++nextId;
+  const on = (e) => {
+    if (e.data.id !== id) return;
+    worker.removeEventListener('message', on);
+    e.data.error ? reject(new Error(e.data.error)) : resolve(e.data.result);
+  };
+  worker.addEventListener('message', on);
+  worker.postMessage({ ...msg, id });
+});
+
+const status = (text, cls = '') => { $('status').textContent = text; $('status').className = 'status ' + cls; };
+const fail = (e) => status(e.message || String(e), 'err');
+const size = (n) => {
+  if (n < 1024) return `${n} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let i = -1;
+  do { n /= 1024; i++; } while (n >= 1024 && i < units.length - 1);
+  return `${n.toFixed(n < 10 ? 1 : 0)} ${units[i]}`;
+};
+const date = (ms) => new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const join = (...parts) => parts.filter(Boolean).join('/');
+const parent = (p) => p.slice(0, Math.max(0, p.lastIndexOf('/')));
+const base = (p) => p.slice(p.lastIndexOf('/') + 1);
+const shown = (p) => (p ? `${ROOT}/${p}` : ROOT);
+
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  el.append(...kids.filter((k) => k != null && k !== false && k !== ''));
+  return el;
+}
+
+// ── state ────────────────────────────────────────────────────────────────────
+
+let files = new Map();       // path relative to /persist -> { size, mtime, segment, offset }
+let made = new Set();        // folders made here that have no file yet
+let cwd = '';
+let sort = { key: 'name', dir: 1 };
+let dragged = null;
+const segments = new Map();  // segment name -> File, to slice the stored files from
+
+const canSaveFolder = typeof window.showDirectoryPicker === 'function';
+// The first folder above `p` that is a file, which would hide `p`.
+const fileAbove = (p) => {
+  for (let i = p.indexOf('/'); i > 0; i = p.indexOf('/', i + 1)) if (files.has(p.slice(0, i))) return p.slice(0, i);
+  return null;
+};
+const isDir = (p) => !p || made.has(p) || [...files.keys()].some((f) => f.startsWith(p + '/'));
+
+async function segmentFiles(names) {
+  try {
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('omc-store');
+    for (const name of names) {
+      if (!segments.has(name)) segments.set(name, await (await dir.getFileHandle(name)).getFile());
+    }
+  } catch {}
+}
+
+// The stored bytes of `path` without reading them: a slice of its segment.
+function blobOf(path, type = '') {
+  const f = files.get(path);
+  return segments.get(f?.segment)?.slice(f.offset, f.offset + f.size, type) || null;
+}
+
+async function bytesOf(path, type = '') {
+  return blobOf(path, type) || new Blob([await call({ cmd: 'read', path })], { type });
+}
+
+async function refresh(done = '') {
+  const list = await call({ cmd: 'list' });
+  files = new Map(list.map((f) => [f.path, f]));
+  for (const d of made) if (isDirWithFiles(d)) made.delete(d);
+  for (const s of segments.keys()) if (!list.some((f) => f.segment === s)) segments.delete(s);
+  await segmentFiles(new Set(list.map((f) => f.segment)));
+  render();
+  status(done || `${plural(files.size, 'file')}, ${size(list.reduce((n, f) => n + f.size, 0))}.`, done ? 'ok' : '');
+}
+const isDirWithFiles = (p) => [...files.keys()].some((f) => f.startsWith(p + '/'));
+
+// Another client stored something: show it, a burst of saves at once.
+let pending = null;
+new BroadcastChannel('omc-store').onmessage = () => {
+  clearTimeout(pending);
+  pending = setTimeout(() => refresh().catch(fail), 250);
+};
+
+// ── rendering ────────────────────────────────────────────────────────────────
+
+function children() {
+  const out = new Map();
+  const prefix = cwd ? cwd + '/' : '';
+  for (const [path, f] of files) {
+    if (!path.startsWith(prefix)) continue;
+    const rest = path.slice(prefix.length);
+    const slash = rest.indexOf('/');
+    if (slash < 0) {
+      out.set(rest, { name: rest, dir: false, size: f.size, mtime: f.mtime });
+    } else {
+      const name = rest.slice(0, slash);
+      const d = out.get(name) || { name, dir: true, size: 0, mtime: 0, count: 0 };
+      d.size += f.size; d.mtime = Math.max(d.mtime, f.mtime); d.count++;
+      out.set(name, d);
+    }
+  }
+  for (const d of made) {
+    if (parent(d) === cwd && !out.has(base(d))) out.set(base(d), { name: base(d), dir: true, size: 0, mtime: 0, count: 0 });
+  }
+  return [...out.values()];
+}
+
+function render() {
+  const parts = cwd ? cwd.split('/') : [];
+  const crumbs = [h('a', { href: '#/' }, ROOT)];
+  dropTarget(crumbs[0], '');
+  parts.forEach((name, i) => {
+    const p = parts.slice(0, i + 1).join('/');
+    const a = h('a', { href: '#/' + p.split('/').map(encodeURIComponent).join('/') }, name);
+    dropTarget(a, p);
+    crumbs.push(h('span', { class: 'sep' }, '/'), a);
+  });
+  $('crumbs').replaceChildren(...crumbs);
+  $('droplabel').textContent = `Add to ${shown(cwd)}`;
+
+  for (const th of document.querySelectorAll('th')) {
+    const key = { Name: 'name', Size: 'size', Changed: 'mtime' }[th.textContent.replace(/ [↑↓]$/, '')];
+    if (!key) continue;
+    th.style.cursor = 'pointer';
+    th.textContent = th.textContent.replace(/ [↑↓]$/, '') + (sort.key === key ? (sort.dir > 0 ? ' ↑' : ' ↓') : '');
+    th.onclick = () => { sort = { key, dir: sort.key === key ? -sort.dir : key === 'name' ? 1 : -1 }; render(); };
+  }
+  const list = children().sort((a, b) => {
+    if (a.dir !== b.dir) return a.dir ? -1 : 1;
+    const c = sort.key === 'name' ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a[sort.key] - b[sort.key];
+    return c * sort.dir || a.name.localeCompare(b.name);
+  });
+  const rows = list.map(row);
+  if (rows.length === 0) {
+    rows.push(h('tr', {}, h('td', { colspan: 4, class: 'empty' },
+      cwd ? 'This folder is empty. A folder is kept once it has a file.' : 'No files yet. Drop files or folders here, or use Add files.')));
+  }
+  $('rows').replaceChildren(...rows);
+}
+
+function row(e) {
+  const path = join(cwd, e.name);
+  const open = e.dir
+    ? { href: '#/' + path.split('/').map(encodeURIComponent).join('/') }
+    : { onclick: () => openFile(path).catch(fail) };
+  const tr = h('tr', { class: 'row', draggable: 'true' },
+    h('td', { class: 'name' },
+      h('a', { class: 'entry', title: e.dir ? `${e.name} · ${plural(e.count, 'file')}` : e.name, draggable: 'false', ...open },
+        h('span', { html: e.dir ? ICON.dir : ICON.file, style: 'display:contents' }), h('span', {}, e.name))),
+    h('td', { class: 'num' }, e.dir ? (e.count ? size(e.size) : '') : size(e.size)),
+    h('td', { class: 'date' }, e.mtime ? date(e.mtime) : ''),
+    h('td', { class: 'act' },
+      !e.dir && h('button', { class: 'icon-btn', title: 'Save to your computer', html: ICON.save, onclick: () => save(path).catch(fail) }),
+      e.dir && h('button', { class: 'icon-btn', title: SAVE_FOLDER, html: ICON.save, onclick: () => saveAnyFolder(path).catch(fail) }),
+      !e.dir && /\.zip$/i.test(e.name) && h('button', { class: 'icon-btn', title: 'Extract', html: ICON.extract, onclick: () => extract(path).catch(fail) }),
+      h('button', { class: 'icon-btn', title: 'Rename', html: ICON.rename, onclick: () => rename(path).catch(fail) }),
+      removeButton(path, e)));
+  tr.addEventListener('dragstart', (ev) => {
+    dragged = path;
+    ev.dataTransfer.setData(INTERNAL, path);
+    ev.dataTransfer.effectAllowed = 'copyMove';
+    const blob = !e.dir && blobOf(path, 'application/octet-stream');
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+      ev.dataTransfer.setData('DownloadURL', `application/octet-stream:${e.name.replace(/:/g, '_')}:${url}`);
+    }
+  });
+  tr.addEventListener('dragend', () => { dragged = null; });
+  if (e.dir) dropTarget(tr, path);
+  return tr;
+}
+
+// Delete on a second click, like the Storage page.
+function removeButton(path, e) {
+  const b = h('button', { class: 'icon-btn', title: 'Delete', html: ICON.remove });
+  b.onclick = async () => {
+    if (!b.dataset.armed) {
+      b.dataset.armed = '1';
+      b.className = 'cancel';
+      b.textContent = 'Delete';
+      setTimeout(() => { if (b.isConnected && b.dataset.armed) { delete b.dataset.armed; b.className = 'icon-btn'; b.innerHTML = ICON.remove; } }, 4000);
+      return;
+    }
+    b.disabled = true;
+    try {
+      made = new Set([...made].filter((d) => d !== path && !d.startsWith(path + '/')));
+      const n = await call({ cmd: 'remove', paths: [path] });
+      await refresh(e.dir ? `Deleted ${e.name} and ${plural(n, 'file')} in it.` : `Deleted ${e.name}.`);
+    } catch (err) {
+      fail(err);
+      b.disabled = false;
+    }
+  };
+  return b;
+}
+
+// ── dialogs ──────────────────────────────────────────────────────────────────
+
+let settle = null;
+const dialog = bindModal($('dialog'), { onClose: () => { settle?.(null); settle = null; } });
+$('dlgForm').onsubmit = (ev) => {
+  ev.preventDefault();
+  const input = $('dlgBody').querySelector('input');
+  const s = settle;
+  settle = null;
+  s?.(input ? input.value.trim() : true);
+  dialog.close();
+};
+
+function ask(title, { text = '', list = null, value = null, ok = 'OK' } = {}) {
+  $('dlgTitle').textContent = title;
+  $('dlgOk').textContent = ok;
+  const input = value == null ? null : h('input', { value, spellcheck: 'false', autocomplete: 'off' });
+  $('dlgBody').replaceChildren(...[text && h('p', {}, text), list && h('ul', {}, ...list.map((t) => h('li', {}, t))), input].filter(Boolean));
+  dialog.open();
+  if (input) {
+    input.focus();
+    const dot = value.lastIndexOf('.');
+    input.setSelectionRange(0, dot > 0 ? dot : value.length);
+  } else {
+    $('dlgOk').focus();
+  }
+  return new Promise((resolve) => { settle = resolve; });
+}
+
+const validName = (name) => name && !name.includes('/') && name !== '.' && name !== '..';
+
+async function rename(path) {
+  const name = await ask(`Rename ${base(path)}`, { value: base(path), ok: 'Rename' });
+  if (!name || name === base(path)) return;
+  if (!validName(name)) throw new Error(`"${name}" is not a valid name`);
+  await moveTo(path, join(parent(path), name));
+}
+
+async function moveTo(from, to) {
+  if (made.has(from) && !isDirWithFiles(from)) {
+    made.delete(from);
+    made.add(to);
+    render();
+    return;
+  }
+  await call({ cmd: 'move', from, to });
+  await refresh(parent(from) === parent(to) ? `Renamed ${base(from)} to ${base(to)}.` : `Moved ${base(from)} to ${shown(parent(to))}.`);
+}
+
+$('newFolder').onclick = async () => {
+  const name = await ask(`New folder in ${shown(cwd)}`, { value: '', ok: 'Create', text: 'A folder is kept once it has a file.' });
+  if (!name) return;
+  if (!validName(name)) return fail(new Error(`"${name}" is not a valid name`));
+  if (isDir(join(cwd, name)) || files.has(join(cwd, name))) return fail(new Error(`${name} already exists`));
+  made.add(join(cwd, name));
+  render();
+};
+
+// ── opening and saving ───────────────────────────────────────────────────────
+
+async function openFile(path) {
+  const type = TEXT.test(path) ? 'text/plain;charset=utf-8'
+    : /\.(png|jpe?g|gif|webp)$/i.test(path) ? `image/${path.split('.').pop().toLowerCase().replace('jpg', 'jpeg')}`
+    : /\.pdf$/i.test(path) ? 'application/pdf' : null;
+  if (!type) return save(path);
+  const url = URL.createObjectURL(await bytesOf(path, type));
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+async function save(path) {
+  const url = URL.createObjectURL(await bytesOf(path, 'application/octet-stream'));
+  const a = h('a', { href: url, download: base(path) });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+async function writeFile(handle, blob) {
+  const out = await handle.createWritable();
+  try {
+    await out.write(blob);
+    await out.close();
+  } catch (e) {
+    await out.abort().catch(() => {});
+    throw e;
+  }
+}
+
+// Write `path` and everything in it into a folder that the user picks. The
+// stored bytes go to the disk as slices of their segments, never all in memory.
+async function saveFolder(path) {
+  let dest;
+  try {
+    dest = await window.showDirectoryPicker({ id: 'omc-persist', mode: 'readwrite' });
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    throw e;
+  }
+  const name = path ? base(path) : 'persist';
+  const prefix = path ? path + '/' : '';
+  const todo = [...files.keys()].filter((p) => p.startsWith(prefix)).sort();
+  const exists = await dest.getDirectoryHandle(name).then(() => true, () => false);
+  if (exists && !await ask(`${name} already exists in ${dest.name}`, {
+    text: 'Replace the files in it that have the same names? The other files in it are kept.', ok: 'Replace' })) return;
+  const dirs = new Map([['', await dest.getDirectoryHandle(name, { create: true })]]);
+  const dirOf = async (rel) => {
+    if (!dirs.has(rel)) dirs.set(rel, await (await dirOf(parent(rel))).getDirectoryHandle(base(rel), { create: true }));
+    return dirs.get(rel);
+  };
+  const total = todo.reduce((n, p) => n + files.get(p).size, 0);
+  let done = 0;
+  for (const p of todo) {
+    status(`Saving ${name} to ${dest.name}: ${Math.floor(total ? (100 * done) / total : 100)}%…`, 'busy');
+    const rel = p.slice(prefix.length);
+    const handle = await (await dirOf(parent(rel))).getFileHandle(base(rel), { create: true });
+    await writeFile(handle, await bytesOf(p))
+      .catch(async () => writeFile(handle, new Blob([await call({ cmd: 'read', path: p })])));
+    done += files.get(p).size;
+  }
+  for (const d of made) if (d.startsWith(prefix)) await dirOf(d.slice(prefix.length));
+  status(`Saved ${plural(todo.length, 'file')} (${size(total)}) to ${dest.name}/${name}.`, 'ok');
+}
+
+async function crcOf(blob, progress) {
+  let crc = 0;
+  for (let pos = 0; pos < blob.size; pos += 8 * MB) {
+    const chunk = new Uint8Array(await blob.slice(pos, pos + 8 * MB).arrayBuffer());
+    crc = crc32(crc, chunk);
+    progress(chunk.length);
+  }
+  return crc;
+}
+
+// Without a folder picker: `path` and everything in it as a .zip download. The
+// archive is made of slices of the stored files; only the checksums read them.
+async function saveZip(path) {
+  const name = path ? base(path) : 'persist';
+  const prefix = path ? path + '/' : '';
+  const todo = [...files.keys()].filter((p) => p.startsWith(prefix)).sort();
+  const total = todo.reduce((n, p) => n + files.get(p).size, 0);
+  const entries = [{ name: `${name}/`, mtime: Date.now() }];
+  let done = 0;
+  const progress = (n) => {
+    done += n;
+    status(`Making ${name}.zip: ${Math.floor(total ? (100 * done) / total : 100)}%…`, 'busy');
+  };
+  progress(0);
+  for (const p of todo) {
+    const before = done;
+    let blob = await bytesOf(p);
+    let crc;
+    try {
+      crc = await crcOf(blob, progress);
+    } catch {
+      done = before;
+      blob = new Blob([await call({ cmd: 'read', path: p })]);
+      crc = await crcOf(blob, progress);
+    }
+    entries.push({ name: `${name}/${p.slice(prefix.length)}`, blob, crc, mtime: files.get(p).mtime });
+  }
+  for (const d of made) if (d.startsWith(prefix)) entries.push({ name: `${name}/${d.slice(prefix.length)}/`, mtime: Date.now() });
+  const url = URL.createObjectURL(zipBlob(entries));
+  const a = h('a', { href: url, download: `${name}.zip` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  status(`Made ${name}.zip with ${plural(todo.length, 'file')} (${size(total)}).`, 'ok');
+}
+
+const SAVE_FOLDER = canSaveFolder ? 'Save folder to…' : 'Save folder as .zip';
+const saveAnyFolder = (path) => (canSaveFolder ? saveFolder(path) : saveZip(path));
+$('saveFolder').textContent = SAVE_FOLDER;
+$('saveFolder').hidden = false;
+$('saveFolder').onclick = () => saveAnyFolder(cwd).catch(fail);
+$('saveHint').textContent = `To save a folder, use its save button or ${SAVE_FOLDER}.`;
+
+// Unpack `path` next to it: into the archive's own top folder if it has one,
+// else into a folder named after the archive. Names that would leave that
+// folder are skipped.
+async function extract(path) {
+  const archive = await bytesOf(path);
+  status(`Reading ${base(path)}…`, 'busy');
+  const list = await readZip(archive);
+  const skipped = [];
+  const items = [];
+  for (const e of list) {
+    const parts = e.name.replace(/\\/g, '/').split('/').filter((p) => p && p !== '.');
+    if (parts.length === 0 || parts.includes('..') || /^[A-Za-z]:$/.test(parts[0])) {
+      skipped.push(e.name);
+      continue;
+    }
+    items.push({ e, rel: parts.join('/') });
+  }
+  const tops = new Set(items.map((i) => i.rel.split('/')[0]));
+  const wrapped = tops.size === 1 && items.every((i) => i.e.dir || i.rel.includes('/'));
+  const target = wrapped ? parent(path) : join(parent(path), base(path).replace(/\.zip$/i, ''));
+  const dirs = items.filter((i) => i.e.dir).map((i) => join(target, i.rel));
+  let todo = items.filter((i) => !i.e.dir).map((i) => ({ ...i, path: join(target, i.rel) }));
+  const clash = todo.find((t) => isDir(t.path));
+  if (clash) throw new Error(`${clash.path} is a folder`);
+  const above = [...todo.map((t) => t.path), ...dirs].map(fileAbove).find(Boolean);
+  if (above) throw new Error(`${above} is a file, not a folder`);
+  const keep = await keepOrReplace(todo.map((t) => t.path));
+  todo = todo.filter((t) => keep.has(t.path));
+  for (const d of dirs) made.add(d);
+  const total = todo.reduce((n, t) => n + t.e.size, 0);
+  let done = 0;
+  let batch = [];
+  let batchSize = 0;
+  const flush = async () => {
+    if (batch.length) await call({ cmd: 'put', entries: batch });
+    batch = [];
+    batchSize = 0;
+  };
+  for (const t of todo) {
+    status(`Extracting ${base(path)}: ${Math.floor(total ? (100 * done) / total : 100)}%…`, 'busy');
+    batch.push({ path: t.path, blob: await entryData(archive, t.e), mtime: t.e.mtime });
+    batchSize += t.e.size;
+    done += t.e.size;
+    if (batchSize >= 256 * MB) await flush();
+  }
+  await flush();
+  await refresh(`Extracted ${plural(todo.length, 'file')} to ${shown(wrapped ? join(target, [...tops][0]) : target)}.`
+    + (skipped.length ? ` Skipped ${plural(skipped.length, 'entry')} with a name outside the folder.` : ''));
+}
+
+// ── adding files ─────────────────────────────────────────────────────────────
+
+// The paths to write: all of them, or only the new ones if the user keeps the
+// files that exist.
+async function keepOrReplace(paths) {
+  const exist = paths.filter((p) => files.has(p));
+  if (exist.length === 0) return new Set(paths);
+  const fresh = paths.length - exist.length;
+  const replace = await ask(exist.length === 1 ? `${base(exist[0])} already exists` : `${exist.length} files already exist`, {
+    text: `Replace ${exist.length === 1 ? 'it' : 'them'}?` + (fresh ? ` If you cancel, only the ${plural(fresh, 'new file')} ${fresh === 1 ? 'is' : 'are'} added.` : ''),
+    list: exist.length > 1 ? exist.slice(0, 12).concat(exist.length > 12 ? [`… and ${exist.length - 12} more`] : []) : null,
+    ok: 'Replace',
+  });
+  return new Set(replace ? paths : paths.filter((p) => !files.has(p)));
+}
+
+async function add(entries, dirs, target) {
+  let todo = entries.map(({ file, rel }) => ({ file, path: join(target, rel) }));
+  for (const d of dirs) made.add(join(target, d));
+  const clash = todo.find((t) => isDir(t.path));
+  if (clash) throw new Error(`${clash.path} is a folder`);
+  const above = todo.map((t) => fileAbove(t.path)).find(Boolean);
+  if (above) throw new Error(`${above} is a file, not a folder`);
+  const keep = await keepOrReplace(todo.map((t) => t.path));
+  todo = todo.filter((t) => keep.has(t.path));
+  if (todo.length === 0) return render();
+  const bytes = todo.reduce((n, t) => n + t.file.size, 0);
+  status(`Adding ${plural(todo.length, 'file')} (${size(bytes)})…`, 'busy');
+  await call({ cmd: 'put', entries: todo.map((t) => ({ path: t.path, blob: t.file, mtime: t.file.lastModified || Date.now() })) });
+  await refresh(`Added ${plural(todo.length, 'file')} to ${shown(target)}.`);
+}
+
+async function collect(items) {
+  const entries = [];
+  const dirs = [];
+  async function walk(entry, prefix) {
+    if (entry.isFile) {
+      entries.push({ file: await new Promise((res, rej) => entry.file(res, rej)), rel: prefix + entry.name });
+    } else if (entry.isDirectory) {
+      const dir = prefix + entry.name;
+      dirs.push(dir);
+      const reader = entry.createReader();
+      for (;;) {
+        const batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+        if (batch.length === 0) break;
+        for (const child of batch) await walk(child, dir + '/');
+      }
+    }
+  }
+  for (const it of items) {
+    if (it instanceof File) entries.push({ file: it, rel: it.name });
+    else if (it) await walk(it, '');
+  }
+  return { entries, dirs };
+}
+
+$('addFiles').onclick = () => $('pickFiles').click();
+$('addFolder').onclick = () => $('pickFolder').click();
+for (const id of ['pickFiles', 'pickFolder']) {
+  $(id).onchange = (ev) => {
+    const entries = [...ev.target.files].map((f) => ({ file: f, rel: f.webkitRelativePath || f.name }));
+    ev.target.value = '';
+    add(entries, [], cwd).catch(fail);
+  };
+}
+
+// ── drag and drop ────────────────────────────────────────────────────────────
+
+const internal = (ev) => ev.dataTransfer.types.includes(INTERNAL);
+const fromOutside = (ev) => !internal(ev) && ev.dataTransfer.types.includes('Files');
+
+function accepts(ev, target) {
+  if (!internal(ev)) return ev.dataTransfer.types.includes('Files');
+  return dragged == null || (target !== dragged && !target.startsWith(dragged + '/') && target !== parent(dragged));
+}
+
+function drop(ev, target) {
+  if (internal(ev)) {
+    const from = ev.dataTransfer.getData(INTERNAL);
+    dragged = null;
+    if (from && parent(from) !== target) moveTo(from, join(target, base(from))).catch(fail);
+    return;
+  }
+  const items = [...ev.dataTransfer.items].filter((i) => i.kind === 'file')
+    .map((i) => i.webkitGetAsEntry?.() || i.getAsFile());
+  collect(items).then(({ entries, dirs }) => add(entries, dirs, target)).catch(fail);
+}
+
+function dropTarget(el, path) {
+  el.addEventListener('dragover', (ev) => {
+    if (!accepts(ev, path)) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.dataTransfer.dropEffect = internal(ev) ? 'move' : 'copy';
+    el.classList.add('drop');
+    $('droplabel').textContent = `Add to ${shown(path)}`;
+  });
+  el.addEventListener('dragleave', () => {
+    el.classList.remove('drop');
+    $('droplabel').textContent = `Add to ${shown(cwd)}`;
+  });
+  el.addEventListener('drop', (ev) => {
+    if (!accepts(ev, path)) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    el.classList.remove('drop');
+    endDrag();
+    drop(ev, path);
+  });
+}
+
+let depth = 0;
+const endDrag = () => { depth = 0; document.body.classList.remove('dragging'); };
+addEventListener('dragenter', (ev) => { if (fromOutside(ev)) { depth++; document.body.classList.add('dragging'); } });
+addEventListener('dragleave', (ev) => { if (fromOutside(ev) && --depth <= 0) endDrag(); });
+addEventListener('dragover', (ev) => { if (fromOutside(ev)) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy'; } });
+addEventListener('drop', (ev) => {
+  ev.preventDefault();
+  endDrag();
+  if (fromOutside(ev)) drop(ev, cwd);
+});
+
+// ── navigation ───────────────────────────────────────────────────────────────
+
+function go() {
+  cwd = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent).join('/');
+  render();
+}
+addEventListener('hashchange', go);
+
+if (!navigator.storage?.getDirectory) {
+  status('This browser has no storage for files, or it is a private window.', 'err');
+} else {
+  go();
+  refresh().catch((e) => status(`Browser storage is not available: ${e.message}`, 'err'));
+}
+window.__files = { refresh, call };
+</script>
+</body>
+</html>

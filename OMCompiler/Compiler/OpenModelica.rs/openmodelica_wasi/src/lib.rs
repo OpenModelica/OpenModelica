@@ -168,6 +168,8 @@ struct Store {
     files: BTreeMap<String, Entry>,
     /// `<root>/` of the persistent tree; changes below it are recorded in `dirty`.
     persist: Option<String>,
+    /// Other `<root>/`s whose changes are recorded too, without transient directories.
+    extra: Vec<String>,
     /// Directories below the root whose own files are not persisted, as `<root>/<dir>/`.
     transient: Vec<String>,
     dirty: HashSet<String>,
@@ -183,7 +185,9 @@ impl Store {
             .transient
             .iter()
             .any(|t| key.strip_prefix(t.as_str()).is_some_and(|f| !f.contains('/')));
-        if !transient && self.persist.as_deref().is_some_and(|p| key.starts_with(p)) {
+        let persisted = self.persist.as_deref().is_some_and(|p| key.starts_with(p))
+            || (self.persist.is_some() && self.extra.iter().any(|p| key.starts_with(p.as_str())));
+        if !transient && persisted {
             self.dirty.insert(key.to_owned());
         }
     }
@@ -428,6 +432,15 @@ pub fn set_persistent_root(root: &str, transient: &[&str], reader: SegmentReader
     s.reader = Some(reader);
 }
 
+/// Also record changes below `root`, once [`set_persistent_root`] is called.
+pub fn add_persistent_root(root: &str) {
+    let root = format!("{}/", normalize(root).trim_end_matches('/'));
+    let mut s = store();
+    if !s.extra.contains(&root) {
+        s.extra.push(root);
+    }
+}
+
 /// Stop recording changes, after the host failed to save them. Stored files stay readable.
 pub fn stop_persisting() {
     let mut s = store();
@@ -450,7 +463,26 @@ pub fn mount(path: &str, mtime: Duration, seg: u32, off: u64, len: u64) {
     );
 }
 
-/// What changed below the persistent root since the last [`commit`].
+/// Take a file that another instance stored, as [`mount`] does, unless this
+/// instance changed it and did not store that yet. Returns true if it was taken.
+pub fn mount_unless_changed(path: &str, mtime: Duration, seg: u32, off: u64, len: u64) -> bool {
+    let key = normalize(path);
+    if store().dirty.contains(&key) {
+        return false;
+    }
+    mount(&key, mtime, seg, off, len);
+    true
+}
+
+/// Drop a file that another instance removed from storage, unless this instance
+/// changed it and did not store that yet. Returns true if it was dropped.
+pub fn unmount_unless_changed(path: &str) -> bool {
+    let key = normalize(path);
+    let mut s = store();
+    !s.dirty.contains(&key) && s.files.remove(&key).is_some()
+}
+
+/// What changed below the persistent roots since the last [`commit`].
 pub struct Snapshot {
     /// Path, mtime and length of each file, whose bytes follow each other in `data`.
     pub files: Vec<(String, Duration, u64)>,
@@ -615,6 +647,29 @@ mod persist_tests {
             }
         ));
         assert!(matches!(s.files["/outside.txt"].data, Data::Mem(_)));
+        drop(s);
+        extra_root_and_changes_of_other_instances();
+    }
+
+    // Shares the global store, so it runs after mount_snapshot_commit, not beside it.
+    fn extra_root_and_changes_of_other_instances() {
+        add_persistent_root("/files");
+        let t = Duration::new(1_700_000_000, 0);
+        write("/files/a.txt", b"mine".to_vec());
+        write("/elsewhere/b.txt", b"x".to_vec());
+        assert!(!mount_unless_changed("/files/a.txt", t, 7, 0, 9));
+        assert!(mount_unless_changed("/files/c.txt", t, 7, 0, 9));
+        assert_eq!(read("/files/c.txt").as_deref(), Some(&b"package P"[..]));
+        write("/files/d.txt", b"d".to_vec());
+        let snap = take_snapshot().unwrap();
+        let names: Vec<&str> = snap.files.iter().map(|f| f.0.as_str()).collect();
+        assert_eq!(names, ["/files/a.txt", "/files/d.txt"]);
+        assert!(!unmount_unless_changed("/files/d.txt"));
+        commit(9, &[0, 4]);
+        assert!(unmount_unless_changed("/files/d.txt"));
+        assert!(unmount_unless_changed("/files/c.txt"));
+        assert!(read("/files/c.txt").is_none());
+        assert!(take_snapshot().is_none());
     }
 }
 

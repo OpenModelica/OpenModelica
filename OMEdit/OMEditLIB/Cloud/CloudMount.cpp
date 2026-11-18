@@ -107,7 +107,7 @@ QString CloudMountManager::workingCopyRoot()
 {
 #if defined(__EMSCRIPTEN__)
   // In the omc worker's filesystem, so that omc reads the same bytes the GUI
-  // writes. Deliberately not under /persist, which is the page's own tree.
+  // writes. Deliberately not under PersistentStorage::root(), which is the page's own tree.
   return QStringLiteral("/cloud");
 #else
   return PersistentStorage::root() + QStringLiteral("/cloud");
