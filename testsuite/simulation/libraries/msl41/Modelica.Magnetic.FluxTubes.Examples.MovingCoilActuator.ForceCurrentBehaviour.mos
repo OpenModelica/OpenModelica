@@ -12,12 +12,12 @@ packageVersion := "4.1.0";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceCurrentBehaviour);
+// Not compared: pmActuator.coil.L_stat = abs(Psi/i), and i crosses zero at t=3
 compareVars :=
 {
    "cActuator.flange.f",
    "pmActuator.flange.f",
-   "pmActuator.coil.Phi",
-   "pmActuator.coil.L_stat"
+   "pmActuator.coil.Phi"
 };
 
 runScript(modelTesting);getErrorString();
@@ -29,8 +29,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceCurrentBehaviour
-// {"cActuator.flange.f", "pmActuator.flange.f", "pmActuator.coil.Phi", "pmActuator.coil.L_stat"}
-// Simulation options: startTime = 0.0, stopTime = 6.0, numberOfIntervals = 60000, tolerance = 1e-7, method = 'auto', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceCurrentBehaviour', options = '', outputFormat = 'mat', variableFilter = 'time|cActuator.flange.f|pmActuator.flange.f|pmActuator.coil.Phi|pmActuator.coil.L_stat', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"cActuator.flange.f", "pmActuator.flange.f", "pmActuator.coil.Phi"}
+// Simulation options: startTime = 0.0, stopTime = 6.0, numberOfIntervals = 60000, tolerance = 1e-7, method = 'auto', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceCurrentBehaviour', options = '', outputFormat = 'mat', variableFilter = 'time|cActuator.flange.f|pmActuator.flange.f|pmActuator.coil.Phi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceCurrentBehaviour_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

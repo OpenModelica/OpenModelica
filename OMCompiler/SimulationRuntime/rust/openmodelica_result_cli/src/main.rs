@@ -18,7 +18,7 @@ usage: omplot <command> [options] ...
 options:
   --relTol X --relTolDiffMinMax X --rangeDelta X   tolerances for diff/tube
   --algorithm rectangle|ellipse|ellipse2014        tube algorithm
-                                  (ellipse2014 = diffSimulationResults, default)
+                                  (default rectangle, as diffSimulationResults)
   --nominalValue X                rectangle/ellipse tube-height floor
   --intervals N                   resample convert's output onto N equidistant steps
   --single                        convert: store the reals in single precision

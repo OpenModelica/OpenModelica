@@ -148,7 +148,7 @@ const cmpSummary = $('cmpSummary');
 const charts = createCharts(chartsEl);
 
 // The scripting API's diffSimulationResults defaults.
-const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002, algorithm: 'ellipse2014', nominalValue: 0.001 };
+const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002, algorithm: 'rectangle', nominalValue: 0.001 };
 
 // --- state -----------------------------------------------------------------
 const files = [];       // { id, name, rf, vars, params:Set, units, nrows, selected:Set }
