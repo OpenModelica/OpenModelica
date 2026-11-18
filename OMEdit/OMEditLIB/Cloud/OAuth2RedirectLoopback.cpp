@@ -41,6 +41,7 @@
 
 #include "Cloud/OAuth2Redirect.h"
 
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QHash>
 #include <QTcpServer>
@@ -65,6 +66,7 @@ const char *const kResponsePage =
 
 class LoopbackRedirect : public OAuth2Redirect
 {
+  Q_DECLARE_TR_FUNCTIONS(LoopbackRedirect)
 public:
   explicit LoopbackRedirect(QObject *pParent) : OAuth2Redirect(pParent)
   {

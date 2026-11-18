@@ -484,6 +484,7 @@ private:
 
 class ReloadAsModelicaInfoBar : public QFrame
 {
+  Q_OBJECT
 public:
   ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor);
 private:
