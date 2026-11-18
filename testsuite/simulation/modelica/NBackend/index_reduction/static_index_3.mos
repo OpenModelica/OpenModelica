@@ -24,7 +24,7 @@ equation
 end static_index_3;
 
 model static_index_3_alt
-  \"alternate, almost equivalent model where state order cannot solve the problem\"
+  \"alternate model with the affine state order der(phi1) = factor*omega1\"
   extends static_index_3(factor = 0.999999);
 end static_index_3_alt;
 "); getErrorString();

@@ -2519,20 +2519,6 @@ public
       b := match eqn case DUMMY_EQUATION() then true; else false; end match;
     end isDummy;
 
-    function isIdentity
-      "true if both sides are equal, e.g. x = x."
-      input Equation eqn;
-      output Boolean b;
-    algorithm
-      b := match eqn
-        case SCALAR_EQUATION() then Expression.isEqual(eqn.lhs, eqn.rhs);
-        case ARRAY_EQUATION() then Expression.isEqual(eqn.lhs, eqn.rhs);
-        case RECORD_EQUATION() then Expression.isEqual(eqn.lhs, eqn.rhs);
-        case FOR_EQUATION() then List.all(eqn.body, isIdentity);
-        else false;
-      end match;
-    end isIdentity;
-
     function isResidual extends checkEqn;
     protected
       EquationAttributes attr;

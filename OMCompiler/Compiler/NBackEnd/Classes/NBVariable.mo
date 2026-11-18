@@ -59,6 +59,7 @@ public
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import Operator = NFOperator;
   import NFFunction.Function;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
@@ -2237,6 +2238,11 @@ function isJacobianResultVar
     (_, b) := Expression.mapFold(exp, function checkExpTraverse(func=func,info=info), false);
   end checkExpMap;
 
+  function isVarCref
+    input ComponentRef cref;
+    output Boolean b = ComponentRef.isCref(cref) and InstNode.isVar(ComponentRef.node(cref));
+  end isVarCref;
+
   function checkCref
     input ComponentRef cref;
     input checkVar func;
@@ -2765,6 +2771,62 @@ function isJacobianResultVar
     end createSortHashTpl;
   end VariablePointers;
 
+  uniontype StateOrder
+    "x = k*der(y) + c for a state y. k and c are constants, parameters or literals."
+    record STATE_ORDER
+      ComponentRef partner                               "x without subscripts";
+      Option<tuple<Expression, Expression>> coefficients "(k, c), NONE() for x = der(y)";
+    end STATE_ORDER;
+
+    function derivative
+      "Returns der(y) = (x - c)/k with the subscripts of the state cref y."
+      input StateOrder order;
+      input ComponentRef state;
+      output Expression exp;
+    protected
+      Expression k, c;
+      Type ty;
+    algorithm
+      exp := Expression.fromCref(ComponentRef.copySubscripts(state, order.partner));
+      exp := match order.coefficients
+        case SOME((k, c)) algorithm
+          ty := Expression.typeOf(exp);
+          if Type.isArray(ty) then
+            if not Expression.isZero(c) then
+              exp := Expression.BINARY(exp, Operator.makeArrayScalar(ty, NFOperator.Op.SUB, false), c);
+            end if;
+            exp := Expression.BINARY(exp, Operator.makeArrayScalar(ty, NFOperator.Op.DIV, false), k);
+          else
+            if not Expression.isZero(c) then
+              exp := Expression.BINARY(exp, Operator.makeSub(ty), c);
+            end if;
+            exp := Expression.BINARY(exp, Operator.makeDiv(ty), k);
+          end if;
+        then SimplifyExp.simplify(exp);
+        else exp;
+      end match;
+    end derivative;
+
+    function isEqual
+      input StateOrder order1;
+      input StateOrder order2;
+      output Boolean b;
+    protected
+      Expression k1, c1, k2, c2;
+    algorithm
+      b := ComponentRef.isEqual(order1.partner, order2.partner) and (match (order1.coefficients, order2.coefficients)
+        case (NONE(), NONE()) then true;
+        case (SOME((k1, c1)), SOME((k2, c2))) then Expression.isEqual(k1, k2) and Expression.isEqual(c1, c2);
+        else false;
+      end match);
+    end isEqual;
+
+    function toString
+      input StateOrder order;
+      output String str = Expression.toString(derivative(order, order.partner));
+    end toString;
+  end StateOrder;
+
   // ==========================================================================
   //                        Variable Data
   //    All variable arrays are pointer arrays to avoid duplicates
@@ -2807,7 +2869,7 @@ function isJacobianResultVar
       VariablePointers artificials        "artificial variables to have pointers on crefs";
 
       /* state order for differentiation and index reduction */
-      UnorderedMap<ComponentRef, ComponentRef> state_order;
+      UnorderedMap<ComponentRef, StateOrder> state_order;
       Boolean resizable                   "true if the model has resizable parameters, set by Resizable.resize";
     end VAR_DATA_SIM;
 
@@ -3024,7 +3086,7 @@ function isJacobianResultVar
 
     function getStateOrder
       input VarData varData;
-      output UnorderedMap<ComponentRef, ComponentRef> state_order;
+      output UnorderedMap<ComponentRef, StateOrder> state_order;
     algorithm
       state_order := match varData
         case VAR_DATA_SIM() then varData.state_order;

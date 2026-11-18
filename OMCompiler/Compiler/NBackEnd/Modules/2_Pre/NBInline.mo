@@ -353,7 +353,7 @@ protected
     Expression new_exp;
   algorithm
     exp := match exp
-      case Expression.CREF(ty = Type.COMPLEX()) guard(Type.isRecord(exp.ty) and isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo())) algorithm
+      case Expression.CREF(ty = Type.COMPLEX()) guard(Type.isRecord(exp.ty) and BVariable.isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo())) algorithm
         var_ptr  := BVariable.getVarPointer(exp.cref, sourceInfo());
         children := BVariable.getRecordChildren(var_ptr);
         if List.any(children, BVariable.isConst) and List.compareLength(children, Type.recordFields(exp.ty)) == 0 then
@@ -363,16 +363,11 @@ protected
           new_exp  := exp;
         end if;
       then new_exp;
-      case Expression.CREF() guard(isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isConst, sourceInfo()))
+      case Expression.CREF() guard(BVariable.isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isConst, sourceInfo()))
       then Replacements.recordChildArg(exp.cref);
       else exp;
     end match;
   end replaceConstantArgument;
-
-  function isVarCref
-    input ComponentRef cref;
-    output Boolean b = ComponentRef.isCref(cref) and InstNode.isVar(ComponentRef.node(cref));
-  end isVarCref;
 
 // =========================================================================
 //          ATTRIBUTE PROPAGATION (min/max/nominal/unit/... see #15947)
