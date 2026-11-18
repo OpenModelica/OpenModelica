@@ -1744,6 +1744,7 @@ end hasStructuralUpdate;
 
 template functionUpdateStructuralParameters(list<SimVar> intParamVars, list<SimVar> inputVars, Text modelNamePrefixStr)
  "The size parameters $DIM_k of derived dimensions of resizable arrays (N-1),
+  the resizable parameters with a binding of other parameters (s.N = N),
   and the number of scalar inputs if an input is a resizable array.
   The runtime calls it after reading the init.xml, before it computes the sizes
   of the arrays and allocates them: only the start attributes of the parameters

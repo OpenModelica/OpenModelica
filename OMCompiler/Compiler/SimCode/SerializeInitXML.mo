@@ -353,7 +353,8 @@ algorithm
   for var in vars.intParamVars loop
     UnorderedMap.add(DAE.CREF(var.name, var.type_), vr, dims);
     if SimCodeCodegenUtil.isDimensionParameter(var) then
-      UnorderedMap.add(Util.getOption(var.initialValue), vr, dims);
+      // s.N with start value N must not replace the value reference of N
+      UnorderedMap.tryAdd(Util.getOption(var.initialValue), vr, dims);
     end if;
     vr := vr + 1;
   end for;

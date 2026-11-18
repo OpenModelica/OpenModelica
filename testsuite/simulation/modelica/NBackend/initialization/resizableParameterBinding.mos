@@ -2,9 +2,11 @@
 // keywords: NewBackend resizable
 // status: correct
 // cflags: --newBackend --resizableArrays
+// teardown_command: rm -f resizableParameterBinding_cvode.* resizableParameterBinding_ida.*
 //
 // The binding of a resizable parameter that is bound to another parameter
-// needs a binding equation, otherwise its value is zero.
+// needs a binding equation, otherwise its value is zero. The solvers size the
+// ODE Jacobian with s.N before the initialization.
 
 loadString("
 model Sub
@@ -27,6 +29,10 @@ end resizableParameterBinding;
 simulate(resizableParameterBinding, stopTime = 1); getErrorString();
 val(s.N, 0);
 abs(val(s.y, 1) - 3 * exp(-1)) < 1e-3;
+system("./resizableParameterBinding -s=cvode -r=resizableParameterBinding_cvode.mat > resizableParameterBinding_cvode.log 2>&1");
+abs(val(s.y, 1, "resizableParameterBinding_cvode.mat") - 3 * exp(-1)) < 1e-3;
+system("./resizableParameterBinding -s=ida -r=resizableParameterBinding_ida.mat > resizableParameterBinding_ida.log 2>&1");
+abs(val(s.y, 1, "resizableParameterBinding_ida.mat") - 3 * exp(-1)) < 1e-3;
 // Result:
 // true
 // ""
@@ -39,5 +45,9 @@ abs(val(s.y, 1) - 3 * exp(-1)) < 1e-3;
 // end SimulationResult;
 // ""
 // 3.0
+// true
+// 0
+// true
+// 0
 // true
 // endResult
