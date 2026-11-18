@@ -510,7 +510,14 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
   // (e.g. -lv=LOG_STATS), as the native executable would receive on its command line.
   // -logFormat=xml, as the native run's xmltcp, keeps the equation indexes a message
   // names; the "Debug more" links come from them. First, so a user's own wins.
-  const QString simflags = (QStringList() << "-logFormat=xml" << mSimulationOptions.getSimulationFlags()).join(" ");
+  // omc splits simflags on whitespace outside quotes, e.g. in a -r path.
+  QStringList simflagsList = QStringList() << "-logFormat=xml" << mSimulationOptions.getSimulationFlags();
+  for (QString &flag : simflagsList) {
+    if (flag.contains(QRegularExpression("\\s"))) {
+      flag = QString("'%1'").arg(flag);
+    }
+  }
+  const QString simflags = simflagsList.join(" ");
   const QString command = QString("simulate(%1, %2, resimulateExecutable=\"%3\", simflags=\"%4\")")
                               .arg(mSimulationOptions.getClassName(), simulationParameters,
                                    mSimulationOptions.getOutputFileName(), simflags);

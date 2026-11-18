@@ -2065,6 +2065,80 @@ int SaveChangesDialog::exec()
 }
 
 /*!
+ * \class LibraryFileChangeDialog
+ * \brief Creates a dialog that lists the libraries changed on disk outside OMEdit.
+ */
+/*!
+ * \brief LibraryFileChangeDialog::LibraryFileChangeDialog
+ * \param pParent
+ */
+LibraryFileChangeDialog::LibraryFileChangeDialog(QWidget *pParent)
+  : QDialog(pParent)
+{
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Files Changed on Disk")));
+  setMinimumWidth(400);
+  mpChangesLabel = new Label(tr("Reload the following libraries from disk?"));
+  mpChangesLabel->setWordWrap(true);
+  mpChangedLibrariesListWidget = new QListWidget;
+  mpChangedLibrariesListWidget->setObjectName("ChangedLibrariesListWidget");
+  mpChangedLibrariesListWidget->setItemDelegate(new ItemDelegate(mpChangedLibrariesListWidget));
+  mpChangedLibrariesListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  // Create the buttons
+  mpReloadButton = new QPushButton(tr("Reload"));
+  mpReloadButton->setAutoDefault(true);
+  connect(mpReloadButton, &QPushButton::clicked, this, &QDialog::accept);
+  mpKeepButton = new QPushButton(tr("Keep"));
+  mpKeepButton->setAutoDefault(false);
+  connect(mpKeepButton, &QPushButton::clicked, this, &QDialog::reject);
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpReloadButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpKeepButton, QDialogButtonBox::ActionRole);
+  // create a main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpChangesLabel);
+  pMainLayout->addWidget(mpChangedLibrariesListWidget);
+  pMainLayout->addWidget(mpButtonBox, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief LibraryFileChangeDialog::listChangedLibraries
+ * Lists the libraries. All of them are selected for reloading by default.
+ * \param libraries
+ * \param anyUnsavedChanges
+ */
+void LibraryFileChangeDialog::listChangedLibraries(const QStringList &libraries, bool anyUnsavedChanges)
+{
+  mpChangedLibrariesListWidget->addItems(libraries);
+  mpChangedLibrariesListWidget->selectAll();
+  QStringList warnings;
+  if (anyUnsavedChanges) {
+    warnings.append(tr("Reloading from disk discards unsaved changes in the selected libraries."));
+  }
+  warnings.append(tr("Libraries deleted on disk are removed from OMEdit when you reload them.<br />"));
+  warnings.append(tr("The default reload behavior can be set in <b>Tools > Options > General > Library Browser > Reload libraries when files change on disk</b>."));
+  mpChangesLabel->setText(QString("%1<br>%2").arg(mpChangesLabel->text(), warnings.join("<br>")));
+}
+
+/*!
+ * \brief LibraryFileChangeDialog::getSelectedRows
+ * Returns the rows of the libraries selected for reloading.
+ * \return
+ */
+QList<int> LibraryFileChangeDialog::getSelectedRows() const
+{
+  QList<int> rows;
+  for (int i = 0; i < mpChangedLibrariesListWidget->count(); ++i) {
+    if (mpChangedLibrariesListWidget->item(i)->isSelected()) {
+      rows.append(i);
+    }
+  }
+  return rows;
+}
+
+/*!
  * \class ExportFigaroDialog
  * \brief Creates a dialog for Figaro export.
  */
@@ -2284,6 +2358,7 @@ void CreateNewItemDialog::createNewFileOrFolder()
     if (mIsCreateFile) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     }
+    MainWindow::instance()->getLibraryWidget()->refreshLibraryFileWatcher();
   }
   accept();
 }
@@ -2390,8 +2465,14 @@ void RenameItemDialog::renameItem()
         mpLibraryTreeItem->getModelWidget()->setWindowTitle(mpNameTextBox->text());
       }
       // if we have renamed a directory then we need to update the file paths of the nested files.
+      LibraryWidget *pLibraryWidget = MainWindow::instance()->getLibraryWidget();
       if (fileInfo.isDir()) {
         updateChildrenPath(mpLibraryTreeItem);
+        pLibraryWidget->resyncLibraryFileWatcher();
+      } else {
+        pLibraryWidget->ignoreFileChange(oldFileInfo.absoluteFilePath());
+        pLibraryWidget->ignoreFileChange(fileInfo.absoluteFilePath());
+        pLibraryWidget->refreshLibraryFileWatcher();
       }
     }
   } else if (mpLibraryTreeItem->isSSP()) {

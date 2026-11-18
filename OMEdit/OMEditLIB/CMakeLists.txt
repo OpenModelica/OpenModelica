@@ -22,6 +22,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       LSP/ModelicaLSPClient.cpp
                       Util/Helper.cpp
                       Util/Utilities.cpp
+                      Util/RecursiveFileWatcher.cpp
                       Util/Style.cpp
                       Util/PersistentStorage.cpp
                       Cloud/CloudTypes.cpp
@@ -50,6 +51,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Modeling/MessagesWidget.cpp
                       Modeling/ItemDelegate.cpp
                       Modeling/LibraryTreeWidget.cpp
+                      Modeling/LibraryFileWatcher.cpp
                       Modeling/ElementTreeWidget.cpp
                       Modeling/Commands.cpp
                       Modeling/ModelWidgetContainer.cpp
@@ -201,6 +203,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Cloud/OAuth2Client.h
                       Cloud/OAuth2Redirect.h
                       Util/Utilities.h
+                      Util/RecursiveFileWatcher.h
                       Util/Style.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
@@ -214,6 +217,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Modeling/MessagesWidget.h
                       Modeling/ItemDelegate.h
                       Modeling/LibraryTreeWidget.h
+                      Modeling/LibraryFileWatcher.h
                       Modeling/ElementTreeWidget.h
                       Modeling/Commands.h
                       Modeling/ModelWidgetContainer.h
