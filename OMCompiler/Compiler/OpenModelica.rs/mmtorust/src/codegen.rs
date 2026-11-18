@@ -742,6 +742,8 @@ struct GenCtx {
     /// Variables read by the ranges of the enclosing `for` loops, which may
     /// borrow them for the whole loop.
     loop_range_reads: Vec<String>,
+    /// Variables of the enclosing `for` loops over a list, bound as `&T`.
+    ref_loop_vars: Vec<String>,
     /// Parts of borrowed parameters bound by the enclosing match arms:
     /// `&'__b` references that can be passed on as they are.
     param_tails: HashSet<String>,
@@ -876,6 +878,7 @@ impl GenCtx {
             fn_slot_used: false,
             loop_label_stack: Vec::new(),
             loop_range_reads: Vec::new(),
+            ref_loop_vars: Vec::new(),
             param_tails: HashSet::new(),
         }
     }
@@ -2035,7 +2038,7 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
             // Inside the timed section: the parallel-speedup guard below sets
             // the summed per-file times against the wall clock of this phase.
             let content = crate::rustfmt::format(
-                &crate::mutfix::drop_unused_mut(&content),
+                &crate::mutfix::drop_unused_mut(&crate::tidy::tidy(&content)),
                 std::path::Path::new(&file_path),
             );
             let file_elapsed = file_t0.elapsed();
@@ -9476,18 +9479,12 @@ fn emit_function<'a>(
         // Partial-function aliases lower to `Arc<dyn Fn(...) -> Result<...>
         // + 'static>` (see [`fmt_param_ty`] — closures-with-captures
         // cannot inhabit a `fn(...)` pointer, so we standardise on the
-        // trait-object shape). The aliased type never participates in
-        // structural equality, so drop `PartialEq` from the type-parameter
-        // bound — keeping it would force every user of the alias to also
-        // carry `T: PartialEq`, which fails when the alias is parametric
-        // over a callback. The `+ 'static` bound on each type parameter
-        // is required because `dyn Fn(T, ...) + 'static` is only
-        // well-formed when T outlives 'static.
+        // trait-object shape). Rust does not enforce bounds on a type alias,
+        // so its parameters are left unbounded.
         let type_params = if all_type_vars.is_empty() {
             String::new()
         } else {
-            let bounded: Vec<String> = all_type_vars.iter().map(|v| format!("{v}: Clone + 'static")).collect();
-            format!("<{}>", bounded.join(", "))
+            format!("<{}>", all_type_vars.join(", "))
         };
         let ins = fn_inputs
             .iter()
@@ -10139,7 +10136,12 @@ fn emit_function<'a>(
         (true, None) => "<'__b>".to_owned(),
     };
     emit_doc_comment(out, indent, class_doc(c));
-    writeln!(out, "{indent}{pub_kw}fn {ename}{type_params}({params}) -> {sig_ret} {{").unwrap();
+    let ret_arrow = if sig_ret == "()" {
+        String::new()
+    } else {
+        format!(" -> {sig_ret}")
+    };
+    writeln!(out, "{indent}{pub_kw}fn {ename}{type_params}({params}){ret_arrow} {{").unwrap();
     let body_indent = format!("{indent}    ");
 
     // Emit `use` statements for function-local imports — those declared
@@ -10731,7 +10733,7 @@ fn emit_function<'a>(
     };
     if is_fallible_fn {
         writeln!(out, "{body_indent}Ok({tail_val})").unwrap();
-    } else {
+    } else if tail_val != "()" {
         writeln!(out, "{body_indent}{tail_val}").unwrap();
     }
     writeln!(out, "{indent}}}").unwrap();
@@ -12056,6 +12058,33 @@ fn emit_exp<'a>(
                 // there the `.clone()` is load-bearing (it produces the owned
                 // value the context expects).
                 _ if copy && is_plain_local && owned => var_str,
+                // `var_field!` yields `&T`; a field path after it is a place.
+                _ if copy && var_str.starts_with("var_field!(") && is_whole_macro_call(&var_str) => {
+                    format!("*{var_str}")
+                }
+                // The variable of a `for` loop or reduction over a list is a `&T`.
+                _ if copy
+                    && is_plain_local
+                    && !has_borrow_guard
+                    && ctx.ref_loop_vars.contains(&base)
+                    && matches!(ctx.place_mode.get(&base), Some(PlaceMode::Ref)) =>
+                {
+                    format!("*{var_str}")
+                }
+                // An enumeration literal.
+                _ if matches!(effective_ty, Ty::Enumeration(_))
+                    && !is_plain_local
+                    && !ctx.place_mode.contains_key(&base)
+                    && !has_borrow_guard =>
+                {
+                    var_str
+                }
+                // A field path, `(*x)` or array element of a local of a `Copy`
+                // type is a place: reading it copies. (A package constant may
+                // be a `LazyLock` and still needs its `.clone()`.)
+                _ if copy && ctx.place_mode.contains_key(&base) && (!is_plain_local || var_str.starts_with("(*")) => {
+                    var_str
+                }
                 // Final read of an owned, non-`Copy` plain local: move the value
                 // instead of cloning it (the marquee win — no `Arc` refcount bump
                 // or `Vec`/`String`/record deep copy). `node_last_use` is set by
@@ -12286,7 +12315,7 @@ fn emit_exp<'a>(
                     } else {
                         let mut s = String::from("{ let mut __mm_s = String::new(); ");
                         for p in parts {
-                            let _ = write!(s, "__mm_s.push_str(&*{p}); ");
+                            let _ = write!(s, "__mm_s.push_str(&{p}); ");
                         }
                         s.push_str("ArcStr::from(__mm_s) }");
                         s
@@ -14122,17 +14151,27 @@ fn emit_reduction<'a>(
         }
     }
     let mut by_ref_iters: HashSet<String> = HashSet::new();
+    let saved_ref_loop_vars = ctx.ref_loop_vars.len();
     let saved_iter_modes: Vec<(String, Option<PlaceMode>, Option<Option<VarShape>>)> = iterators
         .iter()
         .filter(|it| !written.contains(&it.name))
         .filter_map(|it| {
-            let Ty::List(elem) = (match it.range.ty() {
+            let range_ty = match it.range.ty() {
                 Ty::Tuple(ts) if !ts.is_empty() => ts[0].clone(),
                 t => t,
-            }) else {
+            };
+            // A range yields owned values.
+            if let Ty::Range(elem) = &range_ty
+                && ty_is_copy(elem, &ctx.copy_type_qnames)
+            {
+                let mode = ctx.place_mode.insert(it.name.clone(), PlaceMode::Owned);
+                return Some((it.name.clone(), mode, None));
+            }
+            let Ty::List(elem) = range_ty else {
                 return None;
             };
             by_ref_iters.insert(it.name.clone());
+            ctx.ref_loop_vars.push(it.name.clone());
             let mode = ctx.place_mode.insert(it.name.clone(), PlaceMode::Ref);
             let shape =
                 is_arc_wrapped(&elem, ctx).then(|| ctx.variant_shapes.insert(it.name.clone(), VarShape::RefArc));
@@ -14289,6 +14328,7 @@ fn emit_reduction<'a>(
 
     // Restore the iterator bindings now that the body, guards and ranges have
     // all been emitted (see the NOTE above the body emission).
+    ctx.ref_loop_vars.truncate(saved_ref_loop_vars);
     for (name, mode, shape) in saved_iter_modes.into_iter().rev() {
         match mode {
             Some(m) => {
@@ -15164,7 +15204,13 @@ fn emit_builtin_call<'a>(
         },
         "listLength" | "stringLength" => {
             let arg = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
-            Ok(format!("(({arg}).len() as i32)"))
+            let recv = if arg.bytes().all(|c| c.is_ascii_alphanumeric() || b"_#.:".contains(&c)) {
+                arg
+            } else {
+                format!("({arg})")
+            };
+            // `List::len` is already an `i32`.
+            Ok(if func == "listLength" { format!("{recv}.len()") } else { format!("({recv}.len() as i32)") })
         },
         "floor" => {
             // floor/ceil are Real-only. `num_traits::Float` (re-exported by
@@ -20601,7 +20647,7 @@ fn emit_match<'a>(
                     s.push_str(&format!("                    Ok({result})\n"));
                     s.push_str("                }\n");
                     if !rust_pat_irrefutable(&pat) {
-                        s.push_str("                _ => return Err(\"nomatch\"),\n");
+                        s.push_str("                _ => Err(\"nomatch\"),\n");
                     }
                     s.push_str("            }}\n");
                 } else {
@@ -21893,7 +21939,12 @@ fn emit_pat_with_implicit_bind_md<'a>(
                         | Ty::RustEnum(_)
                         | Ty::AliasTo(_)
                 );
-                if is_struct_ty {
+                if matches!(ty, Ty::RustUnitVariant)
+                    && rust.contains("::")
+                    && field_tys_for_ctor().is_some_and(|f| f.is_empty())
+                {
+                    rust
+                } else if is_struct_ty {
                     format!("{rust} {{ .. }}")
                 } else {
                     // For non-struct types (constants, unknown), look up fields.
@@ -22923,7 +22974,16 @@ fn try_emit_reference_eq<'a>(
             list_operand_ref(lhs),
             list_operand_ref(rhs)
         )),
-        _ if referenceeq_derefs_to_pointee(ty, ctx) => Some(format!("referenceEq(&*({lhs}),&*({rhs}))")),
+        _ if referenceeq_derefs_to_pointee(ty, ctx) => {
+            let pointee = |e: &str| {
+                if e.starts_with("&*") {
+                    e.to_owned()
+                } else {
+                    format!("&*({e})")
+                }
+            };
+            Some(format!("referenceEq({}, {})", pointee(lhs), pointee(rhs)))
+        }
         Ty::Generic(name, _) if is_cell_ctor(name) => Some(format!("{name}::referenceEq(&({lhs}), &({rhs}))")),
         Ty::Option(inner) => {
             // The match borrows the operands, so `__refeq_l`/`__refeq_r` are
@@ -23039,6 +23099,25 @@ fn try_emit_reference_eq<'a>(
         }
         _ => None,
     }
+}
+
+/// Whether `s` is one macro call, `name!(…)`, with nothing after it.
+fn is_whole_macro_call(s: &str) -> bool {
+    let Some(open) = s.find("!(") else { return false };
+    let mut depth = 0i32;
+    for (k, c) in s.char_indices().skip(open + 1) {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return k + 1 == s.len();
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }
 
 /// True when a value of this type is `Copy` in the generated Rust, so a
@@ -27125,6 +27204,10 @@ fn emit_stmt<'a>(
             let saved_var_mode = ctx
                 .place_mode
                 .insert(var.clone(), if var_by_ref { PlaceMode::Ref } else { PlaceMode::Owned });
+            let saved_ref_loop_vars = ctx.ref_loop_vars.len();
+            if var_by_ref {
+                ctx.ref_loop_vars.push(var.clone());
+            }
             let saved_var_shape = if var_by_ref && is_arc_wrapped(&elem_ty, ctx) {
                 Some(ctx.variant_shapes.insert(var.clone(), VarShape::RefArc))
             } else {
@@ -27163,6 +27246,7 @@ fn emit_stmt<'a>(
             );
             ctx.loop_label_stack.pop();
             ctx.loop_range_reads.truncate(saved_range_reads);
+            ctx.ref_loop_vars.truncate(saved_ref_loop_vars);
             if iter_newly_init {
                 ctx.fn_initialized_vars.remove(var);
             }

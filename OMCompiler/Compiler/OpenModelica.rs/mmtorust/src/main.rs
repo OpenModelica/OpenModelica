@@ -18,6 +18,7 @@ mod mc_disjoint;
 mod mutable_cycles;
 mod rustfmt;
 mod scripting_api_qt;
+mod tidy;
 mod typedexp;
 mod unused_functions;
 mod validate;
