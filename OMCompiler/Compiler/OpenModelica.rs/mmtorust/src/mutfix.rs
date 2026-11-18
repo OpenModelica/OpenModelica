@@ -72,6 +72,9 @@ const MUT_METHODS: &[&str] = &[
     "value",
 ];
 
+/// Macros that only read their arguments.
+const VALUE_MACROS: &[&str] = &["list", "literal", "fnptr", "vec", "format", "matches", "var_field"];
+
 pub(crate) fn is_ident_char(c: u8) -> bool {
     c.is_ascii_alphanumeric() || c == b'_'
 }
@@ -403,7 +406,7 @@ fn mutations(b: &[u8], from: usize, to: usize) -> Vec<Mutation> {
                     }
                     break;
                 }
-                if b.get(r.1) == Some(&b'!') {
+                if b.get(r.1) == Some(&b'!') && !VALUE_MACROS.iter().any(|m| m.as_bytes() == &b[r.0..r.1]) {
                     let k = skip_ws(b, r.1 + 1);
                     if matches!(b.get(k), Some(b'(') | Some(b'[') | Some(b'{')) {
                         let k = skip_ws(b, k + 1);
@@ -428,9 +431,62 @@ fn mutations(b: &[u8], from: usize, to: usize) -> Vec<Mutation> {
     out
 }
 
-/// Whether `let mut name: T;` ending its name at `after` is assigned exactly
-/// once in its block, outside any loop that does not also hold the
-/// declaration, and mutated no other way: then it needs no `mut`.
+/// Whether `p1 < p2` lie in different branches of one `if … else` chain.
+fn in_other_branch(b: &[u8], p1: usize, p2: usize) -> bool {
+    let (mut depth, mut min) = (0i32, 0i32);
+    let mut k = p1;
+    while k < p2 {
+        match b[k] {
+            b'{' => depth += 1,
+            b'}' => depth -= 1,
+            _ => {}
+        }
+        if depth < min {
+            min = depth;
+            // A block around `p1` ends at `k`: follow its `else` chain.
+            let mut c = k;
+            loop {
+                let j = skip_ws(b, c + 1);
+                if !word_at(b, j, b"else") {
+                    break;
+                }
+                let j = skip_ws(b, j + 4);
+                let Some(o) = b[j..].iter().position(|&x| x == b'{').map(|p| j + p) else {
+                    break;
+                };
+                if !(b[j] == b'{' || word_at(b, j, b"if")) {
+                    break;
+                }
+                let mut d = 0i32;
+                let mut close = o;
+                while close < b.len() {
+                    match b[close] {
+                        b'{' => d += 1,
+                        b'}' => {
+                            d -= 1;
+                            if d == 0 {
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                    close += 1;
+                }
+                if o < p2 && p2 < close {
+                    return true;
+                }
+                c = close;
+            }
+        }
+        k += 1;
+    }
+    false
+}
+
+/// Whether `let mut name: T;` ending its name at `after` is assigned once on
+/// every path through its block (once, or once in each branch of an `if …
+/// else` chain), outside any loop that does not also hold the declaration,
+/// and mutated no other way: then it needs no `mut`.
 fn deferred_init_once(b: &[u8], after: usize, to: usize, name: &str, muts: &[Mutation]) -> bool {
     let Some(semi) = b[after..to]
         .iter()
@@ -467,12 +523,19 @@ fn deferred_init_once(b: &[u8], after: usize, to: usize, name: &str, muts: &[Mut
         .iter()
         .filter(|x| x.name == name && x.at > semi && x.at < end)
         .collect();
-    if redeclared || here.len() != 1 || !here[0].assign {
+    if redeclared || here.is_empty() || here.iter().any(|x| !x.assign) {
         return false;
     }
-    let between = &b[semi..here[0].at];
-    !(0..between.len())
-        .any(|k| word_at(between, k, b"loop") || word_at(between, k, b"while") || word_at(between, k, b"for"))
+    let in_loop = |at: usize| {
+        let between = &b[semi..at];
+        (0..between.len())
+            .any(|k| word_at(between, k, b"loop") || word_at(between, k, b"while") || word_at(between, k, b"for"))
+    };
+    here.iter().all(|x| !in_loop(x.at))
+        && here
+            .iter()
+            .enumerate()
+            .all(|(n, x)| here[n + 1..].iter().all(|y| in_other_branch(b, x.at, y.at)))
 }
 
 /// Where the function body starting at `body` declares `name` again with a
@@ -612,6 +675,21 @@ mod tests {
         assert_eq!(
             f(src),
             "fn g(a: A, mut b: B) {\n    let a: A = a;\n    *f(&mut a.clone().borrow_mut(), 1) = 2;\n    h(&mut b.x);\n}\n"
+        );
+    }
+
+    #[test]
+    fn assigned_once_per_branch() {
+        let src = "fn g(c: bool, d: bool) -> i32 {\n    let mut a: i32;\n    if c {\n        a = 1;\n    } else if d {\n        if c {\n            h();\n        }\n        a = 2;\n    } else {\n        a = 3;\n    }\n    let mut b: i32;\n    if c {\n        b = 1;\n    }\n    b = 2;\n    a + b\n}\n";
+        assert_eq!(f(src), src.replacen("let mut a", "let a", 1));
+    }
+
+    #[test]
+    fn value_macros_do_not_mutate() {
+        let src = "fn g(mut a: A, mut b: B) {\n    h(list![a, b]);\n    assign_variant_field!(b => V; f = 1);\n}\n";
+        assert_eq!(
+            f(src),
+            "fn g(a: A, mut b: B) {\n    h(list![a, b]);\n    assign_variant_field!(b => V; f = 1);\n}\n"
         );
     }
 

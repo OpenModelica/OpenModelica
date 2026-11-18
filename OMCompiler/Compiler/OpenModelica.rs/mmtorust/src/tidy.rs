@@ -125,7 +125,8 @@ fn strip_value_parens(src: &str) -> String {
         };
         if b.get(open) == Some(&b'(')
             && let Some(close) = close_of(&b, open)
-            && b.get(skip_ws(&b, close + 1)).is_some_and(|c| followers.contains(c))
+            && (b.get(skip_ws(&b, close + 1)).is_some_and(|c| followers.contains(c))
+                || (is_assign_eq(&b, i) && let_else_value(&b, open, close)))
             && !only_ws(&b[open + 1..close])
             && !top_level_comma(&b, open + 1, close)
         {
@@ -137,6 +138,25 @@ fn strip_value_parens(src: &str) -> String {
         i += 1;
     }
     apply(src, edits)
+}
+
+/// Whether `(…)` at `open..=close` is the value of a `let … else`, and one
+/// that may stand there without the parentheses: it must not end in `}` or
+/// be a lazy boolean.
+fn let_else_value(b: &[u8], open: usize, close: usize) -> bool {
+    if !word_at(b, skip_ws(b, close + 1), b"else") || b[skip_ws_back(b, close) - 1] == b'}' {
+        return false;
+    }
+    let mut depth = 0i32;
+    for k in open + 1..close {
+        match b[k] {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' => depth -= 1,
+            b'&' | b'|' if depth == 0 && b[k + 1] == b[k] => return false,
+            _ => {}
+        }
+    }
+    true
 }
 
 /// The first use of `name` in `b[from..to]`, with the change in `{}` depth
@@ -200,7 +220,7 @@ fn stmt_end(b: &[u8], from: usize, to: usize) -> Option<usize> {
 fn mentions(b: &[u8], from: usize, to: usize, name: &str) -> bool {
     let mut i = from;
     while i < to {
-        if is_ident_char(b[i]) && !is_ident_char(b[i - 1]) {
+        if is_ident_char(b[i]) && (i == 0 || !is_ident_char(b[i - 1])) {
             let Some(r) = ident_at(b, i) else {
                 while i < to && is_ident_char(b[i]) {
                     i += 1;
@@ -339,10 +359,164 @@ fn return_tail_let(src: &str) -> String {
             continue;
         }
         let value = src[k + 1..last].trim();
-        let text = if wrap { format!("Ok({value})") } else { value.to_owned() };
+        let text = match value.strip_suffix('?') {
+            Some(inner) if wrap && is_one_operand(&b, k + 1, last) => inner.to_owned(),
+            _ if wrap => format!("Ok({value})"),
+            _ => value.to_owned(),
+        };
         edits.push((l, skip_ws_back(&b, to).max(last + 1), text));
     }
     apply(src, edits)
+}
+
+/// Whether the trimmed `b[from..to]` is `e?` for a single operand `e` (a call
+/// or path chain without another `?` outside brackets). A prefix operator
+/// would apply after the `?` (`*e?` is `*(e?)`).
+fn is_one_operand(b: &[u8], from: usize, to: usize) -> bool {
+    let (s, e) = (skip_ws(b, from), skip_ws_back(b, to));
+    e > s + 1 && b[e - 1] == b'?' && (is_ident_char(b[s]) || b[s] == b'(') && !has_top_level_operator(b, s, e - 1)
+}
+
+/// `Ok(return e)` as `return e`, and `return Ok(e?)` as `return e`: `?` and
+/// `return` leave the same function.
+fn ok_returns(src: &str) -> String {
+    let b = mask(src);
+    let mut edits = Vec::new();
+    let mut i = 0;
+    while i < b.len() {
+        if word_at(&b, i, b"Ok")
+            && b.get(i + 2) == Some(&b'(')
+            && let Some(close) = close_of(&b, i + 2)
+        {
+            let inner = skip_ws(&b, i + 3);
+            let before = skip_ws_back(&b, i);
+            let after_return = before >= 6 && word_at(&b, before - 6, b"return");
+            if word_at(&b, inner, b"return") {
+                edits.push((if after_return { before - 6 } else { i }, inner, String::new()));
+                edits.push((close, close + 1, String::new()));
+                i = close + 1;
+                continue;
+            }
+            if after_return && is_one_operand(&b, inner, close) {
+                edits.push((i, inner, String::new()));
+                edits.push((skip_ws_back(&b, close) - 1, close + 1, String::new()));
+                i = close + 1;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    apply(src, edits)
+}
+
+/// Declarations of locals that nothing else in the function mentions, when
+/// they have no value or a literal one.
+fn drop_unused_locals(src: &str) -> String {
+    let b = mask(src);
+    let mut edits = Vec::new();
+    for (from, to) in fn_scopes(&b) {
+        let mut ls = line_start(&b, from);
+        while ls < to {
+            let le = b[ls..to].iter().position(|&c| c == b'\n').map_or(to, |p| ls + p);
+            let k = skip_ws(&b, ls);
+            if k < le && word_at(&b, k, b"let") {
+                let mut n = skip_ws(&b, k + 3);
+                if word_at(&b, n, b"mut") {
+                    n = skip_ws(&b, n + 3);
+                }
+                let line = src[k..le].trim_end();
+                if let Some(r) = ident_at(&b, n)
+                    && line.ends_with(';')
+                    && literal_or_none(line)
+                    && !mentions(&b, from, ls, &ident_str(&b, r))
+                    && !mentions(&b, le, to, &ident_str(&b, r))
+                {
+                    edits.push((ls, (le + 1).min(to), String::new()));
+                }
+            }
+            ls = le + 1;
+        }
+    }
+    apply(src, edits)
+}
+
+/// Parameters that the body never mentions get a `_` prefix.
+fn prefix_unused_params(src: &str) -> String {
+    let b = mask(src);
+    let mut edits = Vec::new();
+    for (from, to) in fn_scopes(&b) {
+        let Some(body) = b[from..to].iter().position(|&c| c == b'{').map(|p| from + p) else {
+            continue;
+        };
+        // The parameter list is the first `(` after the name and generics.
+        let mut k = skip_ws(&b, from + 2);
+        let Some(name) = ident_at(&b, k) else { continue };
+        k = skip_ws(&b, name.1);
+        if b[k] == b'<' {
+            let mut depth = 0i32;
+            while k < body {
+                match b[k] {
+                    b'<' => depth += 1,
+                    b'>' if b[k - 1] != b'-' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+                k += 1;
+            }
+            k = skip_ws(&b, k + 1);
+        }
+        if b.get(k) != Some(&b'(') {
+            continue;
+        }
+        let Some(close) = close_of(&b, k) else { continue };
+        let mut params = Vec::new();
+        let (mut depth, mut start) = (0i32, k + 1);
+        for j in k + 1..close {
+            match b[j] {
+                b'(' | b'[' | b'{' | b'<' => depth += 1,
+                b')' | b']' | b'}' => depth -= 1,
+                b'>' if b[j - 1] != b'-' => depth -= 1,
+                b',' if depth == 0 => {
+                    params.push(start);
+                    start = j + 1;
+                }
+                _ => {}
+            }
+        }
+        params.push(start);
+        for p in params {
+            let mut p = skip_ws(&b, p);
+            if word_at(&b, p, b"mut") {
+                p = skip_ws(&b, p + 3);
+            }
+            if let Some(r) = ident_at(&b, p)
+                && b.get(skip_ws(&b, r.1)) == Some(&b':')
+                && b[r.0] != b'_'
+                && &b[r.0..r.1] != b"self"
+                && !mentions(&b, body, to, &ident_str(&b, r))
+            {
+                let name = if b[r.0..].starts_with(b"r#") { r.0 + 2 } else { r.0 };
+                edits.push((r.0, name, "_".to_owned()));
+            }
+        }
+    }
+    apply(src, edits)
+}
+
+/// Whether the `let …;` line declares without a value or with a literal one.
+fn literal_or_none(line: &str) -> bool {
+    let Some((_, value)) = line.split_once(" = ") else {
+        return !line.contains('=');
+    };
+    let v = value.trim_end_matches(';').trim();
+    matches!(v, "true" | "false" | "None" | "metamodelica::nil()")
+        || v.parse::<f64>().is_ok()
+        || v.strip_suffix("_f64").is_some_and(|x| x.parse::<f64>().is_ok())
+        || (v.starts_with("literal!(\"") && v.ends_with("\")") && v.matches('"').count() == 2)
 }
 
 /// `S { f: f }` (literal or pattern) as `S { f }`, inside function bodies
@@ -557,8 +731,9 @@ fn drop_unit_tails(src: &str) -> String {
 /// `src` after all rewrites, in the order that lets each one see the shapes
 /// the previous one leaves.
 pub fn tidy(src: &str) -> String {
-    let s = return_tail_let(&merge_late_init(&strip_value_parens(src)));
-    prune_imports(&compound_assign(&shorthand_fields(&drop_unit_tails(&s))))
+    let s = return_tail_let(&merge_late_init(&drop_unused_locals(&strip_value_parens(src))));
+    let s = prefix_unused_params(&ok_returns(&drop_unit_tails(&s)));
+    prune_imports(&compound_assign(&shorthand_fields(&s)))
 }
 
 #[cfg(test)]
@@ -667,6 +842,52 @@ mod tests {
         assert_eq!(
             drop_unit_tails(&strip_value_parens(src)),
             "fn g() {\n    if a == b {\n        f();\n    } else if (S { x } == s) {\n        ()\n    }\n    while i < n {\n        i += 1;\n    }\n    let () = match x {\n        _ => {\n            h()?;\n        }\n    };\n}\n"
+        );
+    }
+
+    #[test]
+    fn let_else_parens() {
+        let src = "fn g() -> Result<()> {\n    let true = (f(x)?) else { return Err(\"fail\") };\n    let true = (a && b) else { return Err(\"fail\") };\n    let 1 = (match y { _ => 1 }) else { return Err(\"fail\") };\n    Ok(())\n}\n";
+        assert_eq!(
+            strip_value_parens(src),
+            "fn g() -> Result<()> {\n    let true = f(x)? else { return Err(\"fail\") };\n    let true = (a && b) else { return Err(\"fail\") };\n    let 1 = (match y { _ => 1 }) else { return Err(\"fail\") };\n    Ok(())\n}\n"
+        );
+    }
+
+    #[test]
+    fn ok_and_return() {
+        let src = "fn g() -> Result<i32> {\n    if c {\n        return Ok(f(x)?);\n    }\n    if d {\n        return Ok(f(x)? + 1);\n    }\n    let v = Ok(h()?);\n    if e {\n        return Ok(return Err(\"fail\"));\n    }\n    Ok(return Err(\"fail\"))\n}\n";
+        assert_eq!(
+            ok_returns(src),
+            "fn g() -> Result<i32> {\n    if c {\n        return f(x);\n    }\n    if d {\n        return Ok(f(x)? + 1);\n    }\n    let v = Ok(h()?);\n    if e {\n        return Err(\"fail\");\n    }\n    return Err(\"fail\")\n}\n"
+        );
+    }
+
+    #[test]
+    fn tail_ok_question() {
+        let src = "fn g() -> Result<i32> {\n    let o: i32 = f(x)?;\n    Ok(o)\n}\nfn h() -> Result<i32> {\n    let o: i32 = f(x)? + 1;\n    Ok(o)\n}\nfn k() -> Result<i32> {\n    let o: i32 = *f(x)?;\n    Ok(o)\n}\n";
+        assert_eq!(
+            return_tail_let(src),
+            "fn g() -> Result<i32> {\n    f(x)\n}\nfn h() -> Result<i32> {\n    Ok(f(x)? + 1)\n}\nfn k() -> Result<i32> {\n    Ok(*f(x)?)\n}\n"
+        );
+    }
+
+    #[test]
+    fn unused_params() {
+        let src =
+            "pub fn g<T: Fn(A) -> B>(a: i32, b: &dyn Fn(i32, i32) -> i32, mut r#fn: F, _c: i32) -> i32 {\n    a\n}\n";
+        assert_eq!(
+            prefix_unused_params(src),
+            "pub fn g<T: Fn(A) -> B>(a: i32, _b: &dyn Fn(i32, i32) -> i32, mut _fn: F, _c: i32) -> i32 {\n    a\n}\n"
+        );
+    }
+
+    #[test]
+    fn unused_locals() {
+        let src = "fn g(a: i32) -> i32 {\n\n    let b: i32;\n    let mut c: i32 = 0;\n    let d: ArcStr = literal!(\"x\");\n    let e: i32 = f();\n    let g: i32 = 1;\n    a + g\n}\n";
+        assert_eq!(
+            drop_unused_locals(src),
+            "fn g(a: i32) -> i32 {\n\n    let e: i32 = f();\n    let g: i32 = 1;\n    a + g\n}\n"
         );
     }
 
