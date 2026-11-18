@@ -1,0 +1,49 @@
+// name: StepRetryEventLocation.mos - event location after a step retry (ticket #18182)
+// keywords: maxStepRetries, algebraic, event location
+// status: correct
+// teardown_command: rm -rf StepRetryEventLocation StepRetryEventLocation.c StepRetryEventLocation.o StepRetryEventLocation.h StepRetryEventLocation.libs StepRetryEventLocation.log StepRetryEventLocation.makefile StepRetryEventLocation_*
+//
+// The model cannot be evaluated at t = 0.5. The time event at t = 0.4985 puts
+// the step to the output point t = 0.5 off the grid; it fails and is retried
+// over half its step size. The step after the retry must not have t = 0.5 as
+// its midpoint: the event location of the state event at t = 0.5002 evaluates
+// the model there first, and a failure in the event location ends the run.
+
+loadString("
+model StepRetryEventLocation
+  function f \"Fails within 1e-9 of t = 0.5\"
+    input Real t;
+    output Real y;
+  algorithm
+    assert(abs(t - 0.5) > 1e-9, \"f cannot be evaluated at t = 0.5\");
+    y := t^2;
+    annotation(Inline = false);
+  end f;
+  Real y = f(time);
+  Boolean late(start = false, fixed = true);
+  discrete Real tShift(start = 0, fixed = true);
+equation
+  when time >= 0.4985 then
+    tShift = time;
+  end when;
+  when y > 0.5002^2 then
+    late = true;
+  end when;
+  annotation(experiment(StopTime = 1, Interval = 0.002, Tolerance = 1e-6));
+end StepRetryEventLocation;
+"); getErrorString();
+
+echo(false); res := simulate(StepRetryEventLocation); resultFile := res.resultFile; echo(true); getErrorString();
+resultFile <> "";
+val(late, 0.5); val(late, 0.6); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// 0.0
+// 1.0
+// ""
+// endResult

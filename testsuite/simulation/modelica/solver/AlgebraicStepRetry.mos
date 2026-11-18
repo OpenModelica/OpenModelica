@@ -38,8 +38,8 @@ echo(false); res := simulate(AlgebraicStepRetry, simflags="-nls=hybrid -maxStepR
 resultFile <> "";
 abs(val(x, 0.4) + 100) < 1e-5; abs(val(x, 0.6) - 100) < 1e-5; getErrorString();
 
-// A single retry is not.
-echo(false); res := simulate(AlgebraicStepRetry, simflags="-nls=hybrid -maxStepRetries=1"); resultFile := res.resultFile; echo(true); getErrorString();
+// Without a retry, it is not.
+echo(false); res := simulate(AlgebraicStepRetry, simflags="-nls=hybrid -maxStepRetries=0"); resultFile := res.resultFile; echo(true); getErrorString();
 resultFile <> "";
 
 // Result:

@@ -805,8 +805,8 @@ struct StepRetry {
     stored: bool,
     /// C's `retry`: the failed attempts of the current step.
     attempts: u32,
-    /// C's `retryStepSize`: the step size limit after a failed step, doubled by
-    /// every accepted step until it is back at the output interval.
+    /// C's `retryStepSize`: the step size limit after a failed step, grown by 3/2
+    /// with every accepted step until it is back at the output interval.
     limit: Option<f64>,
     /// C's `stepShortened`: the limit ends the current step before its output point.
     short: bool,
@@ -880,9 +880,10 @@ impl StepRetry {
         self.time = read_f64(e, sim_data + TIME_OFF)?;
         self.stored = true;
         self.attempts = 0;
-        // Let the step size grow back to the output interval.
+        // Let the step size grow back to the output interval, by 3/2 as in C's
+        // `performSimulation`, where it says why not by 2.
         if let Some(limit) = self.limit {
-            self.limit = (2.0 * limit < self.interval).then_some(2.0 * limit);
+            self.limit = (1.5 * limit < self.interval).then_some(1.5 * limit);
         }
         self.hold = self.short && !self.skip;
         self.skip = false;

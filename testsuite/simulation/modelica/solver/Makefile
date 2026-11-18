@@ -26,6 +26,7 @@ gbodeShorthands.mos \
 problem6-cvode.mos \
 problem6-irksco.mos \
 AlgebraicStepRetry.mos \
+StepRetryEventLocation.mos \
 StepAfterTimeEvent.mos \
 Ticket15649.mos
 

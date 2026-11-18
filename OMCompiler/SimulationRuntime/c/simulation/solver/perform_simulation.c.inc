@@ -453,9 +453,14 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
  *  A step that fails with an error is taken again with half its step size, up
  *  to -maxStepRetries times in a row and not below -minRetryStepSize, before
  *  the simulation is terminated. The step size limit a failed step leaves
- *  behind is doubled by every accepted step until it is back at the output
+ *  behind grows by 3/2 with every accepted step until it is back at the output
  *  interval. The output point a failed step was heading for is left out, the
  *  shortened steps go on to the next one.
+ *
+ *  The limit does not double: the step after a retry over half a failed step
+ *  would then have the time that failed as its midpoint, which is where the
+ *  event location evaluates the model first. With 3/2, no time that failed is
+ *  a point of the bisection.
  */
 int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
@@ -668,7 +673,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         retry = 0; /* reset retry */
         /* let the step size grow back to the output interval */
         if (retryStepSize < DBL_MAX) {
-          retryStepSize = 2*retryStepSize < simInfo->stepSize ? 2*retryStepSize : DBL_MAX;
+          retryStepSize = 1.5*retryStepSize < simInfo->stepSize ? 1.5*retryStepSize : DBL_MAX;
         }
 
         fmtEmitStep(data, threadData, &fmt, solverInfo);

@@ -29,10 +29,12 @@ simulate(DelayTooSmall);
 // LOG_ASSERT        | debug   | delayImpl: delayTime is zero or too small.
 // |                 | |       | OpenModelica doesn't support delay operator with zero delay time.
 // LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
-// LOG_ASSERT        | debug   | Negative delay requested: delayTime = -0.002
-// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
 // LOG_ASSERT        | debug   | Negative delay requested: delayTime = -0.0005
-// LOG_STDOUT        | info    | model terminate | Simulation terminated by an assert at time: 0.5005
+// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
+// LOG_ASSERT        | debug   | Negative delay requested: delayTime = -0.000875
+// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
+// LOG_ASSERT        | debug   | Negative delay requested: delayTime = -0.0003125
+// LOG_STDOUT        | info    | model terminate | Simulation terminated by an assert at time: 0.500313
 // "
 // end SimulationResult;
 // endResult
