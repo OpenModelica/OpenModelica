@@ -21,6 +21,13 @@ simulate(simple_BasicHX_water_gas); getErrorString();
 //     resultFile = "simple_BasicHX_water_gas_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 1000, tolerance = 1e-5, method = 'auto', fileNamePrefix = 'simple_BasicHX_water_gas', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 76.264803. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 213.555166. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 213.555166. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 213.555166. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 63.393832. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | info    | Too many warnings, reached display limit of 3. Suppressing further warning messages of the same type.
+// LOG_STDOUT        | info    | Change limit with simulation flag -lvMaxWarn=<newLimit>
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
