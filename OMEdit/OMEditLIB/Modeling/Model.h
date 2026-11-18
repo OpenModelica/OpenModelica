@@ -424,6 +424,7 @@ private:
     void deserialize(const QJsonValue &jsonValue);
 
     const QString &getScaleType() const {return mScaleType;}
+    void setScaleType(const QString &scaleType) {mScaleType = scaleType;}
     int getBase() const {return mBase;}
     QString toString() const;
   private:
@@ -437,10 +438,14 @@ private:
     void deserialize(const QJsonValue &jsonValue);
 
     const FlatModelica::Expression &getMin() const {return mMin;}
+    void setMin(const FlatModelica::Expression &min) {mMin = min;}
     const FlatModelica::Expression &getMax() const {return mMax;}
+    void setMax(const FlatModelica::Expression &max) {mMax = max;}
     const QString &getUnit() const {return mUnit;}
     const QString &getLabel() const {return mLabel;}
+    void setLabel(const QString &label) {mLabel = label;}
     const AxisScale *getScale() const {return mpScale.get();}
+    void setScale(std::unique_ptr<AxisScale> pScale) {mpScale = std::move(pScale);}
     QString toString() const;
   private:
     FlatModelica::Expression mMin;
@@ -456,9 +461,13 @@ private:
     void deserialize(const QJsonValue &jsonValue);
 
     const QString &getX() const {return mX;}
+    void setX(const QString &x) {mX = x;}
     const FlatModelica::Expression &getY() const {return mY;}
+    void setY(const FlatModelica::Expression &y) {mY = y;}
     const QString &getLegend() const {return mLegend;}
+    void setLegend(const QString &legend) {mLegend = legend;}
     int getZOrder() const {return mZOrder;}
+    void setZOrder(int zOrder) {mZOrder = zOrder;}
     QString toString() const;
   private:
     QString mX = "time";
@@ -473,10 +482,14 @@ private:
     void deserialize(const QJsonValue &jsonValue);
 
     const QString &getTitle() const {return mTitle;}
+    void setTitle(const QString &title) {mTitle = title;}
     const QString &getIdentifier() const {return mIdentifier;}
     const std::vector<std::unique_ptr<Curve>> &getCurves() const {return mCurves;}
+    void addCurve(std::unique_ptr<Curve> pCurve) {mCurves.push_back(std::move(pCurve));}
     const Axis *getXAxis() const {return mpXAxis.get();}
+    void setXAxis(std::unique_ptr<Axis> pAxis) {mpXAxis = std::move(pAxis);}
     const Axis *getYAxis() const {return mpYAxis.get();}
+    void setYAxis(std::unique_ptr<Axis> pAxis) {mpYAxis = std::move(pAxis);}
     QString toString() const;
   private:
     QString mTitle;
@@ -492,10 +505,13 @@ private:
     void deserialize(const QJsonValue &jsonValue);
 
     const QString &getTitle() const {return mTitle;}
+    void setTitle(const QString &title) {mTitle = title;}
     const QString &getIdentifier() const {return mIdentifier;}
     const QString &getGroup() const {return mGroup;}
     bool isPreferred() const {return mPreferred;}
+    void setPreferred(bool preferred) {mPreferred = preferred;}
     const std::vector<std::unique_ptr<Plot>> &getPlots() const {return mPlots;}
+    void addPlot(std::unique_ptr<Plot> pPlot) {mPlots.push_back(std::move(pPlot));}
     const QString &getCaption() const {return mCaption;}
     QString toString() const;
   private:
@@ -518,20 +534,17 @@ private:
     const QString &getInfoHeader() const {return mInfoHeader;}
     const QStringList &getStyleSheets() const {return mStyleSheets;}
     void setDocumentation(const QString &info, const QString &revisions, const QString &infoHeader);
-    void setFigureAnnotation(const QString &figureTitle, const QString &figureAnnotation);
+    void setFigure(std::unique_ptr<Figure> pFigure);
     QString toString() const;
     QString toString(const QString &info, const QString &revisions, const QString &infoHeader) const;
-    QString toString(const QString &figureTitle, const QString &figureAnnotation) const;
+    QString toString(const Figure &figure) const;
   private:
-    QString toString(const QString &info, const QString &revisions, const QString &infoHeader,
-                     const QString &figureTitle, const QString &figureAnnotation, bool replaceFigure) const;
+    QString toString(const QString &info, const QString &revisions, const QString &infoHeader, const Figure *pNewFigure) const;
     QString mInfo;
     QString mRevisions;
     QString mInfoHeader;
     QStringList mStyleSheets;
     std::vector<std::unique_ptr<Figure>> mFigures;
-    QStringList mSerializedFigures;
-    QStringList mSerializedFigureTitles;
   };
 
   class Annotation

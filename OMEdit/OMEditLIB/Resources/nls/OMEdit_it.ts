@@ -8628,6 +8628,10 @@ Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; O
         <translation>Non ci sono curve valide da salvare nell&apos;annotazione del modello.</translation>
     </message>
     <message>
+        <source>Cannot save curve %1 in figure %2 because it is not a valid expression.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Cannot save figure %1 in model %2 because the model cannot be annotated.</source>
         <translation>Impossibile salvare la figura %1 nel modello %2 perché il modello non può essere annotato.</translation>
     </message>

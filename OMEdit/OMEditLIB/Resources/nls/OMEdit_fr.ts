@@ -8586,6 +8586,10 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Cannot save curve %1 in figure %2 because it is not a valid expression.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Cannot save figure %1 in model %2 because the model cannot be annotated.</source>
         <translation type="unfinished"></translation>
     </message>
