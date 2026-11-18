@@ -84,7 +84,7 @@ simulate(jacobianEntryPermutation, simflags="-s=dassl -jacobian=bicoloredSymboli
 // ""
 // record SimulationResult
 //     resultFile = "jacobianEntryPermutation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=symbolical -initialStepSize=1e-5 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=symbolical -initialStepSize=1e-5 -lv=LOG_JAC'",
 //     messages = "LOG_JAC           | info    | Using Jacobian method: symbolical.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
@@ -112,7 +112,7 @@ simulate(jacobianEntryPermutation, simflags="-s=dassl -jacobian=bicoloredSymboli
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "jacobianEntryPermutation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC'",
 //     messages = "LOG_JAC           | info    | Using Jacobian method: coloredSymbolical.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
@@ -140,7 +140,7 @@ simulate(jacobianEntryPermutation, simflags="-s=dassl -jacobian=bicoloredSymboli
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "jacobianEntryPermutation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolicalAdjoint -initialStepSize=1e-5 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolicalAdjoint -initialStepSize=1e-5 -lv=LOG_JAC'",
 //     messages = "LOG_JAC           | info    | Using Jacobian method: coloredSymbolicalAdjoint.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
@@ -168,7 +168,7 @@ simulate(jacobianEntryPermutation, simflags="-s=dassl -jacobian=bicoloredSymboli
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "jacobianEntryPermutation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'jacobianEntryPermutation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC'",
 //     messages = "LOG_JAC           | info    | Using Jacobian method: bicoloredSymbolical.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
