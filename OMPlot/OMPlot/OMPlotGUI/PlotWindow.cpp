@@ -1529,12 +1529,15 @@ void PlotWindow::fitInView()
   mpPlot->replot();
   mpPlot->applyValueScales();
   mpPlot->replot();
-  alignYAxisZero();
+  const bool zeroAligned = alignYAxisZero();
   mpPlot->replot();
   // Restore the persistent auto scale flag so that a subsequent replot keeps
   // or drops the scaled range depending on whether auto scale is on.
-  mpPlot->setAxisAutoScale(QwtPlot::yLeft, mpAutoScaleButton->isChecked());
-  mpPlot->setAxisAutoScale(QwtPlot::yRight, mpAutoScaleButton->isChecked());
+  // Auto scale would recompute the aligned y-axis ranges, so keep them fixed.
+  if (!zeroAligned) {
+    mpPlot->setAxisAutoScale(QwtPlot::yLeft, mpAutoScaleButton->isChecked());
+    mpPlot->setAxisAutoScale(QwtPlot::yRight, mpAutoScaleButton->isChecked());
+  }
   mpPlot->setAxisAutoScale(QwtPlot::xBottom, mpAutoScaleButton->isChecked());
   mpPlot->getPlotZoomer()->setZoomBase(false);
   // the zoomer has divided the y-axes again
@@ -1550,13 +1553,14 @@ void PlotWindow::fitInView()
  * position on both axes.
  * The ranges are only expanded, preserving all plotted data, and logarithmic
  * or single-axis plots are left unchanged.
+ * \return true if the y-axis ranges were set.
  */
-void PlotWindow::alignYAxisZero()
+bool PlotWindow::alignYAxisZero()
 {
   // Zero cannot be aligned on logarithmic axes or when one of the axes is hidden.
   if (!mAlignZero || mpLogYButton->isChecked() || !mpPlot->axisWidget(QwtPlot::yLeft)->isVisible()
       || !mpPlot->axisWidget(QwtPlot::yRight)->isVisible()) {
-    return;
+    return false;
   }
 
   const QwtScaleDiv leftScale = mpPlot->axisScaleDiv(QwtPlot::yLeft);
@@ -1572,7 +1576,7 @@ void PlotWindow::alignYAxisZero()
 
   // A range that does not contain zero has no meaningful zero position.
   if ((leftNegative == 0.0 && leftPositive == 0.0) || (rightNegative == 0.0 && rightPositive == 0.0)) {
-    return;
+    return false;
   }
 
   // Calculate the normalized zero position and use the farther position for both axes.
@@ -1586,6 +1590,7 @@ void PlotWindow::alignYAxisZero()
 
   mpPlot->setAxisScale(QwtPlot::yLeft, -leftRange * zeroPosition, leftRange * (1.0 - zeroPosition));
   mpPlot->setAxisScale(QwtPlot::yRight, -rightRange * zeroPosition, rightRange * (1.0 - zeroPosition));
+  return true;
 }
 
 void PlotWindow::updateCurves()
