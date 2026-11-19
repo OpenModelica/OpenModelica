@@ -66,6 +66,9 @@ public:
   bool isTranslationProcessRunning() {return mIsTranslationProcessRunning;}
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
+#if defined(__EMSCRIPTEN__)
+  static bool callInPage(const QString &function, const QByteArray &crml, const QString &argument, QString *pResult, QString *pError);
+#endif
 private:
   CRMLTranslatorOptions mCRMLTranslatorOptions;
   Label *mpProgressLabel;

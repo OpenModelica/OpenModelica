@@ -58,22 +58,28 @@
 
 /* The web build has no Java to run the CRML compiler. The page translates instead, with
  * crml.js, the translator of OpenModelica/CRML compiled to JavaScript (its web build),
- * which is staged next to the page. Its translate(crml, within) returns the Modelica text,
- * or a text starting with "ERROR " when the translation fails.
- * The module is imported on the first translation. omedit_crml_translate_start settles
- * Module.__omeditCRML once the translation is done.
+ * which is staged next to the page. Its translate(crml, within) returns the Modelica text
+ * and its externals(crml, sourceFile) the externals JSON of the bindings, or a text
+ * starting with "ERROR " when that fails.
+ * The module is imported on the first call. omedit_crml_translate_start settles
+ * Module.__omeditCRML once the call is done.
  */
-EM_JS(void, omedit_crml_translate_start, (const char *crml, const char *within), {
+EM_JS(void, omedit_crml_translate_start, (const char *name, const char *crml, const char *argument), {
   const st = { settled: false, result: "", error: "" };
   Module.__omeditCRML = st;
+  const functionName = UTF8ToString(name);
   const text = UTF8ToString(crml);
-  const withinName = UTF8ToString(within);
+  const withinName = UTF8ToString(argument);
   if (!Module.__omeditCRMLModule) {
     Module.__omeditCRMLModule = import(new URL("crml.js", document.baseURI).href);
   }
   Module.__omeditCRMLModule.then((m) => {
     try {
-      st.result = m.translate(text, withinName);
+      if (typeof m[functionName] !== "function") {
+        st.error = "the CRML translator crml.js has no " + functionName + "(), it is too old";
+      } else {
+        st.result = m[functionName](text, withinName);
+      }
     } catch (e) {
       st.error = "the CRML translator failed: " + e;
     }
@@ -95,6 +101,43 @@ EM_JS(char *, omedit_crml_translate_result, (), {
 EM_JS(char *, omedit_crml_translate_error, (), {
   return stringToNewUTF8(Module.__omeditCRML.error);
 });
+
+/*!
+ * \brief CRMLTranslatorOutputWidget::callInPage
+ * Calls function(crml, argument) of crml.js and waits for its result.
+ * \return false with the error when the call fails.
+ */
+bool CRMLTranslatorOutputWidget::callInPage(const QString &function, const QByteArray &crml, const QString &argument, QString *pResult, QString *pError)
+{
+  omedit_crml_translate_start(function.toUtf8().constData(), crml.constData(), argument.toUtf8().constData());
+  // Wait in a nested event loop, as for the other calls into the page; the timer wakes it
+  // up, as the settling happens in JavaScript and posts nothing to Qt.
+  if (!omedit_crml_translate_settled()) {
+    QEventLoop loop;
+    QTimer poll;
+    QObject::connect(&poll, &QTimer::timeout, &loop, [&loop]() {
+      if (omedit_crml_translate_settled()) {
+        loop.quit();
+      }
+    });
+    poll.start(50);
+    while (!omedit_crml_translate_settled()) {
+      loop.exec();
+    }
+  }
+  char *rawError = omedit_crml_translate_error();
+  *pError = QString::fromUtf8(rawError);
+  free(rawError);
+  if (pError->isEmpty()) {
+    char *rawResult = omedit_crml_translate_result();
+    *pResult = QString::fromUtf8(rawResult);
+    free(rawResult);
+    if (pResult->startsWith(QStringLiteral("ERROR "))) {
+      *pError = pResult->mid(6);
+    }
+  }
+  return pError->isEmpty();
+}
 #endif
 
 /*!
@@ -231,33 +274,7 @@ void CRMLTranslatorOutputWidget::translateModelInPage()
     const QByteArray crml = file.readAll();
     file.close();
     writeTranslationOutput(tr("Translating %1 with crml.js\n").arg(crmlFile), Style::messagesCommandColor());
-    omedit_crml_translate_start(crml.constData(), mCRMLTranslatorOptions.getModelicaWithin().toUtf8().constData());
-    // Wait in a nested event loop, as for the other calls into the page; the timer wakes it
-    // up, as the settling happens in JavaScript and posts nothing to Qt.
-    if (!omedit_crml_translate_settled()) {
-      QEventLoop loop;
-      QTimer poll;
-      QObject::connect(&poll, &QTimer::timeout, &loop, [&loop]() {
-        if (omedit_crml_translate_settled()) {
-          loop.quit();
-        }
-      });
-      poll.start(50);
-      while (!omedit_crml_translate_settled()) {
-        loop.exec();
-      }
-    }
-    char *rawError = omedit_crml_translate_error();
-    error = QString::fromUtf8(rawError);
-    free(rawError);
-    if (error.isEmpty()) {
-      char *rawResult = omedit_crml_translate_result();
-      modelica = QString::fromUtf8(rawResult);
-      free(rawResult);
-      if (modelica.startsWith(QStringLiteral("ERROR "))) {
-        error = modelica.mid(6);
-      }
-    }
+    callInPage(QStringLiteral("translate"), crml, mCRMLTranslatorOptions.getModelicaWithin(), &modelica, &error);
   } else {
     error = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(crmlFile);
   }
