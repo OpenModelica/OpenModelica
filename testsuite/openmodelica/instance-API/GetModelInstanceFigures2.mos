@@ -95,6 +95,24 @@ getErrorString();
 //                         ]
 //                       }
 //                     ]
+//                   },
+//                   {
+//                     \"$kind\": \"record\",
+//                     \"name\": \"Axis\",
+//                     \"elements\": [
+//                       0,
+//                       0,
+//                       \"\",
+//                       \"\",
+//                       {
+//                         \"$kind\": \"record\",
+//                         \"name\": \"AxisScale\",
+//                         \"elements\": [
+//                           \"Linear\",
+//                           10
+//                         ]
+//                       }
+//                     ]
 //                   }
 //                 ]
 //               }
