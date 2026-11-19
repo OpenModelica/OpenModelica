@@ -1915,6 +1915,13 @@ pub fn build_engine(
         wts(set.call(&mut store, (ptr, blob.len() as u32, sim_data)))?;
     }
 
+    let spatial_history = if meta.layout.has_spatial_distribution {
+        Some(wts(
+            rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_spatial_history")
+        )?)
+    } else {
+        None
+    };
     let engine = WasmtimeEngine {
         store,
         memory,
@@ -1924,6 +1931,7 @@ pub fn build_engine(
         funcs2: Default::default(),
         absent: Default::default(),
         addrs: [None; 4],
+        spatial_history,
     };
     let mut engine: Box<dyn sim_driver::SimEngine + 'static> = Box::new(engine);
     sim_driver::write_size_table(&mut *engine, sim_data, meta).map_err(|e| e.to_string())?;
@@ -1992,6 +2000,7 @@ struct WasmtimeEngine {
     memory: wasmtime::Memory,
     instance: wasmtime::Instance,
     rt_inst: wasmtime::Instance,
+    spatial_history: Option<wasmtime::TypedFunc<u32, u32>>,
     funcs: foldhash::HashMap<String, wasmtime::TypedFunc<u32, ()>>,
     /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
     /// Resolved two-argument exports by name (`evaluateDAEResiduals` and the
@@ -2155,9 +2164,8 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         self.rt_addr(RtAddr::Context)
     }
     fn spatial_history(&mut self, action: sim_driver::SpatialHistory) -> bool {
-        self.rt_inst
-            .get_typed_func::<u32, u32>(&mut self.store, "rt_spatial_history")
-            .ok()
+        self.spatial_history
+            .as_ref()
             .and_then(|f| f.call(&mut self.store, action as u32).ok())
             .unwrap_or(0)
             != 0

@@ -1516,7 +1516,7 @@ algorithm
   try
     arg := (shared, createAlgebraicEquations);
     zcVars := BackendDAEUtil.zeroCrossingVarIndices(inSysts, inAllZeroCrossings);
-    if Config.simCodeTarget() == "C" or Config.simCodeTarget() == "wasm-jit" then
+    if Config.simCodeTarget() == "C" or Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm" then
       SimCode.SPATIAL_DISTRIBUTION_INFO(spatialDistributions=spatialDistributions) := extractSpatialDistributionInfo(BackendDAE.DAE(inSysts, shared));
       for sd in spatialDistributions loop
         spatialInputs := sd.in0 :: sd.in1 :: sd.pos :: sd.dir :: spatialInputs;

@@ -1030,6 +1030,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   int finished = FALSE;
   int rootFailed = FALSE;
   int workRetries = 0;
+  const modelica_boolean storeSolverSteps = spatialDistributionStoresSolverSteps(data, solverInfo->solverRootFinding);
   double tout = 0;
   long int i;
 
@@ -1097,9 +1098,13 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* The inputs of an FMU can change at the communication point */
   CVodeSetStopTime(cvodeData->cvode_mem, tout);
 #else
-  if (data->modelData->nSpatialDistributions || simulationInfo->nextSampleEvent < DBL_MAX)
+  if (data->modelData->nSpatialDistributions > 0)
   {
-    CVodeSetStopTime(cvodeData->cvode_mem, data->modelData->nSpatialDistributions ? tout : fmax(simulationInfo->nextSampleEvent, tout));
+    CVodeSetStopTime(cvodeData->cvode_mem, tout);
+  }
+  else if (simulationInfo->nextSampleEvent < DBL_MAX)
+  {
+    CVodeSetStopTime(cvodeData->cvode_mem, fmax(simulationInfo->nextSampleEvent, tout));
   }
   else
   {
@@ -1134,10 +1139,11 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
                  tout,
                  cvodeData->y,
                  &(solverInfo->currentTime),
-                 data->modelData->nSpatialDistributions ? CV_ONE_STEP : CV_NORMAL);
+                 data->modelData->nSpatialDistributions > 0 ? CV_ONE_STEP : CV_NORMAL);
 
-    if (!solverInfo->solverRootFinding && spatialDistributionNeedsHistory(data, FALSE)) {
-      retVal = -1;
+    if (!storeSolverSteps && spatialDistributionNeedsHistory(data, FALSE)) {
+      retVal = CV_RHSFUNC_FAIL;
+      messageClose(OMC_LOG_SOLVER);
       break;
     }
 
@@ -1174,15 +1180,14 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;
-    if (data->modelData->nSpatialDistributions && (solverInfo->solverRootFinding || !data->modelData->nZeroCrossings)
-        && flag == CV_SUCCESS && solverInfo->currentTime < tout && storeSpatialDistributionStep(data, threadData)) {
-      retVal = -1;
+    if (storeSolverSteps && flag == CV_SUCCESS && solverInfo->currentTime < tout && storeSpatialDistributionStep(data, threadData)) {
+      retVal = CV_RHSFUNC_FAIL;
       break;
     }
   } while (!finished && !OMC_ERROR_RAISED());
 
   /* Catch */
-  if (OMC_ERROR_RAISED() && !rootFailed && !data->modelData->nSpatialDistributions) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !rootFailed && data->modelData->nSpatialDistributions == 0) { OMC_ERROR_CLEAR(); }
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;
 

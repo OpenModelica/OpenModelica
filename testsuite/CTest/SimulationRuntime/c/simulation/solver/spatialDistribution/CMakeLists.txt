@@ -1,0 +1,5 @@
+add_executable(test_spatial_history_behavior 01_test_history_behavior.c)
+target_link_libraries(test_spatial_history_behavior PRIVATE SimulationRuntimeC)
+add_test(NAME test_spatial_history_behavior COMMAND test_spatial_history_behavior)
+
+add_custom_target(ctestsuite-simulation-solver-spatialDistribution DEPENDS test_spatial_history_behavior)

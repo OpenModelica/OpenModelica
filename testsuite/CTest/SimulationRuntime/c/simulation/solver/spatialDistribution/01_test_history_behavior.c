@@ -1,19 +1,20 @@
 #include "simulation/solver/spatialDistribution.h"
 #include "util/omc_error.h"
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// test correct history behavior of the spatialDistribution implementation
-
-int spatialHistoryBehavior(void)
+/* Reads, failures and checkpoint restoration must preserve committed history. */
+int main(void)
 {
   DATA data = {0};
   MODEL_DATA model = {0};
   SIMULATION_INFO info = {0};
   SIMULATION_DATA point = {0};
   SIMULATION_DATA* points[] = {&point};
-  threadData_t* threadData = omc_thread_data(NULL, "spatialDistribution history test");
+  threadData_t thread = {0};
+  threadData_t* threadData = &thread;
   _index_t length = 2;
   double grid[] = {0, 1}, values[] = {0, 0};
   real_array initialPoints = {1, &length, grid, 0, 0};
@@ -83,5 +84,6 @@ int spatialHistoryBehavior(void)
   free(after);
   freeSpatialDistribution(info.spatialDistributionData, 1);
   free(info.spatialDistributionData);
-  return ok;
+  if (!ok) fprintf(stderr, "spatialDistribution history check failed\n");
+  return !ok;
 }

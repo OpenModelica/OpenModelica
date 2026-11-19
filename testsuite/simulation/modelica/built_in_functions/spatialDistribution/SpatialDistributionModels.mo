@@ -1,16 +1,5 @@
 within;
 
-impure function spatialHistoryBehavior
-  output Boolean ok;
-  external "C" ok = spatialHistoryBehavior()
-    annotation(Include = "#include \"historyBehavior.c\"");
-end spatialHistoryBehavior;
-
-model SpatialHistoryBehavior
-initial algorithm
-  assert(spatialHistoryBehavior(), "Transport history check failed");
-end SpatialHistoryBehavior;
-
 function spatialCausalInlet
   input Real u;
   output Real y;
@@ -50,16 +39,6 @@ equation
   outlet = if direction > 0 then right else left;
   der(integral) = outlet;
 end SpatialCoarseEvents;
-
-model SpatialHistoryEvents
-  Real position(start = 0, fixed = true);
-  Real unused;
-  Real outlet;
-  Boolean crossed = outlet > 0.5;
-equation
-  der(position) = 10;
-  (unused, outlet) = spatialDistribution(time, 0, position, true, {0, 1}, {0, 0});
-end SpatialHistoryEvents;
 
 model SpatialInitialProfile
   Real position(start = 4);

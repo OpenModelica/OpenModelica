@@ -483,6 +483,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   int return_from_small_step = 0;
   int firstStepRestarts = 0;
   int workRetries = 0;
+  const modelica_boolean storeSolverSteps = spatialDistributionStoresSolverSteps(data, solverInfo->solverRootFinding);
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
 
@@ -541,11 +542,11 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   /* Never step past the next time event: what the model computes beyond it
    * continues the left limit and is no part of the solution. */
-  if (data->modelData->nSpatialDistributions || (data->simulationInfo->nextSampleEvent < DBL_MAX &&
+  if (data->modelData->nSpatialDistributions > 0 || (data->simulationInfo->nextSampleEvent < DBL_MAX &&
       (0 == dasslData->info[0] || data->simulationInfo->nextSampleEvent >= dasslData->rwork[3])))
   {
     dasslData->info[3] = 1;
-    dasslData->rwork[0] = data->modelData->nSpatialDistributions ? tout : fmax(data->simulationInfo->nextSampleEvent, tout);
+    dasslData->rwork[0] = data->modelData->nSpatialDistributions > 0 ? tout : fmax(data->simulationInfo->nextSampleEvent, tout);
   }
   else
   {
@@ -611,8 +612,11 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
       /* set ringbuffer time to current time */
       sData->timeValue = solverInfo->currentTime;
-      if (data->modelData->nSpatialDistributions && (solverInfo->solverRootFinding || !data->modelData->nZeroCrossings)
-          && dasslData->idid == 1 && solverInfo->currentTime < tout && storeSpatialDistributionStep(data, threadData))
+      if (!storeSolverSteps && spatialDistributionNeedsHistory(data, FALSE)) {
+        retVal = -1;
+        break;
+      }
+      if (storeSolverSteps && dasslData->idid == 1 && solverInfo->currentTime < tout && storeSpatialDistributionStep(data, threadData))
       {
         retVal = -1;
         break;
@@ -687,7 +691,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
   /* After a failed root function, DDASKR searches on stale values and its root
    * is none: the step fails and performSimulation retries it. */
-  if (OMC_ERROR_RAISED() && !dasslData->rootFailed && !data->modelData->nSpatialDistributions) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !dasslData->rootFailed && data->modelData->nSpatialDistributions == 0) { OMC_ERROR_CLEAR(); }
 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;

@@ -261,7 +261,7 @@ pub(super) fn build_sim_model(
         // `delay(...)` / `spatialDistribution(...)`: the driver has to store their
         // accepted points, which costs an extra evaluation, so it asks first.
         has_history_ops: sim_code.delayedExps.maxDelayedIndex >= 0 || sim_code.spatialInfo.maxIndex >= 0,
-        has_spatial_distribution: sim_code.spatialInfo.maxIndex >= 0,
+        has_spatial_distribution: lst(&sim_code.spatialInfo.spatialDistributions).next().is_some(),
         // Mirroring the last accepted step's reals costs a copy per step, so only
         // a model with a method-1 linear system to read them asks for it.
         has_old_real: has_method1_linear(sim_code),
