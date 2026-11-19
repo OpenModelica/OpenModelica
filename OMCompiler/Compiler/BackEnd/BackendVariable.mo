@@ -3296,6 +3296,11 @@ algorithm
     (ty, dims) := TypesDump.flattenArrayType(ComponentReference.crefLastType(cr));
     // latest added first, as expanding cr and looking its elements up gave
     for i in listReverse(indices) loop
+      if i >= inVariables.varArr.numberOfElements then
+        // added by a Variables that shares the arrays with this one
+        live := i :: live;
+        continue;
+      end if;
       var_opt := arrayGet(inVariables.varArr.varOptArr, i + 1);
       if isSome(var_opt) then
         // walking oldest first, so consing restores the stored order
