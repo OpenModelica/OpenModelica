@@ -1,3 +1,5 @@
+.. _omjulia:
+
 OMJulia - OpenModelica Julia Scripting
 ======================================
 
@@ -17,6 +19,10 @@ OpenModelica installation.
 
 OMJulia.jl is implemented in Julia and depends on
 ZeroMQ - high performance asynchronous messaging library.
+
+If several OpenModelica versions are installed, see :ref:`multiple-installations`, select the one
+to use with :code:`OMJulia.OMCSession(version="1.27.0")`, or :code:`version="1.27"` for the newest
+installed 1.27.x.
 
 The latest OMJulia.jl documentation can be found online:
 `OMJulia.jl documentation <https://openmodelica.github.io/OMJulia.jl/dev/>`_
