@@ -12,8 +12,9 @@ packageVersion := "4.1.0";
 
 modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls);
-// The flow in ductOut slides along zero (-ductOut.m_flows[1] > 0). DASSL gets
-// through it, but CVODE stops on chattering at time 39653, see #17952.
+// The array flow*actualStream products of the vessels get no smooth(0, ...), so
+// the flow in ductOut sliding along zero chatters. DASSL gets through it, CVODE
+// stops at time 39653, see #17952.
 simflags := "-s=ida";
 compareVars :=
 {

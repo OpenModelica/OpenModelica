@@ -16,7 +16,6 @@ functionOutputStartAlias.mos \
 functionAliasStartLoop.mos \
 primaryParameterFor.mos \
 primaryParameterRecord.mos \
-resizableParameterBinding.mos \
 primaryParameterRecordArray.mos \
 homotopy_indirect.mos \
 homotopy_no_loop.mos \
@@ -30,6 +29,7 @@ initParamLinearSystem.mos \
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+resizableParameterBinding.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

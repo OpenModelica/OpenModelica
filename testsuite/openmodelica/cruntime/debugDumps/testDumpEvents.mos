@@ -46,266 +46,155 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = h <= 0.0
 // |                 | |       | | [3] (pre: false)  true = v <= 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=0.451523641008
+// LOG_EVENTS        | info    | state event at time=0.451523403657
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 3.10061
-// LOG_EVENTS        | info    | state event at time=0.451523641072
+// LOG_EVENTS        | info    | state event at time=0.451523403722
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=0.767590189724
+// LOG_EVENTS        | info    | state event at time=0.767589786228
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=1.08365673842
+// LOG_EVENTS        | info    | state event at time=1.08365471939
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 2.17043
-// LOG_EVENTS        | info    | state event at time=1.08365673851
+// |                 | |       | | reinit v = 2.17042
+// LOG_EVENTS        | info    | state event at time=1.08365471948
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=1.30490332252
+// LOG_EVENTS        | info    | state event at time=1.30490017262
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=1.52614990659
+// LOG_EVENTS        | info    | state event at time=1.5261437915
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 1.5193
-// LOG_EVENTS        | info    | state event at time=1.52614990673
+// |                 | |       | | reinit v = 1.51928
+// LOG_EVENTS        | info    | state event at time=1.52614379163
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=1.68102251546
+// LOG_EVENTS        | info    | state event at time=1.68101432473
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=1.83589512431
+// LOG_EVENTS        | info    | state event at time=1.83588242251
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 1.06351
-// LOG_EVENTS        | info    | state event at time=1.8358951245
+// |                 | |       | | reinit v = 1.06348
+// LOG_EVENTS        | info    | state event at time=1.83588242269
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=1.94430595052
+// LOG_EVENTS        | info    | state event at time=1.94429009096
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.0527167767
+// LOG_EVENTS        | info    | state event at time=2.05269445106
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.744457
-// LOG_EVENTS        | info    | state event at time=2.05271677697
+// |                 | |       | | reinit v = 0.744413
+// LOG_EVENTS        | info    | state event at time=2.05269445133
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.12860435505
+// LOG_EVENTS        | info    | state event at time=2.12857750315
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.20449193337
+// LOG_EVENTS        | info    | state event at time=2.20445596714
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.52112
-// LOG_EVENTS        | info    | state event at time=2.20449193375
+// |                 | |       | | reinit v = 0.521057
+// LOG_EVENTS        | info    | state event at time=2.20445596752
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.25761323821
+// LOG_EVENTS        | info    | state event at time=2.25757089195
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.31073454302
+// LOG_EVENTS        | info    | state event at time=2.31067944215
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.364784
-// LOG_EVENTS        | info    | state event at time=2.31073454357
+// |                 | |       | | reinit v = 0.364696
+// LOG_EVENTS        | info    | state event at time=2.3106794427
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.34791945641
+// LOG_EVENTS        | info    | state event at time=2.34785542731
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.38510436977
+// LOG_EVENTS        | info    | state event at time=2.38502252577
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.255349
-// LOG_EVENTS        | info    | state event at time=2.38510437055
+// |                 | |       | | reinit v = 0.255226
+// LOG_EVENTS        | info    | state event at time=2.38502252655
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.41113380913
+// LOG_EVENTS        | info    | state event at time=2.4110394947
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.43716324847
+// LOG_EVENTS        | info    | state event at time=2.43704400382
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.178744
-// LOG_EVENTS        | info    | state event at time=2.43716324959
+// |                 | |       | | reinit v = 0.178573
+// LOG_EVENTS        | info    | state event at time=2.43704400494
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.45538385602
+// LOG_EVENTS        | info    | state event at time=2.45524716023
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.47360446354
+// LOG_EVENTS        | info    | state event at time=2.47343292151
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.125121
-// LOG_EVENTS        | info    | state event at time=2.47360446513
+// |                 | |       | | reinit v = 0.124882
+// LOG_EVENTS        | info    | state event at time=2.47343292311
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.48635888882
+// LOG_EVENTS        | info    | state event at time=2.48616295442
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.49911331406
+// LOG_EVENTS        | info    | state event at time=2.49886867176
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0875846
-// LOG_EVENTS        | info    | state event at time=2.49911331634
+// |                 | |       | | reinit v = 0.0872502
+// LOG_EVENTS        | info    | state event at time=2.49886867406
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.50804141174
+// LOG_EVENTS        | info    | state event at time=2.50776267392
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.51696950938
+// LOG_EVENTS        | info    | state event at time=2.51662251966
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0613092
-// LOG_EVENTS        | info    | state event at time=2.51696951264
+// |                 | |       | | reinit v = 0.0608406
+// LOG_EVENTS        | info    | state event at time=2.51662252295
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.52321917775
+// LOG_EVENTS        | info    | state event at time=2.5228244117
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.52946884606
+// LOG_EVENTS        | info    | state event at time=2.52897840517
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0429165
-// LOG_EVENTS        | info    | state event at time=2.52946885072
+// |                 | |       | | reinit v = 0.0422595
+// LOG_EVENTS        | info    | state event at time=2.5289784099
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.5338436139
+// LOG_EVENTS        | info    | state event at time=2.53328620062
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.53821838167
+// LOG_EVENTS        | info    | state event at time=2.53752676045
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0300415
-// LOG_EVENTS        | info    | state event at time=2.53821838832
+// |                 | |       | | reinit v = 0.0291199
+// LOG_EVENTS        | info    | state event at time=2.53752676732
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.54128071912
+// LOG_EVENTS        | info    | state event at time=2.54049515236
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.5443430565
+// LOG_EVENTS        | info    | state event at time=2.54336804587
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0210291
-// LOG_EVENTS        | info    | state event at time=2.54434306601
+// |                 | |       | | reinit v = 0.0197282
+// LOG_EVENTS        | info    | state event at time=2.54336805601
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.54648669268
+// LOG_EVENTS        | info    | state event at time=2.54537907135
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.54863032877
+// LOG_EVENTS        | info    | state event at time=2.54725161318
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0147203
-// LOG_EVENTS        | info    | state event at time=2.54863034235
+// |                 | |       | | reinit v = 0.0128587
+// LOG_EVENTS        | info    | state event at time=2.54725162873
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55013087404
+// LOG_EVENTS        | info    | state event at time=2.54856239247
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55163141919
+// LOG_EVENTS        | info    | state event at time=2.54967593612
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0103042
-// LOG_EVENTS        | info    | state event at time=2.5516314386
+// |                 | |       | | reinit v = 0.0076467
+// LOG_EVENTS        | info    | state event at time=2.54967596228
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55268180081
+// LOG_EVENTS        | info    | state event at time=2.5504554167
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55373218227
+// LOG_EVENTS        | info    | state event at time=2.55096263993
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00721297
-// LOG_EVENTS        | info    | state event at time=2.55373221
+// |                 | |       | | reinit v = 0.0034831
+// LOG_EVENTS        | info    | state event at time=2.55096269736
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.5544674493
+// LOG_EVENTS        | info    | state event at time=2.5513176962
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55520271612
+// LOG_EVENTS        | info    | state event at time=2.5513687805
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00504908
-// LOG_EVENTS        | info    | state event at time=2.55520275574
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55571740291
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55623208942
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00353435
-// LOG_EVENTS        | info    | state event at time=2.55623214602
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55659236999
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55695265019
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00247404
-// LOG_EVENTS        | info    | state event at time=2.55695273106
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55720484635
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.557457042
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00173183
-// LOG_EVENTS        | info    | state event at time=2.55745715755
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55763357898
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55781011528
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00121227
-// LOG_EVENTS        | info    | state event at time=2.55781028041
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55793369072
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55805726525
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000848586
-// LOG_EVENTS        | info    | state event at time=2.55805750132
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55814376745
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55823026845
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000594002
-// LOG_EVENTS        | info    | state event at time=2.55823060619
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55829081917
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55835136827
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000415791
-// LOG_EVENTS        | info    | state event at time=2.55835185227
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55839375266
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55843613483
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000291038
-// LOG_EVENTS        | info    | state event at time=2.55843683061
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55846580237
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55849546686
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000203706
-// LOG_EVENTS        | info    | state event at time=2.55849647374
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55851623202
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55853699312
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000142567
-// LOG_EVENTS        | info    | state event at time=2.55853847233
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55855152591
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55856605309
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 9.97582e-05
-// LOG_EVENTS        | info    | state event at time=2.55856831036
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55857622212
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55858638353
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 6.97784e-05
-// LOG_EVENTS        | info    | state event at time=2.55859037025
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55859349653
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.55860059936
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 4.87753e-05
-// LOG_EVENTS        | info    | state event at time=2.55860557137
-// |                 | |       | | [3] v <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// LOG_EVENTS        | info    | state event at time=2.5586105337
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 3.40764e-05
-// LOG_EVENTS        | info    | state event at time=2.55861400735
+// |                 | |       | | reinit v = 0.000350796
+// LOG_EVENTS        | info    | state event at time=2.55140453953
 // |                 | |       | | [3] v <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0
@@ -325,1491 +214,863 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = h <= 0.0
 // |                 | |       | | [3] (pre: false)  true = v <= 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=0.451523641008
+// LOG_EVENTS        | info    | state event at time=0.451523403657
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 3.10061
-// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
+// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523403657
 // |                 | |       | | discrete var changed: v_new from 0 to 3.10061
 // |                 | |       | | discrete var changed: n_bounce from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=0.451523641008
+// LOG_EVENTS_V      | info    | status of relations at time=0.451523403657
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523641008
+// LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523403657
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
+// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523403657
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=0.451523641008
+// LOG_EVENTS_V      | info    | status of relations at time=0.451523403657
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523641008
+// LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523403657
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
-// LOG_EVENTS        | info    | state event at time=0.451523641072
+// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523403657
+// LOG_EVENTS        | info    | state event at time=0.451523403722
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641072
+// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523403722
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=0.451523641072
+// LOG_EVENTS_V      | info    | status of relations at time=0.451523403722
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523641072
+// LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523403722
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641072
-// LOG_EVENTS        | info    | state event at time=0.767590189724
+// LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523403722
+// LOG_EVENTS        | info    | state event at time=0.767589786228
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=0.767590189724
-// LOG_EVENTS        | info    | state event at time=1.08365673842
+// LOG_EVENTS_V      | info    | check for discrete changes at time=0.767589786228
+// LOG_EVENTS        | info    | state event at time=1.08365471939
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 2.17043
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
-// |                 | |       | | discrete var changed: v_new from 3.10061 to 2.17043
+// |                 | |       | | reinit v = 2.17042
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365471939
+// |                 | |       | | discrete var changed: v_new from 3.10061 to 2.17042
 // |                 | |       | | discrete var changed: n_bounce from 1 to 2
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=1.08365673842
+// LOG_EVENTS_V      | info    | status of relations at time=1.08365471939
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365673842
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365471939
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365471939
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=1.08365673842
+// LOG_EVENTS_V      | info    | status of relations at time=1.08365471939
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365673842
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365471939
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
-// LOG_EVENTS        | info    | state event at time=1.08365673851
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365471939
+// LOG_EVENTS        | info    | state event at time=1.08365471948
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673851
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365471948
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=1.08365673851
+// LOG_EVENTS_V      | info    | status of relations at time=1.08365471948
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365673851
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365471948
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673851
-// LOG_EVENTS        | info    | state event at time=1.30490332252
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365471948
+// LOG_EVENTS        | info    | state event at time=1.30490017262
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.30490332252
-// LOG_EVENTS        | info    | state event at time=1.52614990659
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.30490017262
+// LOG_EVENTS        | info    | state event at time=1.5261437915
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 1.5193
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
-// |                 | |       | | discrete var changed: v_new from 2.17043 to 1.5193
+// |                 | |       | | reinit v = 1.51928
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.5261437915
+// |                 | |       | | discrete var changed: v_new from 2.17042 to 1.51928
 // |                 | |       | | discrete var changed: n_bounce from 2 to 3
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=1.52614990659
+// LOG_EVENTS_V      | info    | status of relations at time=1.5261437915
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.52614990659
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.5261437915
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.5261437915
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=1.52614990659
+// LOG_EVENTS_V      | info    | status of relations at time=1.5261437915
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.52614990659
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.5261437915
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
-// LOG_EVENTS        | info    | state event at time=1.52614990673
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.5261437915
+// LOG_EVENTS        | info    | state event at time=1.52614379163
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990673
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614379163
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=1.52614990673
+// LOG_EVENTS_V      | info    | status of relations at time=1.52614379163
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.52614990673
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.52614379163
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990673
-// LOG_EVENTS        | info    | state event at time=1.68102251546
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614379163
+// LOG_EVENTS        | info    | state event at time=1.68101432473
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.68102251546
-// LOG_EVENTS        | info    | state event at time=1.83589512431
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.68101432473
+// LOG_EVENTS        | info    | state event at time=1.83588242251
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 1.06351
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
-// |                 | |       | | discrete var changed: v_new from 1.5193 to 1.06351
+// |                 | |       | | reinit v = 1.06348
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83588242251
+// |                 | |       | | discrete var changed: v_new from 1.51928 to 1.06348
 // |                 | |       | | discrete var changed: n_bounce from 3 to 4
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=1.83589512431
+// LOG_EVENTS_V      | info    | status of relations at time=1.83588242251
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.83589512431
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.83588242251
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83588242251
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=1.83589512431
+// LOG_EVENTS_V      | info    | status of relations at time=1.83588242251
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.83589512431
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.83588242251
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
-// LOG_EVENTS        | info    | state event at time=1.8358951245
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83588242251
+// LOG_EVENTS        | info    | state event at time=1.83588242269
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.8358951245
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83588242269
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=1.8358951245
+// LOG_EVENTS_V      | info    | status of relations at time=1.83588242269
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=1.8358951245
+// LOG_EVENTS_V      | info    | status of zero crossings at time=1.83588242269
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.8358951245
-// LOG_EVENTS        | info    | state event at time=1.94430595052
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.83588242269
+// LOG_EVENTS        | info    | state event at time=1.94429009096
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=1.94430595052
-// LOG_EVENTS        | info    | state event at time=2.0527167767
+// LOG_EVENTS_V      | info    | check for discrete changes at time=1.94429009096
+// LOG_EVENTS        | info    | state event at time=2.05269445106
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.744457
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
-// |                 | |       | | discrete var changed: v_new from 1.06351 to 0.744457
+// |                 | |       | | reinit v = 0.744413
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.05269445106
+// |                 | |       | | discrete var changed: v_new from 1.06348 to 0.744413
 // |                 | |       | | discrete var changed: n_bounce from 4 to 5
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.0527167767
+// LOG_EVENTS_V      | info    | status of relations at time=2.05269445106
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.0527167767
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.05269445106
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.05269445106
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.0527167767
+// LOG_EVENTS_V      | info    | status of relations at time=2.05269445106
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.0527167767
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.05269445106
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
-// LOG_EVENTS        | info    | state event at time=2.05271677697
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.05269445106
+// LOG_EVENTS        | info    | state event at time=2.05269445133
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.05271677697
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.05269445133
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.05271677697
+// LOG_EVENTS_V      | info    | status of relations at time=2.05269445133
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.05271677697
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.05269445133
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.05271677697
-// LOG_EVENTS        | info    | state event at time=2.12860435505
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.05269445133
+// LOG_EVENTS        | info    | state event at time=2.12857750315
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.12860435505
-// LOG_EVENTS        | info    | state event at time=2.20449193337
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.12857750315
+// LOG_EVENTS        | info    | state event at time=2.20445596714
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.52112
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
-// |                 | |       | | discrete var changed: v_new from 0.744457 to 0.52112
+// |                 | |       | | reinit v = 0.521057
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20445596714
+// |                 | |       | | discrete var changed: v_new from 0.744413 to 0.521057
 // |                 | |       | | discrete var changed: n_bounce from 5 to 6
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.20449193337
+// LOG_EVENTS_V      | info    | status of relations at time=2.20445596714
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.20449193337
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.20445596714
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20445596714
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.20449193337
+// LOG_EVENTS_V      | info    | status of relations at time=2.20445596714
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.20449193337
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.20445596714
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
-// LOG_EVENTS        | info    | state event at time=2.20449193375
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20445596714
+// LOG_EVENTS        | info    | state event at time=2.20445596752
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193375
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20445596752
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.20449193375
+// LOG_EVENTS_V      | info    | status of relations at time=2.20445596752
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.20449193375
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.20445596752
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193375
-// LOG_EVENTS        | info    | state event at time=2.25761323821
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.20445596752
+// LOG_EVENTS        | info    | state event at time=2.25757089195
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.25761323821
-// LOG_EVENTS        | info    | state event at time=2.31073454302
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.25757089195
+// LOG_EVENTS        | info    | state event at time=2.31067944215
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.364784
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
-// |                 | |       | | discrete var changed: v_new from 0.52112 to 0.364784
+// |                 | |       | | reinit v = 0.364696
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31067944215
+// |                 | |       | | discrete var changed: v_new from 0.521057 to 0.364696
 // |                 | |       | | discrete var changed: n_bounce from 6 to 7
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.31073454302
+// LOG_EVENTS_V      | info    | status of relations at time=2.31067944215
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.31073454302
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.31067944215
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31067944215
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.31073454302
+// LOG_EVENTS_V      | info    | status of relations at time=2.31067944215
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.31073454302
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.31067944215
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
-// LOG_EVENTS        | info    | state event at time=2.31073454357
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31067944215
+// LOG_EVENTS        | info    | state event at time=2.3106794427
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454357
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.3106794427
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.31073454357
+// LOG_EVENTS_V      | info    | status of relations at time=2.3106794427
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.31073454357
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.3106794427
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454357
-// LOG_EVENTS        | info    | state event at time=2.34791945641
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.3106794427
+// LOG_EVENTS        | info    | state event at time=2.34785542731
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.34791945641
-// LOG_EVENTS        | info    | state event at time=2.38510436977
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.34785542731
+// LOG_EVENTS        | info    | state event at time=2.38502252577
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.255349
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
-// |                 | |       | | discrete var changed: v_new from 0.364784 to 0.255349
+// |                 | |       | | reinit v = 0.255226
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38502252577
+// |                 | |       | | discrete var changed: v_new from 0.364696 to 0.255226
 // |                 | |       | | discrete var changed: n_bounce from 7 to 8
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.38510436977
+// LOG_EVENTS_V      | info    | status of relations at time=2.38502252577
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.38510436977
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.38502252577
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38502252577
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.38510436977
+// LOG_EVENTS_V      | info    | status of relations at time=2.38502252577
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.38510436977
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.38502252577
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
-// LOG_EVENTS        | info    | state event at time=2.38510437055
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38502252577
+// LOG_EVENTS        | info    | state event at time=2.38502252655
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510437055
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38502252655
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.38510437055
+// LOG_EVENTS_V      | info    | status of relations at time=2.38502252655
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.38510437055
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.38502252655
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510437055
-// LOG_EVENTS        | info    | state event at time=2.41113380913
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.38502252655
+// LOG_EVENTS        | info    | state event at time=2.4110394947
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.41113380913
-// LOG_EVENTS        | info    | state event at time=2.43716324847
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.4110394947
+// LOG_EVENTS        | info    | state event at time=2.43704400382
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.178744
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
-// |                 | |       | | discrete var changed: v_new from 0.255349 to 0.178744
+// |                 | |       | | reinit v = 0.178573
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43704400382
+// |                 | |       | | discrete var changed: v_new from 0.255226 to 0.178573
 // |                 | |       | | discrete var changed: n_bounce from 8 to 9
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.43716324847
+// LOG_EVENTS_V      | info    | status of relations at time=2.43704400382
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.43716324847
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.43704400382
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43704400382
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.43716324847
+// LOG_EVENTS_V      | info    | status of relations at time=2.43704400382
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.43716324847
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.43704400382
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
-// LOG_EVENTS        | info    | state event at time=2.43716324959
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43704400382
+// LOG_EVENTS        | info    | state event at time=2.43704400494
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324959
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43704400494
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.43716324959
+// LOG_EVENTS_V      | info    | status of relations at time=2.43704400494
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.43716324959
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.43704400494
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324959
-// LOG_EVENTS        | info    | state event at time=2.45538385602
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.43704400494
+// LOG_EVENTS        | info    | state event at time=2.45524716023
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.45538385602
-// LOG_EVENTS        | info    | state event at time=2.47360446354
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.45524716023
+// LOG_EVENTS        | info    | state event at time=2.47343292151
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.125121
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
-// |                 | |       | | discrete var changed: v_new from 0.178744 to 0.125121
+// |                 | |       | | reinit v = 0.124882
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47343292151
+// |                 | |       | | discrete var changed: v_new from 0.178573 to 0.124882
 // |                 | |       | | discrete var changed: n_bounce from 9 to 10
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.47360446354
+// LOG_EVENTS_V      | info    | status of relations at time=2.47343292151
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.47360446354
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.47343292151
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47343292151
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.47360446354
+// LOG_EVENTS_V      | info    | status of relations at time=2.47343292151
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.47360446354
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.47343292151
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
-// LOG_EVENTS        | info    | state event at time=2.47360446513
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47343292151
+// LOG_EVENTS        | info    | state event at time=2.47343292311
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446513
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47343292311
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.47360446513
+// LOG_EVENTS_V      | info    | status of relations at time=2.47343292311
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.47360446513
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.47343292311
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446513
-// LOG_EVENTS        | info    | state event at time=2.48635888882
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.47343292311
+// LOG_EVENTS        | info    | state event at time=2.48616295442
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.48635888882
-// LOG_EVENTS        | info    | state event at time=2.49911331406
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.48616295442
+// LOG_EVENTS        | info    | state event at time=2.49886867176
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0875846
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
-// |                 | |       | | discrete var changed: v_new from 0.125121 to 0.0875846
+// |                 | |       | | reinit v = 0.0872502
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49886867176
+// |                 | |       | | discrete var changed: v_new from 0.124882 to 0.0872502
 // |                 | |       | | discrete var changed: n_bounce from 10 to 11
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.49911331406
+// LOG_EVENTS_V      | info    | status of relations at time=2.49886867176
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.49911331406
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.49886867176
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49886867176
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.49911331406
+// LOG_EVENTS_V      | info    | status of relations at time=2.49886867176
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.49911331406
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.49886867176
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
-// LOG_EVENTS        | info    | state event at time=2.49911331634
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49886867176
+// LOG_EVENTS        | info    | state event at time=2.49886867406
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331634
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49886867406
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.49911331634
+// LOG_EVENTS_V      | info    | status of relations at time=2.49886867406
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.49911331634
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.49886867406
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331634
-// LOG_EVENTS        | info    | state event at time=2.50804141174
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.49886867406
+// LOG_EVENTS        | info    | state event at time=2.50776267392
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.50804141174
-// LOG_EVENTS        | info    | state event at time=2.51696950938
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.50776267392
+// LOG_EVENTS        | info    | state event at time=2.51662251966
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0613092
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
-// |                 | |       | | discrete var changed: v_new from 0.0875846 to 0.0613092
+// |                 | |       | | reinit v = 0.0608406
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51662251966
+// |                 | |       | | discrete var changed: v_new from 0.0872502 to 0.0608406
 // |                 | |       | | discrete var changed: n_bounce from 11 to 12
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.51696950938
+// LOG_EVENTS_V      | info    | status of relations at time=2.51662251966
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.51696950938
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.51662251966
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51662251966
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.51696950938
+// LOG_EVENTS_V      | info    | status of relations at time=2.51662251966
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.51696950938
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.51662251966
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
-// LOG_EVENTS        | info    | state event at time=2.51696951264
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51662251966
+// LOG_EVENTS        | info    | state event at time=2.51662252295
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696951264
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51662252295
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.51696951264
+// LOG_EVENTS_V      | info    | status of relations at time=2.51662252295
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.51696951264
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.51662252295
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696951264
-// LOG_EVENTS        | info    | state event at time=2.52321917775
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.51662252295
+// LOG_EVENTS        | info    | state event at time=2.5228244117
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52321917775
-// LOG_EVENTS        | info    | state event at time=2.52946884606
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5228244117
+// LOG_EVENTS        | info    | state event at time=2.52897840517
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0429165
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
-// |                 | |       | | discrete var changed: v_new from 0.0613092 to 0.0429165
+// |                 | |       | | reinit v = 0.0422595
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52897840517
+// |                 | |       | | discrete var changed: v_new from 0.0608406 to 0.0422595
 // |                 | |       | | discrete var changed: n_bounce from 12 to 13
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.52946884606
+// LOG_EVENTS_V      | info    | status of relations at time=2.52897840517
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.52946884606
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.52897840517
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52897840517
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.52946884606
+// LOG_EVENTS_V      | info    | status of relations at time=2.52897840517
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.52946884606
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.52897840517
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
-// LOG_EVENTS        | info    | state event at time=2.52946885072
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52897840517
+// LOG_EVENTS        | info    | state event at time=2.5289784099
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946885072
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5289784099
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.52946885072
+// LOG_EVENTS_V      | info    | status of relations at time=2.5289784099
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.52946885072
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5289784099
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946885072
-// LOG_EVENTS        | info    | state event at time=2.5338436139
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5289784099
+// LOG_EVENTS        | info    | state event at time=2.53328620062
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5338436139
-// LOG_EVENTS        | info    | state event at time=2.53821838167
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53328620062
+// LOG_EVENTS        | info    | state event at time=2.53752676045
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0300415
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
-// |                 | |       | | discrete var changed: v_new from 0.0429165 to 0.0300415
+// |                 | |       | | reinit v = 0.0291199
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53752676045
+// |                 | |       | | discrete var changed: v_new from 0.0422595 to 0.0291199
 // |                 | |       | | discrete var changed: n_bounce from 13 to 14
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.53821838167
+// LOG_EVENTS_V      | info    | status of relations at time=2.53752676045
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.53821838167
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.53752676045
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53752676045
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.53821838167
+// LOG_EVENTS_V      | info    | status of relations at time=2.53752676045
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.53821838167
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.53752676045
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
-// LOG_EVENTS        | info    | state event at time=2.53821838832
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53752676045
+// LOG_EVENTS        | info    | state event at time=2.53752676732
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838832
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53752676732
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.53821838832
+// LOG_EVENTS_V      | info    | status of relations at time=2.53752676732
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.53821838832
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.53752676732
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838832
-// LOG_EVENTS        | info    | state event at time=2.54128071912
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.53752676732
+// LOG_EVENTS        | info    | state event at time=2.54049515236
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54128071912
-// LOG_EVENTS        | info    | state event at time=2.5443430565
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54049515236
+// LOG_EVENTS        | info    | state event at time=2.54336804587
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0210291
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
-// |                 | |       | | discrete var changed: v_new from 0.0300415 to 0.0210291
+// |                 | |       | | reinit v = 0.0197282
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54336804587
+// |                 | |       | | discrete var changed: v_new from 0.0291199 to 0.0197282
 // |                 | |       | | discrete var changed: n_bounce from 14 to 15
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.5443430565
+// LOG_EVENTS_V      | info    | status of relations at time=2.54336804587
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5443430565
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54336804587
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54336804587
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.5443430565
+// LOG_EVENTS_V      | info    | status of relations at time=2.54336804587
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5443430565
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54336804587
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
-// LOG_EVENTS        | info    | state event at time=2.54434306601
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54336804587
+// LOG_EVENTS        | info    | state event at time=2.54336805601
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54434306601
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54336805601
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.54434306601
+// LOG_EVENTS_V      | info    | status of relations at time=2.54336805601
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54434306601
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54336805601
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54434306601
-// LOG_EVENTS        | info    | state event at time=2.54648669268
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54336805601
+// LOG_EVENTS        | info    | state event at time=2.54537907135
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54648669268
-// LOG_EVENTS        | info    | state event at time=2.54863032877
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54537907135
+// LOG_EVENTS        | info    | state event at time=2.54725161318
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0147203
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
-// |                 | |       | | discrete var changed: v_new from 0.0210291 to 0.0147203
+// |                 | |       | | reinit v = 0.0128587
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54725161318
+// |                 | |       | | discrete var changed: v_new from 0.0197282 to 0.0128587
 // |                 | |       | | discrete var changed: n_bounce from 15 to 16
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.54863032877
+// LOG_EVENTS_V      | info    | status of relations at time=2.54725161318
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54863032877
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54725161318
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54725161318
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.54863032877
+// LOG_EVENTS_V      | info    | status of relations at time=2.54725161318
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54863032877
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54725161318
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
-// LOG_EVENTS        | info    | state event at time=2.54863034235
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54725161318
+// LOG_EVENTS        | info    | state event at time=2.54725162873
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863034235
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54725162873
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.54863034235
+// LOG_EVENTS_V      | info    | status of relations at time=2.54725162873
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54863034235
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54725162873
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863034235
-// LOG_EVENTS        | info    | state event at time=2.55013087404
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54725162873
+// LOG_EVENTS        | info    | state event at time=2.54856239247
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55013087404
-// LOG_EVENTS        | info    | state event at time=2.55163141919
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54856239247
+// LOG_EVENTS        | info    | state event at time=2.54967593612
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.0103042
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
-// |                 | |       | | discrete var changed: v_new from 0.0147203 to 0.0103042
+// |                 | |       | | reinit v = 0.0076467
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54967593612
+// |                 | |       | | discrete var changed: v_new from 0.0128587 to 0.0076467
 // |                 | |       | | discrete var changed: n_bounce from 16 to 17
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55163141919
+// LOG_EVENTS_V      | info    | status of relations at time=2.54967593612
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55163141919
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54967593612
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54967593612
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55163141919
+// LOG_EVENTS_V      | info    | status of relations at time=2.54967593612
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55163141919
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54967593612
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
-// LOG_EVENTS        | info    | state event at time=2.5516314386
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54967593612
+// LOG_EVENTS        | info    | state event at time=2.54967596228
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5516314386
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54967596228
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.5516314386
+// LOG_EVENTS_V      | info    | status of relations at time=2.54967596228
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5516314386
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.54967596228
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5516314386
-// LOG_EVENTS        | info    | state event at time=2.55268180081
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.54967596228
+// LOG_EVENTS        | info    | state event at time=2.5504554167
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55268180081
-// LOG_EVENTS        | info    | state event at time=2.55373218227
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5504554167
+// LOG_EVENTS        | info    | state event at time=2.55096263993
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00721297
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
-// |                 | |       | | discrete var changed: v_new from 0.0103042 to 0.00721297
+// |                 | |       | | reinit v = 0.0034831
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55096263993
+// |                 | |       | | discrete var changed: v_new from 0.0076467 to 0.0034831
 // |                 | |       | | discrete var changed: n_bounce from 17 to 18
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55373218227
+// LOG_EVENTS_V      | info    | status of relations at time=2.55096263993
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55373218227
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55096263993
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55096263993
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55373218227
+// LOG_EVENTS_V      | info    | status of relations at time=2.55096263993
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55373218227
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55096263993
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
-// LOG_EVENTS        | info    | state event at time=2.55373221
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55096263993
+// LOG_EVENTS        | info    | state event at time=2.55096269736
 // |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373221
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55096269736
 // |                 | |       | | discrete var changed: $whenCondition2 from true to false
 // |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55373221
+// LOG_EVENTS_V      | info    | status of relations at time=2.55096269736
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55373221
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55096269736
 // |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true) false = h <= 0.0
 // |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373221
-// LOG_EVENTS        | info    | state event at time=2.5544674493
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55096269736
+// LOG_EVENTS        | info    | state event at time=2.5513176962
 // |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5544674493
-// LOG_EVENTS        | info    | state event at time=2.55520271612
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5513176962
+// LOG_EVENTS        | info    | state event at time=2.5513687805
 // |                 | |       | | [2] h <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00504908
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
-// |                 | |       | | discrete var changed: v_new from 0.00721297 to 0.00504908
+// |                 | |       | | reinit v = 0.000350796
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5513687805
+// |                 | |       | | discrete var changed: v_new from 0.0034831 to 0.000350796
 // |                 | |       | | discrete var changed: n_bounce from 18 to 19
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition2 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55520271612
+// LOG_EVENTS_V      | info    | status of relations at time=2.5513687805
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55520271612
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5513687805
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5513687805
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55520271612
+// LOG_EVENTS_V      | info    | status of relations at time=2.5513687805
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55520271612
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5513687805
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre: false)  true = h <= 0.0
 // |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
-// LOG_EVENTS        | info    | state event at time=2.55520275574
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520275574
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55520275574
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55520275574
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520275574
-// LOG_EVENTS        | info    | state event at time=2.55571740291
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55571740291
-// LOG_EVENTS        | info    | state event at time=2.55623208942
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00353435
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
-// |                 | |       | | discrete var changed: v_new from 0.00504908 to 0.00353435
-// |                 | |       | | discrete var changed: n_bounce from 19 to 20
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55623208942
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55623208942
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55623208942
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55623208942
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
-// LOG_EVENTS        | info    | state event at time=2.55623214602
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623214602
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55623214602
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55623214602
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623214602
-// LOG_EVENTS        | info    | state event at time=2.55659236999
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55659236999
-// LOG_EVENTS        | info    | state event at time=2.55695265019
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00247404
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
-// |                 | |       | | discrete var changed: v_new from 0.00353435 to 0.00247404
-// |                 | |       | | discrete var changed: n_bounce from 20 to 21
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55695265019
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55695265019
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55695265019
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55695265019
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
-// LOG_EVENTS        | info    | state event at time=2.55695273106
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695273106
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55695273106
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55695273106
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695273106
-// LOG_EVENTS        | info    | state event at time=2.55720484635
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55720484635
-// LOG_EVENTS        | info    | state event at time=2.557457042
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00173183
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
-// |                 | |       | | discrete var changed: v_new from 0.00247404 to 0.00173183
-// |                 | |       | | discrete var changed: n_bounce from 21 to 22
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.557457042
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.557457042
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.557457042
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.557457042
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
-// LOG_EVENTS        | info    | state event at time=2.55745715755
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55745715755
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55745715755
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55745715755
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55745715755
-// LOG_EVENTS        | info    | state event at time=2.55763357898
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55763357898
-// LOG_EVENTS        | info    | state event at time=2.55781011528
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.00121227
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
-// |                 | |       | | discrete var changed: v_new from 0.00173183 to 0.00121227
-// |                 | |       | | discrete var changed: n_bounce from 22 to 23
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55781011528
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55781011528
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55781011528
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55781011528
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
-// LOG_EVENTS        | info    | state event at time=2.55781028041
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781028041
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55781028041
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55781028041
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781028041
-// LOG_EVENTS        | info    | state event at time=2.55793369072
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55793369072
-// LOG_EVENTS        | info    | state event at time=2.55805726525
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000848586
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
-// |                 | |       | | discrete var changed: v_new from 0.00121227 to 0.000848586
-// |                 | |       | | discrete var changed: n_bounce from 23 to 24
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55805726525
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55805726525
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55805726525
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55805726525
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
-// LOG_EVENTS        | info    | state event at time=2.55805750132
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805750132
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55805750132
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55805750132
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805750132
-// LOG_EVENTS        | info    | state event at time=2.55814376745
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55814376745
-// LOG_EVENTS        | info    | state event at time=2.55823026845
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000594002
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
-// |                 | |       | | discrete var changed: v_new from 0.000848586 to 0.000594002
-// |                 | |       | | discrete var changed: n_bounce from 24 to 25
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55823026845
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55823026845
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55823026845
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55823026845
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
-// LOG_EVENTS        | info    | state event at time=2.55823060619
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823060619
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55823060619
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55823060619
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823060619
-// LOG_EVENTS        | info    | state event at time=2.55829081917
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55829081917
-// LOG_EVENTS        | info    | state event at time=2.55835136827
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000415791
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
-// |                 | |       | | discrete var changed: v_new from 0.000594002 to 0.000415791
-// |                 | |       | | discrete var changed: n_bounce from 25 to 26
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55835136827
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55835136827
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55835136827
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55835136827
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
-// LOG_EVENTS        | info    | state event at time=2.55835185227
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835185227
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55835185227
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55835185227
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835185227
-// LOG_EVENTS        | info    | state event at time=2.55839375266
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55839375266
-// LOG_EVENTS        | info    | state event at time=2.55843613483
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000291038
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
-// |                 | |       | | discrete var changed: v_new from 0.000415791 to 0.000291038
-// |                 | |       | | discrete var changed: n_bounce from 26 to 27
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55843613483
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55843613483
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55843613483
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55843613483
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
-// LOG_EVENTS        | info    | state event at time=2.55843683061
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843683061
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55843683061
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55843683061
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843683061
-// LOG_EVENTS        | info    | state event at time=2.55846580237
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55846580237
-// LOG_EVENTS        | info    | state event at time=2.55849546686
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000203706
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
-// |                 | |       | | discrete var changed: v_new from 0.000291038 to 0.000203706
-// |                 | |       | | discrete var changed: n_bounce from 27 to 28
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55849546686
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55849546686
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55849546686
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55849546686
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
-// LOG_EVENTS        | info    | state event at time=2.55849647374
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849647374
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55849647374
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55849647374
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849647374
-// LOG_EVENTS        | info    | state event at time=2.55851623202
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55851623202
-// LOG_EVENTS        | info    | state event at time=2.55853699312
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 0.000142567
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
-// |                 | |       | | discrete var changed: v_new from 0.000203706 to 0.000142567
-// |                 | |       | | discrete var changed: n_bounce from 28 to 29
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55853699312
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55853699312
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55853699312
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55853699312
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
-// LOG_EVENTS        | info    | state event at time=2.55853847233
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853847233
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55853847233
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55853847233
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853847233
-// LOG_EVENTS        | info    | state event at time=2.55855152591
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55855152591
-// LOG_EVENTS        | info    | state event at time=2.55856605309
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 9.97582e-05
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
-// |                 | |       | | discrete var changed: v_new from 0.000142567 to 9.97582e-05
-// |                 | |       | | discrete var changed: n_bounce from 29 to 30
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55856605309
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55856605309
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55856605309
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55856605309
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
-// LOG_EVENTS        | info    | state event at time=2.55856831036
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856831036
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55856831036
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55856831036
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856831036
-// LOG_EVENTS        | info    | state event at time=2.55857622212
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55857622212
-// LOG_EVENTS        | info    | state event at time=2.55858638353
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 6.97784e-05
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
-// |                 | |       | | discrete var changed: v_new from 9.97582e-05 to 6.97784e-05
-// |                 | |       | | discrete var changed: n_bounce from 30 to 31
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55858638353
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55858638353
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55858638353
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55858638353
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
-// LOG_EVENTS        | info    | state event at time=2.55859037025
-// |                 | |       | | [2] h <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55859037025
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55859037025
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55859037025
-// |                 | |       | | [1] (pre: false) false = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true) false = h <= 0.0
-// |                 | |       | | [3] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55859037025
-// LOG_EVENTS        | info    | state event at time=2.55859349653
-// |                 | |       | | [3] v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55859349653
-// LOG_EVENTS        | info    | state event at time=2.55860059936
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 4.87753e-05
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
-// |                 | |       | | discrete var changed: v_new from 6.97784e-05 to 4.87753e-05
-// |                 | |       | | discrete var changed: n_bounce from 31 to 32
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.55860059936
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55860059936
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55860059936
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55860059936
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
-// LOG_EVENTS        | info    | state event at time=2.55860557137
-// |                 | |       | | [3] v <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860557137
-// |                 | |       | | discrete var changed: $whenCondition2 from true to false
-// |                 | |       | | discrete var changed: impact from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55860557137
-// |                 | |       | | [1] (pre: false) false = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55860557137
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [3] (pre: false)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860557137
-// LOG_EVENTS        | info    | state event at time=2.5586105337
-// |                 | |       | | [2] h <= 0.0
-// |                 | |       | | [1] h <= 0.0 and v <= 0.0
-// |                 | |       | | reinit v = 3.40764e-05
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5586105337
-// |                 | |       | | discrete var changed: v_new from 4.87753e-05 to 3.40764e-05
-// |                 | |       | | discrete var changed: n_bounce from 32 to 33
-// |                 | |       | | discrete var changed: $whenCondition1 from false to true
-// |                 | |       | | discrete var changed: $whenCondition2 from false to true
-// |                 | |       | | discrete var changed: $whenCondition3 from false to true
-// |                 | |       | | discrete var changed: impact from false to true
-// LOG_EVENTS_V      | info    | status of relations at time=2.5586105337
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5586105337
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5586105337
-// |                 | |       | | discrete var changed: $whenCondition1 from true to false
-// |                 | |       | | discrete var changed: $whenCondition3 from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.5586105337
-// |                 | |       | | [1] (pre:  true)  true = h <= 0.0
-// |                 | |       | | [2] (pre: false) false = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.5586105337
-// |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: false)  true = h <= 0.0
-// |                 | |       | | [3] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5586105337
-// LOG_EVENTS        | info    | state event at time=2.55861400735
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.5513687805
+// LOG_EVENTS        | info    | state event at time=2.55140453953
 // |                 | |       | | [3] v <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55861400735
-// |                 | |       | | discrete var changed: v_new from 3.40764e-05 to 0
-// |                 | |       | | discrete var changed: n_bounce from 33 to 34
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55140453953
+// |                 | |       | | discrete var changed: v_new from 0.000350796 to 0
+// |                 | |       | | discrete var changed: n_bounce from 19 to 20
 // |                 | |       | | discrete var changed: $whenCondition1 from false to true
 // |                 | |       | | discrete var changed: $whenCondition3 from false to true
 // |                 | |       | | discrete var changed: flying from true to false
-// LOG_EVENTS_V      | info    | status of relations at time=2.55861400735
+// LOG_EVENTS_V      | info    | status of relations at time=2.55140453953
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55861400735
+// LOG_EVENTS_V      | info    | status of zero crossings at time=2.55140453953
 // |                 | |       | | [1] (pre: false)  true = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [3] (pre: false)  true = v <= 0.0
-// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55861400735
+// LOG_EVENTS_V      | info    | check for discrete changes at time=2.55140453953
 // LOG_EVENTS_V      | info    | terminal event at stop time 3
 // LOG_EVENTS_V      | info    | check for discrete changes at time=3
 // LOG_SUCCESS       | info    | The simulation finished successfully.

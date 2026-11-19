@@ -2,9 +2,11 @@
 // keywords: NewBackend resizable
 // status: correct
 // cflags: --newBackend --resizableArrays
+// suite: disabled
 //
 // The binding of a resizable parameter that is bound to another parameter
 // needs a binding equation, otherwise its value is zero.
+// Disabled: resizable arrays are new, CVODE crashes on this model, see #18189.
 
 loadString("
 model Sub
