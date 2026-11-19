@@ -5564,7 +5564,7 @@ fn choose_solver_method(method: &str, dae_mode: bool, no_states: bool) -> &str {
                 ("euler", ", because the model has no states.")
             } else if dae_mode {
                 ("ida", ", because the model was compiled with --daeMode.")
-            } else if cfg!(sundials) {
+            } else if crate::simflags::cvode_linked() {
                 ("cvode", ", the default ODE solver.")
             } else {
                 ("dassl", ", the default ODE solver without SUNDIALS.")

@@ -507,8 +507,18 @@ pub fn is_solver_name(method: &str) -> bool {
     SOLVERS.iter().any(|(n, ..)| *n == method)
 }
 
+static CVODE_LINKED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(cfg!(sundials));
+
+/// Whether CVODE is linked, as the last [`check`] was told. A wasm FMU links the
+/// SUNDIALS driver only when it is exported with a SUNDIALS method, so
+/// `cfg(sundials)` alone does not say.
+pub fn cvode_linked() -> bool {
+    CVODE_LINKED.load(core::sync::atomic::Ordering::Relaxed)
+}
+
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
+    CVODE_LINKED.store(cap.cvode, core::sync::atomic::Ordering::Relaxed);
     // Each solver library is linked on its own, so each is its own question --
     // the same one `Offer::With*` asks in the tables below.
     for (flag, name, have) in [
