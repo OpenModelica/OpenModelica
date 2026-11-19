@@ -1177,6 +1177,17 @@ fn load_assign_local(n: &mut Node, eq: &Json) {
     }
 }
 
+/// `load_algorithm_check_local_define`: an algorithm section inside a system
+/// defines several variables at once, all local to the node from here on.
+fn load_algorithm_local(n: &mut Node, eq: &Json) {
+    n.lhs.extend(strings(eq, "defines").map(String::from));
+    for u in strings(eq, "uses") {
+        if !n.lhs.contains(u) {
+            n.rhs.insert(u.to_string());
+        }
+    }
+}
+
 /// `load_linear_system`, which serves the non-linear containers too: the system's
 /// own unknowns plus whatever its inner equations read from outside.
 fn load_system(n: &mut Node, eq: &Json) -> Result<()> {
@@ -1192,11 +1203,18 @@ fn load_system(n: &mut Node, eq: &Json) -> Result<()> {
         }
     }
     n.lhs.extend(strings(eq, "defines").map(String::from));
+    // What the matrix and the right hand side of a linear system read.
+    for u in strings(eq, "uses") {
+        if !n.lhs.contains(u) {
+            n.rhs.insert(u.to_string());
+        }
+    }
     for int_eq in eq.get("internal-equations").and_then(Json::as_array).unwrap_or(&[]) {
         let i_index = int_eq.get("eqIndex").and_then(Json::as_i64).unwrap_or(-1) as i32;
         match int_eq.get("tag").and_then(Json::as_str).unwrap_or("") {
             "assign" | "torn" => load_assign_local(n, int_eq),
             "residual" => n.rhs.extend(strings(int_eq, "uses").map(String::from)),
+            "algorithm" => load_algorithm_local(n, int_eq),
             t => {
                 return Err(eq_fatal(
                     i_index,
