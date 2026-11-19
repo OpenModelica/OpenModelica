@@ -8583,6 +8583,14 @@ match ty
         >>
       else
         error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
+  case T_STRING(__) then
+    let &preExp = buffer ""
+    let varPart = daeExp(left, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let exp = daeExp(right, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    <<
+    <%preExp%>
+    omc_string_store(&(<%varPart%>), <%exp%>);
+    >>
   else
     let &preExp = buffer ""
     let varPart = daeExp(left, context, &preExp, &varDecls, &varFrees, &auxFunction)

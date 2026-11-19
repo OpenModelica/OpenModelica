@@ -42,6 +42,7 @@ ServerWithQueue.mos \
 StrictTimeEvents.mos \
 TestNoEventsFlags.mos \
 whenInAlgorithm.mos \
+whenString.mos \
 whenTest1.mos \
 whenTest2.mos \
 ZeroCrossing.mos \
