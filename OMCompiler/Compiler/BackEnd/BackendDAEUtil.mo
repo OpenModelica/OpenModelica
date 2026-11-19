@@ -5698,12 +5698,12 @@ algorithm
         if not solved then
           (de,_) := ExpressionSimplify.simplify(de);
           (_,crlst) := Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
-          solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars);
+          solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars,shared.functionTree);
         else
           if derived then
             (de,_) := ExpressionSimplify.simplify(de);
             (_,crlst) := Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
-            solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars);
+            solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars,shared.functionTree);
             solvab := transformSolvabilityForCasualTearingSet(solvab);
           else
             solvab := BackendDAE.SOLVABILITY_SOLVABLE();
@@ -5730,12 +5730,12 @@ algorithm
           if not solved then
             (de,_) := ExpressionSimplify.simplify(de);
             (_,crlst) := Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
-            solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+            solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars,shared.functionTree);
           else
             if derived then
               (de,_) := ExpressionSimplify.simplify(de);
               (_,crlst) := Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
-              solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+              solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars,shared.functionTree);
               solvab := transformSolvabilityForCasualTearingSet(solvab);
             else
               solvab := BackendDAE.SOLVABILITY_SOLVABLE();
@@ -6064,6 +6064,7 @@ protected function adjacencyRowEnhanced2
   input list<DAE.ComponentRef> crlst;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables globalKnownVars;
+  input AvlTreePathFunction.Tree functions;
   output BackendDAE.Solvability oSolvab;
 algorithm
   oSolvab := match crlst
@@ -6083,7 +6084,7 @@ algorithm
         b1 := containAnyVar(crlst,globalKnownVars);
         b2 := containAnyVar(crlst,vars);
       then
-        adjacencyRowEnhanced3(b1,b2,cr,e,crlst,vars,globalKnownVars);
+        adjacencyRowEnhanced3(b1,b2,cr,e,crlst,vars,globalKnownVars,functions);
   end match;
 end adjacencyRowEnhanced2;
 
@@ -6098,6 +6099,7 @@ protected function adjacencyRowEnhanced3
   input list<DAE.ComponentRef> crlst;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables globalKnownVars;
+  input AvlTreePathFunction.Tree functions;
   output BackendDAE.Solvability oSolvab;
 algorithm
   oSolvab := match(b1, b2)
@@ -6122,6 +6124,9 @@ algorithm
         (nominal,_) := ExpressionSimplify.simplify(nominal);
         (e1,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
         (e1,_) := Expression.traverseExpBottomUp(e1, replaceParamWithoutFixedValueWithStart, globalKnownVars);
+        (e1,_) := ExpressionSimplify.simplify(e1);
+        e1 := Expression.traverseExpDummy(e1, function EvaluateFunctions.evaluateConstantFunctionCallExp(
+          funcsIn = functions, evalConstArgsOnly = true, recursionLimit = Flags.getConfigInt(Flags.EVAL_RECURSION_LIMIT)));
         (e1,_) := ExpressionSimplify.simplify(e1);
         b := not Expression.isZeroOrAlmostZero(e1, nominal);
         // A parameter with fixed = false and no start value is computed during
