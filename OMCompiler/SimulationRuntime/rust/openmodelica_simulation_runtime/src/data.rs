@@ -700,6 +700,7 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     si.noThrowDivZero = 0;
     si.noThrowAsserts = 0;
     si.needToReThrow = 0;
+    si.holdWarnings = 0;
     si.discreteStateChanged = 0;
     si.discreteCall = 0;
     si.needToIterate = 0;

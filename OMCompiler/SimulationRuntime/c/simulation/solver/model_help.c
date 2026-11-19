@@ -1679,6 +1679,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->noThrowDivZero = 0;
   data->simulationInfo->noThrowAsserts = 0;
   data->simulationInfo->needToReThrow = 0;
+  data->simulationInfo->holdWarnings = 0;
   data->simulationInfo->discreteStateChanged = 0;
   data->simulationInfo->discreteCall = 0;
 

@@ -867,6 +867,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean noThrowDivZero;     /* true if solving nonlinear system to avoid THROW for division by zero */
   modelica_boolean noThrowAsserts;     /* true if asserts can be ignored, e.g. when searching for an event location */
   modelica_boolean needToReThrow;      /* true if an ignored asserts was found, and may need to be rethrown */
+  modelica_boolean holdWarnings;       /* 1 if warnings wait for the accepted point, 2 if a warning waits */
 
   double solverSteps;                  /* Number of integration steps so far for writing to the result file */ // FIXME why is this not an integer?
 
