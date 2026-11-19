@@ -59,6 +59,8 @@ typedef struct {
   fmi2_event_info_t* FMIEventInfo;
   fmi2_solving_mode_t FMISolvingMode;
   int FMIFailed;  /* a call returned an error: fmi2Terminate is not allowed */
+  int FMITerminateSimulation;  /* the FMU returned terminateSimulation = true */
+  int FMIStepEvent;  /* fmi2CompletedIntegratorStep returned enterEventMode = true */
 } FMI2ModelExchange;
 
 MODELICA_NORETURN void fmi2Failed(FMI2ModelExchange* FMI2ME, const char* function, fmi2_status_t status) MODELICA_NORETURNATTR;

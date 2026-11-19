@@ -1,0 +1,98 @@
+// name:     fmi_import_discrete_input_change
+// keywords: FMI 2.0 3.0 import discrete input Integer Boolean event
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml terminalsAndIcons resources ImportDiscreteInput* output.log
+//
+// A change of an Integer or Boolean input of an imported Model Exchange FMU
+// is an event: the wrapper must set the new value in Event Mode.
+// The FMU has no events of its own. Before, the new values reached the FMU
+// only at the terminal() event: at time 0.5, yk = 1 and yb = false.
+//
+
+loadString("
+model ImportDiscreteInput
+  input Integer k(start = 1);
+  input Boolean b(start = false);
+  output Integer yk;
+  output Boolean yb;
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  yk = k;
+  yb = b;
+end ImportDiscreteInput;
+
+partial model ImportDiscreteInputBase
+  discrete Integer k(start = 1, fixed = true);
+  discrete Boolean b(start = false, fixed = true);
+algorithm
+  when time > 0.25 then
+    k := 5;
+    b := true;
+  end when;
+end ImportDiscreteInputBase;
+
+model ImportDiscreteInput2
+  extends ImportDiscreteInputBase;
+  ImportDiscreteInput_2_me_FMU f(k = k, b = b);
+end ImportDiscreteInput2;
+
+model ImportDiscreteInput3
+  extends ImportDiscreteInputBase;
+  ImportDiscreteInput_3_me_FMU f(k = k, b = b);
+end ImportDiscreteInput3;
+"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+
+buildModelFMU(ImportDiscreteInput, version="2.0", fmuType="me", fileNamePrefix="ImportDiscreteInput_2"); getErrorString();
+importFMU("ImportDiscreteInput_2.fmu"); getErrorString();
+loadFile("ImportDiscreteInput_2_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(ImportDiscreteInput2, stopTime=1.0); clearMessages();
+echo(true);
+res.resultFile;
+// 5 and true at time 0.5
+val(f.yk, 0.5);
+val(f.yb, 0.5);
+
+buildModelFMU(ImportDiscreteInput, version="3.0", fmuType="me", fileNamePrefix="ImportDiscreteInput_3"); getErrorString();
+echo(false);
+importFMU("ImportDiscreteInput_3.fmu"); clearMessages();
+echo(true);
+loadFile("ImportDiscreteInput_3_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(ImportDiscreteInput3, stopTime=1.0); clearMessages();
+echo(true);
+res.resultFile;
+val(f.yk, 0.5);
+val(f.yb, 0.5);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "ImportDiscreteInput_2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "ImportDiscreteInput_2_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// "ImportDiscreteInput2_res.mat"
+// 5.0
+// 1.0
+// "ImportDiscreteInput_3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// true
+// true
+// ""
+// true
+// "ImportDiscreteInput3_res.mat"
+// 5.0
+// 1.0
+// endResult

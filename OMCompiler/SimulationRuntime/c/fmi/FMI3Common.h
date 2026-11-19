@@ -78,6 +78,8 @@ typedef struct {
   fmi3_event_info_omc_t FMIEventInfo;
   fmi3_solving_mode_t FMISolvingMode;
   int FMIFailed;  /* a call returned an error: fmi3Terminate is not allowed */
+  int FMITerminateSimulation;  /* the FMU returned terminateSimulation = true */
+  int FMIStepEvent;  /* fmi3CompletedIntegratorStep returned enterEventMode = true */
 } FMI3ModelExchange;
 
 MODELICA_NORETURN void fmi3Failed(FMI3ModelExchange* FMI3ME, const char* function, fmi3_status_t status) MODELICA_NORETURNATTR;

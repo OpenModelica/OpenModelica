@@ -53,6 +53,8 @@ void* FMI3ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI3ModelExchange* FMI3ME = malloc(sizeof(FMI3ModelExchange));
   jm_status_enu_t status, instantiateModelStatus;
   FMI3ME->FMIFailed = 0;
+  FMI3ME->FMITerminateSimulation = 0;
+  FMI3ME->FMIStepEvent = 0;
   FMI3ME->FMILogLevel = fmi_log_level;
   /* JM callbacks */
   FMI3ME->JMCallbacks.malloc = malloc;
@@ -146,6 +148,33 @@ void fmi3EnterInitializationModel_OMC(void* in_fmi3me, int toleranceDefined, dou
 }
 
 /*
+ * Returns 1 if the call must not go to the FMU: the FMU returned terminateSimulation
+ * and only gets fmi3Terminate. The simulation then stops at the end of this step.
+ * After an error the FMU is in its error state, and the simulation must stop: this
+ * gives an error and does not return.
+ */
+static int fmi3SkipCall(FMI3ModelExchange* FMI3ME, const char* function)
+{
+  if (FMI3ME->FMIFailed) {
+    ModelicaFormatError("%s: the FMU is in the error state after an earlier error\n", function);
+  }
+  return FMI3ME->FMITerminateSimulation;
+}
+
+/*
+ * The call table allows the function only in Continuous-Time Mode. A call in an other
+ * mode is an error in the FMU import, not in the FMU.
+ */
+static void fmi3CheckContinuousTimeMode(FMI3ModelExchange* FMI3ME, const char* function)
+{
+  if (FMI3ME->FMISolvingMode != fmi3_continuousTime_mode) {
+    ModelicaFormatError("%s: the FMU is not in Continuous-Time Mode. This is an error in the FMU import.\n", function);
+  }
+}
+
+int fmi3EndEventUpdate_OMC(void* in_fmi3me);
+
+/*
  * Wrapper for the FMI function fmi3ExitInitializationMode.
  *
  * An FMI 3.0 Model Exchange FMU is in Event Mode when initialization ends, which is
@@ -159,6 +188,8 @@ void fmi3ExitInitializationModel_OMC(void* in_fmi3me)
     fmi3Failed(FMI3ME, "fmi3ExitInitializationMode", status);
   }
   FMI3ME->FMISolvingMode = fmi3_event_mode;
+  /* the initial event iteration */
+  fmi3EndEventUpdate_OMC(FMI3ME);
 }
 
 /*
@@ -167,11 +198,14 @@ void fmi3ExitInitializationModel_OMC(void* in_fmi3me)
 void fmi3SetTime_OMC(void* in_fmi3me, double time)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  if (FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
-    fmi3_status_t status = fmi3_import_set_time(FMI3ME->FMIImportInstance, time);
-    if (status != fmi3_status_ok && status != fmi3_status_warning) {
-      fmi3Failed(FMI3ME, "fmi3SetTime", status);
-    }
+  fmi3_status_t status;
+  if (fmi3SkipCall(FMI3ME, "fmi3SetTime")) {
+    return;
+  }
+  fmi3CheckContinuousTimeMode(FMI3ME, "fmi3SetTime");
+  status = fmi3_import_set_time(FMI3ME->FMIImportInstance, time);
+  if (status != fmi3_status_ok && status != fmi3_status_warning) {
+    fmi3Failed(FMI3ME, "fmi3SetTime", status);
   }
 }
 
@@ -197,8 +231,10 @@ void fmi3GetContinuousStates_OMC(void* in_fmi3me, int numberOfContinuousStates, 
 double fmi3SetContinuousStates_OMC(void* in_fmi3me, int numberOfContinuousStates, double flowParams, double* states)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  if (numberOfContinuousStates > 0 && FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
-    fmi3_status_t status = fmi3_import_set_continuous_states(FMI3ME->FMIImportInstance, (const fmi3_float64_t*)states, numberOfContinuousStates);
+  if (numberOfContinuousStates > 0 && !fmi3SkipCall(FMI3ME, "fmi3SetContinuousStates")) {
+    fmi3_status_t status;
+    fmi3CheckContinuousTimeMode(FMI3ME, "fmi3SetContinuousStates");
+    status = fmi3_import_set_continuous_states(FMI3ME->FMIImportInstance, (const fmi3_float64_t*)states, numberOfContinuousStates);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
       fmi3Failed(FMI3ME, "fmi3SetContinuousStates", status);
     }
@@ -213,7 +249,7 @@ double fmi3SetContinuousStates_OMC(void* in_fmi3me, int numberOfContinuousStates
 void fmi3GetEventIndicators_OMC(void* in_fmi3me, int numberOfEventIndicators, double flowStates, double* events)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  if (numberOfEventIndicators > 0) {
+  if (numberOfEventIndicators > 0 && !fmi3SkipCall(FMI3ME, "fmi3GetEventIndicators")) {
     fmi3_status_t status = fmi3_import_get_event_indicators(FMI3ME->FMIImportInstance, (fmi3_float64_t*)events, numberOfEventIndicators);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
       fmi3Failed(FMI3ME, "fmi3GetEventIndicators", status);
@@ -231,7 +267,7 @@ void fmi3GetDerivatives_OMC(void* in_fmi3me, int numberOfContinuousStates, doubl
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
   /* FMI Library still calls this fmi3_import_get_derivatives, though FMI 3.0 renamed
      the function it wraps to fmi3GetContinuousStateDerivatives. */
-  if (numberOfContinuousStates > 0) {
+  if (numberOfContinuousStates > 0 && !fmi3SkipCall(FMI3ME, "fmi3GetContinuousStateDerivatives")) {
     fmi3_status_t status = fmi3_import_get_derivatives(FMI3ME->FMIImportInstance, (fmi3_float64_t*)states, numberOfContinuousStates);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
       fmi3Failed(FMI3ME, "fmi3GetContinuousStateDerivatives", status);
@@ -245,7 +281,10 @@ void fmi3GetDerivatives_OMC(void* in_fmi3me, int numberOfContinuousStates, doubl
 void fmi3StartEventUpdate_OMC(void* in_fmi3me)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  /* fmi3ExitInitializationMode already left the FMU in Event Mode for the first event. */
+  if (fmi3SkipCall(FMI3ME, "fmi3EnterEventMode")) {
+    return;
+  }
+  FMI3ME->FMIStepEvent = 0;
   if (FMI3ME->FMISolvingMode != fmi3_event_mode) {
     fmi3_status_t status = fmi3_import_enter_event_mode(FMI3ME->FMIImportInstance);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
@@ -274,6 +313,9 @@ int fmi3EndEventUpdate_OMC(void* in_fmi3me)
   fmi3_boolean_t valuesOfContinuousStatesChanged = fmi3_false;
   fmi3_status_t status;
 
+  if (fmi3SkipCall(FMI3ME, "fmi3UpdateDiscreteStates")) {
+    return fmi3_false;
+  }
   eventInfo->discreteStatesNeedUpdate = fmi3_true;
   eventInfo->terminateSimulation = fmi3_false;
   while (eventInfo->discreteStatesNeedUpdate && !eventInfo->terminateSimulation) {
@@ -291,6 +333,11 @@ int fmi3EndEventUpdate_OMC(void* in_fmi3me)
     if (eventInfo->valuesOfContinuousStatesChanged) {
       valuesOfContinuousStatesChanged = fmi3_true;
     }
+  }
+  /* the FMU stays in Event Mode, the next call is fmi3Terminate */
+  if (eventInfo->terminateSimulation) {
+    FMI3ME->FMITerminateSimulation = 1;
+    return fmi3_false;
   }
 
   status = fmi3_import_enter_continuous_time_mode(FMI3ME->FMIImportInstance);
@@ -316,21 +363,52 @@ double fmi3nextEventTime_OMC(void* in_fmi3me, double flowStates)
 }
 
 /*
- * Wrapper for the FMI function fmi3CompletedIntegratorStep.
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
+ * Returns true if the FMU returned terminateSimulation = fmi3True. The generated code
+ * then calls terminate().
  */
-int fmi3CompletedIntegratorStep_OMC(void* in_fmi3me, double flowStates)
+int fmi3TerminateSimulation_OMC(void* in_fmi3me, double flowStates)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  if (FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+  return FMI3ME->FMITerminateSimulation;
+}
+
+/*
+ * Wrapper for the FMI function fmi3CompletedIntegratorStep.
+ *
+ * The solver calls it only for an accepted step, after the event location, and not at
+ * the trial points of the event location (FMI 2.0.5, section 3.2.2): the time does not
+ * go back over this call. The result goes to fmi3StepEvent_OMC.
+ */
+double fmi3CompletedIntegratorStep_OMC(void* in_fmi3me, double flowStates)
+{
+  FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
+  if (!fmi3SkipCall(FMI3ME, "fmi3CompletedIntegratorStep") && FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
     fmi3_boolean_t callEventUpdate = fmi3_false;
     fmi3_boolean_t terminateSimulation = fmi3_false;
     fmi3_status_t status = fmi3_import_completed_integrator_step(FMI3ME->FMIImportInstance, fmi3_true, &callEventUpdate, &terminateSimulation);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
       fmi3Failed(FMI3ME, "fmi3CompletedIntegratorStep", status);
     }
-    return callEventUpdate;
+    if (callEventUpdate) {
+      FMI3ME->FMIStepEvent = 1;
+    }
+    if (terminateSimulation) {
+      FMI3ME->FMITerminateSimulation = 1;
+    }
   }
-  return fmi3_false;
+  return flowStates;
+}
+
+/*
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
+ * Returns true if the last fmi3CompletedIntegratorStep asked for an event, or to
+ * terminate. Does not call the FMU, so the zero-crossing functions can call it.
+ */
+int fmi3StepEvent_OMC(void* in_fmi3me, double flowStates)
+{
+  FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
+  return FMI3ME->FMIStepEvent || FMI3ME->FMITerminateSimulation;
 }
 
 #ifdef __cplusplus
