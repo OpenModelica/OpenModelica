@@ -787,6 +787,7 @@ wasm/fmi-simulator/session.js
 wasm/fmi-simulator/wasi.js
 wasm/fmu-aot-worker.js
 wasm/fmu-aot.js
+wasm/fonts.css
 wasm/home/index.html
 wasm/icons/files.svg
 wasm/icons/fmi.svg

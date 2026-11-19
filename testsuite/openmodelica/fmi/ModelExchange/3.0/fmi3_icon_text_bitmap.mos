@@ -1,0 +1,83 @@
+// name: fmi3_icon_text_bitmap.mos
+// keywords: FMI 3.0 export icon PNG SVG Text Bitmap
+// status: correct
+// suite: rustOmc
+// teardown_command: rm -rf IconPkg/ IconText1* IconText2* IconBitmap* icon-*.png
+//
+// The icon PNG is rendered from the icon SVG, so it shows the Text and Bitmap
+// shapes too (#18167). The file of a Bitmap is put into the SVG as a data URI
+// of its type: an FMU cannot refer to a file outside it. Only the Rust omc
+// does this; the C omc's renderer draws neither.
+
+mkdir("IconPkg"); getErrorString();
+writeFile("IconPkg/package.mo", "
+package IconPkg
+  partial model Base
+    Real x(start = 1, fixed = true);
+  equation
+    der(x) = -x;
+    annotation(Icon(graphics = {Rectangle(extent = {{-100,-100},{100,100}})}));
+  end Base;
+
+  model Text1
+    extends Base;
+    annotation(Icon(graphics = {Text(extent = {{-100,-40},{100,40}}, textString = \"A\")}));
+  end Text1;
+
+  model Text2
+    extends Base;
+    annotation(Icon(graphics = {Text(extent = {{-100,-40},{100,40}}, textString = \"B\")}));
+  end Text2;
+
+  model WithBitmap
+    extends Base;
+    annotation(Icon(graphics = {
+      Text(extent = {{-100,-40},{100,40}}, textString = \"B\"),
+      Bitmap(extent = {{-50,-50},{50,50}}, fileName = \"modelica://IconPkg/image.svg\")}));
+  end WithBitmap;
+end IconPkg;
+"); getErrorString();
+writeFile("IconPkg/image.svg", "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><rect width=\"10\" height=\"10\" fill=\"red\"/></svg>"); getErrorString();
+loadFile("IconPkg/package.mo"); getErrorString();
+
+buildModelFMU(IconPkg.Text1, version = "3.0", fmuType = "me", fileNamePrefix = "IconText1"); getErrorString();
+buildModelFMU(IconPkg.Text2, version = "3.0", fmuType = "me", fileNamePrefix = "IconText2"); getErrorString();
+buildModelFMU(IconPkg.WithBitmap, version = "3.0", fmuType = "me", fileNamePrefix = "IconBitmap"); getErrorString();
+
+// Two icons that differ only in their text.
+system("unzip -p IconText1.fmu terminalsAndIcons/icon.png > icon-text1.png && unzip -p IconText2.fmu terminalsAndIcons/icon.png > icon-text2.png && (cmp -s icon-text1.png icon-text2.png || echo differ)"); getErrorString();
+// The same icon with a Bitmap.
+system("unzip -p IconBitmap.fmu terminalsAndIcons/icon.png > icon-bitmap.png && (cmp -s icon-text2.png icon-bitmap.png || echo differ)"); getErrorString();
+system("unzip -p IconBitmap.fmu terminalsAndIcons/icon.svg | grep -o 'data:image/svg+xml;base64,'"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "IconText1.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "IconText2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "IconBitmap.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// differ
+// 0
+// ""
+// differ
+// 0
+// ""
+// data:image/svg+xml;base64,
+// 0
+// ""
+// endResult

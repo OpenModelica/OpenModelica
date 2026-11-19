@@ -1246,10 +1246,11 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
   // wasm: off everywhere else - these tests select the wasm-jit/wasm target
   // themselves, which only this build has.
+  // rustOmc: off everywhere else - these tests need a feature of the Rust omc.
   // hdf5: the CMake build this stage uses links the system HDF5, so MAT v7.3
   // works. gbode: disabled in the Rust simulation runtime. ofScripting and
   // nfScripting: see ofScriptingArgs().
-  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode,+ofScripting,-nfScripting'
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+rustOmc,+hdf5,-gbode,+ofScripting,-nfScripting'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   // nativeSharedLib links a native shared library, which a wasm target cannot load.
   // realTime passes -rt, which only a simulation executable accepts.
