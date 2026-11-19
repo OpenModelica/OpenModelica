@@ -1,0 +1,108 @@
+// name:     ZeroCrossingInactiveBranch
+// keywords: events, zero crossing, parameter, if-expression
+// status: correct
+// teardown_command: rm -rf ZeroCrossingInactiveBranch_* output.log
+//
+// A relation in a branch of an if-expression that a parameter deselects must not
+// trigger events. -lv=LOG_STATS reports the number of state events; the regex
+// picks it out of the messages, which also hold run-dependent timings.
+
+loadString("
+package ZeroCrossingInactiveBranch
+model M
+  parameter Boolean p = false;
+  Real x = sin(62.83185307179586*time);
+  Boolean b;
+  Real y(start = 0, fixed = true);
+equation
+  b = if p then x >= 0 else true;
+  der(y) = if b then 1 else 0;
+end M;
+
+model MElse
+  parameter Boolean p = true;
+  Real x = sin(62.83185307179586*time);
+  Boolean b;
+  Real y(start = 0, fixed = true);
+equation
+  b = if p then true else x >= 0;
+  der(y) = if b then 1 else 0;
+end MElse;
+
+model MPlain
+  parameter Boolean p = false;
+  Real x = sin(62.83185307179586*time);
+  Boolean b, c;
+  Real y(start = 0, fixed = true);
+equation
+  c = x >= 0;
+  b = if p then x >= 0 else true;
+  der(y) = if c then 1 else 0;
+end MPlain;
+end ZeroCrossingInactiveBranch;
+"); getErrorString();
+
+// then branch inactive (p = false): no events
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.M, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS", fileNamePrefix="ZeroCrossingInactiveBranch_off");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+val(y, 1, "ZeroCrossingInactiveBranch_off_res.mat");
+
+// then branch active via -override: events still happen
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.M, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS -override=p=true", fileNamePrefix="ZeroCrossingInactiveBranch_on");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+abs(val(y, 1, "ZeroCrossingInactiveBranch_on_res.mat") - 0.5) < 1e-6;
+
+// else branch inactive (p = true): no events
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.MElse, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS", fileNamePrefix="ZeroCrossingInactiveBranch_else");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+val(y, 1, "ZeroCrossingInactiveBranch_else_res.mat");
+
+// else branch active via -override: events still happen
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.MElse, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS -override=p=false", fileNamePrefix="ZeroCrossingInactiveBranch_elseOn");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+abs(val(y, 1, "ZeroCrossingInactiveBranch_elseOn_res.mat") - 0.5) < 1e-6;
+
+// same relation also used outside the if-expression: its events stay
+echo(false);
+r := simulate(ZeroCrossingInactiveBranch.MPlain, stopTime=1, numberOfIntervals=100, simflags="-lv=LOG_STATS", fileNamePrefix="ZeroCrossingInactiveBranch_plain");
+echo(true);
+getErrorString();
+regex(r.messages, "([0-9]+) state events", 2);
+abs(val(y, 1, "ZeroCrossingInactiveBranch_plain_res.mat") - 0.5) < 1e-6;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// (2, {"0 state events", "0"})
+// 1.0
+// true
+// ""
+// (2, {"19 state events", "19"})
+// true
+// true
+// ""
+// (2, {"0 state events", "0"})
+// 1.0
+// true
+// ""
+// (2, {"19 state events", "19"})
+// true
+// true
+// ""
+// (2, {"19 state events", "19"})
+// true
+// endResult
