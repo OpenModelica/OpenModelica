@@ -825,7 +825,6 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
   unsigned long nWarningsRemovedEvents;
   unsigned long nWarningsOutputEvents;
   modelica_boolean needsHistory;
-  modelica_boolean hasStoredInlet;
 } SPATIAL_DISTRIBUTION_DATA;
 
 typedef struct SIMULATION_INFO

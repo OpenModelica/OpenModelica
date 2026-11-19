@@ -810,6 +810,7 @@ struct StepRetry {
     stored: bool,
     /// C's `retry`: the failed attempts of the current step.
     attempts: u32,
+    ordinary_attempts: u32,
     /// C's `retryStepSize`: the step size limit after a failed step, doubled by
     /// every accepted step until it is back at the output interval.
     limit: Option<f64>,
@@ -887,6 +888,7 @@ impl StepRetry {
         self.time = read_f64(e, sim_data + TIME_OFF)?;
         self.stored = true;
         self.attempts = 0;
+        self.ordinary_attempts = 0;
         // Let the step size grow back to the output interval.
         if let Some(limit) = self.limit {
             self.limit = (2.0 * limit < self.interval).then_some(2.0 * limit);
@@ -937,7 +939,8 @@ impl StepRetry {
                 if history {
                     h < min_step.unwrap_or(MINIMAL_STEP_SIZE) || self.time + h <= self.time
                 } else {
-                    self.attempts >= max_retries || (self.attempts > 0 && h < min_step.unwrap_or(MINIMAL_STEP_SIZE))
+                    self.ordinary_attempts >= max_retries
+                        || (self.ordinary_attempts > 0 && h < min_step.unwrap_or(MINIMAL_STEP_SIZE))
                 }
             }
             None => self.attempts >= 1,
@@ -948,13 +951,21 @@ impl StepRetry {
             omclog::info!(
                 omclog::STDOUT,
                 false,
-                "model terminate | Simulation terminated by an assert at time: {}",
+                "model terminate | {} at time: {}",
+                if history {
+                    "spatialDistribution transport history exhausted; cannot retry a smaller step"
+                } else {
+                    "Simulation terminated by an assert"
+                },
                 format_g(t, 6),
             );
             return Ok(None);
         }
-        let first = self.attempts == 0;
+        let first = self.ordinary_attempts == 0;
         self.attempts += 1;
+        if !history {
+            self.ordinary_attempts += 1;
+        }
         self.limit = halved.or(self.limit);
         self.skip |= halved.is_some() && !self.short && !history;
         // The throw is being retried, so nothing downstream may report it.
@@ -3910,17 +3921,22 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
     Ok(true)
 }
 
-/// C's `updateContinuousSystem`: recompute everything an output row reads. A
-/// `--daeMode` model has no explicit ODE, so that is one algebraic-stage residual.
-/// C's `function_storeDelayed` + `function_storeSpatialDistribution`, the tail of
-/// `updateContinuousSystem`: the operators with an internal history record the point
-/// the model was last evaluated at. A model without any skips it entirely.
+/// Commit operator histories after evaluating an accepted point and locating its events.
 pub fn store_operators(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if !layout.has_history_ops {
         return Ok(());
     }
     e.call1_if_present("functionStoreDelayed", sim_data)?;
-    e.call1_if_present("functionStoreSpatialDistribution", sim_data)
+    commit_spatial(e, sim_data)
+}
+
+pub fn commit_spatial(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+    e.call1_if_present("functionStoreSpatialDistribution", sim_data)?;
+    if e.spatial_history(SpatialHistory::Needed) {
+        Err(ASSERT_ERR)
+    } else {
+        Ok(())
+    }
 }
 
 fn store_spatial(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
@@ -3929,10 +3945,7 @@ fn store_spatial(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     } else {
         eval_ode(e, sim_data, layout)?;
     }
-    if e.spatial_history(SpatialHistory::Needed) {
-        return Err(ASSERT_ERR);
-    }
-    e.call1_if_present("functionStoreSpatialDistribution", sim_data)
+    commit_spatial(e, sim_data)
 }
 
 /// [`store_operators`] at an accepted point the model has not been evaluated at yet:
@@ -8796,7 +8809,7 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         let Some((layout, at)) = self.accept else {
             return Ok(false);
         };
-        if !layout.has_history_ops || zc.is_empty() || layout.has_spatial_distribution {
+        if !layout.has_history_ops || zc.is_empty() {
             return Ok(false);
         }
         write_time(self.e, self.sim_data, t)?;
@@ -8805,7 +8818,11 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         write_i32(self.e, self.sim_data + layout.rel_fresh_off, 0)?;
         eval_continuous(self.e, self.sim_data, layout)?;
         self.calls += 1;
-        store_operators(self.e, self.sim_data, layout)?;
+        if layout.has_spatial_distribution {
+            self.e.call1_if_present("functionStoreDelayed", self.sim_data)?;
+        } else {
+            store_operators(self.e, self.sim_data, layout)?;
+        }
         for (i, v) in f.iter_mut().enumerate() {
             *v = read_f64(self.e, self.ders_base + 8 * i as u32)?;
         }
@@ -8819,7 +8836,9 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         for (i, v) in zc.iter_mut().enumerate() {
             *v = read_f64(self.e, self.sim_data + self.zc_off + 8 * i as u32)?;
         }
-        at.set(t);
+        if !layout.has_spatial_distribution {
+            at.set(t);
+        }
         Ok(true)
     }
 
@@ -9682,7 +9701,7 @@ impl SolverCore {
                 // makes it an output point, so otherwise integrate on, as C's
                 // `dassl_step` loop does while IDID == 1.
                 Progress::Stepped if !no_equidistant_grid() => {
-                    if spatial && (self.solver_root_finding() || unsafe { &*ctx.layout }.n_zc == 0) {
+                    if spatial && self.solver_root_finding() {
                         let e = unsafe { &mut *ctx.engine };
                         self.write_states(e)?;
                         write_time(e, sim_data, self.t)?;
@@ -10280,11 +10299,8 @@ impl SolverCore {
                 None => {}
             }
             if target >= tout - eps {
-                // C stores after the accepted point's evaluation and before the row is
-                // written, so the row reports the operator's pre-store outputs — an
-                // input-side output extrapolated from the just-stored value would close
-                // the algebraic loop the extrapolation exists to avoid. `rows` is Some
-                // exactly when the caller writes that row and stores after it.
+                // Preserve the outputs evaluated before committing the accepted point.
+                // With rows, the caller commits after writing that row.
                 if rows.is_none() {
                     let spatial = layout.has_spatial_distribution;
                     if ctx.accepted_at.get() != self.t {
@@ -10300,7 +10316,7 @@ impl SolverCore {
                     // root finding has, and it lands on the communication point.
                     let flips = save_zero_crossings(e, sim_data, layout)?;
                     if spatial {
-                        e.call1_if_present("functionStoreSpatialDistribution", sim_data)?;
+                        commit_spatial(e, sim_data)?;
                     }
                     if !flips.is_empty() {
                         if defers(self.t) {
@@ -10618,7 +10634,7 @@ impl CsDriver {
             let out = self.step(e, model, target, partial_defer, dss).and_then(|out| {
                 if matches!(out, CsStep::Event { .. }) {
                     if layout.has_spatial_distribution {
-                        store_spatial(e, sim_data, layout)?;
+                        store_operators_at(e, sim_data, layout, self.core.t)?;
                     }
                     rethrow_store::note_event();
                 }

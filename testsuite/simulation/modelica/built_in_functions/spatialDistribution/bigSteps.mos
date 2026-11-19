@@ -14,6 +14,7 @@ loadString("
   Real rightInput = 0;
   Real leftOutput;
   Real rightOutput;
+  Boolean crossed = rightOutput > 0.5;
   constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
   constant Real[:] initialValues = {0.0, 0.0};
   Real v = 25;
@@ -38,6 +39,8 @@ end bigStepsModel;"); getErrorString();
 // Simulate
 simulate(bigStepsModel, numberOfIntervals=10, stopTime=100); getErrorString();
 
+// Check outlet events even though the outlet does not affect a state derivative.
+val(crossed, 10, "bigStepsModel_res.mat") > 0.5 and val(crossed, 100, "bigStepsModel_res.mat") < 0.5; getErrorString();
 
 // Result:
 // true
@@ -51,5 +54,7 @@ simulate(bigStepsModel, numberOfIntervals=10, stopTime=100); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
+// ""
+// true
 // ""
 // endResult

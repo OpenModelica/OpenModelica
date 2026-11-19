@@ -94,9 +94,10 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   else /* ode mode */
   {
     data->callback->functionODE(data, threadData);
+    if (data->modelData->nSpatialDistributions > 0 && OMC_ERROR_RAISED()) return;
     data->callback->functionAlgebraics(data, threadData);
   }
-  if (data->modelData->nSpatialDistributions && OMC_ERROR_RAISED()) return;
+  if (data->modelData->nSpatialDistributions > 0 && OMC_ERROR_RAISED()) return;
   data->callback->output_function(data, threadData);
   data->callback->setc_function(data, threadData);
   data->callback->setb_function(data, threadData);
@@ -114,16 +115,10 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   prefixedName_updateContinuousSystem(data, threadData);
   /* Everything below would evaluate the model again, on the point that just
      failed. */
-  if (OMC_ERROR_RAISED()) {
-    data->simulationInfo->noThrowAsserts = 0 /* false */;
-    return NO_TIMER_FIRED;
-  }
+  if (OMC_ERROR_RAISED()) goto update_failed;
 
   saveZeroCrossings(data, threadData);
-  if (OMC_ERROR_RAISED()) {
-    data->simulationInfo->noThrowAsserts = 0 /* false */;
-    return NO_TIMER_FIRED;
-  }
+  if (OMC_ERROR_RAISED()) goto update_failed;
 
   /***** Event handling *****/
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
@@ -134,9 +129,12 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   timerWasActivated = syncRet == TIMER_FIRED || syncRet == TIMER_FIRED_EVENT || timerWasActivated;
   do
   {
+    if (OMC_ERROR_RAISED()) goto update_failed;
     int eventType = checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, /*out*/ &solverInfo->currentTime);
+    if (OMC_ERROR_RAISED()) goto update_failed;
     if(eventType > 0 || syncRet == TIMER_FIRED_EVENT) /* event */
     {
+      if (storeSpatialDistributionStep(data, threadData)) goto update_failed;
       foundEvent = 1;
       threadData->currentErrorStage = ERROR_EVENTHANDLING;
       infoStreamPrint(OMC_LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
@@ -146,13 +144,9 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
         sim_result.emit(&sim_result, data, threadData);
         rt_tick(SIM_TIMER_EVENT);
       }
-      if (storeSpatialDistributionStep(data, threadData)) return NO_TIMER_FIRED;
       handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       /* Nothing is left to retry from: an error raised here ends the run. */
-      if (OMC_ERROR_RAISED()) {
-        OMC_ERROR_CLEAR();
-        longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
-      }
+      if (OMC_ERROR_RAISED()) goto update_failed;
       cleanUpOldValueListAfterEvent(data, solverInfo->currentTime);
       messageClose(OMC_LOG_EVENTS);
       threadData->currentErrorStage = ERROR_SIMULATION;
@@ -161,7 +155,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
     }
     else /* no event */
     {
-      data->callback->function_storeSpatialDistribution(data, threadData);
+      if (data->callback->function_storeSpatialDistribution(data, threadData)) goto update_failed;
       solverInfo->laststep = solverInfo->currentTime;
       solverInfo->didEventStep = 0;
     }
@@ -189,16 +183,13 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   } while (syncRet1 != NO_TIMER_FIRED);
 
   /* Update continous system because hold() needs to be re-evaluated */
-  if (timerWasActivated == 1) {
+  if (timerWasActivated == 1)
     prefixedName_updateContinuousSystem(data, threadData);
-    data->callback->function_storeSpatialDistribution(data, threadData);
-  }
 
-  /* Add event to spatialDistribution */
-  if (foundEvent==1) {
+  /* Store event histories after the timer updates. */
+  if (foundEvent==1)
     data->callback->function_storeDelayed(data, threadData);
-    data->callback->function_storeSpatialDistribution(data, threadData);
-  }
+  if ((foundEvent || timerWasActivated) && data->callback->function_storeSpatialDistribution(data, threadData)) goto update_failed;
 
   /* Check if ignored assert throw was actually a valid throw */
   data->simulationInfo->noThrowAsserts = 0 /* false */;
@@ -210,6 +201,18 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   }
 
   return syncRet;
+
+update_failed:
+  data->simulationInfo->noThrowAsserts = 0;
+  if (threadData->currentErrorStage == ERROR_EVENTHANDLING) messageClose(OMC_LOG_EVENTS);
+  threadData->currentErrorStage = ERROR_SIMULATION;
+  if (foundEvent || timerWasActivated) {
+    if (spatialDistributionNeedsHistory(data, FALSE))
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "spatialDistribution transport history exhausted during an event at time %.15g", data->localData[0]->timeValue);
+    OMC_ERROR_CLEAR();
+    longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
+  }
+  return NO_TIMER_FIRED;
 }
 
 static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
@@ -475,6 +478,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   int i, steadStateReached=0;
   /* Changed in the try block and read in its catch, so they must not live in a register. */
   volatile int retry = 0;                  /* failed attempts of the current step */
+  volatile int ordinaryRetries = 0;
   volatile int stepShortened = 0;          /* the current step ends before its output point */
   volatile double retryStepSize = DBL_MAX; /* upper limit of the step size after a failed step */
   volatile double triedStepSize = 0;       /* step size of the current attempt */
@@ -535,10 +539,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     while(solverInfo->currentTime < simInfo->stopTime || !simInfo->useStopTime)
     {
       int success = 0;
-      if (!retry && data->modelData->nSpatialDistributions) {
+      if (!retry && data->modelData->nSpatialDistributions > 0) {
         spatialCheckpointSize = spatialDistributionStateWords(data, NULL);
         if (spatialCheckpointSize > spatialCheckpointCapacity) {
-          spatialCheckpointCapacity = spatialCheckpointSize;
+          spatialCheckpointCapacity = 2 * spatialCheckpointSize;
           spatialCheckpoint = realloc(spatialCheckpoint, spatialCheckpointCapacity * sizeof(double));
           assertStreamPrint(threadData, spatialCheckpoint != NULL, "Out of memory saving spatialDistribution history");
         }
@@ -686,11 +690,12 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           }
           break;
         }
-        if (!data->modelData->nSpatialDistributions || (!retValIntegrator && !OMC_ERROR_RAISED()))
+        if (data->modelData->nSpatialDistributions == 0 || (!retValIntegrator && !OMC_ERROR_RAISED()))
           syncStep = simulationUpdate(data, threadData, solverInfo);
         /* The step is only over if it came back clean. */
         if (!OMC_ERROR_RAISED()) {
         retry = 0; /* reset retry */
+        ordinaryRetries = 0;
         /* let the step size grow back to the output interval */
         if (retryStepSize < DBL_MAX) {
           retryStepSize = 2*retryStepSize < simInfo->stepSize ? 2*retryStepSize : DBL_MAX;
@@ -727,21 +732,30 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
       if (!success) { /* catch */
-        int historyFailure = spatialDistributionNeedsHistory(data, 0);
+        modelica_boolean historyFailure = spatialDistributionNeedsHistory(data, FALSE);
         /* halve the step size until the step succeeds, there is no step size to
          * halve for the optimization though */
-        if(S_OPTIMIZATION == solverInfo->solverMethod ? 0 == retry :
-            historyFailure ? triedStepSize/2 >= minRetryStepSize && solverInfo->currentTime + triedStepSize/2 > solverInfo->currentTime :
-            retry < maxStepRetries && (0 == retry || triedStepSize/2 >= minRetryStepSize)) {
+        modelica_boolean canRetry;
+        if (solverInfo->solverMethod == S_OPTIMIZATION)
+          canRetry = retry == 0;
+        else if (historyFailure)
+          canRetry = triedStepSize/2 >= minRetryStepSize && simInfo->timeValueOld + triedStepSize/2 > simInfo->timeValueOld;
+        else
+          canRetry = ordinaryRetries < maxStepRetries && (ordinaryRetries == 0 || triedStepSize/2 >= minRetryStepSize);
+        if (canRetry) {
           retryStepSize = triedStepSize/2;
           skipOutputPoint = skipOutputPoint || (!stepShortened && !historyFailure);
           if (spatialCheckpoint) setSpatialDistributionStateWords(data, spatialCheckpoint, spatialCheckpointSize, TRUE);
-          retrySimulationStep(data, threadData, solverInfo, retry, historyFailure);
+          retrySimulationStep(data, threadData, solverInfo, ordinaryRetries, historyFailure);
+          if (!historyFailure) ordinaryRetries++;
           retry++;
           infoStreamPrint(OMC_LOG_SOLVER, 0, "step failed, retry %d with step size %g", (int)retry, (double)retryStepSize);
         } else {
           retValue =  -1;
-          infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
+          if (historyFailure)
+            errorStreamPrint(OMC_LOG_STDOUT, 0, "spatialDistribution transport history exhausted at time %.15g; cannot retry a smaller step", data->localData[0]->timeValue);
+          else
+            infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
           break;
         }
       }

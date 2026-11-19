@@ -231,7 +231,7 @@ impl CEngine {
             si.needToReThrow = 0;
             driver::note_no_throw_assert();
         }
-        if rc != -1 && !crate::support::error_raised(self.rt.thread_data) {
+        if !crate::support::error_raised(self.rt.thread_data) && rc != -1 {
             return Ok(());
         }
         if Self::error_absorbed(self.driver_stage()) {

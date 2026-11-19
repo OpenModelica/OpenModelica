@@ -110,6 +110,16 @@ static double spatialZeroDeltaX(double posA, double posB) {
 // ############################################################################
 
 
+/**
+ * @brief Internal commits are safe only when the solver locates the first event.
+ * Otherwise the driver must locate it before committing and pruning history.
+ */
+modelica_boolean spatialDistributionStoresSolverSteps(DATA* data, modelica_boolean solverRootFinding)
+{
+  return data->modelData->nSpatialDistributions > 0 && solverRootFinding;
+}
+
+/** @brief Report missing transport history, optionally clearing the report. */
 modelica_boolean spatialDistributionNeedsHistory(DATA* data, modelica_boolean reset)
 {
   modelica_boolean needed = FALSE;
@@ -120,19 +130,20 @@ modelica_boolean spatialDistributionNeedsHistory(DATA* data, modelica_boolean re
   return needed;
 }
 
-/* Call only after accepting the step and locating its first event. */
+/**
+ * @brief Refresh inlets and commit after accepting a step and locating its events.
+ * @return 0 on success, -1 on model failure.
+ */
 int storeSpatialDistributionStep(DATA* data, threadData_t* threadData)
 {
-  if (!data->modelData->nSpatialDistributions) return 0;
+  if (data->modelData->nSpatialDistributions == 0) return 0;
   if (OMC_ERROR_RAISED()) return -1;
   EVAL_SELECTION* selection = data->simulationInfo->evalSelection;
   data->simulationInfo->evalSelection = NULL;
   spatialDistributionNeedsHistory(data, TRUE);
 #ifndef OMC_FMI_RUNTIME
   externalInputUpdate(data);
-#endif
   data->callback->input_function(data, threadData);
-#ifndef OMC_FMI_RUNTIME
   if (compiledInDAEMode) {
     data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
   } else
@@ -141,9 +152,7 @@ int storeSpatialDistributionStep(DATA* data, threadData_t* threadData)
     data->callback->functionODE(data, threadData);
   }
   data->simulationInfo->evalSelection = selection;
-  if (OMC_ERROR_RAISED()) return -1;
-  data->callback->function_storeSpatialDistribution(data, threadData);
-  return OMC_ERROR_RAISED() ? -1 : 0;
+  return data->callback->function_storeSpatialDistribution(data, threadData);
 }
 
 /**
@@ -180,6 +189,7 @@ SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistrib
     spatialDistributionData[i].lastStoredEventValue = 0;
     spatialDistributionData[i].nWarningsRemovedEvents = 0;
     spatialDistributionData[i].nWarningsOutputEvents = 0;
+    spatialDistributionData[i].needsHistory = FALSE;
   }
 
   return spatialDistributionData;
@@ -438,9 +448,8 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
    * value changes. oldPosX is kept, so small moves add up until they count. */
   if (deltaX <= spatialZeroDeltaX(spatialDistribution->oldPosX, posX)) {
     storeBoundarySpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, isPositiveVelocity ? in0 : in1);
-    if (spatialDistribution->hasStoredInlet && !data->simulationInfo->initial)
+    if (deltaX > 0 && !data->simulationInfo->initial)
       pruneSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity);
-    spatialDistribution->hasStoredInlet = TRUE;
     messageClose(OMC_LOG_SPATIALDISTR);
     return;
   }
@@ -485,7 +494,6 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
 
   /* Update oldPosX */
   spatialDistribution->oldPosX = posX;
-  spatialDistribution->hasStoredInlet = TRUE;
   messageClose(OMC_LOG_SPATIALDISTR);
   return;
 }
@@ -497,6 +505,7 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
  * (out0, out1) = spatialDistribution (posX, isPositiveVelocity)
  * If an event was outputted integrator needs to iterate.
  * History is stored only after accepting a step.
+ * Missing history raises a recoverable error and returns NaN.
  *
  * @param data                Data
  * @param threadData          Thread data for error handling
@@ -511,8 +520,6 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   /* Variables */
   SPATIAL_DISTRIBUTION_DATA* spatialDistribution;
   DOUBLE_ENDED_LIST* transportedQuantityList;
-  DOUBLE_ENDED_LIST_NODE* firstNode;
-  DOUBLE_ENDED_LIST_NODE* lastNode;
   TRANSPORTED_QUANTITY_DATA* firstNodeData;
   TRANSPORTED_QUANTITY_DATA* lastNodeData;
   int walkedOverEvents;
@@ -550,7 +557,8 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   if (walkedOverEvents > 1) {
     warnStepSizeTooBig(data, &spatialDistribution->nWarningsOutputEvents, "Need to output", index, walkedOverEvents);
   }
-  if (walkedOverEvents>0 && (!data->simulationInfo->discreteCall || data->simulationInfo->initial) && !isnan(eventPreValue)) {
+  if (walkedOverEvents>0 && !isnan(eventPreValue) &&
+      (!data->simulationInfo->discreteCall || data->simulationInfo->initial || posX == spatialDistribution->oldPosX)) {
     infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);
     outValue = eventPreValue;
   }
@@ -639,7 +647,7 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
     zeroCrossingValue = -posX+1 >= currentNodeData->position - SPATIAL_EPS
       ? -currentNodeData->zeroCrossValue : currentNodeData->zeroCrossValue;
   } else {
-    zeroCrossingValue = -posX < currentNodeData->position
+    zeroCrossingValue = -posX <= currentNodeData->position + SPATIAL_EPS
       ? currentNodeData->zeroCrossValue : -currentNodeData->zeroCrossValue;
   }
 
@@ -1082,9 +1090,8 @@ size_t spatialDistributionStateWords(DATA* data, double* out)
       out[k+5] = (double) s->nWarningsRemovedEvents;
       out[k+6] = (double) s->nWarningsOutputEvents;
       out[k+7] = doubleEndedListLen(s->transportedQuantity);
-      out[k+8] = s->hasStoredInlet;
     }
-    k += 9;
+    k += 8;
     for (node = getFirstNodeDoubleEndedList(s->transportedQuantity); node; node = getNextNodeDoubleEndedList(node)) {
       TRANSPORTED_QUANTITY_DATA* q = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(node);
       if (out) {
@@ -1127,7 +1134,7 @@ long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len, i
   }
   for (i = 0; i < data->modelData->nSpatialDistributions; i++) {
     SPATIAL_DISTRIBUTION_DATA* s = &data->simulationInfo->spatialDistributionData[i];
-    if (k + 10 > len || !(w[k+7] >= 0 && w[k+7] <= (len - k - 10) / 2)) return -1;
+    if (k + 9 > len || !(w[k+7] >= 0 && w[k+7] <= (len - k - 9) / 2)) return -1;
     n = (int) w[k+7];
     if (apply) {
       s->needsHistory = FALSE;
@@ -1138,16 +1145,15 @@ long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len, i
       s->lastStoredEventValue = (int) w[k+4];
       s->nWarningsRemovedEvents = (unsigned long) w[k+5];
       s->nWarningsOutputEvents = (unsigned long) w[k+6];
-      s->hasStoredInlet = w[k+8] != 0;
       clearDoubleEndedList(s->transportedQuantity);
       for (j = 0; j < n; j++) {
         TRANSPORTED_QUANTITY_DATA q;
-        q.position = w[k + 9 + 2 * j];
-        q.value = w[k + 10 + 2 * j];
+        q.position = w[k + 8 + 2 * j];
+        q.value = w[k + 9 + 2 * j];
         pushBackDoubleEndedList(s->transportedQuantity, &q);
       }
     }
-    k += 9 + 2 * (size_t) n;
+    k += 8 + 2 * (size_t) n;
     if (!(w[k] >= 0 && w[k] <= (len - k - 1) / 2)) return -1;
     n = (int) w[k++];
     if (apply) {

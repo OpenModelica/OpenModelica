@@ -187,7 +187,6 @@ struct Spatial {
     n_warnings_removed_events: u64,
     n_warnings_output_events: u64,
     needs_history: bool,
-    has_stored_inlet: bool,
 }
 
 impl Spatial {
@@ -203,7 +202,6 @@ impl Spatial {
             n_warnings_removed_events: 0,
             n_warnings_output_events: 0,
             needs_history: false,
-            has_stored_inlet: false,
         }
     }
 
@@ -367,10 +365,9 @@ impl Spatial {
         let (moved, dx) = self.progress(pos_x);
         if dx <= zero_delta_x(self.old_pos_x, pos_x) {
             self.store_boundary(positive, if positive { in0 } else { in1 });
-            if self.has_stored_inlet && !initial {
+            if dx > 0.0 && !initial {
                 self.prune(positive);
             }
-            self.has_stored_inlet = true;
             omclog::close(omclog::SPATIALDISTR);
             return;
         }
@@ -403,7 +400,6 @@ impl Spatial {
             warn_step_size_too_big(&mut self.n_warnings_removed_events, "Removed", time, index, walked);
         }
         self.old_pos_x = pos_x;
-        self.has_stored_inlet = true;
         omclog::close(omclog::SPATIALDISTR);
     }
 
@@ -709,11 +705,10 @@ impl Spatial {
                     read.events,
                 );
             }
-            // A discontinuity reached the output edge: a continuous call reports the
-            // value in front of it so the zero crossing has something to bracket; the
-            // event call that follows reports the value behind it.
+            // Keep the value before an outlet jump during continuous evaluation or
+            // while x is unchanged. An event call after movement may use the other limit.
             let mut out = read.out;
-            if read.events > 0 && !discrete {
+            if read.events > 0 && (!discrete || pos_x == self.old_pos_x) {
                 if let Some(pre) = read.event_pre {
                     omclog::info!(
                         omclog::SPATIALDISTR,
@@ -775,7 +770,7 @@ impl Spatial {
             } else {
                 event.sign
             }
-        } else if -pos_x < event.pos {
+        } else if -pos_x <= event.pos + SPATIAL_EPS {
             event.sign
         } else {
             -event.sign
@@ -834,7 +829,6 @@ impl SpatialState {
                 s.out1,
                 s.n_warnings_removed_events as f64,
                 s.n_warnings_output_events as f64,
-                s.has_stored_inlet as u8 as f64,
             ]);
         }
     }
@@ -866,7 +860,6 @@ impl SpatialState {
             s.out1 = w.next()?;
             s.n_warnings_removed_events = w.next()? as u64;
             s.n_warnings_output_events = w.next()? as u64;
-            s.has_stored_inlet = w.next()? != 0.0;
             ops.push(s);
         }
         Some(SpatialState {

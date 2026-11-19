@@ -1472,7 +1472,7 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Emit `functionStoreSpatialDistribution`: `rt_spatial_store(idx, time, in0,
-    /// in1, x, positiveVelocity)` per `spatialDistribution(...)` operator (C's
+    /// in1, x, positiveVelocity, mode)` per `spatialDistribution(...)` operator (C's
     /// `function_storeSpatialDistribution`).
     ///
     /// An operator inside an `if`-branch is guarded by the same condition as the

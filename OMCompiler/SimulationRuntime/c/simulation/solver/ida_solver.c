@@ -775,6 +775,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   int stepsMode;    /* Has to be IDA_NORMAL (1) or IDA_ONE_STEP (2) */
   int restartAfterLSFail = 0;
   int workRetries = 0;
+  const modelica_boolean storeSolverSteps = spatialDistributionStoresSolverSteps(data, solverInfo->solverRootFinding);
 
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
@@ -899,15 +900,15 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   else
   {
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
-    stepsMode = data->modelData->nSpatialDistributions ? IDA_ONE_STEP : IDA_NORMAL;
+    stepsMode = data->modelData->nSpatialDistributions > 0 ? IDA_ONE_STEP : IDA_NORMAL;
 #ifdef OMC_FMI_RUNTIME
     /* The inputs of an FMU can change at the communication point */
     IDASetStopTime(idaData->ida_mem, tout);
 #else
     /* Never step past the next time event */
-    if (data->modelData->nSpatialDistributions || data->simulationInfo->nextSampleEvent < DBL_MAX)
+    if (data->modelData->nSpatialDistributions > 0 || data->simulationInfo->nextSampleEvent < DBL_MAX)
     {
-      IDASetStopTime(idaData->ida_mem, data->modelData->nSpatialDistributions ? tout : fmax(data->simulationInfo->nextSampleEvent, tout));
+      IDASetStopTime(idaData->ida_mem, data->modelData->nSpatialDistributions > 0 ? tout : fmax(data->simulationInfo->nextSampleEvent, tout));
     }
     else
     {
@@ -942,25 +943,27 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
       /* rescale idaData->y and idaData->yp */
       idaReScaleData(idaData);
     }
-    if (!solverInfo->solverRootFinding && spatialDistributionNeedsHistory(data, FALSE)) {
-      retVal = -1;
+    if (!storeSolverSteps && spatialDistributionNeedsHistory(data, FALSE)) {
+      retVal = IDA_RES_FAIL;
+      messageClose(OMC_LOG_SOLVER);
       break;
     }
 
     /* set time to current time */
     sData->timeValue = solverInfo->currentTime;
-    if (data->modelData->nSpatialDistributions && idaData->daeMode) {
+    if (data->modelData->nSpatialDistributions > 0 && idaData->daeMode) {
       memcpy(sData->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
       setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
       memcpy(sData->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
     }
-    if (data->modelData->nSpatialDistributions && (solverInfo->solverRootFinding || !data->modelData->nZeroCrossings) && flag == IDA_SUCCESS && solverInfo->currentTime < tout) {
+    if (storeSolverSteps && flag == IDA_SUCCESS && solverInfo->currentTime < tout) {
 #ifdef OMC_FMI_RUNTIME
       if (idaData->daeMode)
         data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
 #endif
       if (storeSpatialDistributionStep(data, threadData)) {
-        retVal = -1;
+        retVal = IDA_RES_FAIL;
+        messageClose(OMC_LOG_SOLVER);
         break;
       }
     }
@@ -1034,7 +1037,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
 
   } while(!finished && !OMC_ERROR_RAISED());
-  if (OMC_ERROR_RAISED() && !rootFailed && !data->modelData->nSpatialDistributions) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !rootFailed && data->modelData->nSpatialDistributions == 0) { OMC_ERROR_CLEAR(); }
 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;

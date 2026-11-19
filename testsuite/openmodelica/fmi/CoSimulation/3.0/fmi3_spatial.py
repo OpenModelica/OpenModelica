@@ -49,8 +49,9 @@ class SpatialCoSimulation(unittest.TestCase):
     def test_dae_refreshes_inlet(self):
         with instance("SpatialCSDae") as (fmu, vr):
             advance(fmu, 0, 1)
-            expected = sum(0.1**(k-1) * (1-0.1*k)**2 / 2 for k in range(1, 11))
+            expected = sum(0.1**(k-1) * ((1-0.1*k)**2 / 2 + 1-0.1*k) for k in range(1, 11))
             self.assertAlmostEqual(fmu.getFloat64([vr["area"]])[0], expected, places=6)
+            self.assertEqual(fmu.getFloat64([vr["u"]])[0], 1)
 
     def test_repeated_history_subdivision(self):
         for event_mode, early in [(False, False), (True, False), (True, True)]:

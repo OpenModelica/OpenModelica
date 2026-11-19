@@ -34,12 +34,13 @@ if getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET") <> "wasm-jit" then
     (unused,y)=spatialDistribution(0,0,x,true,{0,0.2,0.2,0.4,0.4,1},{0,0,1,1,0,0});
   end SpatialCSPulse;
   model SpatialCSDae
+    input Real u(start=1);
     Real x(start=0,fixed=true), inlet, unused, y;
     output Real area(start=0,fixed=true);
   equation
     der(x)=10;
     der(area)=y;
-    inlet=time+0.1*y;
+    inlet=time+u+0.1*y;
     (unused,y)=spatialDistribution(inlet,0,x,true,{0,1},{0,0});
   end SpatialCSDae;"); getErrorString();
   if runtime == "C" then

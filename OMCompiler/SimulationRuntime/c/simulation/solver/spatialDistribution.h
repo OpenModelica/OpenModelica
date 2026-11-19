@@ -25,7 +25,22 @@
  *
  */
 
-/*! \file spatialDistribution.h
+/** @file
+ * For each step:
+ * 1. Save the model state. Save the spatial history with spatialDistributionStateWords.
+ * 2. Call spatialDistributionNeedsHistory(data, TRUE) to clear the missing history flag.
+ *    During the step, spatialDistribution reads saved history. spatialDistributionZeroCrossing gives event indicators.
+ * 3. Accept the step and find any events before saving new history.
+ *    storeSpatialDistributionStep updates the inlet values and saves the history.
+ *    If the point was already evaluated, the generated store callback calls storeSpatialDistribution directly.
+ *
+ * If history is missing: reject the step. Restore the model state and call setSpatialDistributionStateWords to restore history.
+ * Clear the error and the missing history flag. Restart the solver with a smaller step.
+ *
+ * If an event is found: save the values before the event, run event iteration, then save the values after the event.
+ * Use the same position for both history stores.
+ * spatialDistributionStoresSolverSteps checks if the solver can store history at its internal steps.
+ * If it cannot, the outer driver must find events before storing history.
  */
 
 #include "../../simulation_data.h"
@@ -36,6 +51,7 @@
 #endif
 
 SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistributions);
+modelica_boolean spatialDistributionStoresSolverSteps(DATA* data, modelica_boolean solverRootFinding);
 modelica_boolean spatialDistributionNeedsHistory(DATA* data, modelica_boolean reset);
 int storeSpatialDistributionStep(DATA* data, threadData_t* threadData);
 void freeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributionData, unsigned int nSpatialDistributions);
