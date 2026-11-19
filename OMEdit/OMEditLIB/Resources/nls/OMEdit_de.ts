@@ -6941,6 +6941,15 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
         <translation>ngspice-Netzliste wird importiert und in Modelica-Code konvertiert</translation>
     </message>
     <message>
+        <source>This page has no CRML bindings example.
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not copy the example file %1 to %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>OMSens is not supported on macOS</source>
         <translation>OMSens wird unter macOS nicht unterstützt</translation>
     </message>
@@ -7134,6 +7143,14 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
     </message>
     <message>
         <source>Binds a CRML requirement model to architecture and behaviour models and generates the verification model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CRML Bindings Example</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the cooling system example in the CRML verification configuration editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10494,7 +10511,7 @@ Variabilität: %4</translation>
     </message>
     <message>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Status</translation>
     </message>
     <message>
         <source>Confidence</source>
@@ -10662,6 +10679,14 @@ Variabilität: %4</translation>
     </message>
     <message>
         <source>The CRML compiler could not translate %1 to Modelica: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML translator gave no externals for %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML translator could not translate %1 to Modelica: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

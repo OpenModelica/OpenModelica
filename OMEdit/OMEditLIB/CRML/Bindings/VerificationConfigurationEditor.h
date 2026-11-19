@@ -57,6 +57,7 @@ class VerificationConfigurationEditor : public QDialog
   Q_OBJECT
 public:
   VerificationConfigurationEditor(const QString &crmlFile, QWidget *pParent = nullptr);
+  void setModels(const QString &architectureFile, const QString &behaviourModel, const QStringList &observerLibraries);
 private:
   CRMLBindings::VerificationConfiguration mConfiguration;
   CRMLBindings::CrmlExternals mExternals;

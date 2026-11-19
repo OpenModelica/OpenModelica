@@ -6873,6 +6873,15 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>export till bild</translation>
     </message>
     <message>
+        <source>This page has no CRML bindings example.
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not copy the example file %1 to %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
         <translation>Kunde inte köra terminalkommandot &lt;b&gt;%1&lt;/b&gt; med argumenten &lt;b&gt;%2&lt;/b&gt;. Processen misslyckades med felet &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
@@ -7126,6 +7135,14 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     </message>
     <message>
         <source>Binds a CRML requirement model to architecture and behaviour models and generates the verification model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CRML Bindings Example</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the cooling system example in the CRML verification configuration editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10494,7 +10511,7 @@ Variabilitet: %4</translation>
     </message>
     <message>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Status</translation>
     </message>
     <message>
         <source>Confidence</source>
@@ -10662,6 +10679,14 @@ Variabilitet: %4</translation>
     </message>
     <message>
         <source>The CRML compiler could not translate %1 to Modelica: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML translator gave no externals for %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML translator could not translate %1 to Modelica: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

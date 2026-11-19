@@ -58,6 +58,7 @@
 #include "OMS/ModelDialog.h"
 #include "CRML/CRMLTranslateAsDialog.h"
 #include "CRML/Bindings/VerificationConfigurationEditor.h"
+#include "Util/DirectoryOrFileSelector.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -105,6 +106,9 @@
 #include <QStandardPaths>
 #include <QUrl>
 #include <QDir>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QMessageBox>
 #include <QFileInfo>
 #include <QNetworkProxyFactory>
 #include <QRegularExpression>
@@ -1380,6 +1384,11 @@ void MainWindow::openResultFile(const QString &fileName)
   QFileInfo fileInfo(fileName);
   QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
   if (list.size() > 0) {
+#if defined(__EMSCRIPTEN__)
+    // the result readers use C stdio, which reads the file system of the page, not that of omc
+    extern bool omcWorkerStageFile(const char *path);
+    omcWorkerStageFile(fileInfo.absoluteFilePath().toUtf8().constData());
+#endif
     switchToPlottingPerspectiveSlot();
     mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
   }
@@ -3893,6 +3902,68 @@ void MainWindow::showCRMLVerificationConfigurationEditor(const QString &crmlFile
   pEditor->show();
 }
 
+#if defined(__EMSCRIPTEN__)
+/*!
+ * \brief MainWindow::openCRMLBindingsExample
+ * Opens the CRML bindings example that is staged next to the page, in share/crml-bindings.
+ * Its example.json names the CRMLtoModelica library, the Modelica files, the requirement
+ * model, the architecture model, the behaviour model and the observer libraries. The files
+ * are copied to the working directory, where omc reads them.
+ */
+void MainWindow::openCRMLBindingsExample()
+{
+  const QString title = QString("%1 - %2").arg(Helper::applicationName, Helper::error);
+  const QString source = QString("%1/share/crml-bindings").arg(Helper::OpenModelicaHome);
+  QJsonObject example;
+  QString error;
+  if (!CRMLBindings::readJsonFile(source + "/example.json", example, &error)) {
+    QMessageBox::critical(this, title, tr("This page has no CRML bindings example.\n%1").arg(error));
+    return;
+  }
+  const QString directory = QString("%1/crml-bindings-example").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  QDir().mkpath(directory);
+  const QString library = example.value("library").toString();
+  const QString requirement = example.value("requirement").toString();
+  const QString architecture = example.value("architecture").toString();
+  QStringList models;
+  for (const QJsonValue &model : example.value("models").toArray()) {
+    models.append(model.toString());
+  }
+  QStringList files = models;
+  files << library << requirement << architecture;
+  files.removeAll(QString());
+  for (const QString &file : std::as_const(files)) {
+    QFile in(QString("%1/%2").arg(source, file));
+    QFile out(QString("%1/%2").arg(directory, file));
+    if (!in.open(QIODevice::ReadOnly) || !out.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      QMessageBox::critical(this, title, tr("Could not copy the example file %1 to %2.").arg(file, directory));
+      return;
+    }
+    out.write(in.readAll());
+    out.close();
+  }
+  // the translated requirement model needs the CRMLtoModelica library
+  DirectoryOrFileSelector *pLibraries = OptionsDialog::instance()->getCRMLPage()->getModelicaLibraries();
+  if (!library.isEmpty() && pLibraries->items().isEmpty()) {
+    pLibraries->setItems({QString("%1/%2").arg(directory, library)});
+  }
+  for (const QString &model : std::as_const(models)) {
+    mpLibraryWidget->openFile(QString("%1/%2").arg(directory, model), Helper::utf8, false, true);
+  }
+  const QString crmlFile = QString("%1/%2").arg(directory, requirement);
+  if (isCRMLEnabled()) {
+    mpLibraryWidget->openFile(crmlFile, Helper::utf8, false, true);
+  }
+  QStringList observers;
+  for (const QJsonValue &observer : example.value("observers").toArray()) {
+    observers.append(observer.toString());
+  }
+  VerificationConfigurationEditor *pEditor = new VerificationConfigurationEditor(crmlFile, this);
+  pEditor->setModels(architecture.isEmpty() ? QString() : QString("%1/%2").arg(directory, architecture), example.value("behaviour").toString(), observers);
+  pEditor->show();
+}
+#endif
+
 void MainWindow::openTemporaryDirectory()
 {
   QUrl temporaryDirectory (QString("file:///%1").arg(Utilities::tempDirectory()));
@@ -5141,6 +5212,11 @@ void MainWindow::createActions()
   mpCRMLVerificationConfigurationAction = new QAction(tr("CRML Verification Configuration..."), this);
   mpCRMLVerificationConfigurationAction->setStatusTip(tr("Binds a CRML requirement model to architecture and behaviour models and generates the verification model"));
   connect(mpCRMLVerificationConfigurationAction, &QAction::triggered, this, [this]() {showCRMLVerificationConfigurationEditor();});
+#if defined(__EMSCRIPTEN__)
+  mpCRMLBindingsExampleAction = new QAction(tr("CRML Bindings Example"), this);
+  mpCRMLBindingsExampleAction->setStatusTip(tr("Opens the cooling system example in the CRML verification configuration editor"));
+  connect(mpCRMLBindingsExampleAction, &QAction::triggered, this, &MainWindow::openCRMLBindingsExample);
+#endif
   mpOpenTemporaryDirectoryAction = new QAction(tr("Open Temporary Directory"), this);
   mpOpenTemporaryDirectoryAction->setStatusTip(tr("Opens the temporary directory"));
   connect(mpOpenTemporaryDirectoryAction, SIGNAL(triggered()), SLOT(openTemporaryDirectory()));
@@ -5575,6 +5651,11 @@ void MainWindow::createMenus()
     pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
   }
   pToolsMenu->addAction(mpCRMLVerificationConfigurationAction);
+#if defined(__EMSCRIPTEN__)
+  if (QFile::exists(QString("%1/share/crml-bindings/example.json").arg(Helper::OpenModelicaHome))) {
+    pToolsMenu->addAction(mpCRMLBindingsExampleAction);
+  }
+#endif
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpOpenTemporaryDirectoryAction);
   pToolsMenu->addAction(mpOpenWorkingDirectoryAction);

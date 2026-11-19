@@ -36,6 +36,7 @@
 #include "VerificationConfigurationEditor.h"
 #include "ModelIndexBuilder.h"
 #include "MainWindow.h"
+#include "CRML/CRMLTranslatorOutputWidget.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "OMC/OMCProxy.h"
 #include "Options/OptionsDialog.h"
@@ -49,6 +50,8 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QJsonDocument>
+#include <QJsonParseError>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
@@ -168,6 +171,19 @@ VerificationConfigurationEditor::VerificationConfigurationEditor(const QString &
   pMainLayout->addWidget(mpTabWidget);
   pMainLayout->addLayout(pButtonsLayout);
   setLayout(pMainLayout);
+  fillModelsTab();
+}
+
+/*!
+ * \brief VerificationConfigurationEditor::setModels
+ * Sets the architecture model, the behaviour model and the observer libraries.
+ */
+void VerificationConfigurationEditor::setModels(const QString &architectureFile, const QString &behaviourModel, const QStringList &observerLibraries)
+{
+  mConfiguration.mArchitectureFile = architectureFile;
+  mConfiguration.mBehaviourModel = behaviourModel;
+  mConfiguration.mObserverLibraries = observerLibraries;
+  mModelsLoaded = false;
   fillModelsTab();
 }
 
@@ -450,6 +466,7 @@ QString VerificationConfigurationEditor::outputDirectory() const
 /*!
  * \brief VerificationConfigurationEditor::translateRequirement
  * Runs the CRML compiler with --externals-json and reads the externals and the translated Modelica model.
+ * The web version has no Java: there crml.js, the CRML translator in the page, gives both.
  */
 bool VerificationConfigurationEditor::translateRequirement(QString *pError)
 {
@@ -486,6 +503,32 @@ bool VerificationConfigurationEditor::translateRequirement(QString *pError)
     return false;
   }
   mTranslatedRequirement = QString::fromUtf8(file.readAll());
+  return true;
+#elif defined(__EMSCRIPTEN__)
+  QFile file(mConfiguration.mRequirementFile);
+  if (!file.open(QIODevice::ReadOnly)) {
+    *pError = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(mConfiguration.mRequirementFile);
+    return false;
+  }
+  const QByteArray crml = file.readAll();
+  file.close();
+  QString externals;
+  if (!CRMLTranslatorOutputWidget::callInPage(QStringLiteral("externals"), crml, QFileInfo(mConfiguration.mRequirementFile).fileName(), &externals, pError)) {
+    return false;
+  }
+  QJsonParseError parseError;
+  const QJsonDocument document = QJsonDocument::fromJson(externals.toUtf8(), &parseError);
+  if (!document.isObject()) {
+    *pError = tr("The CRML translator gave no externals for %1: %2").arg(mConfiguration.mRequirementFile, parseError.errorString());
+    return false;
+  }
+  if (!mExternals.fromJson(document.object(), pError)) {
+    return false;
+  }
+  if (!CRMLTranslatorOutputWidget::callInPage(QStringLiteral("translate"), crml, QString(), &mTranslatedRequirement, pError)) {
+    *pError = tr("The CRML translator could not translate %1 to Modelica: %2").arg(mConfiguration.mRequirementFile, *pError);
+    return false;
+  }
   return true;
 #else
   *pError = tr("The CRML bindings need the CRML compiler, which cannot run here.");

@@ -6620,6 +6620,15 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>This page has no CRML bindings example.
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not copy the example file %1 to %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6761,6 +6770,14 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Binds a CRML requirement model to architecture and behaviour models and generates the verification model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CRML Bindings Example</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the cooling system example in the CRML verification configuration editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10571,6 +10588,14 @@ Variability: %4</source>
     </message>
     <message>
         <source>The CRML compiler could not translate %1 to Modelica: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML translator gave no externals for %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML translator could not translate %1 to Modelica: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
