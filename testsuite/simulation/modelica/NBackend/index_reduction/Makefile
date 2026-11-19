@@ -14,6 +14,7 @@ partialArrayCandidate.mos\
 partialArrayState.mos\
 partialStateOrder.mos\
 stateOrderPartner.mos\
+affineStateOrder.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

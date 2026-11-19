@@ -41,6 +41,10 @@ simulate(static_IR_2); getErrorString();
 // 	[STAT] (1) Real z (StateSelect = never)
 // 	[STAT] (1) Real y (StateSelect = prefer)
 //
+// [stateselection] State Order:
+// *******************************
+// 	(x --d/dt--> z/0.5)
+//
 // [stateselection] (2) State Derivatives Created by Differentiation
 // *******************************************************************
 // 	[DDER] (1) Real $DER.$FUN_1 (StateSelect = avoid)
@@ -69,6 +73,10 @@ simulate(static_IR_2); getErrorString();
 // *************************************************************
 // 	[STAT] (1) Real z (StateSelect = prefer)
 // 	[STAT] (1) Real y (StateSelect = prefer)
+//
+// [stateselection] State Order:
+// *******************************
+// 	(x --d/dt--> z/0.5)
 //
 // [stateselection] (2) State Derivatives Created by Differentiation
 // *******************************************************************

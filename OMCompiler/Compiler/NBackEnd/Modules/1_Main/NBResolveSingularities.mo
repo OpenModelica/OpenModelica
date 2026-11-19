@@ -66,8 +66,9 @@ protected
   import Resizable = NBResizable;
   import Variable = NFVariable;
   import BVariable = NBVariable;
+  import DetectStates = NBDetectStates;
   import PointerWeak;
-  import NBVariable.{VarData, VariablePointer, VariablePointers};
+  import NBVariable.{StateOrder, VarData, VariablePointer, VariablePointers};
 
   // util imports
   import Array;
@@ -322,7 +323,7 @@ public
 
       // Build differentiation argument structure
       diffArguments           := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcMap);
-      diffArguments.diff_map  := SOME(VarData.getStateOrder(varData));
+      diffArguments.state_order := SOME(VarData.getStateOrder(varData));
       diffArguments_ptr       := Pointer.create(diffArguments);
 
       if Flags.isSet(Flags.DUMMY_SELECT) then
@@ -724,25 +725,24 @@ protected
   end resolveClustering;
 
   function aliasStateDerivatives
-    "replaces state derivative candidates, e.g. $DER.x in v = $DER.x, by the state order
-    partner y of y = $DER.x or by an alias a = $DER.x. Otherwise the derivative would become
-    a (dummy) state and stop being the derivative of x. Constraints that become y = y define
-    the partner and are no longer constraints."
+    "replaces state derivative candidates, e.g. $DER.x in v = 2*$DER.x, by (y - c)/k of the
+    state order y = k*$DER.x + c or by an alias a = $DER.x. Otherwise the derivative would
+    become a (dummy) state and stop being the derivative of x. The equations of the state
+    order define y and are no longer constraints."
     input output VariablePointers candidates;
     input output EquationPointers constraints;
-    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+    input UnorderedMap<ComponentRef, StateOrder> state_order;
     input Pointer<Integer> uniqueIndex;
     output list<Pointer<Variable>> aliases = {};
     output list<Pointer<Equation>> alias_eqns = {};
   protected
-    UnorderedMap<ComponentRef, ComponentRef> subst = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, StateOrder> subst = UnorderedMap.new<StateOrder>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> occurring = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     list<Pointer<Variable>> ders;
     list<Pointer<Equation>> defining = {};
     Pointer<Variable> alias_var;
     ComponentRef der_cref, alias_cref;
-    Option<ComponentRef> partner;
-    Equation eqn;
+    Option<StateOrder> order;
   algorithm
     ders := list(v for v guard(BVariable.isStateDerivative(v)) in VariablePointers.toList(candidates));
     if listEmpty(ders) then
@@ -750,19 +750,18 @@ protected
     end if;
 
     for der_var in ders loop
-      partner := statePartner(der_var, state_order);
-      if isSome(partner) then
-        UnorderedMap.add(BVariable.getVarName(der_var), Util.getOption(partner), subst);
+      order := statePartner(der_var, state_order);
+      if isSome(order) then
+        UnorderedMap.add(BVariable.getVarName(der_var), Util.getOption(order), subst);
       end if;
     end for;
 
     if not UnorderedMap.isEmpty(subst) then
       for constraint in EquationPointers.toList(constraints) loop
-        eqn := Equation.map(Pointer.access(constraint), function substituteDerivativeAlias(subst = subst));
-        if Equation.isIdentity(eqn) then
+        if isStateOrderEquation(Pointer.access(constraint), subst) then
           defining := constraint :: defining;
         else
-          Pointer.update(constraint, eqn);
+          Pointer.update(constraint, Equation.map(Pointer.access(constraint), function substituteDerivativeAlias(subst = subst)));
         end if;
       end for;
       if listLength(defining) < EquationPointers.size(constraints) then
@@ -787,7 +786,7 @@ protected
         (alias_var, alias_cref) := BVariable.makeAuxVar(NBVariable.DUMMY_ALIAS_STR, Pointer.access(uniqueIndex), Variable.typeOf(Pointer.access(der_var)), false);
         Pointer.update(uniqueIndex, Pointer.access(uniqueIndex) + 1);
         alias_eqns := Equation.makeAssignment(Expression.fromCref(alias_cref), Expression.fromCref(der_cref), uniqueIndex, "DUM", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: alias_eqns;
-        UnorderedMap.add(der_cref, alias_cref, subst);
+        UnorderedMap.add(der_cref, StateOrder.STATE_ORDER(alias_cref, NONE()), subst);
         aliases := alias_var :: aliases;
       end if;
     end for;
@@ -801,35 +800,67 @@ protected
   end aliasStateDerivatives;
 
   function statePartner
-    "Returns the state order partner y of y = der(x) for $DER.x, if y can replace it."
+    "Returns the state order y = k*der(x) + c for $DER.x, if y can replace der(x)."
     input Pointer<Variable> der_var;
-    input UnorderedMap<ComponentRef, ComponentRef> state_order;
-    output Option<ComponentRef> partner;
+    input UnorderedMap<ComponentRef, StateOrder> state_order;
+    output Option<StateOrder> order;
   protected
     Pointer<Variable> var;
+    ComponentRef partner;
   algorithm
-    partner := match BVariable.getVarState(der_var)
+    order := match BVariable.getVarState(der_var)
       case SOME(var) then UnorderedMap.get(BVariable.getVarName(var), state_order);
       else NONE();
     end match;
-    if isSome(partner) then
-      var := BVariable.getVarPointer(Util.getOption(partner), sourceInfo());
-      if BVariable.isStateDerivative(var) or not BVariable.isContinuous(var, false) then
-        partner := NONE();
-      end if;
-    end if;
+    order := match order
+      case SOME(StateOrder.STATE_ORDER(partner = partner)) algorithm
+        var := BVariable.getVarPointer(partner, sourceInfo());
+      then if BVariable.isStateDerivative(var) or not BVariable.isContinuous(var, false) then NONE() else order;
+      else order;
+    end match;
   end statePartner;
+
+  function isStateOrderEquation
+    "true if the equation is y = k*$DER.x + c of the state order of $DER.x in subst."
+    input Equation eqn;
+    input UnorderedMap<ComponentRef, StateOrder> subst;
+    output Boolean b;
+  algorithm
+    b := match eqn
+      case Equation.SCALAR_EQUATION() then isStateOrderRelation(DetectStates.stateRelation(eqn.lhs, eqn.rhs), subst);
+      case Equation.ARRAY_EQUATION() then isStateOrderRelation(DetectStates.stateRelation(eqn.lhs, eqn.rhs), subst);
+      case Equation.FOR_EQUATION() then List.all(eqn.body, function isStateOrderEquation(subst = subst));
+      else false;
+    end match;
+  end isStateOrderEquation;
+
+  function isStateOrderRelation
+    input Option<tuple<ComponentRef, ComponentRef, Option<tuple<Expression, Expression>>>> relation;
+    input UnorderedMap<ComponentRef, StateOrder> subst;
+    output Boolean b;
+  protected
+    ComponentRef der_cref, alias;
+    Option<tuple<Expression, Expression>> coefficients;
+  algorithm
+    b := match relation
+      case SOME((der_cref, alias, coefficients)) then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(der_cref), subst)
+        local
+          StateOrder order;
+        case SOME(order) then StateOrder.isEqual(order, StateOrder.STATE_ORDER(ComponentRef.stripSubscriptsAll(alias), coefficients))
+          and List.isEqualOnTrue(ComponentRef.subscriptsAllWithWholeFlat(der_cref), ComponentRef.subscriptsAllWithWholeFlat(alias), Subscript.isEqual);
+        else false;
+      end match;
+      else false;
+    end match;
+  end isStateOrderRelation;
 
   function substituteDerivativeAlias
     input output Expression exp;
-    input UnorderedMap<ComponentRef, ComponentRef> subst;
+    input UnorderedMap<ComponentRef, StateOrder> subst;
   algorithm
     exp := match exp
-      local
-        ComponentRef alias_cref;
-      case Expression.CREF() guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), subst)) algorithm
-        alias_cref := UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(exp.cref), subst, sourceInfo());
-      then Expression.fromCref(ComponentRef.copySubscripts(exp.cref, alias_cref));
+      case Expression.CREF() guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), subst))
+      then StateOrder.derivative(UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(exp.cref), subst, sourceInfo()), exp.cref);
       else exp;
     end match;
   end substituteDerivativeAlias;
@@ -906,7 +937,7 @@ protected
     singular for them, e.g. for x1 = x2 + c*x3 and c*x3 = x2 - x4 the dummy states x2, x3
     leave the dependent states x1 = x4."
     extends BVariable.checkVar;
-    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+    input UnorderedMap<ComponentRef, StateOrder> state_order;
   algorithm
     b := BVariable.isStateSelect(var_ptr, StateSelect.DEFAULT)
       and not UnorderedMap.contains(BVariable.getVarName(var_ptr), state_order);

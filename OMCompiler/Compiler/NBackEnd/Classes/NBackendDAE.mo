@@ -1342,7 +1342,7 @@ protected
     variableData := BVariable.VAR_DATA_SIM(Pointer.create(0), variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
                       derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
                       states, inputs, resizables, parameters, constants, records, external_objects, artificials,
-                      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual), false);
+                      UnorderedMap.new<BVariable.StateOrder>(ComponentRef.hash, ComponentRef.isEqual), false);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(forced_states)) + ") Forced states by StateSelect.ALWAYS:"));

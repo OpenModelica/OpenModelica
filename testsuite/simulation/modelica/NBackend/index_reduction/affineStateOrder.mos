@@ -1,0 +1,115 @@
+// name: affineStateOrder
+// keywords: NewBackend, index reduction
+// status: correct
+// v1 = k*der(x) + c is the state order of x. The constraint v2 = 3*der(x) - 1
+// becomes v2 = 3*((v1 - c)/k) - 1. No alias for der(x) is necessary.
+// affineStateOrderFor: the same for der(x[i]) = (v1[i] - 1)/k in a for-equation.
+
+loadString("
+model affineStateOrder
+  parameter Real k = 2, c = 0.5;
+  Real x(stateSelect = StateSelect.prefer, start = 1, fixed = true);
+  Real v1(start = 0, fixed = true);
+  Real v2, a1, a2;
+equation
+  v1 = k*der(x) + c;
+  v2 = 3*der(x) - 1;
+  a1 = der(v1);
+  a2 = der(v2);
+  a1 + a2 = -x;
+end affineStateOrder;
+
+model affineStateOrderFor
+  parameter Integer n = 2;
+  parameter Real k = 2;
+  Real x[n](each stateSelect = StateSelect.prefer, each start = 1, each fixed = true);
+  Real v1[n](each start = 0, each fixed = true);
+  Real v2[n], a1[n], a2[n];
+equation
+  for i in 1:n loop
+    der(x[i]) = (v1[i] - 1)/k;
+    v2[i] = 3*der(x[i]) + x[i];
+    a1[i] = der(v1[i]);
+    a2[i] = der(v2[i]);
+    a1[i] + a2[i] = -i*x[i];
+  end for;
+end affineStateOrderFor;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=stateselection"); getErrorString();
+simulate(affineStateOrder); getErrorString();
+val(x, 1);
+simulate(affineStateOrderFor); getErrorString();
+val(x[2], 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
+// [stateselection] (3) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real x (fixed = true, start = 1.0, StateSelect = prefer)
+// 	[STAT] (1) Real v1 (fixed = true, start = 0.0)
+// 	[STAT] (1) Real v2
+//
+// [stateselection] State Order:
+// *******************************
+// 	(x --d/dt--> (v1 - c)/k)
+// 	(v1 --d/dt--> a1)
+// 	(v2 --d/dt--> a2)
+//
+// [stateselection] (0) State Derivatives Created by Differentiation
+// *******************************************************************
+// 	
+//
+// [stateselection] (1) Selected Dummy States
+// ********************************************
+// [DSTA] (1) Real v2
+//
+// record SimulationResult
+//     resultFile = "affineStateOrder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'affineStateOrder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.6599078457708548
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
+// [stateselection] (3) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (2) Real[2] v2
+// 	[STAT] (2) Real[2] v1 (fixed = {true for $f1 in 1:2}, start = {0.0 for $f2 in 1:2})
+// 	[STAT] (2) Real[2] x (fixed = {true for $f2 in 1:2}, start = {1.0 for $f3 in 1:2}, StateSelect = prefer)
+//
+// [stateselection] State Order:
+// *******************************
+// 	(v2 --d/dt--> a2)
+// 	(v1 --d/dt--> a1)
+// 	(x --d/dt--> (v1 .- (1/k)/(k/k^2.0))/(1/(k/k^2.0)))
+//
+// [stateselection] (0) State Derivatives Created by Differentiation
+// *******************************************************************
+// 	
+//
+// [stateselection] (1) Selected Dummy States
+// ********************************************
+// [DSTA] (2) Real[2] v2
+//
+// record SimulationResult
+//     resultFile = "affineStateOrderFor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'affineStateOrderFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3951941714949556
+// endResult
