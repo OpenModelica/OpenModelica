@@ -1,0 +1,36 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeatingCvode.mos
+// keywords: simulation ThermoSysPro cvode assert
+// status: correct
+// teardown_command: rm -rf TestDynamicWaterHeatingCvode*
+//
+// CVODE's trial steps end at the next time event, 762.648, where an assert in a
+// nonlinear system fails. Failing there again after successful steps must not
+// stop CVODE.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ThermoSysPro, {"4.2.0"}); getErrorString();
+
+echo(false);
+res := simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating, stopTime = 1000, method = "cvode", fileNamePrefix = "TestDynamicWaterHeatingCvode");
+messages := res.messages;
+echo(true);
+regexBool(messages, "The simulation finished successfully");
+OpenModelica.Scripting.compareSimulationResults(
+  "TestDynamicWaterHeatingCvode_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.mat",
+  "TestDynamicWaterHeatingCvode_diff.csv",
+  0.01, 0.0001,
+  {"WaterHeating.WaterHeating.P",
+   "WaterHeating.WaterHeating.hl",
+   "WaterHeating.WaterHeating.Tp",
+   "WaterHeating.volumeD1.h"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// {"Files Equal!"}
+// endResult

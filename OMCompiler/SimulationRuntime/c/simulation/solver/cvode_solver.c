@@ -196,16 +196,28 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
       memcpy(N_VGetArrayPointer(ydot), cvodeData->fStart, cvodeData->N * sizeof(double));
       retVal = 0;
     }
-    /* Failing again at the same time: a shorter step no longer moves the
-     * point, as with DASKR's minimum step size */
-    else if (fabs(time - cvodeData->rhsFailTime) <= 4.0 * DBL_EPSILON * fabs(time))
-    {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER");
-      retVal = -1;
-    }
     else
     {
-      cvodeData->rhsFailTime = time;
+      long int steps = 0, stepFails = 0;
+      CVodeGetNumSteps(cvodeData->cvode_mem, &steps);
+      CVodeGetNumStepSolveFails(cvodeData->cvode_mem, &stepFails);
+      /* Failing again at the same time after CVODE reduced the step, without a
+       * step in between: a shorter step no longer moves the point, as with
+       * DASKR's minimum step size. Within one step attempt the Newton solver
+       * retries at the same time with a new Jacobian, and a stop time can
+       * make a later step end at the same time again; neither counts. */
+      if (steps == cvodeData->rhsFailSteps && stepFails > cvodeData->rhsFailStepFails
+          && fabs(time - cvodeData->rhsFailTime) <= 4.0 * DBL_EPSILON * fabs(time))
+      {
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER");
+        retVal = -1;
+      }
+      else
+      {
+        cvodeData->rhsFailTime = time;
+        cvodeData->rhsFailSteps = steps;
+        cvodeData->rhsFailStepFails = stepFails;
+      }
     }
   }
 
@@ -652,6 +664,8 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
 
   cvodeData->isInitialized = FALSE;
   cvodeData->rhsFailTime = NAN;
+  cvodeData->rhsFailSteps = 0;
+  cvodeData->rhsFailStepFails = 0;
 
   /* Get CVODE settings from user flags */
   cvodeGetConfig(&(cvodeData->config), threadData);
