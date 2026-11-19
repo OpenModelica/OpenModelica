@@ -275,6 +275,9 @@ void OMSProxy::startGuiServer()
   process = QString("%1/bin/OMSimulator").arg(Helper::OpenModelicaHome);
 #endif
   mpGuiProcess->start(process, args);
+  // OMSProxy is created on first use and that caller sends a command right away,
+  // before the event loop could deliver started() and set mServerReady.
+  mpGuiProcess->waitForStarted();
 }
 
 /*!
