@@ -11,7 +11,8 @@ TupleConstraintStateSet.mos \
 TupleAssignInIf.mos \
 ForLoopAlgorithm.mos \
 StateSetArrayEq.mos \
-StateSetDerivativeCandidate.mos
+StateSetDerivativeCandidate.mos \
+UnusedFunctionInput.mos
 
 
 # test that currently fail. Move up when fixed. 
