@@ -3297,10 +3297,14 @@ algorithm
       list<DAE.Exp> explst, explst2;
       list<BackendDAE.Equation> eqns;
       BackendDAE.EquationAttributes attr;
+      list<Boolean> keep;
 
     case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(explst), right=DAE.TUPLE(explst2), source=source, attr=attr)
     algorithm
       true := listLength(explst) == listLength(explst2);
+      keep := list(not Expression.isWild(e) for e in explst);
+      (explst, _) := List.splitOnBoolList(explst, keep);
+      (explst2, _) := List.splitOnBoolList(explst2, keep);
       eqns := List.threadMap2(explst, explst2, generateEquation, source, attr);
     then eqns;
 
