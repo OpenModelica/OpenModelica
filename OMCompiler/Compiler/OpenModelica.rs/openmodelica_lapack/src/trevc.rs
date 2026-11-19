@@ -16,17 +16,13 @@
 
 use crate::blas::{at, daxpy, dscal, idamax};
 use crate::hqr::ULP;
-use crate::{abs, SAFMIN};
+use crate::{SAFMIN, abs};
 
 /// `DLADIV2`.
 fn dladiv2(a: f64, b: f64, c: f64, d: f64, r: f64, t: f64) -> f64 {
     if r != 0.0 {
         let br = b * r;
-        if br != 0.0 {
-            (a + br) * t
-        } else {
-            a * t + (b * t) * r
-        }
+        if br != 0.0 { (a + br) * t } else { a * t + (b * t) * r }
     } else {
         (a + d * (b / c)) * t
     }
@@ -107,8 +103,7 @@ pub(crate) fn dlaln2(
     // (2,1), 2 is (1,2), 3 is (2,2).
     const ZSWAP: [bool; 4] = [false, false, true, true];
     const RSWAP: [bool; 4] = [false, true, false, true];
-    const IPIVOT: [[usize; 4]; 4] =
-        [[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0]];
+    const IPIVOT: [[usize; 4]; 4] = [[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0]];
 
     let smlnum = 2.0 * SAFMIN;
     let bignum = 1.0 / smlnum;
@@ -195,7 +190,11 @@ pub(crate) fn dlaln2(
             ur22 = smini;
             info = 1;
         }
-        let (br1, mut br2) = if RSWAP[icmax] { (bb(1, 0), bb(0, 0)) } else { (bb(0, 0), bb(1, 0)) };
+        let (br1, mut br2) = if RSWAP[icmax] {
+            (bb(1, 0), bb(0, 0))
+        } else {
+            (bb(0, 0), bb(1, 0))
+        };
         br2 -= lr21 * br1;
         let bbnd = f64::max(abs(br1 * (ur22 * ur11r)), abs(br2));
         if bbnd > 1.0 && abs(ur22) < 1.0 && bbnd >= bignum * abs(ur22) {
@@ -388,8 +387,19 @@ pub(crate) fn dtrevc(right: bool, n: usize, t: &[f64], ldt: usize, v: &mut [f64]
                     }
                     if j1 == j {
                         let (x, mut sc, xnorm, _) = dlaln2(
-                            false, 1, 1, smin, 1.0, &t[(j - 1) + (j - 1) * ldt..], ldt, 1.0, 1.0,
-                            &wk1[j - 1..], n, wr, 0.0,
+                            false,
+                            1,
+                            1,
+                            smin,
+                            1.0,
+                            &t[(j - 1) + (j - 1) * ldt..],
+                            ldt,
+                            1.0,
+                            1.0,
+                            &wk1[j - 1..],
+                            n,
+                            wr,
+                            0.0,
                         );
                         let mut x11 = x[0];
                         if xnorm > 1.0 && cnorm[j - 1] > bignum / xnorm {
@@ -404,8 +414,19 @@ pub(crate) fn dtrevc(right: bool, n: usize, t: &[f64], ldt: usize, v: &mut [f64]
                         daxpy(-x11, &col, &mut wk1[..j - 1]);
                     } else {
                         let (x, mut sc, xnorm, _) = dlaln2(
-                            false, 2, 1, smin, 1.0, &t[(j - 2) + (j - 2) * ldt..], ldt, 1.0, 1.0,
-                            &wk1[j - 2..], n, wr, 0.0,
+                            false,
+                            2,
+                            1,
+                            smin,
+                            1.0,
+                            &t[(j - 2) + (j - 2) * ldt..],
+                            ldt,
+                            1.0,
+                            1.0,
+                            &wk1[j - 2..],
+                            n,
+                            wr,
+                            0.0,
                         );
                         let (mut x11, mut x21) = (x[0], x[1]);
                         if xnorm > 1.0 {
@@ -467,8 +488,19 @@ pub(crate) fn dtrevc(right: bool, n: usize, t: &[f64], ldt: usize, v: &mut [f64]
                     if j1 == j {
                         let b = [wk1[j - 1], 0.0, wk2[j - 1], 0.0];
                         let (x, mut sc, xnorm, _) = dlaln2(
-                            false, 1, 2, smin, 1.0, &t[(j - 1) + (j - 1) * ldt..], ldt, 1.0, 1.0,
-                            &b, 2, wr, wi,
+                            false,
+                            1,
+                            2,
+                            smin,
+                            1.0,
+                            &t[(j - 1) + (j - 1) * ldt..],
+                            ldt,
+                            1.0,
+                            1.0,
+                            &b,
+                            2,
+                            wr,
+                            wi,
                         );
                         let (mut x11, mut x12) = (x[0], x[2]);
                         if xnorm > 1.0 && cnorm[j - 1] > bignum / xnorm {
@@ -488,8 +520,19 @@ pub(crate) fn dtrevc(right: bool, n: usize, t: &[f64], ldt: usize, v: &mut [f64]
                     } else {
                         let b = [wk1[j - 2], wk1[j - 1], wk2[j - 2], wk2[j - 1]];
                         let (x, mut sc, xnorm, _) = dlaln2(
-                            false, 2, 2, smin, 1.0, &t[(j - 2) + (j - 2) * ldt..], ldt, 1.0, 1.0,
-                            &b, 2, wr, wi,
+                            false,
+                            2,
+                            2,
+                            smin,
+                            1.0,
+                            &t[(j - 2) + (j - 2) * ldt..],
+                            ldt,
+                            1.0,
+                            1.0,
+                            &b,
+                            2,
+                            wr,
+                            wi,
                         );
                         let (mut x11, mut x21, mut x12, mut x22) = (x[0], x[1], x[2], x[3]);
                         if xnorm > 1.0 {
@@ -623,8 +666,19 @@ fn left_eigenvectors(
                 }
                 if j2 == j {
                     let (x, mut sc, xnorm, _) = dlaln2(
-                        true, 1, 1, smin, 1.0, &t[(j - 1) + (j - 1) * ldt..], ldt, 1.0, 1.0,
-                        &wk1[j - 1..], n, wr, 0.0,
+                        true,
+                        1,
+                        1,
+                        smin,
+                        1.0,
+                        &t[(j - 1) + (j - 1) * ldt..],
+                        ldt,
+                        1.0,
+                        1.0,
+                        &wk1[j - 1..],
+                        n,
+                        wr,
+                        0.0,
                     );
                     let mut x11 = x[0];
                     if xnorm > 1.0 && cnorm[j - 1] > bignum / xnorm {
@@ -639,8 +693,19 @@ fn left_eigenvectors(
                     daxpy(-x11, &row, &mut wk1[j..n]);
                 } else {
                     let (x, mut sc, xnorm, _) = dlaln2(
-                        true, 2, 1, smin, 1.0, &t[(j - 1) + (j - 1) * ldt..], ldt, 1.0, 1.0,
-                        &wk1[j - 1..], n, wr, 0.0,
+                        true,
+                        2,
+                        1,
+                        smin,
+                        1.0,
+                        &t[(j - 1) + (j - 1) * ldt..],
+                        ldt,
+                        1.0,
+                        1.0,
+                        &wk1[j - 1..],
+                        n,
+                        wr,
+                        0.0,
                     );
                     let (mut x11, mut x21) = (x[0], x[1]);
                     if xnorm > 1.0 {
@@ -699,8 +764,19 @@ fn left_eigenvectors(
                 if j2 == j {
                     let b = [wk1[j - 1], 0.0, wk2[j - 1], 0.0];
                     let (x, mut sc, xnorm, _) = dlaln2(
-                        true, 1, 2, smin, 1.0, &t[(j - 1) + (j - 1) * ldt..], ldt, 1.0, 1.0, &b, 2,
-                        wr, -wi,
+                        true,
+                        1,
+                        2,
+                        smin,
+                        1.0,
+                        &t[(j - 1) + (j - 1) * ldt..],
+                        ldt,
+                        1.0,
+                        1.0,
+                        &b,
+                        2,
+                        wr,
+                        -wi,
                     );
                     let (mut x11, mut x12) = (x[0], x[2]);
                     if xnorm > 1.0 && cnorm[j - 1] > bignum / xnorm {
@@ -720,8 +796,19 @@ fn left_eigenvectors(
                 } else {
                     let b = [wk1[j - 1], wk1[j], wk2[j - 1], wk2[j]];
                     let (x, mut sc, xnorm, _) = dlaln2(
-                        true, 2, 2, smin, 1.0, &t[(j - 1) + (j - 1) * ldt..], ldt, 1.0, 1.0, &b, 2,
-                        wr, -wi,
+                        true,
+                        2,
+                        2,
+                        smin,
+                        1.0,
+                        &t[(j - 1) + (j - 1) * ldt..],
+                        ldt,
+                        1.0,
+                        1.0,
+                        &b,
+                        2,
+                        wr,
+                        -wi,
                     );
                     let (mut x11, mut x21, mut x12, mut x22) = (x[0], x[1], x[2], x[3]);
                     if xnorm > 1.0 {
@@ -829,9 +916,7 @@ pub fn dtrevc_lapack(
     if n == 0 {
         return 0;
     }
-    for (want, v, ldv, right) in
-        [(want_l, &mut *vl, ldvl, false), (want_r, &mut *vr, ldvr, true)]
-    {
+    for (want, v, ldv, right) in [(want_l, &mut *vl, ldvl, false), (want_r, &mut *vr, ldvr, true)] {
         if !want {
             continue;
         }

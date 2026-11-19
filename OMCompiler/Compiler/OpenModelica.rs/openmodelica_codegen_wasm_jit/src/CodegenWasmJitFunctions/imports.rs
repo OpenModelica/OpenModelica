@@ -180,6 +180,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_str_insert_real", &[WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
     ("rt_str_insert_int", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_str_insert_bool", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_str_insert_str", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_bool_string", &[WTy::I32], &[WTy::I32]),
     // `String(Real, significantDigits, minimumLength, leftJustified)` (C `%g`),
     // and space-padding for `String(Integer/Boolean/Enumeration, minLength,

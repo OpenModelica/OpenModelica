@@ -909,8 +909,9 @@ impl StepRetry {
         self.hold
     }
 
-    /// C's `retrySimulationStep`: restore the last accepted point and settle the
-    /// discrete system over it. `None` ⇒ the throw ends the run.
+    /// C's `retrySimulationStep`: restore the last accepted point, settle the
+    /// discrete system over it and save the zero crossings as after an event.
+    /// `None` ⇒ the throw ends the run.
     fn undo(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Option<f64>> {
         // Only a model error the region absorbed reaches C's catch; a rethrown
         // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
@@ -959,6 +960,7 @@ impl StepRetry {
         }
         save_old_real(e, sim_data, layout)?; // C's `overwriteOldSimulationData`
         update_discrete_system(e, sim_data, layout)?;
+        save_zero_crossings_after_event(e, sim_data, layout)?;
         if first {
             omclog::warning(
                 omclog::STDOUT,
@@ -2540,7 +2542,8 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType, l
             note_held_assert(assert_logger_text(&info, &cond, time, w[9] != 0));
             rethrow_store::arm(info);
             armed = true;
-        } else if level == omclog::WARNING {
+        } else if level == omclog::WARNING || cond.is_empty() {
+            // Without a condition it is a function's: C's `omc_assert_warning` always warns.
             omclog::warning_used(omclog::ASSERT, false, &line, info.used());
         } else {
             omclog::info_used(omclog::ASSERT, false, &line, info.used());
@@ -6266,6 +6269,8 @@ impl Driver for EulerDriver {
 /// is a type-erased pointer to the backend (valid only while `ddaskr` runs).
 struct ResCtx {
     engine: *mut dyn SimEngine,
+    /// CVODE: the time of the last failed right-hand side, NaN before.
+    rhs_fail_t: f64,
     sim_data: u32,
     states_base: u32,
     ders_base: u32,
@@ -7629,6 +7634,7 @@ impl Driver for DasslDriver {
         };
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
+            rhs_fail_t: f64::NAN,
             sim_data,
             states_base,
             ders_base,
@@ -9415,6 +9421,7 @@ impl SolverCore {
     fn res_ctx(&self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout) -> ResCtx {
         ResCtx {
             engine: e as *mut dyn SimEngine,
+            rhs_fail_t: f64::NAN,
             sim_data: self.sim_data,
             states_base: self.states_base,
             ders_base: self.ders_base,
@@ -11364,7 +11371,9 @@ impl Driver for EventsDriver {
 
 /// `CVRhsFn`: `ydot := f(t, y)` by [`cvode_eval`]. A wasm trap is unrecoverable
 /// (-1); a model error or a non-converging nonlinear system is recoverable (+1),
-/// which makes CVODE retry from a smaller step, as `dassl_res` does.
+/// which makes CVODE retry from a smaller step, as `dassl_res` does, unless it
+/// fails again at the same time: a shorter step no longer moves the point, as
+/// with DASKR's minimum step size.
 #[cfg(sundials)]
 unsafe extern "C" fn cvode_rhs(
     t: f64,
@@ -11385,7 +11394,18 @@ unsafe extern "C" fn cvode_rhs(
                     .copy_from_slice(&s.f);
                 0
             }
-            _ => failed,
+            _ if failed > 0 && (t - ctx.rhs_fail_t).abs() <= 4.0 * f64::EPSILON * t.abs() => {
+                omclog::warning(
+                    omclog::STDOUT,
+                    false,
+                    "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER",
+                );
+                -1
+            }
+            _ => {
+                ctx.rhs_fail_t = t;
+                failed
+            }
         },
     }
 }
@@ -11743,6 +11763,7 @@ impl Driver for CvodeDriver {
         let states_base = self.states_base;
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
+            rhs_fail_t: f64::NAN,
             sim_data,
             states_base,
             ders_base: self.ders_base,
@@ -12715,6 +12736,7 @@ impl Driver for IdaDriver {
         let states_base = self.states_base;
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
+            rhs_fail_t: f64::NAN,
             sim_data,
             states_base,
             ders_base: self.ders_base,

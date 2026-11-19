@@ -12,6 +12,10 @@ stateOrderDummySelection.mos\
 numericDummySelection.mos\
 partialArrayCandidate.mos\
 partialArrayState.mos\
+partialStateOrder.mos\
+stateOrderPartner.mos\
+affineStateOrder.mos\
+partialStateOrderPartner.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

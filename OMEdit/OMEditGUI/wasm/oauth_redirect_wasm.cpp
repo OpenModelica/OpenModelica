@@ -50,6 +50,7 @@
 
 #include "Cloud/OAuth2Redirect.h"
 
+#include <QCoreApplication>
 #include <QPointer>
 
 #include <emscripten.h>
@@ -160,6 +161,7 @@ QPointer<PopupRedirect> gActiveRedirect;
 
 class PopupRedirect : public OAuth2Redirect
 {
+  Q_DECLARE_TR_FUNCTIONS(PopupRedirect)
 public:
   PopupRedirect(const QString &configuredUri, QObject *pParent)
     : OAuth2Redirect(pParent), mConfiguredUri(configuredUri) {}

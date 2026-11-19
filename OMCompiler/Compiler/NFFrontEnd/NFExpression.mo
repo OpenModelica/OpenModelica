@@ -1630,6 +1630,23 @@ public
     output Boolean b = (not contains(range, isResizableCref)) and 0 >= Dimension.size(Type.nthDimension(typeOf(range), 1), false);
   end emptyRange;
 
+  function isFullRange
+    "true if the range is 1:size(dim) with step 1."
+    input Expression range;
+    input Dimension dim;
+    output Boolean b;
+  algorithm
+    b := match (range, dim)
+      case (RANGE(start = INTEGER(1)), Dimension.INTEGER())
+        then (isNone(range.step) or isOne(Util.getOption(range.step))) and isEqual(range.stop, INTEGER(dim.size));
+      case (RANGE(start = INTEGER(1)), Dimension.RESIZABLE())
+        then (isNone(range.step) or isOne(Util.getOption(range.step))) and Dimension.isEqualResizableExp(range.stop, dim.exp);
+      case (RANGE(start = INTEGER(1)), Dimension.EXP())
+        then (isNone(range.step) or isOne(Util.getOption(range.step))) and isEqual(range.stop, dim.exp);
+      else false;
+    end match;
+  end isFullRange;
+
   function rangeSize
     input Expression range "has to be RANGE()!";
     input Boolean resize = false;

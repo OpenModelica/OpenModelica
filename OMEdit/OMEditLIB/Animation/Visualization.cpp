@@ -54,26 +54,30 @@
 
 // Specializations required for std::map and std::unordered_map to work with const std::reference_wrapper as keys
 
+namespace std {
+
 template<typename T>
-struct std::hash<const std::reference_wrapper<T>> {
+struct hash<const std::reference_wrapper<T>> {
   std::size_t operator()(const std::reference_wrapper<T>& ref) const {
     return reinterpret_cast<std::uintptr_t>(&ref.get());
   }
 };
 
 template<typename T>
-struct std::less<const std::reference_wrapper<T>> {
+struct less<const std::reference_wrapper<T>> {
   bool operator()(const std::reference_wrapper<T>& lhs, const std::reference_wrapper<T>& rhs) const {
     return &lhs.get() < &rhs.get();
   }
 };
 
 template<typename T>
-struct std::equal_to<const std::reference_wrapper<T>> {
+struct equal_to<const std::reference_wrapper<T>> {
   bool operator()(const std::reference_wrapper<T>& lhs, const std::reference_wrapper<T>& rhs) const {
     return &lhs.get() == &rhs.get();
   }
 };
+
+} // namespace std
 
 OMVisualBase::OMVisualBase(VisualizationAbstract* visualization, const std::string& modelFile, const std::string& path)
   : _modelFile(modelFile),

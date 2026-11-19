@@ -50,7 +50,11 @@ pub struct Record {
 #[derive(Clone, Debug)]
 pub enum TypeDef {
     /// `rust` is the path below the package module, e.g. `Exp` or `Variable::Variable`.
-    Union { rust: String, is_struct: bool, records: Vec<Record> },
+    Union {
+        rust: String,
+        is_struct: bool,
+        records: Vec<Record>,
+    },
     Alias(Ty),
 }
 
@@ -154,7 +158,9 @@ impl Ty {
             Ty::Array(t) => of("array", t),
             Ty::Tuple(ts) => json!({ "k": "tuple", "of": ts.iter().map(Ty::to_json).collect::<Vec<_>>() }),
             Ty::Named(n) => json!({ "k": "named", "name": n }),
-            Ty::Generic(n, ts) => json!({ "k": "generic", "name": n, "of": ts.iter().map(Ty::to_json).collect::<Vec<_>>() }),
+            Ty::Generic(n, ts) => {
+                json!({ "k": "generic", "name": n, "of": ts.iter().map(Ty::to_json).collect::<Vec<_>>() })
+            }
             Ty::TyVar(n) => json!({ "k": "tyvar", "name": n }),
         }
     }
@@ -175,11 +181,21 @@ impl Ty {
             "list" => Ty::List(of()?),
             "option" => Ty::Option(of()?),
             "array" => Ty::Array(of()?),
-            "tuple" => Ty::Tuple(v.get("of")?.as_array()?.iter().map(Ty::from_json).collect::<Option<_>>()?),
+            "tuple" => Ty::Tuple(
+                v.get("of")?
+                    .as_array()?
+                    .iter()
+                    .map(Ty::from_json)
+                    .collect::<Option<_>>()?,
+            ),
             "named" => Ty::Named(v.get("name")?.as_str()?.into()),
             "generic" => Ty::Generic(
                 v.get("name")?.as_str()?.into(),
-                v.get("of")?.as_array()?.iter().map(Ty::from_json).collect::<Option<_>>()?,
+                v.get("of")?
+                    .as_array()?
+                    .iter()
+                    .map(Ty::from_json)
+                    .collect::<Option<_>>()?,
             ),
             "tyvar" => Ty::TyVar(v.get("name")?.as_str()?.into()),
             _ => return None,
@@ -188,7 +204,9 @@ impl Ty {
 }
 
 fn fields_json(fs: &[Field]) -> Value {
-    fs.iter().map(|f| json!({ "name": f.name, "rust": f.rust, "ty": f.ty.to_json() })).collect()
+    fs.iter()
+        .map(|f| json!({ "name": f.name, "rust": f.rust, "ty": f.ty.to_json() }))
+        .collect()
 }
 
 impl Index {
@@ -237,10 +255,16 @@ impl Index {
                         ConstAccess::Deref => "deref",
                         ConstAccess::Str => "str",
                     };
-                    (n.clone(), json!({ "rust": c.rust, "ty": c.ty.to_json(), "access": access }))
+                    (
+                        n.clone(),
+                        json!({ "rust": c.rust, "ty": c.ty.to_json(), "access": access }),
+                    )
                 })
                 .collect();
-            pkgs.insert(name.clone(), json!({ "crate": p.krate, "types": types, "functions": functions, "constants": constants }));
+            pkgs.insert(
+                name.clone(),
+                json!({ "crate": p.krate, "types": types, "functions": functions, "constants": constants }),
+            );
         }
         json!({ "version": 1, "packages": pkgs, "boxed": self.boxed, "crates": self.crates })
     }
@@ -248,8 +272,15 @@ impl Index {
     pub fn from_json(v: &Value) -> Result<Index, String> {
         let err = |what: &str| format!("susan index: malformed {what}");
         let mut idx = Index::default();
-        for (name, p) in v.get("packages").and_then(Value::as_object).ok_or_else(|| err("packages"))? {
-            let mut pkg = Package { krate: p["crate"].as_str().ok_or_else(|| err("crate"))?.into(), ..Default::default() };
+        for (name, p) in v
+            .get("packages")
+            .and_then(Value::as_object)
+            .ok_or_else(|| err("packages"))?
+        {
+            let mut pkg = Package {
+                krate: p["crate"].as_str().ok_or_else(|| err("crate"))?.into(),
+                ..Default::default()
+            };
             let fields = |v: &Value| -> Result<Vec<Field>, String> {
                 v.as_array()
                     .ok_or_else(|| err("fields"))?
@@ -273,7 +304,12 @@ impl Index {
                             .as_array()
                             .ok_or_else(|| err("records"))?
                             .iter()
-                            .map(|r| Ok(Record { name: r["name"].as_str().ok_or_else(|| err("record"))?.into(), fields: fields(&r["fields"])? }))
+                            .map(|r| {
+                                Ok(Record {
+                                    name: r["name"].as_str().ok_or_else(|| err("record"))?.into(),
+                                    fields: fields(&r["fields"])?,
+                                })
+                            })
                             .collect::<Result<_, String>>()?,
                     },
                     _ => return Err(err("type kind")),
@@ -297,9 +333,18 @@ impl Index {
                     n.clone(),
                     Function {
                         rust: f["rust"].as_str().ok_or_else(|| err("function rust"))?.into(),
-                        tyvars: f["tyvars"].as_array().map(|a| a.iter().filter_map(|s| s.as_str().map(String::from)).collect()).unwrap_or_default(),
+                        tyvars: f["tyvars"]
+                            .as_array()
+                            .map(|a| a.iter().filter_map(|s| s.as_str().map(String::from)).collect())
+                            .unwrap_or_default(),
                         params,
-                        outs: f["outs"].as_array().ok_or_else(|| err("outs"))?.iter().map(Ty::from_json).collect::<Option<_>>().ok_or_else(|| err("out type"))?,
+                        outs: f["outs"]
+                            .as_array()
+                            .ok_or_else(|| err("outs"))?
+                            .iter()
+                            .map(Ty::from_json)
+                            .collect::<Option<_>>()
+                            .ok_or_else(|| err("out type"))?,
                         fallible: f["fallible"].as_bool().unwrap_or(true),
                         public: f["public"].as_bool().unwrap_or(true),
                     },
@@ -315,7 +360,11 @@ impl Index {
                 };
                 pkg.constants.insert(
                     n.clone(),
-                    Constant { rust: c["rust"].as_str().ok_or_else(|| err("constant rust"))?.into(), ty: Ty::from_json(&c["ty"]).ok_or_else(|| err("constant type"))?, access },
+                    Constant {
+                        rust: c["rust"].as_str().ok_or_else(|| err("constant rust"))?.into(),
+                        ty: Ty::from_json(&c["ty"]).ok_or_else(|| err("constant type"))?,
+                        access,
+                    },
                 );
             }
             idx.packages.insert(name.clone(), pkg);
@@ -324,7 +373,10 @@ impl Index {
             idx.boxed = b.iter().filter_map(|(k, v)| Some((k.clone(), v.as_bool()?))).collect();
         }
         if let Some(c) = v.get("crates").and_then(Value::as_object) {
-            idx.crates = c.iter().filter_map(|(k, v)| Some((k.clone(), v.as_str()?.to_string()))).collect();
+            idx.crates = c
+                .iter()
+                .filter_map(|(k, v)| Some((k.clone(), v.as_str()?.to_string())))
+                .collect();
         }
         Ok(idx)
     }

@@ -10,10 +10,10 @@
 writeFile("DiffSimulationResultsOneRow_ref.csv", "time,x\n0,1\n0,1\n");
 writeFile("DiffSimulationResultsOneRow_res.csv", "time,x\n0,1.0005\n");
 writeFile("DiffSimulationResultsOneRow_off.csv", "time,x\n0,1.01\n");
-diffSimulationResults("DiffSimulationResultsOneRow_res.csv", "DiffSimulationResultsOneRow_ref.csv", ""); getErrorString();
-diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", ""); getErrorString();
+diffSimulationResults("DiffSimulationResultsOneRow_res.csv", "DiffSimulationResultsOneRow_ref.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.ellipse2014); getErrorString();
+diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.ellipse2014); getErrorString();
 diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.rectangle); getErrorString();
-diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", "", relTol=0.02); getErrorString();
+diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", "", relTol=0.02, tube=OpenModelica.Scripting.TubeAlgorithm.ellipse2014); getErrorString();
 
 // Result:
 // true

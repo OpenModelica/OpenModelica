@@ -7,11 +7,11 @@
 //! quadratic model), `Gamma_ijk` (curvature along the step) and `sigma_jj` (the
 //! solution's sensitivity to unknown `j`).
 
-use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
+use openmodelica_solvers::fmath;
 
 use openmodelica_solvers::omclog;
 
@@ -104,14 +104,7 @@ fn mat_mult(a: &[Vec<f64>], b: &[Vec<f64>]) -> Vec<Vec<f64>> {
 
 /// C's `newtonDiagnostics`. `x0` is the start point, `f` the residual there,
 /// `names` the unknowns' names.
-pub fn newton_diagnostics(
-    eq_index: u32,
-    x0: &[f64],
-    f: &[f64],
-    names: &[String],
-    diag: &DiagInfo,
-    cb: &mut Callbacks,
-) {
+pub fn newton_diagnostics(eq_index: u32, x0: &[f64], f: &[f64], names: &[String], diag: &DiagInfo, cb: &mut Callbacks) {
     let m = x0.len();
     let name = |j: usize| names.get(j).map_or("", |s| s.as_str());
     let mut lambda = 1.0f64;
@@ -135,9 +128,7 @@ pub fn newton_diagnostics(
         let mut ipiv = vec![0i32; m];
         let info_ = openmodelica_lapack::dgesv(m, 1, &mut a, m, &mut ipiv, &mut b, m);
         if info_ > 0 {
-            info!(
-                "getFirstNewtonStep: the first Newton step could not be computed; the info satus is : {info_}",
-            );
+            info!("getFirstNewtonStep: the first Newton step could not be computed; the info satus is : {info_}",);
         } else {
             for j in 0..m {
                 dx[j] = -b[j];
@@ -205,8 +196,9 @@ pub fn newton_diagnostics(
         failed = (cb.residual)(&x1, &mut f_x1);
     }
     let eps_nl = 1.0e-9;
-    let n_idx: Vec<usize> =
-        (0..m).filter(|&i| fmath::fabs(f_x1[i] + (lambda - 1.0) * f[i]) > eps_nl).collect();
+    let n_idx: Vec<usize> = (0..m)
+        .filter(|&i| fmath::fabs(f_x1[i] + (lambda - 1.0) * f[i]) > eps_nl)
+        .collect();
     let p = n_idx.len();
     if p == 0 {
         info!("Newton diagnostics terminated: no non-linear equations!");
@@ -255,7 +247,12 @@ pub fn newton_diagnostics(
     if m > q {
         open!("Vector z0 of nonlinear unknowns");
         for i in 0..m - q {
-            info!("z0[{}] = {} ({})", idx(i + 1, m - q, false), f14(x0[z_idx[i]]), name(z_idx[i]));
+            info!(
+                "z0[{}] = {} ({})",
+                idx(i + 1, m - q, false),
+                f14(x0[z_idx[i]]),
+                name(z_idx[i])
+            );
         }
         close();
     }
@@ -303,8 +300,8 @@ pub fn newton_diagnostics(
             }
             w_fww_w += acc * w1_star_w0[j];
         }
-        alpha[i] = fmath::fabs(f_x1_star[ni] - (1.0 - lambda) * f[ni] - 0.5 * w_fww_w)
-            / (fmath::pow(lambda, 3.0) * max_res);
+        alpha[i] =
+            fmath::fabs(f_x1_star[ni] - (1.0 - lambda) * f[ni] - 0.5 * w_fww_w) / (fmath::pow(lambda, 3.0) * max_res);
     }
 
     // Gamma_ijk: curvature of nonlinear equation i along the step in (w_j, w_k).
@@ -341,7 +338,9 @@ pub fn newton_diagnostics(
         }
     }
     let tmp1 = mat_mult(&inv_fx, &h_i);
-    let tmp2: Vec<Vec<f64>> = (0..q).map(|i| (0..q).map(|j| tmp1[w_idx[i]][w_idx[j]]).collect()).collect();
+    let tmp2: Vec<Vec<f64>> = (0..q)
+        .map(|i| (0..q).map(|j| tmp1[w_idx[i]][w_idx[j]]).collect())
+        .collect();
     let mut w_diag = vec![vec![0.0f64; q]; q];
     for i in 0..q {
         w_diag[i][i] = dx[w_idx[i]];
@@ -511,7 +510,11 @@ fn print_results(
         match pick {
             Pick::Scalar(a) => {
                 if !printed.contains(&a) {
-                    let v = if alpha[a] < 1.0e3 { omclog::f(alpha[a], 5, 2) } else { omclog::e(alpha[a], 5, 2) };
+                    let v = if alpha[a] < 1.0e3 {
+                        omclog::f(alpha[a], 5, 2)
+                    } else {
+                        omclog::e(alpha[a], 5, 2)
+                    };
                     info!("{:>6} {:>6} {}", n_idx[a] + 1, eq_idx(n_idx[a]), v);
                     printed.push(a);
                 }

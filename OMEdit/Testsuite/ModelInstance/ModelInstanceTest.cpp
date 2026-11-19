@@ -128,6 +128,9 @@ void ModelInstanceTest::documentationFigures()
   const auto makeRecord = [](const QString &name, const QJsonArray &elements) {
     return QJsonObject{{"$kind", "record"}, {"name", name}, {"elements", elements}};
   };
+  const auto makeYAxis = [](const QString &literal, int index) {
+    return QJsonObject{{"$kind", "enum"}, {"name", "YAxisSelection." + literal}, {"index", index}};
+  };
   const QJsonObject curve = makeRecord("Curve", QJsonArray{
                                          "time",
                                          QJsonObject{
@@ -135,6 +138,7 @@ void ModelInstanceTest::documentationFigures()
                                            {"parts", QJsonArray{QJsonObject{{"name", "h"}}}}
                                          },
                                          "Height of ball",
+                                         makeYAxis("Left", 1),
                                          0
                                        });
   const QJsonObject axisScale = makeRecord("AxisScale", QJsonArray{"Log", 2});
@@ -183,12 +187,23 @@ void ModelInstanceTest::documentationFigures()
       "x=Axis(label=\"time (s)\",scale=AxisScale(scaleType=\"Log\",base=2)))}),Figure(title=\"Other\",plots={})})";
   QCOMPARE(documentation.toString(), serialized);
 
-  const QString replacement = "Figure(title=\"Bouncing ball\",preferred=true,plots={Plot(curves={Curve(y=v)})})";
+  const auto makeFigure = [](const QString &title, const QString &yVariable) {
+    auto pCurve = std::make_unique<ModelInstance::Curve>();
+    pCurve->setY(FlatModelica::Expression::parse(yVariable));
+    auto pPlot = std::make_unique<ModelInstance::Plot>();
+    pPlot->addCurve(std::move(pCurve));
+    auto pFigure = std::make_unique<ModelInstance::Figure>();
+    pFigure->setTitle(title);
+    pFigure->setPreferred(true);
+    pFigure->addPlot(std::move(pPlot));
+    return pFigure;
+  };
   const QString replacementSerialization =
       "Documentation(info=\"Model information\",revisions=\"Model revisions\",__OpenModelica_infoHeader=\"Header\","
       "styleSheets={\"plot.css\"},figures={Figure(title=\"Bouncing ball\",preferred=true,plots={Plot(curves={Curve(y=v)})}),"
       "Figure(title=\"Other\",plots={})})";
-  QCOMPARE(documentation.toString("Bouncing ball", replacement), replacementSerialization);
+  QCOMPARE(documentation.toString(*makeFigure("Bouncing ball", "v")), replacementSerialization);
+  QCOMPARE(documentation.getFigures().at(0)->getPlots().at(0)->getCurves().at(0)->getY().toQString(), QString("h"));
 
   documentation.setDocumentation("Updated information", "Updated revisions", "Updated header");
   const QString updatedDocumentation =
@@ -198,17 +213,50 @@ void ModelInstanceTest::documentationFigures()
       "x=Axis(label=\"time (s)\",scale=AxisScale(scaleType=\"Log\",base=2)))}),Figure(title=\"Other\",plots={})})";
   QCOMPARE(documentation.toString(), updatedDocumentation);
 
-  documentation.setFigureAnnotation("Bouncing ball", replacement);
+  documentation.setFigure(makeFigure("Bouncing ball", "v"));
   const QString updatedFigureSerialization =
       "Documentation(info=\"Updated information\",revisions=\"Updated revisions\",__OpenModelica_infoHeader=\"Updated header\","
       "styleSheets={\"plot.css\"},figures={Figure(title=\"Bouncing ball\",preferred=true,plots={Plot(curves={Curve(y=v)})}),"
       "Figure(title=\"Other\",plots={})})";
   QCOMPARE(documentation.toString(), updatedFigureSerialization);
-
-  documentation.setFigureAnnotation("New figure", "Figure(title=\"New figure\",plots={})");
-  QVERIFY(documentation.toString().contains("figures={Figure(title=\"Bouncing ball\""));
-  QVERIFY(documentation.toString().contains("Figure(title=\"New figure\",plots={})"));
+  // The figures that are plotted after a simulation must also be updated.
   QCOMPARE(documentation.getFigures().size(), size_t(2));
+  QCOMPARE(documentation.getFigures().at(0)->getPlots().at(0)->getCurves().at(0)->getY().toQString(), QString("v"));
+
+  documentation.setFigure(makeFigure("New figure", "w"));
+  QVERIFY(documentation.toString().contains("figures={Figure(title=\"Bouncing ball\""));
+  QVERIFY(documentation.toString().contains("Figure(title=\"New figure\",preferred=true,plots={Plot(curves={Curve(y=w)})})"));
+  QCOMPARE(documentation.getFigures().size(), size_t(3));
+  QCOMPARE(documentation.getFigures().at(2)->getTitle(), QString("New figure"));
+
+  // yAxis is written only when it is Right, the default is Left.
+  const QJsonObject rightCurve = makeRecord("Curve", QJsonArray{
+                                              "time",
+                                              QJsonObject{
+                                                {"$kind", "cref"},
+                                                {"parts", QJsonArray{QJsonObject{{"name", "v"}}}}
+                                              },
+                                              "",
+                                              makeYAxis("Right", 2),
+                                              1
+                                            });
+  const QJsonObject yRightAxis = makeRecord("Axis", QJsonArray{QJsonArray{}, QJsonArray{}, "", "speed", QJsonObject{}});
+  ModelInstance::Plot rightPlot;
+  rightPlot.deserialize(makeRecord("Plot", QJsonArray{"", "", QJsonArray{curve, rightCurve}, xAxis, yAxis, yRightAxis}));
+  QCOMPARE(rightPlot.getCurves().size(), size_t(2));
+  QVERIFY(rightPlot.getCurves().at(0)->getYAxis() == ModelInstance::Curve::YAxis::Left);
+  QVERIFY(rightPlot.getCurves().at(1)->getYAxis() == ModelInstance::Curve::YAxis::Right);
+  QCOMPARE(rightPlot.getCurves().at(1)->getZOrder(), 1);
+  QVERIFY(rightPlot.getYRightAxis());
+  QCOMPARE(rightPlot.getYRightAxis()->getLabel(), QString("speed"));
+  QCOMPARE(rightPlot.toString(),
+           QString("Plot(curves={Curve(y=h,legend=\"Height of ball\"),Curve(y=v,yAxis=YAxisSelection.Right,zOrder=1)},"
+                   "x=Axis(label=\"time (s)\",scale=AxisScale(scaleType=\"Log\",base=2)),yRight=Axis(label=\"speed\"))"));
+
+  ModelInstance::Axis axis;
+  axis.setMin(FlatModelica::Expression(-0.123456789));
+  axis.setMax(FlatModelica::Expression(1234.56789));
+  QCOMPARE(axis.toString(), QString("Axis(min=-0.123456789,max=1234.56789)"));
 }
 
 void ModelInstanceTest::isParameter()

@@ -28,7 +28,8 @@ endmacro(omc_option)
 #
 #   omc_add_qt_lupdate(<target>
 #                      TS_FILES <file.ts>...   # absolute paths
-#                      SOURCES  <file>...)     # absolute paths of everything lupdate scans
+#                      SOURCES  <file>...      # absolute paths of everything lupdate scans
+#                      [INCLUDE_DIRECTORIES <dir>...])  # where lupdate resolves #include "..."
 #
 # <target> must already exist; it is made to depend on the custom target <target>_lupdate,
 # so the .ts files are current before lrelease (qt_add_translation) reads them.
@@ -37,7 +38,7 @@ function(omc_add_qt_lupdate target)
   if(NOT OM_UPDATE_TRANSLATIONS)
     return()
   endif()
-  cmake_parse_arguments(PARSE_ARGV 1 ARG "" "" "TS_FILES;SOURCES")
+  cmake_parse_arguments(PARSE_ARGV 1 ARG "" "" "TS_FILES;SOURCES;INCLUDE_DIRECTORIES")
   find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
   # lupdate creates missing .ts files, but not their directory. Create both (an empty .ts with the
   # language taken from the file name, OMEdit_zh_CN.ts -> zh_CN), so adding a language to TS_FILES
@@ -66,12 +67,14 @@ function(omc_add_qt_lupdate target)
     qt_add_lupdate(${target}
       TS_FILES ${ARG_TS_FILES}
       SOURCES ${ARG_SOURCES}
+      INCLUDE_DIRECTORIES ${ARG_INCLUDE_DIRECTORIES}
       OPTIONS ${OM_LUPDATE_OPTIONS})
   else()
     qt_add_lupdate(
       LUPDATE_TARGET ${target}_lupdate
       TS_FILES ${ARG_TS_FILES}
       SOURCES ${ARG_SOURCES}
+      INCLUDE_DIRECTORIES ${ARG_INCLUDE_DIRECTORIES}
       OPTIONS ${OM_LUPDATE_OPTIONS})
   endif()
   # Run lupdate before the target is built so lrelease sees the updated .ts files.

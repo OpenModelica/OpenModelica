@@ -28,7 +28,20 @@ pub fn dgegv(
 ) -> i32 {
     #[cfg(feature = "faer-backend")]
     return crate::faer_backend::dggev(
-        jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, &mut [], 1, &mut [], 1,
+        jobvl,
+        jobvr,
+        n,
+        a,
+        lda,
+        b,
+        ldb,
+        alphar,
+        alphai,
+        beta,
+        &mut [],
+        1,
+        &mut [],
+        1,
     );
     #[cfg(not(feature = "faer-backend"))]
     dgegv_ref(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta)

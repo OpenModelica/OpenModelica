@@ -83,6 +83,7 @@ userDefinedTearing2.mos \
 testTearingStrictness.mos \
 testParamDivision.mos \
 testParamFixedFalseDivision.mos \
+testTimeIndepFuncDivision.mos \
 minimalTearing.mos \
 Algorithm1-minimal.mos \
 Algorithm2-minimal.mos \

@@ -86,7 +86,11 @@ pub extern "C" fn rt_prof_clear(_unused: u32) {
             c.max = c.acc;
         }
         if c.ncall != 0 {
-            c.ncall_min = if c.ncall_min != 0 && c.ncall_min < c.ncall { c.ncall_min } else { c.ncall };
+            c.ncall_min = if c.ncall_min != 0 && c.ncall_min < c.ncall {
+                c.ncall_min
+            } else {
+                c.ncall
+            };
             c.ncall_max = c.ncall_max.max(c.ncall);
         }
         c.acc = 0.0;

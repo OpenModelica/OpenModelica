@@ -49,6 +49,10 @@ simulate(preferStatic); getErrorString();
 // ***********************************************************
 // 	[STAT] (1) Real x (StateSelect = prefer)
 //
+// [stateselection] State Order:
+// *******************************
+// 	(z --d/dt--> $FUN_1/0.5)
+//
 // [stateselection] (1) State Derivatives Created by Differentiation
 // *******************************************************************
 // 	[DDER] (1) Real $DER.$FUN_1 (StateSelect = avoid)

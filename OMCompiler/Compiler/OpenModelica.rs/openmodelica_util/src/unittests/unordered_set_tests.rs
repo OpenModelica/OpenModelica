@@ -8,11 +8,11 @@
 //
 // We use ArcStr elements with stringHashDjb2 / stringEq throughout.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::UnorderedSet as US;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── hash / eq helpers ────────────────────────────────────────────────────────
 
@@ -46,7 +46,9 @@ fn set_of(keys: &[&str]) -> Result<metamodelica::Ref<US::UnorderedSet<ArcStr>>> 
 fn to_sorted_vec(s: metamodelica::Ref<US::UnorderedSet<ArcStr>>) -> Vec<String> {
     let lst = US::toList(s);
     let mut v: Vec<String> = vec![];
-    for k in &*lst { v.push(k.to_string()); }
+    for k in &*lst {
+        v.push(k.to_string());
+    }
     v.sort();
     v
 }
@@ -74,7 +76,7 @@ fn test_non_empty_is_not_empty() -> Result<()> {
 fn test_add_and_contains() -> Result<()> {
     let s = set_of(&["alpha", "beta", "gamma"])?;
     assert!(US::contains(literal!("alpha"), s.clone())?);
-    assert!(US::contains(literal!("beta"),  s.clone())?);
+    assert!(US::contains(literal!("beta"), s.clone())?);
     assert!(US::contains(literal!("gamma"), s.clone())?);
     Ok(())
 }
@@ -363,7 +365,11 @@ fn test_rehash_preserves_all_keys() -> Result<()> {
 fn test_all_true_when_all_match() -> Result<()> {
     // All keys start with "aa" – pred is always true.
     let s = set_of(&["aaa", "aab", "aac"])?;
-    let result = US::all(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("aa")) }).unwrap();
+    let result = US::all(s, &|__b0: &_| {
+        let k: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(k.starts_with("aa"))
+    })
+    .unwrap();
     assert!(result);
     Ok(())
 }
@@ -371,7 +377,11 @@ fn test_all_true_when_all_match() -> Result<()> {
 #[test]
 fn test_all_false_when_one_does_not_match() -> Result<()> {
     let s = set_of(&["aaa", "bbb"])?;
-    let result = US::all(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("aa")) }).unwrap();
+    let result = US::all(s, &|__b0: &_| {
+        let k: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(k.starts_with("aa"))
+    })
+    .unwrap();
     assert!(!result);
     Ok(())
 }
@@ -379,14 +389,22 @@ fn test_all_false_when_one_does_not_match() -> Result<()> {
 #[test]
 fn test_all_empty_set_returns_true() {
     let s = empty_set();
-    let result = US::all(s, &|__b0: &_| { let _: ArcStr = ::std::clone::Clone::clone(__b0); Ok(false) }).unwrap();
+    let result = US::all(s, &|__b0: &_| {
+        let _: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(false)
+    })
+    .unwrap();
     assert!(result);
 }
 
 #[test]
 fn test_any_true_when_one_matches() -> Result<()> {
     let s = set_of(&["no_match", "yes_match"])?;
-    let result = US::any(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("yes")) }).unwrap();
+    let result = US::any(s, &|__b0: &_| {
+        let k: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(k.starts_with("yes"))
+    })
+    .unwrap();
     assert!(result);
     Ok(())
 }
@@ -394,7 +412,11 @@ fn test_any_true_when_one_matches() -> Result<()> {
 #[test]
 fn test_any_false_when_none_match() -> Result<()> {
     let s = set_of(&["a", "b"])?;
-    let result = US::any(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("z")) }).unwrap();
+    let result = US::any(s, &|__b0: &_| {
+        let k: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(k.starts_with("z"))
+    })
+    .unwrap();
     assert!(!result);
     Ok(())
 }
@@ -402,14 +424,22 @@ fn test_any_false_when_none_match() -> Result<()> {
 #[test]
 fn test_any_empty_set_returns_false() {
     let s = empty_set();
-    let result = US::any(s, &|__b0: &_| { let _: ArcStr = ::std::clone::Clone::clone(__b0); Ok(true) }).unwrap();
+    let result = US::any(s, &|__b0: &_| {
+        let _: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(true)
+    })
+    .unwrap();
     assert!(!result);
 }
 
 #[test]
 fn test_none_when_no_element_matches() -> Result<()> {
     let s = set_of(&["a", "b"])?;
-    let result = US::none(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("z")) }).unwrap();
+    let result = US::none(s, &|__b0: &_| {
+        let k: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(k.starts_with("z"))
+    })
+    .unwrap();
     assert!(result);
     Ok(())
 }
@@ -417,7 +447,11 @@ fn test_none_when_no_element_matches() -> Result<()> {
 #[test]
 fn test_none_false_when_one_matches() -> Result<()> {
     let s = set_of(&["a", "z_key"])?;
-    let result = US::none(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("z")) }).unwrap();
+    let result = US::none(s, &|__b0: &_| {
+        let k: ArcStr = ::std::clone::Clone::clone(__b0);
+        Ok(k.starts_with("z"))
+    })
+    .unwrap();
     assert!(!result);
     Ok(())
 }

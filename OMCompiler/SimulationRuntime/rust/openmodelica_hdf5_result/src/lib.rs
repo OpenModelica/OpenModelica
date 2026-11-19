@@ -31,10 +31,16 @@ pub struct Affine {
 }
 
 impl Affine {
-    pub const IDENTITY: Affine = Affine { scale: 1.0, offset: 0.0 };
+    pub const IDENTITY: Affine = Affine {
+        scale: 1.0,
+        offset: 0.0,
+    };
 
     pub fn negated() -> Affine {
-        Affine { scale: -1.0, offset: 0.0 }
+        Affine {
+            scale: -1.0,
+            offset: 0.0,
+        }
     }
 
     pub fn apply(self, v: f64) -> f64 {
@@ -101,10 +107,17 @@ impl VarTy {
 pub enum Kind {
     Time,
     /// Result-row column `col` (0 = time), transformed by `affine`.
-    Column { col: u32, affine: Affine },
+    Column {
+        col: u32,
+        affine: Affine,
+    },
     /// From the `params` slice, in `Param` order.
-    Param { affine: Affine },
-    Const { value: f64 },
+    Param {
+        affine: Affine,
+    },
+    Const {
+        value: f64,
+    },
 }
 
 /// One result variable; the strings borrow the caller's.
@@ -170,7 +183,14 @@ impl Options {
 
 impl Default for Options {
     fn default() -> Options {
-        Options { deflate: None, shuffle: false, chunk_rows: 1024, expected_rows: None, chunk_cols: 0, single: false }
+        Options {
+            deflate: None,
+            shuffle: false,
+            chunk_rows: 1024,
+            expected_rows: None,
+            chunk_cols: 0,
+            single: false,
+        }
     }
 }
 

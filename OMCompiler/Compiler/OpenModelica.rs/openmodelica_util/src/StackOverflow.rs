@@ -34,14 +34,24 @@
  *
  */
 #![allow(warnings)]
-#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
+#![allow(
+    unreachable_patterns,
+    unreachable_code,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code,
+    unused_imports,
+    unused_variables,
+    non_upper_case_globals,
+    unused_mut
+)]
 
-use std::sync::Arc;
-use metamodelica::Result;
-use loop_unwrap::unwrap_break_err;
-use metamodelica::*; // Built-in types and functions
+use arcstr::{ArcStr, format, literal};
 use const_str;
-use arcstr::{ArcStr, literal, format};
+use loop_unwrap::unwrap_break_err;
+use metamodelica::Result;
+use metamodelica::*; // Built-in types and functions
+use std::sync::Arc;
 
 use crate::StringUtil;
 use crate::System;
@@ -51,10 +61,29 @@ fn unmangle(mut inSymbol: ArcStr) -> Result<ArcStr> {
     let mut outSymbol: ArcStr = arcstr::literal!("");
     outSymbol = (inSymbol.clone()).clone();
     if StringUtil::startsWith((inSymbol.clone()).clone(), (literal!("omc_")).clone()) {
-        outSymbol = substring((outSymbol.clone()).clone(), 5, ((outSymbol.clone()).clone().len() as i32))?;
-        outSymbol = (System::stringReplace((outSymbol.clone()).clone(), (literal!("__")).clone(), (literal!("#")).clone())?).clone();
-        outSymbol = (System::stringReplace((outSymbol.clone()).clone(), (literal!("_")).clone(), (literal!(".")).clone())?).clone();
-        outSymbol = (System::stringReplace((outSymbol.clone()).clone(), (literal!("#")).clone(), (literal!("_")).clone())?).clone();
+        outSymbol = substring(
+            (outSymbol.clone()).clone(),
+            5,
+            ((outSymbol.clone()).clone().len() as i32),
+        )?;
+        outSymbol = (System::stringReplace(
+            (outSymbol.clone()).clone(),
+            (literal!("__")).clone(),
+            (literal!("#")).clone(),
+        )?)
+        .clone();
+        outSymbol = (System::stringReplace(
+            (outSymbol.clone()).clone(),
+            (literal!("_")).clone(),
+            (literal!(".")).clone(),
+        )?)
+        .clone();
+        outSymbol = (System::stringReplace(
+            (outSymbol.clone()).clone(),
+            (literal!("#")).clone(),
+            (literal!("_")).clone(),
+        )?)
+        .clone();
     }
     Ok(outSymbol)
 }
@@ -65,7 +94,13 @@ fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
     let mut strs: metamodelica::List<ArcStr> = metamodelica::nil();
     let mut so: ArcStr = arcstr::literal!("");
     let mut fun: ArcStr = arcstr::literal!("");
-    (n, strs) = System::regex((inSymbol.clone()).clone(), (literal!("^([^(]*)[(]([^+]*[^+]*)[+][^)]*[)] *[[]0x[0-9a-fA-F]*[]]$")).clone(), 3, true, false);
+    (n, strs) = System::regex(
+        (inSymbol.clone()).clone(),
+        (literal!("^([^(]*)[(]([^+]*[^+]*)[+][^)]*[)] *[[]0x[0-9a-fA-F]*[]]$")).clone(),
+        3,
+        true,
+        false,
+    );
     if n.clone() == 3 {
         let (__pa0, __pa1) = ::match_deref::match_deref! { match &(strs.clone()) {
             Deref @ metamodelica::ListNode::Cons { head: _, tail: Deref @ metamodelica::ListNode::Cons { head: __pa0, tail: Deref @ metamodelica::ListNode::Cons { head: __pa1, tail: Deref @ metamodelica::ListNode::Nil } } } => (__pa0.clone(), __pa1.clone()),
@@ -73,9 +108,23 @@ fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
         } };
         so = __pa0.clone();
         fun = __pa1.clone();
-        outSymbol = ({ let mut __mm_s = String::new(); __mm_s.push_str(&*so.clone()); __mm_s.push_str(&*literal!("(")); __mm_s.push_str(&*unmangle((fun.clone()).clone())?); __mm_s.push_str(&*literal!(")")); ArcStr::from(__mm_s) }).clone();
+        outSymbol = ({
+            let mut __mm_s = String::new();
+            __mm_s.push_str(&*so.clone());
+            __mm_s.push_str(&*literal!("("));
+            __mm_s.push_str(&*unmangle((fun.clone()).clone())?);
+            __mm_s.push_str(&*literal!(")"));
+            ArcStr::from(__mm_s)
+        })
+        .clone();
     } else {
-        (n, strs) = System::regex((inSymbol.clone()).clone(), (literal!("^[0-9 ]*([A-Za-z0-9.]*) *0x[0-9a-fA-F]* ([A-Za-z0-9_]*) *[+] *[0-9]*$")).clone(), 3, true, false);
+        (n, strs) = System::regex(
+            (inSymbol.clone()).clone(),
+            (literal!("^[0-9 ]*([A-Za-z0-9.]*) *0x[0-9a-fA-F]* ([A-Za-z0-9_]*) *[+] *[0-9]*$")).clone(),
+            3,
+            true,
+            false,
+        );
         if n.clone() == 3 {
             let (__pa3, __pa4) = ::match_deref::match_deref! { match &(strs.clone()) {
                 Deref @ metamodelica::ListNode::Cons { head: _, tail: Deref @ metamodelica::ListNode::Cons { head: __pa3, tail: Deref @ metamodelica::ListNode::Cons { head: __pa4, tail: Deref @ metamodelica::ListNode::Nil } } } => (__pa3.clone(), __pa4.clone()),
@@ -83,7 +132,15 @@ fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
             } };
             so = __pa3.clone();
             fun = __pa4.clone();
-            outSymbol = ({ let mut __mm_s = String::new(); __mm_s.push_str(&*so.clone()); __mm_s.push_str(&*literal!("(")); __mm_s.push_str(&*unmangle((fun.clone()).clone())?); __mm_s.push_str(&*literal!(")")); ArcStr::from(__mm_s) }).clone();
+            outSymbol = ({
+                let mut __mm_s = String::new();
+                __mm_s.push_str(&*so.clone());
+                __mm_s.push_str(&*literal!("("));
+                __mm_s.push_str(&*unmangle((fun.clone()).clone())?);
+                __mm_s.push_str(&*literal!(")"));
+                ArcStr::from(__mm_s)
+            })
+            .clone();
         } else {
             outSymbol = (inSymbol.clone()).clone();
         }
@@ -129,7 +186,28 @@ pub fn readableStacktraceMessages() -> Result<metamodelica::List<ArcStr>> {
         let mut symbol = symbol.clone();
         if prev.clone() == literal!("") {
         } else if symbol.clone() != prev.clone() {
-            symbols = metamodelica::cons(({ let mut __mm_s = String::new(); __mm_s.push_str(&*literal!("[bt] #")); __mm_s.push_str(&*ArcStr::from(::std::format!("{}", prevN.clone()))); __mm_s.push_str(&*if (n.clone() != prevN.clone()) {{ let mut __mm_s = String::new(); __mm_s.push_str(&*literal!("...")); __mm_s.push_str(&*ArcStr::from(::std::format!("{}", n.clone()))); ArcStr::from(__mm_s) }} else {literal!("")}); __mm_s.push_str(&*literal!(" ")); __mm_s.push_str(&*prev.clone()); ArcStr::from(__mm_s) }).clone(), symbols.clone());
+            symbols = metamodelica::cons(
+                ({
+                    let mut __mm_s = String::new();
+                    __mm_s.push_str(&*literal!("[bt] #"));
+                    __mm_s.push_str(&*ArcStr::from(::std::format!("{}", prevN.clone())));
+                    __mm_s.push_str(&*if (n.clone() != prevN.clone()) {
+                        {
+                            let mut __mm_s = String::new();
+                            __mm_s.push_str(&*literal!("..."));
+                            __mm_s.push_str(&*ArcStr::from(::std::format!("{}", n.clone())));
+                            ArcStr::from(__mm_s)
+                        }
+                    } else {
+                        literal!("")
+                    });
+                    __mm_s.push_str(&*literal!(" "));
+                    __mm_s.push_str(&*prev.clone());
+                    ArcStr::from(__mm_s)
+                })
+                .clone(),
+                symbols.clone(),
+            );
             n = n.clone() + 1;
             prevN = n.clone();
         } else {
@@ -137,7 +215,28 @@ pub fn readableStacktraceMessages() -> Result<metamodelica::List<ArcStr>> {
         }
         prev = (symbol.clone()).clone();
     }
-    symbols = metamodelica::cons(({ let mut __mm_s = String::new(); __mm_s.push_str(&*literal!("[bt] #")); __mm_s.push_str(&*ArcStr::from(::std::format!("{}", prevN.clone()))); __mm_s.push_str(&*if (n.clone() != prevN.clone()) {{ let mut __mm_s = String::new(); __mm_s.push_str(&*literal!("...")); __mm_s.push_str(&*ArcStr::from(::std::format!("{}", n.clone()))); ArcStr::from(__mm_s) }} else {literal!("")}); __mm_s.push_str(&*literal!(" ")); __mm_s.push_str(&*prev.clone()); ArcStr::from(__mm_s) }).clone(), symbols.clone());
+    symbols = metamodelica::cons(
+        ({
+            let mut __mm_s = String::new();
+            __mm_s.push_str(&*literal!("[bt] #"));
+            __mm_s.push_str(&*ArcStr::from(::std::format!("{}", prevN.clone())));
+            __mm_s.push_str(&*if (n.clone() != prevN.clone()) {
+                {
+                    let mut __mm_s = String::new();
+                    __mm_s.push_str(&*literal!("..."));
+                    __mm_s.push_str(&*ArcStr::from(::std::format!("{}", n.clone())));
+                    ArcStr::from(__mm_s)
+                }
+            } else {
+                literal!("")
+            });
+            __mm_s.push_str(&*literal!(" "));
+            __mm_s.push_str(&*prev.clone());
+            ArcStr::from(__mm_s)
+        })
+        .clone(),
+        symbols.clone(),
+    );
     symbols = symbols.clone().reverse();
     Ok(symbols)
 }
@@ -148,7 +247,12 @@ pub fn getStacktraceMessages() -> metamodelica::List<ArcStr> {
     let start = frames
         .iter()
         .take(16)
-        .rposition(|f| f.contains("heap_limit::") || f.contains("setStacktraceMessages") || f.starts_with("__rust") || f.starts_with("backtrace::"))
+        .rposition(|f| {
+            f.contains("heap_limit::")
+                || f.contains("setStacktraceMessages")
+                || f.starts_with("__rust")
+                || f.starts_with("backtrace::")
+        })
         .map_or(0, |i| i + 1);
     let skip = SKIP.load(std::sync::atomic::Ordering::Relaxed);
     let take = match FRAMES.load(std::sync::atomic::Ordering::Relaxed) {
@@ -156,7 +260,14 @@ pub fn getStacktraceMessages() -> metamodelica::List<ArcStr> {
         n => n,
     };
     let mut symbols = metamodelica::nil();
-    for f in frames.into_iter().skip(start + skip).take(take).collect::<Vec<_>>().into_iter().rev() {
+    for f in frames
+        .into_iter()
+        .skip(start + skip)
+        .take(take)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+    {
         symbols = metamodelica::cons(ArcStr::from(f), symbols);
     }
     symbols
@@ -198,5 +309,9 @@ pub fn outOfMemoryMessage() -> ArcStr {
 
 pub fn errorPrefix() -> ArcStr {
     let oom = outOfMemoryMessage();
-    if oom.is_empty() { literal!("Stack overflow") } else { format!("Out of memory ({oom})") }
+    if oom.is_empty() {
+        literal!("Stack overflow")
+    } else {
+        format!("Out of memory ({oom})")
+    }
 }

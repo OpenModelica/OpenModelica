@@ -19,9 +19,7 @@ pub fn parse(root: Node) -> Result<ModelDescription> {
         version: string_attr(root, "version"),
         generation_tool: string_attr(root, "generationTool"),
         generation_date_and_time: string_attr(root, "generationDateAndTime"),
-        variable_naming_convention: attr(root, "variableNamingConvention")
-            .unwrap_or("flat")
-            .to_string(),
+        variable_naming_convention: attr(root, "variableNamingConvention").unwrap_or("flat").to_string(),
         default_experiment: default_experiment(root),
         units: units(root),
         type_definitions: type_definitions(root),
@@ -53,26 +51,15 @@ fn co_simulation(imp: Node, model_identifier: String) -> Interface {
         model_identifier,
         // A Tool FMU drives its own tool, which is 2.0's needsExecutionTool.
         needs_execution_tool: tool.is_some(),
-        can_handle_variable_communication_step_size: cap(
-            "canHandleVariableCommunicationStepSize",
-            false,
-        ),
+        can_handle_variable_communication_step_size: cap("canHandleVariableCommunicationStepSize", false),
         can_handle_events: cap("canHandleEvents", false),
         can_reject_steps: cap("canRejectSteps", false),
         can_interpolate_inputs: cap("canInterpolateInputs", false),
         can_run_asynchronously: cap("canRunAsynchronuously", false),
         can_signal_events: cap("canSignalEvents", false),
-        can_be_instantiated_only_once_per_process: cap(
-            "canBeInstantiatedOnlyOncePerProcess",
-            false,
-        ),
-        can_not_use_memory_management_functions: cap(
-            "canNotUseMemoryManagementFunctions",
-            false,
-        ),
-        max_output_derivative_order: caps
-            .and_then(|c| u32_attr(c, "maxOutputDerivativeOrder"))
-            .unwrap_or(0),
+        can_be_instantiated_only_once_per_process: cap("canBeInstantiatedOnlyOncePerProcess", false),
+        can_not_use_memory_management_functions: cap("canNotUseMemoryManagementFunctions", false),
+        max_output_derivative_order: caps.and_then(|c| u32_attr(c, "maxOutputDerivativeOrder")).unwrap_or(0),
         ..Default::default()
     }
 }
@@ -89,8 +76,7 @@ fn var_type(tag: &str) -> Option<VarType> {
 }
 
 fn variables(root: Node) -> Result<Vec<Variable>> {
-    let mv = child(root, "ModelVariables")
-        .ok_or_else(|| Error::Xml("no <ModelVariables>".into()))?;
+    let mv = child(root, "ModelVariables").ok_or_else(|| Error::Xml("no <ModelVariables>".into()))?;
     let mut vars = Vec::new();
     for n in children(mv, "ScalarVariable") {
         let index = vars.len() as u32 + 1;
@@ -175,7 +161,9 @@ fn start(n: Node, ty: VarType) -> Option<Start> {
 /// the output depends on every input, which is what an absent `dependencies`
 /// attribute says in the later versions.
 fn model_structure(root: Node, vars: &[Variable]) -> ModelStructure {
-    let Some(mv) = child(root, "ModelVariables") else { return ModelStructure::default() };
+    let Some(mv) = child(root, "ModelVariables") else {
+        return ModelStructure::default();
+    };
     let outputs = children(mv, "ScalarVariable")
         .enumerate()
         .filter(|(i, _)| vars.get(*i).map(|v| v.causality == Causality::Output).unwrap_or(false))
@@ -196,13 +184,18 @@ fn model_structure(root: Node, vars: &[Variable]) -> ModelStructure {
             }
         })
         .collect();
-    ModelStructure { outputs, ..Default::default() }
+    ModelStructure {
+        outputs,
+        ..Default::default()
+    }
 }
 
 /// 1.0 hangs the display units off `<BaseUnit unit=…>`, and its conversion is
 /// `gain`/`offset` rather than `factor`/`offset`.
 fn units(root: Node) -> Vec<Unit> {
-    let Some(uds) = child(root, "UnitDefinitions") else { return Vec::new() };
+    let Some(uds) = child(root, "UnitDefinitions") else {
+        return Vec::new();
+    };
     children(uds, "BaseUnit")
         .filter_map(|u| {
             Some(Unit {
@@ -224,13 +217,16 @@ fn units(root: Node) -> Vec<Unit> {
 }
 
 fn type_definitions(root: Node) -> Vec<TypeDefinition> {
-    let Some(tds) = child(root, "TypeDefinitions") else { return Vec::new() };
+    let Some(tds) = child(root, "TypeDefinitions") else {
+        return Vec::new();
+    };
     children(tds, "Type")
         .filter_map(|t| {
             let name = attr(t, "name")?.to_string();
-            let n = t.children().filter(Node::is_element).find_map(|c| {
-                var_type(c.tag_name().name().strip_suffix("Type")?).map(|ty| (c, ty))
-            })?;
+            let n = t
+                .children()
+                .filter(Node::is_element)
+                .find_map(|c| var_type(c.tag_name().name().strip_suffix("Type")?).map(|ty| (c, ty)))?;
             let (n, ty) = n;
             Some(TypeDefinition {
                 name,

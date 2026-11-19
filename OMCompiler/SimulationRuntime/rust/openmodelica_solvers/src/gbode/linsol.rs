@@ -57,11 +57,22 @@ pub(super) fn factor(a: &[f64], n: usize) -> Result<GbLu> {
         // more than the dense factorization it would replace.
         if i.len() * 4 <= n * n {
             let nzmax = i.len();
-            let sp = rsparse::data::Sprs { nzmax, m: n, n, p, i, x };
+            let sp = rsparse::data::Sprs {
+                nzmax,
+                m: n,
+                n,
+                p,
+                i,
+                x,
+            };
             let mut s = rsparse::sqr(&sp, 2, false);
-            let nm = rsparse::lu(&sp, &mut s, 1.0)
-                .map_err(|_| "##GBODE## singular Newton matrix")?;
-            return Ok(GbLu::Sparse { s, nm, x: vec![0.0; n], n });
+            let nm = rsparse::lu(&sp, &mut s, 1.0).map_err(|_| "##GBODE## singular Newton matrix")?;
+            return Ok(GbLu::Sparse {
+                s,
+                nm,
+                x: vec![0.0; n],
+                n,
+            });
         }
     }
     let mut lu = a[..n * n].to_vec();
@@ -89,7 +100,12 @@ impl GbLu {
             };
             let mut s = rsparse::sqr(&sp, 2, false);
             let nm = rsparse::lu(&sp, &mut s, 1.0).ok()?;
-            return Some(GbLu::Sparse { s, nm, x: vec![0.0; n], n });
+            return Some(GbLu::Sparse {
+                s,
+                nm,
+                x: vec![0.0; n],
+                n,
+            });
         }
         let mut lu = vec![0.0; n * n];
         for c in 0..n {
@@ -284,7 +300,13 @@ impl NlsPattern {
             ai.extend_from_slice(&col);
             ap.push(ai.len() as i32);
         }
-        NlsPattern { n, ap, ai, ode_to_nls, diag }
+        NlsPattern {
+            n,
+            ap,
+            ai,
+            ode_to_nls,
+            diag,
+        }
     }
 
     pub(super) fn nnz(&self) -> usize {

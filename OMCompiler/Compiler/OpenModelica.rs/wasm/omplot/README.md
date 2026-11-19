@@ -14,7 +14,7 @@ same `../plot.js` the simulator pages draw with.
 | `result=<url>` and `reference=<url>` | fetch both and compare, `result` against `reference` |
 | `var=<name>` | the variable to show first (defaults to the first differing one) |
 | `relTol`, `relTolDiffMinMax`, `rangeDelta` | the tolerances, with `diffSimulationResults`'s defaults |
-| `algorithm=rectangle\|ellipse\|ellipse2014` | which tube to build; `ellipse2014` (the default) is `diffSimulationResults`', the other two are csv-compare's, where `relTol` and `relTolDiffMinMax` do not apply |
+| `algorithm=rectangle\|ellipse\|ellipse2014` | which tube to build; `rectangle` (the default, as in `diffSimulationResults`) and `ellipse` are csv-compare's, where `relTol` and `relTolDiffMinMax` do not apply |
 | `file=<url>` (repeatable) | just load files to plot |
 
 A page such as an OpenModelicaLibraryTesting report can link straight to

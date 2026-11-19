@@ -44,11 +44,17 @@ pub enum SigTy {
     Str,
     /// An N-dimensional array of `elem` with `rank` dimensions: an `i32` handle
     /// to a runtime array object (flat row-major storage).
-    Array { elem: Arc<SigTy>, rank: u32 },
+    Array {
+        elem: Arc<SigTy>,
+        rank: u32,
+    },
     /// A record: an `i32` handle to a runtime record object. `path` is the
     /// record's class name (for `Values.RECORD`); `fields` are its components in
     /// declaration order (name + type), which fix the field layout.
-    Record { path: ArcStr, fields: Arc<Vec<(ArcStr, SigTy)>> },
+    Record {
+        path: ArcStr,
+        fields: Arc<Vec<(ArcStr, SigTy)>>,
+    },
     /// An external object: a native `void*` (e.g. a table `tableID`). Held in
     /// wasm as an opaque `i32` handle into the host's pointer registry; not a
     /// wasm heap value (no ARC — freed by the object's `destructor`).
@@ -56,7 +62,10 @@ pub enum SigTy {
     /// A function reference (`function f(w=3)`): an `i32` handle to a runtime
     /// closure (see the codegen's `closures` module). The signature is what the
     /// holder may call, fixing the `call_indirect` type at every call site.
-    Func { params: Arc<Vec<SigTy>>, results: Arc<Vec<SigTy>> },
+    Func {
+        params: Arc<Vec<SigTy>>,
+        results: Arc<Vec<SigTy>>,
+    },
 }
 
 impl SigTy {
@@ -191,17 +200,29 @@ impl ExtCallSig {
     }
     /// The wasm import parameters: input args + output arrays, in `extArgs` order.
     pub fn wasm_params(&self) -> Vec<SigTy> {
-        self.args.iter().filter(|(t, is_out)| !Self::as_result(t, *is_out)).map(|(t, _)| t.clone()).collect()
+        self.args
+            .iter()
+            .filter(|(t, is_out)| !Self::as_result(t, *is_out))
+            .map(|(t, _)| t.clone())
+            .collect()
     }
     /// The wasm import results: the C return value (if any) then each scalar/string
     /// `_Out_` arg, in `extArgs` order — matching those output variables' order.
     pub fn wasm_results(&self) -> Vec<SigTy> {
         let mut r: Vec<SigTy> = self.ret.iter().cloned().collect();
-        r.extend(self.args.iter().filter(|(t, is_out)| Self::as_result(t, *is_out)).map(|(t, _)| t.clone()));
+        r.extend(
+            self.args
+                .iter()
+                .filter(|(t, is_out)| Self::as_result(t, *is_out))
+                .map(|(t, _)| t.clone()),
+        );
         r
     }
     pub fn wasm_sig(&self) -> FnSig {
-        FnSig { params: self.wasm_params(), results: self.wasm_results() }
+        FnSig {
+            params: self.wasm_params(),
+            results: self.wasm_results(),
+        }
     }
     /// The signature of a [`ExtLang::Fortran77`] import in a *shared-memory*
     /// module (a wasm FMU): Fortran passes every argument by reference, and with
@@ -224,7 +245,13 @@ impl ExtCallSig {
             params: self
                 .args
                 .iter()
-                .map(|(t, is_out)| if Self::as_result(t, *is_out) { SigTy::Ptr } else { t.clone() })
+                .map(|(t, is_out)| {
+                    if Self::as_result(t, *is_out) {
+                        SigTy::Ptr
+                    } else {
+                        t.clone()
+                    }
+                })
                 .collect(),
             results: self.ret.iter().cloned().collect(),
         }
@@ -269,7 +296,12 @@ pub fn record_layout(fields: &[(ArcStr, SigTy)]) -> RecordLayout {
         }
         off += sz;
     }
-    RecordLayout { data_off, size: data_off + align_up(off, 8), field_off, heap }
+    RecordLayout {
+        data_off,
+        size: data_off + align_up(off, 8),
+        field_off,
+        heap,
+    }
 }
 
 /// The layout of C's `<record>_external`: `double`, `int`, a `ptr`-wide pointer
@@ -303,9 +335,12 @@ pub fn c_record_layout(fields: &[(ArcStr, SigTy)], ptr: u32) -> CRecordLayout {
         off += sz;
         align = align.max(a);
     }
-    CRecordLayout { size: align_up(off, align), align, offsets }
+    CRecordLayout {
+        size: align_up(off, align),
+        align,
+        offsets,
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -315,7 +350,10 @@ mod tests {
     /// kernel must import the C prototype, not the host-trampoline shape.
     #[test]
     fn shared_c_import_is_the_c_prototype() {
-        let ints = SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 };
+        let ints = SigTy::Array {
+            elem: Arc::new(SigTy::Int),
+            rank: 1,
+        };
         let sig = ExtCallSig {
             name: "ModelicaRandom_xorshift64star".into(),
             lang: ExtLang::C,

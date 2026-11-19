@@ -57,6 +57,7 @@
 #include <QMap>
 #include <QVariant>
 
+#include <algorithm>
 #include <cmath>
 
 using namespace OMPlot;
@@ -764,25 +765,21 @@ void PlotWindowContainer::saveFigureInModel()
     return;
   }
 
-  auto makeAxisAnnotation = [](const QString &label, const QString &min, const QString &max, bool logarithmic) {
-    QStringList fields;
-    bool minOk = false;
-    bool maxOk = false;
-    min.toDouble(&minOk);
-    max.toDouble(&maxOk);
-    if (minOk) {
-      fields.append(QString("min=%1").arg(min));
+  auto makeAxis = [](const QString &label, bool hasRange, double min, double max, bool logarithmic) {
+    auto pAxis = std::make_unique<ModelInstance::Axis>();
+    if (hasRange && std::isfinite(min)) {
+      pAxis->setMin(FlatModelica::Expression(min));
     }
-    if (maxOk) {
-      fields.append(QString("max=%1").arg(max));
+    if (hasRange && std::isfinite(max)) {
+      pAxis->setMax(FlatModelica::Expression(max));
     }
-    if (!label.isEmpty()) {
-      fields.append(QString("label=\"%1\"").arg(StringHandler::escapeString(label)));
-    }
+    pAxis->setLabel(label);
     if (logarithmic) {
-      fields.append("scale=AxisScale(\"Log\",10)");
+      auto pScale = std::make_unique<ModelInstance::AxisScale>();
+      pScale->setScaleType("Log");
+      pAxis->setScale(std::move(pScale));
     }
-    return fields.isEmpty() ? QString() : QString("Axis(%1)").arg(fields.join(","));
+    return pAxis;
   };
 
   const QwtScaleDiv &xScale = pPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom);
@@ -794,13 +791,18 @@ void PlotWindowContainer::saveFigureInModel()
   const double yMinimum = isZoomed ? qMin(zoomRect.top(), zoomRect.bottom()) : yScale.lowerBound();
   const double yMaximum = isZoomed ? qMax(zoomRect.top(), zoomRect.bottom()) : yScale.upperBound();
   const bool yAxisAutoScale = pPlotWindow->getPlot()->axisAutoScale(QwtPlot::yLeft);
+  const QwtScaleDiv &yRightScale = pPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight);
+  const bool yRightAxisAutoScale = pPlotWindow->getPlot()->axisAutoScale(QwtPlot::yRight);
   const QString plotTitle = pPlotWindow->getPlot()->title().text();
   const QVariant figureTitleProperty = pPlotWindow->property(Helper::modelicaFigureTitle.toStdString().c_str());
   const QString figureTitle = figureTitleProperty.isValid() ? figureTitleProperty.toString() : pPlotWindow->windowTitle();
   bool savedAnyFigure = false;
   foreach (const QString &className, curvesByModel.keys()) {
-    QStringList curveAnnotations;
+    auto pPlot = std::make_unique<ModelInstance::Plot>();
     const QList<PlotCurve*> modelCurves = curvesByModel.value(className);
+    const bool usesRightYAxis = std::any_of(modelCurves.cbegin(), modelCurves.cend(), [](PlotCurve *pPlotCurve) {
+      return pPlotCurve->isYAxisRight();
+    });
     bool timeXAxis = pPlotWindow->isPlot();
     bool hasTimeValues = false;
     double timeStart = 0.0;
@@ -824,30 +826,39 @@ void PlotWindowContainer::saveFigureInModel()
           }
         }
       }
-      QStringList curveFields;
-      if (xVariable != QStringLiteral("time")) {
-        curveFields.append(QString("x=\"%1\"").arg(StringHandler::escapeString(xVariable)));
+      auto pCurve = std::make_unique<ModelInstance::Curve>();
+      pCurve->setX(xVariable);
+      try {
+        pCurve->setY(FlatModelica::Expression::parse(pPlotCurve->getYVariable()));
+      } catch (const std::exception &) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              tr("Cannot save curve %1 in figure %2 because it is not a valid expression.").arg(pPlotCurve->getYVariable(), figureTitle),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+        continue;
       }
-      curveFields.append(QString("y=%1").arg(pPlotCurve->getYVariable()));
-      if (!pPlotCurve->getCustomTitle().isEmpty()) {
-        curveFields.append(QString("legend=\"%1\"").arg(StringHandler::escapeString(pPlotCurve->getCustomTitle())));
+      pCurve->setLegend(pPlotCurve->getCustomTitle());
+      if (pPlotCurve->isYAxisRight()) {
+        pCurve->setYAxis(ModelInstance::Curve::YAxis::Right);
       }
-      if (i != 0) {
-        curveFields.append(QString("zOrder=%1").arg(i));
-      }
-      curveAnnotations.append(QString("Curve(%1)").arg(curveFields.join(",")));
+      pCurve->setZOrder(i);
+      pPlot->addCurve(std::move(pCurve));
     }
     const bool showsFullTimeRange = timeXAxis && hasTimeValues
         && xMinimum <= timeStart && xMaximum >= timeStop;
     const double timeUnitFactor = timeXAxis && !showsFullTimeRange ? pPlotWindow->getTimeUnitFactor() : 1.0;
-    const QString xMin = showsFullTimeRange ? QString() : StringHandler::number(xMinimum / timeUnitFactor);
-    const QString xMax = showsFullTimeRange ? QString() : StringHandler::number(xMaximum / timeUnitFactor);
-    const QString xAxis = makeAxisAnnotation(pPlotWindow->getXCustomLabel(), xMin, xMax,
-                                             pPlotWindow->getLogXCheckBox()->isChecked());
-    const QString yMin = yAxisAutoScale ? QString() : StringHandler::number(yMinimum);
-    const QString yMax = yAxisAutoScale ? QString() : StringHandler::number(yMaximum);
-    const QString yAxis = makeAxisAnnotation(pPlotWindow->getYCustomLabel(), yMin, yMax,
-                                             pPlotWindow->getLogYCheckBox()->isChecked());
+    pPlot->setTitle(plotTitle);
+    pPlot->setXAxis(makeAxis(pPlotWindow->getXCustomLabel(), !showsFullTimeRange, xMinimum / timeUnitFactor,
+                             xMaximum / timeUnitFactor, pPlotWindow->getLogXCheckBox()->isChecked()));
+    pPlot->setYAxis(makeAxis(pPlotWindow->getYCustomLabel(), !yAxisAutoScale, yMinimum, yMaximum,
+                             pPlotWindow->getLogYCheckBox()->isChecked()));
+    if (usesRightYAxis) {
+      pPlot->setYRightAxis(makeAxis(pPlotWindow->getYRightCustomLabel(), !yRightAxisAutoScale, yRightScale.lowerBound(),
+                                    yRightScale.upperBound(), pPlotWindow->getLogYCheckBox()->isChecked()));
+    }
+    auto pFigure = std::make_unique<ModelInstance::Figure>();
+    pFigure->setTitle(figureTitle);
+    pFigure->setPreferred(true);
+    pFigure->addPlot(std::move(pPlot));
 
     LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
     if (!pLibraryTreeItem || !pLibraryTreeItem->isModelica() || pLibraryTreeItem->isSystemLibrary()) {
@@ -857,19 +868,6 @@ void PlotWindowContainer::saveFigureInModel()
       continue;
     }
 
-    QStringList plotFields;
-    if (!plotTitle.isEmpty()) {
-      plotFields.append(QString("title=\"%1\"").arg(StringHandler::escapeString(plotTitle)));
-    }
-    plotFields.append(QString("curves={%1}").arg(curveAnnotations.join(",")));
-    if (!xAxis.isEmpty()) {
-      plotFields.append(QString("x=%1").arg(xAxis));
-    }
-    if (!yAxis.isEmpty()) {
-      plotFields.append(QString("y=%1").arg(yAxis));
-    }
-    const QString figureAnnotation = QString("Figure(title=\"%1\",preferred=true,plots={Plot(%2)})")
-                                     .arg(StringHandler::escapeString(figureTitle), plotFields.join(","));
     ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
     if (!pModelWidget) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
@@ -887,14 +885,16 @@ void PlotWindowContainer::saveFigureInModel()
     const ModelInstance::DocumentationAnnotation *pDocumentationAnnotation = pModelInstance->getAnnotation()->getDocumentationAnnotation();
     const ModelInstance::DocumentationAnnotation emptyDocumentation;
     const ModelInstance::DocumentationAnnotation &documentation = pDocumentationAnnotation ? *pDocumentationAnnotation : emptyDocumentation;
-    const QString oldAnnotation = QString("annotate=%1").arg(documentation.toString());
-    const QString newAnnotation = QString("annotate=%1").arg(documentation.toString(figureTitle, figureAnnotation));
+    const QString newAnnotation = QString("annotate=%1").arg(documentation.toString(*pFigure));
 
-    pModelWidget->beginMacro(tr("Save Figure in model %1").arg(className));
-    pModelWidget->getUndoStack()->push(new UpdateClassAnnotationCommand(pLibraryTreeItem, oldAnnotation, newAnnotation));
-    pModelWidget->endMacro();
-    // Keep the loaded model-instance data in sync for later saves without reloading it from OMC.
-    pModelInstance->getOrCreateAnnotation()->getOrCreateDocumentationAnnotation()->setFigureAnnotation(figureTitle, figureAnnotation);
+    ModelInfo oldModelInfo = pModelWidget->createModelInfo();
+    if (!MainWindow::instance()->getOMCProxy()->addClassAnnotation(className, newAnnotation)) {
+      continue;
+    }
+    // Keep the loaded model-instance data in sync without reloading it from OMC.
+    pModelInstance->getOrCreateAnnotation()->getOrCreateDocumentationAnnotation()->setFigure(std::move(pFigure));
+    ModelInfo newModelInfo = pModelWidget->createModelInfo();
+    pModelWidget->getUndoStack()->push(new OMCUndoCommand(pLibraryTreeItem, oldModelInfo, newModelInfo, tr("Save Figure in model %1").arg(className), true));
     pModelWidget->updateModelText();
     savedAnyFigure = true;
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Saved figure %1 in model %2.").arg(figureTitle, className),

@@ -11,8 +11,8 @@
 //! [`cancelled_error`] so the op fails like any other error and leaves omc
 //! consistent (the caller must roll back partial state).
 
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 
 // ── Phases (control block index 2; see HANDOFF-coi-consolidation.md) ──────────
 pub const PHASE_IDLE: i32 = 0;
@@ -169,7 +169,11 @@ pub fn progress_phase() -> i32 {
 /// label. Cleared by the next [`report_progress`], so report it after that one.
 pub fn report_progress_message(message: &str) {
     let mut slot = PROGRESS_MESSAGE.lock().unwrap_or_else(|e| e.into_inner());
-    *slot = if message.is_empty() { None } else { Some(message.to_owned()) };
+    *slot = if message.is_empty() {
+        None
+    } else {
+        Some(message.to_owned())
+    };
 }
 
 /// Last reported step label, empty if none.

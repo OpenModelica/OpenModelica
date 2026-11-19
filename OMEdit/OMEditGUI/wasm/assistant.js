@@ -26,12 +26,12 @@
   const STORE_KEY = 'omedit-assistant';
   const DEFAULTS = {
     provider: 'openai', baseUrl: '', apiKey: '', model: '',
-    vision: false, admin: false, open: false, width: 400,
+    vision: true, admin: false, open: false, width: 400,
   };
   const PROVIDERS = {
     openai: {
-      label: 'OpenAI-compatible (Ollama, llama.cpp, LM Studio, vLLM)',
-      short: 'OpenAI-compatible', url: 'http://localhost:11434/v1', model: 'qwen3:8b',
+      label: 'OpenAI-compatible (Ollama, llama.cpp, LM Studio, MLX, vLLM)',
+      short: 'OpenAI-compatible', url: 'http://localhost:11434/v1', model: 'qwen3.8:27b',
     },
     anthropic: {
       label: 'Anthropic', short: 'Anthropic', url: 'https://api.anthropic.com', model: 'claude-opus-5-5',
@@ -39,6 +39,7 @@
   };
   const MAX_STEPS = 30;
   const MAX_TOOL_TEXT = 60000;
+  const HELP_URL = 'https://openmodelica.org/doc/OpenModelicaUsersGuide/%s/webbrowser.html#omedit-web-assistant';
 
   const settings = loadSettings();
   let conversation = { provider: settings.provider, messages: [] };
@@ -573,6 +574,7 @@
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
     hide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>',
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',
   };
 
@@ -616,6 +618,11 @@
   const status = el('span', { class: 'as-status' });
   const settingsButton = el('button', { type: 'button', class: 'as-icon', title: 'Settings', 'aria-pressed': 'false', html: ICONS.gear, onclick: toggleSettings });
   const newButton = el('button', { type: 'button', class: 'as-icon', title: 'New chat', html: ICONS.plus, onclick: newChat });
+  const helpLink = el('a', { class: 'as-icon', href: HELP_URL.replace('%s', 'latest'), target: '_blank', rel: 'noopener noreferrer',
+    title: 'How to set up the assistant', html: ICONS.help });
+  omeditReady.then(() => {
+    if (globalThis.omeditUsersGuideVersion) helpLink.href = HELP_URL.replace('%s', globalThis.omeditUsersGuideVersion);
+  });
   const messages = el('div', { class: 'as-messages', role: 'log', 'aria-live': 'polite' });
   const scroller = el('div', { class: 'as-scroll' }, messages);
   const downButton = el('button', { type: 'button', class: 'as-down', title: 'Go to the latest message', hidden: true, html: ICONS.down, onclick: scrollDown });
@@ -630,7 +637,7 @@
     el('button', { type: 'button', class: 'as-tab', title: 'Show the assistant', onclick: () => setOpen(true), html: `${ICONS.chat}<span>Assistant</span>` }),
     el('div', { class: 'as-panel' },
       el('header', { class: 'as-header' },
-        el('span', { class: 'as-title', text: 'Assistant' }), status, newButton, settingsButton,
+        el('span', { class: 'as-title', text: 'Assistant' }), status, newButton, helpLink, settingsButton,
         el('button', { type: 'button', class: 'as-icon', title: 'Hide the assistant', html: ICONS.hide, onclick: () => setOpen(false) })),
       settingsPanel, scroller, form));
   root.querySelectorAll('.as-tab svg').forEach((svg) => { svg.style.width = '16px'; svg.style.height = '16px'; });
@@ -760,7 +767,7 @@
 
   function showEmpty() {
     messages.replaceChildren(el('p', { class: 'as-empty',
-      text: 'Ask about the classes that are loaded in OMEdit, or ask to build, simulate and plot a model. Set the server and the model in the settings first.' }));
+      text: 'Ask about the classes that are loaded in OMEdit, or ask to build, simulate and plot a model. Set the server and the model in the settings first; click ? for help.' }));
   }
 
   function notice(text) {

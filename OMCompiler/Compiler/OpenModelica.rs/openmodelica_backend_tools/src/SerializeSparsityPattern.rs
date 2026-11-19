@@ -47,8 +47,8 @@
 
 use std::io::Write;
 
+use arcstr::{ArcStr, literal};
 use metamodelica::Result;
-use arcstr::{literal, ArcStr};
 use metamodelica::list;
 
 use openmodelica_simcode_types::SimCode;
@@ -108,8 +108,7 @@ pub fn serialize(code: metamodelica::Ref<SimCode::SimCode>) -> Result<ArcStr> {
 /// write the leadindex (the running sum over `colPtrs`) followed by the row
 /// indices, each as a native-endian u32.
 fn serializeJacobian(name: &str, colPtrs: &[i32], rowInds: &[i32]) -> Result<()> {
-    let file = std::fs::File::create(name)
-        .map_err(|_| "Could not open sparsity pattern file {name}.")?;
+    let file = std::fs::File::create(name).map_err(|_| "Could not open sparsity pattern file {name}.")?;
     let mut out = std::io::BufWriter::new(file);
     // Compute and write sparsePattern->leadindex.
     let mut j: u32 = 0;

@@ -73,7 +73,7 @@ public
   // Backend imports
   import NFBackendExtension.BackendInfo;
   import NBEquation.{Equation, EquationAttributes, EquationPointer, EquationPointers, IfEquationBody, WhenEquationBody, WhenStatement};
-  import NBVariable.{VariablePointer};
+  import NBVariable.{StateOrder, VariablePointer};
   import BVariable = NBVariable;
   import Replacements = NBReplacements;
   import StrongComponent = NBStrongComponent;
@@ -102,6 +102,7 @@ public
       ComponentRef diffCref                                     "The input will be differentiated w.r.t. this cref (only SIMPLE).";
       list<Pointer<Variable>> new_vars                          "contains all new variables that need to be added to the system";
       Option<UnorderedMap<ComponentRef, ComponentRef>> diff_map "seed and temporary cref map x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y. Can be used for any differentiation rules";
+      Option<UnorderedMap<ComponentRef, StateOrder>> state_order "known time derivatives of states (only TIME)";
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                        "true if the variables are scalarized";
@@ -117,6 +118,7 @@ public
         diffCref    = ComponentRef.EMPTY(),
         new_vars    = {},
         diff_map    = NONE(),
+        state_order = NONE(),
         diffType    = ty,
         funcMap     = funcMap,
         scalarized  = false,
@@ -133,6 +135,7 @@ public
         diffCref    = cref,
         new_vars    = {},
         diff_map    = NONE(),
+        state_order = NONE(),
         diffType    = DifferentiationType.SIMPLE,
         funcMap     = funcMap,
         scalarized  = false,
@@ -1092,6 +1095,7 @@ public
       local
         Expression res;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
+        UnorderedMap<ComponentRef, StateOrder> state_order;
         list<Subscript> expCrefSubscripts;
         ComponentRef adjointKey;
         list<ComponentRef> elem_crefs;
@@ -1207,12 +1211,10 @@ public
 
       // Types: (TIME)
       // known derivatives by state order
-      case (Expression.CREF(), DifferentiationType.TIME, SOME(diff_map))
-        guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), diff_map)) algorithm
-        // get the derivative and reapply subscripts
-        derCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(exp.cref), diff_map);
-        derCref := ComponentRef.copySubscripts(exp.cref, derCref);
-        res     := Expression.fromCref(derCref);
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(hasStateOrder(exp.cref, diffArguments.state_order)) algorithm
+        SOME(state_order) := diffArguments.state_order;
+        res := StateOrder.derivative(UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(exp.cref), state_order), exp.cref);
       then (res, diffArguments);
 
       // Types: (TIME)
@@ -1395,6 +1397,24 @@ public
 
     end match;
   end differentiateComponentRef;
+
+  function hasStateOrder
+    input ComponentRef cref;
+    input Option<UnorderedMap<ComponentRef, StateOrder>> state_order;
+    output Boolean b;
+  protected
+    UnorderedMap<ComponentRef, StateOrder> map;
+  algorithm
+    b := match state_order
+      case SOME(map) then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), map)
+        local
+          StateOrder order;
+        case SOME(order) then StateOrder.covers(order, cref);
+        else false;
+      end match;
+      else false;
+    end match;
+  end hasStateOrder;
 
   function makeShapedArray
     "Builds an array expression of type ty from its scalar elements given in row-major

@@ -55,8 +55,8 @@ simulate(expandDerOperator3); getErrorString();
 //
 // [stateselection] State Order:
 // *******************************
-// 	(y --d/dt--> $FUN_2)
 // 	(x --d/dt--> $FUN_1)
+// 	(y --d/dt--> $FUN_2)
 //
 // record SimulationResult
 //     resultFile = "expandDerOperator1_res.mat",

@@ -112,9 +112,8 @@ The rules:
   with one change, a line width of 120 ([`rustfmt.toml`](rustfmt.toml)).
 - TOML uses the taplo defaults with the same width and without key reordering
   ([`.taplo.toml`](../../../.taplo.toml)).
-- The rules apply to both cargo workspaces, and only to the files a commit adds
-  or changes. The existing files are not reformatted in one go; each gets
-  formatted the first time somebody changes it.
+- The rules apply to every Rust and TOML file of both cargo workspaces, and
+  all of them are formatted.
 
 How they are applied:
 
@@ -130,10 +129,6 @@ How they are applied:
   workspace.
 - **Editor.** Format-on-save with rust-analyzer and a taplo extension (VS Code:
   "Even Better TOML") uses the same two configuration files.
-
-The first change to a file that was never formatted reformats the whole file.
-If that makes the diff hard to review, format the file in a commit of its own
-first (`./format.sh FILE`, commit), then make your change.
 
 ### Generated code
 

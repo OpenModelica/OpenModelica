@@ -15,11 +15,14 @@
 use std::io::Cursor;
 
 use arrow_array::types::Int32Type;
-use arrow_array::{Array, BooleanArray, DictionaryArray, Float32Array, Float64Array, Int32Array, Int64Array, LargeStringArray, RecordBatch, RunArray, StringArray};
+use arrow_array::{
+    Array, BooleanArray, DictionaryArray, Float32Array, Float64Array, Int32Array, Int64Array, LargeStringArray,
+    RecordBatch, RunArray, StringArray,
+};
 use arrow_ipc::reader::{FileReader, StreamReader};
 use arrow_schema::SchemaRef;
-use openmodelica_arrow_writer::units::{self, BaseUnit, DisplayUnit, UnitDef};
 use openmodelica_arrow_writer::json::{ENUMERATIONS_KEY, UNITS_KEY, VARIABLES_KEY};
+use openmodelica_arrow_writer::units::{self, BaseUnit, DisplayUnit, UnitDef};
 use openmodelica_arrow_writer::{START_TIME_KEY, STOP_TIME_KEY};
 use openmodelica_mat_reader::{MatVariable, ResultTable, find_closest_points, find_var_in, iws_cmp};
 
@@ -90,13 +93,19 @@ fn parse_units(json: &str) -> Vec<UnitDef> {
     let num = |v: &serde_json::Value, k: &str, dflt: f64| v.get(k).and_then(serde_json::Value::as_f64).unwrap_or(dflt);
     let mut out = Vec::new();
     for e in &entries {
-        let Some(name) = e.get("name").and_then(|v| v.as_str()).filter(|n| !n.is_empty()) else { continue };
+        let Some(name) = e.get("name").and_then(|v| v.as_str()).filter(|n| !n.is_empty()) else {
+            continue;
+        };
         let base = e.get("baseUnit").map(|b| {
             let mut exponents = [0i32; 8];
             for (i, k) in units::BASE_EXPONENTS.iter().enumerate() {
                 exponents[i] = b.get(k).and_then(serde_json::Value::as_i64).unwrap_or(0) as i32;
             }
-            BaseUnit { exponents, factor: num(b, "factor", 1.0), offset: num(b, "offset", 0.0) }
+            BaseUnit {
+                exponents,
+                factor: num(b, "factor", 1.0),
+                offset: num(b, "offset", 0.0),
+            }
         });
         let display_units = match e.get("displayUnits") {
             Some(serde_json::Value::Array(ds)) => ds
@@ -113,7 +122,11 @@ fn parse_units(json: &str) -> Vec<UnitDef> {
                 .collect(),
             _ => Vec::new(),
         };
-        out.push(UnitDef { name: name.to_owned(), base, display_units });
+        out.push(UnitDef {
+            name: name.to_owned(),
+            base,
+            display_units,
+        });
     }
     out
 }
@@ -130,7 +143,9 @@ fn column(a: &dyn Array) -> Result<Col, String> {
     } else if let Some(x) = any.downcast_ref::<Int64Array>() {
         Ok(Col::Num(x.values().iter().map(|&v| v as f64).collect()))
     } else if let Some(x) = any.downcast_ref::<BooleanArray>() {
-        Ok(Col::Num((0..x.len()).map(|i| if x.value(i) { 1.0 } else { 0.0 }).collect()))
+        Ok(Col::Num(
+            (0..x.len()).map(|i| if x.value(i) { 1.0 } else { 0.0 }).collect(),
+        ))
     } else if let Some(x) = any.downcast_ref::<StringArray>() {
         Ok(Col::Str((0..x.len()).map(|i| x.value(i).to_owned()).collect()))
     } else if let Some(x) = any.downcast_ref::<LargeStringArray>() {
@@ -157,11 +172,23 @@ fn column(a: &dyn Array) -> Result<Col, String> {
             (ends[k].min(offset + n as i32) - start).max(0) as usize
         };
         Ok(match column(x.values().as_ref())? {
-            Col::Num(v) => Col::Num((0..ends.len()).flat_map(|k| std::iter::repeat_n(v[k], expand(k))).collect()),
-            Col::Str(v) => Col::Str((0..ends.len()).flat_map(|k| std::iter::repeat_n(v[k].clone(), expand(k))).collect()),
+            Col::Num(v) => Col::Num(
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(v[k], expand(k)))
+                    .collect(),
+            ),
+            Col::Str(v) => Col::Str(
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(v[k].clone(), expand(k)))
+                    .collect(),
+            ),
             Col::Enum(n, t) => Col::Enum(
-                (0..ends.len()).flat_map(|k| std::iter::repeat_n(n[k], expand(k))).collect(),
-                (0..ends.len()).flat_map(|k| std::iter::repeat_n(t[k].clone(), expand(k))).collect(),
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(n[k], expand(k)))
+                    .collect(),
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(t[k].clone(), expand(k)))
+                    .collect(),
             ),
         })
     } else {
@@ -177,12 +204,19 @@ impl ArrowJsonReader {
 
     pub fn from_bytes(bytes: Vec<u8>) -> Result<ArrowJsonReader, String> {
         let (schema, batches) = read_batches(&bytes)?;
-        let units = schema.metadata().get(UNITS_KEY).map_or_else(Vec::new, |s| parse_units(s));
+        let units = schema
+            .metadata()
+            .get(UNITS_KEY)
+            .map_or_else(Vec::new, |s| parse_units(s));
         let nfields = schema.fields().len();
         let mut cols: Vec<Vec<f64>> = vec![Vec::new(); nfields];
         let mut strs: Vec<Option<Vec<String>>> = vec![None; nfields];
         let mut text_only = vec![false; nfields];
-        let mut ree: Vec<bool> = schema.fields().iter().map(|f| matches!(f.data_type(), arrow_schema::DataType::RunEndEncoded(..))).collect();
+        let mut ree: Vec<bool> = schema
+            .fields()
+            .iter()
+            .map(|f| matches!(f.data_type(), arrow_schema::DataType::RunEndEncoded(..)))
+            .collect();
         for batch in batches {
             for (c, col) in batch.columns().iter().enumerate() {
                 match column(col.as_ref())? {
@@ -200,7 +234,11 @@ impl ArrowJsonReader {
             }
         }
         // A foreign file's time column need not be first.
-        if let Some(t) = schema.fields().iter().position(|f| f.name() == "time" || f.name() == "Time") {
+        if let Some(t) = schema
+            .fields()
+            .iter()
+            .position(|f| f.name() == "time" || f.name() == "Time")
+        {
             if t != 0 {
                 cols.swap(0, t);
                 strs.swap(0, t);
@@ -220,7 +258,11 @@ impl ArrowJsonReader {
             .unwrap_or_default();
         let mut string_params: std::collections::HashMap<usize, String> = std::collections::HashMap::new();
         let field_pos = |name: &str| schema.fields().iter().position(|f| f.name() == name);
-        match schema.metadata().get(VARIABLES_KEY).map(|s| serde_json::from_str::<serde_json::Value>(s)) {
+        match schema
+            .metadata()
+            .get(VARIABLES_KEY)
+            .map(|s| serde_json::from_str::<serde_json::Value>(s))
+        {
             Some(Ok(serde_json::Value::Array(entries))) => {
                 for e in &entries {
                     let str_of = |k: &str| e.get(k).and_then(|v| v.as_str()).unwrap_or("").to_owned();
@@ -272,7 +314,10 @@ impl ArrowJsonReader {
                             } else if scale == -1.0 && offset == 0.0 {
                                 (false, -ix)
                             } else {
-                                let derived = cols.get(field).map(|c| c.iter().map(|v| scale * v + offset).collect()).unwrap_or_default();
+                                let derived = cols
+                                    .get(field)
+                                    .map(|c| c.iter().map(|v| scale * v + offset).collect())
+                                    .unwrap_or_default();
                                 cols.push(derived);
                                 strs.push(None);
                                 text_only.push(false);
@@ -281,8 +326,18 @@ impl ArrowJsonReader {
                             }
                         }
                     };
-                    allInfo.push(MatVariable { name, descr: str_of("description"), isParam, index });
-                    meta.push((str_of("unit"), str_of("displayUnit"), if ty.is_empty() { "Real".to_owned() } else { ty }, e.get("relativeQuantity").and_then(|v| v.as_bool()).unwrap_or(false)));
+                    allInfo.push(MatVariable {
+                        name,
+                        descr: str_of("description"),
+                        isParam,
+                        index,
+                    });
+                    meta.push((
+                        str_of("unit"),
+                        str_of("displayUnit"),
+                        if ty.is_empty() { "Real".to_owned() } else { ty },
+                        e.get("relativeQuantity").and_then(|v| v.as_bool()).unwrap_or(false),
+                    ));
                     enums.push(enum_ix.and_then(|i| enum_types.get(i as usize).cloned()));
                 }
             }
@@ -291,9 +346,25 @@ impl ArrowJsonReader {
                 for (i, f) in schema.fields().iter().enumerate() {
                     let md = f.metadata();
                     let get = |k: &str| md.get(k).cloned().unwrap_or_default();
-                    let ix = if f.name() == "time" || f.name() == "Time" { 1 } else if i == 0 { 1 } else { i as i32 + 1 };
-                    allInfo.push(MatVariable { name: f.name().clone(), descr: get("description"), isParam: false, index: ix });
-                    meta.push((get("unit"), get("displayUnit"), get("type"), get("relativeQuantity") == "true"));
+                    let ix = if f.name() == "time" || f.name() == "Time" {
+                        1
+                    } else if i == 0 {
+                        1
+                    } else {
+                        i as i32 + 1
+                    };
+                    allInfo.push(MatVariable {
+                        name: f.name().clone(),
+                        descr: get("description"),
+                        isParam: false,
+                        index: ix,
+                    });
+                    meta.push((
+                        get("unit"),
+                        get("displayUnit"),
+                        get("type"),
+                        get("relativeQuantity") == "true",
+                    ));
                     enums.push(None);
                 }
             }
@@ -303,10 +374,31 @@ impl ArrowJsonReader {
         let allInfo: Vec<MatVariable> = order.iter().map(|&i| allInfo[i].clone()).collect();
         let meta: Vec<(String, String, String, bool)> = order.iter().map(|&i| meta[i].clone()).collect();
         let enums: Vec<Option<Vec<String>>> = order.iter().map(|&i| enums[i].clone()).collect();
-        let ends = (cols.first().and_then(|c| c.first()).copied().unwrap_or(f64::NAN), cols.first().and_then(|c| c.last()).copied().unwrap_or(f64::NAN));
+        let ends = (
+            cols.first().and_then(|c| c.first()).copied().unwrap_or(f64::NAN),
+            cols.first().and_then(|c| c.last()).copied().unwrap_or(f64::NAN),
+        );
         let time_md = |k: &str| schema.metadata().get(k).and_then(|v| v.parse::<f64>().ok());
-        let span = (time_md(START_TIME_KEY).unwrap_or(ends.0), time_md(STOP_TIME_KEY).unwrap_or(ends.1));
-        Ok(ArrowJsonReader { allInfo, nparam: params.len(), params, string_params, nrows, nvar: cols.len(), span, meta, enums, cols, strs, text_only, ree, units })
+        let span = (
+            time_md(START_TIME_KEY).unwrap_or(ends.0),
+            time_md(STOP_TIME_KEY).unwrap_or(ends.1),
+        );
+        Ok(ArrowJsonReader {
+            allInfo,
+            nparam: params.len(),
+            params,
+            string_params,
+            nrows,
+            nvar: cols.len(),
+            span,
+            meta,
+            enums,
+            cols,
+            strs,
+            text_only,
+            ree,
+            units,
+        })
     }
 
     /// The definition of `name`: the file's own entry over the predefined one.
@@ -374,7 +466,11 @@ impl ResultTable for ArrowJsonReader {
             return None;
         }
         let col = self.cols.get(field)?;
-        Some(if index < 0 { col.iter().map(|v| -v).collect() } else { col.clone() })
+        Some(if index < 0 {
+            col.iter().map(|v| -v).collect()
+        } else {
+            col.clone()
+        })
     }
     fn read_strings(&mut self, index: i32) -> Option<Vec<String>> {
         if index == 0 {
@@ -438,8 +534,13 @@ impl ResultTable for ArrowJsonReader {
     }
     /// The encoding is the statement: a run-end encoded column is discrete-time.
     fn discrete(&self, idx: usize) -> bool {
-        let Some(i) = self.allInfo.get(idx).filter(|i| !i.isParam && i.index != 0) else { return false };
-        self.ree.get(i.index.unsigned_abs() as usize - 1).copied().unwrap_or(false)
+        let Some(i) = self.allInfo.get(idx).filter(|i| !i.isParam && i.index != 0) else {
+            return false;
+        };
+        self.ree
+            .get(i.index.unsigned_abs() as usize - 1)
+            .copied()
+            .unwrap_or(false)
     }
     fn enumeration(&self, idx: usize) -> Option<Vec<String>> {
         self.enums.get(idx).cloned().flatten()
@@ -470,17 +571,32 @@ mod tests {
         use std::collections::HashMap;
         use std::sync::Arc;
         let dict_type = DataType::Dictionary(Box::new(DataType::Int32), Box::new(DataType::Utf8));
-        let e_md = HashMap::from([("type".to_owned(), "enumeration".to_owned()), ("enumeration".to_owned(), "0".to_owned())]);
+        let e_md = HashMap::from([
+            ("type".to_owned(), "enumeration".to_owned()),
+            ("enumeration".to_owned(), "0".to_owned()),
+        ]);
         let schema = Schema::new_with_metadata(
-            vec![Field::new("time", DataType::Float64, false), Field::new("e", dict_type, false).with_metadata(e_md)],
+            vec![
+                Field::new("time", DataType::Float64, false),
+                Field::new("e", dict_type, false).with_metadata(e_md),
+            ],
             HashMap::from([
-                (VARIABLES_KEY.to_owned(), r#"[{"name":"time","column":0},{"name":"e","column":1}]"#.to_owned()),
+                (
+                    VARIABLES_KEY.to_owned(),
+                    r#"[{"name":"time","column":0},{"name":"e","column":1}]"#.to_owned(),
+                ),
                 (ENUMERATIONS_KEY.to_owned(), r#"[["one","two","three"]]"#.to_owned()),
             ]),
         );
         let keys = Int32Array::from(vec![0, 0, 2]);
-        let dict = DictionaryArray::<Int32Type>::try_new(keys, Arc::new(StringArray::from(vec!["one", "two", "three"]))).expect("dictionary");
-        let batch = RecordBatch::try_new(Arc::new(schema.clone()), vec![Arc::new(Float64Array::from(vec![0.0, 0.5, 1.0])), Arc::new(dict)]).expect("batch");
+        let dict =
+            DictionaryArray::<Int32Type>::try_new(keys, Arc::new(StringArray::from(vec!["one", "two", "three"])))
+                .expect("dictionary");
+        let batch = RecordBatch::try_new(
+            Arc::new(schema.clone()),
+            vec![Arc::new(Float64Array::from(vec![0.0, 0.5, 1.0])), Arc::new(dict)],
+        )
+        .expect("batch");
         let mut out = Vec::new();
         let mut w = FileWriter::try_new(&mut out, &schema).expect("writer");
         w.write(&batch).expect("write");
@@ -490,27 +606,83 @@ mod tests {
         let v = r.find_var("e").expect("e");
         let index = r.all_info()[v].index;
         assert_eq!(r.read_vals(index), Some(vec![1.0, 1.0, 3.0]));
-        assert_eq!(r.read_strings(index), Some(["one", "one", "three"].map(String::from).to_vec()));
-        assert_eq!(r.enumeration(v), Some(["one", "two", "three"].map(String::from).to_vec()));
+        assert_eq!(
+            r.read_strings(index),
+            Some(["one", "one", "three"].map(String::from).to_vec())
+        );
+        assert_eq!(
+            r.enumeration(v),
+            Some(["one", "two", "three"].map(String::from).to_vec())
+        );
     }
 
     #[test]
     fn enumerations_read_as_values_and_literals() {
         let e: Vec<String> = ["one", "two", "three"].map(String::from).to_vec();
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "e", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
-            ArrowVar { name: "ep", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
+            ArrowVar {
+                name: "time",
+                comment: "",
+                unit: "s",
+                display_unit: "",
+                relative_quantity: false,
+                ty: VarTy::Real,
+                discrete: false,
+                kind: ArrowKind::Time,
+                unvarying: false,
+                enumeration: None,
+            },
+            ArrowVar {
+                name: "e",
+                comment: "",
+                unit: "",
+                display_unit: "",
+                relative_quantity: false,
+                ty: VarTy::Integer,
+                discrete: true,
+                kind: ArrowKind::Column {
+                    col: 1,
+                    affine: Affine::IDENTITY,
+                },
+                unvarying: false,
+                enumeration: Some(&e),
+            },
+            ArrowVar {
+                name: "ep",
+                comment: "",
+                unit: "",
+                display_unit: "",
+                relative_quantity: false,
+                ty: VarTy::Integer,
+                discrete: false,
+                kind: ArrowKind::Param {
+                    affine: Affine::IDENTITY,
+                },
+                unvarying: false,
+                enumeration: Some(&e),
+            },
         ];
         let rows = [0.0, 1.0, 0.5, 1.0, 1.0, 3.0];
-        let bytes = write_arrow(&vars, &rows, 2, &[2.0], &[ColTy::F64, ColTy::I32], no_strings(), &FileMeta::default());
+        let bytes = write_arrow(
+            &vars,
+            &rows,
+            2,
+            &[2.0],
+            &[ColTy::F64, ColTy::I32],
+            no_strings(),
+            &FileMeta::default(),
+        );
         let mut r = ArrowJsonReader::from_bytes(bytes).expect("readable");
         let v = r.find_var("e").expect("e");
         assert_eq!(r.var_type(v), "enumeration");
         assert_eq!(r.enumeration(v), Some(e));
         let index = r.all_info()[v].index;
         assert_eq!(r.read_vals(index), Some(vec![1.0, 1.0, 3.0]));
-        assert_eq!(r.read_strings(index), None, "an Int32 column carries no texts; ResultFile::strings maps the literals");
+        assert_eq!(
+            r.read_strings(index),
+            None,
+            "an Int32 column carries no texts; ResultFile::strings maps the literals"
+        );
         let p = r.find_var("ep").expect("ep");
         assert_eq!(r.val(p, 0.0), Some(2.0));
     }
@@ -527,16 +699,37 @@ mod tests {
             relative_quantity: false,
             ty,
             discrete: false,
-            kind: ArrowKind::Param { affine: Affine::IDENTITY },
+            kind: ArrowKind::Param {
+                affine: Affine::IDENTITY,
+            },
             unvarying: false,
             enumeration: None,
         };
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            ArrowVar {
+                name: "time",
+                comment: "",
+                unit: "s",
+                display_unit: "",
+                relative_quantity: false,
+                ty: VarTy::Real,
+                discrete: false,
+                kind: ArrowKind::Time,
+                unvarying: false,
+                enumeration: None,
+            },
             param("b", VarTy::Boolean),
             param("n", VarTy::Integer),
         ];
-        let bytes = write_arrow(&vars, &[0.0, 1.0], 1, &[1.0, -3.0], &[ColTy::F64], no_strings(), &FileMeta::default());
+        let bytes = write_arrow(
+            &vars,
+            &[0.0, 1.0],
+            1,
+            &[1.0, -3.0],
+            &[ColTy::F64],
+            no_strings(),
+            &FileMeta::default(),
+        );
         let mut r = ArrowJsonReader::from_bytes(bytes).expect("readable");
         let b = r.find_var("b").expect("b");
         assert_eq!(r.var_type(b), "Boolean");
@@ -549,12 +742,50 @@ mod tests {
     #[test]
     fn a_file_without_footer_reads_up_to_the_last_block() {
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "x", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar {
+                name: "time",
+                comment: "",
+                unit: "s",
+                display_unit: "",
+                relative_quantity: false,
+                ty: VarTy::Real,
+                discrete: false,
+                kind: ArrowKind::Time,
+                unvarying: false,
+                enumeration: None,
+            },
+            ArrowVar {
+                name: "x",
+                comment: "",
+                unit: "",
+                display_unit: "",
+                relative_quantity: false,
+                ty: VarTy::Real,
+                discrete: false,
+                kind: ArrowKind::Column {
+                    col: 1,
+                    affine: Affine::IDENTITY,
+                },
+                unvarying: false,
+                enumeration: None,
+            },
         ];
         let rows: Vec<f64> = (0..7).flat_map(|i| [i as f64, 10.0 * i as f64]).collect();
         let mut out = Vec::new();
-        let mut s = ArrowStream::begin(&mut out, &vars, &[], &rows[..2], 2, &[ColTy::F64, ColTy::F64], 3, no_strings(), &FileMeta { span: Some((0.0, 6.0)), ..FileMeta::default() });
+        let mut s = ArrowStream::begin(
+            &mut out,
+            &vars,
+            &[],
+            &rows[..2],
+            2,
+            &[ColTy::F64, ColTy::F64],
+            3,
+            no_strings(),
+            &FileMeta {
+                span: Some((0.0, 6.0)),
+                ..FileMeta::default()
+            },
+        );
         s.push_rows(&mut out, &rows);
         // Two complete blocks (6 rows) are on disk; the seventh row is pending, no footer.
         let mut r = ArrowJsonReader::from_bytes(out.clone()).expect("footerless file");

@@ -48,15 +48,15 @@ pub mod blas;
 pub mod chol;
 pub mod dqds;
 pub mod eig;
+#[cfg(feature = "faer-backend")]
+pub mod faer_backend;
+#[cfg(feature = "faer-backend")]
+mod faer_real_schur;
 #[cfg(feature = "fortran-abi")]
 pub mod fortran;
 pub mod gev;
 pub mod hqr;
 pub mod lu;
-#[cfg(feature = "faer-backend")]
-pub mod faer_backend;
-#[cfg(feature = "faer-backend")]
-mod faer_real_schur;
 pub mod qr;
 pub mod rand;
 pub mod rz;

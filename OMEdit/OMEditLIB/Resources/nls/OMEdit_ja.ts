@@ -4283,6 +4283,18 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>垂直ビュー</translation>
     </message>
     <message>
+        <source>%1 Change it in &lt;b&gt;%2-&gt;General-&gt;Working Directory&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The working directory %1 is not an absolute path. OMEdit uses %2 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The working directory %1 does not exist. OMEdit uses %2 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>(%1 minute(s))</source>
         <translation>(%1 分)</translation>
     </message>
@@ -8539,6 +8551,10 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>There are no valid curves to save in the model annotation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot save curve %1 in figure %2 because it is not a valid expression.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

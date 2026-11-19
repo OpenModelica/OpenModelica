@@ -1,0 +1,5 @@
+# Commits that only change the layout. GitHub uses this file for blame.
+# Local use: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# [Rust] Format all Rust and TOML files (#18205)
+fa11fe74e65cba16cff6a0d654098425d562cf5b

@@ -115,6 +115,14 @@ page (`storage/index.html`) shows what is stored, removes it, and installs a
 library that is not in the package index from a .mo file, a .zip file or a
 folder.
 
+Users keep their own files in `/persist`, in the same storage. omc sees them
+in every client, for example as the `fileName` of a table block. The Files
+page (`files/index.html`) adds files and folders that you drop on it, and
+extracts .zip files. It saves a file that you drag to the desktop, and a folder
+into a folder that you choose (Chrome and Edge) or as a .zip file (the other
+browsers). A change that one client makes is seen at once by the other clients
+that are open.
+
 ## Customization
 
 You can change these files after you extract the zip file. The pages read them

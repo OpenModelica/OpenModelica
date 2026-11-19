@@ -53,9 +53,7 @@ fn non_sim_alloc(len: usize) -> *mut c_char {
     // PE has no RTLD_NEXT to hop along, so Windows always takes the malloc path.
     #[cfg(unix)]
     {
-        let next = unsafe {
-            libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateStringWithErrorReturn".as_ptr())
-        };
+        let next = unsafe { libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateStringWithErrorReturn".as_ptr()) };
         if !next.is_null() {
             let f: extern "C" fn(usize) -> *mut c_char = unsafe { std::mem::transmute(next) };
             let res = f(len);

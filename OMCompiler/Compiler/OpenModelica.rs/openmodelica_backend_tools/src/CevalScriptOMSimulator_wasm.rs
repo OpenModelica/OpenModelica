@@ -5,8 +5,8 @@
 
 use std::sync::Arc;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use openmodelica_frontend_types::Values;
 
@@ -14,5 +14,7 @@ pub fn ceval(
     inFunctionName: ArcStr,
     _inVals: metamodelica::List<metamodelica::Ref<Values::Value>>,
 ) -> Result<metamodelica::Ref<Values::Value>> {
-    return Err("CevalScriptOMSimulator: the OMSimulator scripting API (libOMSimulator) is unavailable on wasm (called `{inFunctionName}`)")
+    return Err(
+        "CevalScriptOMSimulator: the OMSimulator scripting API (libOMSimulator) is unavailable on wasm (called `{inFunctionName}`)",
+    );
 }

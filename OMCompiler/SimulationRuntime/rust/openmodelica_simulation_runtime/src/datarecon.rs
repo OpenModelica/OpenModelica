@@ -26,8 +26,7 @@ pub fn jac_words() -> (u32, u32) {
 
 fn jacobian(data: *mut DATA, index: c_int) -> Option<*mut JACOBIAN> {
     let si = unsafe { (*data).simulationInfo.as_ref()? };
-    (index >= 0 && !si.analyticJacobians.is_null())
-        .then(|| unsafe { si.analyticJacobians.add(index as usize) })
+    (index >= 0 && !si.analyticJacobians.is_null()).then(|| unsafe { si.analyticJacobians.add(index as usize) })
 }
 
 /// Run both `initialAnalyticJacobian*` and record what they sized. C rebuilds and
@@ -38,12 +37,16 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) {
         return;
     }
     let cb = unsafe { &*(*data).callback };
-    for (k, (index, init)) in
-        [(cb.INDEX_JAC_F, cb.initialAnalyticJacobianF), (cb.INDEX_JAC_H, cb.initialAnalyticJacobianH)]
-            .into_iter()
-            .enumerate()
+    for (k, (index, init)) in [
+        (cb.INDEX_JAC_F, cb.initialAnalyticJacobianF),
+        (cb.INDEX_JAC_H, cb.initialAnalyticJacobianH),
+    ]
+    .into_iter()
+    .enumerate()
     {
-        let (Some(j), Some(init)) = (jacobian(data, index), init) else { continue };
+        let (Some(j), Some(init)) = (jacobian(data, index), init) else {
+            continue;
+        };
         unsafe { init(data, thread_data, j) };
         let j = unsafe { &*j };
         if j.sizeCols > 0 && !j.seedVars.is_null() && !j.resultVars.is_null() {
@@ -68,7 +71,9 @@ pub fn eval(data: *mut DATA, thread_data: *mut threadData_t, k: usize, out: &mut
         0 => (cb.INDEX_JAC_F, cb.functionJacF_column),
         _ => (cb.INDEX_JAC_H, cb.functionJacH_column),
     };
-    let (Some(jac), Some(column)) = (jacobian(data, index), column) else { return };
+    let (Some(jac), Some(column)) = (jacobian(data, index), column) else {
+        return;
+    };
     crate::linearize::eval_columns(data, thread_data, jac, column, out);
 }
 
@@ -95,7 +100,10 @@ fn attrs(md: &MODEL_DATA, name: &str) -> (String, String) {
     for i in 0..md.nVariablesReal.max(0) as usize {
         let v = unsafe { &*md.realVarsData.add(i) };
         if cstr(v.info.name) == name {
-            return (crate::model_data::string_value(v.attribute.displayUnit), cstr(v.info.comment));
+            return (
+                crate::model_data::string_value(v.attribute.displayUnit),
+                cstr(v.info.comment),
+            );
         }
     }
     (String::new(), String::new())
@@ -117,18 +125,37 @@ pub fn describe(data: *mut DATA, layout: &Layout, version: &str) -> Option<Recon
             .enumerate()
             .map(|(i, name)| {
                 let (unit, comment) = attrs(md, &name);
-                ReconVar { off: base + (i as u32) * 8, negate: Neg::None, name, unit, comment }
+                ReconVar {
+                    off: base + (i as u32) * 8,
+                    negate: Neg::None,
+                    name,
+                    unit,
+                    comment,
+                }
             })
             .collect()
     };
     let plain = |base: u32, count: usize| -> Vec<ReconVar> {
         (0..count as u32)
-            .map(|i| ReconVar { off: base + i * 8, negate: Neg::None, ..Default::default() })
+            .map(|i| ReconVar {
+                off: base + i * 8,
+                negate: Neg::None,
+                ..Default::default()
+            })
             .collect()
     };
-    let jac = |k: usize| shape(k).map(|(rows, cols)| ReconJac { rows, cols, off: window(layout, data, k) });
+    let jac = |k: usize| {
+        shape(k).map(|(rows, cols)| ReconJac {
+            rows,
+            cols,
+            off: window(layout, data, k),
+        })
+    };
     Some(ReconInfo {
-        input_vars: named(x.recon_in, names(data, n(md.ndataReconVars), cb.dataReconciliationInputNames)),
+        input_vars: named(
+            x.recon_in,
+            names(data, n(md.ndataReconVars), cb.dataReconciliationInputNames),
+        ),
         setc_vars: plain(x.recon_setc, n(md.nSetcVars)),
         setb_vars: named(
             x.recon_setb,

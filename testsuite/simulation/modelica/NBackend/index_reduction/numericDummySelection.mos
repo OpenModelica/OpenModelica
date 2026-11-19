@@ -41,8 +41,8 @@ val(y, 1.0);
 //
 // [stateselection] State Order:
 // *******************************
-// 	(y --d/dt--> by)
 // 	(x --d/dt--> bx)
+// 	(y --d/dt--> by)
 //
 // [stateselection] (0) State Derivatives Created by Differentiation
 // *******************************************************************

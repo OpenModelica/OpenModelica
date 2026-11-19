@@ -196,6 +196,17 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
       memcpy(N_VGetArrayPointer(ydot), cvodeData->fStart, cvodeData->N * sizeof(double));
       retVal = 0;
     }
+    /* Failing again at the same time: a shorter step no longer moves the
+     * point, as with DASKR's minimum step size */
+    else if (fabs(time - cvodeData->rhsFailTime) <= 4.0 * DBL_EPSILON * fabs(time))
+    {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER");
+      retVal = -1;
+    }
+    else
+    {
+      cvodeData->rhsFailTime = time;
+    }
   }
 
   threadData->currentErrorStage = saveJumpState;
@@ -640,6 +651,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   cvodeData->simData->threadData = threadData;
 
   cvodeData->isInitialized = FALSE;
+  cvodeData->rhsFailTime = NAN;
 
   /* Get CVODE settings from user flags */
   cvodeGetConfig(&(cvodeData->config), threadData);

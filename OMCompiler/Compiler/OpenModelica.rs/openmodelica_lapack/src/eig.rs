@@ -10,9 +10,8 @@
 //!
 //! See `LICENSE-LAPACK` at the crate root.
 
-
 use crate::blas::{at, dlarf_left, dlarfg, set};
-use crate::{abs, opt, SAFMIN};
+use crate::{SAFMIN, abs, opt};
 
 /// Reduce `a` (rows/columns `ilo..=ihi`, 1-based inclusive) to upper Hessenberg
 /// form and run the QR iteration on it, as `DGEEV` and `DGEES` do between
@@ -64,8 +63,7 @@ fn hess_qr(
     let mut dummy = vec![0.0f64; if want_z { 0 } else { n * n }];
     let zz = z.as_deref_mut().unwrap_or(&mut dummy);
     #[cfg(feature = "faer-backend")]
-    let info =
-        crate::faer_backend::multishift_qr_window(want_t, want_z, n, ilo, ihi, h, ldh, wr, wi, zz, ldh);
+    let info = crate::faer_backend::multishift_qr_window(want_t, want_z, n, ilo, ihi, h, ldh, wr, wi, zz, ldh);
     #[cfg(not(feature = "faer-backend"))]
     let info = crate::hqr::dlahqr(want_t, want_z, n, ilo, ihi, h, ldh, wr, wi, ilo, ihi, zz, ldh);
     if (want_t || info != 0) && n > 2 {
@@ -85,7 +83,9 @@ fn hess_qr(
 pub(crate) fn prescale(n: usize, a: &mut [f64], lda: usize) -> Option<f64> {
     let smlnum = crate::sqrt(SAFMIN) / crate::hqr::ULP;
     let bignum = 1.0 / smlnum;
-    let anrm = (0..n).flat_map(|j| (0..n).map(move |i| (i, j))).map(|(i, j)| abs(at(a, lda, i, j)))
+    let anrm = (0..n)
+        .flat_map(|j| (0..n).map(move |i| (i, j)))
+        .map(|(i, j)| abs(at(a, lda, i, j)))
         .fold(0.0f64, f64::max);
     let cscale = if anrm > 0.0 && anrm < smlnum {
         smlnum
@@ -182,7 +182,9 @@ pub fn dgeev_ref(
     // what `trevc` reads.
     let (z, info) = hess_qr(n, ilo, ihi, &mut h, n, wr, wi, want_l || want_r, want_l || want_r);
 
-    if info == 0 && let Some(z) = z {
+    if info == 0
+        && let Some(z) = z
+    {
         // DTREVC back-transforms in place over the Schur basis, so each side
         // starts from its own copy of Z.
         for (want, v, ldv, right) in [(want_r, &mut *vr, ldvr, true), (want_l, &mut *vl, ldvl, false)] {
@@ -230,7 +232,6 @@ pub fn dgees(
     vs: &mut [f64],
     ldvs: usize,
 ) -> i32 {
-
     if opt(sort) == b'S' {
         return -2;
     }
@@ -281,7 +282,6 @@ pub fn dhseqr(
     z: &mut [f64],
     ldz: usize,
 ) -> i32 {
-
     if n == 0 {
         return 0;
     }
@@ -297,8 +297,7 @@ pub fn dhseqr(
         }
     }
     #[cfg(feature = "faer-backend")]
-    let info =
-        crate::faer_backend::multishift_qr_window(want_t, want_z, n, 1, n, h, ldh, wr, wi, z, ldz);
+    let info = crate::faer_backend::multishift_qr_window(want_t, want_z, n, 1, n, h, ldh, wr, wi, z, ldz);
     #[cfg(not(feature = "faer-backend"))]
     let info = crate::hqr::dlahqr(want_t, want_z, n, 1, n, h, ldh, wr, wi, 1, n, z, ldz);
     if (want_t || info != 0) && n > 2 {
@@ -315,14 +314,7 @@ pub fn dhseqr(
 /// Hessenberg matrix is in the upper triangle and first subdiagonal of `A`, and
 /// reflector `k` is `TAU(k)` plus `V(k+2:)` below it — the packed form `dorghr`
 /// consumes. `ilo`/`ihi` are LAPACK's 1-based active window.
-pub fn dgehrd(
-    n: usize,
-    ilo: usize,
-    ihi: usize,
-    a: &mut [f64],
-    lda: usize,
-    tau: &mut [f64],
-) -> i32 {
+pub fn dgehrd(n: usize, ilo: usize, ihi: usize, a: &mut [f64], lda: usize, tau: &mut [f64]) -> i32 {
     #[cfg(feature = "faer-backend")]
     if let Some(r) = crate::faer_backend::dgehrd(n, ilo, ihi, a, lda, tau) {
         return r;
@@ -331,14 +323,7 @@ pub fn dgehrd(
 }
 
 /// The port of `DGEHRD`, and the only path for a proper `[ilo, ihi]` window.
-pub fn dgehrd_ref(
-    n: usize,
-    ilo: usize,
-    ihi: usize,
-    a: &mut [f64],
-    lda: usize,
-    tau: &mut [f64],
-) -> i32 {
+pub fn dgehrd_ref(n: usize, ilo: usize, ihi: usize, a: &mut [f64], lda: usize, tau: &mut [f64]) -> i32 {
     if n == 0 || ihi <= ilo {
         return 0;
     }
@@ -371,14 +356,7 @@ pub fn dgehrd_ref(
 
 /// `DORGHR`: form the `Q` of a [`dgehrd`] reduction. `a` holds that packed form on
 /// input and `Q` on output.
-pub fn dorghr(
-    n: usize,
-    ilo: usize,
-    ihi: usize,
-    a: &mut [f64],
-    lda: usize,
-    tau: &[f64],
-) -> i32 {
+pub fn dorghr(n: usize, ilo: usize, ihi: usize, a: &mut [f64], lda: usize, tau: &[f64]) -> i32 {
     let (lo, hi) = (ilo - 1, ihi.saturating_sub(1));
     // Shift the reflector columns one to the right and make everything outside
     // the active window the identity — DORGHR's own setup, after which the
@@ -405,7 +383,14 @@ pub fn dorghr(
     if nh > 0 {
         // The sub-block at (lo+1, lo+1) shares the caller's leading dimension, so
         // it is a suffix of the same buffer rather than a copy.
-        crate::qr::dorgqr(nh, nh, nh - 1, &mut a[(lo + 1) + (lo + 1) * lda..], lda, &tau[lo..lo + nh - 1]);
+        crate::qr::dorgqr(
+            nh,
+            nh,
+            nh - 1,
+            &mut a[(lo + 1) + (lo + 1) * lda..],
+            lda,
+            &tau[lo..lo + nh - 1],
+        );
     }
     0
 }
@@ -440,9 +425,7 @@ pub fn dtrsyl(
     }
     let (ta, tb) = (opt(trana) != b'N', opt(tranb) != b'N');
     let (aa, bb) = (reversed(m, a, lda, ta), reversed(n, b, ldb, tb));
-    let idx = |i: usize, j: usize| {
-        (if ta { m - 1 - i } else { i }) + (if tb { n - 1 - j } else { j }) * m
-    };
+    let idx = |i: usize, j: usize| (if ta { m - 1 - i } else { i }) + (if tb { n - 1 - j } else { j }) * m;
     let mut x = vec![0.0f64; m * n];
     for j in 0..n {
         for i in 0..m {
@@ -464,7 +447,11 @@ fn reversed(n: usize, src: &[f64], ld: usize, t: bool) -> Vec<f64> {
     let mut out = vec![0.0f64; n * n];
     for j in 0..n {
         for i in 0..n {
-            out[i + j * n] = if t { at(src, ld, n - 1 - j, n - 1 - i) } else { at(src, ld, i, j) };
+            out[i + j * n] = if t {
+                at(src, ld, n - 1 - j, n - 1 - i)
+            } else {
+                at(src, ld, i, j)
+            };
         }
     }
     out
@@ -549,7 +536,9 @@ fn solve_block_sylvester(p: usize, q: usize, ak: &[f64], bl: &[f64], sgn: f64, r
     let smin = (crate::EPS * scale).max(crate::SAFMIN);
     let mut info = 0;
     for col in 0..s {
-        let piv = (col..s).max_by(|x, y| abs(mat[*x + col * s]).total_cmp(&abs(mat[*y + col * s]))).unwrap();
+        let piv = (col..s)
+            .max_by(|x, y| abs(mat[*x + col * s]).total_cmp(&abs(mat[*y + col * s])))
+            .unwrap();
         if piv != col {
             for j in 0..s {
                 mat.swap(col + j * s, piv + j * s);

@@ -2320,14 +2320,9 @@ void ElementParameters::setUpDialog()
   fetchElementExtendsModifiers(getModel(), hasElement());
   if (hasElement()) {
     fetchModifiers(mpElement->getModifier());
-    // In case of element mode use the root parent ModelInstance::Element to read the element modifiers.
-    if (mpGraphicsView->getModelWidget()->isElementMode()) {
-      fetchRootElementModifiers(mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement());
-    }
     fetchClassExtendsModifiers(mpElement);
-    // In case of element mode use the root parent ModelInstance::Element to read the extends modifiers.
     if (mpGraphicsView->getModelWidget()->isElementMode()) {
-      fetchRootClassExtendsModifiers(mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement());
+      fetchParentElementsModifiers();
     }
   }
   // Apply the default modifiers that are given in the redeclaration of the replaceable class or component.
@@ -2618,29 +2613,6 @@ void ElementParameters::fetchModifiers(ModelInstance::Modifier *pModifier)
 }
 
 /*!
- * \brief ElementParameters::fetchRootElementModifiers
- * \param pModelElement
- */
-void ElementParameters::fetchRootElementModifiers(ModelInstance::Element *pModelElement)
-{
-  if (pModelElement && pModelElement->isComponent() && pModelElement->getModifier()) {
-    QStringList nameList = StringHandler::makeVariableParts(mpElement->getQualifiedName());
-    // the first item is element name
-    if (!nameList.isEmpty()) {
-      nameList.removeFirst();
-    }
-    ModelInstance::Modifier *pModifier = pModelElement->getModifier();
-    foreach (QString name, nameList) {
-      pModifier = pModifier->getModifier(name);
-      if (!pModifier) {
-        return;
-      }
-    }
-    fetchModifiers(pModifier);
-  }
-}
-
-/*!
  * \brief ElementParameters::fetchClassExtendsModifiers
  * If the Element is inherited then fetch the class extends modifiers and apply modifier values on the appropriate Parameters.
  * \param pModelElement
@@ -2673,29 +2645,41 @@ void ElementParameters::fetchClassExtendsModifiers(ModelInstance::Element *pMode
 }
 
 /*!
- * \brief ElementParameters::fetchRootClassExtendsModifiers
- * In case of element mode if the root parent ModelInstance::Element is extend and has modifier.
- * Apply modifier values on the appropriate Parameters.
- * \param pModelElement
+ * \brief ElementParameters::fetchParentElementsModifiers
+ * In case of element mode, applies the modifiers of the parent elements of the element, from the immediate parent to the root.
+ * An outer modifier overrides an inner one, so the modifiers of the root are applied last.
+ * Only the modifiers of the root are values, the others are shown as defaults.
  */
-void ElementParameters::fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement)
+void ElementParameters::fetchParentElementsModifiers()
 {
-  if (pModelElement && pModelElement->isExtend() && pModelElement->getModifier()) {
-    QStringList nameList = StringHandler::makeVariableParts(mpElement->getQualifiedName());
-    ModelInstance::Modifier *pModifier = pModelElement->getModifier();
-    foreach (QString name, nameList) {
-      pModifier = pModifier->getModifier(name);
-      if (!pModifier) {
-        return;
+  QStringList nameList(mpElement->getName());
+  ModelInstance::Model *pParentModel = mpElement->getParentModel();
+  // The extends directly above the element are handled by fetchClassExtendsModifiers.
+  bool componentFound = false;
+  while (pParentModel && pParentModel->getParentElement()) {
+    ModelInstance::Element *pParentElement = pParentModel->getParentElement();
+    componentFound |= pParentElement->isComponent();
+    if (componentFound && pParentElement->getModifier()) {
+      ModelInstance::Modifier *pModifier = pParentElement->getModifier();
+      foreach (const QString &name, nameList) {
+        pModifier = pModifier->getModifier(name);
+        if (!pModifier) {
+          break;
+        }
+      }
+      if (pModifier) {
+        const bool isRoot = !(pParentElement->getParentModel() && pParentElement->getParentModel()->getParentElement());
+        const bool defaultValue = isRoot ? (pParentElement->isComponent() && (mInherited || mNested)) : true;
+        foreach (auto *pSubModifier, pModifier->getModifiers()) {
+          Parameter *pParameter = findParameter(pSubModifier->getName());
+          applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, defaultValue, pParentElement->isExtend());
+        }
       }
     }
-
-    if (pModifier && pModifier->getName().compare(mpElement->getName()) == 0) {
-      foreach (auto *pSubModifier, pModifier->getModifiers()) {
-        Parameter *pParameter = findParameter(pSubModifier->getName());
-        applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, false, true);
-      }
+    if (pParentElement->isComponent()) {
+      nameList.prepend(pParentElement->getName());
     }
+    pParentModel = pParentElement->getParentModel();
   }
 }
 

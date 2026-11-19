@@ -21,6 +21,8 @@
   th.num { text-align:right; }
   td.name { word-break:break-word; }
   td .sub { color:var(--muted); font-size:12px; }
+  td.name a { color:var(--accent); text-decoration:none; }
+  td.name a:hover { text-decoration:underline; }
   td.act { text-align:right; white-space:nowrap; width:1%; }
   button.danger { background:#a1260d; }
   button.danger:hover:not(:disabled) { background:#c42b0e; }
@@ -44,7 +46,7 @@
 <main>
   <div class="wrap">
     <div class="summary">
-      <div class="tile"><div class="k">Libraries and caches</div><div class="v" id="live">–</div></div>
+      <div class="tile"><div class="k">Libraries, caches and files</div><div class="v" id="live">–</div></div>
       <div class="tile"><div class="k">Taken in browser storage</div><div class="v" id="used">–</div></div>
       <div class="tile"><div class="k">Available to this site</div><div class="v" id="quota">–</div></div>
     </div>
@@ -81,9 +83,9 @@
       <span class="grow"></span>
       <button class="danger" id="clear" disabled>Remove everything</button>
     </div>
-    <p class="note">The OpenModelica clients keep installed libraries, the package index and a parse cache here, so
-      they load without a download in the next session. A client that is open keeps what it had until it is
-      reloaded; the space comes back once no client uses it.</p>
+    <p class="note">The OpenModelica clients keep installed libraries, the package index, a parse cache and your
+      files in /persist here, so they load without a download in the next session. A client that is open takes
+      a change at once; the space comes back once no client uses it.</p>
   </div>
 </main>
 
@@ -121,6 +123,12 @@ function groups(files) {
     const m = /^(.*\/\.openmodelica)\/(.*)$/.exec(f.path);
     const [root, rel] = m ? [m[1], m[2]] : ['', f.path];
     let key, name, sub, order;
+    if (f.path.startsWith('/persist/')) {
+      const g = byKey.get('/persist') || { key: '/persist', name: 'Your files', sub: 'In /persist', link: '../files/index.html', order: 2, size: 0, files: 0, mtime: 0 };
+      g.size += f.size; g.files += 1; g.mtime = Math.max(g.mtime, f.mtime);
+      byKey.set('/persist', g);
+      continue;
+    }
     const lib = /^libraries\/([^/]+)\//.exec(rel);
     const file = /^libraries\/([^/]+)\.mo$/.exec(rel);
     if (lib) {
@@ -144,6 +152,16 @@ function groups(files) {
     byKey.set(key, g);
   }
   return [...byKey.values()].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+}
+
+// In the launcher, switch its client, so that the sidebar follows the link.
+function openInLauncher(event, client) {
+  try {
+    if (window.parent !== window && parent.document.getElementById(`nav-${client}`)) {
+      event.preventDefault();
+      parent.location.hash = `#${client}`;
+    }
+  } catch {}
 }
 
 function removeButton(label, prefixes) {
@@ -264,7 +282,13 @@ async function refresh(done = '') {
   for (const g of list) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td class="name"></td><td class="num"></td><td class="date"></td><td class="act"></td>`;
-    tr.children[0].textContent = g.name;
+    if (g.link) {
+      const a = Object.assign(document.createElement('a'), { href: g.link, textContent: g.name, title: 'Open the Files page' });
+      a.onclick = (e) => openInLauncher(e, 'files');
+      tr.children[0].append(a);
+    } else {
+      tr.children[0].textContent = g.name;
+    }
     const sub = Object.assign(document.createElement('div'), { className: 'sub', textContent: `${g.sub} · ${g.files} file${g.files === 1 ? '' : 's'}` });
     tr.children[0].append(sub);
     tr.children[1].textContent = bytes(g.size);

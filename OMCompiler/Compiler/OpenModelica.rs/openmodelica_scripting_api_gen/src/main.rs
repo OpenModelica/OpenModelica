@@ -14,7 +14,10 @@
 
 use std::sync::Arc;
 
-use openmodelica_ast::Absyn::{Class, ClassDef, ClassPart, Direction, Element, ElementItem, ElementSpec, EqMod, Exp, Modification, Path, Restriction, TypeSpec};
+use openmodelica_ast::Absyn::{
+    Class, ClassDef, ClassPart, Direction, Element, ElementItem, ElementSpec, EqMod, Exp, Modification, Path,
+    Restriction, TypeSpec,
+};
 use openmodelica_ast::parser::{Grammar, parse};
 
 /// A "simple API" type, as accepted by `isSimpleAPIFunctionArg`.
@@ -67,7 +70,10 @@ impl STy {
             STy::Real => format!("Values.REAL({name})"),
             STy::Arr(_) => {
                 var_decl.push_str(&format!("Values.Value {name}_arr;\n"));
-                post_match.push_str(&format!("{name} := {};\n", self.out_value_array(&format!("{name}_arr"))));
+                post_match.push_str(&format!(
+                    "{name} := {};\n",
+                    self.out_value_array(&format!("{name}_arr"))
+                ));
                 format!("{name}_arr")
             }
             STy::TypeName => {
@@ -141,7 +147,9 @@ fn simple_ty(ts: &TypeSpec, extra_dims: usize) -> Option<STy> {
 /// are not judged (left in).
 fn default_ok(modif: &Option<metamodelica::Ref<Modification>>, ty: &STy) -> bool {
     let Some(m) = modif else { return true };
-    let EqMod::EQMOD { exp, .. } = &*m.eqMod else { return true };
+    let EqMod::EQMOD { exp, .. } = &*m.eqMod else {
+        return true;
+    };
     match (&**exp, ty) {
         (Exp::STRING { .. }, STy::Str) => true,
         (Exp::INTEGER { .. }, STy::Int | STy::Real) => true,
@@ -204,7 +212,9 @@ fn collect_func(c: &Class) -> Option<Func> {
     if !is_external_builtin(c) {
         return None;
     }
-    let ClassDef::PARTS { classParts, .. } = &*c.body else { return None };
+    let ClassDef::PARTS { classParts, .. } = &*c.body else {
+        return None;
+    };
     let mut inputs = Vec::new();
     let mut outputs = Vec::new();
     for part in &**classParts {
@@ -213,9 +223,20 @@ fn collect_func(c: &Class) -> Option<Func> {
             _ => continue,
         };
         for item in &**contents {
-            let ElementItem::ELEMENTITEM { element } = &**item else { continue };
-            let Element::ELEMENT { specification, .. } = &**element else { continue };
-            let ElementSpec::COMPONENTS { attributes, typeSpec, components } = &**specification else { continue };
+            let ElementItem::ELEMENTITEM { element } = &**item else {
+                continue;
+            };
+            let Element::ELEMENT { specification, .. } = &**element else {
+                continue;
+            };
+            let ElementSpec::COMPONENTS {
+                attributes,
+                typeSpec,
+                components,
+            } = &**specification
+            else {
+                continue;
+            };
             let dst = match attributes.direction {
                 Direction::INPUT => &mut inputs,
                 Direction::OUTPUT => &mut outputs,
@@ -233,14 +254,23 @@ fn collect_func(c: &Class) -> Option<Func> {
             }
         }
     }
-    Some(Func { name: c.name.to_string(), inputs, outputs })
+    Some(Func {
+        name: c.name.to_string(),
+        inputs,
+        outputs,
+    })
 }
 
 /// Emit one wrapper function (`getCevalScriptInterfaceFunc`).
 fn emit_func(f: &Func) -> String {
     let mut var_decl = String::new();
     let mut post_match = String::new();
-    let in_vals = f.inputs.iter().map(|(n, t)| t.in_value(n)).collect::<Vec<_>>().join(", ");
+    let in_vals = f
+        .inputs
+        .iter()
+        .map(|(n, t)| t.in_value(n))
+        .collect::<Vec<_>>()
+        .join(", ");
 
     let out_vals = match f.outputs.len() {
         0 => "Values.NORETCALL()".to_owned(),
@@ -297,14 +327,12 @@ fn main() {
     let builtin_path = &args[1];
     let out_path = &args[2];
 
-    let code = std::fs::read_to_string(builtin_path)
-        .unwrap_or_else(|e| panic!("read {builtin_path}: {e}"));
+    let code = std::fs::read_to_string(builtin_path).unwrap_or_else(|e| panic!("read {builtin_path}: {e}"));
     let program = parse(&code, builtin_path, builtin_path, Grammar::MetaModelica, false, 0.0)
         .unwrap_or_else(|e| panic!("parse {builtin_path}: {e}"));
 
     let top: Vec<metamodelica::Ref<Class>> = (&*program.classes).into_iter().cloned().collect();
-    let openmodelica = find_class(&top, "OpenModelica")
-        .expect("no `OpenModelica` package in the builtin file");
+    let openmodelica = find_class(&top, "OpenModelica").expect("no `OpenModelica` package in the builtin file");
     let scripting = find_class(&sub_classes(&openmodelica), "Scripting")
         .expect("no `OpenModelica.Scripting` package in the builtin file");
 

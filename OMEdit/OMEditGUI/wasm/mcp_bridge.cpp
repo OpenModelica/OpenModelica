@@ -42,6 +42,7 @@
 #if defined(__EMSCRIPTEN__)
 
 #include "MCP/MCPServer.h"
+#include "Util/Helper.h"
 
 #include <QApplication>
 #include <QJsonDocument>
@@ -54,7 +55,8 @@
 
 bool omcWorkerCallInFlight();
 
-EM_JS(void, omedit_mcp_install, (), {
+EM_JS(void, omedit_mcp_install, (const char *usersGuideVersion), {
+  globalThis.omeditUsersGuideVersion = UTF8ToString(usersGuideVersion);
   const queue = { waiting: [], running: new Map(), next: 1 };
   Module.__omeditMcp = queue;
   globalThis.omeditMcp = (request, options) => new Promise((resolve, reject) => {
@@ -116,7 +118,7 @@ static void runMCPRequests(MCPServer *pMCPServer)
 
 void startMCPWebBridge(MCPServer *pMCPServer)
 {
-  omedit_mcp_install();
+  omedit_mcp_install(Helper::OpenModelicaUsersGuideVersion.toUtf8().constData());
   QTimer *pTimer = new QTimer(pMCPServer);
   QObject::connect(pTimer, &QTimer::timeout, pMCPServer, [pMCPServer]() {runMCPRequests(pMCPServer);});
   pTimer->start(50);

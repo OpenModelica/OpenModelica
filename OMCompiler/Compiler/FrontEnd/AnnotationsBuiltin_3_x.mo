@@ -382,10 +382,13 @@ record Axis
   AxisScale scale = AxisScale() "Mapping between axis values and position on axis";
 end Axis;
 
+type YAxisSelection = enumeration(Left, Right);
+
 record Curve
   String x = "time" "X coordinate values";
   Real y "Y coordinate values";
   String legend = "" "Legend";
+  YAxisSelection yAxis = YAxisSelection.Left "Associated y axis";
   Integer zOrder = 0 "Drawing order control";
 end Curve;
 
@@ -395,6 +398,7 @@ record Plot
   Curve[:] curves "Plot curves";
   Axis x = Axis() "X axis properties";
   Axis y = Axis() "Y axis properties";
+  Axis yRight = Axis() "Right y axis properties";
 end Plot;
 
 record Figure

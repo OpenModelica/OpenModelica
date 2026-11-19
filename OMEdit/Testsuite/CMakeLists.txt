@@ -74,6 +74,10 @@ set(OMEDIT_TEST_DYNAMICANNOTATION_SOURCES DynamicAnnotation/DynamicAnnotationTes
                                            DynamicAnnotation/DynamicAnnotationTest.h)
 add_omedit_test(DynamicAnnotation "${OMEDIT_TEST_DYNAMICANNOTATION_SOURCES}")
 
+set(OMEDIT_TEST_ELEMENTMODEMODIFIERS_SOURCES ElementModeModifiers/ElementModeModifiersTest.cpp
+                                             ElementModeModifiers/ElementModeModifiersTest.h)
+add_omedit_test(ElementModeModifiers "${OMEDIT_TEST_ELEMENTMODEMODIFIERS_SOURCES}")
+
 set(OMEDIT_TEST_EXPRESSION_SOURCES Expression/ExpressionTest.cpp
                                    Expression/ExpressionTest.h)
 add_omedit_test(Expression "${OMEDIT_TEST_EXPRESSION_SOURCES}")
@@ -175,3 +179,7 @@ add_omedit_test(Utilities "${OMEDIT_TEST_UTILITIES_SOURCES}")
 set(OMEDIT_TEST_VARIABLEVALUE_SOURCES VariableValue/VariableValueTest.cpp
                                       VariableValue/VariableValueTest.h)
 add_omedit_test(VariableValue "${OMEDIT_TEST_VARIABLEVALUE_SOURCES}")
+
+set(OMEDIT_TEST_WORKINGDIRECTORY_SOURCES WorkingDirectory/WorkingDirectoryTest.cpp
+                                         WorkingDirectory/WorkingDirectoryTest.h)
+add_omedit_test(WorkingDirectory "${OMEDIT_TEST_WORKINGDIRECTORY_SOURCES}")

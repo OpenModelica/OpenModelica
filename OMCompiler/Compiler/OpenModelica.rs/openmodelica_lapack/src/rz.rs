@@ -56,7 +56,11 @@ pub fn dlaic1(job: Est, j: usize, x: &[f64], sest: f64, w: &[f64], gamma: f64) -
             return (tmp * sqrt(s1 * s1 + s2 * s2), 1.0, 0.0);
         }
         if absalp <= eps * absest {
-            return if absgam <= absest { (absest, 1.0, 0.0) } else { (absgam, 0.0, 1.0) };
+            return if absgam <= absest {
+                (absest, 1.0, 0.0)
+            } else {
+                (absgam, 0.0, 1.0)
+            };
         }
         if absest <= eps * absalp || absest <= eps * absgam {
             let (s1, s2) = (absgam, absalp);
@@ -73,7 +77,11 @@ pub fn dlaic1(job: Est, j: usize, x: &[f64], sest: f64, w: &[f64], gamma: f64) -
         let zeta2 = gamma / absest;
         let b = (1.0 - zeta1 * zeta1 - zeta2 * zeta2) * 0.5;
         let c = zeta1 * zeta1;
-        let t = if b > 0.0 { c / (b + sqrt(b * b + c)) } else { sqrt(b * b + c) - b };
+        let t = if b > 0.0 {
+            c / (b + sqrt(b * b + c))
+        } else {
+            sqrt(b * b + c) - b
+        };
         let sine = -zeta1 / t;
         let cosine = -zeta2 / (1.0 + t);
         let tmp = sqrt(sine * sine + cosine * cosine);
@@ -82,7 +90,11 @@ pub fn dlaic1(job: Est, j: usize, x: &[f64], sest: f64, w: &[f64], gamma: f64) -
 
     // Est::Min
     if sest == 0.0 {
-        let (sine, cosine) = if f64::max(absgam, absalp) == 0.0 { (1.0, 0.0) } else { (-gamma, alpha) };
+        let (sine, cosine) = if f64::max(absgam, absalp) == 0.0 {
+            (1.0, 0.0)
+        } else {
+            (-gamma, alpha)
+        };
         let s1 = f64::max(abs(sine), abs(cosine));
         let (s, c) = (sine / s1, cosine / s1);
         let tmp = sqrt(s * s + c * c);
@@ -92,7 +104,11 @@ pub fn dlaic1(job: Est, j: usize, x: &[f64], sest: f64, w: &[f64], gamma: f64) -
         return (absgam, 0.0, 1.0);
     }
     if absalp <= eps * absest {
-        return if absgam <= absest { (absgam, 0.0, 1.0) } else { (absest, 1.0, 0.0) };
+        return if absgam <= absest {
+            (absgam, 0.0, 1.0)
+        } else {
+            (absest, 1.0, 0.0)
+        };
     }
     if absest <= eps * absalp || absest <= eps * absgam {
         let (s1, s2) = (absgam, absalp);
@@ -123,7 +139,11 @@ pub fn dlaic1(job: Est, j: usize, x: &[f64], sest: f64, w: &[f64], gamma: f64) -
     } else {
         let b = (zeta2 * zeta2 + zeta1 * zeta1 - 1.0) * 0.5;
         let c = zeta1 * zeta1;
-        let t = if b >= 0.0 { -c / (b + sqrt(b * b + c)) } else { b - sqrt(b * b + c) };
+        let t = if b >= 0.0 {
+            -c / (b + sqrt(b * b + c))
+        } else {
+            b - sqrt(b * b + c)
+        };
         sine = -zeta1 / t;
         cosine = -zeta2 / (1.0 + t);
         sestpr = sqrt(1.0 + t + 4.0 * eps * eps * norma) * absest;
@@ -135,17 +155,7 @@ pub fn dlaic1(job: Est, j: usize, x: &[f64], sest: f64, w: &[f64], gamma: f64) -
 /// `DLARZ`: apply `H = I - tau*v*v'` where `v` is `(1, 0…0, z)` — `l` trailing
 /// entries preceded by zeros. `v_z` holds `z` with stride `incv`; `c` is `m`×`n`.
 #[allow(clippy::too_many_arguments)]
-fn dlarz(
-    side: &str,
-    m: usize,
-    n: usize,
-    l: usize,
-    v_z: &[f64],
-    incv: usize,
-    tau: f64,
-    c: &mut [f64],
-    ldc: usize,
-) {
+fn dlarz(side: &str, m: usize, n: usize, l: usize, v_z: &[f64], incv: usize, tau: f64, c: &mut [f64], ldc: usize) {
     if tau == 0.0 {
         return;
     }

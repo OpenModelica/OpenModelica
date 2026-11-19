@@ -79,7 +79,9 @@ impl Icons {
             let short = format!("{:0width$x}", digest >> (4 * (32 - length)), width = length);
             let from = self.dir.join(format!("{digest:032x}.svg"));
             let to = self.dir.join(format!("{short}.svg"));
-            if from != to && let Err(e) = std::fs::rename(&from, &to) {
+            if from != to
+                && let Err(e) = std::fs::rename(&from, &to)
+            {
                 eprintln!("omgendoc: {}: {e}", from.display());
             }
             urls.insert(digest, format!("{}/{short}.svg", self.url_prefix));
@@ -123,8 +125,7 @@ pub struct Scope {
     top: metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>,
 }
 
-pub type SCodeProgram =
-    metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>;
+pub type SCodeProgram = metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>;
 
 impl Scope {
     /// The builtin classes and every library's SCode as one program.
@@ -147,9 +148,7 @@ impl Scope {
 
     pub fn icon_svg(&self, class: &metamodelica::Ref<Absyn::Path>, name: &str) -> Option<String> {
         let start = std::time::Instant::now();
-        let json =
-            openmodelica_nf_api::NFInstanceAPI::iconJSONFromTop(self.top.clone(), class.clone())
-                .ok();
+        let json = openmodelica_nf_api::NFInstanceAPI::iconJSONFromTop(self.top.clone(), class.clone()).ok();
         let drawing = record(&INSTANCE_NANOS, start);
         let svg = openmodelica_omgraphics::OMGraphics::icon_svg_from_json(&json?, name);
         record(&DRAWING_NANOS, drawing);
@@ -160,30 +159,23 @@ impl Scope {
     /// resolved)` for its base classes, and `(component name, resolved)` for
     /// its components' types.
     pub fn resolved_names(&self, class: &metamodelica::Ref<Absyn::Path>) -> Resolved {
-        let (bases, components) = match openmodelica_nf_api::NFInstanceAPI::resolveNamesFromTop(
-            self.top.clone(),
-            class.clone(),
-        ) {
-            Ok(pair) => pair,
-            Err(_) => return Resolved::default(),
-        };
+        let (bases, components) =
+            match openmodelica_nf_api::NFInstanceAPI::resolveNamesFromTop(self.top.clone(), class.clone()) {
+                Ok(pair) => pair,
+                Err(_) => return Resolved::default(),
+            };
         let pairs = |list: metamodelica::List<(arcstr::ArcStr, arcstr::ArcStr)>| {
-            list.iter()
-                .map(|(a, b)| (a.to_string(), b.to_string()))
-                .collect()
+            list.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect()
         };
-        Resolved { bases: pairs(bases), components: pairs(components) }
+        Resolved {
+            bases: pairs(bases),
+            components: pairs(components),
+        }
     }
 
-    pub fn diagram_svg(
-        &self,
-        class: &metamodelica::Ref<Absyn::Path>,
-        name: &str,
-    ) -> Option<String> {
+    pub fn diagram_svg(&self, class: &metamodelica::Ref<Absyn::Path>, name: &str) -> Option<String> {
         let start = std::time::Instant::now();
-        let json =
-            openmodelica_nf_api::NFInstanceAPI::diagramJSONFromTop(self.top.clone(), class.clone())
-                .ok();
+        let json = openmodelica_nf_api::NFInstanceAPI::diagramJSONFromTop(self.top.clone(), class.clone()).ok();
         let drawing = record(&INSTANCE_NANOS, start);
         let svg = openmodelica_omgraphics::OMGraphics::diagram_svg_from_json(&json?, name);
         record(&DRAWING_NANOS, drawing);
@@ -198,18 +190,13 @@ static DRAWING_NANOS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU6
 
 fn record(into: &std::sync::atomic::AtomicU64, since: std::time::Instant) -> std::time::Instant {
     let now = std::time::Instant::now();
-    into.fetch_add(
-        (now - since).as_nanos() as u64,
-        std::sync::atomic::Ordering::Relaxed,
-    );
+    into.fetch_add((now - since).as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
     now
 }
 
 /// Seconds spent in the instance API and in OMGraphics.
 pub fn timing() -> (f64, f64) {
-    let seconds = |c: &std::sync::atomic::AtomicU64| {
-        c.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e9
-    };
+    let seconds = |c: &std::sync::atomic::AtomicU64| c.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e9;
     (seconds(&INSTANCE_NANOS), seconds(&DRAWING_NANOS))
 }
 
