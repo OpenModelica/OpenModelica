@@ -91,6 +91,9 @@ pub(crate) struct FnCtx<'a> {
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
     pub(crate) sim: Option<SimCtx>,
+    /// The function whose body this is and its scalar inputs, which a failed
+    /// assertion reports (C's `FUNCTION_CONTEXT` name and inputs).
+    pub(super) assert_fn: Option<(String, Vec<DAE::Exp>)>,
     /// Dynamic tearing: set while lowering the *casual* tearing set's residual, where
     /// a violated `localCon` constraint ends the evaluation (C's
     /// `residualFuncConstraints` returning 1 — see `createLocalConstraints`).
@@ -887,6 +890,7 @@ impl<'a> FnCtx<'a> {
             src_loc: None,
             eq: 0,
             sim: Some(sim),
+            assert_fn: None,
             dt_local_cons: false,
             dt_fallback: None,
             flat: HashMap::default(),

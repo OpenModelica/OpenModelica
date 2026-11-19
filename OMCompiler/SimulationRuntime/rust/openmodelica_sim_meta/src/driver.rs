@@ -2542,7 +2542,8 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType, l
             note_held_assert(assert_logger_text(&info, &cond, time, w[9] != 0));
             rethrow_store::arm(info);
             armed = true;
-        } else if level == omclog::WARNING {
+        } else if level == omclog::WARNING || cond.is_empty() {
+            // Without a condition it is a function's: C's `omc_assert_warning` always warns.
             omclog::warning_used(omclog::ASSERT, false, &line, info.used());
         } else {
             omclog::info_used(omclog::ASSERT, false, &line, info.used());

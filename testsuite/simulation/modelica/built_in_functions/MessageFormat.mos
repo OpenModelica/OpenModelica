@@ -70,9 +70,9 @@ m1 := r1.messages;
 m2 := r2.messages;
 m3 := r3.messages;
 echo(true);
-// Each message is shown as it is, as a whole line. The message texts and their
+// Each message is shown as it is, at the end of a line. The message texts and their
 // log levels differ between the simulation targets, so only the text is checked.
-OpenModelica.Scripting.regexBool(m1, "\\| f: 100%s %d %%\n");
+OpenModelica.Scripting.regexBool(m1, "--> \"f: 100%s %d %%\"\n");
 OpenModelica.Scripting.regexBool(m1, ": stop equation: 100%s %d %%\n");
 OpenModelica.Scripting.regexBool(m2, ": stop algorithm: 100%s %d %%\n");
 OpenModelica.Scripting.regexBool(m3, "\\| g: 100%s %d %%\n");

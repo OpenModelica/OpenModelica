@@ -122,6 +122,7 @@ pub(crate) fn build_init_fns(
             src_loc: None,
             eq: 0,
             sim: None,
+            assert_fn: None,
             dt_local_cons: false,
             dt_fallback: None,
             flat: HashMap::default(),
