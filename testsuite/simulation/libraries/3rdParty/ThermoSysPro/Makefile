@@ -14,6 +14,7 @@ ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeatingCvode.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.mos \

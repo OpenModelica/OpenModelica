@@ -172,6 +172,7 @@ unsafe extern "C" {
     fn CVodeGetNumJacEvals(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn CVodeGetNumErrTestFails(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn CVodeGetNumNonlinSolvConvFails(mem: *mut c_void, n: *mut c_long) -> c_int;
+    fn CVodeGetNumStepSolveFails(mem: *mut c_void, n: *mut c_long) -> c_int;
 }
 
 /// Where one [`Cvode::step`] stopped.
@@ -1096,6 +1097,17 @@ pub fn cvode_current_step(mem: *mut c_void) -> f64 {
     let mut h = 0.0;
     unsafe { CVodeGetCurrentStep(mem, &mut h) };
     h
+}
+
+/// CVODE's steps and the step attempts it gave up on after a nonlinear solver
+/// failure, both since the last (re)initialization.
+pub fn cvode_steps_and_solve_fails(mem: *mut c_void) -> (i64, i64) {
+    let (mut steps, mut fails): (c_long, c_long) = (0, 0);
+    unsafe {
+        CVodeGetNumSteps(mem, &mut steps);
+        CVodeGetNumStepSolveFails(mem, &mut fails);
+    }
+    (steps as i64, fails as i64)
 }
 
 /// A dense `SUNMatrix`'s column-major data, `n*n` in length.
