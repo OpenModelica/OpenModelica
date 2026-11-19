@@ -49,7 +49,7 @@ readFile("fmi3_attributes_02.xml"); getErrorString();
 //     <Float64 name=\"time\" valueReference=\"7\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
 //     <Float64 name=\"w\" valueReference=\"0\" />
 //     <Float64 name=\"x\" valueReference=\"1\" initial=\"exact\"  start=\"1.0\"/>
-//     <Float64 name=\"z\" valueReference=\"2\" initial=\"approx\"  start=\"0.0\"/>
+//     <Float64 name=\"z\" valueReference=\"2\" />
 //     <Float64 name=\"der(w)\" valueReference=\"3\"  derivative=\"0\"/>
 //     <Float64 name=\"der(x)\" valueReference=\"4\"  derivative=\"1\"/>
 //     <Float64 name=\"der(z)\" valueReference=\"5\"  derivative=\"2\"/>

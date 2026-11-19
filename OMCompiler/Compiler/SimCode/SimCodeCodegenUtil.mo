@@ -1704,17 +1704,19 @@ algorithm
 end getFMIArrayStartValues;
 
 public function fmi3StateInitial
-  "The FMI 3.0 initial attribute of a continuous-time state: calculated for a
-   start expression, else exact for a fixed and approx for an unfixed start."
+  "The FMI 3.0 initial attribute of a continuous-time state. Without one from
+   SimCode (non-scalarized backend): calculated for a start expression, else
+   exact for a fixed and approx for an unfixed start."
   input SimCodeVar.SimVar var;
   output SimCodeVar.Initial initial_;
 algorithm
   initial_ := match var
+    case SimCodeVar.SIMVAR(initial_ = SOME(initial_)) then initial_;
     case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE())
       then if not hasFMIStartLiteral(var) then SimCodeVar.CALCULATED()
            elseif var.isFixed then SimCodeVar.EXACT()
            else SimCodeVar.APPROX();
-    else Util.getOptionOrDefault(var.initial_, SimCodeVar.NONE_INITIAL());
+    else SimCodeVar.NONE_INITIAL();
   end match;
 end fmi3StateInitial;
 
