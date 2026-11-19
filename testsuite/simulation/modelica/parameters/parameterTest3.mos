@@ -7,7 +7,7 @@ model parameterTest3
   parameter Boolean b1 = false;
   parameter Real p1 = if b1 then sub(p2,2) else 0;
   parameter Real p2 = if b1 then 0 else sub(p1,3);
-  
+
   function sub
     input Real x;
     input Real y;
@@ -15,7 +15,7 @@ model parameterTest3
   algorithm
     res := x - y;
   end sub;
-  
+
 equation
 
 end parameterTest3;

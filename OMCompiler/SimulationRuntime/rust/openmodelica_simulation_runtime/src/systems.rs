@@ -260,14 +260,14 @@ pub fn eval_jacobian(
     dense: bool,
 ) -> Result<(), &'static str> {
     let j = unsafe { &mut *jacobian };
-    if j.isBidirectional != 0 && !j.adjointJacobian.is_null() {
+    if j.evalRow.is_some() && j.evalColumn.is_some() {
         return Err("a bidirectionally evaluated Jacobian is not served by this runtime yet");
     }
-    if j.isRowEval != 0 {
+    if j.evalColumn.is_none() && j.evalRow.is_some() {
         return Err("a row-evaluated Jacobian is not served by this runtime yet");
     }
     let stage = crate::support::error_stage::NONLINEARSOLVER;
-    if let Some(f) = j.constantEqns
+    if let Some(f) = j.constColEqns
         && !crate::support::protected(thread_data, stage, || {
             unsafe { f(data, thread_data, jacobian, parent) };
         })

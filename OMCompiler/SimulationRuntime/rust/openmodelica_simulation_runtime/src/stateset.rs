@@ -185,7 +185,7 @@ pub fn eval_jacobians(data: *mut DATA, thread_data: *mut threadData_t) -> Result
         let jacobian = unsafe { si.analyticJacobians.add(set.jacobianIndex as usize) };
         let j = unsafe { &*jacobian };
         let stage = crate::support::error_stage::SIMULATION;
-        if let Some(f) = j.constantEqns
+        if let Some(f) = j.constColEqns
             && !crate::support::protected(thread_data, stage, || {
                 unsafe { f(data, thread_data, jacobian, core::ptr::null_mut()) };
             })

@@ -44,6 +44,26 @@ int computeColPackColumnColoring(
     unsigned int* colorCols,
     unsigned int* maxColors);
 
+int computeColPackRowColoring(
+    unsigned int nRows,
+    unsigned int nCols,
+    const unsigned int* leadindex,
+    const unsigned int* index,
+    unsigned int nnz,
+    unsigned int* colorCols,
+    unsigned int* maxColors);
+
+int computeColPackStarBicoloring(
+    unsigned int nRows,
+    unsigned int nCols,
+    const unsigned int* rowPtr,
+    const unsigned int* colIdx,
+    unsigned int* rowColors,
+    unsigned int* nRowColors,
+    unsigned int* colColors,
+    unsigned int* nColColors);
+
+
 #ifdef __cplusplus
 }
 #endif

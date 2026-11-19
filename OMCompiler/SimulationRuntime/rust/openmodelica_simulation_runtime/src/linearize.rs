@@ -87,7 +87,7 @@ pub fn eval(data: *mut DATA, thread_data: *mut threadData_t, k: usize, out: &mut
     let (Some(jac), Some(column)) = (jacobian(data, index), column) else {
         return;
     };
-    if let Some(f) = unsafe { (*jac).constantEqns } {
+    if let Some(f) = unsafe { (*jac).constColEqns } {
         unsafe { f(data, thread_data, jac, core::ptr::null_mut()) };
     }
     eval_columns(data, thread_data, jac, column, out);

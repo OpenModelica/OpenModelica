@@ -6577,7 +6577,7 @@ unsafe fn dassl_res(
     }
 }
 
-/// C's `JACOBIAN_AVAILABILITY` (`jacobian_util.h`).
+/// C's `JACOBIAN_AVAILABILITY` (`jacobian_util.h`, outdated).
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum JacAvail {
     NotAvailable,

@@ -120,7 +120,7 @@ pub fn eval(data: *mut DATA, thread_data: *mut threadData_t, k: usize, constant:
         return;
     };
     let f = match constant {
-        true => unsafe { (*jac).constantEqns },
+        true => unsafe { (*jac).constColEqns },
         false => columns[k],
     };
     let Some(f) = f else { return };
@@ -321,7 +321,7 @@ fn jac(data: *mut DATA, layout: &Layout, k: usize) -> Option<OptJac> {
         seed_offs: (0..cols).map(|c| base + c * 8).collect(),
         result_offs: (0..rows).map(|r| base + (cols + r) * 8).collect(),
         column_fn: COLUMN_FNS[k].to_string(),
-        const_fn: match j.constantEqns.is_some() {
+        const_fn: match j.constColEqns.is_some() {
             true => CONST_FNS[k].to_string(),
             false => String::new(),
         },
