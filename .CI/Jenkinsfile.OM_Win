@@ -1,0 +1,87 @@
+// The whole testsuite on Windows, with an omc built with OMDev (MSYS2 UCRT64):
+// the Jenkins job Windows/OM_Win. It replaces the batch script that was typed
+// into the configuration of that job; the build and the testsuite run are in
+// .CI/scripts/om-win-testsuite.sh.
+//
+// Every build starts from a clean tree and stops at the first configuration or
+// build error. The old job kept its build tree and went on after an error, so
+// once that tree no longer configured it ran the testsuite with the omc of an
+// earlier revision for weeks (#18215).
+//
+// Job: "Pipeline script from SCM", repository OpenModelica/OpenModelica, branch
+// master, script path .CI/Jenkinsfile.OM_Win. The submodules are updated here,
+// so the job needs no "Advanced sub-modules behaviours".
+def common
+
+pipeline {
+  agent {
+    node {
+      label 'windows-no-release'
+      // a short path, and not the one of the pull request builds (ws/OpenModelica)
+      customWorkspace 'ws/OM_Win'
+    }
+  }
+  options {
+    skipDefaultCheckout()
+    disableConcurrentBuilds()
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '100'))
+    timeout(time: 6, unit: 'HOURS')
+  }
+  triggers {
+    pollSCM('H/20 * * * *')
+  }
+  environment {
+    OMDEV = 'C:\\OMDevUCRT'
+    // the timings of the earlier runs, kept on the node (an MSYS path)
+    RUNTESTDB = '/c/dev'
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        // leftovers of an aborted build keep files of the workspace open; taskkill fails when nothing runs
+        bat '''
+          taskkill /F /IM omc.exe /T
+          taskkill /F /IM perl.exe /T
+          exit /b 0
+        '''
+        script {
+          // common.checkoutSCM(), which is not loaded yet
+          echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
+          int attempt = 0
+          retry(2) {
+            if (attempt++ > 0) {
+              bat script: 'git submodule absorbgitdirs && git submodule deinit --all -f', returnStatus: true
+            }
+            checkout(scm).each { k, v -> env.setProperty(k, v) }
+          }
+          bat 'git submodule sync --recursive && git submodule update --init --recursive --force'
+          common = load("${env.WORKSPACE}/.CI/common.groovy")
+          // git clean of the tree and of the submodules: no build_cmake/ and no build/ of an earlier revision
+          common.standardSetup()
+          common.cloneOMDev()
+        }
+      }
+    }
+    stage('Build and test') {
+      steps {
+        script {
+          String workspace = env.WORKSPACE.replace('\\', '/')
+          bat """
+            If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+            echo FMPY_TOOL: %FMPY_TOOL%
+            set HOME=C:\\dev\\
+            set MSYSTEM=UCRT64
+            "%OMDEV%\\tools\\msys\\usr\\bin\\sh" --login -c "bash ${workspace}/.CI/scripts/om-win-testsuite.sh"
+          """
+        }
+      }
+    }
+  }
+  post {
+    always {
+      // failed tests make the build unstable; no result.xml means the build failed before the testsuite
+      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
+    }
+  }
+}
