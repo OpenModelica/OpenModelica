@@ -73,7 +73,7 @@ pub(super) fn emit_assert(
     source: &DAE::ElementSource,
 ) -> Result<()> {
     let is_warning = matches!(level, DAE::Exp::ENUM_LITERAL { index: 1, .. });
-    // C's `FUNCTION_CONTEXT` arm reports the message alone, with no dumped condition.
+    // C's `FUNCTION_CONTEXT` arm gives no condition: a function body puts it in the message.
     let in_function = ctx.sim().is_err();
     let when_body = ctx.sim().is_ok_and(|s| s.when_body);
     let warn_flag = is_warning.then(shared_lits::new_flag);
@@ -101,6 +101,9 @@ pub(super) fn emit_assert(
         if mw != WTy::I32 {
             return Err("CodegenWasmJit: assert message is not a String");
         }
+        if in_function {
+            emit_function_assert_text(ctx, cond)?;
+        }
         emit_str_literal(ctx, file.as_bytes())?; // file String handle
         ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
         ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
@@ -120,6 +123,9 @@ pub(super) fn emit_assert(
     let mw = compile_exp(ctx, msg)?; // owned message String handle
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: assert message is not a String");
+    }
+    if in_function {
+        emit_function_assert_text(ctx, cond)?;
     }
     let msg_h = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(msg_h));
@@ -210,31 +216,93 @@ fn emit_assert_report(
     Ok(())
 }
 
-/// C's `assert_cond` followed by the values of the variables in it, as an owned
-/// String handle on the stack. Each value is inserted at its offset in the
-/// literal, the last first, so that the offsets before it stay valid.
-fn emit_assert_cond(ctx: &mut FnCtx, cond: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
-    let mut text = format!("({})", dumped_exp(cond)?);
-    let mut vals = Vec::new();
-    let vars = Expression::assertConditionValues(cond.clone())?;
-    for v in vars.iter() {
-        let (insert, wty) = match exp_sigty(&v) {
-            Ok(SigTy::Real) => ("rt_str_insert_real", WTy::F64),
-            Ok(SigTy::Int) => ("rt_str_insert_int", WTy::I32),
-            Ok(SigTy::Bool) => ("rt_str_insert_bool", WTy::I32),
-            _ => continue,
-        };
-        text.push_str(&format!(", {}=", dumped_exp(&v)?));
-        vals.push((v, text.len(), insert, wty));
-    }
-    emit_str_literal(ctx, text.as_bytes())?;
-    for (v, at, insert, wty) in vals.iter().rev() {
-        ctx.emit(we::Instruction::I32Const(*at as i32));
-        let w = compile_exp(ctx, v)?;
-        coerce(ctx, w, *wty);
-        ctx.emit(we::Instruction::Call(rt_index(insert)?));
+/// A value inserted into an assertion's text literal at byte `at`.
+struct AssertValue {
+    exp: DAE::Exp,
+    at: usize,
+    insert: &'static str,
+    wty: WTy,
+}
+
+/// Append `<sep><e>=` to `text` and note where the value of `e` goes; skipped
+/// unless `e` is a Real, Integer or Boolean.
+fn push_assert_value(text: &mut String, vals: &mut Vec<AssertValue>, e: &DAE::Exp, sep: &str) -> Result<()> {
+    let (insert, wty) = match exp_sigty(e) {
+        Ok(SigTy::Real) => ("rt_str_insert_real", WTy::F64),
+        Ok(SigTy::Int) => ("rt_str_insert_int", WTy::I32),
+        Ok(SigTy::Bool) => ("rt_str_insert_bool", WTy::I32),
+        _ => return Ok(()),
+    };
+    text.push_str(&format!("{sep}{}=", dumped_exp(e)?));
+    vals.push(AssertValue {
+        exp: e.clone(),
+        at: text.len(),
+        insert,
+        wty,
+    });
+    Ok(())
+}
+
+/// `({cond}), x=, y=` with the values of the variables in the condition.
+fn push_assert_cond(text: &mut String, vals: &mut Vec<AssertValue>, cond: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
+    text.push_str(&format!("({})", dumped_exp(cond)?));
+    for v in Expression::assertConditionValues(cond.clone())?.iter() {
+        push_assert_value(text, vals, &v, ", ")?;
     }
     Ok(())
+}
+
+/// Insert each value into the owned String on the stack, the last first, so
+/// that the offsets before it stay valid.
+fn emit_assert_values(ctx: &mut FnCtx, vals: &[AssertValue]) -> Result<()> {
+    for v in vals.iter().rev() {
+        ctx.emit(we::Instruction::I32Const(v.at as i32));
+        let w = compile_exp(ctx, &v.exp)?;
+        coerce(ctx, w, v.wty);
+        ctx.emit(we::Instruction::Call(rt_index(v.insert)?));
+    }
+    Ok(())
+}
+
+/// C's `assert_cond` followed by the values of the variables in it, as an owned
+/// String handle on the stack.
+fn emit_assert_cond(ctx: &mut FnCtx, cond: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
+    let mut text = String::new();
+    let mut vals = Vec::new();
+    push_assert_cond(&mut text, &mut vals, cond)?;
+    emit_str_literal(ctx, text.as_bytes())?;
+    emit_assert_values(ctx, &vals)
+}
+
+/// C's `FUNCTION_CONTEXT` message: replaces the owned message String handle on
+/// the stack with the text that also names the function, the values of its
+/// scalar inputs and the condition with its values. As C, `assert(false, msg)`
+/// without inputs to give keeps the message alone.
+fn emit_function_assert_text(ctx: &mut FnCtx, cond: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
+    let Some((name, inputs)) = ctx.assert_fn.clone() else {
+        return Ok(());
+    };
+    if inputs.is_empty() && matches!(&**cond, DAE::Exp::BCONST { bool: false }) {
+        return Ok(());
+    }
+    let msg_h = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(msg_h));
+    let mut text = format!("The following assertion has been violated in function {name}(");
+    let mut vals = Vec::new();
+    for e in &inputs {
+        let sep = if vals.is_empty() { "" } else { ", " };
+        push_assert_value(&mut text, &mut vals, e, sep)?;
+    }
+    text.push_str(")\n(");
+    push_assert_cond(&mut text, &mut vals, cond)?;
+    text.push_str(") --> \"");
+    let msg_at = text.len();
+    text.push('"');
+    emit_str_literal(ctx, text.as_bytes())?;
+    ctx.emit(we::Instruction::I32Const(msg_at as i32));
+    ctx.emit(we::Instruction::LocalGet(msg_h));
+    ctx.emit(we::Instruction::Call(rt_index("rt_str_insert_str")?));
+    emit_assert_values(ctx, &vals)
 }
 
 /// The running `SimData` pointer, or 0 outside a simulation.

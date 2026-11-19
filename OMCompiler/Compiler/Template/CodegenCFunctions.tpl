@@ -1630,7 +1630,7 @@ case FUNCTION(__) then
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInitLocal(var, fn, &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
-  let bodyPart = funStatement(body, &varDecls, &varFrees, &auxFunction)
+  let bodyPart = funStatement(body, SimCodeFunctionUtil.functionBodyContext(name, functionArguments), &varDecls, &varFrees, &auxFunction)
   // Captured before the frees run: they null the local it is read from.
   let &varDecls += (match outVars case v::_ then '<%retVarType(v)%> omc_ret_;<%\n%>')
   let outVarAssign = (List.restOrEmpty(outVars) |> var => varOutput(var))
@@ -3163,10 +3163,10 @@ template tempSizeVarName(ComponentRef c, DAE.Exp indices, Text &auxFunction)
   else error(sourceInfo(), 'tempSizeVarName:UNHANDLED_EXPRESSION')
 end tempSizeVarName;
 
-template funStatement(list<DAE.Statement> statementLst, Text &varDecls, Text &varFrees, Text &auxFunction)
+template funStatement(list<DAE.Statement> statementLst, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates function statements."
 ::=
-  statementLst |> stmt => algStatement(stmt, contextFunction, &varDecls, &varFrees, &auxFunction) ; separator="\n"
+  statementLst |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction) ; separator="\n"
 end funStatement;
 
 template parModelicafunStatement(list<DAE.Statement> statementLst, Text &varDecls, Text &varFrees, Text &auxFunction)
@@ -4923,9 +4923,13 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
             else '_withEquationIndexes'
   let assertExpStr = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))
   let &preExpValues = buffer ""
-  let valueFmt = match context case FUNCTION_CONTEXT(__) then "" else
+  // assert(false, msg) in a function without inputs to give, such as Modelica.Utilities.Streams.error.
+  let messageOnly = match context
+    case FUNCTION_CONTEXT(assert_function = "") then "1"
+    case FUNCTION_CONTEXT(assert_inputs = {}) then (match condition case BCONST(bool = false) then "1")
+  let valueFmt = if messageOnly then "" else
     (Expression.assertConditionValues(condition) |> e => ', <%assertValueFormat(e)%>')
-  let valueArgs = match context case FUNCTION_CONTEXT(__) then "" else
+  let valueArgs = if messageOnly then "" else
     (Expression.assertConditionValues(condition) |> e => ', <%assertValueArg(e, context, &preExpValues, &varDecls, &varFrees, &auxFunction)%>')
   /* Note that our error/log functions split the message on new lines and indent it. So it is better to have one long string
      and send it to them instead of calling them repeatedlly (avoids the 'assert', 'warning' labels printed for each call.) */
@@ -4936,10 +4940,22 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let assertCheck = match level case ENUM_LITERAL(index=1) then '' else errorCheck(context)
   // A when-body runs only at its event, which would excuse a held error.
   let neverHeld = match context case SIMULATION_CONTEXT(whenBody=true) then (match level case ENUM_LITERAL(index=1) then '' else '1')
-  let assertCode = match context case FUNCTION_CONTEXT(__) then
+  let assertCode = match context
+    case FUNCTION_CONTEXT(__) then
+    if messageOnly then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
     <%omcAssertFunc%>info, "%s", <%msgVar%>);
+    <%assertCheck%>
+    >>
+    else
+    let fnFmt = System.stringReplace(Util.escapeModelicaStringToCString(assert_function), "%", "%%")
+    let inputFmt = (assert_inputs |> e => assertValueFormat(e) ; separator=", ")
+    let inputArgs = (assert_inputs |> e => ', <%assertValueArg(e, context, &preExpValues, &varDecls, &varFrees, &auxFunction)%>')
+    <<
+    const char* assert_cond = "(<%assertExpStr%>)";
+    FILE_INFO info = {<%infoArgs(info)%>};
+    <%omcAssertFunc%>info, "The following assertion has been violated in function <%fnFmt%>(<%inputFmt%>)\n(%s<%valueFmt%>) --> \"%s\""<%inputArgs%>, assert_cond<%valueArgs%>, <%msgVar%>);
     <%assertCheck%>
     >>
     else if neverHeld then

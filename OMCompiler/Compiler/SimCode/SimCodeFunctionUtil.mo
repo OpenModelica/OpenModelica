@@ -3342,7 +3342,7 @@ public function getCurrentCrefPrefix
   output String cref_pref;
 algorithm
   cref_pref := match context
-    case SimCodeFunction.FUNCTION_CONTEXT(cref_pref, _) then cref_pref;
+    case SimCodeFunction.FUNCTION_CONTEXT(cref_prefix = cref_pref) then cref_pref;
     else algorithm Error.addInternalError("Tried to get cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
   end match;
 end getCurrentCrefPrefix;
@@ -3351,15 +3351,33 @@ public function appendCurrentCrefPrefix
   input SimCodeFunction.Context context;
   input String in_cref_pref;
   output SimCodeFunction.Context out_context;
-protected
-  String cref_pref;
-  Boolean prl;
 algorithm
   out_context := match context
-    case SimCodeFunction.FUNCTION_CONTEXT(cref_pref, prl) then SimCodeFunction.FUNCTION_CONTEXT(cref_pref + in_cref_pref, prl);
+    case SimCodeFunction.FUNCTION_CONTEXT()
+      then SimCodeFunction.FUNCTION_CONTEXT(context.cref_prefix + in_cref_pref, context.is_parallel,
+        context.assert_function, context.assert_inputs);
     else algorithm Error.addInternalError("Tried to append cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
   end match;
 end appendCurrentCrefPrefix;
+
+public function functionBodyContext
+  "The context of the statements of a function body."
+  input Absyn.Path name;
+  input list<SimCodeFunction.Variable> args;
+  output SimCodeFunction.Context context;
+protected
+  list<DAE.Exp> inputs = {};
+algorithm
+  for v in args loop
+    inputs := match v
+      case SimCodeFunction.VARIABLE(ty = DAE.T_REAL()) then DAE.CREF(v.name, v.ty) :: inputs;
+      case SimCodeFunction.VARIABLE(ty = DAE.T_INTEGER()) then DAE.CREF(v.name, v.ty) :: inputs;
+      case SimCodeFunction.VARIABLE(ty = DAE.T_BOOL()) then DAE.CREF(v.name, v.ty) :: inputs;
+      else inputs;
+    end match;
+  end for;
+  context := SimCodeFunction.FUNCTION_CONTEXT("", false, AbsynUtil.pathString(name), listReverse(inputs));
+end functionBodyContext;
 
 annotation(__OpenModelica_Interface="simcode_util");
 end SimCodeFunctionUtil;

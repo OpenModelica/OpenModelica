@@ -2709,7 +2709,7 @@ fn real_text(r: f64) -> String {
 }
 
 /// The owned String `s` with `text` inserted at byte `at`; consumes `s`.
-fn str_insert(s: u32, at: u32, text: &str) -> u32 {
+fn str_insert(s: u32, at: u32, text: &[u8]) -> u32 {
     let old = unsafe { str_bytes(s) };
     let at = (at as usize).min(old.len());
     let obj = rt_str_new((old.len() + text.len()) as u32);
@@ -2725,17 +2725,26 @@ fn str_insert(s: u32, at: u32, text: &str) -> u32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_insert_real(s: u32, at: u32, r: f64) -> u32 {
-    str_insert(s, at, &real_text(r))
+    str_insert(s, at, real_text(r).as_bytes())
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_insert_int(s: u32, at: u32, i: i32) -> u32 {
-    str_insert(s, at, &format!("{i}"))
+    str_insert(s, at, format!("{i}").as_bytes())
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_insert_bool(s: u32, at: u32, b: i32) -> u32 {
-    str_insert(s, at, if b != 0 { "true" } else { "false" })
+    let text: &[u8] = if b != 0 { b"true" } else { b"false" };
+    str_insert(s, at, text)
+}
+
+/// Consumes both Strings.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_str(s: u32, at: u32, t: u32) -> u32 {
+    let obj = str_insert(s, at, unsafe { str_bytes(t) });
+    rt_release(t);
+    obj
 }
 
 /// `String(r, significantDigits, minimumLength, leftJustified)` for a Real.

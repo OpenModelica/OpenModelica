@@ -1307,6 +1307,8 @@ package SimCodeFunction
     record FUNCTION_CONTEXT
       String cref_prefix;
       Boolean is_parallel;
+      String assert_function;
+      list<DAE.Exp> assert_inputs;
     end FUNCTION_CONTEXT;
     record JACOBIAN_CONTEXT
       String name;
@@ -2154,6 +2156,12 @@ package SimCodeFunctionUtil
     input String cref_pref;
     output SimCodeFunction.Context out_context;
   end appendCurrentCrefPrefix;
+
+  function functionBodyContext
+    input Absyn.Path name;
+    input list<SimCodeFunction.Variable> args;
+    output SimCodeFunction.Context context;
+  end functionBodyContext;
 
 end SimCodeFunctionUtil;
 

@@ -105,6 +105,27 @@ fn function_path(f: &SimCodeFunction::Function::Function) -> String {
         .unwrap_or_default()
 }
 
+/// The scalar Real, Integer and Boolean inputs, as `SimCodeFunctionUtil.functionBodyContext`.
+fn assert_inputs(args: &metamodelica::List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>) -> Vec<DAE::Exp> {
+    (&**args)
+        .into_iter()
+        .filter_map(|v| match &**v {
+            SimCodeFunction::Variable::Variable::VARIABLE { name, ty, .. }
+                if matches!(
+                    &**ty,
+                    DAE::Type::T_REAL { .. } | DAE::Type::T_INTEGER { .. } | DAE::Type::T_BOOL { .. }
+                ) =>
+            {
+                Some(DAE::Exp::CREF {
+                    componentRef: name.clone(),
+                    ty: ty.clone(),
+                })
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 fn compile_function_body(
     f: &SimCodeFunction::Function::Function,
     by_name: &HashMap<String, FnInfo>,
@@ -233,6 +254,7 @@ fn compile_function_body(
         src_loc: None,
         eq: 0,
         sim: None,
+        assert_fn: Some((function_path(f), assert_inputs(functionArguments))),
         dt_local_cons: false,
         dt_fallback: None,
         flat,
@@ -372,6 +394,7 @@ fn compile_external_function(
         src_loc: None,
         eq: 0,
         sim: None,
+        assert_fn: None,
         dt_local_cons: false,
         dt_fallback: None,
         flat: HashMap::default(),
