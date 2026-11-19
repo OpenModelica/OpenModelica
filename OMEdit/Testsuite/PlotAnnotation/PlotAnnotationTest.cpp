@@ -118,17 +118,20 @@ void PlotAnnotationTest::plotAndSaveDocumentationFigure()
   QCOMPARE(pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->getYVariable(), QStringLiteral("x"));
   QCOMPARE(pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->getCustomTitle(), QStringLiteral("State"));
 
-  auto curveLegend = [pModelWidget]() {
+  auto modelCurve = [pModelWidget]() -> const ModelInstance::Curve* {
     const ModelInstance::DocumentationAnnotation *pDocumentation = pModelWidget->getModelInstance()->getAnnotation()->getDocumentationAnnotation();
     if (!pDocumentation || pDocumentation->getFigures().size() != 1 || pDocumentation->getFigures().at(0)->getPlots().size() != 1
         || pDocumentation->getFigures().at(0)->getPlots().at(0)->getCurves().size() != 1) {
-      return QStringLiteral("<no single curve>");
+      return nullptr;
     }
-    return pDocumentation->getFigures().at(0)->getPlots().at(0)->getCurves().at(0)->getLegend();
+    return pDocumentation->getFigures().at(0)->getPlots().at(0)->getCurves().at(0).get();
   };
 
   // Change the plot so that the saved figure differs from the one in the model.
-  pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->setCustomTitle(QStringLiteral("Changed state"));
+  OMPlot::PlotCurve *pPlotCurve = pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first();
+  pPlotCurve->setCustomTitle(QStringLiteral("Changed state"));
+  pAnnotatedPlotWindow->setYAxisRight(pPlotCurve, true);
+  pAnnotatedPlotWindow->setYRightCustomLabel(QStringLiteral("Right label"));
   // Activate the annotated plot because saveFigureInModel operates on the current MDI window.
   pPlotWindowContainer->setActiveSubWindow(pPlotSubWindow);
   const int previousUndoCount = pModelWidget->getUndoStack()->count();
@@ -141,14 +144,20 @@ void PlotAnnotationTest::plotAndSaveDocumentationFigure()
   const QString savedDocumentation = pDocumentation->toString();
   QVERIFY(savedDocumentation.contains(QStringLiteral("info=\"Figure test documentation\"")));
   QVERIFY(savedDocumentation.contains(QStringLiteral("Figure(title=\"Annotated decay\"")));
-  QVERIFY(savedDocumentation.contains(QStringLiteral("Curve(y=x,legend=\"Changed state\")")));
+  QVERIFY(savedDocumentation.contains(QStringLiteral("Curve(y=x,legend=\"Changed state\",yAxis=YAxisSelection.Right)")));
+  QVERIFY(savedDocumentation.contains(QStringLiteral("yRight=Axis(")));
+  QVERIFY(savedDocumentation.contains(QStringLiteral("label=\"Right label\")")));
   // The next simulation plots these figures, so they must have the saved curve.
-  QCOMPARE(curveLegend(), QStringLiteral("Changed state"));
+  QVERIFY(modelCurve());
+  QCOMPARE(modelCurve()->getLegend(), QStringLiteral("Changed state"));
+  QVERIFY(modelCurve()->getYAxis() == ModelInstance::Curve::YAxis::Right);
 
   // Undo reloads the model instance with the figure from before the save.
   pModelWidget->getUndoStack()->undo();
   QApplication::processEvents();
-  QCOMPARE(curveLegend(), QStringLiteral("State"));
+  QVERIFY(modelCurve());
+  QCOMPARE(modelCurve()->getLegend(), QStringLiteral("State"));
+  QVERIFY(modelCurve()->getYAxis() == ModelInstance::Curve::YAxis::Left);
 }
 
 /*!

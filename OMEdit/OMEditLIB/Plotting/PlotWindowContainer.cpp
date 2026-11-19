@@ -57,6 +57,7 @@
 #include <QMap>
 #include <QVariant>
 
+#include <algorithm>
 #include <cmath>
 
 using namespace OMPlot;
@@ -790,6 +791,8 @@ void PlotWindowContainer::saveFigureInModel()
   const double yMinimum = isZoomed ? qMin(zoomRect.top(), zoomRect.bottom()) : yScale.lowerBound();
   const double yMaximum = isZoomed ? qMax(zoomRect.top(), zoomRect.bottom()) : yScale.upperBound();
   const bool yAxisAutoScale = pPlotWindow->getPlot()->axisAutoScale(QwtPlot::yLeft);
+  const QwtScaleDiv &yRightScale = pPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight);
+  const bool yRightAxisAutoScale = pPlotWindow->getPlot()->axisAutoScale(QwtPlot::yRight);
   const QString plotTitle = pPlotWindow->getPlot()->title().text();
   const QVariant figureTitleProperty = pPlotWindow->property(Helper::modelicaFigureTitle.toStdString().c_str());
   const QString figureTitle = figureTitleProperty.isValid() ? figureTitleProperty.toString() : pPlotWindow->windowTitle();
@@ -797,6 +800,9 @@ void PlotWindowContainer::saveFigureInModel()
   foreach (const QString &className, curvesByModel.keys()) {
     auto pPlot = std::make_unique<ModelInstance::Plot>();
     const QList<PlotCurve*> modelCurves = curvesByModel.value(className);
+    const bool usesRightYAxis = std::any_of(modelCurves.cbegin(), modelCurves.cend(), [](PlotCurve *pPlotCurve) {
+      return pPlotCurve->isYAxisRight();
+    });
     bool timeXAxis = pPlotWindow->isPlot();
     bool hasTimeValues = false;
     double timeStart = 0.0;
@@ -831,6 +837,9 @@ void PlotWindowContainer::saveFigureInModel()
         continue;
       }
       pCurve->setLegend(pPlotCurve->getCustomTitle());
+      if (pPlotCurve->isYAxisRight()) {
+        pCurve->setYAxis(ModelInstance::Curve::YAxis::Right);
+      }
       pCurve->setZOrder(i);
       pPlot->addCurve(std::move(pCurve));
     }
@@ -842,6 +851,10 @@ void PlotWindowContainer::saveFigureInModel()
                              xMaximum / timeUnitFactor, pPlotWindow->getLogXCheckBox()->isChecked()));
     pPlot->setYAxis(makeAxis(pPlotWindow->getYCustomLabel(), !yAxisAutoScale, yMinimum, yMaximum,
                              pPlotWindow->getLogYCheckBox()->isChecked()));
+    if (usesRightYAxis) {
+      pPlot->setYRightAxis(makeAxis(pPlotWindow->getYRightCustomLabel(), !yRightAxisAutoScale, yRightScale.lowerBound(),
+                                    yRightScale.upperBound(), pPlotWindow->getLogYCheckBox()->isChecked()));
+    }
     auto pFigure = std::make_unique<ModelInstance::Figure>();
     pFigure->setTitle(figureTitle);
     pFigure->setPreferred(true);
