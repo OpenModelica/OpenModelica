@@ -2139,6 +2139,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanEventInputVariablesVRs, "") then "Boolean booleanEventInputVariables["+nBooleanEventInputVariables+"](each fixed=true);"%>
     <%if not stringEq(stringEventInputVariablesVRs, "") then "String stringEventInputVariables["+nStringEventInputVariables+"](each fixed=true);"%>
     Boolean callEventUpdate;
+    Real flowStepCompleted;
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
     parameter Real initialNextEventTime(fixed = false);
@@ -2161,7 +2162,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetBooleanParameter(fmi2me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetStringParameter(fmi2me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
     flowInitialized := fmi2Functions.fmi2ExitInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
-    fmi2Functions.fmi2EndEventUpdate(fmi2me);
+    /* the next time event after the initial event iteration of fmi2ExitInitialization */
     initialNextEventTime := fmi2Functions.fmi2nextEventTime(fmi2me, flowInitialized);
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi2Functions.fmi2GetReal(fmi2me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
@@ -2194,15 +2195,18 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not boolAnd(stringEq(booleanOutputVariablesNames, ""), stringEq(booleanOutputVariablesVRs, "")) then "{"+booleanOutputVariablesNames+"} = fmi2Functions.fmi2GetBoolean(fmi2me, {"+booleanOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(stringOutputVariablesNames, ""), stringEq(stringOutputVariablesVRs, "")) then "{"+stringOutputVariablesNames+"} = fmi2Functions.fmi2GetString(fmi2me, {"+stringOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%dumpOutputGetEnumerationVariables(fmiModelVariablesList, fmiTypeDefinitionsList, "fmi2Functions.fmi2GetInteger", "fmi2me")%>
-    callEventUpdate = fmi2Functions.fmi2CompletedIntegratorStep(fmi2me, flowStatesInputs+flowTime);
+    callEventUpdate = fmi2Functions.fmi2StepEvent(fmi2me, flowStatesInputs);
+    /* No zero-crossing function needs flowStepCompleted. Thus the solver calls
+       fmi2CompletedIntegratorStep only after the event location of a step. */
+    flowStepCompleted = fmi2Functions.fmi2CompletedIntegratorStep(fmi2me, flowStatesInputs+flowTime);
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
-    when {<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>, triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
+    when {<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>, triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time<%dumpDiscreteInputChanges(fmiModelVariablesList)%>, terminal()} then
   >>
   else
   <<
-    when {triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
+    when {triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time<%dumpDiscreteInputChanges(fmiModelVariablesList)%>, terminal()} then
   >>
   %>
       fmi2Functions.fmi2StartEventUpdate(fmi2me);
@@ -2212,6 +2216,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       <%if not stringEq(stringEventInputVariablesVRs, "") then "stringEventInputVariables := fmi2Functions.fmi2SetString(fmi2me, {"+stringEventInputVariablesVRs+"}, {"+stringEventStartVariablesNames+"});"%>
       newStatesAvailable := fmi2Functions.fmi2EndEventUpdate(fmi2me);
       nextEventTime := fmi2Functions.fmi2nextEventTime(fmi2me, flowStatesInputs);
+      if fmi2Functions.fmi2TerminateSimulation(fmi2me, flowStatesInputs) then
+        terminate("The FMU requested to terminate the simulation.");
+      end if;
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
       if newStatesAvailable then
@@ -2440,12 +2447,26 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" outNewnextTime = fmi2nextEventTime_OMC(fmi2me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2nextEventTime;
 
+      function fmi2TerminateSimulation
+        input FMI2ModelExchange fmi2me;
+        input Real inFlowStates;
+        output Boolean outTerminateSimulation;
+        external "C" outTerminateSimulation = fmi2TerminateSimulation_OMC(fmi2me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+      end fmi2TerminateSimulation;
+
       function fmi2CompletedIntegratorStep
         input FMI2ModelExchange fmi2me;
         input Real inFlowStates;
-        output Boolean outCallEventUpdate;
-        external "C" outCallEventUpdate = fmi2CompletedIntegratorStep_OMC(fmi2me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Real outFlowStates;
+        external "C" outFlowStates = fmi2CompletedIntegratorStep_OMC(fmi2me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2CompletedIntegratorStep;
+
+      function fmi2StepEvent
+        input FMI2ModelExchange fmi2me;
+        input Real inFlowStates;
+        output Boolean outCallEventUpdate;
+        external "C" outCallEventUpdate = fmi2StepEvent_OMC(fmi2me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+      end fmi2StepEvent;
     end fmi2Functions;
   end <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%>;
   >>
@@ -2567,6 +2588,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanEventInputVariablesVRs, "") then "Boolean booleanEventInputVariables["+nBooleanEventInputVariables+"](each fixed=true);"%>
     <%if not stringEq(stringEventInputVariablesVRs, "") then "String stringEventInputVariables["+nStringEventInputVariables+"](each fixed=true);"%>
     Boolean callEventUpdate;
+    Real flowStepCompleted;
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
     parameter Real initialNextEventTime(fixed = false);
@@ -2589,7 +2611,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetBooleanParameter(fmi3me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetStringParameter(fmi3me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
     flowInitialized := fmi3Functions.fmi3ExitInitialization(fmi3me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
-    fmi3Functions.fmi3EndEventUpdate(fmi3me);
+    /* the next time event after the initial event iteration of fmi3ExitInitialization */
     initialNextEventTime := fmi3Functions.fmi3nextEventTime(fmi3me, flowInitialized);
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi3Functions.fmi3GetReal(fmi3me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
@@ -2622,15 +2644,18 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not boolAnd(stringEq(booleanOutputVariablesNames, ""), stringEq(booleanOutputVariablesVRs, "")) then "{"+booleanOutputVariablesNames+"} = fmi3Functions.fmi3GetBoolean(fmi3me, {"+booleanOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(stringOutputVariablesNames, ""), stringEq(stringOutputVariablesVRs, "")) then "{"+stringOutputVariablesNames+"} = fmi3Functions.fmi3GetString(fmi3me, {"+stringOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%dumpOutputGetEnumerationVariables(fmiModelVariablesList, fmiTypeDefinitionsList, "fmi3Functions.fmi3GetInteger", "fmi3me")%>
-    callEventUpdate = fmi3Functions.fmi3CompletedIntegratorStep(fmi3me, flowStatesInputs+flowTime);
+    callEventUpdate = fmi3Functions.fmi3StepEvent(fmi3me, flowStatesInputs);
+    /* No zero-crossing function needs flowStepCompleted. Thus the solver calls
+       fmi3CompletedIntegratorStep only after the event location of a step. */
+    flowStepCompleted = fmi3Functions.fmi3CompletedIntegratorStep(fmi3me, flowStatesInputs+flowTime);
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
-    when {<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>, triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
+    when {<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>, triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time<%dumpDiscreteInputChanges(fmiModelVariablesList)%>, terminal()} then
   >>
   else
   <<
-    when {triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
+    when {triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time<%dumpDiscreteInputChanges(fmiModelVariablesList)%>, terminal()} then
   >>
   %>
       fmi3Functions.fmi3StartEventUpdate(fmi3me);
@@ -2640,6 +2665,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       <%if not stringEq(stringEventInputVariablesVRs, "") then "stringEventInputVariables := fmi3Functions.fmi3SetString(fmi3me, {"+stringEventInputVariablesVRs+"}, {"+stringEventStartVariablesNames+"});"%>
       newStatesAvailable := fmi3Functions.fmi3EndEventUpdate(fmi3me);
       nextEventTime := fmi3Functions.fmi3nextEventTime(fmi3me, flowStatesInputs);
+      if fmi3Functions.fmi3TerminateSimulation(fmi3me, flowStatesInputs) then
+        terminate("The FMU requested to terminate the simulation.");
+      end if;
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
       if newStatesAvailable then
@@ -2862,12 +2890,26 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" outNewnextTime = fmi3nextEventTime_OMC(fmi3me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi3nextEventTime;
 
+      function fmi3TerminateSimulation
+        input FMI3ModelExchange fmi3me;
+        input Real inFlowStates;
+        output Boolean outTerminateSimulation;
+        external "C" outTerminateSimulation = fmi3TerminateSimulation_OMC(fmi3me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+      end fmi3TerminateSimulation;
+
       function fmi3CompletedIntegratorStep
         input FMI3ModelExchange fmi3me;
         input Real inFlowStates;
-        output Boolean outCallEventUpdate;
-        external "C" outCallEventUpdate = fmi3CompletedIntegratorStep_OMC(fmi3me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Real outFlowStates;
+        external "C" outFlowStates = fmi3CompletedIntegratorStep_OMC(fmi3me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi3CompletedIntegratorStep;
+
+      function fmi3StepEvent
+        input FMI3ModelExchange fmi3me;
+        input Real inFlowStates;
+        output Boolean outCallEventUpdate;
+        external "C" outCallEventUpdate = fmi3StepEvent_OMC(fmi3me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+      end fmi3StepEvent;
     end fmi3Functions;
   end <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%>;
   >>
@@ -3821,6 +3863,24 @@ match fmiModelVariable
 %>
 >>
 end dumpVariable;
+
+template dumpDiscreteInputChanges(list<ModelVariables> fmiModelVariablesList)
+ "A change of an Integer, Boolean or String input is an event of the FMU: the
+  input can only be set in Event Mode."
+::=
+  fmiModelVariablesList |> fmiModelVariable => dumpDiscreteInputChange(fmiModelVariable)
+end dumpDiscreteInputChanges;
+
+template dumpDiscreteInputChange(ModelVariables fmiModelVariable)
+::=
+  match fmiModelVariable
+  case INTEGERVARIABLE(causality="input") then ', change(<%name%>)'
+  case BOOLEANVARIABLE(causality="input") then ', change(<%name%>)'
+  case STRINGVARIABLE(causality="input") then ', change(<%name%>)'
+  case FMI3INTEGERVARIABLE(causality="input") then ', change(<%name%>)'
+  case FMI3BOOLEANVARIABLE(causality="input") then ', change(<%name%>)'
+  case FMI3STRINGVARIABLE(causality="input") then ', change(<%name%>)'
+end dumpDiscreteInputChange;
 
 template dumpOutputGetEnumerationVariables(list<ModelVariables> fmiModelVariablesList, list<TypeDefinitions> fmiTypeDefinitionsList, String fmiGetFunction, String fmiInstance)
 ::=

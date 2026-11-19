@@ -50,6 +50,9 @@ equation
 end R134a_pTX_phX_all;
 "); getErrorString();
 
+// The C runtime FMU holds the assert until the event update. The C+Rust FMU
+// returns fmi2Error at the rejected step, and the import then stops.
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 buildModelFMU(R134a_pTX_phX_all, version="2.0"); getErrorString();
 importFMU("R134a_pTX_phX_all.fmu"); getErrorString();
 setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
@@ -66,6 +69,8 @@ regexBool(messages, {"The following assertion has been violated at time 0.230204
   "Found event, previous asserts are ignored.", "The simulation finished successfully."}); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

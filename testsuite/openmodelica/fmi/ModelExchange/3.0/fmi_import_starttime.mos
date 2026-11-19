@@ -1,0 +1,73 @@
+// name:     fmi_import_starttime
+// keywords: FMI 2.0 3.0 import startTime initial event
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml terminalsAndIcons resources ImportStartTime* output.log
+//
+// After the initialization the imported Model Exchange FMU is in Event Mode.
+// The import must do the initial event iteration, which moves the FMU to
+// Continuous-Time Mode, also when the simulation does not start at time 0.
+// y = exp(-(time - 0.5)): y(1.0) = 0.6065, y(2.0) = 0.2231.
+//
+
+loadString("
+model ImportStartTime
+  Real x(start = 1, fixed = true);
+  output Real y;
+equation
+  der(x) = -x;
+  y = x;
+end ImportStartTime;
+"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+
+buildModelFMU(ImportStartTime, version="2.0", fmuType="me", fileNamePrefix="ImportStartTime_2"); getErrorString();
+importFMU("ImportStartTime_2.fmu"); getErrorString();
+loadFile("ImportStartTime_2_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(ImportStartTime_2_me_FMU, startTime=0.5, stopTime=2.0); clearMessages();
+echo(true);
+res.resultFile;
+val(y, 1.0);
+val(y, 2.0);
+
+buildModelFMU(ImportStartTime, version="3.0", fmuType="me", fileNamePrefix="ImportStartTime_3"); getErrorString();
+echo(false);
+importFMU("ImportStartTime_3.fmu"); clearMessages();
+echo(true);
+loadFile("ImportStartTime_3_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(ImportStartTime_3_me_FMU, startTime=0.5, stopTime=2.0); clearMessages();
+echo(true);
+res.resultFile;
+val(y, 1.0);
+val(y, 2.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "ImportStartTime_2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "ImportStartTime_2_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// "ImportStartTime_2_me_FMU_res.mat"
+// 0.6065316146198498
+// 0.22313095304295494
+// "ImportStartTime_3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// true
+// true
+// ""
+// true
+// "ImportStartTime_3_me_FMU_res.mat"
+// 0.6065316145288668
+// 0.22313095300948385
+// endResult

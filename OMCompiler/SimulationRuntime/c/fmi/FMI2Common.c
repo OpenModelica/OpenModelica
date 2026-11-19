@@ -140,6 +140,7 @@ void fmi2GetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
  * @brief Wrapper for fmi2SetReal.
  *
  * Only sets values in instantiated, initialization, event, or continuous-time mode.
+ * In continuous-time mode, only the continuous variables.
  *
  * @param in_fmi2                 FMI2 model exchange instance.
  * @param numberOfValueReferences Number of value references.
@@ -151,7 +152,26 @@ void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
   if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
-    fmi2_status_t status = fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+    fmi2_real_t* values = (fmi2_real_t*)realValues;
+    size_t n = numberOfValueReferences;
+    fmi2_status_t status;
+    /* Continuous-Time Mode allows only continuous Real inputs (FMI 2.0.5, section 3.2.3,
+       note 5). The event update sets the discrete ones in Event Mode. */
+    if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
+      size_t i;
+      values = (fmi2_real_t*)malloc(numberOfValueReferences * sizeof(fmi2_real_t));
+      for (i = 0, n = 0; i < (size_t)numberOfValueReferences; i++) {
+        fmi2_import_variable_t* v = fmi2_import_get_variable_by_vr(FMI2ME->FMIImportInstance, fmi2_base_type_real, valuesReferences_int[i]);
+        if (!v || fmi2_import_get_variability(v) == fmi2_variability_enu_continuous) {
+          valuesReferences_int[n] = valuesReferences_int[i];
+          values[n++] = realValues[i];
+        }
+      }
+    }
+    status = n ? fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, n, values) : fmi2_status_ok;
+    if (values != (fmi2_real_t*)realValues) {
+      free(values);
+    }
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       fmi2Failed(FMI2ME, "fmi2SetReal", status);
