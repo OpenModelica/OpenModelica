@@ -48,6 +48,7 @@ protected
 
 import Absyn;
 import Array;
+import AvlSetInt;
 import BackendDAEEXT;
 import BackendDAEUtil;
 import BackendDump;
@@ -5634,7 +5635,7 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,internalCall,isyst,inMatchingOptions)
     local
-      BackendDAE.AdjacencyMatrix m,mt, m1,m1t;
+      BackendDAE.AdjacencyMatrix m,mt, m1;
       Integer nv_1,ne_1,memsize;
       list<Integer> unmatched_eqs;
       list<list<Integer>> meqns1, comps;
@@ -5703,13 +5704,7 @@ algorithm
         if listEmpty(unmatched_eqs) then
           meqns1 := {};
         else
-          // remove some edges which do not have to be traversed when finding the MSSS
-          m1 := arrayCopy(m);
-          m1t := arrayCopy(mt);
-          (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,syst,ishared);
-          (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,syst,ishared);
-
-          meqns1 := getEqnsforIndexReduction(unmatched_eqs,ne,m1,m1t,ass1_1,ass2_1,inArg);
+          meqns1 := getMSSSforIndexReduction(unmatched_eqs, nv, ne, m, mt, ass1_1, ass2_1, algIndx, cheapMatching, syst, ishared, inArg);
         end if;
         /*
           -----------------------------------------
@@ -5803,7 +5798,7 @@ protected
   BackendDAE.Equation form_eqn;
   DAE.ComponentRef cr;
   DAE.Exp residualExp, diffExp;
-  BackendDAE.AdjacencyMatrix m, mt, m1, m1t;
+  BackendDAE.AdjacencyMatrix m, mt;
   String msg;
 algorithm
   try
@@ -5963,11 +5958,7 @@ algorithm
       BackendDAEEXT.matching(nv, ne, algIndx, cheapMatching, 1.0, clearMatching);
       BackendDAEEXT.getAssignment(ass1, ass2);
       unmatched1 := getUnassigned(ne, ass1, {});
-      m1 := arrayCopy(m);
-      m1t := arrayCopy(mt);
-      (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1, m1t, syst, shared);
-      (m1,m1t) := removeEdgesToDiscreteEquations(m1, m1t, syst, shared);
-      eqns := getEqnsforIndexReduction(unmatched1, ne, m1, m1t, ass1, ass2, arg);
+      eqns := getMSSSforIndexReduction(unmatched1, nv, ne, m, mt, ass1, ass2, algIndx, cheapMatching, syst, shared, arg);
     end if;
 
     if Flags.isSet(Flags.BLT_DUMP) and not listEmpty(undiffable_artificial) then
@@ -6050,6 +6041,121 @@ algorithm
     else true;
   end match;
 end collectArtificialStates;
+
+protected function getMSSSforIndexReduction
+  "Collects the minimal structurally singular subsets of the unmatched
+   equations. The search does not traverse edges that differentiation does
+   not need. If the matching uses such an edge, the matching is continued
+   without it."
+  input list<Integer> unmatched;
+  input Integer nv;
+  input Integer ne;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
+  input array<Integer> ass1 "var := ass1[eqn]";
+  input array<Integer> ass2 "eqn := ass2[var]";
+  input Integer algIndx;
+  input Integer cheapMatching;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.StructurallySingularSystemHandlerArg arg;
+  output list<list<Integer>> msss;
+protected
+  BackendDAE.AdjacencyMatrix m1, m1t;
+  array<list<Integer>> mapEqnIncRow;
+  list<Integer> unmatched1 = unmatched;
+  Boolean rematch = false;
+  Integer var;
+algorithm
+  (_, _, mapEqnIncRow, _, _) := arg;
+  m1 := arrayCopy(m);
+  m1t := arrayCopy(mt);
+  (m1, m1t) := removeEdgesForInlinedFunctionInputs(m1, m1t, syst, shared, mapEqnIncRow);
+  for eqn in 1:ne loop
+    var := ass1[eqn];
+    if var > 0 and not listMember(var, m1[eqn]) then
+      arrayUpdate(ass1, eqn, -1);
+      arrayUpdate(ass2, var, -1);
+      rematch := true;
+    end if;
+  end for;
+  if rematch then
+    BackendDAEEXT.setAssignment(ne, nv, ass1, ass2);
+    matchingExternalsetAdjacencyMatrix(nv, ne, m1);
+    BackendDAEEXT.matching(nv, ne, algIndx, cheapMatching, 1.0, 0);
+    BackendDAEEXT.getAssignment(ass1, ass2);
+    unmatched1 := getUnassigned(ne, ass1, {});
+  end if;
+  (m1, m1t) := removeEdgesForNoDerivativeFunctionInputs(m1, m1t, syst, shared);
+  (m1, m1t) := removeEdgesToDiscreteEquations(m1, m1t, syst, shared);
+  msss := getEqnsforIndexReduction(unmatched1, ne, m1, m1t, ass1, ass2, arg);
+end getMSSSforIndexReduction;
+
+protected function removeEdgesForInlinedFunctionInputs
+  "Removes the edges to the variables that are arguments of a function call
+   but that the inlined call does not use. Differentiate inlines such calls,
+   so the derivative of the equation does not contain these variables."
+  input output BackendDAE.AdjacencyMatrix m;
+  input output BackendDAE.AdjacencyMatrixT mt;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input array<list<Integer>> mapEqnIncRow;
+protected
+  Integer idx = 1;
+  BackendDAE.Equation inlinedEq;
+  Boolean inlined;
+  AvlSetInt.Tree varsBefore, varsAfter;
+  list<Integer> removed, rows;
+algorithm
+  for eq in BackendEquation.equationList(syst.orderedEqs) loop
+    Error.checkCancel();
+    (inlinedEq, (_, inlined)) := BackendEquation.traverseExpsOfEquation(eq, function Expression.traverseExpTopDown(func = inlineCallWithoutDerivative), (shared.functionTree, false));
+    if inlined then
+      (_, varsBefore) := BackendEquation.traverseExpsOfEquation(eq, function BackendEquation.checkEquationsVarsExpTopDownTraverseHelper(vars = syst.orderedVars), AvlSetInt.new());
+      (_, varsAfter) := BackendEquation.traverseExpsOfEquation(inlinedEq, function BackendEquation.checkEquationsVarsExpTopDownTraverseHelper(vars = syst.orderedVars), AvlSetInt.new());
+      removed := list(v for v guard not AvlSetInt.hasKey(varsAfter, v) in AvlSetInt.listKeys(varsBefore));
+      if not listEmpty(removed) then
+        rows := mapEqnIncRow[idx];
+        for r in rows loop
+          arrayUpdate(m, r, list(v for v guard not listMember(intAbs(v), removed) in m[r]));
+        end for;
+        for v in removed loop
+          arrayUpdate(mt, v, list(e for e guard not listMember(intAbs(e), rows) in mt[v]));
+        end for;
+      end if;
+    end if;
+    idx := idx + 1;
+  end for;
+end removeEdgesForInlinedFunctionInputs;
+
+protected function inlineCallWithoutDerivative
+  "Inlines a call to a function without derivative annotation, the same way
+   Differentiate.differentiateFunctionCall does before it differentiates it."
+  input output DAE.Exp exp;
+  output Boolean cont = true;
+  input output tuple<AvlTreePathFunction.Tree, Boolean> tpl;
+protected
+  Absyn.Path path;
+  AvlTreePathFunction.Tree functionTree;
+  Boolean inlined;
+algorithm
+  () := match exp
+    case DAE.CALL(path = path, attr = DAE.CALL_ATTR(builtin = false))
+      algorithm
+        (functionTree, _) := tpl;
+        try
+          Differentiate.getFunctionMapper(path, functionTree);
+        else
+          (exp, _, inlined) := Inline.forceInlineExp(exp, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), DAE.emptyElementSource, Ceval.cevalSimpleWithFunctionTreeReturnExp);
+          if inlined then
+            tpl := (functionTree, true);
+            cont := false;
+          end if;
+        end try;
+      then ();
+    else ();
+  end match;
+end inlineCallWithoutDerivative;
 
 protected function removeEdgesToDiscreteEquations""
   input BackendDAE.AdjacencyMatrix m;
