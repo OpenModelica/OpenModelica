@@ -821,7 +821,8 @@ protected
       case {alias, der_cref} guard(isDerivativeCref(der_cref) and not isDerivativeCref(alias) and BVariable.isVarCref(alias)) then (der_cref, alias, true);
       else (ComponentRef.EMPTY(), ComponentRef.EMPTY(), false);
     end match;
-    if not found then
+    // a discrete variable is not k*der(y) + c
+    if not found or not BVariable.checkCref(alias, function BVariable.isContinuous(staticAsContinuous = false), sourceInfo()) then
       return;
     end if;
 

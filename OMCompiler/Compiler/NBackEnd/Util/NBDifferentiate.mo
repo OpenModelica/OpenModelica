@@ -2495,6 +2495,7 @@ public
       case "ceil"     then Expression.REAL(0.0);
       case "floor"    then Expression.REAL(0.0);
       case "integer"  then Expression.INTEGER(0);
+      case "Integer"  then Expression.INTEGER(0);
 
       // abs(arg) -> sign(arg)
       case "abs" then Expression.CAST(
