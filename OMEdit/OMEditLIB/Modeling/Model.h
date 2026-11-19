@@ -458,6 +458,7 @@ private:
   class Curve
   {
   public:
+    enum class YAxis {Left, Right};
     void deserialize(const QJsonValue &jsonValue);
 
     const QString &getX() const {return mX;}
@@ -466,6 +467,8 @@ private:
     void setY(const FlatModelica::Expression &y) {mY = y;}
     const QString &getLegend() const {return mLegend;}
     void setLegend(const QString &legend) {mLegend = legend;}
+    YAxis getYAxis() const {return mYAxis;}
+    void setYAxis(YAxis yAxis) {mYAxis = yAxis;}
     int getZOrder() const {return mZOrder;}
     void setZOrder(int zOrder) {mZOrder = zOrder;}
     QString toString() const;
@@ -473,6 +476,7 @@ private:
     QString mX = "time";
     FlatModelica::Expression mY;
     QString mLegend;
+    YAxis mYAxis = YAxis::Left;
     int mZOrder = 0;
   };
 
@@ -490,6 +494,8 @@ private:
     void setXAxis(std::unique_ptr<Axis> pAxis) {mpXAxis = std::move(pAxis);}
     const Axis *getYAxis() const {return mpYAxis.get();}
     void setYAxis(std::unique_ptr<Axis> pAxis) {mpYAxis = std::move(pAxis);}
+    const Axis *getYRightAxis() const {return mpYRightAxis.get();}
+    void setYRightAxis(std::unique_ptr<Axis> pAxis) {mpYRightAxis = std::move(pAxis);}
     QString toString() const;
   private:
     QString mTitle;
@@ -497,6 +503,7 @@ private:
     std::vector<std::unique_ptr<Curve>> mCurves;
     std::unique_ptr<Axis> mpXAxis;
     std::unique_ptr<Axis> mpYAxis;
+    std::unique_ptr<Axis> mpYRightAxis;
   };
 
   class Figure

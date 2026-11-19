@@ -682,13 +682,18 @@ namespace ModelInstance
       mLegend = elements.at(2).toString();
     }
     if (elements.size() > 3) {
-      mZOrder = elements.at(3).toInt();
+      // An enumeration literal, e.g. {"$kind": "enum", "name": "YAxisSelection.Right", "index": 2}.
+      const QString yAxis = elements.at(3).toObject().value("name").toString();
+      mYAxis = yAxis.section('.', -1) == QStringLiteral("Right") ? YAxis::Right : YAxis::Left;
+    }
+    if (elements.size() > 4) {
+      mZOrder = elements.at(4).toInt();
     }
   }
 
   /*!
    * \brief Curve::toString
-   * Omits default x, legend, and z-order values.
+   * Omits default x, legend, yAxis, and z-order values.
    */
   QString Curve::toString() const
   {
@@ -699,6 +704,9 @@ namespace ModelInstance
     fields.append(QString("y=%1").arg(mY.toQString()));
     if (!mLegend.isEmpty()) {
       fields.append(QString("legend=%1").arg(quoteModelicaString(mLegend)));
+    }
+    if (mYAxis == YAxis::Right) {
+      fields.append("yAxis=YAxisSelection.Right");
     }
     if (mZOrder != 0) {
       fields.append(QString("zOrder=%1").arg(mZOrder));
@@ -742,6 +750,10 @@ namespace ModelInstance
       mpYAxis = std::make_unique<Axis>();
       mpYAxis->deserialize(elements.at(4));
     }
+    if (elements.size() > 5 && elements.at(5).isObject()) {
+      mpYRightAxis = std::make_unique<Axis>();
+      mpYRightAxis->deserialize(elements.at(5));
+    }
   }
 
   /*!
@@ -767,6 +779,9 @@ namespace ModelInstance
     }
     if (mpYAxis && mpYAxis->toString() != QStringLiteral("Axis()")) {
       fields.append(QString("y=%1").arg(mpYAxis->toString()));
+    }
+    if (mpYRightAxis && mpYRightAxis->toString() != QStringLiteral("Axis()")) {
+      fields.append(QString("yRight=%1").arg(mpYRightAxis->toString()));
     }
     return QString("Plot(%1)").arg(fields.join(","));
   }

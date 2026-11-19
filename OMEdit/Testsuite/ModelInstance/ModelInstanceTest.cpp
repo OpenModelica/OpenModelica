@@ -128,6 +128,9 @@ void ModelInstanceTest::documentationFigures()
   const auto makeRecord = [](const QString &name, const QJsonArray &elements) {
     return QJsonObject{{"$kind", "record"}, {"name", name}, {"elements", elements}};
   };
+  const auto makeYAxis = [](const QString &literal, int index) {
+    return QJsonObject{{"$kind", "enum"}, {"name", "YAxisSelection." + literal}, {"index", index}};
+  };
   const QJsonObject curve = makeRecord("Curve", QJsonArray{
                                          "time",
                                          QJsonObject{
@@ -135,6 +138,7 @@ void ModelInstanceTest::documentationFigures()
                                            {"parts", QJsonArray{QJsonObject{{"name", "h"}}}}
                                          },
                                          "Height of ball",
+                                         makeYAxis("Left", 1),
                                          0
                                        });
   const QJsonObject axisScale = makeRecord("AxisScale", QJsonArray{"Log", 2});
@@ -224,6 +228,30 @@ void ModelInstanceTest::documentationFigures()
   QVERIFY(documentation.toString().contains("Figure(title=\"New figure\",preferred=true,plots={Plot(curves={Curve(y=w)})})"));
   QCOMPARE(documentation.getFigures().size(), size_t(3));
   QCOMPARE(documentation.getFigures().at(2)->getTitle(), QString("New figure"));
+
+  // yAxis is written only when it is Right, the default is Left.
+  const QJsonObject rightCurve = makeRecord("Curve", QJsonArray{
+                                              "time",
+                                              QJsonObject{
+                                                {"$kind", "cref"},
+                                                {"parts", QJsonArray{QJsonObject{{"name", "v"}}}}
+                                              },
+                                              "",
+                                              makeYAxis("Right", 2),
+                                              1
+                                            });
+  const QJsonObject yRightAxis = makeRecord("Axis", QJsonArray{QJsonArray{}, QJsonArray{}, "", "speed", QJsonObject{}});
+  ModelInstance::Plot rightPlot;
+  rightPlot.deserialize(makeRecord("Plot", QJsonArray{"", "", QJsonArray{curve, rightCurve}, xAxis, yAxis, yRightAxis}));
+  QCOMPARE(rightPlot.getCurves().size(), size_t(2));
+  QVERIFY(rightPlot.getCurves().at(0)->getYAxis() == ModelInstance::Curve::YAxis::Left);
+  QVERIFY(rightPlot.getCurves().at(1)->getYAxis() == ModelInstance::Curve::YAxis::Right);
+  QCOMPARE(rightPlot.getCurves().at(1)->getZOrder(), 1);
+  QVERIFY(rightPlot.getYRightAxis());
+  QCOMPARE(rightPlot.getYRightAxis()->getLabel(), QString("speed"));
+  QCOMPARE(rightPlot.toString(),
+           QString("Plot(curves={Curve(y=h,legend=\"Height of ball\"),Curve(y=v,yAxis=YAxisSelection.Right,zOrder=1)},"
+                   "x=Axis(label=\"time (s)\",scale=AxisScale(scaleType=\"Log\",base=2)),yRight=Axis(label=\"speed\"))"));
 
   ModelInstance::Axis axis;
   axis.setMin(FlatModelica::Expression(-0.123456789));
