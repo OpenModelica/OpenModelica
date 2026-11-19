@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES=\
 algorithmSliceInForLoop.mos \
+maxArrayIntegerEnum.mos \
 reuseConstantPartsJac1.mos \
 tupleWildcard.mos
 

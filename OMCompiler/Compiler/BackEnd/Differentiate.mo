@@ -1622,7 +1622,6 @@ algorithm
       DAE.Exp exp_1,exp_2;
       AvlTreePathFunction.Tree funcs;
       DAE.Type tp;
-      list<DAE.Exp> expl;
 
     case ("pre",_) algorithm
       tp := Expression.typeof(exp);
@@ -1789,18 +1788,18 @@ algorithm
       then
        (exp_2, funcs);
 
-    case ("max",DAE.ARRAY(array=expl,ty=tp))
+    case ("max",_)
       algorithm
-        tp := Types.arrayElementType(tp);
-        exp_1 := createFromNCall2ArgsCall("max", expl, tp);
+        tp := Types.arrayElementType(Expression.typeof(exp));
+        exp_1 := createFromNCall2ArgsCall("max", Expression.arrayElements(exp), tp);
         (exp_2, funcs) := differentiateExp(exp_1, inDiffwrtCref, inInputData, inDiffType, inFuncs, maxIter);
       then
        (exp_2, funcs);
 
-    case ("min",DAE.ARRAY(array=expl,ty=tp))
+    case ("min",_)
       algorithm
-        tp := Types.arrayElementType(tp);
-        exp_1 := createFromNCall2ArgsCall("min", expl, tp);
+        tp := Types.arrayElementType(Expression.typeof(exp));
+        exp_1 := createFromNCall2ArgsCall("min", Expression.arrayElements(exp), tp);
         (exp_2, funcs) := differentiateExp(exp_1, inDiffwrtCref, inInputData, inDiffType, inFuncs, maxIter);
       then
        (exp_2, funcs);
@@ -1826,6 +1825,13 @@ algorithm
       then
        (exp_1, inFuncs);
 
+    case ("Integer",_)
+      algorithm
+        tp := Expression.typeof(exp);
+        (exp_1, _) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (exp_1, inFuncs);
+
   end match;
 end differentiateCallExp1Arg;
 
@@ -1835,11 +1841,11 @@ protected function createFromNCall2ArgsCall
   input DAE.Type tp;
   output DAE.Exp result;
 protected
-  DAE.Exp e1,e2;
   list<DAE.Exp> rest;
 algorithm
- e1::e2::rest := expl;
- result := Expression.makePureBuiltinCall(funcName,{e1,e2},tp);
+ result::rest := expl;
+ // an array element means that the argument could not be expanded
+ false := Types.isArray(Expression.typeof(result));
  for elem in rest loop
    result := Expression.makePureBuiltinCall(funcName,{result,elem},tp);
  end for;
