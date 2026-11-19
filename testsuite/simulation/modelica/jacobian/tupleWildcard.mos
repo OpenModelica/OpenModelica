@@ -1,0 +1,49 @@
+// name: tupleWildcard
+// keywords: symbolic jacobian tuple wildcard
+// status: correct
+// teardown_command: rm -f TupleWildcard*
+//
+// #18228: a tuple equation with an unused output gave an extra equation
+// _ = ... in the symbolic Jacobian.
+
+loadString("
+model TupleWildcard
+  function f
+    input Real x;
+    output Real a;
+    output Real b;
+  algorithm
+    a := sin(x);
+    b := x^2;
+  end f;
+  Real s(start = 0, fixed = true);
+  Real w(start = 1, fixed = true);
+  Real b;
+equation
+  (, b) = f(2*w);
+  der(s) = f(w) - s;
+  der(w) = -0.1*w + 0.05*s + 0.01*b;
+end TupleWildcard;
+"); getErrorString();
+
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
+simulate(TupleWildcard, simflags="-jacobian=symbolical"); getErrorString();
+val(s, 1.0);
+val(w, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TupleWildcard_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TupleWildcard', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=symbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5221495010538657
+// 0.955809885819651
+// endResult

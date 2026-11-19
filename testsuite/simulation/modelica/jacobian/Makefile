@@ -2,7 +2,8 @@ TEST = ../../../rtest -v
 
 TESTFILES=\
 algorithmSliceInForLoop.mos \
-reuseConstantPartsJac1.mos
+reuseConstantPartsJac1.mos \
+tupleWildcard.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
