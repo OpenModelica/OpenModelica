@@ -442,11 +442,12 @@ protected
   DAE.Algorithm alg;
   DAE.ElementSource source;
   DAE.Expand crefExpand;
-  HashSet.HashSet leftCrs;
+  HashSet.HashSet leftCrs, initOutputs;
   Integer size;
   list<BackendDAE.Equation> eqns;
   list<BackendDAE.Equation> accEq;
   list<DAE.Statement> stmts;
+  list<DAE.ComponentRef> outputs;
 algorithm
   (accEq, leftCrs) := inTpl;
   outTpl := match inEq
@@ -460,7 +461,15 @@ algorithm
       DAE.ALGORITHM_STMTS(statementLst=stmts) := alg;
       // the size of an algorithm differentiated by the index reduction is not the number of its outputs
       if List.any(stmts, isWhenStatement) then
-        (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
+        outputs := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND());
+        stmts := inlineWhenForInitializationWhenAlgorithm(stmts);
+        // outputs that only inactive when-branches assign keep pre(v)
+        initOutputs := List.fold(CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()), BaseHashSet.add, HashSet.emptyHashSet());
+        for cr in outputs loop
+          if not BaseHashSet.has(cr, initOutputs) then
+            leftCrs := BaseHashSet.add(cr, leftCrs);
+          end if;
+        end for;
         alg := DAE.ALGORITHM_STMTS(stmts);
         size := listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
       end if;
@@ -491,7 +500,7 @@ algorithm
 
     case BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(statementLst = stmts)) algorithm
       stmts := list(s for s guard (match s case DAE.STMT_WHEN() then true; else false; end match) in stmts);
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
+      stmts := inlineWhenForInitializationWhenAlgorithm(stmts);
       if not listEmpty(stmts) then
         eqns := BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS(stmts), inEq.source, inEq.expand, BackendDAE.EQ_ATTR_DEFAULT_INITIAL) :: eqns;
       end if;
@@ -584,70 +593,49 @@ end isWhenStatement;
 protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input list< DAE.Statement> inStmts;
-  input list< DAE.Statement> inAcc "={}";
-  input HashSet.HashSet inLeftCrs;
+  input list< DAE.Statement> inAcc = {};
   output list< DAE.Statement> outStmts;
-  output HashSet.HashSet outLeftCrs;
 algorithm
-  (outStmts, outLeftCrs) := match inStmts
+  outStmts := match inStmts
     local
       DAE.Statement stmt;
-      list<DAE.Statement> stmts, rest;
-      HashSet.HashSet leftCrs;
+      list<DAE.Statement> rest;
 
     case {}
-    then (listReverse(inAcc), inLeftCrs);
+    then listReverse(inAcc);
 
-    // when statement
-    case (stmt as DAE.STMT_WHEN())::rest algorithm
-      // for when statements it is not necessary that all branches have the same left hand side variables
-      // -> take care that for each left hand side an assigment is generated
-      (stmts, leftCrs) := inlineWhenForInitializationWhenStmt(stmt, inLeftCrs, inAcc);
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(rest, stmts, leftCrs);
-    then (stmts, leftCrs);
+    case (stmt as DAE.STMT_WHEN())::rest
+    then inlineWhenForInitializationWhenAlgorithm(rest, inlineWhenForInitializationWhenStmt(stmt, inAcc));
 
-    // no when statement
-    case stmt::rest algorithm
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(rest, stmt::inAcc, inLeftCrs);
-    then (stmts, leftCrs);
+    case stmt::rest
+    then inlineWhenForInitializationWhenAlgorithm(rest, stmt::inAcc);
   end match;
 end inlineWhenForInitializationWhenAlgorithm;
 
 protected function inlineWhenForInitializationWhenStmt "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input DAE.Statement inWhenStatement;
-  input HashSet.HashSet inLeftCrs;
   input list< DAE.Statement> inAcc;
   output list< DAE.Statement> outStmts;
-  output HashSet.HashSet outLeftCrs;
 algorithm
-  (outStmts, outLeftCrs) := match inWhenStatement
+  outStmts := match inWhenStatement
     local
       DAE.Exp condition;
-      list<DAE.ComponentRef> crefLst;
       DAE.Statement stmt;
       list<DAE.Statement> stmts;
-      HashSet.HashSet leftCrs;
 
     // active when equation during initialization
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts) guard
       Expression.containsInitialCall(condition)
-    algorithm
-      stmts := List.foldr(stmts, List.consr, inAcc);
-    then (stmts, inLeftCrs);
+    then List.foldr(stmts, List.consr, inAcc);
 
     // inactive when equation during initialization
-    case DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()) algorithm
-      crefLst := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs := List.fold(crefLst, BaseHashSet.add, inLeftCrs);
-    then (inAcc, leftCrs);
+    case DAE.STMT_WHEN(elseWhen=NONE())
+    then inAcc;
 
     // inactive when equation during initialization with elsewhen part
-    case DAE.STMT_WHEN(statementLst=stmts, elseWhen=SOME(stmt)) algorithm
-      crefLst := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs := List.fold(crefLst, BaseHashSet.add, inLeftCrs);
-      (stmts, leftCrs) := inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
-    then (stmts, leftCrs);
+    case DAE.STMT_WHEN(elseWhen=SOME(stmt))
+    then inlineWhenForInitializationWhenStmt(stmt, inAcc);
 
     else algorithm
       Error.addInternalError("function inlineWhenForInitializationWhenStmt failed", sourceInfo());

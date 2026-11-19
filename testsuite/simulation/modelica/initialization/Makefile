@@ -98,6 +98,7 @@ conflictingStartValues.mos \
 startAttributePriority.mos \
 Ticket5340.mos \
 Issue17162.mos \
+Issue18209.mos \
 redundantTupleEquation.mos \
 UnfixedParameterStart.mos \
 
