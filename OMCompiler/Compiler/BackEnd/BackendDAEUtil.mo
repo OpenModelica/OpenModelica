@@ -5102,7 +5102,7 @@ algorithm
     // WHEN_EQUATION
     case (vars, BackendDAE.WHEN_EQUATION(size=size,whenEquation = elsewe))
       algorithm
-        (row,varsSolvedInWhenEqns) := adjacencyRowWhenEnhanced(elsewe, mark, rowmark, vars, globalKnownVars, {}, {},shared);
+        (row,varsSolvedInWhenEqns) := adjacencyRowWhenEnhanced(elsewe, mark, rowmark, vars, shared);
         varsSolvedInWhenEqnsTuple := {(mark,varsSolvedInWhenEqns)};
       then
         (row,size);
@@ -5346,68 +5346,53 @@ end adjacencyRowAlgorithmInputs1;
 protected function adjacencyRowWhenEnhanced
 "author: Frenkel TUD
   Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
-  in the matrix for one equation."
+  in the matrix for one equation. The equation can only be solved for the
+  assigned variables, not for the variables in the conditions or right-hand
+  sides of any branch."
   input BackendDAE.WhenEquation inEquation;
   input Integer mark;
   input array<Integer> rowmark;
   input BackendDAE.Variables vars;
-  input BackendDAE.Variables globalKnownVars;
-  input list<Integer> iLst;
-  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   input BackendDAE.Shared shared;
-  output BackendDAE.AdjacencyMatrixElementEnhanced outRow = iRow;
-  output list<Integer> varsSolvedInWhenEqns={};
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+  output list<Integer> varsSolvedInWhenEqns = {};
 protected
+  Boolean isInitial = isInitializationDAE(shared);
+  Option<BackendDAE.WhenEquation> owe = SOME(inEquation);
   DAE.Exp condition;
   list<BackendDAE.WhenOperator> whenStmtLst;
-  Option<BackendDAE.WhenEquation> oelsepart;
-  list<Integer> lst;
-  BackendDAE.WhenEquation elsepart;
-  Boolean isInitial;
+  list<DAE.Exp> lhsLst = {};
+  list<Integer> lst = {}, varIdcs;
 algorithm
-  isInitial := isInitializationDAE(shared);
-  BackendDAE.WHEN_STMTS(condition = condition, whenStmtLst = whenStmtLst, elsewhenPart = oelsepart) := inEquation;
-  lst := adjacencyRowExpEnhanced(condition, vars, mark, rowmark, isInitial, iLst);
-  for rs in whenStmtLst loop
-    () := match rs
-      local
-        Integer varIndx;
-        list<Integer> varIdcs;
-        DAE.ComponentRef left;
-        list<DAE.ComponentRef> crefs;
-        DAE.Exp right, leftexp;
+  while isSome(owe) loop
+    SOME(BackendDAE.WHEN_STMTS(condition = condition, whenStmtLst = whenStmtLst, elsewhenPart = owe)) := owe;
+    lst := adjacencyRowExpEnhanced(condition, vars, mark, rowmark, isInitial, lst);
+    for rs in whenStmtLst loop
+      () := match rs
+        case BackendDAE.ASSIGN()
+          algorithm
+            lst := adjacencyRowExpEnhanced(rs.right, vars, mark, rowmark, isInitial, lst);
+            lhsLst := rs.left :: lhsLst;
+          then ();
+        else ();
+      end match;
+    end for;
+  end while;
 
-      case BackendDAE.ASSIGN(left = leftexp as DAE.CREF(componentRef = left), right=right)
-        algorithm
-        (_,{varIndx}) := BackendVariable.getVar(left, vars);
-        varsSolvedInWhenEqns := varIndx :: varsSolvedInWhenEqns;
-        lst := adjacencyRowExpEnhanced(right, vars, mark, rowmark, isInitial, lst);
-        // mark all negative because the when condition cannot used to solve a variable
-        List.fold1(lst,markNegativ,rowmark,mark);
-        //leftexp = Expression.crefExp(left);
-        lst := adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, isInitial, lst);
-        outRow := adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false,1,shared);
-      then ();
-
-      case BackendDAE.ASSIGN(leftexp, right) algorithm
-        crefs := Expression.getAllCrefs(leftexp);
-        (_,varIdcs) := BackendVariable.getVarLst(crefs, vars);
-        varsSolvedInWhenEqns := listAppend(varIdcs, varsSolvedInWhenEqns);
-        lst := adjacencyRowExpEnhanced(right, vars, mark, rowmark, isInitial, lst);
-        // mark all negative because the when condition cannot used to solve a variable
-        List.fold1(lst,markNegativ,rowmark,mark);
-        lst := adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, isInitial, lst);
-        outRow := adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false,1,shared);
-      then ();
-
-      else ();
-    end match;
-
+  for i in lst loop
+    if i > 0 then
+      arrayUpdate(rowmark, i, -mark);
+    end if;
   end for;
-  if isSome(oelsepart) then
-    SOME(elsepart) := oelsepart;
-    outRow := adjacencyRowWhenEnhanced(elsepart, mark, rowmark, vars, globalKnownVars, lst, outRow, shared);
-  end if;
+
+  for lhs in lhsLst loop
+    (_, varIdcs) := BackendVariable.getVarLst(Expression.getAllCrefs(lhs), vars);
+    varsSolvedInWhenEqns := listAppend(varIdcs, varsSolvedInWhenEqns);
+    lst := adjacencyRowExpEnhanced(lhs, vars, mark, rowmark, isInitial, lst);
+  end for;
+  varsSolvedInWhenEqns := List.unique(varsSolvedInWhenEqns);
+
+  outRow := list((i, if i > 0 and rowmark[i] == mark then BackendDAE.SOLVABILITY_SOLVED() else BackendDAE.SOLVABILITY_UNSOLVABLE(), {}) for i in listReverse(lst));
 end adjacencyRowWhenEnhanced;
 
 protected function markNegativ
