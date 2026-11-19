@@ -839,8 +839,8 @@ static enum SOLVER_METHOD resolveAutoSolver(DATA* data, enum SOLVER_METHOD solve
     infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method ida, because the model was compiled with --daeMode.");
     return S_IDA;
   }
-  infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method dassl, the default ODE solver.");
-  return S_DASSL;
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method cvode, the default ODE solver.");
+  return S_CVODE;
 }
 
 /**

@@ -9321,6 +9321,10 @@ Impostare il valore a 0 per non avere alcun ritardo.</translation>
         <translation>Ricerca degli zeri</translation>
     </message>
     <message>
+        <source>Activates the internal root finding procedure of methods: dassl, ida and cvode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Restart After Event</source>
         <translation>Riavvio dopo un evento</translation>
     </message>
@@ -9419,10 +9423,6 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
     <message>
         <source>Specifies the embedded server port.</source>
         <translation>Specifica la porta del server integrato.</translation>
-    </message>
-    <message>
-        <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation>Attiva la procedura interna di ricerca degli zeri dei metodi: dassl e ida.</translation>
     </message>
     <message>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>

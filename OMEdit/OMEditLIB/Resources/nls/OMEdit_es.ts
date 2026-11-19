@@ -9238,6 +9238,10 @@ Set the value to 0 if you don&apos;t want any delay.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Activates the internal root finding procedure of methods: dassl, ida and cvode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Restart After Event</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9337,10 +9341,6 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Specifies the embedded server port.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

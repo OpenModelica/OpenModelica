@@ -9382,10 +9382,6 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
         <translation>Anger porten för den inbäddade servern.</translation>
     </message>
     <message>
-        <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation>Aktiverar den interna nollställesökningen för metoderna: dassl och ida.</translation>
-    </message>
-    <message>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>
         <translation>Aktiverar omstart av integreringsmetoden efter en händelse, används av metoderna: dassl, ida</translation>
     </message>
@@ -9504,6 +9500,10 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
     <message>
         <source>Root Finding</source>
         <translation>Nollställesökning</translation>
+    </message>
+    <message>
+        <source>Activates the internal root finding procedure of methods: dassl, ida and cvode.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restart After Event</source>
