@@ -726,11 +726,7 @@ pub extern "C" fn initialization(
     inst.meta.start_time = unsafe { (**(*data).localData).timeValue };
     unsafe { (*(*data).simulationInfo).homotopySteps = 0 };
     omclog::info(omclog::INIT, false, "### START INITIALIZATION ###");
-    let r = driver::run_initialization_model(&mut inst.engine, SIM_DATA, &inst.meta)
-        // C's `initialization()` pivots the state sets on the resolved initial
-        // point before it returns, so the caller's first step already has the
-        // selected states.
-        .and_then(|()| driver::StateSelection::initial(&mut inst.engine, SIM_DATA, &inst.meta));
+    let r = driver::run_initialization_model(&mut inst.engine, SIM_DATA, &inst.meta);
     omclog::info(omclog::INIT, false, "### END INITIALIZATION ###");
     // C's `initialization` ends with `initSynchronous`.
     let r = r.and_then(|sel| {

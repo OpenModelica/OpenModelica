@@ -3093,6 +3093,170 @@ end collectInitialBindings;
 
 
 // =============================================================================
+// section for addStateSetJacobianInputs
+//
+// =============================================================================
+
+public function addStateSetJacobianInputs
+  "The runtime selects the states of the dynamic state sets on the initial
+   solution. The Jacobians of the sets can read variables that only the
+   simulation system has, e.g. the $cse variables of wrapFunctionCalls. This
+   adds the equations of these variables to the end of the initial system."
+  input BackendDAE.BackendDAE inInitDAE;
+  input BackendDAE.BackendDAE inSimDAE;
+  output BackendDAE.BackendDAE outInitDAE = inInitDAE;
+protected
+  list<DAE.ComponentRef> crefs;
+  list<BackendDAE.Var> vars = {};
+  list<BackendDAE.Equation> eqns = {};
+  BackendDAE.BackendDAE dae;
+algorithm
+  for syst in inSimDAE.eqs loop
+    if not listEmpty(syst.stateSets) then
+      crefs := {};
+      for stateSet in syst.stateSets loop
+        crefs := stateSetJacobianCrefs(stateSet.jacobian, crefs);
+      end for;
+      (vars, eqns) := simulationOnlyEquations(syst, crefs, inInitDAE, vars, eqns);
+    end if;
+  end for;
+  if listEmpty(eqns) then
+    return;
+  end if;
+
+  dae := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.listVar1(vars), BackendEquation.listEquation(eqns))}, inInitDAE.shared);
+  dae := BackendDAEUtil.causalizeDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),
+    BackendDAEUtil.getMatchingAlgorithm(NONE()), BackendDAEUtil.getIndexReductionMethod(SOME("none")), false);
+  outInitDAE.eqs := listAppend(inInitDAE.eqs, dae.eqs);
+end addStateSetJacobianInputs;
+
+protected function stateSetJacobianCrefs
+  input BackendDAE.Jacobian inJacobian;
+  input output list<DAE.ComponentRef> crefs;
+algorithm
+  () := match inJacobian
+    local
+      BackendDAE.BackendDAE jacDAE;
+    case BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((jacDAE, _, _, _, _, _)))
+      algorithm
+        for syst in jacDAE.eqs loop
+          crefs := List.append_reverse(BackendEquation.getAllCrefFromEquations(syst.orderedEqs), crefs);
+        end for;
+      then ();
+    else ();
+  end match;
+end stateSetJacobianCrefs;
+
+protected function simulationOnlyEquations
+  "Collects the equations of inSyst that solve the variables in inCrefs that
+   the initial system does not have, and recursively those of the variables
+   these equations use."
+  input BackendDAE.EqSystem inSyst;
+  input list<DAE.ComponentRef> inCrefs;
+  input BackendDAE.BackendDAE inInitDAE;
+  input output list<BackendDAE.Var> vars;
+  input output list<BackendDAE.Equation> eqns;
+protected
+  list<tuple<Integer, list<Integer>>> solved = {};
+  array<Integer> varEqn;
+  array<list<Integer>> eqnVars;
+  array<Boolean> added, seen;
+  Integer maxEqn = 0, e;
+  list<Integer> vs, indices;
+  list<DAE.ComponentRef> work = inCrefs;
+  DAE.ComponentRef cr;
+  BackendDAE.Equation eqn;
+algorithm
+  for comp in BackendDAEUtil.getStrongComponents(inSyst) loop
+    solved := solvedEquations(comp, solved);
+  end for;
+  for s in solved loop
+    (e, _) := s;
+    maxEqn := max(maxEqn, e);
+  end for;
+  varEqn := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), 0);
+  seen := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
+  eqnVars := arrayCreate(maxEqn, {});
+  added := arrayCreate(maxEqn, false);
+  for s in solved loop
+    (e, vs) := s;
+    arrayUpdate(eqnVars, e, vs);
+    for v in vs loop
+      arrayUpdate(varEqn, v, e);
+    end for;
+  end for;
+
+  while not listEmpty(work) loop
+    cr :: work := work;
+    try
+      (_, indices) := BackendVariable.getVar(cr, inSyst.orderedVars);
+    else
+      indices := {};
+    end try;
+    for i in indices loop
+      e := varEqn[i];
+      if e > 0 and not seen[i] then
+        arrayUpdate(seen, i, true);
+        if not (added[e] or isInitialSystemVar(BackendVariable.varCref(BackendVariable.getVarAt(inSyst.orderedVars, i)), inInitDAE)) then
+          arrayUpdate(added, e, true);
+          eqn := BackendEquation.get(inSyst.orderedEqs, e);
+          eqns := eqn :: eqns;
+          vars := List.append_reverse(list(BackendVariable.getVarAt(inSyst.orderedVars, v) for v in eqnVars[e]), vars);
+          work := List.append_reverse(BackendEquation.equationCrefs(eqn), work);
+        end if;
+      end if;
+    end for;
+  end while;
+end simulationOnlyEquations;
+
+protected function solvedEquations
+  input BackendDAE.StrongComponent inComp;
+  input output list<tuple<Integer, list<Integer>>> solved;
+algorithm
+  solved := match inComp
+    local
+      Integer e, v;
+      list<Integer> vs;
+      list<BackendDAE.InnerEquation> innerEqns;
+    case BackendDAE.SINGLEEQUATION(eqn = e, var = v) then (e, {v}) :: solved;
+    case BackendDAE.SINGLEARRAY(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.SINGLEALGORITHM(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.SINGLEIFEQUATION(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(innerEquations = innerEqns))
+      then List.fold(innerEqns, innerSolvedEquation, solved);
+    else solved;
+  end match;
+end solvedEquations;
+
+protected function innerSolvedEquation
+  input BackendDAE.InnerEquation inInner;
+  input output list<tuple<Integer, list<Integer>>> solved;
+protected
+  Integer e;
+  list<Integer> vs;
+algorithm
+  (e, vs, _) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(inInner);
+  solved := (e, vs) :: solved;
+end innerSolvedEquation;
+
+protected function isInitialSystemVar
+  input DAE.ComponentRef inCref;
+  input BackendDAE.BackendDAE inInitDAE;
+  output Boolean b;
+algorithm
+  for syst in inInitDAE.eqs loop
+    if BackendVariable.containsCref(inCref, syst.orderedVars) then
+      b := true;
+      return;
+    end if;
+  end for;
+  b := BackendVariable.containsCref(inCref, inInitDAE.shared.globalKnownVars) or
+       BackendVariable.containsCref(inCref, inInitDAE.shared.aliasVars);
+end isInitialSystemVar;
+
+
+// =============================================================================
 // section for post-optimization module "removeInitializationStuff"
 //
 // =============================================================================
