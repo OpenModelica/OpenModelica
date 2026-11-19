@@ -12,7 +12,8 @@ TupleAssignInIf.mos \
 ForLoopAlgorithm.mos \
 StateSetArrayEq.mos \
 StateSetDerivativeCandidate.mos \
-UnusedFunctionInput.mos
+UnusedFunctionInput.mos \
+StateSetInitialSelection.mos
 
 
 # test that currently fail. Move up when fixed. 

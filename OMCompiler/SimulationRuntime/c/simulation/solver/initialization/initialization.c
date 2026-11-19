@@ -912,12 +912,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   infoStreamPrint(OMC_LOG_INIT, 0, "### END INITIALIZATION ###");
 #endif
 
-  overwriteOldSimulationData(data);       /* overwrite the whole ring-buffer with initialized values */
-  storePreValues(data);                   /* save pre-values */
-  updateDiscreteSystem(data, threadData); /* evaluate discrete variables (event iteration) */
-  saveZeroCrossings(data, threadData);
-
-  /* do pivoting for dynamic state selection if selection changed try again */
+  /* do pivoting for dynamic state selection if selection changed try again;
+   * before updateDiscreteSystem computes the other candidates from the selected ones */
 #if !defined(OMC_NO_STATESELECTION)
   if(stateSelection(data, threadData, 0, 1) == 1) {
     if(stateSelection(data, threadData, 1, 1) == 1) {
@@ -926,6 +922,11 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     }
   }
 #endif
+
+  overwriteOldSimulationData(data);       /* overwrite the whole ring-buffer with initialized values */
+  storePreValues(data);                   /* save pre-values */
+  updateDiscreteSystem(data, threadData); /* evaluate discrete variables (event iteration) */
+  saveZeroCrossings(data, threadData);
 
   data->simulationInfo->initial = 0;
   /* initialization is done */

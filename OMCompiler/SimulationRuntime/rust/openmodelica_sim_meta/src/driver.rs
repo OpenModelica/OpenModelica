@@ -275,28 +275,22 @@ impl StateSelection {
         }
     }
 
-    /// C's `initialization()` tail: pivot once on the resolved initial point, before
-    /// the first result row is emitted. C runs `stateSelection` there and `solver_main`
-    /// emits row 0 afterwards, so a model whose initial selection differs from the
-    /// identity has the *selected* states in that row. A switch reinits the state
-    /// variables from their candidates, so the derivatives are refreshed after it.
+    /// C's `initialization()`: pivot once on the initial solution, before the
+    /// discrete update computes the candidates that are not selected from the
+    /// selected ones. A switch reinits the state variables from their candidates.
     ///
     /// The first pass does not report a singular Jacobian, and only a second switch
     /// in a row warns.
-    pub fn initial(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<Self> {
-        let mut sel = StateSelection::new(model);
-        if model.state_sets.is_empty() {
-            return Ok(sel);
-        }
-        if sel.run(e, sim_data, model, false, true)? {
-            if sel.reselect(e, sim_data, model)? {
-                omclog::warning(
-                    omclog::STDOUT,
-                    false,
-                    "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.",
-                );
-            }
-            e.call1("functionODE", sim_data)?;
+    fn initial(e: &mut dyn SimEngine, sim_data: u32, sets: &[StateSetInfo]) -> Result<Self> {
+        let mut sel = StateSelection {
+            pivots: init_state_pivots(sets),
+        };
+        if sel.run(e, sim_data, sets, false, true)? && sel.run(e, sim_data, sets, true, true)? {
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.",
+            );
         }
         Ok(sel)
     }
@@ -304,26 +298,26 @@ impl StateSelection {
     /// C's `stateSelection(data, threadData, 1, 1)`: select and switch, returning
     /// whether any set changed — the caller restarts the integrator.
     pub fn reselect(&mut self, e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<bool> {
-        self.run(e, sim_data, model, true, true)
+        self.run(e, sim_data, &model.state_sets, true, true)
     }
 
     /// C's `stateSelection(data, threadData, 1, 0)`: whether the selection *would*
     /// change here, leaving it as it is. The switch belongs to the event update that
     /// follows.
     pub fn would_change(&mut self, e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<bool> {
-        self.run(e, sim_data, model, true, false)
+        self.run(e, sim_data, &model.state_sets, true, false)
     }
 
     fn run(
         &mut self,
         e: &mut dyn SimEngine,
         sim_data: u32,
-        model: &SimMeta,
+        sets: &[StateSetInfo],
         report_error: bool,
         switch: bool,
     ) -> Result<bool> {
         let mut changed = false;
-        for (i, (info, st)) in model.state_sets.iter().zip(self.pivots.iter_mut()).enumerate() {
+        for (i, (info, st)) in sets.iter().zip(self.pivots.iter_mut()).enumerate() {
             changed |= state_selection_set(e, sim_data, info, st, i, report_error, switch)?;
         }
         Ok(changed)
@@ -2849,34 +2843,38 @@ pub fn install_event_dump(model: &SimMeta) {
 /// with the relations fresh (init mode) — directly, or through the global
 /// equidistant homotopy continuation (C's `solveWithGlobalHomotopy`), see
 /// `run_initialization_impl`. Leaves lambda = 1, then seeds `relationsPre` for the
-/// continuous phase's held relations.
+/// continuous phase's held relations. Returns the initial selection of `state_sets`.
 pub fn run_initialization(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
     inputs: &[crate::InputVar],
     start_time: f64,
-) -> Result<()> {
-    init_model(e, sim_data, layout, inputs, start_time, None, None)?;
+    state_sets: &[StateSetInfo],
+) -> Result<StateSelection> {
+    let dss = init_model(e, sim_data, layout, inputs, start_time, state_sets, None, None)?;
     signal_init_done();
-    terminate_at_init(e, sim_data, layout)
+    terminate_at_init(e, sim_data, layout)?;
+    Ok(dss)
 }
 
 /// [`run_initialization`] where the caller has the metadata the `LOG_SOTI` dump
 /// and the discrete start attributes need.
-pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
-    init_model(
+pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<StateSelection> {
+    let dss = init_model(
         e,
         sim_data,
         &model.layout,
         &model.inputs,
         model.start_time,
+        &model.state_sets,
         Some(model),
         None,
     )?;
     log_event_status(e, sim_data, &model.layout, omclog::EVENTS)?;
     signal_init_done();
-    terminate_at_init(e, sim_data, &model.layout)
+    terminate_at_init(e, sim_data, &model.layout)?;
+    Ok(dss)
 }
 
 /// C asks after `initializeModel` reported success and before the main loop: a
@@ -2896,13 +2894,14 @@ pub fn run_initialization_with_clocks(
     sim_data: u32,
     model: &SimMeta,
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
-) -> Result<crate::sync::Sync> {
-    init_model(
+) -> Result<(crate::sync::Sync, StateSelection)> {
+    let dss = init_model(
         e,
         sim_data,
         &model.layout,
         &model.inputs,
         model.start_time,
+        &model.state_sets,
         Some(model),
         dae,
     )?;
@@ -2913,18 +2912,20 @@ pub fn run_initialization_with_clocks(
     log_event_status(e, sim_data, &model.layout, omclog::EVENTS)?;
     signal_init_done();
     terminate_at_init(e, sim_data, &model.layout)?;
-    Ok(sync)
+    Ok((sync, dss))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn init_model(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
     inputs: &[crate::InputVar],
     start_time: f64,
+    state_sets: &[StateSetInfo],
     model: Option<&SimMeta>,
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
-) -> Result<()> {
+) -> Result<StateSelection> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
     // C's `read_input_xml` and `initializeNonlinearSystems` report these.
     if let Some(m) = model {
@@ -2945,6 +2946,7 @@ fn init_model(
         dump_initial_solution(e, sim_data, m);
     }
     omclog::info(omclog::INIT, false, "### END INITIALIZATION ###");
+    let dss = StateSelection::initial(e, sim_data, state_sets)?;
     // C's `storePreValues` after the initial solve (initialization.c:903).
     seed_pre_from_live(e, sim_data, layout)?;
     save_old_real(e, sim_data, layout)?;
@@ -2986,7 +2988,7 @@ fn init_model(
     // initialization-success line.
     check_asserts(e, sim_data, layout, omclog::WARNING)?;
     rtclock::accumulate(rtclock::INIT);
-    Ok(())
+    Ok(dss)
 }
 
 fn run_initialization_impl(
@@ -6117,13 +6119,10 @@ impl EulerDriver {
         // Init (with homotopy fallback). No state events on this path, so relations
         // stay fresh (mode 2, set by run_initialization); `rt_solve_nls` still holds
         // them internally around its Newton solve.
-        run_initialization_model(e, sim_data, model)?;
+        let dss = run_initialization_model(e, sim_data, model)?;
         let n_rows = model.n_output_rows();
         let mut retry = StepRetry::default();
         retry.store(e, sim_data, &model.layout)?;
-        // The initial selection belongs to initialization, before row 0 (see
-        // `StateSelection::initial`); only the per-step ones are in `advance`.
-        let dss = StateSelection::initial(e, sim_data, model)?;
         Ok(EulerDriver {
             sim_data,
             row: 0,
@@ -7429,7 +7428,7 @@ impl DasslDriver {
         let layout = &model.layout;
         // Init (with homotopy fallback). No state events on this path, so relations
         // stay fresh (mode 2); `rt_solve_nls` still holds them internally.
-        run_initialization_model(e, sim_data, model)?;
+        let dss = run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + layout.real_off;
@@ -7438,10 +7437,9 @@ impl DasslDriver {
         let start = model.start_time;
 
         let mut rows = rows_buffer(n_rows, row_width(&model.layout));
-        // Dynamic state selection, then row 0 at the start time. For an explicit ODE
-        // the consistent initial derivative is exactly f(t0, y0), which `functionODE`
-        // (called by `emit_initial_row`) leaves in the derivative slots — so INFO(11)=0.
-        let dss = StateSelection::initial(e, sim_data, model)?;
+        // Row 0 at the start time. For an explicit ODE the consistent initial
+        // derivative is exactly f(t0, y0), which `functionODE` (called by
+        // `emit_initial_row`) leaves in the derivative slots — so INFO(11)=0.
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?; // terminate() at the initial point
 
@@ -10851,7 +10849,7 @@ impl EventsDriver {
             false => None,
             true => Some(SolverCore::new(&*e, model, sim_data, start, method, gbode.take())?),
         };
-        let sync = match early.as_mut() {
+        let (sync, dss) = match early.as_mut() {
             None => run_initialization_with_clocks(e, sim_data, model, None)?,
             Some(core) => {
                 let mut ctx = core.res_ctx(e, layout);
@@ -10859,11 +10857,11 @@ impl EventsDriver {
                 RES_CTX.store(ctx_ptr, Ordering::Relaxed);
                 let _guard = ResCtxGuard;
                 let mut dae = |e: &mut dyn SimEngine| core.dae_event_update(e, ctx_ptr);
-                let sync = run_initialization_with_clocks(e, sim_data, model, Some(&mut dae))?;
+                let init = run_initialization_with_clocks(e, sim_data, model, Some(&mut dae))?;
                 if let Some(err) = ctx.err.take() {
                     return Err(err);
                 }
-                sync
+                init
             }
         };
         let mut core = match early {
@@ -10884,7 +10882,6 @@ impl EventsDriver {
         let mut rows = rows_buffer(n_rows, row_width(&model.layout));
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
-        let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
@@ -11636,7 +11633,7 @@ struct CvodeDriver {
 impl CvodeDriver {
     fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
         let layout = &model.layout;
-        run_initialization_model(e, sim_data, model)?;
+        let dss = run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + layout.real_off;
@@ -11644,7 +11641,6 @@ impl CvodeDriver {
         let start = model.start_time;
 
         let mut rows = rows_buffer(n_rows, row_width(&model.layout));
-        let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
@@ -12604,7 +12600,7 @@ impl IdaDriver {
     fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
         let layout = &model.layout;
         let setup = IdaSetup::new(model)?;
-        run_initialization_model(e, sim_data, model)?;
+        let dss = run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + layout.real_off;
@@ -12615,7 +12611,6 @@ impl IdaDriver {
         let mut rows = rows_buffer(n_rows, row_width(&model.layout));
         // For an explicit ODE the consistent `y'` is f(t0, y0), which the initial
         // row leaves in the derivative slots.
-        let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 

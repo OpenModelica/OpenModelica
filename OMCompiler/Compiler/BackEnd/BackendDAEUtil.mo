@@ -8011,6 +8011,7 @@ algorithm
   if Flags.isSet(Flags.WARN_NO_NOMINAL) then
     warnAboutIterationVariablesWithNoNominal(simDAE);
   end if;
+  outInitDAE := Initialization.addStateSetJacobianInputs(outInitDAE, simDAE);
 
   // sort the globalKnownVars
   simDAE := sortGlobalKnownVarsInDAE(simDAE);
