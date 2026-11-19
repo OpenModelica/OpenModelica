@@ -9,6 +9,12 @@ openmodelica_util.workspace = true
 # Writes the PNG bytes; routes through the VFS on wasm.
 openmodelica_wasi.workspace = true
 arcstr.workspace = true
-# PNG IDAT + chunk CRC-32, replacing the C++ renderer's compress2/crc32.
-# rust_backend is pure Rust, so it builds for wasm too.
-flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+# Renders the icon SVG to PNG: with the system fonts, or on the web with the
+# fonts the host serves (wasm_api.rs).
+resvg = { version = "0.50", default-features = false, features = ["text", "raster-images"] }
+# Measures text in the font resvg draws it with; the version usvg uses.
+skrifa = "0.49"
+base64 = "0.23"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+resvg = { version = "0.50", default-features = false, features = ["system-fonts", "memmap-fonts"] }

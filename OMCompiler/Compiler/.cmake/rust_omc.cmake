@@ -1997,6 +1997,52 @@ function(omc_rust_setup_wasm)
                         "'${RUST_OMC_WASM_MODE}'.")
   endif()
 
+  # The fonts the icon PNG is drawn with in the browser, which has no system
+  # fonts for omc (openmodelica_omgraphics): Liberation Sans, Serif and Mono have
+  # the widths of Arial, Times New Roman and Courier New, and DejaVu Sans has the
+  # symbols they lack. Not kept in git: two release archives, unpacked to fonts/.
+  set(RUST_OMC_FONTS_DIR ${CMAKE_CURRENT_BINARY_DIR}/fonts)
+  if(NOT EXISTS ${RUST_OMC_FONTS_DIR}/DejaVuSans.ttf)
+    set(_liberation liberation-fonts-ttf-2.1.5)
+    set(_dejavu dejavu-sans-ttf-2.37)
+    omc_download(https://github.com/liberationfonts/liberation-fonts/files/7261482/${_liberation}.tar.gz
+                 ${OM_DOWNLOADS_DIR}/${_liberation}.tar.gz
+                 7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0 _fonts_dl)
+    if(NOT _fonts_dl)
+      omc_download(https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/${_dejavu}.zip
+                   ${OM_DOWNLOADS_DIR}/${_dejavu}.zip
+                   5c6e497a2f36552cb5ffb112c413a6af39c0f3c47653662b90b4fa6499822fd7 _fonts_dl)
+    endif()
+    if(_fonts_dl)
+      message(FATAL_ERROR "Failed to download the fonts of the web build (${_fonts_dl})")
+    endif()
+    set(_fonts_tmp ${CMAKE_CURRENT_BINARY_DIR}/fonts-unpack)
+    file(REMOVE_RECURSE ${_fonts_tmp} ${RUST_OMC_FONTS_DIR})
+    file(MAKE_DIRECTORY ${_fonts_tmp} ${RUST_OMC_FONTS_DIR})
+    set(_members ${_liberation}/LICENSE)
+    foreach(_family Sans Serif Mono)
+      foreach(_style Regular Bold Italic BoldItalic)
+        list(APPEND _members ${_liberation}/Liberation${_family}-${_style}.ttf)
+      endforeach()
+    endforeach()
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf ${OM_DOWNLOADS_DIR}/${_liberation}.tar.gz -- ${_members}
+                    WORKING_DIRECTORY ${_fonts_tmp} RESULT_VARIABLE _fonts_untar)
+    if(_fonts_untar EQUAL 0)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf ${OM_DOWNLOADS_DIR}/${_dejavu}.zip --
+                              ${_dejavu}/ttf/DejaVuSans.ttf ${_dejavu}/LICENSE
+                      WORKING_DIRECTORY ${_fonts_tmp} RESULT_VARIABLE _fonts_untar)
+    endif()
+    if(NOT _fonts_untar EQUAL 0)
+      message(FATAL_ERROR "Failed to unpack the fonts of the web build: ${_fonts_untar}")
+    endif()
+    file(GLOB _ttf ${_fonts_tmp}/${_liberation}/*.ttf)
+    file(COPY ${_ttf} DESTINATION ${RUST_OMC_FONTS_DIR})
+    configure_file(${_fonts_tmp}/${_liberation}/LICENSE ${RUST_OMC_FONTS_DIR}/Liberation-LICENSE.txt COPYONLY)
+    configure_file(${_fonts_tmp}/${_dejavu}/LICENSE ${RUST_OMC_FONTS_DIR}/DejaVu-LICENSE.txt COPYONLY)
+    configure_file(${_fonts_tmp}/${_dejavu}/ttf/DejaVuSans.ttf ${RUST_OMC_FONTS_DIR}/DejaVuSans.ttf COPYONLY)
+    file(REMOVE_RECURSE ${_fonts_tmp})
+  endif()
+
   # wasm-bindgen, built from the pinned wasm-bindgen-cli-support rather than
   # found on PATH: cargo then resolves the same schema version the bindgen'd
   # crates depend on, so no `cargo install wasm-bindgen-cli --version ...` is
@@ -2336,6 +2382,9 @@ function(omc_rust_setup_wasm)
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
+    # The fonts omc reads through wasm-blobs.js, also for the pages (fonts.css).
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_OMC_FONTS_DIR} ${_web_dir}/fonts
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/wasm/fonts.css ${_web_dir}/fonts/
     # The side modules the wasm omc does not embed, with the index naming what each
     # exports; fetched from here on the first call that needs one (wasm-blobs.js).
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/wasm-blobs
@@ -2346,7 +2395,7 @@ function(omc_rust_setup_wasm)
             ${_web_dir}/wasm-blobs/
     ${_web_launcher_extra}
     DEPENDS ${_wasm_artifact} rust_wasm_cargo ${WASM_BINDGEN_EXECUTABLE}
-            ${_web_launcher} ${_web_launcher_deps}
+            ${_web_launcher} ${_web_launcher_deps} ${RUST_OMC_DIR}/wasm/fonts.css
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
     VERBATIM)
   add_custom_target(rust_wasm ALL DEPENDS ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)

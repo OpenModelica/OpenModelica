@@ -89,6 +89,12 @@ fn aot_compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
 #[wasm_bindgen]
 pub fn omc_enable_wasm_blobs() {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_wasm_blob_source(omc_wasm_blob_js);
+    openmodelica_omgraphics::OMGraphics::set_font_source(font_blob);
+}
+
+/// The fonts of the icon PNG, in web/fonts beside wasm-blobs/.
+fn font_blob(file: &str) -> Option<Vec<u8>> {
+    omc_wasm_blob_js(&format!("../fonts/{file}"))
 }
 
 /// Let `buildModelFMU(..., platforms={"wasm", "linux64"})` serve native platforms
