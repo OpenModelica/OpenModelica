@@ -2266,6 +2266,48 @@ function isJacobianResultVar
     index := SOME(idx);
   end flatIndex;
 
+  function elementIndices
+    "Returns the zero based flat indices of all elements that the subscripts address.
+    NONE() if a subscript or dimension is not literal."
+    input list<Subscript> subs;
+    input list<Dimension> dims;
+    output Option<UnorderedSet<Integer>> indices = NONE();
+  protected
+    UnorderedSet<Integer> set;
+  algorithm
+    if listLength(subs) == listLength(dims) and List.all(subs, Subscript.isLiteral) and List.all(dims, isLiteralDim) then
+      set := UnorderedSet.new(Util.id, intEq);
+      addFlatIndices(list(Subscript.toIndexList(sub, Dimension.size(dim)) threaded for sub in subs, dim in dims), dims, set);
+      indices := SOME(set);
+    end if;
+  end elementIndices;
+
+  function isLiteralDim
+    input Dimension dim;
+    output Boolean b = Dimension.isKnown(dim) and not Dimension.isResizable(dim) and Type.isInteger(Dimension.subscriptType(dim));
+  end isLiteralDim;
+
+  function addFlatIndices
+    "Adds the flat indices of all combinations of the subscript values."
+    input list<list<Integer>> values;
+    input list<Dimension> dims;
+    input UnorderedSet<Integer> indices;
+    input Integer offset = 0;
+  protected
+    Integer size;
+  algorithm
+    if listEmpty(values) then
+      UnorderedSet.add(offset, indices);
+    else
+      size := Dimension.size(listHead(dims));
+      for v in listHead(values) loop
+        if v >= 1 and v <= size then
+          addFlatIndices(listRest(values), listRest(dims), indices, offset * size + v - 1);
+        end if;
+      end for;
+    end if;
+  end addFlatIndices;
+
   function checkCref
     input ComponentRef cref;
     input checkVar func;
@@ -2803,18 +2845,22 @@ function isJacobianResultVar
     end STATE_ORDER;
 
     function covers
-      "true if the order holds for the cref. Partial orders only hold for literal subscripts."
+      "true if the order holds for all elements the cref can address. Iterator subscripts
+      of iters stand for their ranges, other subscripts of partial orders must be literal."
       input StateOrder order;
       input ComponentRef cref;
+      input list<Iterator> iters;
       output Boolean b;
     protected
-      UnorderedSet<Integer> elements;
-      Integer index;
+      UnorderedSet<Integer> elements, indices;
+      list<Subscript> subs;
     algorithm
       b := match order.elements
         case NONE() then true;
-        case SOME(elements) then match flatIndex(cref)
-          case SOME(index) then UnorderedSet.contains(index, elements);
+        case SOME(elements) algorithm
+          subs := Iterator.sliceSubscripts(ComponentRef.subscriptsAllWithWholeFlat(cref), iters);
+        then match elementIndices(subs, Type.arrayDims(Variable.typeOf(Pointer.access(getVarPointer(cref, sourceInfo())))))
+          case SOME(indices) then not UnorderedSet.isEmpty(indices) and List.all(UnorderedSet.toList(indices), function UnorderedSet.contains(set = elements));
           else false;
         end match;
       end match;

@@ -103,6 +103,7 @@ public
       list<Pointer<Variable>> new_vars                          "contains all new variables that need to be added to the system";
       Option<UnorderedMap<ComponentRef, ComponentRef>> diff_map "seed and temporary cref map x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y. Can be used for any differentiation rules";
       Option<UnorderedMap<ComponentRef, StateOrder>> state_order "known time derivatives of states (only TIME)";
+      list<NBEquation.Iterator> iterators                       "the surrounding for-loops (only TIME)";
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                        "true if the variables are scalarized";
@@ -119,6 +120,7 @@ public
         new_vars    = {},
         diff_map    = NONE(),
         state_order = NONE(),
+        iterators   = {},
         diffType    = ty,
         funcMap     = funcMap,
         scalarized  = false,
@@ -136,6 +138,7 @@ public
         new_vars    = {},
         diff_map    = NONE(),
         state_order = NONE(),
+        iterators   = {},
         diffType    = DifferentiationType.SIMPLE,
         funcMap     = funcMap,
         scalarized  = false,
@@ -394,10 +397,12 @@ public
       then (Equation.IF_EQUATION(eq.size, ifBody, eq.source, attr), Pointer.access(diffArguments_ptr));
 
       case Equation.FOR_EQUATION() algorithm
+        diffArguments.iterators := eq.iter :: diffArguments.iterators;
         for body_eqn in eq.body loop
           (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
           forBody := body_eqn :: forBody;
         end for;
+        diffArguments.iterators := listRest(diffArguments.iterators);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.FOR_EQUATION(eq.size,
                                   eq.iter,
@@ -1212,7 +1217,7 @@ public
       // Types: (TIME)
       // known derivatives by state order
       case (Expression.CREF(), DifferentiationType.TIME, _)
-        guard(hasStateOrder(exp.cref, diffArguments.state_order)) algorithm
+        guard(hasStateOrder(exp.cref, diffArguments.state_order, diffArguments.iterators)) algorithm
         SOME(state_order) := diffArguments.state_order;
         res := StateOrder.derivative(UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(exp.cref), state_order), exp.cref);
       then (res, diffArguments);
@@ -1401,6 +1406,7 @@ public
   function hasStateOrder
     input ComponentRef cref;
     input Option<UnorderedMap<ComponentRef, StateOrder>> state_order;
+    input list<NBEquation.Iterator> iters;
     output Boolean b;
   protected
     UnorderedMap<ComponentRef, StateOrder> map;
@@ -1409,7 +1415,7 @@ public
       case SOME(map) then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), map)
         local
           StateOrder order;
-        case SOME(order) then StateOrder.covers(order, cref);
+        case SOME(order) then StateOrder.covers(order, cref, iters);
         else false;
       end match;
       else false;
