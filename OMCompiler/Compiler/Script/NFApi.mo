@@ -563,11 +563,11 @@ protected
   AvlTreePathFunction.Tree daeFuncs;
 algorithm
   // Type the class.
-  Typing.typeClass(inst_cls, NFInstContext.RELAXED);
+  Typing.typeClass(inst_cls, ANNOTATION_CONTEXT);
 
   // Flatten and simplify the model.
   flat_model := Flatten.flatten(inst_cls, Absyn.Path.IDENT(name));
-  flat_model := EvalConstants.evaluate(flat_model, NFInstContext.RELAXED);
+  flat_model := EvalConstants.evaluate(flat_model, ANNOTATION_CONTEXT);
   flat_model := UnitCheck.checkUnits(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
   flat_model := Package.collectConstants(flat_model);

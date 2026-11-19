@@ -127,7 +127,9 @@ algorithm
   try
     (foundCref, foundScope, state) := lookupCref(cref, scope, context);
     node := ComponentRef.node(foundCref);
-    false := InstNode.isName(node);
+    // Don't allow the node to be a name node, except in annotations where it's
+    // needed to handle undeclared expandable connector variables.
+    false := InstNode.isName(node) and not InstContext.inAnnotation(context);
   else
     Error.addSourceMessageAndFail(Error.LOOKUP_VARIABLE_ERROR,
       {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);

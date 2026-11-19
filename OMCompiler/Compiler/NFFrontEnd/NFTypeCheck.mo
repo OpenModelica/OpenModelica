@@ -2690,6 +2690,20 @@ algorithm
       then
         (compatibleType, matchKind);
 
+    case (_, Type.POLYMORPHIC())
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchPolymorphic(expectedType.name, actualType, expectedType, expression);
+      then
+        (compatibleType, matchKind);
+
+    case (Type.POLYMORPHIC(), _)
+      algorithm
+        // expression := Expression.unbox(expression);
+        // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
+      then
+        (expectedType, MatchKind.GENERIC);
+
     // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
     case (Type.UNKNOWN(), _)
       then (expectedType,
@@ -2716,20 +2730,6 @@ algorithm
       then
         (compatibleType, if isCompatibleMatch(matchKind) then MatchKind.CAST else matchKind);
 
-    case (_, Type.POLYMORPHIC())
-      algorithm
-        (expression, compatibleType, matchKind) :=
-          matchPolymorphic(expectedType.name, actualType, expression);
-      then
-        (compatibleType, matchKind);
-
-    case (Type.POLYMORPHIC(), _)
-      algorithm
-        // expression := Expression.unbox(expression);
-        // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
-      then
-        (expectedType, MatchKind.GENERIC);
-
     // Expected type is any, any actual type matches.
     case (_, Type.ANY()) then (expectedType, MatchKind.EXACT);
 
@@ -2748,6 +2748,7 @@ end matchTypes_cast;
 function matchPolymorphic
   input String polymorphicName;
   input Type actualType;
+  input Type expectedType;
   input output Expression exp;
         output Type compatibleType;
         output MatchKind matchKind;
@@ -2789,6 +2790,14 @@ algorithm
         matchKind := if Type.isComplex(actualType) then MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
       then
         (actualType, matchKind);
+
+    // cref or der(), used by Curve annotation record.
+    case "__ResultReference"
+      algorithm
+        matchKind := if Expression.isCref(exp) or Expression.isCallNamed(exp, "der") then
+          MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+      then
+        (expectedType, matchKind);
 
     else
       algorithm

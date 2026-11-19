@@ -170,7 +170,7 @@ algorithm
         () := match c.ty
           case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_con))
             algorithm
-              typeStructor(InstNode.borrow(rec_con));
+              typeStructor(InstNode.borrow(rec_con), context);
             then
               ();
 
@@ -206,8 +206,8 @@ algorithm
     case Class.INSTANCED_BUILTIN(ty = Type.COMPLEX(complexTy =
         ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de)))
       algorithm
-        typeStructor(InstNode.borrow(con));
-        typeStructor(InstNode.borrow(de));
+        typeStructor(InstNode.borrow(con), context);
+        typeStructor(InstNode.borrow(de), context);
       then
         ();
 
@@ -224,18 +224,20 @@ end typeComponents;
 
 function typeStructor
   input InstNode node;
+  input InstContext.Type context;
 protected
   CachedData cache;
   list<Function> fnl;
-  InstContext.Type context;
+  InstContext.Type next_context;
 algorithm
   cache := InstNode.getFuncCache(node);
 
   () := match cache
     case CachedData.FUNCTION(funcs = fnl, typed = false)
       algorithm
-        context := InstContext.set(NFInstContext.FUNCTION, NFInstContext.RELAXED);
-        fnl := list(Function.typeFunction(fn, context) for fn in fnl);
+        next_context := InstContext.set(context, NFInstContext.FUNCTION);
+        next_context := InstContext.set(next_context, NFInstContext.RELAXED);
+        fnl := list(Function.typeFunction(fn, next_context) for fn in fnl);
         fnl := list(OperatorOverloading.patchOperatorRecordConstructorBinding(fn) for fn in fnl);
         InstNode.setFuncCache(node, CachedData.FUNCTION(fnl, true, cache.specialBuiltin));
       then
@@ -2178,7 +2180,7 @@ algorithm
   // Check that time isn't used in a function context.
   // TODO: Fix NFBuiltin.TIME_CREF so that the compiler treats it like an actual
   //       constant, then maybe we can use referenceEq here instead.
-  if InstContext.inFunction(context) and
+  if (InstContext.inFunction(context) and not InstContext.inAnnotation(context)) and
      ComponentRef.isTime(cref) then
     Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"time"}, info);
     fail();

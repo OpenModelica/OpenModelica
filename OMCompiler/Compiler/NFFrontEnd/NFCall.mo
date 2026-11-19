@@ -305,6 +305,10 @@ public
           // Strip any contexts that don't apply inside the function itself.
           fn_context := NFInstContext.FUNCTION;
 
+          if InstContext.inAnnotation(context) then
+            fn_context := InstContext.set(fn_context, NFInstContext.ANNOTATION);
+          end if;
+
           if InstContext.inRelaxed(context) then
             fn_context := InstContext.set(fn_context, NFInstContext.RELAXED);
           end if;
