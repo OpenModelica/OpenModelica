@@ -123,6 +123,7 @@ typedef struct CVODE_SOLVER
   double startTime;
   double *yStart;
   double *fStart;
+  double rhsFailTime;         /* time of the last failed right-hand side, NAN before */
 
   /* Non-linear solver data */
   SUNNonlinearSolver nonLinSol; /* Non-linear solver object */
