@@ -2243,6 +2243,29 @@ function isJacobianResultVar
     output Boolean b = ComponentRef.isCref(cref) and InstNode.isVar(ComponentRef.node(cref));
   end isVarCref;
 
+  function flatIndex
+    "zero based flat index of a cref with literal subscripts in its variable"
+    input ComponentRef cref;
+    output Option<Integer> index = NONE();
+  protected
+    list<Subscript> subs;
+    list<Integer> sizes;
+    Integer idx = 0;
+  algorithm
+    subs := ComponentRef.subscriptsAllFlat(cref);
+    sizes := list(Dimension.size(dim) for dim in Type.arrayDims(Variable.typeOf(Pointer.access(getVarPointer(cref, sourceInfo())))));
+    if listLength(subs) <> listLength(sizes) then return; end if;
+    for tpl in List.zip(subs, sizes) loop
+      () := match tpl
+        case (Subscript.INDEX(index = Expression.INTEGER()), _) algorithm
+          idx := idx * Util.tuple22(tpl) + Expression.integerValue(Subscript.toExp(Util.tuple21(tpl))) - 1;
+        then ();
+        else algorithm return; then ();
+      end match;
+    end for;
+    index := SOME(idx);
+  end flatIndex;
+
   function checkCref
     input ComponentRef cref;
     input checkVar func;
@@ -2776,7 +2799,39 @@ function isJacobianResultVar
     record STATE_ORDER
       ComponentRef partner                               "x without subscripts";
       Option<tuple<Expression, Expression>> coefficients "(k, c), NONE() for x = der(y)";
+      Option<UnorderedSet<Integer>> elements             "flat indices of the covered elements, NONE() for all";
     end STATE_ORDER;
+
+    function covers
+      "true if the order holds for the cref. Partial orders only hold for literal subscripts."
+      input StateOrder order;
+      input ComponentRef cref;
+      output Boolean b;
+    protected
+      UnorderedSet<Integer> elements;
+      Integer index;
+    algorithm
+      b := match order.elements
+        case NONE() then true;
+        case SOME(elements) then match flatIndex(cref)
+          case SOME(index) then UnorderedSet.contains(index, elements);
+          else false;
+        end match;
+      end match;
+    end covers;
+
+    function rank
+      "Prefers orders for all elements, then x = der(y)."
+      input StateOrder order;
+      output Integer r = 0;
+    algorithm
+      if isNone(order.elements) then
+        r := 2;
+      end if;
+      if isNone(order.coefficients) then
+        r := r + 1;
+      end if;
+    end rank;
 
     function derivative
       "Returns der(y) = (x - c)/k with the subscripts of the state cref y."
@@ -2824,6 +2879,13 @@ function isJacobianResultVar
     function toString
       input StateOrder order;
       output String str = Expression.toString(derivative(order, order.partner));
+    protected
+      UnorderedSet<Integer> elements;
+    algorithm
+      str := match order.elements
+        case SOME(elements) then str + " (flat elements " + stringDelimitList(list(intString(i) for i in List.sort(list(i + 1 for i in UnorderedSet.toList(elements)), intGt)), ", ") + ")";
+        else str;
+      end match;
     end toString;
   end StateOrder;
 
