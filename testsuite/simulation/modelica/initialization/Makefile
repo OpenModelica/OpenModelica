@@ -48,6 +48,7 @@ initStartValueCycle.mos \
 initStartValueCycle2.mos \
 OpenIPSL_AC8B_total.mos \
 initial_equation.mos \
+InitialArrayEquationRows.mos \
 parameters.mos \
 parameterWithoutBinding.mos \
 pre1.mos \

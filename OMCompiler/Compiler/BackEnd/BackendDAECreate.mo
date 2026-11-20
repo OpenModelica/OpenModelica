@@ -2004,7 +2004,7 @@ algorithm
         e1 := Expression.crefExp(cr1);
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
       then
-        (inEquations,inREquations,BackendDAE.EQUATION(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inIEquations);
+        (inEquations,inREquations,BackendDAE.EQUATION(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inIEquations);
 
     case DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source)
       algorithm
@@ -2018,7 +2018,7 @@ algorithm
       algorithm
          //TODO: remove inline
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
-        eqns := lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inIEquations);
+        eqns := lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL,functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
 
@@ -2043,7 +2043,7 @@ algorithm
     case DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source)
       algorithm
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns := lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,inIEquations);
+        eqns := lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL,inIEquations);
       then
         (inEquations,inREquations,eqns);
 

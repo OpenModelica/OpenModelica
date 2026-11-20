@@ -68,8 +68,18 @@ public function inlineArrayEqn "
   This module expands all array equations to scalar equations."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Shared shared;
+  list<BackendDAE.Equation> eqnLst;
+  Boolean found;
 algorithm
   (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, inlineArrayEqn1, false);
+  shared := outDAE.shared;
+  (eqnLst, found) := getScalarArrayEqns(BackendEquation.equationList(shared.initialEqs));
+  if found then
+    shared.initialEqs := BackendEquation.listEquation(eqnLst);
+    outDAE.shared := shared;
+  end if;
 end inlineArrayEqn;
 
 protected function inlineArrayEqn1
