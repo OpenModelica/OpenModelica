@@ -14,6 +14,7 @@ AssertTest7.mos \
 AssertTest8.mos \
 AssertFunction.mos \
 AssertValues.mos \
+WasmWarnRollback.mos \
 testAssertSolve.mos \
 TestAssert.mos \
 powAssert1.mos \

@@ -2214,6 +2214,34 @@ pub(super) fn build_sim_model(
         functions.function(throw_fn_type);
         bodies.push(f);
     }
+    // `commitAssertWarnings(SimData*)` / `dropAssertWarnings(SimData*)`: a
+    // warning-assert flag is 1 while its warning waits in the host, 2 once the host
+    // wrote it. The host commits (1 -> 2) what it wrote and drops (1 -> 0) what a
+    // rejected point recorded, so that site can warn at an accepted point.
+    let commit_warnings_fn = import_base + bodies.len() as u32;
+    let drop_warnings_fn = commit_warnings_fn + 1;
+    for commit in [true, false] {
+        let mut f = we::Function::new([]);
+        for (i, slot) in lits.iter().enumerate() {
+            if slot.is_none() {
+                let g = lit_global + i as u32;
+                f.instruction(&we::Instruction::GlobalGet(g));
+                if commit {
+                    f.instruction(&we::Instruction::I32Const(0));
+                    f.instruction(&we::Instruction::I32Ne);
+                    f.instruction(&we::Instruction::I32Const(1));
+                    f.instruction(&we::Instruction::I32Shl);
+                } else {
+                    f.instruction(&we::Instruction::I32Const(2));
+                    f.instruction(&we::Instruction::I32And);
+                }
+                f.instruction(&we::Instruction::GlobalSet(g));
+            }
+        }
+        f.instruction(&we::Instruction::End);
+        functions.function(eqfn_type);
+        bodies.push(f);
+    }
     if nls_wiring.is_some() || !thunk_indices.is_empty() || parmod_fns.is_some() || !outlined.is_empty() {
         imports.import(
             "rt",
@@ -2422,6 +2450,8 @@ pub(super) fn build_sim_model(
     exports.export("functionUpdateSynchronous", we::ExportKind::Func, sync_update);
     exports.export("functionEquationsSynchronous", we::ExportKind::Func, sync_eqs);
     exports.export("evaluateDAEResiduals", we::ExportKind::Func, dae_residuals_idx);
+    exports.export("commitAssertWarnings", we::ExportKind::Func, commit_warnings_fn);
+    exports.export("dropAssertWarnings", we::ExportKind::Func, drop_warnings_fn);
     if error_tag_type.is_some() {
         for (k, (name, _)) in guarded.iter().enumerate() {
             exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + k as u32);
@@ -2508,6 +2538,8 @@ pub(super) fn build_sim_model(
     names.push((sync_update, "functionUpdateSynchronous".to_string()));
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
     names.push((dae_residuals_idx, "evaluateDAEResiduals".to_string()));
+    names.push((commit_warnings_fn, "commitAssertWarnings".to_string()));
+    names.push((drop_warnings_fn, "dropAssertWarnings".to_string()));
     if let Some((lk_idx, task_idx)) = parmod_fns {
         names.push((lk_idx, "functionLocalKnownVars".to_string()));
         names.push((task_idx, "parmodTask".to_string()));

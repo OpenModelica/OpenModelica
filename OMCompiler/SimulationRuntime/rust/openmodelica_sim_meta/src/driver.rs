@@ -373,6 +373,8 @@ pub const MODEL_FNS: &[&str] = &[
     "functionReconSetC",
     "functionReconSetB",
     "functionNextTimeEvent",
+    "commitAssertWarnings",
+    "dropAssertWarnings",
 ];
 
 /// The clock a model entry point runs under, where `CodegenC.tpl` ticks one inside
@@ -2510,6 +2512,7 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType, l
     if pending.is_empty() {
         return Ok(false);
     }
+    e.call1_if_present("commitAssertWarnings", sim_data)?;
     let mut armed = false;
     let time = read_f64(e, sim_data + TIME_OFF)?;
     for w in pending {
@@ -4860,11 +4863,21 @@ fn probe_zero_crossings(
     read_zero_crossings(e, sim_data, layout, out)
 }
 
-/// Drop the violations [`update_zero_crossings`] kept for a row evaluated again since.
-fn supersede(e: &mut dyn SimEngine, evaluated: &mut bool) {
-    if core::mem::take(evaluated) {
-        let _ = e.take_pending_warnings();
+/// Drop the violations recorded at a point the solution does not have. Their
+/// warning-level sites can warn again (the generated code latched them).
+fn drop_warnings(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+    if !e.take_pending_warnings().is_empty() {
+        e.call1_if_present("dropAssertWarnings", sim_data)?;
     }
+    Ok(())
+}
+
+/// Drop the violations [`update_zero_crossings`] kept for a row evaluated again since.
+fn supersede(e: &mut dyn SimEngine, sim_data: u32, evaluated: &mut bool) -> Result<()> {
+    if core::mem::take(evaluated) {
+        drop_warnings(e, sim_data)?;
+    }
+    Ok(())
 }
 
 /// C's `updateContinuousSystem` + `saveZeroCrossings`, what `checkForStateEvent`
@@ -4885,7 +4898,7 @@ fn update_zero_crossings(
     write_time(e, sim_data, time)?;
     eval_continuous(e, sim_data, layout)?;
     if !keep {
-        let _ = e.take_pending_warnings();
+        drop_warnings(e, sim_data)?;
     }
     read_zero_crossings(e, sim_data, layout, out)
 }
@@ -9955,6 +9968,8 @@ impl SolverCore {
                 // A zero-crossing root at `t` (< target): the integrator stopped
                 // on a sign change of its own root probes.
                 if rooted {
+                    // The root search evaluated points after the root.
+                    drop_warnings(e, sim_data)?;
                     ctx.accepted_at.set(f64::NAN);
                     let troot = self.t;
                     let left = self.event_left();
@@ -11037,7 +11052,7 @@ impl Driver for EventsDriver {
                         }
                     }
                     if let Some((tleft, tr)) = troot {
-                        supersede(e, &mut evaluated);
+                        supersede(e, sim_data, &mut evaluated)?;
                         // The bisection left `SimData` at its last trial point.
                         update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                         let crossed = zc_crossed_idx(&zc0, &scratch);
@@ -11089,7 +11104,7 @@ impl Driver for EventsDriver {
                     // reads the left limit of a `u` the time event below changes.
                     let clocked = self.sync.next_time() <= subtarget + SYNC_EPS;
                     if clocked {
-                        supersede(e, &mut evaluated);
+                        supersede(e, sim_data, &mut evaluated)?;
                         event_step = true;
                         self.core.t = subtarget;
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
@@ -11122,7 +11137,7 @@ impl Driver for EventsDriver {
                     // it is due at or before this grid point; otherwise the interval
                     // is clean up to `tout`.
                     if te <= subtarget + sample_pull_eps(model) {
-                        supersede(e, &mut evaluated);
+                        supersede(e, sim_data, &mut evaluated)?;
                         event_step = true;
                         log_time_event(e, te, &self.samp, model);
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
