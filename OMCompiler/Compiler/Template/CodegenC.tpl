@@ -9380,7 +9380,7 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
     // Emit them inside the loop body so expressions referencing them compile correctly.
     let subIterDecls = (sub_iter |> si => subIterator(si, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
-    for(modelica_integer <%iter_%>=<%start_%>; in_range_integer(<%iter_%>, <%start_%>, <%stop_%>); <%iter_%>+=<%step_%>){
+    for(modelica_integer <%iter_%>=<%start_%>; (<%step_%>) > 0 ? <%iter_%> <= (<%stop_%>) : <%iter_%> >= (<%stop_%>); <%iter_%>+=<%step_%>){
     <%if subIterDecls then subIterDecls%>
     >>
   case SIM_ITERATOR_LIST() then
