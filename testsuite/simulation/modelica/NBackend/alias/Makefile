@@ -34,6 +34,7 @@ AliasArrayStartParameter.mos \
 RecordFieldConstantAlias.mos \
 AliasWhenInitial.mos \
 AliasZeroProduct.mos \
+AliasIntegerToReal.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
