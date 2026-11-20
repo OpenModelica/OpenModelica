@@ -345,6 +345,7 @@ fn compile_external_function(
         funArgs,
         outVars,
         biVars,
+        variableDeclarations,
         extName,
         extArgs,
         extReturn,
@@ -403,15 +404,7 @@ fn compile_external_function(
         size_locals: Default::default(),
     };
     borrow_record_params(&mut ctx, funArgs, None)?;
-    // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
-    // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
-    // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
-    let lang = external_import_sig(f).map(|s| s.lang).unwrap_or(ExtLang::C);
-    let ordered: Vec<&metamodelica::Ref<SimCodeFunction::Variable::Variable>> = match lang {
-        ExtLang::Fortran77 => (&**biVars).into_iter().chain(&**outVars).collect(),
-        ExtLang::C => (&**outVars).into_iter().chain(&**biVars).collect(),
-    };
-    for v in ordered {
+    for v in &**variableDeclarations {
         let SimCodeFunction::Variable::Variable::VARIABLE {
             name,
             ty,

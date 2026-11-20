@@ -1,0 +1,90 @@
+// name: ExternalInitOrder
+// status: correct
+//
+// External functions where a protected variable uses an output (dgeqrf,
+// dorgqr) and where an output uses protected variables (lsq, cfill).
+
+loadString("
+model ExternalInitOrder
+  function dgeqrf
+    input Real A[:, :];
+    output Real QR[size(A, 1), size(A, 2)] = A;
+    output Real tau[min(size(A, 1), size(A, 2))];
+    output Integer info;
+  protected
+    Integer lda = max(1, size(QR, 1));
+    Integer lwork = max(1, size(A, 2));
+    Real work[lwork];
+  external \"FORTRAN 77\" dgeqrf(size(A, 1), size(A, 2), QR, lda, tau, work, lwork, info) annotation(Library = \"lapack\");
+  end dgeqrf;
+
+  function dorgqr
+    input Real QR[:, :];
+    input Real tau[min(size(QR, 1), size(QR, 2))];
+    output Real Q[size(QR, 1), size(QR, 2)] = QR;
+    output Integer info;
+  protected
+    Integer lda = max(1, size(Q, 1));
+    Integer lwork = max(1, size(QR, 2));
+    Real work[lwork];
+  external \"FORTRAN 77\" dorgqr(size(QR, 1), size(QR, 2), size(tau, 1), Q, lda, tau, work, lwork, info) annotation(Library = \"lapack\");
+  end dorgqr;
+
+  function lsq
+    input Real A[:, :];
+    input Real b[size(A, 1)];
+    output Real x[nx] = cat(1, b, fill(0.0, nx - nrow));
+    output Integer info;
+    output Integer rank;
+  protected
+    Integer nrow = size(A, 1);
+    Integer ncol = size(A, 2);
+    Integer nx = max(nrow, ncol);
+    Integer lwork = max(1, max(min(nrow, ncol) + 3*ncol + 1, 2*min(nrow, ncol) + 1));
+    Real work[lwork];
+    Real Awork[nrow, ncol] = A;
+    Integer jpvt[ncol] = zeros(ncol);
+    Real rcond = 1e-10;
+  external \"FORTRAN 77\" dgelsy(nrow, ncol, 1, Awork, nrow, x, nx, jpvt, rcond, rank, work, lwork, info) annotation(Library = \"lapack\");
+  end lsq;
+
+  function cfill
+    input Real u[:];
+    output Real y[n];
+  protected
+    Integer n = size(u, 1) + 1;
+  external \"C\" cfill(y, size(y, 1)) annotation(Include = \"static void cfill(double *y, int n) {int i; for (i = 0; i < n; i++) y[i] = i + 1;}\");
+  end cfill;
+
+  Real A[3, 2] = [1, 0; 1, 1; 1, 2 + time];
+  Real QR[3, 2], tau[2], Q[3, 2], x[3], y[3];
+  Integer info1, info2, info3, rank;
+equation
+  (QR, tau, info1) = dgeqrf(A);
+  (Q, info2) = dorgqr(QR, tau);
+  (x, info3, rank) = lsq(A, {1, 2, 4});
+  y = cfill({time, time});
+end ExternalInitOrder;
+"); getErrorString();
+simulate(ExternalInitOrder, stopTime = 1, numberOfIntervals = 1); getErrorString();
+{val(Q[1, 1], 0), val(Q[2, 1], 0), val(Q[3, 1], 0), val(Q[1, 2], 0), val(Q[3, 2], 0)};
+{val(x[1], 0), val(x[2], 0), val(rank, 0)};
+{val(info1, 0), val(info2, 0), val(info3, 0)};
+{val(y[1], 0), val(y[2], 0), val(y[3], 0)};
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalInitOrder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'ExternalInitOrder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {-0.5773502691896257, -0.5773502691896257, -0.5773502691896257, 0.7071067811865476, -0.7071067811865475}
+// {0.833333333333333, 1.5, 2.0}
+// {0.0, 0.0, 0.0}
+// {1.0, 2.0, 3.0}
+// endResult
