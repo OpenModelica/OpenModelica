@@ -17,6 +17,7 @@ inlineFunction9.mos \
 inlineFunction10.mos \
 inlineFunction11.mos \
 inlineScalarProductSlice.mos \
+inlineSliceArgument.mos \
 forceComplexEq.mos \
 forceComplexEq2.mos \
 forceComplexEq3.mos \
