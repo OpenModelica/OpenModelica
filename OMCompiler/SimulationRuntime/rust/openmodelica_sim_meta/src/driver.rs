@@ -6476,6 +6476,9 @@ unsafe fn dassl_rt(
         return 1;
     }
     let ctx = unsafe { &mut *ctx };
+    if ctx.err.is_some() {
+        return 1;
+    }
     let e = unsafe { &mut *ctx.engine };
     let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::EVENT);
     let hit_before = stage_hit(e, ctx.err_stage_addr);
@@ -6587,6 +6590,11 @@ unsafe fn dassl_res(
         return;
     }
     let ctx = unsafe { &mut *ctx };
+    // A failed Jacobian has no status return; leave DASKR so the step can be retried.
+    if ctx.err.is_some() {
+        unsafe { *ires = -2 };
+        return;
+    }
     let e = unsafe { &mut *ctx.engine };
     let n = ctx.n_states;
     let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::RESIDUALS);
@@ -6892,7 +6900,7 @@ unsafe fn dassl_jac(
                 let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
                 e.write_bytes(ctx.states_base, y_bytes)?;
                 let evaluated = match e.call1("functionODE", ctx.sim_data) {
-                    Ok(()) => true,
+                    Ok(()) => !e.spatial_history(SpatialHistory::Needed),
                     Err(err) if residual_model_throw(e, err, unsafe { *t }) => false,
                     Err(err) => return Err(err),
                 };
@@ -6917,6 +6925,9 @@ unsafe fn dassl_jac(
                 for &col in group {
                     let ci = col as usize;
                     unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
+                }
+                if e.spatial_history(SpatialHistory::Needed) {
+                    return Err(ASSERT_ERR);
                 }
             }
             set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
