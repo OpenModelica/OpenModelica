@@ -1,0 +1,39 @@
+// name:     GetUsedClassNames
+// keywords: getUsedClassNames
+// status:   correct
+//
+// Checks that getUsedClassNames returns the classes that a class uses.
+//
+
+loadString("
+package Lib
+  constant Real k = 2;
+  function f input Real x; output Real y = k*x; end f;
+  function g input Real x; output Real y = x; end g;
+  type T = Real(unit = \"m\");
+  package Icons model IconBase end IconBase; end Icons;
+  model A extends Icons.IconBase; T x = f(time); end A;
+  package MediumA function h input Real x; output Real y = x; end h; end MediumA;
+  package MediumB function h input Real x; output Real y = 2*x; end h; end MediumB;
+  partial model Base replaceable package Medium = MediumA; Real y = Medium.h(time); end Base;
+end Lib;
+package P
+  model B Lib.A a; end B;
+  model C extends Lib.Base(redeclare package Medium = Lib.MediumB); end C;
+  model Unused Real z = Lib.g(time); end Unused;
+end P;
+"); getErrorString();
+getUsedClassNames(P.B); getErrorString();
+getUsedClassNames(P.C); getErrorString();
+getUsedClassNames(NoSuchClass); getErrorString();
+
+// Result:
+// true
+// ""
+// {P.B, P, Lib.A, Lib.Icons.IconBase, Lib.Icons, Lib.T, Lib.f, Lib}
+// ""
+// {P.C, P, Lib.Base.Medium, Lib.Base, Lib.MediumB.h, Lib.MediumB, Lib.MediumA.h, Lib.MediumA, Lib}
+// ""
+// {}
+// ""
+// endResult
