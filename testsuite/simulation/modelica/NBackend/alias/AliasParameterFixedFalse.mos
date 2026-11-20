@@ -1,0 +1,61 @@
+// name: AliasParameterFixedFalse
+// keywords: NewBackend, alias, fixed
+// status: correct
+// x = c makes x a parameter with the binding c. Its fixed = false must not
+// keep it at its start value, see #18220.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model AliasParameterFixedFalse
+  parameter Real c = 2;
+  Real x(start = 1, fixed = false);
+  Real y(start = 1);
+equation
+  x = c;
+  y = c;
+end AliasParameterFixedFalse;
+
+model AliasParameterAmbient
+  import Modelica.Thermal.FluidHeatFlow;
+  FluidHeatFlow.Sources.Ambient amb1(constantAmbientTemperature = 303.15, constantAmbientPressure = 0);
+  FluidHeatFlow.Sources.VolumeFlow pump(m = 0, T0 = 303.15, constantVolumeFlow = 1);
+  FluidHeatFlow.Sources.Ambient amb2(constantAmbientTemperature = 303.15, constantAmbientPressure = 0);
+equation
+  connect(amb1.flowPort, pump.flowPort_a);
+  connect(pump.flowPort_b, amb2.flowPort);
+end AliasParameterAmbient;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(AliasParameterFixedFalse); getErrorString();
+val(x, 1);
+val(y, 1);
+simulate(AliasParameterAmbient); getErrorString();
+val(amb1.T, 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasParameterFixedFalse_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AliasParameterFixedFalse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 2.0
+// record SimulationResult
+//     resultFile = "AliasParameterAmbient_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AliasParameterAmbient', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 303.15
+// endResult
