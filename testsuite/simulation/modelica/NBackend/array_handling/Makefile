@@ -58,6 +58,7 @@ resizableArrayJacobian.mos \
 resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
 resizableTearStart.mos \
+resizableCalcSizeParam.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \

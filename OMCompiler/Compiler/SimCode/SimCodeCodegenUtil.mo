@@ -1543,6 +1543,43 @@ algorithm
   end match;
 end isDimensionParameter;
 
+public function isStructuralParameter
+  "true for a $DIM_k and for a calculated Integer size parameter (s.n = N)
+   whose start value is its resolved binding, see NBResizable.resolveSizeParameter.
+   updateStructuralParameters computes both from the start values."
+  input SimCodeVar.SimVar var;
+  output Boolean b;
+algorithm
+  b := match var
+    local
+      DAE.Exp e;
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM(), type_ = DAE.T_INTEGER(),
+        causality = SOME(SimCodeVar.CALCULATED_PARAMETER()), initialValue = SOME(e))
+      then isDimensionParameter(var) or (Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)
+        and not Expression.isConst(e) and isStructuralExp(e));
+    else isDimensionParameter(var);
+  end match;
+end isStructuralParameter;
+
+protected function isStructuralExp
+  "true for the expressions CodegenC.structuralParameterExp supports"
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.ICONST() then true;
+    case DAE.CREF(ty = DAE.T_INTEGER()) then true;
+    case DAE.BINARY(operator = DAE.ADD()) then isStructuralExp(exp.exp1) and isStructuralExp(exp.exp2);
+    case DAE.BINARY(operator = DAE.SUB()) then isStructuralExp(exp.exp1) and isStructuralExp(exp.exp2);
+    case DAE.BINARY(operator = DAE.MUL()) then isStructuralExp(exp.exp1) and isStructuralExp(exp.exp2);
+    case DAE.UNARY(operator = DAE.UMINUS()) then isStructuralExp(exp.exp);
+    case DAE.CALL(path = Absyn.IDENT(name = "max"), expLst = {_, _}) then List.all(exp.expLst, isStructuralExp);
+    case DAE.CALL(path = Absyn.IDENT(name = "min"), expLst = {_, _}) then List.all(exp.expLst, isStructuralExp);
+    case DAE.CALL(path = Absyn.IDENT(name = "div"), expLst = {_, _}) then List.all(exp.expLst, isStructuralExp);
+    else false;
+  end match;
+end isStructuralExp;
+
 public function jacobianResultVars
   "The result variables of a Jacobian with the resizable sparsity pattern of the
    new backend: the variables its rows are solved for, each once. Empty if one of

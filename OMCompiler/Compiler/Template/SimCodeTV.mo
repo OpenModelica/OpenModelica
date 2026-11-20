@@ -1542,6 +1542,11 @@ package SimCodeCodegenUtil
     output Boolean b;
   end isDimensionParameter;
 
+  function isStructuralParameter
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isStructuralParameter;
+
   function isWholeArrayCref
     input DAE.ComponentRef cref;
     output Boolean b;

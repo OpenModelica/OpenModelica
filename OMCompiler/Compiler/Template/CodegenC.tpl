@@ -1735,7 +1735,7 @@ template fmiAliasIndex(SimCode simCode, AliasVariable v)
 end fmiAliasIndex;
 
 template hasDimensionParameters(list<SimVar> intParamVars)
-::= (intParamVars |> v => if isDimensionParameter(v) then "1")
+::= (intParamVars |> v => if isStructuralParameter(v) then "1")
 end hasDimensionParameters;
 
 template hasStructuralUpdate(list<SimVar> intParamVars, list<SimVar> inputVars)
@@ -1744,14 +1744,14 @@ end hasStructuralUpdate;
 
 template functionUpdateStructuralParameters(list<SimVar> intParamVars, list<SimVar> inputVars, Text modelNamePrefixStr)
  "The size parameters $DIM_k of derived dimensions of resizable arrays (N-1),
-  and the number of scalar inputs if an input is a resizable array.
+  the calculated size parameters (s.n = N), and the number of scalar inputs if an input is a resizable array.
   The runtime calls it after reading the init.xml, before it computes the sizes
   of the arrays and allocates them: only the start attributes of the parameters
   exist, possibly changed with -override, so they are what it reads and writes."
 ::=
   if hasStructuralUpdate(intParamVars, inputVars) then
   let body = (intParamVars |> v as SIMVAR(initialValue = SOME(e)) =>
-    if isDimensionParameter(v) then
+    if isStructuralParameter(v) then
       '<%structuralParameterStart(v)%> = <%structuralParameterExp(e)%>; /* <%crefStrNoUnderscore(v.name)%> */'
     ;separator="\n")
   let inputs = if hasSymbolicDims(inputVars) then
