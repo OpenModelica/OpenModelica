@@ -144,7 +144,7 @@ import TotalModelDebug;
 import Tpl;
 import Types;
 import Uncertainties;
-import UnitAbsynBuilder;
+import UnitConversion;
 import UnitParserExt;
 import UnorderedSet;
 import Unzip;
@@ -886,7 +886,7 @@ algorithm
       algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        (b,scaleFactor,offset) := UnitAbsynBuilder.convertUnits(str1,str2);
+        (b,scaleFactor,offset) := UnitConversion.convertUnits(str1,str2);
       then
         Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)});
 
@@ -897,7 +897,7 @@ algorithm
       algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        strs := UnitAbsynBuilder.getDerivedUnits(str1);
+        strs := UnitConversion.derivedUnits(str1);
       then
         ValuesMake.makeArray(List.map(strs, ValuesMake.makeString));
 

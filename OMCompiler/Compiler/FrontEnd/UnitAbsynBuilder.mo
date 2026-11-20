@@ -266,52 +266,5 @@ algorithm
   unit := UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeParams,units));
 end str2unitWithScaleFactor;
 
-public function convertUnits
-  "value_unit1 = factor*value_unit2 + offset. Units that differ in rad only
-   convert where Hz makes up for it, as revolutions per second (FMI 3.0,
-   section 2.4.3: 1 Hz = 2*pi rad/s)."
-  input String unit1;
-  input String unit2;
-  output Boolean converts;
-  output Real factor;
-  output Real offset;
-protected
-  UnitAbsyn.Unit u1, u2;
-  Real factor1, factor2, offset1, offset2;
-  Integer rad1, hz1, rad2, hz2;
-algorithm
-  (u1, factor1, offset1) := str2unitWithScaleFactor(unit1, NONE());
-  (u2, factor2, offset2) := str2unitWithScaleFactor(unit2, NONE());
-  (rad1, hz1) := UnitParserExt.angleExponents(unit1);
-  (rad2, hz2) := UnitParserExt.angleExponents(unit2);
-  converts := valueEq(u1, u2);
-  factor := factor2/factor1;
-  offset := (offset2 - offset1)/factor1;
-  if rad1 <> rad2 then
-    converts := converts and rad1 + hz1 == rad2 + hz2;
-    if converts then
-      factor := factor*(2*3.14159265358979323846)^intReal(hz2 - hz1);
-    end if;
-  end if;
-end convertUnits;
-
-public function getDerivedUnits
-  "The unit symbols that convertUnits converts to and from baseUnit."
-  input String baseUnit;
-  output list<String> derivedUnits = {};
-protected
-  Boolean converts;
-algorithm
-  str2unit(baseUnit, NONE());
-  for unit in UnitParserExt.allUnitSymbols() loop
-    if not stringEq(baseUnit, unit) then
-      (converts, _, _) := convertUnits(baseUnit, unit);
-      if converts then
-        derivedUnits := unit :: derivedUnits;
-      end if;
-    end if;
-  end for;
-end getDerivedUnits;
-
 annotation(__OpenModelica_Interface="frontend");
 end UnitAbsynBuilder;
