@@ -655,7 +655,13 @@ fn cluster_fixed_width_min_height(s: &mut TaskSystem) {
 /// number of merges not done because of a cycle. Clusters that depend on each
 /// other are merged, whatever their levels, until each exchanges values with
 /// fewer clusters than it has equations.
-fn merge_across_levels_partition(children: &[Vec<usize>]) -> (Vec<usize>, usize) {
+///
+/// Of the merges that are possible, the next one is the one that keeps the
+/// longest path of cluster costs shortest (a path below `total cost / threads`
+/// or below the longest one counts the same), then the one that removes the
+/// most dependencies between clusters, then the one that leaves the least
+/// communication, then the cheapest.
+fn merge_across_levels_partition(children: &[Vec<usize>], cost: &[f64], threads: usize) -> (Vec<usize>, usize) {
     let n = children.len();
     let mut rejected = 0;
     let mut cluster_of: Vec<usize> = (0..n).collect();
@@ -664,105 +670,220 @@ fn merge_across_levels_partition(children: &[Vec<usize>]) -> (Vec<usize>, usize)
     let mut pred: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); n];
     // A topological numbering of the clusters: label[a] < label[b] for every edge a -> b.
     let mut label: Vec<usize> = (0..n).collect();
-    let mut alive = vec![true; n];
+    // Changes with the neighbours of a cluster; a candidate of another version is out of date.
+    let mut version = vec![0u32; n];
+    let mut cc: Vec<f64> = cost.to_vec();
+    // The longest path of cluster costs before and after a cluster, without the cluster itself.
+    let mut before = vec![0.0f64; n];
+    let mut after = vec![0.0f64; n];
+    let mut total = 0.0;
     for (i, cs) in children.iter().enumerate() {
+        total += cc[i];
         for &c in cs {
             succ[i].insert(c);
             pred[c].insert(i);
+            before[c] = before[c].max(before[i] + cc[i]);
         }
+    }
+    let mut longest = total / threads.max(1) as f64;
+    for i in (0..n).rev() {
+        for &c in &children[i] {
+            after[i] = after[i].max(after[c] + cc[c]);
+        }
+        longest = longest.max(before[i] + cc[i] + after[i]);
     }
     let mut seen = vec![0usize; n];
     let mut stamp = 0;
     let mut stack: Vec<usize> = Vec::new();
     let common = |x: &BTreeSet<usize>, y: &BTreeSet<usize>| x.intersection(y).count();
 
-    // The clusters still to look at, the one with the fewest equations first.
-    let mut work: BTreeSet<(usize, usize)> = (0..n).map(|c| (1, c)).collect();
-    while let Some((ops, c)) = work.pop_first() {
-        if !alive[c] || members[c].len() != ops || succ[c].len() + pred[c].len() < ops {
+    // The longest path through the cluster that a and b would be, for an edge a -> b.
+    let path = |a: usize,
+                b: usize,
+                pred: &[BTreeSet<usize>],
+                succ: &[BTreeSet<usize>],
+                cc: &[f64],
+                before: &[f64],
+                after: &[f64]| {
+        let mut t = before[a];
+        for &p in &pred[b] {
+            if p != a {
+                t = t.max(before[p] + cc[p]);
+            }
+        }
+        let mut d = after[b];
+        for &x in &succ[a] {
+            if x != b {
+                d = d.max(after[x] + cc[x]);
+            }
+        }
+        t + cc[a] + cc[b] + d
+    };
+    // (dependencies kept, communication, cost, a, b, version of a, version of b): the candidates
+    // with a path that is not above the longest one. The others have their path in front. The
+    // costs are not negative, so their bits are in the order of their values.
+    type Candidate = (usize, usize, u64, usize, usize, u32, u32);
+    let mut below: BTreeSet<Candidate> = BTreeSet::new();
+    let mut above: BTreeSet<(u64, Candidate)> = BTreeSet::new();
+    macro_rules! offer {
+        ($a:expr, $b:expr) => {{
+            let (a, b) = ($a, $b);
+            let over = |c: usize| succ[c].len() + pred[c].len() >= members[c].len();
+            if over(a) || over(b) {
+                let (cs, cp) = (common(&succ[a], &succ[b]), common(&pred[a], &pred[b]));
+                let comm = succ[a].len() + succ[b].len() - cs - 1 + pred[a].len() + pred[b].len() - cp - 1;
+                let cand = (
+                    usize::MAX - (cs + cp + 1),
+                    comm,
+                    (cc[a] + cc[b]).to_bits(),
+                    a,
+                    b,
+                    version[a],
+                    version[b],
+                );
+                let p = path(a, b, &pred, &succ, &cc, &before, &after);
+                if p <= longest {
+                    below.insert(cand);
+                } else {
+                    above.insert((p.to_bits(), cand));
+                }
+            }
+        }};
+    }
+    for a in 0..n {
+        for &b in &children[a] {
+            offer!(a, b);
+        }
+    }
+
+    let mut order: BTreeSet<(usize, usize)> = BTreeSet::new();
+    loop {
+        while above.first().is_some_and(|c| f64::from_bits(c.0) <= longest) {
+            if let Some((_, cand)) = above.pop_first() {
+                below.insert(cand);
+            }
+        }
+        let (stored, cand) = match below.pop_first() {
+            Some(cand) => (longest, cand),
+            None => match above.pop_first() {
+                Some((p, cand)) => (f64::from_bits(p), cand),
+                None => break,
+            },
+        };
+        let (_, _, _, a, b, va, vb) = cand;
+        if version[a] != va || version[b] != vb {
             continue;
         }
-        // The neighbours, the one that leaves the least communication first.
-        let mut candidates: Vec<((usize, usize), (usize, usize))> = Vec::new();
-        let edges = pred[c].iter().map(|&p| (p, c)).chain(succ[c].iter().map(|&x| (c, x)));
-        for (a, b) in edges {
-            let comm = succ[a].len() + succ[b].len() - common(&succ[a], &succ[b]) - 1 + pred[a].len() + pred[b].len()
-                - common(&pred[a], &pred[b])
-                - 1;
-            candidates.push(((comm, members[a].len() + members[b].len()), (a, b)));
+        // The paths only get longer: a candidate that is not up to date goes back.
+        let now = path(a, b, &pred, &succ, &cc, &before, &after);
+        if now > stored {
+            above.insert((now.to_bits(), cand));
+            continue;
         }
-        candidates.sort();
+        // Is b reached from a by more than the edge a -> b? Then merging them closes a cycle.
+        stamp += 1;
+        stack.clear();
+        for &x in &succ[a] {
+            if x != b && label[x] < label[b] {
+                seen[x] = stamp;
+                stack.push(x);
+            }
+        }
+        let mut other_path = false;
+        'search: while let Some(x) = stack.pop() {
+            for &y in &succ[x] {
+                if y == b {
+                    other_path = true;
+                    break 'search;
+                }
+                if label[y] < label[b] && seen[y] != stamp {
+                    seen[y] = stamp;
+                    stack.push(y);
+                }
+            }
+        }
+        if other_path {
+            rejected += 1;
+            continue;
+        }
 
-        for &(_, (a, b)) in &candidates {
-            // Is b reached from a by more than the edge a -> b? Then merging them closes a cycle.
-            stamp += 1;
-            stack.clear();
-            for &x in &succ[a] {
-                if x != b && label[x] < label[b] {
-                    seen[x] = stamp;
-                    stack.push(x);
-                }
+        let (s, o) = (a.min(b), a.max(b));
+        let merged_label = label[b];
+        let moved = core::mem::take(&mut members[o]);
+        for &m in &moved {
+            cluster_of[m] = s;
+        }
+        members[s].extend(moved);
+        cc[s] += cc[o];
+        // The neighbours of o get s for it: their communication changes, and that of s.
+        let around: Vec<usize> = core::iter::once(s)
+            .chain(succ[o].iter().chain(pred[o].iter()).copied().filter(|&x| x != s))
+            .collect();
+        for x in core::mem::take(&mut succ[o]) {
+            pred[x].remove(&o);
+            if x != s {
+                succ[s].insert(x);
+                pred[x].insert(s);
             }
-            let mut other_path = false;
-            'search: while let Some(x) = stack.pop() {
-                for &y in &succ[x] {
-                    if y == b {
-                        other_path = true;
-                        break 'search;
-                    }
-                    if label[y] < label[b] && seen[y] != stamp {
-                        seen[y] = stamp;
-                        stack.push(y);
-                    }
-                }
+        }
+        for x in core::mem::take(&mut pred[o]) {
+            succ[x].remove(&o);
+            if x != s {
+                pred[s].insert(x);
+                succ[x].insert(s);
             }
-            if other_path {
-                rejected += 1;
-                continue;
-            }
+        }
+        version[o] += 1;
 
-            let (s, o) = (a.min(b), a.max(b));
-            let merged_label = label[b];
-            let moved = core::mem::take(&mut members[o]);
-            for &m in &moved {
-                cluster_of[m] = s;
-            }
-            members[s].extend(moved);
-            for x in core::mem::take(&mut succ[o]) {
-                pred[x].remove(&o);
-                if x != s {
-                    succ[s].insert(x);
-                    pred[x].insert(s);
+        // The merged cluster takes the later label; move the clusters after it up.
+        label[s] = merged_label;
+        stack.clear();
+        stack.push(s);
+        while let Some(x) = stack.pop() {
+            for &y in &succ[x] {
+                if label[y] <= label[x] {
+                    label[y] = label[x] + 1;
+                    stack.push(y);
                 }
             }
-            for x in core::mem::take(&mut pred[o]) {
-                succ[x].remove(&o);
-                if x != s {
-                    pred[s].insert(x);
-                    succ[x].insert(s);
-                }
-            }
-            alive[o] = false;
+        }
 
-            // The merged cluster takes the later label; move the clusters after it up.
-            label[s] = merged_label;
-            stack.clear();
-            stack.push(s);
-            while let Some(x) = stack.pop() {
-                for &y in &succ[x] {
-                    if label[y] <= label[x] {
-                        label[y] = label[x] + 1;
-                        stack.push(y);
-                    }
+        // The paths before the clusters after s and after the clusters before s, in the order of the labels.
+        before[s] = pred[s].iter().map(|&x| before[x] + cc[x]).fold(0.0, f64::max);
+        after[s] = succ[s].iter().map(|&x| after[x] + cc[x]).fold(0.0, f64::max);
+        longest = longest.max(before[s] + cc[s] + after[s]);
+        order.insert((label[s], s));
+        while let Some((_, x)) = order.pop_first() {
+            for &y in &succ[x] {
+                if before[x] + cc[x] > before[y] {
+                    before[y] = before[x] + cc[x];
+                    order.insert((label[y], y));
                 }
             }
-
-            // Their communication changed, so a merge can be needed or possible now.
-            work.insert((members[s].len(), s));
-            for &x in succ[s].iter().chain(pred[s].iter()) {
-                work.insert((members[x].len(), x));
+        }
+        order.insert((label[s], s));
+        while let Some((_, x)) = order.pop_last() {
+            for &y in &pred[x] {
+                if after[x] + cc[x] > after[y] {
+                    after[y] = after[x] + cc[x];
+                    order.insert((label[y], y));
+                }
             }
-            break;
+        }
+
+        // Their candidates are new.
+        for &x in &around {
+            version[x] += 1;
+        }
+        for &x in &around {
+            let (ps, ss): (Vec<usize>, Vec<usize>) =
+                (pred[x].iter().copied().collect(), succ[x].iter().copied().collect());
+            for y in ps {
+                offer!(y, x);
+            }
+            for y in ss {
+                offer!(x, y);
+            }
         }
     }
     (cluster_of, rejected)
@@ -810,7 +931,8 @@ fn cluster_merge_across_levels(s: &mut TaskSystem) {
         stdout("cluster_merge_across_levels: a task depends on a later task; skipping clustering.\n");
         return;
     }
-    let (cluster_of, rejected) = merge_across_levels_partition(&children);
+    let cost: Vec<f64> = vid.iter().map(|&v| s.cluster(v).cost).collect();
+    let (cluster_of, rejected) = merge_across_levels_partition(&children, &cost, s.max_num_threads);
     if !partition_is_acyclic(&children, &cluster_of) {
         stdout("cluster_merge_across_levels: the clusters form a cycle; skipping clustering.\n");
         return;
@@ -2001,20 +2123,31 @@ mod tests {
     fn merge_across_levels_keeps_independent_chains_apart() {
         // 0 -> 1 -> 2 and 3 -> 4 -> 5
         let children = graph(6, &[(0, 1), (1, 2), (3, 4), (4, 5)]);
-        let (cluster_of, rejected) = merge_across_levels_partition(&children);
+        let (cluster_of, rejected) = merge_across_levels_partition(&children, &vec![1.0; children.len()], 2);
         assert_eq!(cluster_of, vec![0, 0, 0, 3, 3, 3]);
         assert_eq!(rejected, 0);
     }
 
     #[test]
     fn merge_across_levels_does_not_close_a_cycle() {
-        // 0 -> 2 is also 0 -> 1 -> 2: merging 0 and 2 alone leaves 1 before and after
-        // them. It is tried first, 1 having more neighbours.
-        let children = graph(5, &[(0, 1), (0, 2), (1, 2), (1, 3), (1, 4)]);
-        let (cluster_of, rejected) = merge_across_levels_partition(&children);
+        // 1 -> 3 is also 1 -> 2 -> 3: merging 1 and 3 alone leaves 2 before and after
+        // them. It is tried first: 1 and 3 share a parent and a child, and the long
+        // task 5 makes all the paths count the same.
+        let children = graph(6, &[(0, 1), (0, 3), (1, 2), (1, 3), (2, 3), (1, 4), (3, 4)]);
+        let (cluster_of, rejected) = merge_across_levels_partition(&children, &[1.0, 1.0, 1.0, 1.0, 1.0, 100.0], 2);
         assert!(rejected > 0);
         assert!(partition_is_acyclic(&children, &cluster_of));
-        assert!(!partition_is_acyclic(&children, &[0, 1, 0, 3, 4]));
+        assert!(!partition_is_acyclic(&children, &[0, 1, 2, 1, 4, 5]));
+    }
+
+    #[test]
+    fn merge_across_levels_keeps_the_longest_path_short() {
+        // 0 -> 1 -> 3 and 0 -> 2 -> 4: task 0 goes to the branch with the lower cost.
+        let children = graph(5, &[(0, 1), (0, 2), (1, 3), (2, 4)]);
+        let (cluster_of, _) = merge_across_levels_partition(&children, &[1.0, 5.0, 1.0, 5.0, 1.0], 2);
+        assert_eq!(cluster_of, vec![0, 1, 0, 1, 0]);
+        let (cluster_of, _) = merge_across_levels_partition(&children, &[1.0, 1.0, 5.0, 1.0, 5.0], 2);
+        assert_eq!(cluster_of, vec![0, 0, 2, 0, 2]);
     }
 
     #[test]

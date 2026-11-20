@@ -70,7 +70,7 @@
 #   * A cluster is merged as long as it communicates at least as much as it
 #     computes: the number of clusters it exchanges values with is not below its
 #     number of equations.
-#   * The runtime takes the merges in one fixed order. Here every dependency has a
+#   * The runtime takes the next merge with a fixed rule. Here every dependency has a
 #     priority and the merges are tried in that order; the metaheuristic searches
 #     the priorities x in [0,1]^E for the clustering with the shortest estimated
 #     evaluation time.

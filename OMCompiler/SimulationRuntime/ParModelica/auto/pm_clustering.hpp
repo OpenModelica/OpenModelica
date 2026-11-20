@@ -40,6 +40,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <tuple>
 #include <utility>
 
 namespace openmodelica { namespace parmodelica {
@@ -724,8 +725,15 @@ struct cluster_merge_across_levels {
 
     /*! The cluster of every task, for a task graph given as the tasks each task
         is read by. Every edge must point to a later task. `rejected` counts the
-        merges that were not done because of a cycle. */
-    static std::vector<int> partition(const std::vector<std::vector<int> >& children, long& rejected) {
+        merges that were not done because of a cycle.
+
+        Of the merges that are possible, the next one is the one that keeps the
+        longest path of cluster costs shortest (a path below `total cost / threads`
+        or below the longest one counts the same), then the one that removes the
+        most dependencies between clusters, then the one that leaves the least
+        communication, then the cheapest. */
+    static std::vector<int> partition(const std::vector<std::vector<int> >& children, const std::vector<double>& cost,
+                                      size_t threads, long& rejected) {
         const int n = (int)children.size();
         rejected = 0;
 
@@ -734,15 +742,29 @@ struct cluster_merge_across_levels {
         std::vector<std::set<int> > succ(n), pred(n);
         /* A topological numbering of the clusters: label[a] < label[b] for every edge a -> b. */
         std::vector<long> label(n);
-        std::vector<char> alive(n, 1);
+        /* Changes with the neighbours of a cluster; a candidate of another version is out of date. */
+        std::vector<unsigned> version(n, 0);
+        std::vector<double>   cc(cost);
+        /* The longest path of cluster costs before and after a cluster, without the cluster itself. */
+        std::vector<double> before(n, 0.0), after(n, 0.0);
+        double              total = 0.0;
         for (int i = 0; i < n; ++i) {
             cluster_of[i] = i;
             members[i].push_back(i);
             label[i] = i;
+            total += cc[i];
             for (size_t e = 0; e < children[i].size(); ++e) {
-                succ[i].insert(children[i][e]);
-                pred[children[i][e]].insert(i);
+                const int c = children[i][e];
+                succ[i].insert(c);
+                pred[c].insert(i);
+                before[c] = std::max(before[c], before[i] + cc[i]);
             }
+        }
+        double longest = total / (double)std::max<size_t>(threads, 1);
+        for (int i = n - 1; i >= 0; --i) {
+            for (size_t e = 0; e < children[i].size(); ++e)
+                after[i] = std::max(after[i], after[children[i][e]] + cc[children[i][e]]);
+            longest = std::max(longest, before[i] + cc[i] + after[i]);
         }
 
         std::vector<int> seen(n, -1);
@@ -781,86 +803,159 @@ struct cluster_merge_across_levels {
             return count;
         };
 
-        /* The clusters still to look at, the one with the fewest equations first. */
-        std::set<std::pair<size_t, int> > work;
-        for (int c = 0; c < n; ++c)
-            work.insert(std::make_pair(members[c].size(), c));
+        /* The longest path through the cluster that a and b would be, for an edge a -> b. */
+        auto path = [&](int a, int b) -> double {
+            double t = before[a];
+            for (std::set<int>::iterator p = pred[b].begin(); p != pred[b].end(); ++p)
+                if (*p != a)
+                    t = std::max(t, before[*p] + cc[*p]);
+            double d = after[b];
+            for (std::set<int>::iterator x = succ[a].begin(); x != succ[a].end(); ++x)
+                if (*x != b)
+                    d = std::max(d, after[*x] + cc[*x]);
+            return t + cc[a] + cc[b] + d;
+        };
 
-        while (!work.empty()) {
-            const size_t ops = work.begin()->first;
-            const int    c = work.begin()->second;
-            work.erase(work.begin());
-            if (!alive[c] || members[c].size() != ops || succ[c].size() + pred[c].size() < ops)
+        /* (- dependencies removed, communication, cost, a, b, version of a, version of b): the
+           candidates with a path that is not above the longest one. The others have their path
+           in front. */
+        typedef std::tuple<long, size_t, double, int, int, unsigned, unsigned> Candidate;
+        std::set<Candidate>                                                    below;
+        std::set<std::pair<double, Candidate> >                                above;
+        auto over = [&](int c) -> bool { return succ[c].size() + pred[c].size() >= members[c].size(); };
+        auto offer = [&](int a, int b) {
+            if (!over(a) && !over(b))
+                return;
+            const size_t cs = common(succ[a], succ[b]);
+            const size_t cp = common(pred[a], pred[b]);
+            const size_t comm = succ[a].size() + succ[b].size() - cs - 1 + pred[a].size() + pred[b].size() - cp - 1;
+            const Candidate cand(-(long)(cs + cp + 1), comm, cc[a] + cc[b], a, b, version[a], version[b]);
+            const double    p = path(a, b);
+            if (p <= longest)
+                below.insert(cand);
+            else
+                above.insert(std::make_pair(p, cand));
+        };
+        for (int a = 0; a < n; ++a)
+            for (size_t e = 0; e < children[a].size(); ++e)
+                offer(a, children[a][e]);
+
+        std::set<std::pair<long, int> > order;
+        std::vector<int>                around;
+        for (;;) {
+            while (!above.empty() && above.begin()->first <= longest) {
+                below.insert(above.begin()->second);
+                above.erase(above.begin());
+            }
+            const bool from_below = !below.empty();
+            if (!from_below && above.empty())
+                break;
+            const double    stored = from_below ? longest : above.begin()->first;
+            const Candidate cand = from_below ? *below.begin() : above.begin()->second;
+            if (from_below)
+                below.erase(below.begin());
+            else
+                above.erase(above.begin());
+            const int a = std::get<3>(cand);
+            const int b = std::get<4>(cand);
+            if (version[a] != std::get<5>(cand) || version[b] != std::get<6>(cand))
                 continue;
+            /* The paths only get longer: a candidate that is not up to date goes back. */
+            const double now = path(a, b);
+            if (now > stored) {
+                above.insert(std::make_pair(now, cand));
+                continue;
+            }
+            if (other_path(a, b)) {
+                ++rejected;
+                continue;
+            }
 
-            /* The neighbours, the one that leaves the least communication first. */
-            std::vector<std::pair<std::pair<size_t, size_t>, std::pair<int, int> > > candidates;
-            for (int dir = 0; dir < 2; ++dir) {
-                const std::set<int>& neighbours = dir == 0 ? pred[c] : succ[c];
-                for (std::set<int>::const_iterator it = neighbours.begin(); it != neighbours.end(); ++it) {
-                    const int    a = dir == 0 ? *it : c;
-                    const int    b = dir == 0 ? c : *it;
-                    const size_t comm = succ[a].size() + succ[b].size() - common(succ[a], succ[b]) - 1 +
-                                        pred[a].size() + pred[b].size() - common(pred[a], pred[b]) - 1;
-                    candidates.push_back(std::make_pair(std::make_pair(comm, members[a].size() + members[b].size()),
-                                                        std::make_pair(a, b)));
+            const int  s = std::min(a, b);
+            const int  o = std::max(a, b);
+            const long merged_label = label[b];
+            members[s].insert(members[s].end(), members[o].begin(), members[o].end());
+            for (size_t m = 0; m < members[o].size(); ++m)
+                cluster_of[members[o][m]] = s;
+            members[o].clear();
+            cc[s] += cc[o];
+            /* The neighbours of o get s for it: their communication changes, and that of s. */
+            around.assign(1, s);
+            for (std::set<int>::iterator x = succ[o].begin(); x != succ[o].end(); ++x)
+                if (*x != s)
+                    around.push_back(*x);
+            for (std::set<int>::iterator x = pred[o].begin(); x != pred[o].end(); ++x)
+                if (*x != s)
+                    around.push_back(*x);
+            for (std::set<int>::iterator x = succ[o].begin(); x != succ[o].end(); ++x) {
+                pred[*x].erase(o);
+                if (*x != s) {
+                    succ[s].insert(*x);
+                    pred[*x].insert(s);
                 }
             }
-            std::sort(candidates.begin(), candidates.end());
-
-            for (size_t k = 0; k < candidates.size(); ++k) {
-                const int a = candidates[k].second.first;
-                const int b = candidates[k].second.second;
-                if (other_path(a, b)) {
-                    ++rejected;
-                    continue;
+            for (std::set<int>::iterator x = pred[o].begin(); x != pred[o].end(); ++x) {
+                succ[*x].erase(o);
+                if (*x != s) {
+                    pred[s].insert(*x);
+                    succ[*x].insert(s);
                 }
+            }
+            succ[o].clear();
+            pred[o].clear();
+            ++version[o];
 
-                const int  s = std::min(a, b);
-                const int  o = std::max(a, b);
-                const long merged_label = label[b];
-                members[s].insert(members[s].end(), members[o].begin(), members[o].end());
-                for (size_t m = 0; m < members[o].size(); ++m)
-                    cluster_of[members[o][m]] = s;
-                members[o].clear();
-                for (std::set<int>::iterator x = succ[o].begin(); x != succ[o].end(); ++x) {
-                    pred[*x].erase(o);
-                    if (*x != s) {
-                        succ[s].insert(*x);
-                        pred[*x].insert(s);
+            /* The merged cluster takes the later label; move the clusters after it up. */
+            label[s] = merged_label;
+            stack.assign(1, s);
+            while (!stack.empty()) {
+                const int x = stack.back();
+                stack.pop_back();
+                for (std::set<int>::iterator y = succ[x].begin(); y != succ[x].end(); ++y)
+                    if (label[*y] <= label[x]) {
+                        label[*y] = label[x] + 1;
+                        stack.push_back(*y);
                     }
-                }
-                for (std::set<int>::iterator x = pred[o].begin(); x != pred[o].end(); ++x) {
-                    succ[*x].erase(o);
-                    if (*x != s) {
-                        pred[s].insert(*x);
-                        succ[*x].insert(s);
+            }
+
+            /* The paths before the clusters after s and after the clusters before s, in the order of the labels. */
+            before[s] = 0.0;
+            for (std::set<int>::iterator x = pred[s].begin(); x != pred[s].end(); ++x)
+                before[s] = std::max(before[s], before[*x] + cc[*x]);
+            after[s] = 0.0;
+            for (std::set<int>::iterator x = succ[s].begin(); x != succ[s].end(); ++x)
+                after[s] = std::max(after[s], after[*x] + cc[*x]);
+            longest = std::max(longest, before[s] + cc[s] + after[s]);
+            order.insert(std::make_pair(label[s], s));
+            while (!order.empty()) {
+                const int x = order.begin()->second;
+                order.erase(order.begin());
+                for (std::set<int>::iterator y = succ[x].begin(); y != succ[x].end(); ++y)
+                    if (before[x] + cc[x] > before[*y]) {
+                        before[*y] = before[x] + cc[x];
+                        order.insert(std::make_pair(label[*y], *y));
                     }
-                }
-                succ[o].clear();
-                pred[o].clear();
-                alive[o] = 0;
+            }
+            order.insert(std::make_pair(label[s], s));
+            while (!order.empty()) {
+                const int x = order.rbegin()->second;
+                order.erase(--order.end());
+                for (std::set<int>::iterator y = pred[x].begin(); y != pred[x].end(); ++y)
+                    if (after[x] + cc[x] > after[*y]) {
+                        after[*y] = after[x] + cc[x];
+                        order.insert(std::make_pair(label[*y], *y));
+                    }
+            }
 
-                /* The merged cluster takes the later label; move the clusters after it up. */
-                label[s] = merged_label;
-                stack.assign(1, s);
-                while (!stack.empty()) {
-                    const int x = stack.back();
-                    stack.pop_back();
-                    for (std::set<int>::iterator y = succ[x].begin(); y != succ[x].end(); ++y)
-                        if (label[*y] <= label[x]) {
-                            label[*y] = label[x] + 1;
-                            stack.push_back(*y);
-                        }
-                }
-
-                /* Their communication changed, so a merge can be needed or possible now. */
-                work.insert(std::make_pair(members[s].size(), s));
-                for (std::set<int>::iterator x = succ[s].begin(); x != succ[s].end(); ++x)
-                    work.insert(std::make_pair(members[*x].size(), *x));
-                for (std::set<int>::iterator x = pred[s].begin(); x != pred[s].end(); ++x)
-                    work.insert(std::make_pair(members[*x].size(), *x));
-                break;
+            /* Their candidates are new. */
+            for (size_t k = 0; k < around.size(); ++k)
+                ++version[around[k]];
+            for (size_t k = 0; k < around.size(); ++k) {
+                const int x = around[k];
+                for (std::set<int>::iterator y = pred[x].begin(); y != pred[x].end(); ++y)
+                    offer(*y, x);
+                for (std::set<int>::iterator y = succ[x].begin(); y != succ[x].end(); ++y)
+                    offer(x, *y);
             }
         }
 
@@ -933,8 +1028,12 @@ struct cluster_merge_across_levels {
             }
         }
 
+        std::vector<double> cost(n);
+        for (int i = 0; i < n; ++i)
+            cost[i] = sys_graph[vid[i]].cost;
+
         long                   rejected = 0;
-        const std::vector<int> cluster_of = partition(children, rejected);
+        const std::vector<int> cluster_of = partition(children, cost, task_system.max_num_threads, rejected);
         if (!is_acyclic(children, cluster_of)) {
             std::cerr << "cluster_merge_across_levels: the clusters form a cycle; skipping clustering." << std::endl;
             return;

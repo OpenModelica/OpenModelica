@@ -63,9 +63,17 @@ The clustering strategies are:
   Merge clusters that depend on each other, also when they are on different
   levels. A cluster is merged with one of its neighbours as long as the number
   of clusters it exchanges values with is not below its number of equations. A
-  merge that closes a cycle in the cluster graph is not done. This strategy uses
-  the structure of the task graph only, so the clusters are the same in every
-  run.
+  merge that closes a cycle in the cluster graph is not done.
+
+  The order of the merges uses the measured costs of the tasks. Of the merges
+  that are possible, the next one is the one that keeps the longest path of
+  cluster costs shortest, then the one that removes the most dependencies
+  between clusters, then the one that leaves the least communication. A path
+  that is not longer than the longest path so far, or than the total cost
+  divided by the number of threads, does not count. The costs are measured in
+  every run, so the clusters can change from run to run. The partition of a
+  large task graph takes time (minutes for 100000 tasks); this pays off for a
+  simulation that runs long.
 
 ``none``
   One cluster per equation.
@@ -148,8 +156,8 @@ export or ``-parmodDumpStages`` snapshot.
     julia parmod_optimize_clustering.jl --run --exe ./m taskgraph.json      # optimize, then simulate
 
   With ``--objective merge_across_levels`` the script searches the clustering of
-  the ``merge_across_levels`` strategy instead. The runtime merges the clusters
-  in one fixed order; here every dependency has a priority, the merges are tried
+  the ``merge_across_levels`` strategy instead. The runtime takes the next
+  merge with a fixed rule; here every dependency has a priority, the merges are tried
   by decreasing priority, and the metaheuristic searches the priorities for the
   clustering with the shortest estimated evaluation time. A merge that closes a
   cycle is not done, so the result is safe to import.
