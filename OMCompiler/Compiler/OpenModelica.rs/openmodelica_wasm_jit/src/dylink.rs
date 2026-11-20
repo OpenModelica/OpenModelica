@@ -251,7 +251,11 @@ pub fn is_direct_call(sig: &crate::sig::ExtCallSig) -> bool {
         matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Ptr)
     }
     sig.lang == crate::sig::ExtLang::C
-        && sig.args.iter().all(|(t, is_out)| !*is_out && scalar(t))
+        && sig
+            .args
+            .iter()
+            .enumerate()
+            .all(|(j, (t, is_out))| !*is_out && !sig.passes_by_ref(j, t) && scalar(t))
         && sig.ret.as_ref().is_none_or(scalar)
 }
 

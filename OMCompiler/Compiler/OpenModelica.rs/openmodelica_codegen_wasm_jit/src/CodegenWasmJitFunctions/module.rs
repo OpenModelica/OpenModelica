@@ -32,6 +32,7 @@ pub(crate) fn parse_ext_sig(line: &str) -> Result<ExtCallSig> {
         name: name.to_string(),
         lang: if lang == "F" { ExtLang::Fortran77 } else { ExtLang::C },
         args: tys.into_iter().zip(outs.chars()).map(|(t, o)| (t, o == '1')).collect(),
+        by_ref: outs.chars().map(|o| o == '2').collect(),
         ret: if ret == "-" {
             None
         } else {
@@ -41,15 +42,21 @@ pub(crate) fn parse_ext_sig(line: &str) -> Result<ExtCallSig> {
     })
 }
 
-/// `<symbol>\t<C|F>\t<return code or ->\t<argument codes>\t<one 0/1 per argument>`,
-/// a `1` marking an `_Out_`. The flags are separate because an argument code is
-/// variable-length.
+/// `<symbol>\t<C|F>\t<return code or ->\t<argument codes>\t<one 0/1/2 per argument>`,
+/// a `1` marking an `_Out_`, a `2` a `by_ref` input. The flags are separate because
+/// an argument code is variable-length.
 pub(super) fn write_ext_sig(e: &ExtCallSig) -> String {
     let mut args = String::new();
     let mut outs = String::new();
-    for (ty, is_out) in &e.args {
+    for (j, (ty, is_out)) in e.args.iter().enumerate() {
         ty.write_code(&mut args);
-        outs.push(if *is_out { '1' } else { '0' });
+        outs.push(if *is_out {
+            '1'
+        } else if e.by_ref.get(j) == Some(&true) {
+            '2'
+        } else {
+            '0'
+        });
     }
     let mut ret = String::new();
     match &e.ret {

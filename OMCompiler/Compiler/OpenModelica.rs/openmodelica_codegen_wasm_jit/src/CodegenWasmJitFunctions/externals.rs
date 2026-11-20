@@ -190,6 +190,7 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
     };
     let lang = ext_lang(language).ok_or("CodegenWasmJit: unsupported external language")?;
     let mut args: Vec<(SigTy, bool)> = Vec::new();
+    let mut by_ref: Vec<bool> = Vec::new();
     for a in &**extArgs {
         let ty = match &**a {
             // A `size(array, dim)` argument is a C `int` dimension (input).
@@ -197,6 +198,15 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
             A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => sig_ty(type_)?,
             other => return Err("CodegenWasmJit: unsupported external-call argument"),
         };
+        // A protected variable: MLS 3.7, section 12.9.1 passes it as an output.
+        by_ref.push(matches!(
+            &**a,
+            A::SIMEXTARG {
+                isInput: false,
+                outputIndex: 0,
+                ..
+            }
+        ));
         args.push((ty, ext_arg_output_index(a) != 0));
     }
     let ret = match &**extReturn {
@@ -213,6 +223,7 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
         name,
         lang,
         args,
+        by_ref,
         ret,
         declare: includes.is_empty(),
     })

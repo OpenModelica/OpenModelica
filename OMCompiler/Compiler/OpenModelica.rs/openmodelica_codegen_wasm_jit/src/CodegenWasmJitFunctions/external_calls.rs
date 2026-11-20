@@ -85,7 +85,7 @@ pub(super) fn emit_shared_external_call(
         None => Vec::new(),
     };
 
-    for a in &**extArgs {
+    for (j, a) in (&**extArgs).into_iter().enumerate() {
         let is_out = ext_arg_output_index(a) != 0;
         let ty = match &**a {
             A::SIMEXTARGSIZE { .. } => SigTy::Int,
@@ -167,11 +167,11 @@ pub(super) fn emit_shared_external_call(
                     ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
                 }
             }
-            SigTy::Int | SigTy::Bool | SigTy::Real if !is_out && !fortran => {
+            SigTy::Int | SigTy::Bool | SigTy::Real if !is_out && !sig.passes_by_ref(j, &ty) => {
                 push_value(ctx, "a scalar", ty.wty())?;
             }
             SigTy::Int | SigTy::Bool | SigTy::Real | SigTy::Str => {
-                // An `_Out_` cell starts zeroed; a Fortran input cell at its value.
+                // An `_Out_` cell starts zeroed; a by-reference input cell at its value.
                 let cell_fn = if matches!(ty, SigTy::Real) {
                     "rt_f77_cell_r"
                 } else {
