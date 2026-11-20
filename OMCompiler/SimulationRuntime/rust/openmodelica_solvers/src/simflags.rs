@@ -408,7 +408,7 @@ pub struct SimFlags {
     pub parmod_num_threads: Option<i32>,
     /// `-parmodScheduler`: `flow` (default) or `level`.
     pub parmod_scheduler: Option<String>,
-    /// `-parmodClustering`: `default`, `fixed_width_min_height` or `none`.
+    /// `-parmodClustering`: `default`, `fixed_width_min_height`, `merge_across_levels` or `none`.
     pub parmod_clustering: Option<String>,
     /// `-parmodClustersPerLevel`: the default clustering's per-level cluster cap.
     pub parmod_clusters_per_level: Option<i32>,
