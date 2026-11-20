@@ -503,6 +503,12 @@ public
     end match;
   end isZero;
 
+  function isAlwaysZero
+    "Zero and not resizable, so it stays zero at runtime."
+    input Dimension dim;
+    output Boolean b = isZero(dim) and not isResizable(dim);
+  end isAlwaysZero;
+
   function isOne
     input Dimension dim;
     output Boolean isOne;
