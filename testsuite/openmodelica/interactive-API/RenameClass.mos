@@ -1,0 +1,335 @@
+// name:     RenameClass
+// keywords: renameClass
+// status:   correct
+//
+// Checks that renameClass updates the references to the renamed class while
+// a large library is loaded, see #1645.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+loadString("
+package P
+  model A constant Real c = 1; end A;
+  model B A a; end B;
+  model C extends A; end C;
+  model D P.A a; .P.A b; end D;
+  model E import P.A; A a; end E;
+  model F import X = P.A; X x; end F;
+  model G import P.{A, B}; A a; end G;
+  model H Real y = A.c; Real z = P.A.c; Real w[integer(A.c)]; end H;
+  model I replaceable model M = A constrainedby A; M m; end I;
+  model J I i(redeclare model M = A) annotation(choices(choice(redeclare model M = A))); end J;
+  model K Real A = 1; Real y = A; end K;
+  model L model A2 end A2; A a; end L;
+  model N Real A2 = 1; Real y = A.c; end N;
+  package Q model A end A; model M A a; end M; end Q;
+  model S model A end A; end S;
+  model T extends S; A a; end T;
+end P;
+model Top P.A a; end Top;
+"); getErrorString();
+renameClass(P.A, A2); getErrorString();
+list(P); getErrorString();
+list(Top); getErrorString();
+
+loadString("
+package Fn
+  function f input Real x; output Real y; algorithm y := if x > 0 then f(x - 1) else 0; end f;
+  function g input Real x; algorithm f(x); end g;
+  model M Real y = f(time); equation f(time); end M;
+end Fn;
+"); getErrorString();
+renameClass(Fn.f, h); getErrorString();
+list(Fn); getErrorString();
+
+loadString("
+package Gr
+  model Line end Line;
+  model M
+    Line l;
+    annotation(Icon(graphics = {Line(points = {{0, 0}, {1, 1}})}));
+  end M;
+end Gr;
+"); getErrorString();
+renameClass(Gr.Line, TLine); getErrorString();
+list(Gr); getErrorString();
+
+loadString("
+package R
+  model Base
+    replaceable model A
+      annotation(choices(choice(redeclare model A = X)));
+    end A;
+    A a;
+  end Base;
+  model X end X;
+  model C extends Base(redeclare model A = X); A a2; end C;
+  model D extends Base; redeclare model A = X; A a2; end D;
+  model E extends Base; redeclare model extends A Real y; end A; end E;
+  model F Base b(redeclare model A = X); end F;
+  model G model H Base b; end H; H h(b(redeclare model A = X)); end G;
+  model I extends D; redeclare model A = X; end I;
+  model Other replaceable model A end A; end Other;
+  model J Other o(redeclare model A = X); end J;
+end R;
+"); getErrorString();
+renameClass(R.Base.A, A2); getErrorString();
+list(R); getErrorString();
+
+loadString("
+package U
+  model M
+    annotation(Documentation(info = \"<a href='modelica://U.M'>M</a>, <a href='modelica://U.MM'>MM</a>, modelica://U.M.Sub\"));
+  end M;
+  model MM end MM;
+  model N
+    annotation(Icon(graphics = {Bitmap(extent = {{0, 0}, {1, 1}}, fileName = \"modelica://U.M/icon.png\")}));
+  end N;
+  annotation(version = \"1.0\");
+end U;
+package V
+  annotation(uses(U(version = \"1.0\")));
+end V;
+"); getErrorString();
+renameClass(U.M, M2); getErrorString();
+list(U); getErrorString();
+renameClass(U, U2); getErrorString();
+list(V); getErrorString();
+
+renameClass(NoSuchClass, X); getErrorString();
+renameClass(Top, A.B); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {P.A2, P.B, P.C, P.D, P.E, P.F, P.G, P.H, P.I.M, P.I, P.J, P.L, P.N, Top}
+// ""
+// "package P
+//   model A2
+//     constant Real c = 1;
+//   end A2;
+//
+//   model B
+//     A2 a;
+//   end B;
+//
+//   model C
+//     extends A2;
+//   end C;
+//
+//   model D
+//     P.A2 a;
+//     .P.A2 b;
+//   end D;
+//
+//   model E
+//     import P.A2;
+//     A2 a;
+//   end E;
+//
+//   model F
+//     import X = P.A2;
+//     X x;
+//   end F;
+//
+//   model G
+//     import P.{A2,B};
+//     A2 a;
+//   end G;
+//
+//   model H
+//     Real y = A2.c;
+//     Real z = P.A2.c;
+//     Real w[integer(A2.c)];
+//   end H;
+//
+//   model I
+//     replaceable model M = A2 constrainedby A2;
+//     M m;
+//   end I;
+//
+//   model J
+//     I i(redeclare model M = A2) annotation(
+//       choices(choice(redeclare model M = A2)));
+//   end J;
+//
+//   model K
+//     Real A = 1;
+//     Real y = A;
+//   end K;
+//
+//   model L
+//     model A2
+//     end A2;
+//
+//     .P.A2 a;
+//   end L;
+//
+//   model N
+//     Real A2 = 1;
+//     Real y = .P.A2.c;
+//   end N;
+//
+//   package Q
+//     model A
+//     end A;
+//
+//     model M
+//       A a;
+//     end M;
+//   end Q;
+//
+//   model S
+//     model A
+//     end A;
+//   end S;
+//
+//   model T
+//     extends S;
+//     A a;
+//   end T;
+// end P;"
+// ""
+// "model Top
+//   P.A2 a;
+// end Top;"
+// ""
+// true
+// ""
+// {Fn.h, Fn.g, Fn.M}
+// ""
+// "package Fn
+//   function h
+//     input Real x;
+//     output Real y;
+//   algorithm
+//     y := if x > 0 then h(x - 1) else 0;
+//   end h;
+//
+//   function g
+//     input Real x;
+//   algorithm
+//     h(x);
+//   end g;
+//
+//   model M
+//     Real y = h(time);
+//   equation
+//     h(time);
+//   end M;
+// end Fn;"
+// ""
+// true
+// ""
+// {Gr.TLine, Gr.M}
+// ""
+// "package Gr
+//   model TLine
+//   end TLine;
+//
+//   model M
+//     TLine l;
+//     annotation(
+//       Icon(graphics = {Line(points = {{0, 0}, {1, 1}})}));
+//   end M;
+// end Gr;"
+// ""
+// true
+// ""
+// {R.Base.A2, R.Base, R.C, R.D.A2, R.D, R.E.A2, R.F, R.G, R.I.A2}
+// ""
+// "package R
+//   model Base
+//     replaceable model A2
+//       annotation(
+//         choices(choice(redeclare model A2 = X)));
+//     end A2;
+//
+//     A2 a;
+//   end Base;
+//
+//   model X
+//   end X;
+//
+//   model C
+//     extends Base(redeclare model A2 = X);
+//     A2 a2;
+//   end C;
+//
+//   model D
+//     extends Base;
+//     redeclare model A2 = X;
+//     A2 a2;
+//   end D;
+//
+//   model E
+//     extends Base;
+//
+//     redeclare model extends A2
+//         Real y;
+//     end A2;
+//   end E;
+//
+//   model F
+//     Base b(redeclare model A2 = X);
+//   end F;
+//
+//   model G
+//     model H
+//       Base b;
+//     end H;
+//
+//     H h(b(redeclare model A2 = X));
+//   end G;
+//
+//   model I
+//     extends D;
+//     redeclare model A2 = X;
+//   end I;
+//
+//   model Other
+//     replaceable model A
+//     end A;
+//   end Other;
+//
+//   model J
+//     Other o(redeclare model A = X);
+//   end J;
+// end R;"
+// ""
+// true
+// ""
+// {U.M2, U.N}
+// ""
+// "package U
+//   model M2
+//     annotation(
+//       Documentation(info = \"<a href='modelica://U.M2'>M</a>, <a href='modelica://U.MM'>MM</a>, modelica://U.M2.Sub\"));
+//   end M2;
+//
+//   model MM
+//   end MM;
+//
+//   model N
+//     annotation(
+//       Icon(graphics = {Bitmap(extent = {{0, 0}, {1, 1}}, fileName = \"modelica://U.M2/icon.png\")}));
+//   end N;
+//   annotation(
+//     version = \"1.0\");
+// end U;"
+// ""
+// {U2, U2.M2, U2.N, V}
+// ""
+// "package V
+//   annotation(
+//     uses(U2(version = \"1.0\")));
+// end V;"
+// ""
+// {}
+// ""
+// {}
+// ""
+// endResult
