@@ -1022,8 +1022,6 @@ protected
   Absyn.Class cls;
   InstNode top, node;
   RenameData data;
-  RenameScope top_scope;
-  list<Absyn.Class> classes;
   Boolean load_missing;
 algorithm
   old_path := AbsynUtil.makeNotFullyQualified(className);
@@ -1050,21 +1048,60 @@ algorithm
     (_, top) := NFInstanceAPI.mkTop(program, scodeFor(program), AbsynUtil.pathString(old_path));
     node := lookupExpandedPath(AbsynUtil.makeFullyQualified(old_path), top);
     data := RenameData.RENAME_DATA(old_path, AbsynUtil.pathSetLastIdent(old_path, AbsynUtil.pathFirstIdent(newName)),
-      AbsynUtil.pathLastIdent(old_path), AbsynUtil.pathFirstIdent(newName), InstNode.definition(node), top,
+      AbsynUtil.pathLastIdent(old_path), AbsynUtil.pathFirstIdent(newName), false, InstNode.definition(node), top,
       Pointer.create(0), Pointer.create(false), Pointer.create({}));
-    top_scope := RenameScope.RENAME_SCOPE("", NONE(), Pointer.create(top));
-    classes := list(renameInClass(c, false, top_scope, NONE(), NONE(), data) for c in program.classes);
-
-    if Pointer.access(data.renamed) then
-      program.classes := classes;
-      changedClasses := data.newPath :: listReverse(Pointer.access(data.changedClasses));
-    end if;
+    (program, changedClasses) := renameInProgram(program, data);
   else
   end try;
 
   ErrorExt.rollBack(getInstanceName());
   FlagsUtil.setConfigBool(Flags.LOAD_MISSING_LIBRARIES, load_missing);
 end renameClass;
+
+function renameComponent
+  "Renames a component in a class and updates the references to it in the
+   classes that are not read-only. Returns the class followed by the classes
+   that were changed, or an empty list if the renaming failed."
+  input Absyn.Path className;
+  input String oldName;
+  input String newName;
+  input output Absyn.Program program;
+        output list<Absyn.Path> changedClasses = {};
+protected
+  Absyn.Path path;
+  Absyn.Class cls;
+  InstNode top, node;
+  RenameData data;
+  Boolean load_missing;
+algorithm
+  path := AbsynUtil.makeNotFullyQualified(className);
+
+  try
+    cls := ProgramUtil.getPathedClassInProgram(path, program);
+  else
+    return;
+  end try;
+
+  if cls.info.isReadOnly then
+    return;
+  end if;
+
+  load_missing := Flags.getConfigBool(Flags.LOAD_MISSING_LIBRARIES);
+  FlagsUtil.setConfigBool(Flags.LOAD_MISSING_LIBRARIES, false);
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    (_, top) := NFInstanceAPI.mkTop(program, scodeFor(program), AbsynUtil.pathString(path));
+    node := Inst.expand(lookupExpandedPath(AbsynUtil.makeFullyQualified(path), top), FAST_CONTEXT);
+    data := RenameData.RENAME_DATA(path, path, oldName, newName, true, listHead(localComponents(oldName, node)), top,
+      Pointer.create(0), Pointer.create(false), Pointer.create({}));
+    (program, changedClasses) := renameInProgram(program, data);
+  else
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+  FlagsUtil.setConfigBool(Flags.LOAD_MISSING_LIBRARIES, load_missing);
+end renameComponent;
 
 protected
 function updateMovedClass
@@ -1116,7 +1153,8 @@ uniontype RenameData
     Absyn.Path newPath;
     String oldName;
     String newName;
-    SCode.Element definition "The definition of the renamed class";
+    Boolean isComponent "The renamed element is a component, not a class";
+    SCode.Element definition "The definition of the renamed element";
     InstNode top;
     Pointer<Integer> changes;
     Pointer<Boolean> renamed;
@@ -1292,6 +1330,12 @@ algorithm
   end match;
 end updateNamesInElementItem;
 
+type DeclarationKind = enumeration(
+  LOCAL "An element of the class",
+  REDECLARED "An element redeclaration in the class",
+  MODIFIER "A redeclaration in a modifier"
+);
+
 function updateNamesInElement
   input output Absyn.Element element;
   input NameEnv env;
@@ -1300,7 +1344,7 @@ algorithm
     case Absyn.Element.ELEMENT()
       algorithm
         element.specification := updateNamesInElementSpec(element.specification, env,
-          isRedeclare(element.redeclareKeywords));
+          if isRedeclare(element.redeclareKeywords) then DeclarationKind.REDECLARED else DeclarationKind.LOCAL);
 
         if isSome(element.constrainClass) then
           element.constrainClass :=
@@ -1335,14 +1379,14 @@ end updateNamesInConstrainClass;
 function updateNamesInElementSpec
   input output Absyn.ElementSpec spec;
   input NameEnv env;
-  input Boolean redeclared = false;
+  input DeclarationKind kind = DeclarationKind.LOCAL;
 protected
   NameEnv mod_env;
 algorithm
   () := match spec
     case Absyn.ElementSpec.CLASSDEF()
       algorithm
-        spec.class_ := updateNestedClass(spec.class_, redeclared, env);
+        spec.class_ := updateNestedClass(spec.class_, kind == DeclarationKind.REDECLARED, env);
       then
         ();
 
@@ -1364,7 +1408,7 @@ algorithm
     case Absyn.ElementSpec.COMPONENTS()
       algorithm
         mod_env := withModTarget(env, typeSpecTarget(spec.typeSpec));
-        spec.components := list(updateNamesInComponentItem(c, env, mod_env) for c in spec.components);
+        spec.components := list(updateNamesInComponentItem(c, kind, env, mod_env) for c in spec.components);
         spec.attributes := updateNamesInElementAttributes(spec.attributes, env);
         spec.typeSpec := updateNamesInTypeSpec(spec.typeSpec, env);
       then
@@ -1387,7 +1431,7 @@ algorithm
 
     else
       algorithm
-        spec := updateNamesInElementSpec(spec, env);
+        spec := updateNamesInElementSpec(spec, env, DeclarationKind.MODIFIER);
       then
         ();
   end match;
@@ -1413,6 +1457,8 @@ algorithm
           arg.modification := SOME(updateNamesInModification(Util.getOption(arg.modification),
             withElementTarget(env, arg.path)));
         end if;
+
+        arg.path := updateModifiedName(arg.path, env);
       then
         ();
 
@@ -1453,11 +1499,16 @@ end updateNamesInModification;
 
 function updateNamesInComponentItem
   input output Absyn.ComponentItem item;
+  input DeclarationKind kind;
   input NameEnv env;
   input NameEnv modEnv "The environment for the modifier, which modifies the type of the component";
 protected
-  Absyn.Component comp = item.component;
+  Absyn.Component comp;
+  NameEnv cmt_env;
 algorithm
+  (item, cmt_env) := updateComponentName(item, kind, env);
+  comp := item.component;
+
   if not listEmpty(comp.arrayDim) then
     comp.arrayDim := list(updateNamesInSubscript(s, env) for s in comp.arrayDim);
   end if;
@@ -1472,7 +1523,7 @@ algorithm
     item.condition := SOME(updateNamesInExp(Util.getOption(item.condition), env));
   end if;
 
-  item.comment := updateNamesInCommentOpt(item.comment, env);
+  item.comment := updateNamesInCommentOpt(item.comment, cmt_env);
 end updateNamesInComponentItem;
 
 function updateNamesInTypeSpec
@@ -1586,6 +1637,7 @@ function updateNamesInExp_traverser
   input output NameEnv env;
 protected
   Absyn.ComponentRef cref;
+  Absyn.FunctionArgs args;
   String str;
 algorithm
   () := match exp
@@ -1601,7 +1653,13 @@ algorithm
 
     case Absyn.Exp.CALL()
       algorithm
-        cref := updateCref(exp.function_, env);
+        args := updateCallArgs(exp.functionArgs, exp.function_, env);
+
+        if not referenceEq(args, exp.functionArgs) then
+          exp.functionArgs := args;
+        end if;
+
+        cref := updateFunctionName(exp.function_, env);
 
         if not referenceEq(cref, exp.function_) then
           exp.function_ := cref;
@@ -1611,7 +1669,7 @@ algorithm
 
     case Absyn.Exp.PARTEVALFUNCTION()
       algorithm
-        cref := updateCref(exp.function_, env);
+        cref := updateFunctionName(exp.function_, env);
 
         if not referenceEq(cref, exp.function_) then
           exp.function_ := cref;
@@ -1634,6 +1692,7 @@ algorithm
 end updateNamesInExp_traverser;
 
 function updatePath
+  "Updates a class path. A renamed component cannot be part of one."
   input Absyn.Path path;
   input NameEnv env;
   output Absyn.Path outPath;
@@ -1642,7 +1701,8 @@ protected
 algorithm
   outPath := match env
     case NameEnv.MOVE() then updateMovedPath(path, env.env);
-    case NameEnv.RENAME(env = e) then if e.inGraphics then path else renamePath(path, e);
+    case NameEnv.RENAME(env = e)
+      then if e.inGraphics or e.data.isComponent then path else renamePath(path, e);
   end match;
 end updatePath;
 
@@ -1655,17 +1715,93 @@ protected
 algorithm
   outCref := match env
     case NameEnv.MOVE() then updateMovedCref(cref, env.env);
-    case NameEnv.RENAME(env = e) then if e.inGraphics then cref else renameCref(cref, e);
+    case NameEnv.RENAME(env = e)
+      then if e.data.isComponent then renameComponentCref(cref, e)
+           elseif e.inGraphics then cref else renameCref(cref, e);
   end match;
 end updateCref;
+
+function updateFunctionName
+  input Absyn.ComponentRef cref;
+  input NameEnv env;
+  output Absyn.ComponentRef outCref;
+protected
+  RenameEnv e;
+algorithm
+  outCref := match env
+    case NameEnv.MOVE() then updateMovedCref(cref, env.env);
+    case NameEnv.RENAME(env = e)
+      then if e.inGraphics or e.data.isComponent then cref else renameCref(cref, e);
+  end match;
+end updateFunctionName;
+
+function updateCallArgs
+  input Absyn.FunctionArgs args;
+  input Absyn.ComponentRef functionName;
+  input NameEnv env;
+  output Absyn.FunctionArgs outArgs;
+protected
+  RenameEnv e;
+algorithm
+  outArgs := match env
+    case NameEnv.RENAME(env = e) guard e.data.isComponent then renameNamedArgs(args, functionName, e);
+    else args;
+  end match;
+end updateCallArgs;
+
+function updateModifiedName
+  "Updates the name of a modified element, which is an element of the class
+   that the modifier modifies."
+  input Absyn.Path name;
+  input NameEnv env;
+  output Absyn.Path outName;
+protected
+  RenameEnv e;
+algorithm
+  outName := match env
+    case NameEnv.RENAME(env = e) guard e.data.isComponent then renameModifiedName(name, e);
+    else name;
+  end match;
+end updateModifiedName;
+
+function updateComponentName
+  "Renames a declared component if it is the renamed component or a
+   redeclaration of it. Also returns the environment for its comment."
+  input output Absyn.ComponentItem item;
+  input DeclarationKind kind;
+  input NameEnv env;
+  output NameEnv commentEnv = env;
+protected
+  RenameEnv e;
+algorithm
+  () := match env
+    case NameEnv.RENAME(env = e)
+      guard e.data.isComponent and item.component.name == e.data.oldName
+      algorithm
+        if isRenamedComponentDeclaration(kind, e) then
+          item := renameComponentItem(item, e.data.newName);
+          markChanged(e);
+          e.isRenamed := true;
+          commentEnv := NameEnv.RENAME(e);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end updateComponentName;
 
 function updateString
   input String str;
   input NameEnv env;
   output String outStr;
+protected
+  RenameEnv e;
 algorithm
   outStr := match env
-    case NameEnv.RENAME() then renameURIs(str, env.env);
+    case NameEnv.RENAME(env = e)
+      then if not e.data.isComponent then renameURIs(str, e)
+           elseif e.inGraphics then renameTextReferences(str, e) else str;
     else str;
   end match;
 end updateString;
@@ -1675,9 +1811,12 @@ function updateImport
   input Absyn.Import imp;
   input NameEnv env;
   output Absyn.Import outImp;
+protected
+  RenameEnv e;
 algorithm
   outImp := match env
-    case NameEnv.RENAME() then renameInImport(imp, env.env);
+    case NameEnv.RENAME(env = e)
+      then if e.data.isComponent then renameComponentInImport(imp, e) else renameInImport(imp, e);
     else imp;
   end match;
 end updateImport;
@@ -1893,7 +2032,9 @@ algorithm
   path := suffixOptPath(parentPath, cls.name);
   is_target := AbsynUtil.pathEqual(path, data.oldPath);
 
-  if is_target then
+  if data.isComponent then
+    renamed := false;
+  elseif is_target then
     renamed := true;
   elseif cls.name == data.oldName and (redeclared or isClassExtends(cls)) then
     renamed := redeclaresRenamedClass(parentScope, data);
@@ -1914,7 +2055,9 @@ algorithm
   end if;
 
   if is_target then
-    Pointer.update(data.renamed, true);
+    if not data.isComponent then
+      Pointer.update(data.renamed, true);
+    end if;
   elseif renamed or Pointer.access(env.changed) then
     Pointer.update(data.changedClasses, env.newPath :: Pointer.access(data.changedClasses));
   end if;
@@ -1955,8 +2098,8 @@ function renameInRedeclaredClass
 protected
   RenameEnv e = env;
 algorithm
-  if cls.name == env.data.oldName then
-    e.isRenamed := modTargetHasRenamedClass(env);
+  if cls.name == env.data.oldName and not env.data.isComponent then
+    e.isRenamed := modTargetHasRenamedElement(env);
   else
     e.isRenamed := false;
   end if;
@@ -1979,7 +2122,7 @@ algorithm
   if isGraphicalAnnotation(arg) then
     e.inGraphics := true;
     arg := updateNamesInElementArg(arg, NameEnv.RENAME(e));
-  elseif isUsesAnnotation(arg) then
+  elseif isUsesAnnotation(arg) and not env.data.isComponent then
     arg := renameInUses(arg, env);
   else
     e.target := if env.isRenamed then ModTarget.SELF_TARGET() else ModTarget.NO_TARGET();
@@ -2298,6 +2441,490 @@ algorithm
   Pointer.update(env.data.changes, Pointer.access(env.data.changes) + 1);
 end markChanged;
 
+function renameInProgram
+  input output Absyn.Program program;
+  input RenameData data;
+  output list<Absyn.Path> changedClasses = {};
+protected
+  RenameScope top_scope;
+  list<Absyn.Class> classes;
+algorithm
+  top_scope := RenameScope.RENAME_SCOPE("", NONE(), Pointer.create(data.top));
+  classes := list(renameInClass(c, false, top_scope, NONE(), NONE(), data) for c in program.classes);
+
+  if Pointer.access(data.renamed) then
+    program.classes := classes;
+    changedClasses := (if data.isComponent then data.oldPath else data.newPath) ::
+                      listReverse(Pointer.access(data.changedClasses));
+  end if;
+end renameInProgram;
+
+uniontype NameElement
+  record CLASS_ELEMENT
+    InstNode node;
+  end CLASS_ELEMENT;
+
+  record COMPONENT_ELEMENT
+    SCode.Element definition;
+    InstNode scope "The class that declares the component";
+  end COMPONENT_ELEMENT;
+end NameElement;
+
+function isRenamedComponentDeclaration
+  input DeclarationKind kind;
+  input RenameEnv env;
+  output Boolean res;
+algorithm
+  res := match kind
+    case DeclarationKind.LOCAL then AbsynUtil.pathEqual(env.path, env.data.oldPath);
+    case DeclarationKind.REDECLARED then redeclaresRenamedComponent(env);
+    case DeclarationKind.MODIFIER then modTargetHasRenamedElement(env);
+  end match;
+
+  if res and kind == DeclarationKind.LOCAL then
+    Pointer.update(env.data.renamed, true);
+  end if;
+end isRenamedComponentDeclaration;
+
+function redeclaresRenamedComponent
+  "Returns true if the class inherits a component with the old name that is
+   the renamed component or a redeclaration of it."
+  input RenameEnv env;
+  output Boolean res;
+protected
+  SCode.Element def;
+  InstNode scope;
+algorithm
+  try
+    (def, scope) := findComponentInBases(env.data.oldName, baseClasses(getScope(env.scope)));
+    res := isRenamedComponent(def, scope, env.data);
+  else
+    res := false;
+  end try;
+end redeclaresRenamedComponent;
+
+function isRenamedComponentElement
+  input NameElement element;
+  input RenameData data;
+  output Boolean res;
+algorithm
+  res := match element
+    case NameElement.COMPONENT_ELEMENT()
+      guard SCodeUtil.getElementName(element.definition) == data.oldName
+      then isRenamedComponent(element.definition, element.scope, data);
+    else false;
+  end match;
+end isRenamedComponentElement;
+
+function isRenamedComponent
+  "Returns true if the component is the renamed component or a redeclaration of it."
+  input SCode.Element definition;
+  input InstNode scope "The class that declares the component";
+  input RenameData data;
+  output Boolean res;
+protected
+  SCode.Element def;
+  InstNode base_scope;
+algorithm
+  if referenceEq(definition, data.definition) then
+    res := true;
+  elseif SCodeUtil.isElementRedeclare(definition) then
+    try
+      (def, base_scope) := findComponentInBases(SCodeUtil.getElementName(definition), baseClasses(scope));
+      res := isRenamedComponent(def, base_scope, data);
+    else
+      res := false;
+    end try;
+  else
+    res := false;
+  end if;
+end isRenamedComponent;
+
+function renameComponentItem
+  input output Absyn.ComponentItem item;
+  input String name;
+protected
+  Absyn.Component comp = item.component;
+algorithm
+  comp.name := name;
+  item.component := comp;
+end renameComponentItem;
+
+function renameComponentCref
+  "Renames the identifiers in a component reference that refer to the renamed component."
+  input output Absyn.ComponentRef cref;
+  input RenameEnv env;
+protected
+  list<String> idents, rest;
+  list<Integer> indices = {};
+  String id;
+algorithm
+  idents := crefIdents(cref);
+
+  if not listMember(env.data.oldName, idents) then
+    return;
+  end if;
+
+  id :: rest := idents;
+
+  try
+    indices := renamedComponentIndices(rest,
+      if AbsynUtil.crefIsFullyQualified(cref) then lookupElementInClass(id, env.data.top)
+      else lookupNameElement(id, getScope(env.scope)), 1, env.data);
+  else
+  end try;
+
+  for i in indices loop
+    cref := setCrefIdent(cref, i, env.data.newName);
+  end for;
+
+  if not listEmpty(indices) then
+    markChanged(env);
+  end if;
+end renameComponentCref;
+
+function renameComponentPath
+  "Renames the identifiers in a path that refer to the renamed component. The
+   first identifier is an element of the given class."
+  input output Absyn.Path path;
+  input InstNode cls;
+  input RenameEnv env;
+protected
+  list<String> idents;
+  list<Integer> indices;
+algorithm
+  idents := AbsynUtil.pathToStringList(path);
+
+  try
+    indices := renamedComponentIndices(listRest(idents), lookupElementInClass(listHead(idents), cls), 1, env.data);
+  else
+    indices := {};
+  end try;
+
+  if not listEmpty(indices) then
+    for i in indices loop
+      idents := List.set(idents, i, env.data.newName);
+    end for;
+
+    path := AbsynUtil.stringListPath(idents);
+    markChanged(env);
+  end if;
+end renameComponentPath;
+
+function renamedComponentIndices
+  "Returns the positions of the identifiers in a name that refer to the
+   renamed component, given the element that the identifier at the position
+   refers to and the identifiers after it."
+  input list<String> idents;
+  input NameElement element;
+  input Integer index;
+  input RenameData data;
+  output list<Integer> indices;
+protected
+  String id;
+  list<String> rest;
+algorithm
+  indices := if isRenamedComponentElement(element, data) then {index} else {};
+
+  if listMember(data.oldName, idents) then
+    id :: rest := idents;
+
+    try
+      indices := listAppend(renamedComponentIndices(rest, lookupInElement(id, element), index + 1, data), indices);
+    else
+    end try;
+  end if;
+end renamedComponentIndices;
+
+function renameModifiedName
+  input output Absyn.Path name;
+  input RenameEnv env;
+algorithm
+  if not listMember(env.data.oldName, AbsynUtil.pathToStringList(name)) then
+    return;
+  end if;
+
+  () := match env.target
+    case ModTarget.NO_TARGET() then ();
+    case ModTarget.SELF_TARGET() then ();
+    else
+      algorithm
+        try
+          name := renameComponentPath(name, resolveModTarget(env.target, env), env);
+        else
+        end try;
+      then
+        ();
+  end match;
+end renameModifiedName;
+
+function renameComponentInImport
+  "Renames an imported constant."
+  input output Absyn.Import imp;
+  input RenameEnv env;
+algorithm
+  () := match imp
+    case Absyn.Import.NAMED_IMPORT()
+      guard listMember(env.data.oldName, AbsynUtil.pathToStringList(imp.path))
+      algorithm
+        imp.path := renameComponentPath(imp.path, env.data.top, env);
+      then
+        ();
+
+    case Absyn.Import.QUAL_IMPORT()
+      guard listMember(env.data.oldName, AbsynUtil.pathToStringList(imp.path))
+      algorithm
+        imp.path := renameComponentPath(imp.path, env.data.top, env);
+      then
+        ();
+
+    case Absyn.Import.GROUP_IMPORT()
+      algorithm
+        imp.groups := list(renameComponentInGroupImport(g, imp.prefix, env) for g in imp.groups);
+      then
+        ();
+
+    else ();
+  end match;
+end renameComponentInImport;
+
+function renameComponentInGroupImport
+  input output Absyn.GroupImport group;
+  input Absyn.Path prefix;
+  input RenameEnv env;
+protected
+  Absyn.Path path;
+algorithm
+  () := match group
+    case Absyn.GroupImport.GROUP_IMPORT_NAME() guard group.name == env.data.oldName
+      algorithm
+        path := renameComponentPath(AbsynUtil.suffixPath(prefix, group.name), env.data.top, env);
+        group.name := AbsynUtil.pathLastIdent(path);
+      then
+        ();
+
+    case Absyn.GroupImport.GROUP_IMPORT_RENAME() guard group.name == env.data.oldName
+      algorithm
+        path := renameComponentPath(AbsynUtil.suffixPath(prefix, group.name), env.data.top, env);
+        group.name := AbsynUtil.pathLastIdent(path);
+      then
+        ();
+
+    else ();
+  end match;
+end renameComponentInGroupImport;
+
+function renameNamedArgs
+  "Renames the named arguments of a call that refer to the renamed component,
+   i.e. an input of a function or a field of a record."
+  input output Absyn.FunctionArgs args;
+  input Absyn.ComponentRef functionName;
+  input RenameEnv env;
+protected
+  Absyn.Path path;
+  InstNode cls;
+algorithm
+  () := match args
+    case Absyn.FunctionArgs.FUNCTIONARGS()
+      guard listMember(env.data.oldName, list(a.argName for a in args.argNames))
+      algorithm
+        try
+          path := AbsynUtil.crefToPath(functionName);
+          cls := Inst.expand(lookupExpandedPath(path, lookupScope(path, env)), FAST_CONTEXT);
+
+          if isRenamedComponentElement(lookupElementInClass(env.data.oldName, cls), env.data) then
+            args.argNames := list(renameNamedArg(a, env.data) for a in args.argNames);
+            markChanged(env);
+          end if;
+        else
+        end try;
+      then
+        ();
+
+    else ();
+  end match;
+end renameNamedArgs;
+
+function renameNamedArg
+  input output Absyn.NamedArg arg;
+  input RenameData data;
+algorithm
+  if arg.argName == data.oldName then
+    arg.argName := data.newName;
+  end if;
+end renameNamedArg;
+
+function renameTextReferences
+  "Renames the references to the renamed component in a text of a graphical
+   annotation, i.e. %name and %{name}."
+  input output String str;
+  input RenameEnv env;
+protected
+  String name = env.data.oldName;
+  list<String> parts = {};
+  Integer i = 1, start = 1, n, len;
+  Boolean refers;
+algorithm
+  if System.stringFind(str, "%" + name) < 0 and System.stringFind(str, "%{" + name + "}") < 0 then
+    return;
+  end if;
+
+  try
+    refers := isRenamedComponentElement(lookupNameElement(name, getScope(env.scope)), env.data);
+  else
+    refers := false;
+  end try;
+
+  if not refers then
+    return;
+  end if;
+
+  n := stringLength(str);
+
+  while i < n loop
+    if stringGet(str, i) <> 37 then
+      i := i + 1;
+    elseif stringGet(str, i + 1) == 37 then
+      i := i + 2;
+    else
+      len := textReferenceLength(str, i + 1, name);
+
+      if len > 0 then
+        parts := (if stringGet(str, i + 1) == 123 then "{" + env.data.newName + "}" else env.data.newName) ::
+                 substring(str, start, i) :: parts;
+        start := i + 1 + len;
+        i := start;
+      else
+        i := i + 1;
+      end if;
+    end if;
+  end while;
+
+  if not listEmpty(parts) then
+    if start <= n then
+      parts := substring(str, start, n) :: parts;
+    end if;
+
+    str := stringAppendList(listReverse(parts));
+    markChanged(env);
+  end if;
+end renameTextReferences;
+
+function textReferenceLength
+  "Returns the length of name or {name} at the position in the string, or 0
+   if neither is there."
+  input String str;
+  input Integer pos;
+  input String name;
+  output Integer len = 0;
+protected
+  Integer n = stringLength(str), name_len = stringLength(name);
+algorithm
+  if pos + name_len - 1 <= n then
+    if substring(str, pos, pos + name_len - 1) == name then
+      if pos + name_len > n then
+        len := name_len;
+      elseif not isIdentChar(stringGet(str, pos + name_len)) then
+        len := name_len;
+      end if;
+    end if;
+  end if;
+
+  if len == 0 and pos + name_len + 1 <= n then
+    if stringGet(str, pos) == 123 and stringGet(str, pos + name_len + 1) == 125 then
+      if substring(str, pos + 1, pos + name_len) == name then
+        len := name_len + 2;
+      end if;
+    end if;
+  end if;
+end textReferenceLength;
+
+function lookupNameElement
+  "Looks up a name in the scope and its enclosing scopes."
+  input String name;
+  input InstNode scope;
+  output NameElement element;
+algorithm
+  try
+    element := lookupElementInClass(name, scope);
+  else
+    false := InstNode.isEncapsulated(scope) or InstNode.isTopScope(scope);
+    element := if name == InstNode.name(scope) then NameElement.CLASS_ELEMENT(scope) else
+      lookupNameElement(name, InstNode.parentScope(scope));
+  end try;
+end lookupNameElement;
+
+function lookupInElement
+  "Looks up a name in a class, or in the type of a component."
+  input String name;
+  input NameElement element;
+  output NameElement outElement;
+protected
+  InstNode cls;
+algorithm
+  cls := match element
+    case NameElement.CLASS_ELEMENT()
+      then if InstNode.isTopScope(element.node) then element.node else Inst.expand(element.node, FAST_CONTEXT);
+    else componentType(element);
+  end match;
+
+  outElement := lookupElementInClass(name, cls);
+end lookupInElement;
+
+function lookupElementInClass
+  "Looks up a local or inherited element of an expanded class."
+  input String name;
+  input InstNode cls;
+  output NameElement element;
+protected
+  SCode.Element def;
+  InstNode scope, node;
+  Boolean is_comp;
+algorithm
+  try
+    Class.lookupComponentIndex(name, InstNode.getClass(cls));
+    is_comp := true;
+  else
+    is_comp := false;
+  end try;
+
+  if is_comp then
+    (def, scope) := findComponent(name, cls);
+    element := NameElement.COMPONENT_ELEMENT(def, scope);
+  else
+    node := lookupExpandedElement(name, cls);
+    element := if InstNode.isClass(node) then NameElement.CLASS_ELEMENT(node) else
+      NameElement.COMPONENT_ELEMENT(InstNode.definition(node), InstNode.parent(node));
+  end if;
+end lookupElementInClass;
+
+function componentType
+  input NameElement element;
+  output InstNode cls;
+protected
+  SCode.Element def;
+  InstNode scope;
+  Absyn.Path ty;
+algorithm
+  NameElement.COMPONENT_ELEMENT(definition = def, scope = scope) := element;
+  SCode.Element.COMPONENT(typeSpec = Absyn.TypeSpec.TPATH(path = ty)) := def;
+  cls := Inst.expand(lookupExpandedPath(ty, scope), FAST_CONTEXT);
+end componentType;
+
+function localComponents
+  input String name;
+  input InstNode cls;
+  output list<SCode.Element> comps;
+algorithm
+  comps := list(e for e guard SCodeUtil.isComponent(e) and SCodeUtil.getElementName(e) == name
+                  in SCodeUtil.getClassElements(InstNode.definition(cls)));
+end localComponents;
+
+function baseClasses
+  input InstNode cls;
+  output list<InstNode> bases = arrayList(ClassTree.getExtends(Class.classTree(InstNode.getClass(cls))));
+end baseClasses;
+
 function isRenamedClassOrRedeclaration
   input InstNode node;
   input RenameData data;
@@ -2334,13 +2961,13 @@ algorithm
   end try;
 end redeclaresRenamedClass;
 
-function modTargetHasRenamedClass
+function modTargetHasRenamedElement
   "Returns true if the class that the modifier modifies has an element with
-   the old name that is the renamed class or a redeclaration of it."
+   the old name that is the renamed element or a redeclaration of it."
   input RenameEnv env;
   output Boolean res = false;
 protected
-  InstNode node;
+  InstNode cls, node;
 algorithm
   () := match env.target
     case ModTarget.NO_TARGET() then ();
@@ -2354,17 +2981,23 @@ algorithm
     else
       algorithm
         try
-          node := lookupExpandedElement(env.data.oldName, resolveModTarget(env.target, env));
+          cls := resolveModTarget(env.target, env);
 
-          if InstNode.isClass(node) then
-            res := isRenamedClassOrRedeclaration(node, env.data);
+          if env.data.isComponent then
+            res := isRenamedComponentElement(lookupElementInClass(env.data.oldName, cls), env.data);
+          else
+            node := lookupExpandedElement(env.data.oldName, cls);
+
+            if InstNode.isClass(node) then
+              res := isRenamedClassOrRedeclaration(node, env.data);
+            end if;
           end if;
         else
         end try;
       then
         ();
   end match;
-end modTargetHasRenamedClass;
+end modTargetHasRenamedElement;
 
 function resolveModTarget
   input ModTarget target;
@@ -2392,14 +3025,8 @@ function componentClass
   input Absyn.Path name;
   input InstNode cls;
   output InstNode node;
-protected
-  SCode.Element comp;
-  InstNode scope;
-  Absyn.Path ty;
 algorithm
-  (comp, scope) := findComponent(AbsynUtil.pathFirstIdent(name), cls);
-  SCode.Element.COMPONENT(typeSpec = Absyn.TypeSpec.TPATH(path = ty)) := comp;
-  node := Inst.expand(lookupExpandedPath(ty, scope), FAST_CONTEXT);
+  node := componentType(lookupElementInClass(AbsynUtil.pathFirstIdent(name), cls));
 
   if AbsynUtil.pathIsQual(name) then
     node := componentClass(AbsynUtil.pathRest(name), node);
@@ -2417,13 +3044,12 @@ protected
   list<SCode.Element> comps;
   InstNode base;
 algorithm
-  comps := list(e for e guard SCodeUtil.isComponent(e) and SCodeUtil.getElementName(e) == name
-                  in SCodeUtil.getClassElements(InstNode.definition(cls)));
+  comps := localComponents(name, cls);
 
   if listEmpty(comps) then
     (comp, scope) := match InstNode.getClass(cls)
       case Class.EXPANDED_DERIVED(baseClass = base) then findComponent(name, base);
-      else findComponentInBases(name, arrayList(ClassTree.getExtends(Class.classTree(InstNode.getClass(cls)))));
+      else findComponentInBases(name, baseClasses(cls));
     end match;
   else
     comp := listHead(comps);
@@ -2569,8 +3195,7 @@ end lookupExpandedElement;
 function lookupInheritedClass
   input String name;
   input InstNode cls;
-  output InstNode node =
-    lookupClassInBases(name, arrayList(ClassTree.getExtends(Class.classTree(InstNode.getClass(cls)))));
+  output InstNode node = lookupClassInBases(name, baseClasses(cls));
 end lookupInheritedClass;
 
 function lookupClassInBases

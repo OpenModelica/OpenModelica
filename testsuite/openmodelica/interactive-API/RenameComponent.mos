@@ -1,0 +1,177 @@
+// name:     RenameComponent
+// keywords: renameComponent
+// status:   correct
+//
+// Checks that renameComponent updates the references to the renamed
+// component in other classes.
+//
+
+loadString("
+package P
+  model T
+    parameter Real x = 1;
+    Real y = x;
+    Real z;
+  equation
+    der(z) = x;
+    annotation(Icon(graphics = {Text(extent = {{0, 0}, {1, 1}}, textString = \"%x and %{x} but %%x and %xy\"),
+      Rectangle(extent = DynamicSelect({{0, 0}, {1, 1}}, {{0, 0}, {x, x}}))}));
+  end T;
+  model U extends T(x = 2); Real w = x; end U;
+  model V T t(x = 3); Real y = t.x; T ta[2](each x = 4); Real z = ta[1].x; end V;
+  model W V v(t(x = 5)); Real q = v.t.x; end W;
+  model X = T(x = 6);
+  model H Real x; Real y = x; end H;
+end P;
+"); getErrorString();
+renameComponent(P.T, x, x2); getErrorString();
+list(P); getErrorString();
+
+loadString("
+package Q
+  connector Pin Real v; flow Real i; end Pin;
+  model Comp Pin p; Pin n; equation p.i + n.i = 0; end Comp;
+  model Circ Comp c1, c2; equation connect(c1.p, c2.n); end Circ;
+  function f input Real x; output Real y = x; end f;
+  model F Real a = f(x = 1); end F;
+  record R Real x; end R;
+  model G R r = R(x = 1); Real s = r.x; end G;
+  package K constant Real c = 1; model M Real y = c; end M; end K;
+  model L import Q.K.c; Real y = c; end L;
+  model Base replaceable Real x = 1 annotation(choices(choice(redeclare Real x = 2))); end Base;
+  model D extends Base; redeclare Real x = 3; end D;
+  model E Base b(redeclare Real x = 4); end E;
+end Q;
+"); getErrorString();
+renameComponent(Q.Comp, p, pa); getErrorString();
+renameComponent(Q.f, x, u); getErrorString();
+renameComponent(Q.R, x, xx); getErrorString();
+renameComponent(Q.K, c, c2); getErrorString();
+renameComponent(Q.Base, x, x2); getErrorString();
+list(Q); getErrorString();
+renameComponent(Q.NoSuchClass, x, y); getErrorString();
+renameComponent(Q.H, nosuch, y); getErrorString();
+
+// Result:
+// true
+// ""
+// {P.T, P.U, P.V, P.W, P.X}
+// ""
+// "package P
+//   model T
+//     parameter Real x2 = 1;
+//     Real y = x2;
+//     Real z;
+//   equation
+//     der(z) = x2;
+//     annotation(
+//       Icon(graphics = {Text(extent = {{0, 0}, {1, 1}}, textString = \"%x2 and %{x2} but %%x and %xy\"), Rectangle(extent = DynamicSelect({{0, 0}, {1, 1}}, {{0, 0}, {x2, x2}}))}));
+//   end T;
+//
+//   model U
+//     extends T(x2 = 2);
+//     Real w = x2;
+//   end U;
+//
+//   model V
+//     T t(x2 = 3);
+//     Real y = t.x2;
+//     T ta[2](each x2 = 4);
+//     Real z = ta[1].x2;
+//   end V;
+//
+//   model W
+//     V v(t(x2 = 5));
+//     Real q = v.t.x2;
+//   end W;
+//
+//   model X = T(x2 = 6);
+//
+//   model H
+//     Real x;
+//     Real y = x;
+//   end H;
+// end P;"
+// ""
+// true
+// ""
+// {Q.Comp, Q.Circ}
+// ""
+// {Q.f, Q.F}
+// ""
+// {Q.R, Q.G}
+// ""
+// {Q.K, Q.K.M, Q.L}
+// ""
+// {Q.Base, Q.D, Q.E}
+// ""
+// "package Q
+//   connector Pin
+//     Real v;
+//     flow Real i;
+//   end Pin;
+//
+//   model Comp
+//     Pin pa;
+//     Pin n;
+//   equation
+//     pa.i + n.i = 0;
+//   end Comp;
+//
+//   model Circ
+//     Comp c1, c2;
+//   equation
+//     connect(c1.pa, c2.n);
+//   end Circ;
+//
+//   function f
+//     input Real u;
+//     output Real y = u;
+//   end f;
+//
+//   model F
+//     Real a = f(u = 1);
+//   end F;
+//
+//   record R
+//     Real xx;
+//   end R;
+//
+//   model G
+//     R r = R(xx = 1);
+//     Real s = r.xx;
+//   end G;
+//
+//   package K
+//     constant Real c2 = 1;
+//
+//     model M
+//       Real y = c2;
+//     end M;
+//   end K;
+//
+//   model L
+//     import Q.K.c2;
+//     Real y = c2;
+//   end L;
+//
+//   model Base
+//     replaceable Real x2 = 1 annotation(
+//       choices(choice(redeclare Real x2 = 2)));
+//   end Base;
+//
+//   model D
+//     extends Base;
+//     redeclare Real x2 = 3;
+//   end D;
+//
+//   model E
+//     Base b(redeclare Real x2 = 4);
+//   end E;
+// end Q;"
+// ""
+// false
+// ""
+// false
+// ""
+// endResult

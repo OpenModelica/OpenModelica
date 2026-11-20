@@ -13,13 +13,6 @@ renameClass(Pck.TestRename, TestRenamed); getErrorString();
 list(Pck.TestRenamed);
 
 loadModel(Modelica); getErrorString();
-// renameComponent traverses the whole program; drop large packages so it stays within the stack
-deleteClass(Modelica.Fluid);
-deleteClass(Modelica.Media);
-deleteClass(Modelica.Electrical.Machines);
-deleteClass(Modelica.Magnetic);
-// get rid of no such file errors!
-deleteClass(Modelica.Utilities.Examples);
 
 list(m1); getErrorString();
 renameComponentInClass(m1, emf1, emf2); getErrorString();
@@ -41,7 +34,7 @@ renameComponent(m1RO, emf1, emf2); getErrorString();
 //   x = 0.2;
 // end TestRename;"
 // ""
-// {.TestRenameComp2, .Pck2.TestRenameComp, .TestRenameExt3, .Pck.TestRenameExt, .Pck.TestRenameExt2, Pck.TestRename}
+// {Pck.TestRename, TestRenameComp2}
 // ""
 // "model TestRename
 //   flow Real RENAMED_X;
@@ -60,11 +53,6 @@ renameComponent(m1RO, emf1, emf2); getErrorString();
 // end TestRenamed;"
 // true
 // ""
-// true
-// true
-// true
-// true
-// true
 // "model m1
 //   Modelica.Electrical.Analog.Basic.EMF emf1;
 // end m1;"

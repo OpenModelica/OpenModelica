@@ -72,49 +72,5 @@ uniontype Variable "- InteractiveTypes.Variable"
 
 end Variable;
 
-public
-uniontype Component "- a component in a class
-  this is used in extracting all the components in all the classes"
-  record COMPONENTITEM
-    Absyn.Path the1 "the class where the component is" ;
-    Absyn.Path the2 "the type of the component" ;
-    Absyn.ComponentRef the3 "the name of the component" ;
-  end COMPONENTITEM;
-
-  record EXTENDSITEM
-    Absyn.Path the1 "the class which is extended" ;
-    Absyn.Path the2 "the class which is the extension" ;
-  end EXTENDSITEM;
-
-end Component;
-
-public
-uniontype Components
-  record COMPONENTS
-    list<Component> componentLst;
-    Integer the "the number of components in list. used to optimize the get_dependency_on_class" ;
-  end COMPONENTS;
-
-end Components;
-
-public
-uniontype ComponentReplacement
-  record COMPONENTREPLACEMENT
-    Absyn.Path which1 "which class contain the old cref" ;
-    Absyn.ComponentRef the2 "the old cref" ;
-    Absyn.ComponentRef the3 "the new cref" ;
-  end COMPONENTREPLACEMENT;
-
-end ComponentReplacement;
-
-public
-uniontype ComponentReplacementRules
-  record COMPONENTREPLACEMENTRULES
-    list<ComponentReplacement> componentReplacementLst;
-    Integer the "the number of rules" ;
-  end COMPONENTREPLACEMENTRULES;
-
-end ComponentReplacementRules;
-
 annotation(__OpenModelica_Interface="frontend");
 end InteractiveTypes;
