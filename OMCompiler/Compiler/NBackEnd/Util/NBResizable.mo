@@ -309,6 +309,8 @@ public
   end resolveSizeParameters;
 
   function resolveSizeParameter
+    "the parameter also gets the resolved binding as start value, so that
+    updateStructuralParameters computes it before systems are sized by it"
     input output Expression exp;
   protected
     Pointer<Variable> var_ptr;
@@ -321,8 +323,10 @@ public
       then match Binding.getExpOpt(var.binding)
         local
           Expression b;
-        case SOME(b) guard BVariable.isParamOrConst(var_ptr) and not Expression.isLiteral(b)
-          then Expression.map(b, resolveSizeParameter);
+        case SOME(b) guard BVariable.isParamOrConst(var_ptr) and not Expression.isLiteral(b) algorithm
+          b := Expression.map(b, resolveSizeParameter);
+          Pointer.update(var_ptr, BVariable.setStartAttribute(var, b, true));
+        then b;
         else exp;
       end match;
       else exp;

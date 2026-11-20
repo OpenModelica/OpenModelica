@@ -1,0 +1,42 @@
+// name: resizableCalcSizeParam
+// keywords: NewBackend resizable calculated parameter size
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableCalcSizeParam resizableCalcSizeParam_* resizableCalcSizeParam.log
+//
+// A resizable size given by a calculated parameter (s.n = N) has its value
+// before the runtime sizes the nonlinear systems and Jacobians.
+
+loadString("
+model resizableCalcSizeParam
+  model Sub
+    parameter Integer n;
+    Real x[n](each start = 0.5);
+    Real y;
+  equation
+    x[1] = 1;
+    x[n] = 1;
+    for i in 2:n-1 loop
+      x[i] + x[i]^3 = 0.5*x[i-1] + y + time;
+    end for;
+    y = 0.1*x[n-1];
+  end Sub;
+  parameter Integer N = 4;
+  Sub s(n = N);
+end resizableCalcSizeParam;
+"); getErrorString();
+
+buildModel(resizableCalcSizeParam, stopTime = 0.1); getErrorString();
+system("./resizableCalcSizeParam -override=N=6", "resizableCalcSizeParam.log");
+val(s.n, 0.1, "resizableCalcSizeParam_res.mat");
+val(s.y, 0.1, "resizableCalcSizeParam_res.mat");
+// Result:
+// true
+// ""
+// {"resizableCalcSizeParam", "resizableCalcSizeParam_init.xml"}
+// ""
+// 0
+// 6.0
+// 0.02459924652931858
+// endResult
