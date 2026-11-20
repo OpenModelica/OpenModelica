@@ -927,8 +927,8 @@ end applyExpSubscripts;
 public function applyExpSubscriptsFoldCheckSimplify "
 author: PA
 Takes an arbitrary expression and applies subscripts to it. This is done by creating asub
-expressions given the original expression and then simplify them.
-Note: The subscripts must be INDEX
+expressions given the original expression and then simplify them. A slice or whole
+dimension followed by other subscripts gives an array of the subscripted elements.
 
 alternative names: subsriptExp (but already taken), subscriptToAsub
 
@@ -945,10 +945,31 @@ It uses the checkSimplify arg and I am not sure what it expects or is supposed t
 protected
   Boolean b;
   DAE.Exp s;
+  list<DAE.Subscript> rest = inSubs;
+  list<DAE.Exp> indices = {}, elems = {};
+  DAE.Type ty;
 algorithm
   for sub in inSubs loop
+    rest := listRest(rest);
+    if isSliceOrWholeDimSubscript(sub) and not List.all(rest, isWholeDimSubscript) then
+      try
+        indices := selectedIndices(sub, exp);
+      else
+        indices := {};
+      end try;
+      if not listEmpty(indices) then
+        for i in indices loop
+          (s, b) := applyExpSubscriptsFoldCheckSimplify(exp, DAE.INDEX(i) :: rest);
+          elems := s :: elems;
+          checkSimplify := b or checkSimplify;
+        end for;
+        elems := listReverse(elems);
+        ty := typeof(listHead(elems));
+        exp := DAE.ARRAY(liftArrayLeft(ty, DAE.DIM_INTEGER(listLength(elems))), not Types.isArray(ty), elems);
+        return;
+      end if;
+    end if;
     // Apply one subscript at a time, so simplify works fine on it.
-    //s := subscriptIndexExp(sub);
     try
       s := getSubscriptExp(sub);
       (exp,b) := ExpressionSimplify.simplify(makeASUB(exp,{s}));
@@ -958,6 +979,33 @@ algorithm
     end try;
   end for;
 end applyExpSubscriptsFoldCheckSimplify;
+
+protected function selectedIndices
+  "The indices that a slice or whole dimension subscript of exp selects."
+  input DAE.Subscript sub;
+  input DAE.Exp exp;
+  output list<DAE.Exp> indices;
+algorithm
+  indices := match (sub, arrayDimension(typeof(exp)))
+    local
+      Integer n;
+      DAE.Exp e;
+
+    case (DAE.SLICE(exp = e), _) then getArrayOrRangeContents(e);
+    case (DAE.WHOLEDIM(), DAE.DIM_INTEGER(integer = n) :: _) then list(DAE.ICONST(i) for i in 1:n);
+    case (DAE.WHOLEDIM(), DAE.DIM_EXP(exp = DAE.ICONST(integer = n)) :: _) then list(DAE.ICONST(i) for i in 1:n);
+  end match;
+end selectedIndices;
+
+protected function isWholeDimSubscript
+  input DAE.Subscript sub;
+  output Boolean b;
+algorithm
+  b := match sub
+    case DAE.WHOLEDIM() then true;
+    else false;
+  end match;
+end isWholeDimSubscript;
 
 public function applyExpSubscripts2
 "@mahge
@@ -985,7 +1033,7 @@ algorithm
     case(DAE.CREF(cref, ty), _)
       algorithm
         try
-          cref := ComponentReference.subscriptCref(cref, inSubs);
+          cref := ComponentReference.crefSetLastSubs(cref, subscriptsCompose(ComponentReference.crefLastSubs(cref), inSubs));
           ty := ComponentReference.crefTypeFull(cref);
           exp := DAE.CREF(cref, ty);
         else
@@ -996,9 +1044,6 @@ algorithm
 
     // This is the default operation for exps not handled explicitly. It is unfortunate
     // we have to build ASUBs. But we can improve this step by step to exclude more exps.
-    // Note getSubscriptExp does not work on WHOLE_DIM subs. So this will fail if one of the
-    // subs is WHOLE_DIM. DAE.ASUB should have been able to have list<DAE.Subscript> instead
-    // of just list<DAE.Exp> represneting subs.
     else algorithm
       exp := applyExpSubscriptsFoldCheckSimplify(inExp, inSubs);
     then exp;
@@ -1308,38 +1353,78 @@ algorithm
 end isArrayScalarOp;
 
 public function subscriptsAppend
-"This function takes a subscript list and adds a new subscript.
-  But there are a few special cases.  When the last existing
-  subscript is a slice, it is replaced by the slice indexed by
-  the new subscript."
+"Subscripts an expression that has the subscripts inSubscriptLst with the
+  index inSubscript, see subscriptsCompose."
   input list<DAE.Subscript> inSubscriptLst;
   input DAE.Exp inSubscript;
-  output list<DAE.Subscript> outSubscriptLst;
-algorithm
-  outSubscriptLst := match inSubscriptLst
-    local
-      DAE.Exp e_1,e;
-      Subscript s;
-      list<DAE.Subscript> ss_1,ss;
-
-    case {} then {DAE.INDEX(inSubscript)};
-    case DAE.WHOLEDIM() :: ss then DAE.INDEX(inSubscript) :: ss;
-
-    case {DAE.SLICE(exp = e)}
-      algorithm
-        (e_1,_) := ExpressionSimplify.simplify1(makeASUB(e,{inSubscript}));
-      then
-        {DAE.INDEX(e_1)};
-
-    case {(s as DAE.INDEX())} then {s,DAE.INDEX(inSubscript)};
-
-    case s :: ss
-      algorithm
-        ss_1 := subscriptsAppend(ss, inSubscript);
-      then
-        (s :: ss_1);
-  end match;
+  output list<DAE.Subscript> outSubscriptLst = subscriptsCompose(inSubscriptLst, {DAE.INDEX(inSubscript)});
 end subscriptsAppend;
+
+public function subscriptsCompose
+"Subscripts an expression that has the subscripts inSubs with newSubs. Each
+  new subscript selects from the next dimension that inSubs leaves, i.e. the
+  next slice or whole dimension. The remaining new subscripts are appended.
+  e.g. a[{1, 2}, :] subscripted with [2, :] gives a[2, :]."
+  input list<DAE.Subscript> inSubs;
+  input list<DAE.Subscript> newSubs;
+  output list<DAE.Subscript> outSubs = {};
+protected
+  list<DAE.Subscript> rest = newSubs;
+  DAE.Subscript new_sub, sub;
+algorithm
+  for s in inSubs loop
+    sub := s;
+    if not listEmpty(rest) and isSliceOrWholeDimSubscript(s) then
+      new_sub :: rest := rest;
+      sub := subscriptSubscript(s, new_sub);
+    end if;
+    outSubs := sub :: outSubs;
+  end for;
+  outSubs := List.append_reverse(outSubs, rest);
+end subscriptsCompose;
+
+protected function isSliceOrWholeDimSubscript
+  input DAE.Subscript sub;
+  output Boolean b;
+algorithm
+  b := match sub
+    case DAE.SLICE() then true;
+    case DAE.WHOLEDIM() then true;
+    else false;
+  end match;
+end isSliceOrWholeDimSubscript;
+
+protected function subscriptSubscript
+  "Selects newSub from the slice or whole dimension sub."
+  input DAE.Subscript sub;
+  input DAE.Subscript newSub;
+  output DAE.Subscript outSub;
+algorithm
+  outSub := match (sub, newSub)
+    local
+      DAE.Exp e, idx;
+      list<DAE.Exp> idxs, elems;
+
+    case (DAE.WHOLEDIM(), _) then newSub;
+    case (DAE.SLICE(), DAE.WHOLEDIM()) then sub;
+
+    case (DAE.SLICE(exp = e), DAE.INDEX(exp = idx))
+      algorithm
+        (idx, _) := ExpressionSimplify.simplify1(makeASUB(e, {idx}));
+      then
+        DAE.INDEX(idx);
+
+    case (DAE.SLICE(exp = e), DAE.SLICE(exp = DAE.ARRAY(array = idxs)))
+      algorithm
+        elems := {};
+        for i in idxs loop
+          (idx, _) := ExpressionSimplify.simplify1(makeASUB(e, {i}));
+          elems := idx :: elems;
+        end for;
+      then
+        DAE.SLICE(DAE.ARRAY(DAE.T_ARRAY(unliftArray(typeof(e)), {DAE.DIM_INTEGER(listLength(idxs))}), true, listReverse(elems)));
+  end match;
+end subscriptSubscript;
 
 public function subscriptsReplaceSlice
   "Replaces the first slice subscript in the given list with the given subscript."
