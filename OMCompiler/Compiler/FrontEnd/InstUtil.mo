@@ -1130,22 +1130,6 @@ algorithm outComps := matchcontinue(inAcrefs, inExisting)
   end matchcontinue;
 end extractConstantPlusDeps3;
 
-public function removeSelfReference
-"@author adrpo
- Removes self reference from a path if it exists.
- Examples:
-   removeSelfReference('Icons', 'Icons.BaseLibrary') => 'BaseLibrary'
-   removeSelfReference('Icons', 'BlaBla.BaseLibrary') => 'BlaBla.BaseLibrary'"
-  input  String     className;
-  input  Absyn.Path path;
-  output Absyn.Path outPath;
-algorithm
-  outPath := if stringEq(className, AbsynUtil.pathFirstIdent(path)) then
-      AbsynUtil.removePrefix(Absyn.IDENT(className), path)
-    else
-      path;
-end removeSelfReference;
-
 public function printExtcomps
 "prints the tuple of elements and modifiers to stdout"
   input list<tuple<SCode.Element, DAE.Mod>> inElements;

@@ -88,7 +88,6 @@ import GlobalScriptDump;
 import InnerOuter;
 import Inst;
 import InstHashTable;
-import InstUtil;
 import InteractiveUtil;
 import JSON;
 import List;
@@ -4082,7 +4081,7 @@ algorithm
       algorithm
         //fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " + AbsynUtil.pathString(path) + " in: " + AbsynUtil.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
-        path := InstUtil.removeSelfReference(AbsynUtil.pathLastIdent(inmodel),path);
+        path := AbsynUtil.removeSelfReference(AbsynUtil.pathLastIdent(inmodel),path);
         inmodeldef := ProgramUtil.getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
         cdef := ProgramUtil.getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP()));
         newpath := AbsynUtil.joinPaths(inmodel, path);
