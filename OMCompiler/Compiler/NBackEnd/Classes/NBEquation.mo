@@ -247,6 +247,34 @@ public
       end match;
     end getFrames;
 
+    function sliceSubscripts
+      "Replaces the subscripts that are iterators of iters by slices of their ranges.
+      Mapped iterators are kept."
+      input output list<Subscript> subs;
+      input list<Iterator> iters;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
+      UnorderedMap<ComponentRef, Expression> slices = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    algorithm
+      for iter in iters loop
+        (names, ranges, maps) := getFrames(iter);
+        for frame in List.zip3(names, ranges, maps) loop
+          if isNone(Util.tuple33(frame)) then
+            UnorderedMap.add(Util.tuple31(frame), Util.tuple32(frame), slices);
+          end if;
+        end for;
+      end for;
+      subs := list(match sub
+          local
+            ComponentRef name;
+          case Subscript.INDEX(index = Expression.CREF(cref = name)) guard(UnorderedMap.contains(name, slices))
+          then Subscript.SLICE(UnorderedMap.getOrFail(name, slices));
+          else sub;
+        end match for sub in subs);
+    end sliceSubscripts;
+
     function merge
       "merges multiple iterators to one NESTED() iterator"
       input list<Iterator> iterators;

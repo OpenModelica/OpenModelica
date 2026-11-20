@@ -761,7 +761,7 @@ protected
         if isStateOrderEquation(Pointer.access(constraint), subst) then
           defining := constraint :: defining;
         else
-          Pointer.update(constraint, Equation.map(Pointer.access(constraint), function substituteDerivativeAlias(subst = subst)));
+          Pointer.update(constraint, substituteStateOrders(Pointer.access(constraint), subst));
         end if;
       end for;
       if listLength(defining) < EquationPointers.size(constraints) then
@@ -794,7 +794,7 @@ protected
     candidates := VariablePointers.compress(VariablePointers.addList(aliases, VariablePointers.removeList(ders, candidates)));
     if not UnorderedMap.isEmpty(subst) then
       for constraint in EquationPointers.toList(constraints) loop
-        Pointer.update(constraint, Equation.map(Pointer.access(constraint), function substituteDerivativeAlias(subst = subst)));
+        Pointer.update(constraint, substituteStateOrders(Pointer.access(constraint), subst));
       end for;
     end if;
   end aliasStateDerivatives;
@@ -824,12 +824,13 @@ protected
     "true if the equation is y = k*$DER.x + c of the state order of $DER.x in subst."
     input Equation eqn;
     input UnorderedMap<ComponentRef, StateOrder> subst;
+    input list<Iterator> iters = {} "the surrounding for-loops";
     output Boolean b;
   algorithm
     b := match eqn
-      case Equation.SCALAR_EQUATION() then isStateOrderRelation(DetectStates.stateRelation(eqn.lhs, eqn.rhs), subst);
-      case Equation.ARRAY_EQUATION() then isStateOrderRelation(DetectStates.stateRelation(eqn.lhs, eqn.rhs), subst);
-      case Equation.FOR_EQUATION() then List.all(eqn.body, function isStateOrderEquation(subst = subst));
+      case Equation.SCALAR_EQUATION() then isStateOrderRelation(DetectStates.stateRelation(eqn.lhs, eqn.rhs), subst, iters);
+      case Equation.ARRAY_EQUATION() then isStateOrderRelation(DetectStates.stateRelation(eqn.lhs, eqn.rhs), subst, iters);
+      case Equation.FOR_EQUATION() then List.all(eqn.body, function isStateOrderEquation(subst = subst, iters = eqn.iter :: iters));
       else false;
     end match;
   end isStateOrderEquation;
@@ -837,6 +838,7 @@ protected
   function isStateOrderRelation
     input Option<tuple<ComponentRef, ComponentRef, Option<tuple<Expression, Expression>>>> relation;
     input UnorderedMap<ComponentRef, StateOrder> subst;
+    input list<Iterator> iters;
     output Boolean b;
   protected
     ComponentRef der_cref, alias;
@@ -847,7 +849,7 @@ protected
         local
           StateOrder order;
         case SOME(order) then StateOrder.isEqual(order, StateOrder.STATE_ORDER(ComponentRef.stripSubscriptsAll(alias), coefficients, NONE()))
-          and StateOrder.covers(order, der_cref)
+          and StateOrder.covers(order, der_cref, iters)
           and List.isEqualOnTrue(ComponentRef.subscriptsAllWithWholeFlat(der_cref), ComponentRef.subscriptsAllWithWholeFlat(alias), Subscript.isEqual);
         else false;
       end match;
@@ -855,15 +857,29 @@ protected
     end match;
   end isStateOrderRelation;
 
+  function substituteStateOrders
+    input output Equation eqn;
+    input UnorderedMap<ComponentRef, StateOrder> subst;
+  protected
+    list<Iterator> iters;
+  algorithm
+    iters := match eqn
+      case Equation.FOR_EQUATION() then {eqn.iter};
+      else {};
+    end match;
+    eqn := Equation.map(eqn, function substituteDerivativeAlias(subst = subst, iters = iters));
+  end substituteStateOrders;
+
   function substituteDerivativeAlias
     input output Expression exp;
     input UnorderedMap<ComponentRef, StateOrder> subst;
+    input list<Iterator> iters "the surrounding for-loops";
   protected
     StateOrder order;
   algorithm
     exp := match exp
       case Expression.CREF() then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(exp.cref), subst)
-        case SOME(order) guard(StateOrder.covers(order, exp.cref)) then StateOrder.derivative(order, exp.cref);
+        case SOME(order) guard(StateOrder.covers(order, exp.cref, iters)) then StateOrder.derivative(order, exp.cref);
         else exp;
       end match;
       else exp;
