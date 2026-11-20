@@ -122,6 +122,7 @@ getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \
 getSimulationOptions4.mos \
+GetUsedClassNames.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 IllegalGraphics.mos\

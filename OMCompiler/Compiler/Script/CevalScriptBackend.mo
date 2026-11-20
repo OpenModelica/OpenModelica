@@ -848,11 +848,8 @@ algorithm
 
     case ("getUsedClassNames",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        sp := SymbolTable.getSCode();
-        (sp, _) := NFSCodeFlatten.flattenClassInProgram(path, sp);
-        sp := SCodeUtil.removeBuiltinsFromTopScope(sp);
+        (sp, _) := getTotalProgramNF(path);
         paths := Interactive.getSCodeClassNamesRecursive(sp);
-        // paths = bcallret2(sort, List.sort, paths, AbsynUtil.pathGe, paths);
       then
         ValuesMake.makeCodeTypeNameArray(paths);
 
