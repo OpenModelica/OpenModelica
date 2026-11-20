@@ -1530,7 +1530,7 @@ algorithm
     case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=solvedVars)::rest, result)
       algorithm
         inputVars := arrayGet(inMatrix, eqn);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1539,7 +1539,7 @@ algorithm
     case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=solvedVars)::rest, result)
       algorithm
         inputVars := arrayGet(inMatrixT, eqn);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1548,7 +1548,7 @@ algorithm
     case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=solvedVars)::rest, result)
       algorithm
         inputVars := arrayGet(inMatrix, eqn);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1557,7 +1557,7 @@ algorithm
     case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=solvedVars)::rest, result)
       algorithm
         inputVars := arrayGet(inMatrix, eqn);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1566,7 +1566,7 @@ algorithm
     case(BackendDAE.SINGLEWHENEQUATION(eqn=eqn,vars=solvedVars)::rest, result)
       algorithm
         inputVars := arrayGet(inMatrix, eqn);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1575,7 +1575,7 @@ algorithm
     case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=solvedVars)::rest, result)
       algorithm
         inputVars := arrayGet(inMatrix, eqn);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1585,7 +1585,7 @@ algorithm
       algorithm
         inputVarsLst := List.map1(eqns, Array.getIndexFirst, inMatrix);
         inputVars := List.flatten(inputVarsLst);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1600,7 +1600,7 @@ algorithm
 
         inputVarsLst := List.map1(eqns1, Array.getIndexFirst, inMatrix);
         inputVars := List.flatten(inputVarsLst);
-        inputVars := list(v for v guard not listMember(v, solvedVars) in inputVars);
+        inputVars := removeSolvedVars(inputVars, solvedVars);
 
         getSparsePattern2(inputVars, solvedVars, eqns1, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1614,6 +1614,16 @@ algorithm
        then fail();
   end match;
 end getSparsePattern;
+
+protected function removeSolvedVars
+  input list<Integer> inputVars;
+  input list<Integer> solvedVars;
+  output list<Integer> outVars;
+protected
+  UnorderedSet<Integer> solved = UnorderedSet.fromList(solvedVars, Util.id, intEq);
+algorithm
+  outVars := list(v for v guard not UnorderedSet.contains(v, solved) in inputVars);
+end removeSolvedVars;
 
 protected function getSparsePattern2
   input list<Integer> inInputVars;
