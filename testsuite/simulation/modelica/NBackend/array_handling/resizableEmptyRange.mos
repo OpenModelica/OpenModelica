@@ -10,38 +10,39 @@
 
 loadString("
 model resizableEmptyRange
-  parameter Integer N = 3;
+  parameter Integer N = 4;
   parameter Real V = 1, k = 1e-4;
-  Real p[N](each stateSelect = StateSelect.prefer, each start = 1.5e5);
-  Real n[N](each stateSelect = StateSelect.never);
-  Real rho[N];
+  Real n[N](each start = 1, each fixed = true);
+  Real rho[N], p[N];
   Real q[N + 1];
 equation
   for i in 1:N loop
     der(n[i]) = q[i] - q[i + 1];
-    rho[i] = p[i]/(287*300);
+    p[i] = 287*300*rho[i];
   end for;
-  n[1] = rho[1]*V/(2*(N - 1));
+  rho[1] = 2*(N - 1)*n[1]/V;
   for i in 2:N - 1 loop
-    n[i] = rho[i]*V/(N - 1);
+    rho[i] = (N - 1)*n[i]/V;
   end for;
-  n[N] = rho[N]*V/(2*(N - 1));
+  rho[N] = 2*(N - 1)*n[N]/V;
+  q[1] = k*(2e5 - p[1]);
   for i in 1:N - 1 loop
     q[i + 1] = k*(p[i] - p[i + 1]);
   end for;
-  p[1] = 2e5;
   q[N + 1] = 0.1 + time;
 end resizableEmptyRange;
 "); getErrorString();
 
 buildModel(resizableEmptyRange, stopTime = 1); getErrorString();
 system("./resizableEmptyRange -override=N=2", "resizableEmptyRange.log");
-val(p[2], 1, "resizableEmptyRange_res.mat");
+val(rho[2], 0, "resizableEmptyRange_res.mat");
+val(n[2], 1, "resizableEmptyRange_res.mat");
 // Result:
 // true
 // ""
 // {"resizableEmptyRange", "resizableEmptyRange_init.xml"}
 // ""
 // 0
-// 189580.72562808963
+// 2.0
+// 1.0502712607819775
 // endResult
