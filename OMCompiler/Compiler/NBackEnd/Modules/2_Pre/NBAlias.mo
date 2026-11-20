@@ -291,7 +291,9 @@ protected
           (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstOrParamAliasBinding);
           for var in const_vars loop
             BVariable.setVarKind(var, VariableKind.PARAMETER(NONE()));
-            BVariable.setBindingAsStartAndFix(var, true);
+            BVariable.setBindingAsStart(var);
+            // the binding defines the parameter, fixed = false of the variable no longer applies
+            BVariable.setFixed(var, true, true);
           end for;
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
