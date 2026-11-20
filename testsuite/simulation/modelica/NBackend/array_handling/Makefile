@@ -60,6 +60,7 @@ resizableLoopBlocks.mos \
 resizableTearStart.mos \
 resizableCalcSizeParam.mos \
 resizableEmptyRange.mos \
+resizableReverseRange.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \

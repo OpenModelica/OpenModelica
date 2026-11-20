@@ -4747,6 +4747,20 @@ template dimension(Dimension d, Context context, Text &preExp, Text &varDecls, T
   else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
 
+template intDivisorChecked(Exp call, Exp divisor, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "The divisor of an Integer div in a temporary that is checked for zero."
+::=
+  let var2 = daeExp(divisor, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  let tvar = tempDecl("modelica_integer", &varDecls, &varFrees)
+  let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
+  let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
+  let &preExp +=
+    if metaModelicaRuntime()
+      then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+      else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+  tvar
+end intDivisorChecked;
+
 template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates an assigment algorithm statement."
 ::=
@@ -5280,7 +5294,11 @@ template jacobianOffsetDecl(list<SimVar> vars, String kind)
     modelica_integer* _jac_off_<%kind%> = (modelica_integer*) malloc(<%jacobianOffsetSize(vars)%> * sizeof(modelica_integer));
     {
       modelica_integer _jac_acc = 0;
+      <%varDecls%>
+      <%auxFunction%>
+      <%preExp%>
       <%assigns%>
+      <%varFrees%>
     }
     >>
 end jacobianOffsetDecl;
@@ -7506,14 +7524,9 @@ let &sub = buffer ""
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let tvar = tempDecl("modelica_integer", &varDecls, &varFrees)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let tvar = match e2
+      case ICONST(__) then (if intNe(integer, 0) then integer else intDivisorChecked(call, e2, context, &preExp, &varDecls, &varFrees, &auxFunction))
+      else intDivisorChecked(call, e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
       /* ldiv not available in opencl c*/
     if isParallelFunctionContext(context) then '(modelica_integer)((<%var1%>) / <%tvar%>)'
     else 'modelica_div_integer(<%var1%>,<%tvar%>).quot'
