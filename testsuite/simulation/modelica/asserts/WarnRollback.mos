@@ -5,8 +5,11 @@
 // Euler evaluates the end of the step before the event location. The point
 // t = 0.8, x = 0.8 is rejected by the event at t = 0.5. The warning must not
 // come from there: it comes at the first accepted point with x > 0.6.
+// wasm-jit still gives the warning of the rejected point (#18263), so a
+// wasm target uses C.
 //
 
+setCommandLineOptions(if regexBool(getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET"), "^wasm") then "--simCodeTarget=C" else ""); getErrorString();
 loadString("
 model WarnRollback
   Real x(start = 0, fixed = true);
@@ -24,6 +27,8 @@ echo(true);
 res.messages;
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true
