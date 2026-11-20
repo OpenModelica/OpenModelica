@@ -1319,6 +1319,7 @@ public function zeroCrossingVarIndices
    in a single pass; looking each zero crossing up in every system is quadratic."
   input BackendDAE.EqSystems systs;
   input list<BackendDAE.ZeroCrossing> zeroCross;
+  input list<DAE.Exp> extraExpressions = {};
   output array<AvlSetInt.Tree> trees;
 protected
   Integer nsys = listLength(systs), total = 0, gidx = 0, s = 0, n;
@@ -1327,6 +1328,9 @@ protected
   AvlSetInt.Tree tree;
 algorithm
   trees := arrayCreate(intMax(nsys, 1), AvlSetInt.new());
+  if listEmpty(zeroCross) and listEmpty(extraExpressions) then
+    return;
+  end if;
   for syst in systs loop
     total := total + BackendVariable.varsSize(syst.orderedVars);
   end for;
@@ -1349,8 +1353,8 @@ algorithm
   end for;
 
   tree := AvlSetInt.new();
-  for zc in zeroCross loop
-    tree := BackendEquation.expressionVarsIndexes(zc.relation_, tree,
+  for exp in listAppend(list(zc.relation_ for zc in zeroCross), extraExpressions) loop
+    tree := BackendEquation.expressionVarsIndexes(exp, tree,
               function BackendEquation.checkEquationsVarsExpTopDown(vars=allVars));
   end for;
 

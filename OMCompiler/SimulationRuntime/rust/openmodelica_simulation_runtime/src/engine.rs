@@ -231,7 +231,7 @@ impl CEngine {
             si.needToReThrow = 0;
             driver::note_no_throw_assert();
         }
-        if rc != -1 && !crate::support::error_raised(self.rt.thread_data) {
+        if !crate::support::error_raised(self.rt.thread_data) && rc != -1 {
             return Ok(());
         }
         if Self::error_absorbed(self.driver_stage()) {
@@ -273,6 +273,10 @@ impl SimEngine for CEngine {
     /// C's `currentContext`, mapped past the layout's end (`data::CONTEXT_OFF`).
     fn context_addr(&mut self) -> u32 {
         self.rt.layout.total + crate::data::CONTEXT_OFF
+    }
+
+    fn spatial_history(&mut self, action: driver::SpatialHistory) -> bool {
+        crate::spatial::history(self.rt.data, action)
     }
 
     /// The `[stage, hit]` pair, in the driver's own memory past the layout's end.

@@ -413,10 +413,15 @@ pub mod eval_stage {
     pub const DISCRETE: u32 = 8;
 }
 
+pub use crate::spatial::History as SpatialHistory;
+
 /// The per-run capabilities a backend must expose: read/write the instance's
 /// linear memory and call its exported functions. Object-safe so the drivers can
 /// take `&mut dyn SimEngine` (and the DASSL residual callback a `*mut dyn`).
 pub trait SimEngine {
+    fn spatial_history(&mut self, _action: SpatialHistory) -> bool {
+        false
+    }
     /// Read `buf.len()` bytes of linear memory starting at byte address `addr`.
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()>;
     /// Write `buf` to linear memory starting at byte address `addr`.
@@ -442,6 +447,9 @@ pub trait SimEngine {
     /// [`SimEngine::call1_raw`] under the clock C's generated entry point ticks
     /// around its own body ([`model_fn_clock`]); every driver goes through here.
     fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
+        if matches!(name, "functionODE" | "functionZeroCrossingsEquations") {
+            self.spatial_history(SpatialHistory::Clear);
+        }
         let parmod = name == "functionODE" && crate::parmod::active();
         let Some(ix) = model_fn_clock(name) else {
             return if parmod {
@@ -501,6 +509,9 @@ pub trait SimEngine {
         out
     }
     fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
+        if name == MODEL_FN_DAE {
+            self.spatial_history(SpatialHistory::Clear);
+        }
         // `functionZeroCrossings` takes `gout`, so it lands here rather than in
         // [`SimEngine::call1`]; C clocks it just the same.
         let ix = model_fn_clock(name).or((name == MODEL_FN_DAE).then_some(rtclock::DAE));
@@ -799,6 +810,7 @@ struct StepRetry {
     stored: bool,
     /// C's `retry`: the failed attempts of the current step.
     attempts: u32,
+    ordinary_attempts: u32,
     /// C's `retryStepSize`: the step size limit after a failed step, doubled by
     /// every accepted step until it is back at the output interval.
     limit: Option<f64>,
@@ -828,6 +840,7 @@ impl StepRetry {
     fn open(&mut self, e: &mut dyn SimEngine, rows: &mut Vec<f64>) {
         commit_rows(rows);
         let addr = e.error_stage_addr();
+        e.spatial_history(SpatialHistory::Clear);
         self.rows_mark = rows.len();
         self.in_step = true;
         self.threw = false;
@@ -859,6 +872,7 @@ impl StepRetry {
     /// that way); the two belong together.
     fn store(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
         seed_pre_from_live(e, sim_data, layout)?;
+        e.spatial_history(SpatialHistory::Save);
         let regions = [
             (layout.real_off, layout.real_bytes()),
             (layout.int_off, layout.n_int_alg() as usize * 4),
@@ -874,6 +888,7 @@ impl StepRetry {
         self.time = read_f64(e, sim_data + TIME_OFF)?;
         self.stored = true;
         self.attempts = 0;
+        self.ordinary_attempts = 0;
         // Let the step size grow back to the output interval.
         if let Some(limit) = self.limit {
             self.limit = (2.0 * limit < self.interval).then_some(2.0 * limit);
@@ -909,6 +924,7 @@ impl StepRetry {
     fn undo(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Option<f64>> {
         // Only a model error the region absorbed reaches C's catch; a rethrown
         // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
+        let history = e.spatial_history(SpatialHistory::Needed);
         let caught = self.end(e) || self.threw || RUNTIME_ERROR.load(Ordering::Relaxed);
         if !caught || THROW_PAST_STEP.load(Ordering::Relaxed) || !self.stored {
             return Ok(None);
@@ -920,7 +936,12 @@ impl StepRetry {
                 let (max_retries, min_step) =
                     crate::simflags::with_flags(|f| (f.max_step_retries, f.min_retry_step_size));
                 let max_retries = max_retries.unwrap_or(if layout.n_states < 1 { MAX_STEP_RETRIES } else { 1 });
-                self.attempts >= max_retries || (self.attempts > 0 && h < min_step.unwrap_or(MINIMAL_STEP_SIZE))
+                if history {
+                    h < min_step.unwrap_or(MINIMAL_STEP_SIZE) || self.time + h <= self.time
+                } else {
+                    self.ordinary_attempts >= max_retries
+                        || (self.ordinary_attempts > 0 && h < min_step.unwrap_or(MINIMAL_STEP_SIZE))
+                }
             }
             None => self.attempts >= 1,
         };
@@ -930,15 +951,23 @@ impl StepRetry {
             omclog::info!(
                 omclog::STDOUT,
                 false,
-                "model terminate | Simulation terminated by an assert at time: {}",
+                "model terminate | {} at time: {}",
+                if history {
+                    "spatialDistribution transport history exhausted; cannot retry a smaller step"
+                } else {
+                    "Simulation terminated by an assert"
+                },
                 format_g(t, 6),
             );
             return Ok(None);
         }
-        let first = self.attempts == 0;
+        let first = self.ordinary_attempts == 0;
         self.attempts += 1;
+        if !history {
+            self.ordinary_attempts += 1;
+        }
         self.limit = halved.or(self.limit);
-        self.skip |= halved.is_some() && !self.short;
+        self.skip |= halved.is_some() && !self.short && !history;
         // The throw is being retried, so nothing downstream may report it.
         clear_runtime_error();
         let _ = e.take_pending_assert();
@@ -952,10 +981,14 @@ impl StepRetry {
                 e.write_bytes(sim_data + off, buf)?;
             }
         }
+        e.spatial_history(SpatialHistory::Restore);
+        if history {
+            seed_pre_from_live(e, sim_data, layout)?;
+        }
         save_old_real(e, sim_data, layout)?; // C's `overwriteOldSimulationData`
         update_discrete_system(e, sim_data, layout)?;
         save_zero_crossings_after_event(e, sim_data, layout)?;
-        if first {
+        if first && !history {
             omclog::warning(
                 omclog::STDOUT,
                 false,
@@ -3883,17 +3916,31 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
     Ok(true)
 }
 
-/// C's `updateContinuousSystem`: recompute everything an output row reads. A
-/// `--daeMode` model has no explicit ODE, so that is one algebraic-stage residual.
-/// C's `function_storeDelayed` + `function_storeSpatialDistribution`, the tail of
-/// `updateContinuousSystem`: the operators with an internal history record the point
-/// the model was last evaluated at. A model without any skips it entirely.
+/// Commit operator histories after evaluating an accepted point and locating its events.
 pub fn store_operators(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if !layout.has_history_ops {
         return Ok(());
     }
     e.call1_if_present("functionStoreDelayed", sim_data)?;
-    e.call1_if_present("functionStoreSpatialDistribution", sim_data)
+    commit_spatial(e, sim_data)
+}
+
+pub fn commit_spatial(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+    e.call1_if_present("functionStoreSpatialDistribution", sim_data)?;
+    if e.spatial_history(SpatialHistory::Needed) {
+        Err(ASSERT_ERR)
+    } else {
+        Ok(())
+    }
+}
+
+fn store_spatial(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.compiled_dae_mode {
+        e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC)?;
+    } else {
+        eval_ode(e, sim_data, layout)?;
+    }
+    commit_spatial(e, sim_data)
 }
 
 /// [`store_operators`] at an accepted point the model has not been evaluated at yet:
@@ -3940,10 +3987,16 @@ fn eval_event_left(
 
 pub fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.compiled_dae_mode {
-        return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
+        e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC)?;
+    } else {
+        e.call1("functionODE", sim_data)?;
+        e.call1("functionAlgebraics", sim_data)?;
     }
-    e.call1("functionODE", sim_data)?;
-    e.call1("functionAlgebraics", sim_data)
+    if layout.has_spatial_distribution && e.spatial_history(SpatialHistory::Needed) {
+        Err(ASSERT_ERR)
+    } else {
+        Ok(())
+    }
 }
 
 /// `functionODE` alone: the derivative slots for the state the integrator last
@@ -5688,7 +5741,7 @@ fn make_driver_resolved(
     // A clocked partition is an event source too, and only `EventsDriver` has the
     // timer list and the consistent restart a tick needs.
     let events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
-    if events || method == "gbode" || layout.dae_mode() {
+    if events || method == "gbode" || layout.dae_mode() || layout.has_spatial_distribution {
         let label = match method {
             "cvode" => "cvode-events",
             "ida" if events => "ida-events",
@@ -6423,6 +6476,9 @@ unsafe fn dassl_rt(
         return 1;
     }
     let ctx = unsafe { &mut *ctx };
+    if ctx.err.is_some() {
+        return 1;
+    }
     let e = unsafe { &mut *ctx.engine };
     let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::EVENT);
     let hit_before = stage_hit(e, ctx.err_stage_addr);
@@ -6534,6 +6590,11 @@ unsafe fn dassl_res(
         return;
     }
     let ctx = unsafe { &mut *ctx };
+    // A failed Jacobian has no status return; leave DASKR so the step can be retried.
+    if ctx.err.is_some() {
+        unsafe { *ires = -2 };
+        return;
+    }
     let e = unsafe { &mut *ctx.engine };
     let n = ctx.n_states;
     let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::RESIDUALS);
@@ -6839,7 +6900,7 @@ unsafe fn dassl_jac(
                 let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
                 e.write_bytes(ctx.states_base, y_bytes)?;
                 let evaluated = match e.call1("functionODE", ctx.sim_data) {
-                    Ok(()) => true,
+                    Ok(()) => !e.spatial_history(SpatialHistory::Needed),
                     Err(err) if residual_model_throw(e, err, unsafe { *t }) => false,
                     Err(err) => return Err(err),
                 };
@@ -6864,6 +6925,9 @@ unsafe fn dassl_jac(
                 for &col in group {
                     let ci = col as usize;
                     unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
+                }
+                if e.spatial_history(SpatialHistory::Needed) {
+                    return Err(ASSERT_ERR);
                 }
             }
             set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
@@ -8398,10 +8462,11 @@ impl CvodeState {
         if !cv.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
         }
-        cv.set_stop_time(tstop.max(target));
+        let one_step = unsafe { &*(*ctx).layout }.has_spatial_distribution;
+        cv.set_stop_time(if one_step { target } else { tstop.max(target) });
         let stop = {
             let _clock = rtclock::Span::new(rtclock::SOLVER);
-            cv.step(t, target, self.stop_at_target)
+            cv.step_internal(t, target, self.stop_at_target || one_step, one_step)
         };
         y.copy_from_slice(cv.y());
         Ok(match stop {
@@ -8504,7 +8569,7 @@ impl IdaState {
             return Err("##IDA## In function IDASetUserData: The ida_mem argument was NULL.");
         }
         // C's `internalSteps`: a step of its own never passes `target`.
-        let one_step = no_equidistant_grid();
+        let one_step = no_equidistant_grid() || unsafe { &*(*ctx).layout }.has_spatial_distribution;
         ida.set_stop_time(if one_step { target } else { tstop.max(target) });
         let stop = {
             let _clock = rtclock::Span::new(rtclock::SOLVER);
@@ -8707,7 +8772,11 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         write_i32(self.e, self.sim_data + layout.rel_fresh_off, 0)?;
         eval_continuous(self.e, self.sim_data, layout)?;
         self.calls += 1;
-        store_operators(self.e, self.sim_data, layout)?;
+        if layout.has_spatial_distribution {
+            self.e.call1_if_present("functionStoreDelayed", self.sim_data)?;
+        } else {
+            store_operators(self.e, self.sim_data, layout)?;
+        }
         for (i, v) in f.iter_mut().enumerate() {
             *v = read_f64(self.e, self.ders_base + 8 * i as u32)?;
         }
@@ -8721,7 +8790,9 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         for (i, v) in zc.iter_mut().enumerate() {
             *v = read_f64(self.e, self.sim_data + self.zc_off + 8 * i as u32)?;
         }
-        at.set(t);
+        if !layout.has_spatial_distribution {
+            at.set(t);
+        }
         Ok(true)
     }
 
@@ -9481,6 +9552,7 @@ impl SolverCore {
     /// the four outcomes.
     fn solve_toward(&mut self, target: f64, ctx: &mut ResCtx, deadline: f64, did_step: &mut bool) -> Result<Solved> {
         let sim_data = self.sim_data;
+        let spatial = unsafe { &*ctx.layout }.has_spatial_distribution;
         loop {
             // Yield inside the work-quota loop too, so a stuck stiff interval is
             // interruptible; resume re-enters with the same target.
@@ -9492,7 +9564,11 @@ impl SolverCore {
                 return Ok(Solved::Cancelled);
             }
             let outside_window = suspend_assert_window();
-            let tstop = self.time_event;
+            let tstop = if spatial {
+                target.min(self.time_event)
+            } else {
+                self.time_event
+            };
             let again = match &mut self.solver {
                 Solver::Daskr(d) => d.step(&mut self.t, &mut self.y, &mut self.yp, target, tstop, self.step_horizon),
                 #[cfg(sundials)]
@@ -9555,6 +9631,11 @@ impl SolverCore {
             *did_step = true;
             publish_steps(|| self.steps_taken());
             // A wasm error in a callback outranks whatever the solver reported.
+            if spatial && unsafe { &mut *ctx.engine }.spatial_history(SpatialHistory::Needed) {
+                let e = unsafe { &mut *ctx.engine };
+                mark_stage_hit(e, ctx.err_stage_addr);
+                return Err(ASSERT_ERR);
+            }
             let err = ctx.err.take();
             if let Progress::RootThrew = again {
                 return Ok(Solved::RootThrew(err.unwrap_or(ASSERT_ERR)));
@@ -9568,7 +9649,16 @@ impl SolverCore {
                 // An internal step below the target: only `-noEquidistantTimeGrid`
                 // makes it an output point, so otherwise integrate on, as C's
                 // `dassl_step` loop does while IDID == 1.
-                Progress::Stepped if !no_equidistant_grid() => continue,
+                Progress::Stepped if !no_equidistant_grid() => {
+                    if spatial && self.solver_root_finding() {
+                        let e = unsafe { &mut *ctx.engine };
+                        self.write_states(e)?;
+                        write_time(e, sim_data, self.t)?;
+                        let layout = unsafe { &*ctx.layout };
+                        store_spatial(e, sim_data, layout)?;
+                    }
+                    continue;
+                }
                 // C integrates the model's own state array, so the point the solver
                 // gave up at is what `drive`'s tail evaluates.
                 Progress::Failed(err) => {
@@ -9675,7 +9765,14 @@ impl SolverCore {
     /// `simulationUpdate` still evaluates at the root. For the two that bisect here,
     /// `findRoot` has already pulled that evaluation back to the bracket's left end.
     fn solver_root_finding(&self) -> bool {
-        !matches!(self.solver, Solver::Fixed(_))
+        match &self.solver {
+            #[cfg(sundials)]
+            Solver::Cvode(c) => c.n_roots > 0,
+            #[cfg(sundials)]
+            Solver::Ida(s) => s.n_roots > 0,
+            Solver::Fixed(_) => false,
+            _ => true,
+        }
     }
 
     /// C's `time_left`/`states_left`, or `None` for a solver that roots without
@@ -9968,7 +10065,7 @@ impl SolverCore {
                     // `simulationUpdate`); a fixed-step method's `findRoot` tail does not.
                     // CS stores there instead, as `fmi2DoStep`'s completed step does.
                     let bisected = left.is_some() && !self.solver_root_finding();
-                    if self.solver_root_finding() || rows.is_none() {
+                    if (self.solver_root_finding() || rows.is_none()) && !layout.has_spatial_distribution {
                         store_operators_at(e, sim_data, layout, troot)?;
                     }
                     // C's `simulationUpdate` at the root: `updateContinuousSystem`,
@@ -10012,6 +10109,9 @@ impl SolverCore {
                     if defers(troot) {
                         write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
+                    }
+                    if layout.has_spatial_distribution {
+                        store_operators_at(e, sim_data, layout, troot)?;
                     }
                     self.event_update_here(e, sim_data, layout, ctx, troot)?;
                     save_zero_crossings_after_event(e, sim_data, layout)?;
@@ -10147,18 +10247,25 @@ impl SolverCore {
                 None => {}
             }
             if target >= tout - eps {
-                // C stores after the accepted point's evaluation and before the row is
-                // written, so the row reports the operator's pre-store outputs — an
-                // input-side output extrapolated from the just-stored value would close
-                // the algebraic loop the extrapolation exists to avoid. `rows` is Some
-                // exactly when the caller writes that row and stores after it.
+                // Preserve the outputs evaluated before committing the accepted point.
+                // With rows, the caller commits after writing that row.
                 if rows.is_none() {
+                    let spatial = layout.has_spatial_distribution;
                     if ctx.accepted_at.get() != self.t {
-                        store_operators_at(e, sim_data, layout, self.t)?;
+                        if spatial {
+                            write_time(e, sim_data, self.t)?;
+                            eval_continuous(e, sim_data, layout)?;
+                            e.call1_if_present("functionStoreDelayed", sim_data)?;
+                        } else {
+                            store_operators_at(e, sim_data, layout, self.t)?;
+                        }
                     }
                     // `fmi2DoStep`'s own detection: the only one an FMU without
                     // root finding has, and it lands on the communication point.
                     let flips = save_zero_crossings(e, sim_data, layout)?;
+                    if spatial {
+                        commit_spatial(e, sim_data)?;
+                    }
                     if !flips.is_empty() {
                         if defers(self.t) {
                             return Ok(Step::Event { time: self.t });
@@ -10459,18 +10566,49 @@ impl CsDriver {
         defer: CsDefer,
         dss: &mut StateSelection,
     ) -> Result<CsStep> {
-        self.retry.open(e, &mut Vec::new());
-        open_assert_window();
-        let out = self.step(e, model, t_target, defer, dss);
-        if matches!(out, Ok(CsStep::Event { .. })) {
-            rethrow_store::note_event();
+        let sim_data = self.core.sim_data;
+        let layout = &model.layout;
+        let mut target = t_target;
+        loop {
+            let schedule = layout.has_spatial_distribution.then(|| self.schedule_words());
+            self.retry.tried = None;
+            self.retry.open(e, &mut Vec::new());
+            open_assert_window();
+            let partial_defer = if target < t_target && defer == CsDefer::AtTarget {
+                CsDefer::None
+            } else {
+                defer
+            };
+            let out = self.step(e, model, target, partial_defer, dss).and_then(|out| {
+                if matches!(out, CsStep::Event { .. }) {
+                    if layout.has_spatial_distribution {
+                        store_operators_at(e, sim_data, layout, self.core.t)?;
+                    }
+                    rethrow_store::note_event();
+                }
+                Ok(out)
+            });
+            let settled = close_assert_window(e, sim_data);
+            let caught = self.retry.close(e);
+            match out.and_then(|out| settled.and(caught).map(|_| out)) {
+                Err(err) if is_model_throw(err) && e.spatial_history(SpatialHistory::Needed) => {
+                    self.retry.tried = Some(target - self.retry.time);
+                    let Some(t0) = self.retry.undo(e, sim_data, layout)? else {
+                        return Err(err);
+                    };
+                    if let Some(schedule) = &schedule {
+                        self.set_schedule_words(schedule);
+                    }
+                    self.resync(e, layout, t0)?;
+                    target = t0 + 0.5 * (target - t0);
+                }
+                Ok(CsStep::Reached) if target < t_target => {
+                    self.retry.store(e, sim_data, layout)?;
+                    target = t_target;
+                }
+                out => return out,
+            }
         }
-        let settled = close_assert_window(e, self.core.sim_data);
-        let caught = self.retry.close(e);
-        let out = out?;
-        settled?;
-        caught?;
-        Ok(out)
     }
 
     fn step(
@@ -10705,6 +10843,9 @@ impl CsDriver {
         } else {
             MasterEvent::State
         });
+        if layout.has_spatial_distribution {
+            self.retry.store(e, sim_data, layout)?;
+        }
         Ok(up)
     }
 

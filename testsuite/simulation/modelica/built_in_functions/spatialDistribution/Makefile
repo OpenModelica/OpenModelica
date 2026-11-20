@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+	causalSteps.mos \
 	nameClash.mos \
 	initSpatialDistribution.mos \
 	helloSpatialDistribution.mos \

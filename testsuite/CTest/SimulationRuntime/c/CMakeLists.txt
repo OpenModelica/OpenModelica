@@ -3,6 +3,7 @@ add_subdirectory(simulation/inputXML/read_input_xml)
 add_subdirectory(simulation/inputXML/unit)
 add_subdirectory(simulation/solver/model_help)
 add_subdirectory(simulation/solver/nonlinearValuesList)
+add_subdirectory(simulation/solver/spatialDistribution)
 add_subdirectory(util/real_array)
 add_subdirectory(util/integer_array)
 add_subdirectory(util/boolean_array)
@@ -17,6 +18,7 @@ add_custom_target(ctestsuite-depends DEPENDS
   ctestsuite-simulation-inputXML-unit
   ctestsuite-simulation-solver-model_help
   ctestsuite-simulation-solver-nonlinearValuesList
+  ctestsuite-simulation-solver-spatialDistribution
   ctestsuite-util-real_array
   ctestsuite-util-integer_array
   ctestsuite-util-boolean_array

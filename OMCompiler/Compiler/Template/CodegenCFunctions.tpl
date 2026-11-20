@@ -7735,12 +7735,9 @@ let &sub = buffer ""
 
   case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, posVelo}) then
     let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-
-    let var1 = daeExp(in0, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let var2 = daeExp(in1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var3 = daeExp(posX, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var4 = daeExp(posVelo, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%var1%>, <%var2%>, <%var3%>, <%var4%>);<%\n%>'
+    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%var3%>, <%var4%>, NULL);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
@@ -7890,12 +7887,9 @@ template daeExpCallTuple(Exp call, Text additionalOutputs /* arguments 2..N */, 
 
   case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, dir, _, _}) then
     let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-
-    let var1 = daeExp(in0, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let var2 = daeExp(in1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var3 = daeExp(posX, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var4 = daeExp(dir, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%> /* index */, <%var1%>, <%var2%>, <%var3%>, <%var4%><%additionalOutputs%>);<%\n%>'
+    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%var3%>, <%var4%><%additionalOutputs%>);<%\n%>'
     tvar
 
   case exp as CALL(attr=attr as CALL_ATTR(isFunctionPointerCall=true)) then

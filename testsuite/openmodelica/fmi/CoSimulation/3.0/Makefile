@@ -10,6 +10,7 @@ fmi3_cs_event_mode_reinit.mos \
 fmi3_cs_event_mode_set.mos \
 fmi3_cs_exitinit_assert.mos \
 fmi3_cs_tolerance.mos \
+fmi3_spatial.mos \
 fmi3_msl_clocked_drive.mos \
 fmi3_wasm_annotation_flags.mos \
 fmi3_wasm_arrays.mos \
@@ -32,6 +33,7 @@ fmi_tunable_parameters_state.mos
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
+fmi3_spatial.py \
 *.mo \
 *.mos \
 fmi3_cs_start_event_error.py \

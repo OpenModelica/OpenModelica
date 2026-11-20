@@ -924,6 +924,14 @@ static void applyTunableParameters(ModelInstance *comp)
   }
 }
 
+static fmiXStatus spatialHistoryError(ModelInstance* comp, const char* func)
+{
+  fmiXStatus status = comp->state == model_state_me_continuous_time_mode ? fmiXDiscard : fmiXError;
+  FILTERED_LOG(comp, status, LOG_FMIX_CALL, "%s: spatialDistribution transport history exhausted at time %.15g; use smaller integration steps.",
+               func, comp->fmuData->localData[0]->timeValue)
+  return status;
+}
+
 fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
 {
   int i, done=0;
@@ -952,6 +960,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
      * iteration the master drives, not one pass of it, so `_event_found` and
      * `needToReThrow` accumulate over the passes and are settled by the last. */
     holdAsserts(comp, 1);
+    spatialDistributionNeedsHistory(comp->fmuData, TRUE);
     applyTunableParameters(comp);
     if (comp->_tunable_applied) {
       eventInfo->nominalsOfContinuousStatesChanged = fmiXTrue;
@@ -969,6 +978,10 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
       /* the update below raises the same violation again */
       comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
       holdAsserts(comp, 1);
+    }
+    if (comp->fmuData->modelData->nSpatialDistributions > 0 && !comp->_event_found) {
+      evalDAEModeContinuous(comp);
+      if (storeSpatialDistributionStep(comp->fmuData, threadData)) goto event_update_cleanup;
     }
     syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
     if (syncRet != 0) {
@@ -1041,6 +1054,10 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
     }
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, "internalEventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");
 
+    if (comp->fmuData->modelData->nSpatialDistributions > 0 && !eventInfo->newDiscreteStatesNeeded) {
+      evalDAEModeContinuous(comp);
+      if (storeSpatialDistributionStep(comp->fmuData, threadData)) goto event_update_cleanup;
+    }
 
     /* TODO: check the event iteration for relation
      * in FMI import and export. This is an workaround,
@@ -1094,6 +1111,8 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
 
     done=1;
 
+event_update_cleanup:
+  ;
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
@@ -1115,6 +1134,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
     return fmiXOK;
   }
 
+  if (spatialDistributionNeedsHistory(comp->fmuData, FALSE)) return spatialHistoryError(comp, "internalEventUpdate");
   FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "internalEventUpdate: terminated by an assertion.")
   comp->_need_update = 1;
   DAE_MODE_CHANGED(comp);
@@ -1249,20 +1269,24 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
       /* As in simulationUpdate, a violated assert() is held (needToReThrow);
        * completedIntegratorStep turns it into an event, Event Mode evaluates live. */
       holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
+      spatialDistributionNeedsHistory(comp->fmuData, TRUE);
       applyTunableParameters(comp);
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       evalDAEModeContinuous(comp);
+      if (OMC_ERROR_RAISED()) goto update_cleanup;
       overwriteOldSimulationData(comp->fmuData);
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      if (OMC_ERROR_RAISED()) goto update_cleanup;
       comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
       comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
       storePreValues(comp->fmuData);
       releaseAsserts(comp);
     }
     comp->_need_update = 0;
     success = 1;
 
+update_cleanup:
+    ;
     /* CATCH */
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = old_jmp;
@@ -1271,6 +1295,7 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
     releaseAsserts(comp);
     if (!success)
     {
+      if (spatialDistributionNeedsHistory(comp->fmuData, FALSE)) return spatialHistoryError(comp, func);
       FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "%s: terminated by an assertion.", func)
       // TODO: Check if fmiXError or fmiXDiscard should be returned
       return fmiXError;
@@ -2045,8 +2070,8 @@ fmiXStatus FMIX(GetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
     return fmiXError;
 
 #if NUMBER_OF_REALS > 0
-  if (updateIfNeeded(comp, FMIX_STR "GetReal") != fmiXOK)
-    return fmiXError;
+  fmiXStatus status = updateIfNeeded(comp, FMIX_STR "GetReal");
+  if (status != fmiXOK) return status;
 #endif
 
   for (i = 0; i < nvr; i++)
@@ -2973,11 +2998,16 @@ fmiXStatus internal_CompletedIntegratorStep(fmiXComponent c, const char *func, f
   OMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
     holdAsserts(comp, 1);
+    spatialDistributionNeedsHistory(comp->fmuData, TRUE);
+    if (comp->fmuData->modelData->nSpatialDistributions > 0)
+      comp->fmuData->callback->functionODE(comp->fmuData, threadData);
     evalDAEModeContinuous(comp);
+    if (OMC_ERROR_RAISED()) goto completed_step_cleanup;
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+    if (OMC_ERROR_RAISED()) goto completed_step_cleanup;
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
+    if (comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData)) goto completed_step_cleanup;
     storePreValues(comp->fmuData);
     releaseAsserts(comp);
     *enterEventMode = fmiXFalse;
@@ -3005,6 +3035,8 @@ fmiXStatus internal_CompletedIntegratorStep(fmiXComponent c, const char *func, f
     overwriteOldSimulationData(comp->fmuData);
     comp->_need_update = 1;
     done=1;
+completed_step_cleanup:
+  ;
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
@@ -3020,6 +3052,10 @@ fmiXStatus internal_CompletedIntegratorStep(fmiXComponent c, const char *func, f
     return fmiXOK;
   }
 
+  if (spatialDistributionNeedsHistory(comp->fmuData, FALSE)) {
+    FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "%s: spatialDistribution transport history exhausted at an accepted step.", func)
+    return fmiXError;
+  }
   FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "%s: terminated by an assertion.", func)
   return fmiXError;
 }
@@ -3100,9 +3136,10 @@ fmiXStatus internalGetDerivatives(fmiXComponent c, const char *func, fmiXReal de
     holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
     if (comp->_need_update)
     {
+      spatialDistributionNeedsHistory(comp->fmuData, TRUE);
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       evalDAEModeContinuous(comp);
-      overwriteOldSimulationData(comp->fmuData);
+      if (!OMC_ERROR_RAISED()) overwriteOldSimulationData(comp->fmuData);
     }
     releaseAsserts(comp);
 
@@ -3125,6 +3162,7 @@ fmiXStatus internalGetDerivatives(fmiXComponent c, const char *func, fmiXReal de
   if (done) {
     return fmiXOK;
   }
+  if (spatialDistributionNeedsHistory(comp->fmuData, FALSE)) return spatialHistoryError(comp, func);
   FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "%s: terminated by an assertion.", func)
   return fmiXError;
 }
@@ -3158,9 +3196,10 @@ fmiXStatus internalGetEventIndicators(fmiXComponent c, const char *func, fmiXRea
     holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
     if (comp->_need_update)
     {
+      spatialDistributionNeedsHistory(comp->fmuData, TRUE);
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       evalDAEModeContinuous(comp);
-      comp->_need_update = 0;
+      if (!OMC_ERROR_RAISED()) comp->_need_update = 0;
     }
     releaseAsserts(comp);
     comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
@@ -3180,6 +3219,7 @@ fmiXStatus internalGetEventIndicators(fmiXComponent c, const char *func, fmiXRea
   if (done) {
     return fmiXOK;
   }
+  if (spatialDistributionNeedsHistory(comp->fmuData, FALSE)) return spatialHistoryError(comp, func);
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, "%s: terminated by an assertion.", func)
   return fmiXError;
 }
@@ -3399,6 +3439,7 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   OMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
+  spatialDistributionNeedsHistory(comp->fmuData, TRUE);
   eventInfo.newDiscreteStatesNeeded           = fmiXFalse;
   eventInfo.terminateSimulation               = fmiXFalse;
   eventInfo.nominalsOfContinuousStatesChanged = fmiXFalse;
@@ -3706,6 +3747,11 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
 doStep_cleanup:
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
+
+  if ((!done || status >= fmiXError) && spatialDistributionNeedsHistory(comp->fmuData, 0)) {
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "DoStep: spatialDistribution transport history exhausted at time %.15g. Restart the simulation with smaller communication steps.",
+                 comp->fmuData->localData[0]->timeValue)
+  }
 
   if (!done && status == fmiXOK)
   {

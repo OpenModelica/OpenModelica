@@ -639,7 +639,10 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
     assertStreamPrint(threadData, isfinite(xloc[i]), "residual_MS: xloc is %g", xloc[i]);
   memcpy(sData->realVars, xloc, nStates*sizeof(modelica_real));
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+  if (gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL) != 0) {
+    omc_error_raise(threadData);
+    return;
+  }
   for (i = 0; i < nStates; i++)
     assertStreamPrint(threadData, isfinite(fODE[i]), "residual_MS: fODE is %g", fODE[i]);
 
@@ -737,7 +740,10 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
     assertStreamPrint(threadData, isfinite(xloc[i]), "residual_DIRK: xloc is %g", xloc[i]);
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+  if (gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL) != 0) {
+    omc_error_raise(threadData);
+    return;
+  }
 
   // Evaluate residuals
   for (i = 0; i < nStates; i++) {
@@ -842,7 +848,10 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     if (!gbData->tableau->isKLeftAvailable || stage_ > 0) {
       sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
       memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+      if (gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL) != 0) {
+        omc_error_raise(threadData);
+        return;
+      }
       for (i = 0; i < nStates; i++)
         assertStreamPrint(threadData, isfinite(fODE[i]), "residual_IRK: fODE is %g", fODE[i]);
       memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
