@@ -3383,7 +3383,7 @@ template systemResiduals(list<SimEqSystem> eqs, Text resizable,
             let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
             let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
             let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
-            <<for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
+            <<for(int <%iter_%>=<%start_%>; (<%step_%>) > 0 ? <%iter_%> <= (<%stop_%>) : <%iter_%> >= (<%stop_%>); <%iter_%>+=<%step_%>){
             <%sub_iter_%>
             >>
           ;separator="\n")

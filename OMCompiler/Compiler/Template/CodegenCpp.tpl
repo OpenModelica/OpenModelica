@@ -4412,7 +4412,7 @@ template forIteratorCpp(SimIterator iter, Context context, Text &preExp, Text &v
     let stop_ = daeExp(stop, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let subIterDecls = (sub_iter |> si => subIteratorCpp(si, iter_, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator="\n")
     <<
-    for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
+    for(int <%iter_%>=<%start_%>; (<%step_%>) > 0 ? <%iter_%> <= (<%stop_%>) : <%iter_%> >= (<%stop_%>); <%iter_%>+=<%step_%>){
     <%if subIterDecls then subIterDecls%>
     >>
   case SIM_ITERATOR_LIST() then
