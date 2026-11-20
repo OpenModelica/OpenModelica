@@ -21,6 +21,7 @@ cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
 derInWhenCondition.mos \
 discreteRelations.mos \
+DiscreteSelfLoop.mos \
 EndAtStopTime.mos \
 EventDelay.mos \
 EventIteration.mos \
