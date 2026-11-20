@@ -21,8 +21,10 @@ if setCommandLineOptions("--newBackend=false --daeMode=false --simCodeTarget=" +
     pulse := scenario == 3;
     prefix := if pulse then "SpatialCoarseEvents" else "SpatialDistributionCausal";
     flags := if pulse then " -initialStepSize=1" else " -initialStepSize=3" + (if scenario == 2 then " -noRootFinding" else "");
-    solvers := if runtime == "C" then {"dassl", "cvode", "ida", "gbode -gbm=esdirk4", "gbode -gbm=radauIIA3"}
-      else {"dassl", "cvode", "ida"};
+    solvers := {"dassl", "cvode", "ida"};
+    if runtime == "C" then
+      solvers := cat(1, solvers, {"gbode -gbm=esdirk4", "gbode -gbm=radauIIA3"});
+    end if;
     if runtime == "C" and pulse then
       // Fixed-step GBODE should also preserve the pulse.
       solvers := cat(1, solvers, {"gbode -gbm=esdirk4 -gbctrl=const", "gbode -gbm=radauIIA3 -gbctrl=const"});
@@ -30,22 +32,23 @@ if setCommandLineOptions("--newBackend=false --daeMode=false --simCodeTarget=" +
 
     for solver in solvers loop
       for direction in {1, -1} loop
-        deleteFile(prefix + "_res.mat");
+        resultFile := prefix + "_res.mat";
+        deleteFile(resultFile);
         simulationFlags := "-alarm=15 -s=" + solver + flags + " -override=direction=" + String(direction);
         if pulse then
-          result := simulate(SpatialCoarseEvents, stopTime = 1, numberOfIntervals = 1, tolerance = 1e-8,
+          simulate(SpatialCoarseEvents, stopTime = 1, numberOfIntervals = 1, tolerance = 1e-8,
             simflags = simulationFlags, resimulateExecutable = prefix);
         else
-          result := simulate(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
+          simulate(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
             simflags = simulationFlags, resimulateExecutable = prefix);
         end if;
-        actual := if result.resultFile == "" then -1
-          elseif pulse then val(integral, 1, result.resultFile)
-          else val(filtered, 3, result.resultFile);
+        actual := if not regularFileExists(resultFile) then -1
+          elseif pulse then val(integral, 1, resultFile)
+          else val(filtered, 3, resultFile);
         closeSimulationResultFile();
 
         // Expect pulse area 0.2, or the calculated filtered value for the feedback model.
-        good := result.resultFile <> "" and abs(actual - (if pulse then 0.2 else expected)) < (if pulse then 1e-6 else 0.002);
+        good := regularFileExists(resultFile) and abs(actual - (if pulse then 0.2 else expected)) < (if pulse then 1e-6 else 0.002);
         if not good then
           print(runtime + " " + solver + " direction=" + String(direction) + " " + prefix + flags + ": " + String(actual) + "\n");
         end if;
@@ -55,14 +58,16 @@ if setCommandLineOptions("--newBackend=false --daeMode=false --simCodeTarget=" +
   end for;
 
   // With a 1 s delay, filtered at t=3 should equal 1 + exp(-2) + 0.1*exp(-1).
-  result := simulate(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
+  deleteFile("SpatialDistributionCausal_res.mat");
+  simulate(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
     simflags = "-alarm=15 -s=cvode -override=velocity=1", resimulateExecutable = "SpatialDistributionCausal");
-  ok := ok and result.resultFile <> "" and abs(val(filtered, 3, result.resultFile) - (1 + exp(-2) + 0.1 * exp(-1))) < 1e-5;
+  ok := ok and abs(val(filtered, 3, "SpatialDistributionCausal_res.mat") - (1 + exp(-2) + 0.1 * exp(-1))) < 1e-5;
   closeSimulationResultFile();
 
   // Initialization should find position 5, then the outlet should fall from 1 to 0.25.
-  result := simulate(SpatialInitialProfile, stopTime = 0.75, numberOfIntervals = 3, tolerance = 1e-8, simflags = "-alarm=15");
-  ok := ok and result.resultFile <> "" and abs(val(position, 0, "SpatialInitialProfile_res.mat") - 5) < 1e-7
+  deleteFile("SpatialInitialProfile_res.mat");
+  simulate(SpatialInitialProfile, stopTime = 0.75, numberOfIntervals = 3, tolerance = 1e-8, simflags = "-alarm=15");
+  ok := ok and abs(val(position, 0, "SpatialInitialProfile_res.mat") - 5) < 1e-7
     and abs(val(outlet, 0, "SpatialInitialProfile_res.mat") - 1) < 1e-7
     and abs(val(outlet, 0.75, "SpatialInitialProfile_res.mat") - 0.25) < 1e-7;
   closeSimulationResultFile();
@@ -71,9 +76,10 @@ if setCommandLineOptions("--newBackend=false --daeMode=false --simCodeTarget=" +
   setCommandLineOptions("--daeMode");
   buildModel(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
     fileNamePrefix = "SpatialDistributionCausalDAE");
-  result := simulate(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
+  deleteFile("SpatialDistributionCausalDAE_res.mat");
+  simulate(SpatialDistributionCausal, stopTime = 3, numberOfIntervals = 1, tolerance = 1e-7,
     simflags = "-alarm=15 -s=ida -initialStepSize=3", resimulateExecutable = "SpatialDistributionCausalDAE");
-  ok := ok and result.resultFile <> "" and abs(val(filtered, 3, result.resultFile) - expected) < 0.002;
+  ok := ok and abs(val(filtered, 3, "SpatialDistributionCausalDAE_res.mat") - expected) < 0.002;
   closeSimulationResultFile();
 else
   ok := false;
