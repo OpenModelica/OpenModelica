@@ -1,7 +1,7 @@
 // name: XmlDumpComment
 // keywords: xml, dump
 // status: correct
-// teardown_command: rm -f XmlDumpComment.xml
+// teardown_command: rm -f XmlDumpComment.xml Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml
 // cflags: -d=newInst
 //
 // Tests that < is escaped in Xml dumps
@@ -38,9 +38,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // (true, "XmlDumpComment.xml")
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
-//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
-//                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
-//                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
+//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\">
 // <variables dimension=\"5\">
 // <knownVariables dimension=\"4\">
 // <variablesList>
@@ -111,9 +109,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // (true, "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml")
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
-//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
-//                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
-//                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
+//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\">
 // <variables dimension=\"1079\">
 // <orderedVariables dimension=\"75\">
 // <variablesList>
@@ -20762,6 +20758,20 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </variablesList>
 // </aliasVariables>
 // </variables>
+// <enumerationTypes dimension=\"2\">
+// <enumerationType name=\"StateSelect\">
+// <literal name=\"never\" index=\"1\" />
+// <literal name=\"avoid\" index=\"2\" />
+// <literal name=\"default\" index=\"3\" />
+// <literal name=\"prefer\" index=\"4\" />
+// <literal name=\"always\" index=\"5\" />
+// </enumerationType>
+// <enumerationType name=\"Modelica.Mechanics.MultiBody.Types.GravityTypes\">
+// <literal name=\"NoGravity\" index=\"1\" />
+// <literal name=\"UniformGravity\" index=\"2\" />
+// <literal name=\"PointGravity\" index=\"3\" />
+// </enumerationType>
+// </enumerationTypes>
 // <equations dimension=\"51\">
 // <equation id=\"1\">damper.a_rel = der(rev.w)
 // </equation>

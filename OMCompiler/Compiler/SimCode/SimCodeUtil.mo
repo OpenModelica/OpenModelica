@@ -263,6 +263,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input String FMUVersion="";
   input String fmuTargetName="";
   input BackendDAE.SymbolicJacobians inFMIDer = {};
+  input Boolean aliasEquations = true "let identical equations share their code";
   output SimCode.SimCode simCode;
   output tuple<Integer, list<tuple<Integer, Integer>>> outMapping "the highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself";
 protected
@@ -409,7 +410,8 @@ algorithm
 
     (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
       equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
-         createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
+         createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true,
+                                   equationOffsets(dlow.eqs, false));
     if debug then execStat("simCode: createEquationsForSystems"); end if;
 
 
@@ -424,7 +426,8 @@ algorithm
 
     (clockedPartitions, uniqueEqIndex, backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars) :=
           translateClockedEquations(clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
-                                    backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
+                                    backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars,
+                                    equationOffsets(dlow.eqs, true));
     if debug then execStat("simCode: translateClockedEquations"); end if;
 
     // create parameter equations
@@ -682,13 +685,14 @@ algorithm
 
 
 
-     if ((Config.simCodeTarget() <> "Cpp"))then
+     if aliasEquations and not listMember(Config.simCodeTarget(), {"Cpp", "XML"}) then
       reasonableSize := Util.nextPrime(10+integer(1.4*(BackendDAEUtil.equationArraySizeBDAE(inBackendDAE)+BackendDAEUtil.equationArraySizeBDAE(inInitDAE)+listLength(parameterEquations))));
       eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
 
 
       // Alias equations to other equations.
       // The C++ codegen does things differently and will not handle this
+      // The XML export lists the full equations of each section.
       (allEquations, eqCache) := aliasSimEqs(allEquations, eqCache);
       (odeEquations, eqCache) := aliasSimEqSystems(odeEquations, eqCache);
       (algebraicEquations, eqCache) := aliasSimEqSystems(algebraicEquations, eqCache);
@@ -814,6 +818,24 @@ algorithm
   end matchcontinue;
 end getParamAsserts;
 
+protected function equationOffsets
+  "For each clocked or each continuous system, the number of equations in all
+   systems before it. FindZeroCrossings numbers the equations this way."
+  input BackendDAE.EqSystems systs;
+  input Boolean clocked;
+  output list<Integer> offsets = {};
+protected
+  Integer n = 0;
+algorithm
+  for syst in systs loop
+    if BackendDAEUtil.isClockedSyst(syst) == clocked then
+      offsets := n :: offsets;
+    end if;
+    n := n + BackendEquation.getNumberOfEquations(syst.orderedEqs);
+  end for;
+  offsets := Dangerous.listReverseInPlace(offsets);
+end equationOffsets;
+
 protected function translateClockedEquations
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.Shared inShared;
@@ -823,6 +845,7 @@ protected function translateClockedEquations
   input list<tuple<Integer,Integer>> ieqSccMapping;
   input list<tuple<Integer,Integer>> ieqBackendSimCodeMapping;
   input list<SimCodeVar.SimVar> itempvars;
+  input list<Integer> eqOffsets "see equationOffsets";
   output list<SimCode.ClockedPartition> outPartitions = {};
   output Integer ouniqueEqIndex = iuniqueEqIndex;
   output SimCode.BackendMapping oBackendMapping = iBackendMapping;
@@ -837,7 +860,8 @@ protected
   array<Integer> ass1, stateeqnsmark, zceqnsmarks;
   AvlTreePathFunction.Tree funcs;
   BackendDAE.StrongComponents comps;
-  Integer sccOffset = iSccOffset;
+  Integer sccOffset = iSccOffset, eqOffset;
+  list<Integer> offsets = eqOffsets;
   list<Integer> varIxs;
   BackendDAE.Var var;
   SimCodeVar.SimVar simVar;
@@ -864,9 +888,10 @@ algorithm
     zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
 
     //FIXME: Add continuous clocked systems support
+    eqOffset :: offsets := offsets;
     (_, _, equations, _, ouniqueEqIndex, clockedVars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping) :=
         createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, {},
-                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, true);
+                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, true, eqOffset);
     sccOffset := listLength(comps) + sccOffset;
     //otempvars := listAppend(clockedVars, otempvars);
     GCExt.free(stateeqnsmark);
@@ -1494,6 +1519,7 @@ protected function createEquationsForSystems "Some kind of comments would be ver
   input Integer iSccOffset; //to map the generated equations to the old strongcomponents, they are numbered from (1+offset) to (n+offset)
   input SimCode.BackendMapping iBackendMapping;
   input Boolean createAlgebraicEquations;
+  input list<Integer> eqOffsets = {} "see equationOffsets; empty if no zero crossing refers to the equations";
   output Integer ouniqueEqIndex;
   output list<list<SimCode.SimEqSystem>> oodeEquations;
   output list<list<SimCode.SimEqSystem>> oalgebraicEquations;
@@ -1509,7 +1535,8 @@ protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
   array<AvlSetInt.Tree> zcVars;
-  Integer sysIdx = 0;
+  Integer sysIdx = 0, eqOffset = 0;
+  list<Integer> offsets = eqOffsets;
 algorithm
   try
     arg := (shared, createAlgebraicEquations);
@@ -1517,7 +1544,10 @@ algorithm
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
     for syst in inSysts loop
       sysIdx := sysIdx + 1;
-      foldArg := createEquationsForSystems1(syst, arrayGet(zcVars, sysIdx), arg, foldArg);
+      if not listEmpty(offsets) then
+        eqOffset :: offsets := offsets;
+      end if;
+      foldArg := createEquationsForSystems1(syst, arrayGet(zcVars, sysIdx), eqOffset, arg, foldArg);
     end for;
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
     oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
@@ -1532,6 +1562,7 @@ end createEquationsForSystems;
 protected function createEquationsForSystems1
   input BackendDAE.EqSystem inSyst;
   input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing";
+  input Integer eqOffset;
   input CreateEquationsForSystemsArg inArg;
   input CreateEquationsForSystemsFold inFold;
   output CreateEquationsForSystemsFold outFold;
@@ -1574,7 +1605,7 @@ algorithm
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) :=
             createEquationsForSystem(
                 stateeqnsmark, zceqnsmarks, syst, shared, comps, uniqueEqIndex, tempvars,
-                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, createAlgebraicEquations);
+                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, createAlgebraicEquations, eqOffset);
         GCExt.free(stateeqnsmark);
         GCExt.free(zceqnsmarks);
 
@@ -1618,6 +1649,7 @@ protected function createEquationsForSystem
   input list<tuple<Integer,Integer>> ieqBackendSimCodeMapping;
   input SimCode.BackendMapping iBackendMapping;
   input Boolean createAlgebraicEquations;
+  input Integer eqOffset = 0 "added to the equation indices of syst in oeqBackendSimCodeMapping";
   output list<SimCode.SimEqSystem> outOdeEquations;
   output list<SimCode.SimEqSystem> outAlgebraicEquations;
   output list<SimCode.SimEqSystem> outAllEquations;
@@ -1625,18 +1657,24 @@ protected function createEquationsForSystem
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
   output list<tuple<Integer,Integer>> oeqSccMapping;
-  output list<tuple<Integer,Integer>> oeqBackendSimCodeMapping;
+  output list<tuple<Integer,Integer>> oeqBackendSimCodeMapping = ieqBackendSimCodeMapping;
   output SimCode.BackendMapping oBackendMapping;
 protected
   CreateEquationsForSystemFold foldArg;
   CreateEquationsForSystemArg arg;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings;
+  list<tuple<Integer,Integer>> eqBackendSimCodeMapping;
+  Integer simEqIdx, eqIdx;
 algorithm
   arg := (stateeqnsmark, zceqnsmark, syst, shared, createAlgebraicEquations);
-  foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, ieqSccMapping, ieqBackendSimCodeMapping, iBackendMapping, iSccIndex);
+  foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, ieqSccMapping, {}, iBackendMapping, iSccIndex);
   foldArg := List.fold2(comps, createEquationsForSystem1, arg, partitionKindToClockIndex(syst.partitionKind), foldArg);
   (ouniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
-   otempvars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, _) := foldArg;
+   otempvars, oeqSccMapping, eqBackendSimCodeMapping, oBackendMapping, _) := foldArg;
+  for m in eqBackendSimCodeMapping loop
+    (simEqIdx, eqIdx) := m;
+    oeqBackendSimCodeMapping := (simEqIdx, eqIdx + eqOffset) :: oeqBackendSimCodeMapping;
+  end for;
   outOdeEquations := List.flattenReverse(odeEquations);
   outAlgebraicEquations := List.flattenReverse(algebraicEquations);
   outAllEquations := List.flattenReverse(allEquations);

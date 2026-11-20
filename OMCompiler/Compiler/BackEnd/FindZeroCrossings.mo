@@ -551,12 +551,13 @@ end encapsulateWhenConditions_AlgorithmsWithArrayConditions;
 // =============================================================================
 
 public function findZeroCrossings "This function finds all zero crossings in the list of equations and
-  the list of when clauses."
+  the list of when clauses. The equation indices of a zero crossing count
+  the equations of all systems in order, starting at 1."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
   //BackendDump.dumpBackendDAE(inDAE, "findZeroCrossings: inDAE");
-  outDAE := BackendDAEUtil.mapEqSystem(inDAE, findZeroCrossings1);
+  outDAE := BackendDAEUtil.mapEqSystemAndFold(inDAE, findZeroCrossings1, 0);
   //BackendDump.dumpBackendDAE(outDAE, "findZeroCrossings: outDAE");
 end findZeroCrossings;
 
@@ -564,8 +565,10 @@ protected function findZeroCrossings1 "
   This function finds all zero-crossings in the list of equations and the list of when clauses."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
+  input Integer eqnOffset "number of equations in the preceding systems";
   output BackendDAE.EqSystem outSyst = inSyst;
   output BackendDAE.Shared outShared;
+  output Integer outEqnOffset;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -574,6 +577,7 @@ protected
   BackendDAE.Matching matching;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=matching ) := inSyst;
+  outEqnOffset := eqnOffset + BackendEquation.getNumberOfEquations(eqns);
   (outSyst, outShared) := match BackendDAEUtil.getSubClock(inSyst, inShared)
     local
       BackendDAE.Variables globalKnownVars;
@@ -597,7 +601,7 @@ algorithm
                                numberMathEvents=countMathFunctions ) := einfo;
         eqs_lst := BackendEquation.equationList(eqns);
         (zero_crossings, eqs_lst1, countMathFunctions, relations, sampleLst) :=
-        findZeroCrossings2( vars, globalKnownVars, eqs_lst, 0,
+        findZeroCrossings2( vars, globalKnownVars, eqs_lst, eqnOffset,
                             countMathFunctions, zero_crossings, relations, sampleLst, {});
         eqs_lst1 := listReverse(eqs_lst1);
         eqns1 := BackendEquation.listEquation(eqs_lst1);
