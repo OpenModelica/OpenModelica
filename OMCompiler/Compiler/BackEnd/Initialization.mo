@@ -265,6 +265,7 @@ protected
   BackendDAE.EqSystem initsyst;
   list<BackendDAE.EqSystem> systs;
   list<BackendDAE.Var> dumpVars2;
+  list<String> alternatives;
   list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
@@ -292,7 +293,7 @@ algorithm
   end if;
 
   // fix over- and under-constrained subsystems
-  (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, initVars);
+  (initdae, dumpVars2, removedEqns, alternatives) := analyzeInitialSystem(initdae, initVars);
   dumpVars := listAppend(dumpVars, dumpVars2) annotation(__OpenModelica_DisableListAppendWarning=true);
   execStat("analyzeInitialSystem (" + systemStr + ")");
 
@@ -336,7 +337,10 @@ algorithm
   msg := "For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")";
   if Flags.isSet(Flags.INITIALIZATION) then
     if b1 then
-      Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
+      Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars)
+        + (if listEmpty(alternatives) then "" else
+          "Instead of the start value of the variable on the left, an initial equation for one of the variables on the right also completes the initial conditions:\n"
+          + warnAboutVars2Work(alternatives, "         ", "\n", sum(stringLength(s) + 10 for s in alternatives))));
     end if;
     if b2 then
       Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {"The following " + intString(listLength(removedEqns)) + " initial equations are redundant, so they are removed from the " + systemStr + " system:\n" + warnAboutEqns2(removedEqns)});
@@ -1298,18 +1302,21 @@ protected function analyzeInitialSystem "author: lochel
   output BackendDAE.BackendDAE outDAE;
   output list<BackendDAE.Var> outDumpVars;
   output list<BackendDAE.Equation> outRemovedEqns;
+  output list<String> outAlternatives;
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.EqSystem syst;
   list<BackendDAE.EqSystem> eqs;
   DoubleEnded.MutableList<BackendDAE.Var> dumpVars;
   DoubleEnded.MutableList<BackendDAE.Equation> removedEqns;
+  DoubleEnded.MutableList<String> alternatives;
   list<BackendDAE.Equation> filtered_initial_eqs;
 algorithm
   // filter empty systems
   eqs := {};
   dumpVars := DoubleEnded.fromList({});
   removedEqns := DoubleEnded.fromList({});
+  alternatives := DoubleEnded.fromList({});
   for syst in inInitDAE.eqs loop
     if BackendDAEUtil.nonEmptySystem(syst) then
       eqs := syst::eqs;
@@ -1322,9 +1329,10 @@ algorithm
   dae := BackendDAE.DAE(eqs, inInitDAE.shared);
 
   //execStat("reset analyzeInitialSystem (initialization)");
-  outDAE := BackendDAEUtil.mapEqSystemAndFold(dae, function func(initVars=inInitVars, dumpVars=dumpVars, removedEqns=removedEqns), 0);
+  outDAE := BackendDAEUtil.mapEqSystemAndFold(dae, function func(initVars=inInitVars, dumpVars=dumpVars, removedEqns=removedEqns, alternatives=alternatives), 0);
   outRemovedEqns := DoubleEnded.toListAndClear(removedEqns);
   outDumpVars := DoubleEnded.toListAndClear(dumpVars);
+  outAlternatives := DoubleEnded.toListAndClear(alternatives);
 end analyzeInitialSystem;
 
 protected function getInitEqIndices
@@ -1353,6 +1361,7 @@ protected partial function constraintHandlerFunc
   input BackendDAE.Variables initVars                               "all variables that are allowed to be fixed";
   input DoubleEnded.MutableList<BackendDAE.Var> dumpVars            "new fixed variables";
   input DoubleEnded.MutableList<BackendDAE.Equation> removedEqns    "redundant equations";
+  input DoubleEnded.MutableList<String> alternatives                "for -d=initialization: the variables that could get an initial equation instead of a new fixed variable";
 end constraintHandlerFunc;
 
 protected function balanceInitialSystem "author: kabdelhak
@@ -1416,6 +1425,7 @@ algorithm
         consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, enhancedRows(outEqSystem, inShared), var_to_eqn, eqn_to_var, scal_to_arr);
         redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
       end if;
+      reportAlternatives(unfixedVars, mT, eqn_to_var, outEqSystem.orderedVars, initVars, alternatives);
       outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
       (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
       nVars := BackendVariable.varsSize(outEqSystem.orderedVars);
@@ -1455,6 +1465,7 @@ algorithm
           if not listEmpty(redundantEqns) then
             consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, enhancedRows(outEqSystem, inShared), var_to_eqn, eqn_to_var, scal_to_arr);
           end if;
+          reportAlternatives(unfixedVars, mT, eqn_to_var, outEqSystem.orderedVars, initVars, alternatives);
           outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
           (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
         end if;
@@ -1608,6 +1619,128 @@ algorithm
   // 8. success
   syst := BackendDAEUtil.setEqSystEqs(syst, BackendEquation.sortInitialEqns(new_eqns));
 end resolveOverAndUnderconstraints;
+
+protected function reportAlternatives
+  "For -d=initialization: for each unmatched variable, list the variables that
+  an initial equation could be given for instead. They are the fixable
+  variables and dummy states reachable on alternating paths: an unmatched
+  variable can take over an equation it appears in, which leaves the variable
+  matched to that equation unmatched."
+  input list<Integer> unfixedVars;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input array<Integer> eqn_to_var;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables initVars;
+  input DoubleEnded.MutableList<String> alternatives;
+protected
+  array<Boolean> visited;
+  list<Integer> queue, next;
+  list<tuple<String, String>> candidates "top-level component and name";
+  list<tuple<String, list<String>>> groups = {} "alternatives and the variables that have them", newGroups;
+  String description, name;
+  Integer w;
+  BackendDAE.Var var;
+  DAE.ComponentRef cr;
+  Boolean found;
+algorithm
+  if not Flags.isSet(Flags.INITIALIZATION) then
+    return;
+  end if;
+  for u in unfixedVars loop
+    visited := arrayCreate(arrayLength(mT), false);
+    arrayUpdate(visited, u, true);
+    queue := {u};
+    candidates := {};
+    while not listEmpty(queue) loop
+      next := {};
+      for v in queue loop
+        for e in mT[v] loop
+          w := eqn_to_var[intAbs(e)];
+          if w > 0 and not visited[w] then
+            arrayUpdate(visited, w, true);
+            next := w :: next;
+            var := BackendVariable.getVarAt(vars, w);
+            cr := BackendVariable.varCref(var);
+            if BackendVariable.isDummyStateVar(var) or BackendVariable.containsCref(cr, initVars) then
+              candidates := if ComponentReference.isPreCref(cr)
+                then (ComponentReferenceBasics.crefFirstIdent(ComponentReference.popPreCref(cr)), "pre(" + ComponentReferenceBasics.printComponentRefStr(ComponentReference.popPreCref(cr)) + ")") :: candidates
+                else (ComponentReferenceBasics.crefFirstIdent(cr), ComponentReferenceBasics.printComponentRefStr(cr)) :: candidates;
+            end if;
+          end if;
+        end for;
+      end for;
+      queue := next;
+    end while;
+    if listEmpty(candidates) then
+      continue;
+    end if;
+    description := stringDelimitList(summarizeCandidates(List.sort(candidates, candidateGreater)), ", ");
+
+    cr := BackendVariable.varCref(BackendVariable.getVarAt(vars, u));
+    name := ComponentReferenceBasics.printComponentRefStr(if ComponentReference.isPreCref(cr) then ComponentReference.popPreCref(cr) else cr);
+    found := false;
+    newGroups := {};
+    for g in groups loop
+      if not found and stringEq(Util.tuple21(g), description) then
+        found := true;
+        newGroups := (description, name :: Util.tuple22(g)) :: newGroups;
+      else
+        newGroups := g :: newGroups;
+      end if;
+    end for;
+    groups := if found then listReverse(newGroups) else (description, {name}) :: groups;
+  end for;
+
+  for g in listReverse(groups) loop
+    DoubleEnded.push_back(alternatives, stringDelimitList(listReverse(Util.tuple22(g)), ", ") + ": " + Util.tuple21(g));
+  end for;
+end reportAlternatives;
+
+protected function candidateGreater
+  input tuple<String, String> c1;
+  input tuple<String, String> c2;
+  output Boolean b;
+protected
+  Integer c = stringCompare(Util.tuple21(c1), Util.tuple21(c2));
+algorithm
+  b := c > 0 or (c == 0 and stringCompare(Util.tuple22(c1), Util.tuple22(c2)) > 0);
+end candidateGreater;
+
+protected function summarizeCandidates
+  "Lists the candidates sorted by top-level component; a component with more
+  than maxListed candidates is only counted."
+  input list<tuple<String, String>> candidates;
+  output list<String> strs = {};
+protected
+  constant Integer maxListed = 3;
+  String ident = "";
+  list<String> group = {};
+algorithm
+  for c in candidates loop
+    if not stringEq(Util.tuple21(c), ident) then
+      strs := addCandidateGroup(ident, group, maxListed, strs);
+      ident := Util.tuple21(c);
+      group := {};
+    end if;
+    group := Util.tuple22(c) :: group;
+  end for;
+  strs := listReverse(addCandidateGroup(ident, group, maxListed, strs));
+end summarizeCandidates;
+
+protected function addCandidateGroup
+  input String ident;
+  input list<String> group "in reverse order";
+  input Integer maxListed;
+  input output list<String> strs "in reverse order";
+algorithm
+  if listLength(group) > maxListed then
+    strs := ident + " (" + intString(listLength(group)) + " variables)" :: strs;
+  else
+    for name in listReverse(group) loop
+      strs := name :: strs;
+    end for;
+  end if;
+end addCandidateGroup;
 
 protected function fixInitialSystem "author: lochel
   This function handles under-, over-, and mixed-determined systems with a given index."

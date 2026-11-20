@@ -72,6 +72,7 @@ underdeterminedTest3.mos \
 underdeterminedTest4.mos \
 underdeterminedTest5.mos \
 underdeterminedTest6.mos \
+underdeterminedTest7.mos \
 unfixedParameter1.mos \
 unfixedParameter2.mos \
 autoFixed.mos \
