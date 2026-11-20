@@ -765,10 +765,10 @@ algorithm
       then
         Absyn.EQ_WHEN_E(e1, eqil1, else_branch);
 
-    case Absyn.EQ_NORETCALL(functionName = cref1, functionArgs = func_args)
+    case Absyn.EQ_NORETCALL()
       algorithm
-        (cref1, arg) := traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
-        (func_args, arg) := traverseExpBidirFunctionArgs(func_args, enterFunc, exitFunc, arg);
+        (Absyn.CALL(function_ = cref1, functionArgs = func_args), arg) :=
+          traverseExpBidir(Absyn.CALL(eq.functionName, eq.functionArgs, {}), enterFunc, exitFunc, arg);
       then
         Absyn.EQ_NORETCALL(cref1, func_args);
 
@@ -890,10 +890,10 @@ algorithm
       then
         Absyn.ALG_WHEN_A(e1, algs1, else_branch);
 
-    case Absyn.ALG_NORETCALL(cref1, func_args)
+    case Absyn.ALG_NORETCALL()
       algorithm
-        (cref1, arg) := traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
-        (func_args, arg) := traverseExpBidirFunctionArgs(func_args, enterFunc, exitFunc, arg);
+        (Absyn.CALL(function_ = cref1, functionArgs = func_args), arg) :=
+          traverseExpBidir(Absyn.CALL(alg.functionCall, alg.functionArgs, {}), enterFunc, exitFunc, arg);
       then
         Absyn.ALG_NORETCALL(cref1, func_args);
 

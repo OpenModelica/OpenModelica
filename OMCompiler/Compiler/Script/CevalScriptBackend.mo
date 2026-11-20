@@ -3466,10 +3466,10 @@ algorithm
 
     case ("renameClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        (p, v) := Interactive.renameClass(classpath, path, SymbolTable.getAbsyn());
+        (p, paths) := NFApi.renameClass(classpath, path, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        v;
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("renameComponent", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_VARIABLENAME(cr)),
                               Values.CODE(Absyn.C_VARIABLENAME(cr2))})
