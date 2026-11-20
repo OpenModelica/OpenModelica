@@ -2369,13 +2369,21 @@ algorithm
           eqSystlst := listAppend(eqs,resEqs);
           tempvars := createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
         else
-          // non-linear
-          (resEqs, (uniqueEqIndex, _), tempvars) := createNonlinearResidualEquations({eqn}, (iuniqueEqIndex, 0), itempvars, shared.functionTree);
-          resEqs := fixNonlinearResidualIndices(resEqs);
-          cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
-          (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-          eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, isMixedSystem({eqn}, {v}), false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
-          uniqueEqIndex := uniqueEqIndex+1;
+          if not Types.isRealOrSubTypeReal(v.varType) and (ExpressionBasics.expEqual(e1, varexp) or ExpressionBasics.expEqual(e2, varexp)) then
+            // Discrete v = f(v): the event iteration finds the fixed point (MLS 3.7, section 3.7.5).
+            exp_ := if ExpressionBasics.expEqual(e1, varexp) then e2 else e1;
+            eqSystlst := {SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source, eqAttr)};
+            uniqueEqIndex := iuniqueEqIndex+1;
+            tempvars := itempvars;
+          else
+            // non-linear
+            (resEqs, (uniqueEqIndex, _), tempvars) := createNonlinearResidualEquations({eqn}, (iuniqueEqIndex, 0), itempvars, shared.functionTree);
+            resEqs := fixNonlinearResidualIndices(resEqs);
+            cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
+            (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
+            eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, isMixedSystem({eqn}, {v}), false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
+            uniqueEqIndex := uniqueEqIndex+1;
+          end if;
         end try;
       then (eqSystlst, uniqueEqIndex,tempvars);
 
