@@ -76,7 +76,7 @@ import SimCodeFunctionUtil;
 import SimCodeUtilShared;
 import StringUtil;
 import System;
-import UnitAbsynBuilder;
+import UnitConversion;
 import UnitParserExt;
 import UnorderedMap;
 
@@ -437,7 +437,7 @@ algorithm
   ErrorExt.setCheckpoint(getInstanceName());
   try
     UnitParserExt.initSIUnits();
-    (converts, factor, offset) := UnitAbsynBuilder.convertUnits(to, from);
+    (converts, factor, offset) := UnitConversion.convertUnits(to, from);
   else
   end try;
   ErrorExt.rollBack(getInstanceName());
