@@ -1,0 +1,73 @@
+// name: bug2756
+// keywords: event, algorithm, for
+// status: correct
+// teardown_command: rm -rf NestedForZeroCrossings* output.log
+//
+// Relations in nested for-loops of an algorithm section
+
+loadString("
+model NestedForZeroCrossings
+  parameter Integer n = 2, m = 3;
+  Real x[n] = {10*time, 20*time};
+  parameter Real a[m] = {5, 15, 25};
+  Integer z[n], u[n], v[n], w[n], c;
+algorithm
+  for i in 1:n loop
+    z[i] := 1;
+    u[i] := 0;
+    v[i] := 0;
+    for j in 1:m loop
+      if x[i] > a[j] then
+        z[i] := z[i] + 1;
+      end if;
+      if not x[i] > a[j] then
+        u[i] := u[i] + 1;
+      end if;
+      if x[i] > 12 then
+        v[i] := v[i] + 1;
+      end if;
+    end for;
+    w[i] := if x[i] > 12 then 1 else 0;
+  end for;
+  c := 0;
+  for i in n:-1:1 loop
+    for j in 1:2:m loop
+      if x[i] > a[j] and time > 0.1 then
+        c := c + 1;
+      end if;
+    end for;
+  end for;
+end NestedForZeroCrossings;
+"); getErrorString();
+
+simulate(NestedForZeroCrossings, stopTime = 3); getErrorString();
+for t in {0.3, 0.52, 0.8, 1.27, 1.52, 2.52} loop
+  print(String(t) + ": z = {" + String(val(z[1], t)) + ", " + String(val(z[2], t))
+    + "}, u = {" + String(val(u[1], t)) + ", " + String(val(u[2], t))
+    + "}, v = {" + String(val(v[1], t)) + ", " + String(val(v[2], t))
+    + "}, w = {" + String(val(w[1], t)) + ", " + String(val(w[2], t))
+    + "}, c = " + String(val(c, t)) + "\n");
+end for;
+// Each event adds two rows
+readSimulationResultSize("NestedForZeroCrossings_res.mat");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "NestedForZeroCrossings_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'NestedForZeroCrossings', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3: z = {1, 2}, u = {3, 2}, v = {0, 0}, w = {0, 0}, c = 1
+// 0.52: z = {2, 2}, u = {2, 2}, v = {0, 0}, w = {0, 0}, c = 2
+// 0.8: z = {2, 3}, u = {2, 1}, v = {0, 3}, w = {0, 1}, c = 2
+// 1.27: z = {2, 4}, u = {2, 0}, v = {3, 3}, w = {1, 1}, c = 3
+// 1.52: z = {3, 4}, u = {1, 0}, v = {3, 3}, w = {1, 1}, c = 3
+// 2.52: z = {4, 4}, u = {0, 0}, v = {3, 3}, w = {1, 1}, c = 4
+//
+// 520
+// endResult
