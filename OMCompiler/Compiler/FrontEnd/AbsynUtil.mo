@@ -743,10 +743,10 @@ algorithm
       then
         Absyn.EQ_PDE(e1, e2,cref1);
 
-    case Absyn.EQ_CONNECT(connector1 = cref1, connector2 = cref2)
+    case Absyn.EQ_CONNECT()
       algorithm
-        (cref1, arg) := traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
-        (cref2, arg) := traverseExpBidirCref(cref2, enterFunc, exitFunc, arg);
+        (Absyn.CREF(componentRef = cref1), arg) := traverseExpBidir(Absyn.CREF(eq.connector1), enterFunc, exitFunc, arg);
+        (Absyn.CREF(componentRef = cref2), arg) := traverseExpBidir(Absyn.CREF(eq.connector2), enterFunc, exitFunc, arg);
       then
         Absyn.EQ_CONNECT(cref1, cref2);
 

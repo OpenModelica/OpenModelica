@@ -171,6 +171,7 @@ refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
 regex.mos \
 Rename.mos \
+RenameComponent.mos \
 RenameClass.mos \
 ReverseLookup1.mos \
 ReverseLookup2.mos \
