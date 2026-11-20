@@ -58,6 +58,33 @@ fn csv_booleans_are_numbers() {
 }
 
 #[test]
+fn csv_val() {
+    let d = dir("val");
+    let file = path(&d, "res.csv");
+    std::fs::write(&file, "\"time\",\"x\",\"der(b.x)\"\n0,0,1\n0.5,1,1\n0.5,3,1\n1,5,2\n").unwrap();
+    let mut m = Collect::default();
+    let val = |m: &mut Collect, var: &str, t: f64| scripting::val(m, &file, var, t);
+    assert_eq!(
+        [0.0, 0.25, 0.5, 0.75, 1.0].map(|t| val(&mut m, "x", t)),
+        [0.0, 0.5, 3.0, 4.0, 5.0]
+    );
+    assert_eq!(val(&mut m, "time", 0.3), 0.3);
+    assert_eq!(val(&mut m, "b.der(x)", 0.75), 1.5);
+    assert!(m.0.is_empty());
+    assert!(val(&mut m, "x", 1.5).is_nan());
+    assert!(val(&mut m, "y", 0.5).is_nan());
+    assert_eq!(
+        m.0.iter().map(|(_, s)| s.as_str()).collect::<Vec<_>>(),
+        [
+            "x not defined at time 1.5 (startTime=0, stopTime=1).".to_owned(),
+            format!("y not found in {file}\n"),
+        ]
+    );
+    scripting::close();
+    std::fs::remove_dir_all(d).unwrap();
+}
+
+#[test]
 fn diff_all_finds_csv_names_as_in_mat_files() {
     let d = dir("names");
     let actual = path(&d, "actual.csv");

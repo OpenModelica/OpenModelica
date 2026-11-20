@@ -96,6 +96,7 @@ ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \
 CsvParameterAlias.mos \
+ValResultFormats.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \
 localKnownVars.mos \
