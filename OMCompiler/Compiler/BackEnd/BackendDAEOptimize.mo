@@ -85,6 +85,7 @@ import HashSet;
 import HashTableExpToIndex;
 import HpcOmTaskGraph;
 import Inline;
+import InlineArrayEquations;
 import List;
 import Matching;
 import MetaModelica.Dangerous;
@@ -4312,6 +4313,7 @@ end sortEqnsVarsWeights;
 // e.g. (a,-b) = f(.) -> (a,c) = f(.) with c = -b
 //      (a,b) = (c,d) -> a=c and b = d
 //      {a,b} = {c,d} -> a=c and b = d
+//      {a*b,c} = f(.) -> d = f(.) with d[1] = a*b and d[2] = c
 //      (a,b) = f(a) fixed iterration var
 // author: Vitalij Ruge
 // =============================================================================
@@ -4497,6 +4499,17 @@ algorithm
           left := DAE.TUPLE(MetaModelica.Dangerous.listReverseInPlace(expLst));
           eqn := BackendEquation.generateEquation(left, right, source, attr);
           eqns := BackendEquation.setAtIndex(eqns, i, eqn);
+        elseif withTmpVars and BackendEquation.isArrayEquation(eqn) and
+               not (Expression.isCref(left) or Expression.isCref(right))
+        then // {a*b, c} = f(.)
+          j := idx;
+          (left, idx, vars, eqns) := replaceArrayLiteral(left, tmpVarPrefix, source, attr, idx, vars, eqns);
+          (right, idx, vars, eqns) := replaceArrayLiteral(right, tmpVarPrefix, source, attr, idx, vars, eqns);
+          if idx > j then
+            eqn := BackendEquation.generateEquation(left, right, source, attr);
+            eqns := BackendEquation.setAtIndex(eqns, i, eqn);
+            update := true;
+          end if;
         end if; // lhs <-> rhs
       end if; // complex
     end for; //1:n
@@ -4544,6 +4557,44 @@ algorithm
   end try;
 
 end simplifyComplexFunction2;
+
+protected function replaceArrayLiteral
+  "Replaces an array literal that has an element other than x, der(x) or -x with
+   a new array variable, and adds the equations for the elements of the new
+   variable."
+  input DAE.Exp exp;
+  input String tmpVarPrefix;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes attr;
+  output DAE.Exp outExp = exp;
+  input output Integer idx;
+  input output BackendDAE.Variables vars;
+  input output BackendDAE.EquationArray eqns;
+protected
+  list<DAE.Exp> elements;
+  list<BackendDAE.Equation> elementEqns;
+  DAE.Exp arrayExp;
+  DAE.Type ty = Expression.typeof(exp);
+  Boolean split;
+algorithm
+  if (Expression.isArray(exp) or Expression.isMatrix(exp)) and Types.isSimpleType(DAEUtil.expTypeElementType(ty)) then
+    elements := Expression.flattenArrayExpToList(exp);
+    try
+      _ := List.map(List.map(elements, Expression.replaceDerOpInExp), Expression.expCrefNegCref);
+    else
+      arrayExp := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), ty, {}));
+      (elementEqns, split) := InlineArrayEquations.getScalarArrayEqns({BackendEquation.generateEquation(arrayExp, exp, source, attr)});
+      if split then
+        for cr in ComponentReference.expandCref(Expression.expCref(arrayExp), true) loop
+          vars := BackendVariable.addVar(BackendVariable.createCSEArrayVar(cr, DAEUtil.expTypeElementType(ty), ComponentReferenceBasics.crefDims(cr)), vars);
+        end for;
+        eqns := BackendEquation.addList(elementEqns, eqns);
+        idx := idx + 1;
+        outExp := arrayExp;
+      end if;
+    end try;
+  end if;
+end replaceArrayLiteral;
 
 // =============================================================================
 // section for hets

@@ -6112,13 +6112,18 @@ protected function createSingleArrayEqnCode
   output list<SimCodeVar.SimVar> otempvars;
 protected
   BackendDAE.Equation inEquation;
+  DAE.Exp lhs, rhs;
 algorithm
   // first replace der() to match them as cref $DER. below
   inEquation := match listHead(inEquations)
     case inEquation as BackendDAE.ARRAY_EQUATION(_)
     algorithm
-      inEquation.left := Expression.replaceDerOpInExp(inEquation.left);
-      inEquation.right := Expression.replaceDerOpInExp(inEquation.right);
+      lhs := Expression.replaceDerOpInExp(inEquation.left);
+      rhs := Expression.replaceDerOpInExp(inEquation.right);
+      (lhs, rhs) := Util.swap((Expression.isArray(rhs) or Expression.isMatrix(rhs)) and
+        not (Expression.isArray(lhs) or Expression.isMatrix(lhs) or Expression.isCref(lhs)), lhs, rhs);
+      inEquation.left := lhs;
+      inEquation.right := rhs;
     then inEquation;
     end match;
   (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(inEquation, inVars)
@@ -6163,6 +6168,7 @@ algorithm
     algorithm
       // Flattne multi-dimensional ARRAY{ARRAY} expressions
       expLst := Expression.flattenArrayExpToList(e1);
+      true := BackendVariable.areAllCrefsInVarList(List.map(expLst, Expression.expCrefNegCref), inVars);
       // create the lhs tmp var
       ty := Expression.typeof(e1);
       (basety,dims) := TypesDump.flattenArrayType(ty);
@@ -6205,8 +6211,9 @@ algorithm
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
     // An array equation
-    // lhsexp = rhsexp
+    // lhsexp = rhsexp, solved for an array variable
     case ((BackendDAE.ARRAY_EQUATION(left=lhse, right=rhse, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
+    guard Expression.isArrayType(Expression.typeof(Expression.crefExp(cr)))
     algorithm
       (lhse, _) := BackendDAEUtil.collateArrExp(lhse, NONE());
       (rhse, _) := BackendDAEUtil.collateArrExp(rhse, NONE());

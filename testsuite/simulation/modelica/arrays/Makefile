@@ -20,6 +20,7 @@ ArrayReturn.mos \
 ArraySlice.mos \
 ArraySlice2.mos \
 ArrayArgElementReplaced.mos \
+ArrayEquationNonVariableElements.mos \
 ArraySliceAssigmentFunction.mos \
 SlicedArrayEquationLhs.mos \
 ArrayWithImplicitSubscripts.mos \
