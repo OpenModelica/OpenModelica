@@ -1816,7 +1816,7 @@ package SimCodeCodegenUtil
 
   function simVarIndexRuns
     input list<SimCodeVar.SimVar> vars;
-    output list<tuple<Integer, Integer, Integer, Integer>> runs;
+    output list<tuple<Integer, Integer, Integer, Integer, SimCodeVar.SimVar>> runs;
   end simVarIndexRuns;
 
   function getSimCode

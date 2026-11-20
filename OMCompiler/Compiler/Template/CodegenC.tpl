@@ -3353,14 +3353,12 @@ end functionNonLinearResiduals;
 template linearSystemSetIterVars(list<SimVar> vars, Text &sub)
   "the iteration variables from xloc, runs of consecutive real variables at once"
 ::=
-  (simVarIndexRuns(vars) |> (pos, idx, len, kind) =>
-    if intEq(kind, 1) then if intGt(len, 1) then
-      (match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then
-        'memcpy(&data->localData[0]->realVars[<%idx%>], xloc + <%pos%>, <%len%> * sizeof(double)); /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> ... */')
-    else
-      (match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then '<%cref(var.name, &sub)%> = xloc[<%pos%>];')
-    else
-      (match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then '<%cref(var.name, &sub)%> = xloc[<%pos%>];')
+  (simVarIndexRuns(vars) |> (pos, idx, len, kind, firstVar) =>
+    match firstVar case var as SIMVAR() then
+      if intEq(kind, 1) then if intGt(len, 1) then
+        'memcpy(&data->localData[0]->realVars[<%idx%>], xloc + <%pos%>, <%len%> * sizeof(double)); /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> ... */'
+      else '<%cref(var.name, &sub)%> = xloc[<%pos%>];'
+      else '<%cref(var.name, &sub)%> = xloc[<%pos%>];'
   ;separator="\n")
 end linearSystemSetIterVars;
 
