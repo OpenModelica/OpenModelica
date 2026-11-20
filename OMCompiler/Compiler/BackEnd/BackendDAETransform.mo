@@ -524,7 +524,7 @@ algorithm
 
         // if Jacobian is constant, then check if it is singular
         if jacConstant and isSome(jac) then
-          true := analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
+          analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
         end if;
       else
         jac := NONE();
@@ -611,7 +611,6 @@ protected function analyzeConstantJacobian
   input list<BackendDAE.Var> inVars;
   input list<BackendDAE.Equation> inEqns;
   input BackendDAE.Shared inShared;
-  output Boolean outValid = true;
 protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
@@ -619,32 +618,12 @@ protected
   Integer info;
   String infoStr, syst, varnames, varname, rhsStr, jacStr, eqnstr;
   list<DAE.Exp> beqs;
-  list<Real> rhsVals;
   list<list<Real>> jacVals;
 algorithm
-  jacVals := SymbolicJacobian.evaluateConstantJacobian(inSize, inJac);
-  rhsVals := List.fill(0.0, inSize);
-  (_, info) := System.dgesv(jacVals, rhsVals);
+  info := SymbolicJacobian.constantJacobianZeroPivot(inSize, inJac);
 
-  if info < 0 then
-    // info < 0:  if INFO = -i, the i-th argument had an illegal value
-    // this case should never happen
-    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr), " ;\n  ");
-    eqns := BackendEquation.listEquation(inEqns);
-    vars := BackendVariable.listVar1(inVars);
-    funcs := BackendDAEUtil.getFunctions(inShared);
-    (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
-    beqs := listReverse(beqs);
-    rhsStr := stringDelimitList(List.map(beqs, ExpressionBasics.printExpStr), " ;\n  ");
-    jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
-    eqnstr := BackendDump.dumpEqnsStr(inEqns);
-    syst := eqnstr + "\n[" + jacStr + "] * [" + varnames + "] = [" + rhsStr + "]";
-    Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv", syst});
-    outValid := false;
-  elseif info > 0 then
-    // info > 0:  if INFO = i, U(i,i) is exactly zero. The factorization
-    //            has been completed, but the factor U is exactly
-    //            singular, so the solution could not be computed.
+  if info > 0 then
+    jacVals := SymbolicJacobian.evaluateConstantJacobian(inSize, inJac);
     varname := ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
     infoStr := intString(info);
     varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr), " ;\n  ");
@@ -658,7 +637,6 @@ algorithm
     eqnstr := BackendDump.dumpEqnsStr(inEqns);
     syst := eqnstr + "\n[\n  " + jacStr + "\n]\n  *\n[\n  " + varnames + "\n]\n  =\n[\n  " + rhsStr + "\n]";
     Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst, infoStr, varname});
-    //outValid := false;
   end if;
 end analyzeConstantJacobian;
 

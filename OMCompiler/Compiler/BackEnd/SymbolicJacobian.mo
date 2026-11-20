@@ -1133,6 +1133,130 @@ algorithm
   end match;
 end evaluateConstantJacobian2;
 
+public function constantJacobianZeroPivot
+  "Returns the first k with U(k,k) = 0 in the LU factorization with partial
+  pivoting of a constant Jacobian, as INFO of LAPACK dgetrf, or 0. Only the
+  non-zero elements are stored."
+  input Integer size;
+  input list<tuple<Integer,Integer,BackendDAE.Equation>> jac;
+  output Integer info = 0;
+protected
+  array<list<tuple<Integer,Real>>> rows = arrayCreate(size, {});
+  array<list<Integer>> colRows = arrayCreate(size, {});
+  array<Boolean> pivoted = arrayCreate(size, false);
+  Integer i, j, p;
+  Real r, piv;
+  DAE.Exp exp;
+  list<tuple<Integer,Real>> row, pivotRow;
+algorithm
+  for e in jac loop
+    (i, j, BackendDAE.RESIDUAL_EQUATION(exp = exp)) := e;
+    Values.REAL(r) := Ceval.cevalSimple(exp);
+    if r <> 0.0 then
+      arrayUpdate(rows, i, (j, r) :: rows[i]);
+      arrayUpdate(colRows, j, i :: colRows[j]);
+    end if;
+  end for;
+
+  for i in 1:size loop
+    arrayUpdate(rows, i, List.sort(rows[i], sparseElementColumnGt));
+  end for;
+
+  // colRows[k] holds every row that has a non-zero in column k, and also rows
+  // that are pivoted or lost that non-zero.
+  for k in 1:size loop
+    p := 0;
+    piv := 0.0;
+    for i in colRows[k] loop
+      r := sparseRowLeadingValue(rows[i], k);
+      if not pivoted[i] and abs(r) > abs(piv) then
+        p := i;
+        piv := r;
+      end if;
+    end for;
+
+    if p == 0 then
+      info := k;
+      return;
+    end if;
+
+    arrayUpdate(pivoted, p, true);
+    _ :: pivotRow := rows[p];
+    for i in colRows[k] loop
+      if not pivoted[i] then
+        r := sparseRowLeadingValue(rows[i], k);
+        if r <> 0.0 then
+          _ :: row := rows[i];
+          arrayUpdate(rows, i, sparseRowSubtract(row, pivotRow, r / piv, i, colRows));
+        end if;
+      end if;
+    end for;
+    arrayUpdate(colRows, k, {});
+  end for;
+end constantJacobianZeroPivot;
+
+protected function sparseElementColumnGt
+  input tuple<Integer,Real> e1;
+  input tuple<Integer,Real> e2;
+  output Boolean gt = Util.tuple21(e1) > Util.tuple21(e2);
+end sparseElementColumnGt;
+
+protected function sparseRowLeadingValue
+  "The value in column col of a row whose columns before col are eliminated."
+  input list<tuple<Integer,Real>> row;
+  input Integer col;
+  output Real value;
+algorithm
+  value := match row
+    local
+      Integer c;
+      Real v;
+    case (c, v) :: _ guard c == col then v;
+    else 0.0;
+  end match;
+end sparseRowLeadingValue;
+
+protected function sparseRowSubtract
+  "Returns row - factor * pivotRow. Adds rowIndex to colRows for each fill-in."
+  input list<tuple<Integer,Real>> row;
+  input list<tuple<Integer,Real>> pivotRow;
+  input Real factor;
+  input Integer rowIndex;
+  input array<list<Integer>> colRows;
+  output list<tuple<Integer,Real>> outRow = {};
+protected
+  list<tuple<Integer,Real>> r1 = row, r2 = pivotRow, rest1, rest2;
+  Integer c1, c2;
+  Real v1, v2, v;
+algorithm
+  while not (listEmpty(r1) or listEmpty(r2)) loop
+    (c1, v1) :: rest1 := r1;
+    (c2, v2) :: rest2 := r2;
+    if c1 < c2 then
+      outRow := (c1, v1) :: outRow;
+      r1 := rest1;
+    elseif c2 < c1 then
+      outRow := (c2, -factor * v2) :: outRow;
+      arrayUpdate(colRows, c2, rowIndex :: colRows[c2]);
+      r2 := rest2;
+    else
+      v := v1 - factor * v2;
+      if v <> 0.0 then
+        outRow := (c1, v) :: outRow;
+      end if;
+      r1 := rest1;
+      r2 := rest2;
+    end if;
+  end while;
+
+  for e in r2 loop
+    (c2, v2) := e;
+    outRow := (c2, -factor * v2) :: outRow;
+    arrayUpdate(colRows, c2, rowIndex :: colRows[c2]);
+  end for;
+  outRow := List.append_reverse(outRow, r1);
+end sparseRowSubtract;
+
 protected function checkLinearSystem
   input Integer info;
   input list<DAE.ComponentRef> vars;
