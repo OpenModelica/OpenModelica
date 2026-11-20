@@ -2442,13 +2442,15 @@ algorithm
 end nVariablesReal;
 
 public function simVarIndexRuns
-  "The variables as runs (position in the list, first index, length, kind): kind 1 for
-   real variables with consecutive indices in realVars, else a run of one variable
-   with kind 0 for variables without index, 2 for parameters and 3 for any other."
+  "The variables as runs (position in the list, first index, length, kind, first
+   variable): kind 1 for real variables with consecutive indices in realVars, else a
+   run of one variable with kind 0 for variables without index, 2 for parameters and
+   3 for any other."
   input list<SimCodeVar.SimVar> vars;
-  output list<tuple<Integer, Integer, Integer, Integer>> runs = {};
+  output list<tuple<Integer, Integer, Integer, Integer, SimCodeVar.SimVar>> runs = {};
 protected
   Integer pos = 0, start = -1, len = 0, kind, index;
+  Option<SimCodeVar.SimVar> first = NONE();
 algorithm
   for var in vars loop
     kind := match var.varKind
@@ -2470,20 +2472,21 @@ algorithm
       len := len + 1;
     else
       if len > 0 then
-        runs := (pos - len, start, len, 1) :: runs;
+        runs := (pos - len, start, len, 1, Util.getOption(first)) :: runs;
         len := 0;
       end if;
       if kind == 1 then
         start := index;
         len := 1;
+        first := SOME(var);
       else
-        runs := (pos, index, 1, kind) :: runs;
+        runs := (pos, index, 1, kind, var) :: runs;
       end if;
     end if;
     pos := pos + 1;
   end for;
   if len > 0 then
-    runs := (pos - len, start, len, 1) :: runs;
+    runs := (pos - len, start, len, 1, Util.getOption(first)) :: runs;
   end if;
   runs := listReverse(runs);
 end simVarIndexRuns;

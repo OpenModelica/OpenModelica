@@ -9216,8 +9216,8 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
  one of the parameters."
 ::=
   let len = listLength(simVarIndexRuns(vars))
-  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind) =>
-    match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then
+  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind, firstVar) =>
+    match firstVar case var as SIMVAR() then
       '{<%pos%>, <%idx%>, <%n%>, <%kind%>} /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> */'
     ;separator=",\n")
   <<
