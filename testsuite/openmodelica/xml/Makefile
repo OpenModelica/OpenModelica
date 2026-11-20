@@ -7,6 +7,9 @@ SimpleTriggeredTrapezoid.mos \
 BB.mos \
 Bug3857.mos \
 translateModelXML.mos \
+StateSpaceZeroCrossings.mos \
+XmlDumpEnumerationTypes.mos \
+XmlExportStructure.mos \
 
 
 FAILINGTESTFILES= \

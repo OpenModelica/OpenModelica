@@ -1,0 +1,44 @@
+// name: XmlDumpEnumerationTypes
+// keywords: xml, dump, enumeration, #2799
+// status: correct
+// teardown_command: rm -f XmlEnum.M.xml XmlEnum.part.xml
+//
+// dumpXMLDAE declares the enumeration types of the variables, so that each
+// literal can be mapped to its index.
+
+loadString("
+package XmlEnum
+  type E = enumeration(f, g, h);
+  model M
+    E e = if time > 0.5 then E.g else E.f;
+    parameter StateSelect s = StateSelect.prefer;
+    Real x = if e == E.g then 1 else 0;
+  end M;
+end XmlEnum;
+"); getErrorString();
+dumpXMLDAE(XmlEnum.M); getErrorString();
+system("sed -n '/<enumerationTypes/,/<\\/enumerationTypes>/p' XmlEnum.M.xml > XmlEnum.part.xml"); getErrorString();
+readFile("XmlEnum.part.xml");
+// Result:
+// true
+// ""
+// (true, "XmlEnum.M.xml")
+// ""
+// 0
+// ""
+// "<enumerationTypes dimension=\"2\">
+// <enumerationType name=\"XmlEnum.E\">
+// <literal name=\"f\" index=\"1\" />
+// <literal name=\"g\" index=\"2\" />
+// <literal name=\"h\" index=\"3\" />
+// </enumerationType>
+// <enumerationType name=\"StateSelect\">
+// <literal name=\"never\" index=\"1\" />
+// <literal name=\"avoid\" index=\"2\" />
+// <literal name=\"default\" index=\"3\" />
+// <literal name=\"prefer\" index=\"4\" />
+// <literal name=\"always\" index=\"5\" />
+// </enumerationType>
+// </enumerationTypes>
+// "
+// endResult
