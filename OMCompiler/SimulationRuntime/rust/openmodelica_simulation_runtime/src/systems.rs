@@ -282,22 +282,23 @@ pub fn eval_jacobian(
         return Ok(());
     }
     let sp = unsafe { &*j.sparsePattern };
+    let Some(eval_column) = j.evalColumn else {
+        if !dense {
+            out[..sp.nnz as usize].fill(0.0);
+        }
+        return Ok(());
+    };
     for color in 0..sp.maxColors {
         for column in 0..j.sizeCols {
             if unsafe { *sp.colorCols.add(column) } == color + 1 {
                 unsafe { *j.seedVars.add(column) = 1.0 };
             }
         }
-        match j.evalColumn {
-            Some(f) => {
-                if !crate::support::protected(thread_data, stage, || {
-                    unsafe { f(data, thread_data, jacobian, parent) };
-                }) {
-                    return Err(MODEL_THREW);
-                }
-            }
-            None => return Err("the Jacobian has no column evaluation"),
-        };
+        if !crate::support::protected(thread_data, stage, || {
+            unsafe { eval_column(data, thread_data, jacobian, parent) };
+        }) {
+            return Err(MODEL_THREW);
+        }
         for column in 0..j.sizeCols {
             if unsafe { *sp.colorCols.add(column) } != color + 1 {
                 continue;

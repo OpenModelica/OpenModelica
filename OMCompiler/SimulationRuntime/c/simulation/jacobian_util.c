@@ -359,6 +359,14 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
 
   if (!sp) return; /* no sparsity pattern; Jacobian entries cannot be filled */
 
+  /* no column equations: every derivative in the pattern is zero */
+  if (!jacobian->evalColumn) {
+    if (!isDense) {
+      memset(jac, 0, sp->nnz * sizeof(modelica_real));
+    }
+    return;
+  }
+
   /* evaluate Jacobian */
   for (color = 0; color < sp->maxColors; color++) {
     /* activate seed variable for the corresponding color */
