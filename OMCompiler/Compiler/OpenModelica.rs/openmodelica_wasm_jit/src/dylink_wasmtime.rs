@@ -763,6 +763,7 @@ mod tests {
             name: "triple".into(),
             lang: ExtLang::C,
             args: vec![(SigTy::Real, false)],
+            by_ref: Vec::new(),
             ret: Some(SigTy::Real),
             declare: false,
         };
@@ -830,6 +831,7 @@ mod tests {
             name: "xorshift".into(),
             lang: ExtLang::C,
             args: vec![(ints.clone(), false), (ints, true), (SigTy::Real, true)],
+            by_ref: Vec::new(),
             ret: None,
             declare: false,
         };
@@ -844,6 +846,7 @@ mod tests {
             name: "greet".into(),
             lang: ExtLang::C,
             args: vec![(SigTy::Str, false), (SigTy::Int, false)],
+            by_ref: Vec::new(),
             ret: Some(SigTy::Str),
             declare: false,
         };
@@ -1504,7 +1507,7 @@ fn call_external_in_wasm(
     };
 
     let mut in_i = 0usize;
-    for (ty, is_out) in &sig.args {
+    for (j, (ty, is_out)) in sig.args.iter().enumerate() {
         // A struct: by pointer, or as its member's scalar when it has one member.
         if let SigTy::Record { fields, .. } = ty {
             // An output record is a wasm *result*, so it consumes no parameter.
@@ -1566,7 +1569,7 @@ fn call_external_in_wasm(
             .get(in_i)
             .ok_or_else(|| "external \"C\": the call passes fewer arguments than the signature declares".to_string())?;
         in_i += 1;
-        if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+        if sig.passes_by_ref(j, ty) {
             let cell = alloc(caller, 8)?;
             let raw = match ty {
                 SigTy::Real => v.unwrap_f64().to_le_bytes(),

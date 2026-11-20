@@ -7,7 +7,8 @@
 //! The frame is one 8-byte slot per C argument in declaration order, the return
 //! value in the slot after them ([`result_slot`]). A String or array argument is
 //! the runtime handle; an `_Out_` scalar or String is the address of a cell. A
-//! FORTRAN 77 scalar goes through a cell both ways, arrays column-major.
+//! FORTRAN 77 or `by_ref` C scalar goes through a cell both ways, Fortran arrays
+//! column-major.
 #![no_std]
 extern crate alloc;
 
@@ -47,6 +48,8 @@ impl Ty {
 pub struct Arg {
     pub ty: Ty,
     pub out: bool,
+    /// A C input scalar passed by pointer, as a protected variable is.
+    pub by_ref: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -130,7 +133,8 @@ fn record_size(code: &str) -> Result<u32, String> {
 ///
 /// An `extlib` line names a library the FMU does not ship, opened by soname.
 /// A `fn` line is the name, the language (`C`/`F`), the return type or `-`, then
-/// each argument, `*` marking an `_Out_`. Types are the wasm-jit `SigTy` codes.
+/// each argument, `*` marking an `_Out_` and `&` a `by_ref` input. Types are the
+/// wasm-jit `SigTy` codes.
 pub fn parse(text: &str) -> Result<Table, String> {
     let mut t = Table::default();
     for line in text
@@ -151,13 +155,15 @@ pub fn parse(text: &str) -> Result<Table, String> {
                 };
                 let mut args = Vec::new();
                 for w in words {
-                    let (out, code) = match w.strip_prefix('*') {
-                        Some(c) => (true, c),
-                        None => (false, w),
+                    let (out, by_ref, code) = match (w.strip_prefix('*'), w.strip_prefix('&')) {
+                        (Some(c), _) => (true, false, c),
+                        (_, Some(c)) => (false, true, c),
+                        _ => (false, false, w),
                     };
                     args.push(Arg {
                         ty: parse_ty(code)?,
                         out,
+                        by_ref,
                     });
                 }
                 t.fns.push(Sig {
@@ -204,9 +210,9 @@ pub fn is_cell(sig: &Sig, a: &Arg) -> bool {
     a.out && !matches!(a.ty, Ty::Array(_) | Ty::Record(_)) && !is_ref(sig, a)
 }
 
-/// A FORTRAN 77 scalar: by reference, in and out.
+/// A FORTRAN 77 or `by_ref` C scalar: by reference, in and out.
 pub fn is_ref(sig: &Sig, a: &Arg) -> bool {
-    sig.fortran && matches!(a.ty, Ty::Scalar(_))
+    (sig.fortran || a.by_ref) && matches!(a.ty, Ty::Scalar(_))
 }
 
 /// Row-major <-> column-major, the runtime's `f77_reorder`.
@@ -517,6 +523,22 @@ mod tests {
         assert_eq!(m.read(ret, 4), b"out\0");
         assert_eq!(scratch, vec![ret]);
         assert!(scatter(&sig, frame, &results[..2], &mut m, &mut scratch).is_err());
+    }
+
+    /// `void f(double *y, int *n)` with `n` protected: its value goes in a cell.
+    #[test]
+    fn by_ref_c_scalar() {
+        let sig = parse("fn f C - *[R &I").unwrap().fns.remove(0);
+        assert!(!sig.fortran && sig.args[1].by_ref);
+        assert!(is_ref(&sig, &sig.args[1]) && !is_cell(&sig, &sig.args[1]));
+        let mut m = Mem::default();
+        let n = m.alloc(8);
+        m.store_i32(n, 3);
+        let frame = m.alloc(8 * 3);
+        m.store_i32(frame + 8, n as i32);
+        let y = m.reals_nd(&[0.0, 0.0, 0.0], &[3]);
+        m.store_i32(frame, y as i32);
+        assert_eq!(gather(&sig, frame, &m).unwrap()[1], Value::Int(3));
     }
 
     /// `SUBROUTINE F(N, A, INFO)`, `A` a 2x3 matrix the callee overwrites.

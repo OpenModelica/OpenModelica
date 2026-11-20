@@ -909,7 +909,7 @@ algorithm
         includeDirs := List.union(fn_includeDirs, includeDirs);
         libs := List.union(fn_libs, libs);
         libPaths := List.union(fn_paths, libPaths);
-        simextargs := List.map(extargs, extArgsToSimExtArgs);
+        simextargs := list(extArgsToSimExtArgs(constantExtArg(a, daeElts)) for a in extargs);
         extReturn := extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) := fixOutputIndex(outVars, simextargs, extReturn);
         // make lang to-upper as we have FORTRAN 77 and Fortran 77 in the Modelica Library!
@@ -1028,6 +1028,32 @@ algorithm
         fail();
   end matchcontinue;
 end daeInOutSimVar;
+
+protected function constantExtArg
+  "A reference to a constant is passed as an input (MLS 3.7, section 12.9.1)."
+  input DAE.ExtArg extArg;
+  input list<DAE.Element> elements;
+  output DAE.ExtArg outArg = extArg;
+algorithm
+  outArg := match extArg
+    case DAE.EXTARG()
+      guard Types.isSimpleType(extArg.type_) and
+            List.any(elements, function isConstantVar(cref = extArg.componentRef))
+      then DAE.EXTARGEXP(DAE.CREF(extArg.componentRef, extArg.type_), extArg.type_);
+    else extArg;
+  end match;
+end constantExtArg;
+
+protected function isConstantVar
+  input DAE.Element element;
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match element
+    case DAE.VAR(kind = DAE.CONST()) then ComponentReferenceBasics.crefEqual(element.componentRef, cref);
+    else false;
+  end match;
+end isConstantVar;
 
 protected function extArgsToSimExtArgs
   input DAE.ExtArg extArg;

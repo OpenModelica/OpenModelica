@@ -8,6 +8,7 @@ ExternalInitOrder.mos \
 ExternalFunctionsWasmJit.mos \
 ExternalLibraries.mos \
 ExternalNlsRecovery.mos \
+ExternalProtectedArg.mos \
 ExternalRHSFlag.mos \
 ExternalUncaughtException.mos \
 extObj_ticket3446.mos \

@@ -329,10 +329,17 @@ pub(super) fn native_externals_table(sigs: &[ExtCallSig], libs: &[String], syste
             }
             None => line.push_str(" -"),
         }
-        for (t, out) in &sig.args {
+        for (j, (t, out)) in sig.args.iter().enumerate() {
             code.clear();
             t.write_code(&mut code);
-            line.push_str(&format!(" {}{code}", if *out { "*" } else { "" }));
+            let mark = if *out {
+                "*"
+            } else if sig.by_ref.get(j) == Some(&true) {
+                "&"
+            } else {
+                ""
+            };
+            line.push_str(&format!(" {mark}{code}"));
         }
         out.push_str(&line);
         out.push('\n');

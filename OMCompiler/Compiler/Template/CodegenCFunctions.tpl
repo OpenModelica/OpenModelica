@@ -1514,6 +1514,11 @@ template extFunDefArg(SimExtArg extArg)
     <<
     <%typeStr%>*
     >>
+  case SIMEXTARG(cref=c, outputIndex=0, type_=T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))) then
+    let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
+    <<
+    void * /*<%name%>*/
+    >>
   case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
     let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
     let typeStr = extType(t,ii,ia,false)
@@ -3060,6 +3065,23 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &varFrees, 
       else argName
     let &preExp += '<%cVarName%>_c89 = data_of_<%shortTypeStr%>_c89_array(<%packedArgName%>);<%\n%>'
     '<%cVarName%>_c89'
+
+  // Protected variable: by pointer, as an output (MLS 3.7, section 12.9.1);
+  // a String or external object by value
+  case SIMEXTARG(cref=c, isInput=false, outputIndex=0, type_=t) then
+    let cr = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
+    match t
+    case T_STRING(__) then 'omc_string_data(<%cr%>)'
+    case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then cr
+    case T_COMPLEX(complexClassType=RECORD(__)) then
+      let &varDecls += '<%expTypeShort(t)%>_external <%extVarName(c)%>;<%\n%>'
+      let &preExp += '<%expTypeShort(t)%>_copy_to_external(<%cr%>, <%extVarName(c)%>);<%\n%>'
+      '&<%extVarName(c)%>'
+    else
+      let cType = extType(t, true, false, false)
+      let &varDecls += '<%cType%> <%extVarName(c)%>;<%\n%>'
+      let &preExp += '<%extVarName(c)%> = (<%cType%>) <%cr%>;<%\n%>'
+      '&<%extVarName(c)%>'
 
   // Scalar argument, no output
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then

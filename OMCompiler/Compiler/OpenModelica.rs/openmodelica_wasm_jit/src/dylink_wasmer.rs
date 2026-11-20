@@ -1035,7 +1035,7 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
     };
 
     let mut in_i = 0usize;
-    for (ty, is_out) in &sig.args {
+    for (j, (ty, is_out)) in sig.args.iter().enumerate() {
         // A struct: by pointer, or as its member's scalar when it has one member.
         if let SigTy::Record { fields, .. } = ty {
             // An output record is a wasm *result*, so it consumes no parameter.
@@ -1100,8 +1100,8 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
             .get(in_i)
             .ok_or_else(|| "external \"C\": the call passes fewer arguments than the signature declares".to_string())?;
         in_i += 1;
-        // FORTRAN 77 takes every argument by reference.
-        if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+        // FORTRAN 77 takes every scalar by reference, C a protected one.
+        if sig.passes_by_ref(j, ty) {
             let cell = rt.alloc.call(&mut store, 8).map_err(|e| format!("rt_alloc: {e}"))?;
             let mut raw = [0u8; 8];
             match ty {

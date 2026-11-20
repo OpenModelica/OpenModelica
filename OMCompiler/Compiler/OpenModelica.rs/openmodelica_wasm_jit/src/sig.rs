@@ -185,6 +185,9 @@ pub struct ExtCallSig {
     pub name: String,
     pub lang: ExtLang,
     pub args: Vec<(SigTy, bool)>,
+    /// Per argument: a C input scalar passed by pointer, as a protected variable
+    /// is (MLS 3.7, section 12.9.1). Empty when there is none.
+    pub by_ref: Vec<bool>,
     pub ret: Option<SigTy>,
     /// The function carried no `Include`, so a unit calling it must declare it
     /// itself (C's `extFunDef`).
@@ -192,6 +195,12 @@ pub struct ExtCallSig {
 }
 
 impl ExtCallSig {
+    /// Whether input argument `j` of type `ty` goes as a pointer to a cell that
+    /// holds its value: every FORTRAN 77 scalar, and a `by_ref` C scalar.
+    pub fn passes_by_ref(&self, j: usize, ty: &SigTy) -> bool {
+        matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool)
+            && (self.lang == ExtLang::Fortran77 || self.by_ref.get(j) == Some(&true))
+    }
     /// Array args are always passed by pointer (the buffer is pre-allocated on the
     /// wasm side), so both input and output arrays are wasm *parameters*; only
     /// scalar/string `_Out_` args come back as results.
@@ -239,14 +248,16 @@ impl ExtCallSig {
     /// The signature of a C import in a *shared-memory* module: the C prototype
     /// itself, which is what a library beside the model exports. An `_Out_`
     /// scalar or String is a pointer to a cell the generated code allocates and
-    /// reads back; only the C return value comes back as a result.
+    /// reads back, a `by_ref` scalar one it fills; only the C return value comes
+    /// back as a result.
     pub fn wasm_sig_c_shared(&self) -> FnSig {
         FnSig {
             params: self
                 .args
                 .iter()
-                .map(|(t, is_out)| {
-                    if Self::as_result(t, *is_out) {
+                .enumerate()
+                .map(|(j, (t, is_out))| {
+                    if Self::as_result(t, *is_out) || self.passes_by_ref(j, t) {
                         SigTy::Ptr
                     } else {
                         t.clone()
@@ -358,6 +369,7 @@ mod tests {
             name: "ModelicaRandom_xorshift64star".into(),
             lang: ExtLang::C,
             args: vec![(ints.clone(), false), (ints.clone(), true), (SigTy::Real, true)],
+            by_ref: Vec::new(),
             ret: None,
             declare: false,
         };
@@ -372,10 +384,32 @@ mod tests {
             name: "ModelicaStrings_substring".into(),
             lang: ExtLang::C,
             args: vec![(SigTy::Str, false), (SigTy::Int, false), (SigTy::Int, false)],
+            by_ref: Vec::new(),
             ret: Some(SigTy::Str),
             declare: false,
         };
         assert_eq!(ret.wasm_sig_c_shared().params, vec![SigTy::Str, SigTy::Int, SigTy::Int]);
         assert_eq!(ret.wasm_sig_c_shared().results, vec![SigTy::Str]);
+    }
+
+    /// `void f(double *y, int *n)` with `n` protected: a value in, not a result.
+    #[test]
+    fn by_ref_scalar_is_an_input_pointer() {
+        let reals = SigTy::Array {
+            elem: Arc::new(SigTy::Real),
+            rank: 1,
+        };
+        let sig = ExtCallSig {
+            name: "f".into(),
+            lang: ExtLang::C,
+            args: vec![(reals.clone(), true), (SigTy::Int, false)],
+            by_ref: vec![false, true],
+            ret: None,
+            declare: false,
+        };
+        assert!(sig.passes_by_ref(1, &SigTy::Int) && !sig.passes_by_ref(0, &reals));
+        assert_eq!(sig.wasm_sig().params, vec![reals.clone(), SigTy::Int]);
+        assert!(sig.wasm_sig().results.is_empty());
+        assert_eq!(sig.wasm_sig_c_shared().params, vec![reals, SigTy::Ptr]);
     }
 }
