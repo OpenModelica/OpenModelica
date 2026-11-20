@@ -627,8 +627,9 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
 }
 
 #[cfg(feature = "fmi")]
-/// What [`initialize_nonlinear_systems`] allocated per system.
-pub fn free_nonlinear_systems(data: *mut DATA) {
+/// C's `freeNonlinearSyst`: what [`initialize_nonlinear_systems`] and the model's
+/// `initialNonLinearSystem` allocated per system.
+pub fn free_nonlinear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
     if si.nonlinearSystemData.is_null() {
@@ -647,6 +648,18 @@ pub fn free_nonlinear_systems(data: *mut DATA) {
             &mut sys.max,
         ] {
             unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
+        }
+        unsafe { libc::free(core::mem::replace(&mut sys.eqn_simcode_indices, core::ptr::null_mut()) as *mut c_void) };
+        if let Some(f) = sys.freeStaticNLSData {
+            unsafe { f(data, thread_data, sys) };
+        }
+        let pattern = core::mem::replace(&mut sys.nonlinearPattern, core::ptr::null_mut());
+        if !pattern.is_null() {
+            let p = unsafe { &*pattern };
+            for a in [p.indexVar, p.indexEqn, p.columns, p.rows] {
+                unsafe { libc::free(a as *mut c_void) };
+            }
+            unsafe { libc::free(pattern as *mut c_void) };
         }
         let scratch = core::mem::replace(&mut sys.solverData, core::ptr::null_mut());
         if !scratch.is_null() {
