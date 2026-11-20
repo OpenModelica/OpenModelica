@@ -1377,6 +1377,125 @@ algorithm
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markZeroCrossingEquations;
 
+public function markTimeVaryingEquations
+  "Marks the equations of the blocks whose values can change during the
+   simulation. An unmarked block uses only parameters, constants and the
+   variables of other unmarked blocks, so the values the initialization gives
+   it hold for the whole simulation."
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.StrongComponents comps;
+  input list<BackendDAE.Variables> allVars "the orderedVars of all systems";
+  input output array<Integer> marks;
+protected
+  array<Boolean> varying = arrayCreate(BackendVariable.varsSize(syst.orderedVars), false);
+  list<BackendDAE.Var> vars;
+  list<Integer> varIdxs, eqIdxs;
+  list<BackendDAE.Equation> eqs;
+  Boolean b;
+algorithm
+  for comp in comps loop
+    (vars, varIdxs, eqs, eqIdxs) := getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
+    b := List.any(vars, isTimeVaryingVar);
+    for eq in eqs loop
+      if b then
+        break;
+      end if;
+      (_, (_, b)) := BackendEquation.traverseExpsOfEquation(eq, Expression.traverseSubexpressionsTopDownHelper,
+        (function isTimeVaryingExp(vars = syst.orderedVars, varying = varying, shared = shared, allVars = allVars), false));
+    end for;
+    if b then
+      for i in varIdxs loop
+        arrayUpdate(varying, i, true);
+      end for;
+      for i in eqIdxs loop
+        arrayUpdate(marks, i, 1);
+      end for;
+    end if;
+  end for;
+end markTimeVaryingEquations;
+
+protected function isTimeVaryingVar
+  input BackendDAE.Var var;
+  output Boolean b = BackendVariable.isStateVar(var) or BackendVariable.isVarDiscrete(var) or
+                     BackendVariable.isVarOnTopLevelAndInput(var);
+end isTimeVaryingVar;
+
+protected function isTimeVaryingExp
+  input DAE.Exp exp;
+  input Boolean inVarying;
+  input BackendDAE.Variables vars;
+  input array<Boolean> varying;
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.Variables> allVars;
+  output DAE.Exp outExp = exp;
+  output Boolean cont;
+  output Boolean outVarying = inVarying;
+algorithm
+  if not outVarying then
+    outVarying := match exp
+      local
+        DAE.ComponentRef cr;
+        String name;
+      case DAE.CREF(componentRef = cr) then isTimeVaryingCref(cr, vars, varying, shared, allVars);
+      case DAE.CALL(attr = DAE.CALL_ATTR(isImpure = true)) then true;
+      case DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true)) then true;
+      case DAE.CALL(path = Absyn.IDENT(name = name)) then listMember(name, {"pre", "previous", "edge", "change",
+        "sample", "initial", "terminal", "der", "delay", "spatialDistribution", "$delayZeroCrossing",
+        "$spatialDistributionZeroCrossing", "hold", "noClock", "interval", "firstTick", "subSample",
+        "superSample", "shiftSample", "backSample", "Clock", "$_clkfire"});
+      case DAE.CLKCONST() then true;
+      else false;
+    end match;
+  end if;
+  cont := not outVarying;
+end isTimeVaryingExp;
+
+protected function isTimeVaryingCref
+  "Parameters, constants, external objects and the variables of unmarked
+   blocks are not time-varying; nor are crefs that are no variable, e.g. for
+   iterators. States come after the blocks that use them, so they are checked
+   by kind. The systems share only states, so a variable of another system is
+   time-varying."
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  input array<Boolean> varying;
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.Variables> allVars;
+  output Boolean b = false;
+protected
+  list<BackendDAE.Var> varLst;
+  list<Integer> idxs;
+algorithm
+  if ComponentReferenceBasics.crefEqual(cr, DAE.crefTime) or (match cr
+      local
+        String id;
+      case DAE.CREF_QUAL(ident = id) then listMember(id, {DAE.derivativeNamePrefix, DAE.preNamePrefix, DAE.previousNamePrefix});
+      else false;
+    end match) then
+    b := true;
+  else
+    try
+      (varLst, idxs as _ :: _) := BackendVariable.getVar(cr, vars);
+      b := List.any(varLst, isTimeVaryingVar);
+      for i in idxs loop
+        if varying[i] then
+          b := true;
+          break;
+        end if;
+      end for;
+    else
+      try
+        (varLst as _ :: _, _) := BackendVariable.getVar(cr, shared.globalKnownVars);
+        b := List.any(varLst, BackendVariable.isVarOnTopLevelAndInput);
+      else
+        b := BackendVariable.containsCref(cr, shared.localKnownVars) or BackendVariable.containsCref(cr, shared.aliasVars) or
+             List.any(allVars, function BackendVariable.containsCref(cr = cr));
+      end try;
+    end try;
+  end if;
+end isTimeVaryingCref;
+
 protected function markStateEquationsWork
   "Helper function to mark_state_equation
   Does the job by looking at variable indexes and adjacency matrix.

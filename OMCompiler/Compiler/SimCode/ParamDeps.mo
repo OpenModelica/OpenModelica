@@ -56,6 +56,7 @@ import SimCodeCodegenUtil;
 import SimCodeVar;
 import SimCodeVar.SimVar;
 import UnorderedMap;
+import UnorderedSet;
 import Util;
 
 type IntList = list<Integer>;
@@ -235,7 +236,9 @@ end lookupAll;
 function dependencies
   "The non-literal parameter equations in evaluation order, the initial
    equations of the time-invariant variables the simulation does not
-   calculate, the min, max and nominal attributes bound to parameters, then
+   calculate, the simulation equations that only functionDAE evaluates
+   (SimCode.timeInvariantEquations), the min, max and nominal attributes
+   bound to parameters, then
    the values that only the initialization calculates (parameters with
    fixed=false, variables of `when initial()`; not the states)."
   input SimCode.SimCode simCode;
@@ -247,6 +250,7 @@ protected
   list<tuple<list<Integer>, list<Integer>>> initEqs;
   array<Boolean> mark, simDefined, continuous, invariant;
   SimCode.SimEqSystem e;
+  UnorderedSet<Integer> timeInvariant;
 algorithm
   for eq in SimCodeCodegenUtil.filterScalarLiteralAssignments(simCode.parameterEquations) loop
     e := resolveAlias(eq, byIndex);
@@ -282,6 +286,17 @@ algorithm
       eqs := SimCode.PARAM_DEP_EQ(SOME(eq), uses, defines) :: eqs;
     end if;
   end for;
+
+  if not listEmpty(simCode.timeInvariantEquations) then
+    timeInvariant := UnorderedSet.fromList(simCode.timeInvariantEquations, Util.id, intEq);
+    for eq in simCode.allEquations loop
+      if UnorderedSet.contains(SimCodeCodegenUtil.simEqSystemIndex(eq), timeInvariant) then
+        e := resolveAlias(eq, byIndex);
+        eqs := SimCode.PARAM_DEP_EQ(SOME(eq), lookupAll(eqUses(e, {}, byIndex), slots),
+                                    lookupAll(eqDefines(e, {}, byIndex), slots)) :: eqs;
+      end if;
+    end for;
+  end if;
 
   for eq in List.flatten({simCode.minValueEquations, simCode.maxValueEquations, simCode.nominalValueEquations}) loop
     eqs := match eq

@@ -72,24 +72,8 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 //
 //
-// algebraicEquations (1 systems):
+// algebraicEquations (0 systems):
 // ========================================
-// 14:  (NONLINEAR) index:1 jacobian: true
-// crefs: x
-// 	8: z=5.0 + x ^ 2.0 - 5.0 [Real]
-// 	9: y=z - (9.0 + x) [Real]
-// 	10: z - y ^ 2.0 (RESIDUAL)
-// 	Jacobian idx: -1
-// 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * x.SeedNLSJac1 [Real]
-// 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - x.SeedNLSJac1 [Real]
-// 	13: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + (-2.0) * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real]
-//
-// columnVars(3)
-// ----------------------
-// index:1: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
-// index:0: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
-// index:0: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
-//
 // ========================================
 //
 //
@@ -253,24 +237,8 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 //
 //
-// algebraicEquations (1 systems):
+// algebraicEquations (0 systems):
 // ========================================
-// 20:  (NONLINEAR) index:1 jacobian: true
-// crefs: x
-// 	14: z=5.0 + x ^ 2.0 - 5.0 [Real]
-// 	15: y=z - (9.0 + x) [Real]
-// 	16: z - y ^ 2.0 (RESIDUAL)
-// 	Jacobian idx: -1
-// 	17: z.$pDERNLSJac4.dummyVarNLSJac4=2.0 * x * x.SeedNLSJac4 [Real]
-// 	18: y.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 - x.SeedNLSJac4 [Real]
-// 	19: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + (-2.0) * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real]
-//
-// columnVars(3)
-// ----------------------
-// index:1: y.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
-// index:0: z.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
-// index:0: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
-//
 // ========================================
 //
 //

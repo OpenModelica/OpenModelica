@@ -626,6 +626,8 @@ pub(super) fn build_sim_model(
         &assert_eqs,
         &removed_init_eqs,
         &clocked,
+        // `SimCode.timeInvariantEquations`: only `functionDAE` solves them.
+        &all_eqs,
     ]
     .iter()
     .map(|l| eqs_with_nested(l.as_slice()))
@@ -2778,6 +2780,7 @@ fn nls_homotopy_support(sim_code: &SimCode::SimCode) -> bool {
         || has(flatten_eqs(&sim_code.initialEquations))
         || has(flatten_eqs_ll(&sim_code.odeEquations))
         || has(flatten_eqs_ll(&sim_code.algebraicEquations))
+        || has(flatten_eqs(&sim_code.allEquations))
 }
 
 /// C's `homotopyMethod` model-callback entry, from the same `Config` predicates.

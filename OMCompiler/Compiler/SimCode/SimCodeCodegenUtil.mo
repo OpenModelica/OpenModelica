@@ -598,6 +598,7 @@ algorithm
     case SimCode.SES_MIXED(index=index) then index;
     case SimCode.SES_WHEN(index=index) then index;
     case SimCode.SES_FOR_LOOP(index=index) then index;
+    case SimCode.SES_FOR_EQUATION(index=index) then index;
     case SimCode.SES_ALIAS(index=index) then index;
     else
       algorithm
