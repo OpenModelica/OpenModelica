@@ -1967,6 +1967,22 @@ algorithm
   end match;
 end removePrefix;
 
+public function removeSelfReference
+"@author adrpo
+ Removes self reference from a path if it exists.
+ Examples:
+   removeSelfReference('Icons', 'Icons.BaseLibrary') => 'BaseLibrary'
+   removeSelfReference('Icons', 'BlaBla.BaseLibrary') => 'BlaBla.BaseLibrary'"
+  input  String     className;
+  input  Absyn.Path path;
+  output Absyn.Path outPath;
+algorithm
+  outPath := if stringEq(className, pathFirstIdent(path)) then
+      removePrefix(Absyn.IDENT(className), path)
+    else
+      path;
+end removeSelfReference;
+
 public function removePrefixOpt
   "Removes prefixPath from path and returns the rest of the path, or returns
    NONE() if prefixPath isn't a prefix of path."
