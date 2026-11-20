@@ -138,6 +138,37 @@ algorithm
   end try;
 end evaluateAnnotation;
 
+function evaluateAnnotationRecords
+  "Evaluates the elements of an annotation as record constructor calls, e.g.
+   the Line annotation of a connect equation. An element that cannot be
+   evaluated is returned as name(error)."
+  input Absyn.Program program;
+  input Absyn.Path classPath;
+  input list<Absyn.ElementArg> annotations;
+  output list<String> strings = {};
+protected
+  Boolean b, s;
+algorithm
+  b := FlagsUtil.set(Flags.SCODE_INST, true);
+  s := FlagsUtil.set(Flags.NF_SCALARIZE, true);
+
+  for arg in annotations loop
+    () := match arg
+      case Absyn.ElementArg.MODIFICATION(path = Absyn.Path.IDENT())
+        algorithm
+          strings := evaluateAnnotationRecord(arg, program, classPath) :: strings;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  strings := listReverse(strings);
+  FlagsUtil.set(Flags.SCODE_INST, b);
+  FlagsUtil.set(Flags.NF_SCALARIZE, s);
+end evaluateAnnotationRecords;
+
 protected
 function evaluateAnnotation_dispatch
   "Instantiates the annotation class, gets the DAE and populates the annotation result"
@@ -287,6 +318,53 @@ algorithm
   end if;
 
 end evaluateAnnotation_dispatch;
+
+function evaluateAnnotationRecord
+  input Absyn.ElementArg arg;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
+  output String str;
+protected
+  String name;
+  Option<Absyn.Modification> opt_mod;
+  list<Absyn.ElementArg> mod;
+  SourceInfo info;
+  InstNode cls;
+  Expression exp;
+algorithm
+  Absyn.ElementArg.MODIFICATION(path = Absyn.Path.IDENT(name = name), modification = opt_mod, info = info) := arg;
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    SOME(Absyn.Modification.CLASSMOD(elementArgLst = mod)) := opt_mod;
+
+    if AbsynUtil.onlyLiteralsInAnnotationMod(mod) then
+      (_, cls) := NFInstanceAPI.mkTop(program, scodeFor(program), name);
+    else
+      (_, _, cls) := frontEndFront(program, classPath);
+    end if;
+
+    exp := NFInst.instExp(Absyn.Exp.CALL(Absyn.ComponentRef.CREF_IDENT(name, {}),
+      AbsynUtil.createFuncargsFromElementargs(mod), {}), cls, ANNOTATION_CONTEXT, info);
+    exp := Typing.typeExp(exp, ANNOTATION_CONTEXT, info);
+
+    try
+      exp := NFCeval.evalExp(exp);
+    else
+      exp := EvalConstants.evaluateExp(exp, info);
+    end try;
+
+    str := Expression.toString(SimplifyExp.simplify(exp));
+  else
+    str := name + "(error)";
+  end try;
+
+  if Flags.isSet(Flags.NF_API_NOISE) then
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    ErrorExt.rollBack(getInstanceName());
+  end if;
+end evaluateAnnotationRecord;
 
 public
 function evaluateAnnotations
