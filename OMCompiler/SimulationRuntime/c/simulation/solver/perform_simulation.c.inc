@@ -109,6 +109,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
 {
   int foundEvent = 0 /* false */;
   int timerWasActivated = 0 /* false */;
+  fire_timer_t syncRet;
   data->simulationInfo->noThrowAsserts = 1 /* true */;
   data->simulationInfo->needToReThrow = 0 /* false */;
 
@@ -123,7 +124,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   /***** Event handling *****/
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
 
-  fire_timer_t syncRet = handleTimers(data, threadData, solverInfo);
+  syncRet = handleTimers(data, threadData, solverInfo);
   fire_timer_t syncRet1;
 
   timerWasActivated = syncRet == TIMER_FIRED || syncRet == TIMER_FIRED_EVENT || timerWasActivated;
@@ -543,7 +544,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         spatialCheckpointSize = spatialDistributionStateWords(data, NULL);
         if (spatialCheckpointSize > spatialCheckpointCapacity) {
           spatialCheckpointCapacity = 2 * spatialCheckpointSize;
-          spatialCheckpoint = realloc(spatialCheckpoint, spatialCheckpointCapacity * sizeof(double));
+          spatialCheckpoint = (double*) realloc(spatialCheckpoint, spatialCheckpointCapacity * sizeof(double));
           assertStreamPrint(threadData, spatialCheckpoint != NULL, "Out of memory saving spatialDistribution history");
         }
         spatialDistributionStateWords(data, spatialCheckpoint);
