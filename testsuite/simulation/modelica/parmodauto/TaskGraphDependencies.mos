@@ -1,0 +1,101 @@
+// name:      TaskGraphDependencies
+// keywords:  parmodauto task graph algorithm torn system linear system
+// status:    correct
+// cflags:
+//
+// Two kinds of systems the parmodauto task graph did not handle:
+//  - a call to a function with several outputs stays an algorithm inside the
+//    torn system it is part of, and the loader rejected the system with
+//    "Internal Equation type not yet handled: algorithm";
+//  - a linear system that is not torn is described by its matrix and right
+//    hand side only, and what these read was not listed, so the system
+//    depended on no other task.
+// Checked with the C and the Rust simulation runtime against the values of
+// the sequential simulation.
+//
+
+loadString("
+model AlgorithmInTornSystem
+  function f
+    input Real x;
+    output Real a;
+    output Real b;
+  algorithm
+    a := 2*x;
+    b := x^3;
+    annotation(Inline = false);
+  end f;
+  Real s1(start = 1, fixed = true), s2(start = 0.5, fixed = true);
+  Real y1(start = 0.1), a1, b1;
+  Real y2(start = 0.1), a2, b2;
+equation
+  (a1, b1) = f(y1);
+  y1 + sin(a1 + b1) = s1;
+  der(s1) = -y1;
+  (a2, b2) = f(y2);
+  y2 + sin(a2 + b2) = s2;
+  der(s2) = -y2 + 0.1*b1;
+end AlgorithmInTornSystem;
+
+model LinearSystemUses
+  Real s(start = 1, fixed = true);
+  Real u, x, y;
+equation
+  u = 2 + sin(time + s);
+  x + u*y = s;
+  u*x - y = 1;
+  der(s) = -x;
+end LinearSystemUses;
+");
+getErrorString();
+
+echo(false);
+
+setCommandLineOptions("--parmodauto --simCodeTarget=C");
+resAlgC := simulate(AlgorithmInTornSystem, stopTime=1);
+algorithmC := abs(val(s1, 1.0) - 0.7132821704189992) < 1e-6 and abs(val(s2, 1.0) - 0.359969483253544) < 1e-6;
+errAlgC := getErrorString();
+
+setCommandLineOptions("--simCodeTarget=C+Rust");
+resAlgRust := simulate(AlgorithmInTornSystem, stopTime=1);
+algorithmRust := abs(val(s1, 1.0) - 0.7132821704189992) < 1e-6 and abs(val(s2, 1.0) - 0.359969483253544) < 1e-6;
+errAlgRust := getErrorString();
+
+// Without tearing the linear system is given as A and b.
+setCommandLineOptions("--postOptModules-=tearingSystem --simCodeTarget=C");
+resLinC := simulate(LinearSystemUses, stopTime=1);
+linearC := abs(val(s, 1.0) - 0.6127873760348345) < 1e-6;
+// The system reads u, which another task computes.
+linearUses := regexBool(readFile("LinearSystemUses_ode.json"), "\"tag\":\"system\"[^}]*\"uses\":[[][^]]*\"u\"");
+errLinC := getErrorString();
+
+setCommandLineOptions("--simCodeTarget=C+Rust");
+resLinRust := simulate(LinearSystemUses, stopTime=1);
+linearRust := abs(val(s, 1.0) - 0.6127873760348345) < 1e-6;
+errLinRust := getErrorString();
+
+echo(true);
+
+algorithmC;
+errAlgC;
+algorithmRust;
+errAlgRust;
+linearC;
+linearUses;
+errLinC;
+linearRust;
+errLinRust;
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// true
+// ""
+// true
+// true
+// ""
+// true
+// ""
+// endResult
