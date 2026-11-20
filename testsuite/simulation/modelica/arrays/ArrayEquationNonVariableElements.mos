@@ -4,6 +4,8 @@
 //
 // An array equation {e1, e2, ...} = f(...) where an element is not a variable
 // is split into scalar equations, which are sorted and torn like any other.
+// Array literals from inlined functions can have elements that are arrays
+// themselves, e.g. {-x[2, :], x[1, :]}, and dimensions that are not known.
 
 loadString("
 package ArrayEquationNonVariableElements
@@ -16,6 +18,22 @@ package ArrayEquationNonVariableElements
     input Real t;
     output Real y[2, 2] = {{sin(t), cos(t)}, {t, 1}};
   end g;
+
+  function jj
+    input Real xx[:, :];
+    output Real yy[size(xx, 1), size(xx, 2)];
+  algorithm
+    yy := cat(1, {-xx[2, :], xx[1, :]}, zeros(size(xx, 1) - 2, size(xx, 2)));
+    annotation(Inline = true);
+  end jj;
+
+  function rot
+    input Real xx[:, :];
+    output Real yy[size(xx, 1), size(xx, 2)];
+  algorithm
+    yy := {2*xx[2, :], xx[1, :] + xx[2, :]};
+    annotation(Inline = true);
+  end rot;
 
   function pointGravity
     input Real r[3];
@@ -51,6 +69,35 @@ package ArrayEquationNonVariableElements
     2*z = g(time);
     2*der(x) = f(time);
   end Equations;
+
+  model InlinedRows \"Inlined functions give rows that are not array literals\"
+    Real a[2, 2], b[2, 2], c[2, 2];
+    Real x[2, 2](each start = 1, each fixed = true);
+  equation
+    jj(a) = g(time);
+    rot(b) = g(time);
+    g(time) = rot(c);
+    rot(der(x)) = g(time);
+  end InlinedRows;
+
+  model CallRow \"An element that cannot be expanded gives an array equation\"
+    Real x[2], y[2], a, b;
+  equation
+    {f(time), {a, b}} = {x, y};
+    a = time;
+    b = 1;
+  end CallRow;
+
+  model InlinedRowsInit \"As in PowerSystems.AC3ph.Lines with steady-state initialization\"
+    parameter Real w0 = 1;
+    Real w;
+    Real v[3, 2];
+  initial equation
+    der(v) = w*jj(v);
+  equation
+    w = w0;
+    der(v) = jj(v)*w - v + {{sin(time), 0}, {0, cos(time)}, {1, 2}};
+  end InlinedRowsInit;
 end ArrayEquationNonVariableElements;
 "); getErrorString();
 
@@ -74,6 +121,28 @@ val(z[1, 2], 1.0);
 val(z[2, 1], 1.0);
 val(x[1], 1.0);
 val(x[2], 1.0);
+
+simulate(ArrayEquationNonVariableElements.InlinedRows, stopTime = 1); getErrorString();
+val(a[1, 1], 1.0);
+val(a[2, 2], 1.0);
+val(b[1, 1], 1.0);
+val(b[2, 2], 1.0);
+val(c[1, 2], 1.0);
+val(c[2, 1], 1.0);
+val(x[1, 1], 1.0);
+val(x[2, 2], 1.0);
+
+simulate(ArrayEquationNonVariableElements.CallRow, stopTime = 1); getErrorString();
+val(x[2], 1.0);
+val(y[1], 1.0);
+val(y[2], 1.0);
+
+simulate(ArrayEquationNonVariableElements.InlinedRowsInit, stopTime = 1); getErrorString();
+val(v[1, 1], 0.0);
+val(v[2, 2], 0.0);
+val(v[1, 1], 1.0);
+val(v[2, 2], 1.0);
+val(v[3, 2], 1.0);
 
 // Result:
 // true
@@ -111,4 +180,44 @@ val(x[2], 1.0);
 // 0.5
 // 0.22984915338929526
 // 0.4207341374973617
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.InlinedRows_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.InlinedRows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// -0.5403023058681398
+// 0.5792645075960517
+// 0.2701511529340699
+// 0.7298488470659301
+// 0.42073549240394825
+// 1.270149705851976
+// 1.420732400403579
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.CallRow_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.CallRow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5403023058681398
+// 1.0
+// 1.0
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.InlinedRowsInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.InlinedRowsInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 0.3127511912500346
+// 0.6338958160348089
+// 2.0
 // endResult

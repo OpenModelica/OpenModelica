@@ -117,6 +117,7 @@ import HashTableCrefSimVar;
 import HashTableSimCodeEqCache;
 import HpcOmSimCode;
 import Inline;
+import InlineArrayEquations;
 import List;
 import Matching;
 import MetaModelica.Dangerous;
@@ -6184,11 +6185,10 @@ algorithm
       list<SimCode.SimEqSystem> eqSystlst;
       Integer uniqueEqIndex;
       String str;
-      list<DAE.Dimension> dims;
       list<SimCodeVar.SimVar> tempvars;
       BackendDAE.EquationAttributes eqAttr;
       list<DAE.ComponentRef> crefstmp;
-      DAE.Type ty,basety;
+      DAE.Type ty;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
 
 // A special case for built-in function stateSelectionSet
@@ -6213,12 +6213,10 @@ algorithm
     guard Expression.isMatrix(e1) or Expression.isArray(e1)
     algorithm
       // Flattne multi-dimensional ARRAY{ARRAY} expressions
-      expLst := Expression.flattenArrayExpToList(e1);
+      expLst := InlineArrayEquations.scalarizeArrayExp(e1);
       true := BackendVariable.areAllCrefsInVarList(List.map(expLst, Expression.expCrefNegCref), inVars);
       // create the lhs tmp var
-      ty := Expression.typeof(e1);
-      (basety,dims) := TypesDump.flattenArrayType(ty);
-      ty := DAE.T_ARRAY(basety, dims);
+      ty := DAE.T_ARRAY(DAEUtil.expTypeElementType(Expression.typeof(e1)), list(DAE.DIM_INTEGER(d) for d in ds));
       left := ComponentReferenceBasics.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
 
       lhse := DAE.CREF(left,ty);
