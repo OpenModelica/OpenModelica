@@ -4339,10 +4339,11 @@ protected
   BackendDAE.Equation eqn = BackendDAE.DUMMY_EQUATION(), eqn1;
   DAE.Exp left, right, e1, e2, e, e3;
   list<DAE.Exp> left_lst, right_lst;
-  list<Integer> indRemove;
+  list<Integer> indRemove, dims;
+  list<BackendDAE.Equation> eqnLst;
   DAE.ElementSource source "origin of equation";
   BackendDAE.EquationAttributes attr;
-  Boolean update, sc;
+  Boolean update, sc, split;
   Absyn.Path path;
   list<DAE.Exp> arrayLst, arrayLst2, expLst;
   DAE.CallAttributes cattr;
@@ -4402,37 +4403,15 @@ algorithm
               end if; //isScalar
             end if; // isWild
           end for;
-        elseif Expression.isArray(left) and Expression.isArray(right)
-        then // array{} = array{} // not work with arrayType
-            //print(BackendDump.equationString(eqn) + "--In--\n");
-          try
-            left_lst := Expression.getArrayOrRangeContents(left);
-            right_lst := Expression.getArrayOrRangeContents(right);
+        elseif isArrayLiteral(left) and isArrayLiteral(right)
+        then // array{} = array{}
+          (eqnLst, split) := InlineArrayEquations.getScalarArrayEqns({eqn});
+          // An element equation without variables, e.g. 0 = 0, cannot be matched.
+          if split and List.all(eqnLst, function equationHasVariable(vars = vars)) then
             update := true;
             indRemove := i :: indRemove;
-            for e1 in left_lst loop
-            e2 :: right_lst := right_lst;
-            //print("=>" +  ExpressionBasics.printExpStr(e2) + " = " +  ExpressionBasics.printExpStr(e1) + "\n");
-            if not Expression.isWild(e1) then
-              if Expression.isScalar(e2) then
-              eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
-              eqns := BackendEquation.add(eqn1, eqns);
-              //print(BackendDump.equationString(eqn1) + "--new--\n");
-              else
-              expLst := simplifyComplexFunction2(e1);
-              arrayLst := simplifyComplexFunction2(e2);
-              for e_asub in arrayLst loop
-                e3 :: expLst := expLst;
-                eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
-                eqns := BackendEquation.add(eqn1, eqns);
-                //print(BackendDump.equationString(eqn1) + "--new--\n");
-              end for;
-              end if; //isScalar
-            end if; // isWild
-            end for;
-          else
-            continue;
-          end try;
+            eqns := BackendEquation.addList(eqnLst, eqns);
+          end if;
         elseif withTmpVars and  Expression.isTuple(left) and Expression.isCall(right)  //tuple() = call()
         then
           DAE.TUPLE(PR = left_lst) := left;
@@ -4502,9 +4481,10 @@ algorithm
         elseif withTmpVars and BackendEquation.isArrayEquation(eqn) and
                not (Expression.isCref(left) or Expression.isCref(right))
         then // {a*b, c} = f(.)
+          BackendDAE.ARRAY_EQUATION(dimSize = dims) := eqn;
           j := idx;
-          (left, idx, vars, eqns) := replaceArrayLiteral(left, tmpVarPrefix, source, attr, idx, vars, eqns);
-          (right, idx, vars, eqns) := replaceArrayLiteral(right, tmpVarPrefix, source, attr, idx, vars, eqns);
+          (left, idx, vars, eqns) := replaceArrayLiteral(left, dims, tmpVarPrefix, source, attr, idx, vars, eqns);
+          (right, idx, vars, eqns) := replaceArrayLiteral(right, dims, tmpVarPrefix, source, attr, idx, vars, eqns);
           if idx > j then
             eqn := BackendEquation.generateEquation(left, right, source, attr);
             eqns := BackendEquation.setAtIndex(eqns, i, eqn);
@@ -4563,6 +4543,7 @@ protected function replaceArrayLiteral
    a new array variable, and adds the equations for the elements of the new
    variable."
   input DAE.Exp exp;
+  input list<Integer> dims "the dimensions of the equation";
   input String tmpVarPrefix;
   input DAE.ElementSource source;
   input BackendDAE.EquationAttributes attr;
@@ -4571,30 +4552,55 @@ protected function replaceArrayLiteral
   input output BackendDAE.Variables vars;
   input output BackendDAE.EquationArray eqns;
 protected
-  list<DAE.Exp> elements;
   list<BackendDAE.Equation> elementEqns;
   DAE.Exp arrayExp;
-  DAE.Type ty = Expression.typeof(exp);
+  DAE.Type ty;
   Boolean split;
 algorithm
-  if (Expression.isArray(exp) or Expression.isMatrix(exp)) and Types.isSimpleType(DAEUtil.expTypeElementType(ty)) then
-    elements := Expression.flattenArrayExpToList(exp);
-    try
-      _ := List.map(List.map(elements, Expression.replaceDerOpInExp), Expression.expCrefNegCref);
-    else
-      arrayExp := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), ty, {}));
-      (elementEqns, split) := InlineArrayEquations.getScalarArrayEqns({BackendEquation.generateEquation(arrayExp, exp, source, attr)});
-      if split then
-        for cr in ComponentReference.expandCref(Expression.expCref(arrayExp), true) loop
-          vars := BackendVariable.addVar(BackendVariable.createCSEArrayVar(cr, DAEUtil.expTypeElementType(ty), ComponentReferenceBasics.crefDims(cr)), vars);
-        end for;
-        eqns := BackendEquation.addList(elementEqns, eqns);
-        idx := idx + 1;
-        outExp := arrayExp;
-      end if;
-    end try;
+  if not isArrayLiteral(exp) then
+    return;
+  end if;
+  ty := DAEUtil.expTypeElementType(Expression.typeof(exp));
+  if not Types.isSimpleType(ty) or isVariableArrayLiteral(exp) then
+    return;
+  end if;
+  // The type of the literal can have unknown dimensions, e.g. from an inlined function.
+  arrayExp := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx),
+    DAE.T_ARRAY(ty, list(DAE.DIM_INTEGER(d) for d in dims)), {}));
+  (elementEqns, split) := InlineArrayEquations.getScalarArrayEqns({BackendDAE.ARRAY_EQUATION(dims, arrayExp, exp, source, attr, NONE())});
+  if split then
+    for cr in ComponentReference.expandCref(Expression.expCref(arrayExp), true) loop
+      vars := BackendVariable.addVar(BackendVariable.createCSEArrayVar(cr, ty, ComponentReferenceBasics.crefDims(cr)), vars);
+    end for;
+    eqns := BackendEquation.addList(elementEqns, eqns);
+    idx := idx + 1;
+    outExp := arrayExp;
   end if;
 end replaceArrayLiteral;
+
+protected function isArrayLiteral
+  input DAE.Exp exp;
+  output Boolean b = Expression.isArray(exp) or Expression.isMatrix(exp);
+end isArrayLiteral;
+
+protected function equationHasVariable
+  input BackendDAE.Equation eqn;
+  input BackendDAE.Variables vars;
+  output Boolean b = not listEmpty(BackendEquation.equationVars(eqn, vars));
+end equationHasVariable;
+
+protected function isVariableArrayLiteral
+  "Returns true if all scalar elements of the array literal are x, der(x) or -x."
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  try
+    _ := List.map(List.map(InlineArrayEquations.scalarizeArrayExp(exp), Expression.replaceDerOpInExp), Expression.expCrefNegCref);
+    b := true;
+  else
+    b := false;
+  end try;
+end isVariableArrayLiteral;
 
 // =============================================================================
 // section for hets
