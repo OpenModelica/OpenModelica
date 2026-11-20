@@ -32,7 +32,7 @@ simulate(Alias_pre); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) y = $FUN_1; ($RES_SIM_2)
 // 	[SCAL] (1) y = 3.0 + x; ($RES_SIM_3)

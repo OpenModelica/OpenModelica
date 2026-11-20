@@ -1160,6 +1160,9 @@ protected
     marked_vars := listArray(list(var_map[var_idx] < 0 for var_idx in UnorderedMap.valueList(variables.map)));
     single_vars := list(var_ptr for var_ptr in VariablePointers.getMarkedVars(variables, marked_vars));
 
+    // TODO also look at aliases and mark them as belonging to a partition
+    // are empty partitions removed even if they have alias variables?
+
     if not listEmpty(single_vars) then
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " (" + Partition.Partition.kindToString(kind)
         + ") failed because the following variables could not be assigned to a partition:\n  {"

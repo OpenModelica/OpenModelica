@@ -78,7 +78,10 @@ val(m, 0.8);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [SCAL] (1) $DER.x = 1.0; ($RES_SIM_5)
+// "
 // 1.0
 // record SimulationResult
 //     resultFile = "whenIfStatements.Mixed_res.mat",
@@ -88,7 +91,10 @@ val(m, 0.8);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [SCAL] (1) $DER.x = 1.0; ($RES_SIM_9)
+// "
 // 2.0
 // 0.3599999998699947
 // 4.0
