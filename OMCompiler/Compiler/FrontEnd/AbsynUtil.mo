@@ -40,6 +40,7 @@ import Absyn;
 import Dump;
 import Error;
 import List;
+import StringUtil;
 import System;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -3618,6 +3619,35 @@ algorithm
       then Absyn.IFEXP(cond,tb,e,{});
   end match;
 end canonIfExp;
+
+public function createFuncargsFromElementargs
+  "Transforms the modifications in a list of element arguments to named
+   function arguments, e.g. to make a record constructor call from a
+   graphical annotation. Vendor-specific elements (__Vendor_name) are not
+   fields of the record and are skipped."
+  input list<Absyn.ElementArg> args;
+  output Absyn.FunctionArgs fargs;
+protected
+  list<Absyn.NamedArg> named_args = {};
+  String id;
+  Absyn.Exp exp;
+algorithm
+  for arg in args loop
+    () := match arg
+      case Absyn.MODIFICATION(path = Absyn.IDENT(name = id),
+          modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp))))
+        guard not StringUtil.startsWith(id, "__")
+        algorithm
+          named_args := Absyn.NAMEDARG(id, exp) :: named_args;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  fargs := Absyn.FUNCTIONARGS({}, listReverse(named_args));
+end createFuncargsFromElementargs;
 
 public function onlyLiteralsInAnnotationMod
 "@author: adrpo

@@ -35,6 +35,7 @@ CheckModelPartial3.mos \
 choicesAllMatching.mos \
 Cmd1.mos \
 Cmd2.mos \
+ConnectionAnnotation.mos \
 ConnectionList.mos \
 ConversionVersions.mos \
 ConvertUnits.mos \
