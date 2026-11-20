@@ -157,7 +157,7 @@ algorithm
       algorithm
         dim := Type.nthDimension(Expression.typeOf(e), 1);
 
-        if Dimension.isZero(dim) then
+        if Dimension.isAlwaysZero(dim) then
           // Discard the for-loop if the iteration range is empty.
         elseif Dimension.isOne(dim) and Flags.getConfigBool(Flags.NEW_BACKEND) then
           // Unroll the loop if the iteration range is size 1.
@@ -235,7 +235,7 @@ algorithm
   Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode) := eq;
   ty := Type.mapDims(ty, simplifyDimension);
 
-  if Type.isEmptyArray(ty) then
+  if Type.isAlwaysEmptyArray(ty) then
     return;
   end if;
 

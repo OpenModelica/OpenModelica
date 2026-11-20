@@ -61,6 +61,7 @@ resizableTearStart.mos \
 resizableCalcSizeParam.mos \
 resizableEmptyRange.mos \
 resizableReverseRange.mos \
+resizableEmptyInitSlice.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \

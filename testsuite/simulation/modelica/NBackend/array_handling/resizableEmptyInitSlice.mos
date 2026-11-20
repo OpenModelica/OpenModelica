@@ -1,0 +1,61 @@
+// name: resizableEmptyInitSlice
+// keywords: NewBackend resizable initial equation empty slice
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableEmptyInitSlice resizableEmptyInitSlice_* resizableEmptyInitSlice.log
+//
+// Equations that are empty only for the original value of a resizable
+// parameter (2:N-1 with N = 2) are kept, so they apply when N is larger
+// at runtime.
+
+loadString("
+model resizableEmptyInitSlice
+  model Pipe
+    parameter Integer N;
+    parameter Boolean useFor = false;
+    parameter Real pstart[N] = {2e5 - 1e4*(i - 1)/(N - 1) for i in 1:N};
+    Real p[N](each start = 1.5e5);
+    Real q[N + 1];
+    input Real pin, pout;
+  initial equation
+    if useFor then
+      for i in 2:N - 1 loop
+        p[i] = pstart[i];
+      end for;
+    else
+      p[2:N - 1] = pstart[2:N - 1];
+    end if;
+  equation
+    for i in 1:N loop
+      der(p[i]) = q[i] - q[i + 1];
+    end for;
+    for i in 1:N - 1 loop
+      q[i + 1] = 1e-3*(p[i] - p[i + 1]);
+    end for;
+    p[1] = pin;
+    p[N] = pout;
+  end Pipe;
+  parameter Integer N_vol = 2;
+  Pipe a(N = N_vol, pin = 2e5 + time, pout = 1.9e5);
+  Pipe b(N = N_vol, useFor = true, pin = 2e5 + time, pout = 1.9e5);
+end resizableEmptyInitSlice;
+"); getErrorString();
+
+buildModel(resizableEmptyInitSlice, stopTime = 1); getErrorString();
+system("./resizableEmptyInitSlice -override=N_vol=4", "resizableEmptyInitSlice.log");
+val(a.p[2], 0, "resizableEmptyInitSlice_res.mat");
+val(a.p[3], 0, "resizableEmptyInitSlice_res.mat");
+val(b.p[2], 0, "resizableEmptyInitSlice_res.mat");
+val(b.p[3], 0, "resizableEmptyInitSlice_res.mat");
+// Result:
+// true
+// ""
+// {"resizableEmptyInitSlice", "resizableEmptyInitSlice_init.xml"}
+// ""
+// 0
+// 196666.66666666666
+// 193333.33333333334
+// 196666.66666666666
+// 193333.33333333334
+// endResult
