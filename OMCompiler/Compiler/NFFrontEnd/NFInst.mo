@@ -2724,7 +2724,12 @@ algorithm
     case Absyn.TPATH()
       algorithm
         (node, prefixes) := Lookup.lookupClassName(typeSpec.path, scope, context, info);
-        checkRecursiveDefinition(node, parent, limitReached = instLevel >= 100);
+
+        // An instantiated class is reused, so the depth limit cannot catch a
+        // loop through it. Other classes may occur again if the tree is finite.
+        if instLevel >= 100 or isInstantiatedClass(node) then
+          checkRecursiveDefinition(node, parent, limitReached = instLevel >= 100);
+        end if;
 
         node := expand(node, context);
         (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel,
@@ -2798,6 +2803,16 @@ algorithm
     fail();
   end if;
 end checkRecursiveDefinition;
+
+function isInstantiatedClass
+  input InstNode node;
+  output Boolean res;
+algorithm
+  res := match InstNode.getClass(node)
+    case Class.EXPANDED_CLASS(elements = ClassTree.INSTANTIATED_TREE()) then true;
+    else false;
+  end match;
+end isInstantiatedClass;
 
 function updateParameterBinding
   "Tries to update the binding of a fixed parameter without binding by using the
