@@ -739,11 +739,7 @@ template StartString3(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
-case SIMVAR(varKind = STATE(__)) then
-  if stringEq(getFMI3StateInitialStr(simVar), "") then ''
-  else
-    let s = startString3(simVar)
-    if stringEq(s, "") then ' start="0.0"' else s
+case SIMVAR(varKind = STATE(__)) then stateStartAttr(simVar)
 else StartString2(simVar)
 end StartString3;
 
@@ -754,14 +750,18 @@ template ArrayStartString3(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
-case SIMVAR(varKind = STATE(__)) then
-  let s = getFMI3StateStart(simVar)
-  if stringEq(s, "") then '' else ' start="<%s%>"'
+case SIMVAR(varKind = STATE(__)) then stateStartAttr(simVar)
 case SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then arrayStartAttr(simVar)
 case SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then arrayStartAttr(simVar)
 case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then arrayStartAttr(simVar)
 else ''
 end ArrayStartString3;
+
+template stateStartAttr(SimVar simVar)
+::=
+  let s = getFMI3StateStart(simVar)
+  if stringEq(s, "") then '' else ' start="<%s%>"'
+end stateStartAttr;
 
 template arrayStartAttr(SimVar simVar)
 ::=
