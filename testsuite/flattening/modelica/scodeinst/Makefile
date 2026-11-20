@@ -1103,6 +1103,8 @@ RecursiveExtends4.mo \
 RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
+RecursiveInst4.mo \
+RecursiveInst5.mo \
 RedeclareClass1.mo \
 RedeclareClass2.mo \
 RedeclareClassComponent.mo \
