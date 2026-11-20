@@ -333,7 +333,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Shows all warnings even if a related log-stream is inactive.".as_ptr(),
     c"  Value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto".as_ptr(),
     c"  Selects the parmodauto scheduler: 'flow' (default) or 'level'. Switchable at run time without recompiling the simulator.".as_ptr(),
-    c"  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', or 'none'.".as_ptr(),
+    c"  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', 'merge_across_levels', or 'none'.".as_ptr(),
     c"  Sets the maximum number of clusters per level used by the default clustering.".as_ptr(),
     c"  Exports the parmodauto task graph (tasks, dependencies) and the resulting clustering to the given json file, keyed by equation index.".as_ptr(),
     c"  Imports a clustering (groups of equation indices) from the given json file instead of computing one. The simulation aborts if the clustering is invalid (forms a cycle or references unknown equations).".as_ptr(),

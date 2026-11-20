@@ -40,6 +40,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <utility>
 
 namespace openmodelica { namespace parmodelica {
 
@@ -701,6 +702,285 @@ struct cluster_fixed_width_min_height {
                     task_system.sys_graph[rep].lane = target_lane;
             }
         }
+
+        task_system.levels_valid = false;
+    }
+};
+
+/*! Merges clusters that depend on each other, also when they are on different
+    levels, until every cluster communicates less than it computes: the number
+    of clusters it exchanges values with is below its number of equations. A
+    merge that closes a cycle in the cluster graph is not done.
+
+    Only the structure of the task graph is used, not the measured costs, so the
+    result is the same in every run. */
+struct cluster_merge_across_levels {
+    static std::string name() { return "cluster_merge_across_levels"; }
+
+    template <typename TaskSystemType>
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_merge_across_levels") {
+        task_system.dump_graphml(cluster_merge_across_levels::name() + "_" + suffix);
+    }
+
+    /*! The cluster of every task, for a task graph given as the tasks each task
+        is read by. Every edge must point to a later task. `rejected` counts the
+        merges that were not done because of a cycle. */
+    static std::vector<int> partition(const std::vector<std::vector<int> >& children, long& rejected) {
+        const int n = (int)children.size();
+        rejected = 0;
+
+        std::vector<int>            cluster_of(n);
+        std::vector<std::vector<int> > members(n);
+        std::vector<std::set<int> > succ(n), pred(n);
+        /* A topological numbering of the clusters: label[a] < label[b] for every edge a -> b. */
+        std::vector<long> label(n);
+        std::vector<char> alive(n, 1);
+        for (int i = 0; i < n; ++i) {
+            cluster_of[i] = i;
+            members[i].push_back(i);
+            label[i] = i;
+            for (size_t e = 0; e < children[i].size(); ++e) {
+                succ[i].insert(children[i][e]);
+                pred[children[i][e]].insert(i);
+            }
+        }
+
+        std::vector<int> seen(n, -1);
+        std::vector<int> stack;
+        int              stamp = 0;
+        /* Is b reached from a by more than the edge a -> b? Then merging them closes a cycle. */
+        auto other_path = [&](int a, int b) -> bool {
+            ++stamp;
+            stack.clear();
+            for (std::set<int>::iterator x = succ[a].begin(); x != succ[a].end(); ++x)
+                if (*x != b && label[*x] < label[b]) {
+                    seen[*x] = stamp;
+                    stack.push_back(*x);
+                }
+            while (!stack.empty()) {
+                const int x = stack.back();
+                stack.pop_back();
+                for (std::set<int>::iterator y = succ[x].begin(); y != succ[x].end(); ++y) {
+                    if (*y == b)
+                        return true;
+                    if (label[*y] < label[b] && seen[*y] != stamp) {
+                        seen[*y] = stamp;
+                        stack.push_back(*y);
+                    }
+                }
+            }
+            return false;
+        };
+
+        auto common = [](const std::set<int>& x, const std::set<int>& y) -> size_t {
+            const std::set<int>& fewer = x.size() < y.size() ? x : y;
+            const std::set<int>& more = x.size() < y.size() ? y : x;
+            size_t               count = 0;
+            for (std::set<int>::const_iterator it = fewer.begin(); it != fewer.end(); ++it)
+                count += more.count(*it);
+            return count;
+        };
+
+        /* The clusters still to look at, the one with the fewest equations first. */
+        std::set<std::pair<size_t, int> > work;
+        for (int c = 0; c < n; ++c)
+            work.insert(std::make_pair(members[c].size(), c));
+
+        while (!work.empty()) {
+            const size_t ops = work.begin()->first;
+            const int    c = work.begin()->second;
+            work.erase(work.begin());
+            if (!alive[c] || members[c].size() != ops || succ[c].size() + pred[c].size() < ops)
+                continue;
+
+            /* The neighbours, the one that leaves the least communication first. */
+            std::vector<std::pair<std::pair<size_t, size_t>, std::pair<int, int> > > candidates;
+            for (int dir = 0; dir < 2; ++dir) {
+                const std::set<int>& neighbours = dir == 0 ? pred[c] : succ[c];
+                for (std::set<int>::const_iterator it = neighbours.begin(); it != neighbours.end(); ++it) {
+                    const int    a = dir == 0 ? *it : c;
+                    const int    b = dir == 0 ? c : *it;
+                    const size_t comm = succ[a].size() + succ[b].size() - common(succ[a], succ[b]) - 1 +
+                                        pred[a].size() + pred[b].size() - common(pred[a], pred[b]) - 1;
+                    candidates.push_back(std::make_pair(std::make_pair(comm, members[a].size() + members[b].size()),
+                                                        std::make_pair(a, b)));
+                }
+            }
+            std::sort(candidates.begin(), candidates.end());
+
+            for (size_t k = 0; k < candidates.size(); ++k) {
+                const int a = candidates[k].second.first;
+                const int b = candidates[k].second.second;
+                if (other_path(a, b)) {
+                    ++rejected;
+                    continue;
+                }
+
+                const int  s = std::min(a, b);
+                const int  o = std::max(a, b);
+                const long merged_label = label[b];
+                members[s].insert(members[s].end(), members[o].begin(), members[o].end());
+                for (size_t m = 0; m < members[o].size(); ++m)
+                    cluster_of[members[o][m]] = s;
+                members[o].clear();
+                for (std::set<int>::iterator x = succ[o].begin(); x != succ[o].end(); ++x) {
+                    pred[*x].erase(o);
+                    if (*x != s) {
+                        succ[s].insert(*x);
+                        pred[*x].insert(s);
+                    }
+                }
+                for (std::set<int>::iterator x = pred[o].begin(); x != pred[o].end(); ++x) {
+                    succ[*x].erase(o);
+                    if (*x != s) {
+                        pred[s].insert(*x);
+                        succ[*x].insert(s);
+                    }
+                }
+                succ[o].clear();
+                pred[o].clear();
+                alive[o] = 0;
+
+                /* The merged cluster takes the later label; move the clusters after it up. */
+                label[s] = merged_label;
+                stack.assign(1, s);
+                while (!stack.empty()) {
+                    const int x = stack.back();
+                    stack.pop_back();
+                    for (std::set<int>::iterator y = succ[x].begin(); y != succ[x].end(); ++y)
+                        if (label[*y] <= label[x]) {
+                            label[*y] = label[x] + 1;
+                            stack.push_back(*y);
+                        }
+                }
+
+                /* Their communication changed, so a merge can be needed or possible now. */
+                work.insert(std::make_pair(members[s].size(), s));
+                for (std::set<int>::iterator x = succ[s].begin(); x != succ[s].end(); ++x)
+                    work.insert(std::make_pair(members[*x].size(), *x));
+                for (std::set<int>::iterator x = pred[s].begin(); x != pred[s].end(); ++x)
+                    work.insert(std::make_pair(members[*x].size(), *x));
+                break;
+            }
+        }
+
+        return cluster_of;
+    }
+
+    /*! Kahn's algorithm on the cluster graph of a partition. */
+    static bool is_acyclic(const std::vector<std::vector<int> >& children, const std::vector<int>& cluster_of) {
+        const int                   n = (int)children.size();
+        std::vector<std::set<int> > succ(n);
+        std::vector<int>            indeg(n, 0);
+        for (int i = 0; i < n; ++i)
+            for (size_t e = 0; e < children[i].size(); ++e) {
+                const int a = cluster_of[i];
+                const int b = cluster_of[children[i][e]];
+                if (a != b && succ[a].insert(b).second)
+                    ++indeg[b];
+            }
+        std::vector<int> ready;
+        for (int c = 0; c < n; ++c)
+            if (indeg[c] == 0)
+                ready.push_back(c);
+        int visited = 0;
+        while (!ready.empty()) {
+            const int a = ready.back();
+            ready.pop_back();
+            ++visited;
+            for (std::set<int>::iterator b = succ[a].begin(); b != succ[a].end(); ++b)
+                if (--indeg[*b] == 0)
+                    ready.push_back(*b);
+        }
+        return visited == n;
+    }
+
+    template <typename TaskSystemType>
+    static void apply(TaskSystemType& task_system) {
+
+        typedef typename TaskSystemType::GraphType              GraphType;
+        typedef typename TaskSystemType::ClusterType            ClusterType;
+        typedef typename TaskSystemType::ClusterIdType          ClusterIdType;
+        typedef typename TaskSystemType::vertex_iterator        vertex_iterator;
+        typedef typename TaskSystemType::adjacency_iterator     adjacency_iterator;
+        typedef typename TaskSystemType::inv_adjacency_iterator inv_adjacency_iterator;
+
+        GraphType&          sys_graph = task_system.sys_graph;
+        const ClusterIdType root_id = task_system.root_node_id;
+
+        std::map<ClusterIdType, int> id_to_idx;
+        std::vector<ClusterIdType>   vid;
+        vertex_iterator              vert_iter, vert_end;
+        for (std::tie(vert_iter, vert_end) = vertices(sys_graph); vert_iter != vert_end; ++vert_iter) {
+            if (*vert_iter == root_id)
+                continue;
+            id_to_idx[*vert_iter] = (int)vid.size();
+            vid.push_back(*vert_iter);
+        }
+
+        const int                      n = (int)vid.size();
+        std::vector<std::vector<int> > children(n);
+        for (int i = 0; i < n; ++i) {
+            adjacency_iterator c_iter, c_end;
+            for (std::tie(c_iter, c_end) = adjacent_vertices(vid[i], sys_graph); c_iter != c_end; ++c_iter) {
+                const int c = id_to_idx.at(*c_iter);
+                if (c <= i) {
+                    std::cerr << "cluster_merge_across_levels: a task depends on a later task; skipping clustering."
+                              << std::endl;
+                    return;
+                }
+                children[i].push_back(c);
+            }
+        }
+
+        long                   rejected = 0;
+        const std::vector<int> cluster_of = partition(children, rejected);
+        if (!is_acyclic(children, cluster_of)) {
+            std::cerr << "cluster_merge_across_levels: the clusters form a cycle; skipping clustering." << std::endl;
+            return;
+        }
+
+        /* A cluster evaluates its tasks in the order they have in the task graph. */
+        int num_clusters = 0;
+        for (int i = 0; i < n; ++i) {
+            const ClusterIdType dest_id = vid[cluster_of[i]];
+            const ClusterIdType src_id = vid[i];
+            if (dest_id == src_id) {
+                ++num_clusters;
+                continue;
+            }
+            ClusterType& dest = sys_graph[dest_id];
+            ClusterType& src = sys_graph[src_id];
+            for (typename ClusterType::iterator task_iter = src.begin(); task_iter != src.end(); ++task_iter)
+                dest.add_task(*task_iter);
+
+            std::vector<ClusterIdType> src_children, src_parents;
+            adjacency_iterator         c_iter, c_end;
+            for (std::tie(c_iter, c_end) = adjacent_vertices(src_id, sys_graph); c_iter != c_end; ++c_iter)
+                src_children.push_back(*c_iter);
+            inv_adjacency_iterator p_iter, p_end;
+            for (std::tie(p_iter, p_end) = inv_adjacent_vertices(src_id, sys_graph); p_iter != p_end; ++p_iter)
+                src_parents.push_back(*p_iter);
+            for (size_t k = 0; k < src_children.size(); ++k)
+                if (src_children[k] != dest_id)
+                    add_edge(dest_id, src_children[k], sys_graph);
+            for (size_t k = 0; k < src_parents.size(); ++k)
+                if (src_parents[k] != dest_id)
+                    add_edge(src_parents[k], dest_id, sys_graph);
+            remove_vertex(src_id, sys_graph);
+        }
+
+        /* The root is the parent of the clusters without one only. */
+        adjacency_iterator         c_iter, c_end;
+        std::vector<ClusterIdType> root_children;
+        for (std::tie(c_iter, c_end) = adjacent_vertices(root_id, sys_graph); c_iter != c_end; ++c_iter)
+            root_children.push_back(*c_iter);
+        for (size_t k = 0; k < root_children.size(); ++k)
+            if (in_degree(root_children[k], sys_graph) > 1)
+                remove_edge(root_id, root_children[k], sys_graph);
+
+        std::cout << "cluster_merge_across_levels: " << n << " tasks in " << num_clusters << " clusters, " << rejected
+                  << " merges not done because of a cycle" << std::endl;
 
         task_system.levels_valid = false;
     }

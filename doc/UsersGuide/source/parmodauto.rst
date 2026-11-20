@@ -38,7 +38,8 @@ JSON export/import. They are passed to the generated executable (e.g. via
 
   -parmodScheduler=flow|level          select the scheduler (default: flow)
   -parmodClustering=NAME               select the clustering strategy
-                                       (default, fixed_width_min_height, none)
+                                       (default, fixed_width_min_height,
+                                       merge_across_levels, none)
   -parmodClustersPerLevel=INT          max clusters per level for the default clustering
 
   -parmodExportTaskGraph=FILE          export the final task graph + clustering as JSON
@@ -46,6 +47,28 @@ JSON export/import. They are passed to the generated executable (e.g. via
                                        clustering optimization (PREFIX.00.initial.json,
                                        PREFIX.01.<opt>.json, ...)
   -parmodImportClustering=FILE         use the clustering from FILE instead of computing one
+
+The clustering strategies are:
+
+``default``
+  Merge a task with its only parent and its siblings up to a cost limit, then
+  merge the clusters of every level into a limited number of clusters of about
+  the same measured cost.
+
+``fixed_width_min_height``
+  Put the tasks of every level into as many lanes as there are threads and
+  move tasks between the lanes of a level to make the longest path shorter.
+
+``merge_across_levels``
+  Merge clusters that depend on each other, also when they are on different
+  levels. A cluster is merged with one of its neighbours as long as the number
+  of clusters it exchanges values with is not below its number of equations. A
+  merge that closes a cycle in the cluster graph is not done. This strategy uses
+  the structure of the task graph only, so the clusters are the same in every
+  run.
+
+``none``
+  One cluster per equation.
 
 Importing a clustering aborts the simulation (with an error) if the file
 references an unknown or duplicated equation, or if the requested clustering
@@ -124,7 +147,34 @@ export or ``-parmodDumpStages`` snapshot.
     julia parmod_optimize_clustering.jl --algorithm AEO --cores 8 --iters 500 taskgraph.json
     julia parmod_optimize_clustering.jl --run --exe ./m taskgraph.json      # optimize, then simulate
 
-  Options include ``-a/--algorithm`` (``GWO``, ``WOA``, ``AEO``, ``SSA``, … —
+  With ``--objective merge_across_levels`` the script searches the clustering of
+  the ``merge_across_levels`` strategy instead. The runtime merges the clusters
+  in one fixed order; here every dependency has a priority, the merges are tried
+  by decreasing priority, and the metaheuristic searches the priorities for the
+  clustering with the shortest estimated evaluation time. A merge that closes a
+  cycle is not done, so the result is safe to import.
+
+  The time is estimated with a lower bound (``--estimate bound``, the default):
+  the longest path of cluster costs, or the total cost divided by ``K`` when
+  that is longer. ``--estimate schedule`` is a simulated evaluation instead:
+  ``K`` threads take the clusters that are ready, and a cluster takes its cost
+  plus an overhead for the cluster and one for every cluster it sends values to
+  (``--cluster-overhead``, ``--edge-overhead``, in the unit of the task costs;
+  the defaults were fitted to the C runtime with the flow scheduler).
+
+  The task costs in an export are one measurement each and change from run to
+  run. ``--cost-from FILE`` (repeatable) reads more exports of the same model and
+  takes the smallest cost of every task. ``--max-comm-weight W`` also searches a
+  weight ``w`` in ``[1, W]`` for the stop rule (merge as long as ``w`` times the
+  communication is not below the number of equations), which gives larger
+  clusters when the overhead of a cluster is high.
+
+  .. code-block:: bash
+
+    ./m -parmodClustering=merge_across_levels -parmodExportTaskGraph=taskgraph.json
+    julia parmod_optimize_clustering.jl --objective merge_across_levels taskgraph.json
+
+  Options include ``--objective``, ``-a/--algorithm`` (``GWO``, ``Jaya``, ``AVOA``, ``MPA``, … —
   default ``GWO``), ``--pop``, ``--iters``, ``-k/--cores``, ``--seed``, ``-o``,
   and ``--run``/``--exe``. It prints the serial and lower-bound reference heights,
   the optimized height, the speedup, and the improvement over the imported

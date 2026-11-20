@@ -159,8 +159,10 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
             flag, PARMOD_CLUSTERING env var fallback). With parmodImportClustering an
             external clustering is applied instead of computing one. "default" is the
             merge-based clustering; "fixed_width_min_height" clusters each level into a
-            fixed number of lanes (= CPU cores) and minimizes the graph height; "none"
-            leaves one flow node per equation. */
+            fixed number of lanes (= CPU cores) and minimizes the graph height;
+            "merge_across_levels" merges dependent clusters of any level until each
+            communicates less than it computes; "none" leaves one flow node per
+            equation. */
         if (cfg.import_clustering) {
             import_clustering_json(task_system, cfg.import_clustering);
             stages.snapshot("imported");
@@ -169,6 +171,10 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
                  cfg.clustering == "fixed_width_min_height") {
             cluster_fixed_width_min_height::apply(task_system);
             stages.snapshot(cluster_fixed_width_min_height::name());
+        }
+        else if (cfg.clustering == cluster_merge_across_levels::name() || cfg.clustering == "merge_across_levels") {
+            cluster_merge_across_levels::apply(task_system);
+            stages.snapshot(cluster_merge_across_levels::name());
         }
         else if (cfg.clustering == "none") {
             /*! no clustering. */

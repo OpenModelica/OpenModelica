@@ -416,28 +416,42 @@ class TaskSystem_v2 {
 
     void update_node_levels() {
 
-        /* compute the level of each node*/
-        long            critical_path = 0;
-        vertex_iterator vert_iter, vert_end;
-        std::tie(vert_iter, vert_end) = vertices(sys_graph);
-        /*! skip the root node. */
-        ++vert_iter;
-        for (; vert_iter != vert_end; ++vert_iter) {
-            const ClusterIdType& curr_clust_id = *vert_iter;
-            ClusterType&         curr_clust = sys_graph[curr_clust_id];
+        /* Compute the level of each node, parents first: a cluster merged from
+           several levels can come before one of its parents in the vertex list. */
+        long                            critical_path = 0;
+        std::map<ClusterIdType, size_t> waiting;
+        std::queue<ClusterIdType>       ready;
+        vertex_iterator                 vert_iter, vert_end;
+        for (std::tie(vert_iter, vert_end) = vertices(sys_graph); vert_iter != vert_end; ++vert_iter) {
+            const size_t nr_of_parents = in_degree(*vert_iter, sys_graph);
+            if (nr_of_parents == 0)
+                ready.push(*vert_iter);
+            else
+                waiting[*vert_iter] = nr_of_parents;
+        }
+        while (!ready.empty()) {
+            const ClusterIdType curr_clust_id = ready.front();
+            ready.pop();
 
-            long max_parent_level = 0;
+            if (curr_clust_id != root_node_id) {
+                ClusterType& curr_clust = sys_graph[curr_clust_id];
 
-            inv_adjacency_iterator parent_iter, parent_end;
-            std::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
-            for (; parent_iter != parent_end; ++parent_iter) {
-                const ClusterIdType& curr_parent_id = *parent_iter;
-                ClusterType&         curr_parent = sys_graph[curr_parent_id];
+                long max_parent_level = 0;
 
-                max_parent_level = std::max(max_parent_level, curr_parent.level);
+                inv_adjacency_iterator parent_iter, parent_end;
+                std::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
+                for (; parent_iter != parent_end; ++parent_iter)
+                    max_parent_level = std::max(max_parent_level, sys_graph[*parent_iter].level);
+
+                curr_clust.level = max_parent_level + 1;
+                critical_path = std::max(curr_clust.level, critical_path);
             }
-            curr_clust.level = max_parent_level + 1;
-            critical_path = std::max(curr_clust.level, critical_path);
+
+            adjacency_iterator child_iter, child_end;
+            for (std::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph); child_iter != child_end;
+                 ++child_iter)
+                if (--waiting[*child_iter] == 0)
+                    ready.push(*child_iter);
         }
 
         // Check the levels are correct. Paranoia!

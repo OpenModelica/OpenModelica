@@ -346,7 +346,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
   /* FLAG_PARMODNUMTHREADS */             "[int default: 0] value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
   /* FLAG_PARMOD_SCHEDULER */             "value selects the parmodauto scheduler: flow (default) or level",
-  /* FLAG_PARMOD_CLUSTERING */            "value selects the parmodauto clustering strategy: default, fixed_width_min_height or none",
+  /* FLAG_PARMOD_CLUSTERING */            "value selects the parmodauto clustering strategy: default, fixed_width_min_height, merge_across_levels or none",
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    "[int] value sets the maximum number of clusters per level for the default clustering",
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */        "value specifies a json file to which the parmodauto task graph and clustering are exported",
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     "value specifies a json file from which a parmodauto clustering is imported instead of computing one",
@@ -770,7 +770,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_PARMOD_SCHEDULER */
   "  Selects the parmodauto scheduler: 'flow' (default) or 'level'. Switchable at run time without recompiling the simulator.",
   /* FLAG_PARMOD_CLUSTERING */
-  "  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', or 'none'.",
+  "  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', 'merge_across_levels', or 'none'.",
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */
   "  Sets the maximum number of clusters per level used by the default clustering.",
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */

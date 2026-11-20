@@ -386,6 +386,7 @@ impl TaskSystem {
 const CLUSTER_MERGE_COMMON: &str = "cluster_merge_common";
 const CLUSTER_MERGE_LEVEL_FOR_BINS: &str = "cluster_merge_level_for_bins";
 const CLUSTER_FIXED_WIDTH_MIN_HEIGHT: &str = "cluster_fixed_width_min_height";
+const CLUSTER_MERGE_ACROSS_LEVELS: &str = "cluster_merge_across_levels";
 
 /// `cluster_merge_common::concat_children_recursive`.
 fn merge_common_recursive(s: &mut TaskSystem, curr: usize) -> usize {
@@ -647,6 +648,193 @@ fn cluster_fixed_width_min_height(s: &mut TaskSystem) {
             }
         }
     }
+    s.levels_valid = false;
+}
+
+/// `cluster_merge_across_levels::partition`: the cluster of every task and the
+/// number of merges not done because of a cycle. Clusters that depend on each
+/// other are merged, whatever their levels, until each exchanges values with
+/// fewer clusters than it has equations.
+fn merge_across_levels_partition(children: &[Vec<usize>]) -> (Vec<usize>, usize) {
+    let n = children.len();
+    let mut rejected = 0;
+    let mut cluster_of: Vec<usize> = (0..n).collect();
+    let mut members: Vec<Vec<usize>> = (0..n).map(|i| vec![i]).collect();
+    let mut succ: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); n];
+    let mut pred: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); n];
+    // A topological numbering of the clusters: label[a] < label[b] for every edge a -> b.
+    let mut label: Vec<usize> = (0..n).collect();
+    let mut alive = vec![true; n];
+    for (i, cs) in children.iter().enumerate() {
+        for &c in cs {
+            succ[i].insert(c);
+            pred[c].insert(i);
+        }
+    }
+    let mut seen = vec![0usize; n];
+    let mut stamp = 0;
+    let mut stack: Vec<usize> = Vec::new();
+    let common = |x: &BTreeSet<usize>, y: &BTreeSet<usize>| x.intersection(y).count();
+
+    // The clusters still to look at, the one with the fewest equations first.
+    let mut work: BTreeSet<(usize, usize)> = (0..n).map(|c| (1, c)).collect();
+    while let Some((ops, c)) = work.pop_first() {
+        if !alive[c] || members[c].len() != ops || succ[c].len() + pred[c].len() < ops {
+            continue;
+        }
+        // The neighbours, the one that leaves the least communication first.
+        let mut candidates: Vec<((usize, usize), (usize, usize))> = Vec::new();
+        let edges = pred[c].iter().map(|&p| (p, c)).chain(succ[c].iter().map(|&x| (c, x)));
+        for (a, b) in edges {
+            let comm = succ[a].len() + succ[b].len() - common(&succ[a], &succ[b]) - 1 + pred[a].len() + pred[b].len()
+                - common(&pred[a], &pred[b])
+                - 1;
+            candidates.push(((comm, members[a].len() + members[b].len()), (a, b)));
+        }
+        candidates.sort();
+
+        for &(_, (a, b)) in &candidates {
+            // Is b reached from a by more than the edge a -> b? Then merging them closes a cycle.
+            stamp += 1;
+            stack.clear();
+            for &x in &succ[a] {
+                if x != b && label[x] < label[b] {
+                    seen[x] = stamp;
+                    stack.push(x);
+                }
+            }
+            let mut other_path = false;
+            'search: while let Some(x) = stack.pop() {
+                for &y in &succ[x] {
+                    if y == b {
+                        other_path = true;
+                        break 'search;
+                    }
+                    if label[y] < label[b] && seen[y] != stamp {
+                        seen[y] = stamp;
+                        stack.push(y);
+                    }
+                }
+            }
+            if other_path {
+                rejected += 1;
+                continue;
+            }
+
+            let (s, o) = (a.min(b), a.max(b));
+            let merged_label = label[b];
+            let moved = core::mem::take(&mut members[o]);
+            for &m in &moved {
+                cluster_of[m] = s;
+            }
+            members[s].extend(moved);
+            for x in core::mem::take(&mut succ[o]) {
+                pred[x].remove(&o);
+                if x != s {
+                    succ[s].insert(x);
+                    pred[x].insert(s);
+                }
+            }
+            for x in core::mem::take(&mut pred[o]) {
+                succ[x].remove(&o);
+                if x != s {
+                    pred[s].insert(x);
+                    succ[x].insert(s);
+                }
+            }
+            alive[o] = false;
+
+            // The merged cluster takes the later label; move the clusters after it up.
+            label[s] = merged_label;
+            stack.clear();
+            stack.push(s);
+            while let Some(x) = stack.pop() {
+                for &y in &succ[x] {
+                    if label[y] <= label[x] {
+                        label[y] = label[x] + 1;
+                        stack.push(y);
+                    }
+                }
+            }
+
+            // Their communication changed, so a merge can be needed or possible now.
+            work.insert((members[s].len(), s));
+            for &x in succ[s].iter().chain(pred[s].iter()) {
+                work.insert((members[x].len(), x));
+            }
+            break;
+        }
+    }
+    (cluster_of, rejected)
+}
+
+/// Kahn's algorithm on the cluster graph of a partition.
+fn partition_is_acyclic(children: &[Vec<usize>], cluster_of: &[usize]) -> bool {
+    let n = children.len();
+    let mut succ: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); n];
+    let mut indeg = vec![0usize; n];
+    for (i, cs) in children.iter().enumerate() {
+        for &c in cs {
+            let (a, b) = (cluster_of[i], cluster_of[c]);
+            if a != b && succ[a].insert(b) {
+                indeg[b] += 1;
+            }
+        }
+    }
+    let mut ready: Vec<usize> = (0..n).filter(|&c| indeg[c] == 0).collect();
+    let mut visited = 0;
+    while let Some(a) = ready.pop() {
+        visited += 1;
+        for &b in &succ[a] {
+            indeg[b] -= 1;
+            if indeg[b] == 0 {
+                ready.push(b);
+            }
+        }
+    }
+    visited == n
+}
+
+fn cluster_merge_across_levels(s: &mut TaskSystem) {
+    let vid: Vec<usize> = s.vertices().collect();
+    let n = vid.len();
+    let mut id_to_idx = vec![usize::MAX; s.nodes.len()];
+    for (i, &v) in vid.iter().enumerate() {
+        id_to_idx[v] = i;
+    }
+    let children: Vec<Vec<usize>> = vid
+        .iter()
+        .map(|&v| s.children[v].iter().map(|&c| id_to_idx[c]).collect())
+        .collect();
+    if children.iter().enumerate().any(|(i, cs)| cs.iter().any(|&c| c <= i)) {
+        stdout("cluster_merge_across_levels: a task depends on a later task; skipping clustering.\n");
+        return;
+    }
+    let (cluster_of, rejected) = merge_across_levels_partition(&children);
+    if !partition_is_acyclic(&children, &cluster_of) {
+        stdout("cluster_merge_across_levels: the clusters form a cycle; skipping clustering.\n");
+        return;
+    }
+    // A cluster evaluates its tasks in the order they have in the task graph.
+    let mut num_clusters = 0;
+    for i in 0..n {
+        if cluster_of[i] == i {
+            num_clusters += 1;
+        } else {
+            s.concat(vid[cluster_of[i]], vid[i]);
+        }
+    }
+    // The root is the parent of the clusters without one only.
+    let top: Vec<usize> = s.children[ROOT].iter().copied().collect();
+    for c in top {
+        if s.in_degree(c) > 1 {
+            s.children[ROOT].remove(&c);
+            s.parents[c].remove(&ROOT);
+        }
+    }
+    stdout(&format!(
+        "cluster_merge_across_levels: {n} tasks in {num_clusters} clusters, {rejected} merges not done because of a cycle\n"
+    ));
     s.levels_valid = false;
 }
 
@@ -1639,6 +1827,9 @@ impl FlowScheduler {
         } else if cfg.clustering == CLUSTER_FIXED_WIDTH_MIN_HEIGHT || cfg.clustering == "fixed_width_min_height" {
             cluster_fixed_width_min_height(&mut self.sys);
             stages.snapshot(&self.sys, CLUSTER_FIXED_WIDTH_MIN_HEIGHT)?;
+        } else if cfg.clustering == CLUSTER_MERGE_ACROSS_LEVELS || cfg.clustering == "merge_across_levels" {
+            cluster_merge_across_levels(&mut self.sys);
+            stages.snapshot(&self.sys, CLUSTER_MERGE_ACROSS_LEVELS)?;
         } else if cfg.clustering == "none" {
         } else {
             cluster_merge_common(&mut self.sys);
@@ -1792,6 +1983,44 @@ mod tests {
         let mut s = TaskSystem::new("m", 2, &chain_info());
         s.update_node_levels();
         cluster_merge_common(&mut s);
+        let live: Vec<usize> = s.vertices().collect();
+        assert_eq!(live, vec![1, 4]);
+        assert_eq!(s.cluster(1).index_list(), "$,1,2,3");
+        assert_eq!(s.topological_order(), vec![0, 1, 4]);
+    }
+
+    fn graph(n: usize, edges: &[(usize, usize)]) -> Vec<Vec<usize>> {
+        let mut children = vec![Vec::new(); n];
+        for &(a, b) in edges {
+            children[a].push(b);
+        }
+        children
+    }
+
+    #[test]
+    fn merge_across_levels_keeps_independent_chains_apart() {
+        // 0 -> 1 -> 2 and 3 -> 4 -> 5
+        let children = graph(6, &[(0, 1), (1, 2), (3, 4), (4, 5)]);
+        let (cluster_of, rejected) = merge_across_levels_partition(&children);
+        assert_eq!(cluster_of, vec![0, 0, 0, 3, 3, 3]);
+        assert_eq!(rejected, 0);
+    }
+
+    #[test]
+    fn merge_across_levels_does_not_close_a_cycle() {
+        // 0 -> 2 is also 0 -> 1 -> 2: merging 0 and 2 alone leaves 1 before and after
+        // them. It is tried first, 1 having more neighbours.
+        let children = graph(5, &[(0, 1), (0, 2), (1, 2), (1, 3), (1, 4)]);
+        let (cluster_of, rejected) = merge_across_levels_partition(&children);
+        assert!(rejected > 0);
+        assert!(partition_is_acyclic(&children, &cluster_of));
+        assert!(!partition_is_acyclic(&children, &[0, 1, 0, 3, 4]));
+    }
+
+    #[test]
+    fn merge_across_levels_on_the_task_system() {
+        let mut s = TaskSystem::new("m", 2, &chain_info());
+        cluster_merge_across_levels(&mut s);
         let live: Vec<usize> = s.vertices().collect();
         assert_eq!(live, vec![1, 4]);
         assert_eq!(s.cluster(1).index_list(), "$,1,2,3");
