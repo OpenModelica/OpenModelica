@@ -1238,6 +1238,7 @@ package SimCodeFunction
       list<Variable> inVars;
       list<Variable> outVars;
       list<Variable> biVars;
+      list<Variable> variableDeclarations;
       list<String> includes;
       list<String> libs;
       String language;

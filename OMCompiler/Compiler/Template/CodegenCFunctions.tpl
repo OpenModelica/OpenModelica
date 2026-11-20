@@ -2007,8 +2007,8 @@ case efn as EXTERNAL_FUNCTION(__) then
   let &varFrees = buffer ""
   let &outputAlloc = buffer ""
   let &auxFunction = buffer ""
-  let callPart = extFunCall(fn, &preExp, &varDecls, &varFrees, &outputAlloc, &auxFunction)
-  let _ = ( outVars |> var =>
+  let callPart = extFunCall(fn, &preExp, &varDecls, &varFrees, &auxFunction)
+  let _ = ( variableDeclarations |> var =>
             varInit(var, "", &varDecls, &outputAlloc, &varFrees, &auxFunction)
             ; empty /* increase the counter! */ )
 
@@ -2759,7 +2759,7 @@ template extVarName(ComponentRef cr)
 ::= '_<%crefToMStr(appendStringFirstIdent("_ext", cr))%>'
 end extVarName;
 
-template extFunCall(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &varInit, Text &auxFunction)
+template extFunCall(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates the call to an external function."
 ::=
 match fun
@@ -2767,7 +2767,7 @@ case EXTERNAL_FUNCTION(__) then
   match language
   case "BUILTIN"
   case "C" then extFunCallC(fun, &preExp, &varDecls, &varFrees, &auxFunction)
-  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &varFrees, &varInit, &auxFunction)
+  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &varFrees, &auxFunction)
   else error(sourceInfo(), 'Unsupported external language: <%language%>')
 end extFunCall;
 
@@ -2778,7 +2778,6 @@ match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> extArgs as there might be some sets in there! */
   let &preExp += (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &varFrees, &auxFunction, false) ;separator="\n") + "\n"
-  let _ = (biVars |> bivar => extFunCallBiVar(bivar, &preExp, &varDecls, &varFrees, &auxFunction) ;separator="\n")
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then
       <<
@@ -2829,7 +2828,7 @@ template extFunCallFree(SimExtArg arg, Text &auxFunction)
   else ""
 end extFunCallFree;
 
-template extFunCallF77(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &varInit, Text &auxFunction)
+template extFunCallF77(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates the call to an external Fortran 77 function."
 ::=
 match fun
@@ -2839,7 +2838,7 @@ case EXTERNAL_FUNCTION(__) then
   let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardeclF77(arg, &varDecls, &varFrees, &auxFunction) ;separator="\n")
   let &varDecls += '/* extFunCallF77: biVarDecs */<%\n%>'
   let &preExp += '/* extFunCallF77: biVarDecs */<%\n%>'
-  let biVarDecs = (biVars |> arg => extFunCallBiVarF77(arg, &varInit, &varDecls, &varFrees, &auxFunction) ;separator="\n")
+  let biVarDecs = (biVars |> arg => extFunCallBiVarF77(arg, &preExp, &varDecls, &varFrees, &auxFunction) ;separator="\n")
   let &varDecls += '/* extFunCallF77: args */<%\n%>'
   let &preExp += '/* extFunCallF77: args */<%\n%>'
   let args = (extArgs |> arg => extArgF77(arg, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=", ")
@@ -2973,50 +2972,16 @@ template typeDefaultValue(DAE.Type ty)
   else ""
 end typeDefaultValue;
 
-template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
-::=
-  match var
-  case var as VARIABLE(__) then
-    let var_name = contextCrefNoPrevExp(name, contextFunction, &auxFunction)
-    let zeroInit = if instDims then rcZeroInit(varType(var))
-    let &varDecls += '<%varType(var)%> <%var_name%><%zeroInit%>;<%\n%>'
-    let defaultValue = match value
-      case SOME(v) then
-        '<%daeExp(v, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>'
-      else ""
-    let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
-    if instDims then
-      let type = expTypeArray(var.ty)
-      let &varFrees += rcRelease(type, var_name)
-      let &preExp += if defaultValue then 'copy_<%type%>(<%defaultValue%>, &<%var_name%>);<%\n%>' else 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-      ""
-    else
-      let &preExp += if defaultValue then '<%var_name%> = <%defaultValue%>;<%\n%>' else ''
-      ""
-end extFunCallBiVar;
-
 template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Copies a protected array into the Fortran layout."
 ::=
   match var
   case var as VARIABLE(__) then
-    let var_name = contextCrefNoPrevExp(name,contextFunction,&auxFunction)
-    let zeroInit = if instDims then rcZeroInit(varType(var))
-    let &varDecls += '<%varType(var)%> <%var_name%><%zeroInit%>;<%\n%>'
-    let &varDecls += '<%varType(var)%> <%extVarName(name)%><%zeroInit%>;<%\n%>'
-    let defaultValue = match value
-      case SOME(v) then
-        '<%daeExp(v, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>'
-      else ""
-    let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
     if instDims then
       let type = expTypeArray(var.ty)
-      let &varFrees += rcRelease(type, var_name)
+      let &varDecls += '<%varType(var)%> <%extVarName(name)%><%rcZeroInit(varType(var))%>;<%\n%>'
       let &varFrees += rcRelease(type, extVarName(name))
-      let &preExp += if defaultValue then 'copy_<%type%>(<%defaultValue%>, &<%var_name%>);<%\n%>' else 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-      let &preExp += 'convert_alloc_<%type%>_to_f77(&<%var_name%>, &<%extVarName(name)%>);<%\n%>'
-      ""
-    else
-      let &preExp += if defaultValue then '<%var_name%> = <%defaultValue%>;<%\n%>' else ''
+      let &preExp += 'convert_alloc_<%type%>_to_f77(&<%contextCrefNoPrevExp(name,contextFunction,&auxFunction)%>, &<%extVarName(name)%>);<%\n%>'
       ""
 end extFunCallBiVarF77;
 

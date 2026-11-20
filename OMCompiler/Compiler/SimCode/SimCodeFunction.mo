@@ -105,6 +105,7 @@ public uniontype Function
     list<Variable> inVars;
     list<Variable> outVars;
     list<Variable> biVars;
+    list<Variable> variableDeclarations "outVars and biVars in initialization order";
     list<String> includes "this one is needed so that we know if we should generate the external function prototype or not";
     list<String> libs "need this one for C#";
     String language "C or Fortran";
@@ -154,6 +155,8 @@ public uniontype Function
         tmp := tmp + "  outVars: {" + stringDelimitList(ls, ", ") + "},\n";
         ls := List.map(func.biVars, Variable.toString);
         tmp := tmp + "  biVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.variableDeclarations, Variable.toString);
+        tmp := tmp + "  variableDeclarations: {" + stringDelimitList(ls, ", ") + "},\n";
         tmp := tmp + "  includes: {" + stringDelimitList(func.includes, ", ") + "},\n";
         tmp := tmp + "  libs: {" + stringDelimitList(func.libs, ", ") + "},\n";
         tmp := tmp + "  language: " + func.language + "\n";

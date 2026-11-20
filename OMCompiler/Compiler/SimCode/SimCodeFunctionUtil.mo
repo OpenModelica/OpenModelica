@@ -900,6 +900,8 @@ algorithm
         outVars := List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         inVars := List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars := List.map(DAEUtil.getBidirElements(daeElts), daeInOutSimVar);
+        varDecls := List.map(sortVarDecls(list(e for e guard DAEUtil.isOutputElement(e) or
+          DAEUtil.isBidirElement(e) in daeElts)), daeInOutSimVar);
         collectRecDeclsFromElems(daeElts, recDeclsMap);
         info := ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) := generateExtFunctionIncludes(program, fpath, ann, info);
@@ -914,7 +916,7 @@ algorithm
         lang := System.toupper(lang);
       then
         (SimCodeFunction.EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-          inVars, outVars, biVars, fn_includes, fn_libs, lang, visibility, info, dynamicLoad), includes, includeDirs, libs,libPaths);
+          inVars, outVars, biVars, varDecls, fn_includes, fn_libs, lang, visibility, info, dynamicLoad), includes, includeDirs, libs,libPaths);
 
     // Record constructor
     case (DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), includes, includeDirs, libs, libPaths)
