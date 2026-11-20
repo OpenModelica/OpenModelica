@@ -1,0 +1,83 @@
+// name: timeInvariantLoops
+// keywords: nonlinear system parameter time-invariant #1869 #1410
+// status: correct
+// teardown_command: rm -rf ConstLoop1869* ParamLoop1410*
+//
+// A nonlinear loop that depends on parameters only is solved in the
+// initialization and at events, not at every output step.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model ConstLoop1869
+  Real x, y;
+  function f_sin
+    input Real x;
+    output Real y;
+  algorithm
+    y := sin(x);
+    pure(Modelica.Utilities.Streams.print(\"f_sin\", \"ConstLoop1869_calls.txt\"));
+  end f_sin;
+equation
+  x = f_sin(y);
+  y = cos(x);
+  annotation(experiment(StopTime = 10, NumberOfIntervals = 100));
+end ConstLoop1869;
+
+model ParamLoop1410
+  parameter Real p = 3;
+  Real x = p*cos(x);
+  Real T(start = 0, fixed = true);
+equation
+  der(T) = x - T;
+  annotation(experiment(StopTime = 1));
+end ParamLoop1410;
+"); getErrorString();
+
+writeFile("ConstLoop1869_calls.txt", ""); getErrorString();
+simulate(ConstLoop1869); getErrorString();
+sum(1 for l in strtok(readFile("ConstLoop1869_calls.txt"), "\n")) < 30;
+val(x, 10); val(y, 10);
+
+simulate(ParamLoop1410); getErrorString();
+val(x, 1); val(T, 1);
+simulate(ParamLoop1410, simflags="-override=p=2"); getErrorString();
+val(x, 1); val(T, 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ConstLoop1869_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ConstLoop1869', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// 0.6948196907307875
+// 0.768169156736796
+// record SimulationResult
+//     resultFile = "ParamLoop1410_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ParamLoop1410', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.170120950002626
+// 0.7396598619820104
+// record SimulationResult
+//     resultFile = "ParamLoop1410_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ParamLoop1410', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=p=2'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0298665293222589
+// 0.6510012292564545
+// endResult

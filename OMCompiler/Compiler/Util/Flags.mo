@@ -589,6 +589,8 @@ constant DebugFlag NF_SCRIPTING = DEBUG_FLAG(203, "nfScripting", EXTERNAL(), tru
   "Evaluates scripts with the new frontend.");
 constant DebugFlag HOMOTOPY_IN_RESIDUALS = DEBUG_FLAG(204, "homotopyInResiduals", EXTERNAL(), false,
   "Keeps homotopy() in the DAE residuals, the generated code evaluates the branches that lambda selects.");
+constant DebugFlag TIME_INVARIANT_BLOCKS = DEBUG_FLAG(205, "timeInvariantBlocks", EXTERNAL(), true,
+  "Solves the blocks whose values cannot change during the simulation in the initialization and at events, not at every step.");
 
 public
 // CONFIGURATION FLAGS

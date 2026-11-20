@@ -2628,7 +2628,8 @@ algorithm
       daeModeData                 = daeModeData,
       scalarized                  = true,
       fmiFigures                  = {},
-      paramDeps                   = SimCode.emptyParamDeps
+      paramDeps                   = SimCode.emptyParamDeps,
+      timeInvariantEquations      = {}
     );
 
     (simCode, lits) := SimCodeUtil.findSimCodeLiterals(simCode, literals);
