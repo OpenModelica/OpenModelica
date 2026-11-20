@@ -8342,6 +8342,10 @@ Slutpunkt: %2</translation>
         <translation>%1 - %2 - Livevy</translation>
     </message>
     <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
+        <translation>Livevyn är inte tillgänglig eftersom omuq har stoppats. Hela utskriften finns i fönstret Meddelanden.</translation>
+    </message>
+    <message>
         <source>The run is recorded in %1
 </source>
         <translation>Körningen har registrerats i %1
