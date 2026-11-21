@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+#include <float.h>
+
 #include "FMICommon.h"
 #include "FMI2Common.h"
 
@@ -41,6 +43,8 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ModelExchange* FMI2ME = malloc(sizeof(FMI2ModelExchange));
   jm_status_enu_t status, instantiateModelStatus;
   FMI2ME->FMIFailed = 0;
+  FMI2ME->FMITerminateSimulation = 0;
+  FMI2ME->FMIStepEvent = 0;
   FMI2ME->FMILogLevel = fmi_log_level;
   /* JM callbacks */
   FMI2ME->JMCallbacks.malloc = malloc;
@@ -100,7 +104,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   }
   FMI2ME->FMIToleranceControlled = fmi2_true;
   FMI2ME->FMIRelativeTolerance = 0.001;
-  FMI2ME->FMIEventInfo = malloc(sizeof(fmi2_event_info_t));
+  FMI2ME->FMIEventInfo = calloc(1, sizeof(fmi2_event_info_t));
   FMI2ME->FMISolvingMode = fmi2_instantiated_mode;
   return FMI2ME;
 }
@@ -149,6 +153,33 @@ void fmi2EnterInitializationModel_OMC(void* in_fmi2me)
 }
 
 /*
+ * Returns 1 if the call must not go to the FMU: the FMU returned terminateSimulation
+ * and only gets fmi2Terminate. The simulation then stops at the end of this step.
+ * After an error the FMU is in its error state, and the simulation must stop: this
+ * gives an error and does not return.
+ */
+static int fmi2SkipCall(FMI2ModelExchange* FMI2ME, const char* function)
+{
+  if (FMI2ME->FMIFailed) {
+    ModelicaFormatError("%s: the FMU is in the error state after an earlier error\n", function);
+  }
+  return FMI2ME->FMITerminateSimulation;
+}
+
+/*
+ * The call table allows the function only in Continuous-Time Mode. A call in an other
+ * mode is an error in the FMU import, not in the FMU.
+ */
+static void fmi2CheckContinuousTimeMode(FMI2ModelExchange* FMI2ME, const char* function)
+{
+  if (FMI2ME->FMISolvingMode != fmi2_continuousTime_mode) {
+    ModelicaFormatError("%s: the FMU is not in Continuous-Time Mode. This is an error in the FMU import.\n", function);
+  }
+}
+
+int fmi2EndEventUpdate_OMC(void* in_fmi2me);
+
+/*
  * Wrapper for the FMI function fmi2ExitInitializationMode.
  */
 void fmi2ExitInitializationModel_OMC(void* in_fmi2me)
@@ -159,20 +190,27 @@ void fmi2ExitInitializationModel_OMC(void* in_fmi2me)
     fmi2Failed(FMI2ME, "fmi2ExitInitializationMode", status);
   }
   FMI2ME->FMISolvingMode = fmi2_event_mode;
+  /* the initial event iteration (FMI 2.0.5, section 3.2.4) */
+  fmi2EndEventUpdate_OMC(FMI2ME);
 }
 
 /*
  * Wrapper for the FMI function fmi2SetTime.
- * Returns status.
+ *
+ * The FMI 2.0 call table allows fmi2SetTime in Continuous-Time Mode, and in Event Mode
+ * only for a pure discrete-time FMU. The import calls it only in Continuous-Time Mode.
  */
 void fmi2SetTime_OMC(void* in_fmi2me, double time)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
-    fmi2_status_t status = fmi2_import_set_time(FMI2ME->FMIImportInstance, time);
-    if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      fmi2Failed(FMI2ME, "fmi2SetTime", status);
-    }
+  fmi2_status_t status;
+  if (fmi2SkipCall(FMI2ME, "fmi2SetTime")) {
+    return;
+  }
+  fmi2CheckContinuousTimeMode(FMI2ME, "fmi2SetTime");
+  status = fmi2_import_set_time(FMI2ME->FMIImportInstance, time);
+  if (status != fmi2_status_ok && status != fmi2_status_warning) {
+    fmi2Failed(FMI2ME, "fmi2SetTime", status);
   }
 }
 
@@ -193,13 +231,18 @@ void fmi2GetContinuousStates_OMC(void* in_fmi2me, int numberOfContinuousStates, 
 /*
  * Wrapper for the FMI function fmi2SetContinuousStates.
  * parameter flowParams is dummy and is only used to run the equations in sequence.
- * Returns status.
+ *
+ * The FMI 2.0 call table allows fmi2SetContinuousStates only in Continuous-Time Mode.
+ * In Event Mode the FMU itself changes the states, and the import reads them with
+ * fmi2GetContinuousStates.
  */
 double fmi2SetContinuousStates_OMC(void* in_fmi2me, int numberOfContinuousStates, double flowParams, double* states)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (numberOfContinuousStates > 0) {
-    fmi2_status_t status = fmi2_import_set_continuous_states(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
+  if (numberOfContinuousStates > 0 && !fmi2SkipCall(FMI2ME, "fmi2SetContinuousStates")) {
+    fmi2_status_t status;
+    fmi2CheckContinuousTimeMode(FMI2ME, "fmi2SetContinuousStates");
+    status = fmi2_import_set_continuous_states(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       fmi2Failed(FMI2ME, "fmi2SetContinuousStates", status);
     }
@@ -215,7 +258,11 @@ double fmi2SetContinuousStates_OMC(void* in_fmi2me, int numberOfContinuousStates
 void fmi2GetEventIndicators_OMC(void* in_fmi2me, int numberOfEventIndicators, double flowStates, double* events)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_status_t status = fmi2_import_get_event_indicators(FMI2ME->FMIImportInstance, (fmi2_real_t*)events, numberOfEventIndicators);
+  fmi2_status_t status;
+  if (fmi2SkipCall(FMI2ME, "fmi2GetEventIndicators")) {
+    return;
+  }
+  status = fmi2_import_get_event_indicators(FMI2ME->FMIImportInstance, (fmi2_real_t*)events, numberOfEventIndicators);
   if (status != fmi2_status_ok && status != fmi2_status_warning) {
     fmi2Failed(FMI2ME, "fmi2GetEventIndicators", status);
   }
@@ -225,11 +272,17 @@ void fmi2GetEventIndicators_OMC(void* in_fmi2me, int numberOfEventIndicators, do
  * Wrapper for the FMI function fmi2GetDerivatives.
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns states.
+ *
+ * The FMI 2.0 call table allows fmi2GetDerivatives also in Initialization Mode and in
+ * Event Mode, where the solver needs the derivatives too.
  */
 void fmi2GetDerivatives_OMC(void* in_fmi2me, int numberOfContinuousStates, double flowStates, double* states)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode){
+  if (fmi2SkipCall(FMI2ME, "fmi2GetDerivatives")) {
+    return;
+  }
+  if (FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_status_t status = fmi2_import_get_derivatives(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       fmi2Failed(FMI2ME, "fmi2GetDerivatives", status);
@@ -245,7 +298,12 @@ void fmi2StartEventUpdate_OMC(void* in_fmi2me)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   fmi2_event_info_t *eventInfo = FMI2ME->FMIEventInfo;
-  fmi2_status_t status = fmi2_import_enter_event_mode(FMI2ME->FMIImportInstance);
+  fmi2_status_t status;
+  if (fmi2SkipCall(FMI2ME, "fmi2EnterEventMode")) {
+    return;
+  }
+  FMI2ME->FMIStepEvent = 0;
+  status = fmi2_import_enter_event_mode(FMI2ME->FMIImportInstance);
   if (status != fmi2_status_ok && status != fmi2_status_warning) {
     fmi2Failed(FMI2ME, "fmi2EnterEventMode", status);
   }
@@ -257,18 +315,38 @@ void fmi2StartEventUpdate_OMC(void* in_fmi2me)
 
 /*
  * Wrapper for the FMI function fmi2NewDiscreteStates.
- * Returns valuesOfContinuousStatesChanged
+ *
+ * The FMU may need more than one pass before the discrete states settle, which is what
+ * newDiscreteStatesNeeded says; iterate until it does.
+ *
+ * Returns valuesOfContinuousStatesChanged.
  */
 int fmi2EndEventUpdate_OMC(void* in_fmi2me)
 {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
     fmi2_event_info_t* eventInfo = FMI2ME->FMIEventInfo;
+    fmi2_boolean_t valuesOfContinuousStatesChanged = fmi2_false;
+    fmi2_status_t status;
 
+    if (fmi2SkipCall(FMI2ME, "fmi2NewDiscreteStates")) {
+        return fmi2_false;
+    }
     eventInfo->newDiscreteStatesNeeded = fmi2_true;
     eventInfo->terminateSimulation = fmi2_false;
-    fmi2_status_t status = fmi2_import_new_discrete_states(FMI2ME->FMIImportInstance, eventInfo);
-    if (status != fmi2_status_ok && status != fmi2_status_warning) {
-        fmi2Failed(FMI2ME, "fmi2NewDiscreteStates", status);
+    while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation) {
+        status = fmi2_import_new_discrete_states(FMI2ME->FMIImportInstance, eventInfo);
+        if (status != fmi2_status_ok && status != fmi2_status_warning) {
+            fmi2Failed(FMI2ME, "fmi2NewDiscreteStates", status);
+        }
+        /* any pass that moved the states counts, not only the last one */
+        if (eventInfo->valuesOfContinuousStatesChanged) {
+            valuesOfContinuousStatesChanged = fmi2_true;
+        }
+    }
+    /* the FMU stays in Event Mode, the next call is fmi2Terminate */
+    if (eventInfo->terminateSimulation) {
+        FMI2ME->FMITerminateSimulation = 1;
+        return fmi2_false;
     }
 
     status = fmi2_import_enter_continuous_time_mode(FMI2ME->FMIImportInstance);
@@ -276,35 +354,70 @@ int fmi2EndEventUpdate_OMC(void* in_fmi2me)
         fmi2Failed(FMI2ME, "fmi2EnterContinuousTimeMode", status);
     }
     FMI2ME->FMISolvingMode = fmi2_continuousTime_mode;
-    return eventInfo->valuesOfContinuousStatesChanged;
+    return valuesOfContinuousStatesChanged;
 }
 
 /*
  * parameter flowStates is dummy and is only used to run the equations in sequence.
- * Returns FMI EventInfo nextEventTime
+ * Returns the next event time, or infinity when the FMU did not give one, which is
+ * what the generated code expects for "no event scheduled".
  */
 double fmi2nextEventTime_OMC(void* in_fmi2me, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  return FMI2ME->FMIEventInfo->nextEventTime;
+  if (FMI2ME->FMIEventInfo->nextEventTimeDefined) {
+    return FMI2ME->FMIEventInfo->nextEventTime;
+  }
+  return DBL_MAX;
+}
+
+/*
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
+ * Returns true if the FMU returned terminateSimulation = fmi2True. The generated code
+ * then calls terminate().
+ */
+int fmi2TerminateSimulation_OMC(void* in_fmi2me, double flowStates)
+{
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
+  return FMI2ME->FMITerminateSimulation;
 }
 
 /*
  * Wrapper for the FMI function fmi2CompletedIntegratorStep.
+ *
+ * The solver calls it only for an accepted step, after the event location, and not at
+ * the trial points of the event location (FMI 2.0.5, section 3.2.2): the time does not
+ * go back over this call. The result goes to fmi2StepEvent_OMC.
  */
-int fmi2CompletedIntegratorStep_OMC(void* in_fmi2me, double flowStates)
+double fmi2CompletedIntegratorStep_OMC(void* in_fmi2me, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode){
+  if (!fmi2SkipCall(FMI2ME, "fmi2CompletedIntegratorStep") && FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_boolean_t callEventUpdate = fmi2_false;
     fmi2_boolean_t terminateSimulation = fmi2_false;
     fmi2_status_t status = fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, fmi2_true, &callEventUpdate, &terminateSimulation);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       fmi2Failed(FMI2ME, "fmi2CompletedIntegratorStep", status);
     }
-    return callEventUpdate;
+    if (callEventUpdate) {
+      FMI2ME->FMIStepEvent = 1;
+    }
+    if (terminateSimulation) {
+      FMI2ME->FMITerminateSimulation = 1;
+    }
   }
-  return fmi2_false;
+  return flowStates;
+}
+
+/*
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
+ * Returns true if the last fmi2CompletedIntegratorStep asked for an event, or to
+ * terminate. Does not call the FMU, so the zero-crossing functions can call it.
+ */
+int fmi2StepEvent_OMC(void* in_fmi2me, double flowStates)
+{
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
+  return FMI2ME->FMIStepEvent || FMI2ME->FMITerminateSimulation;
 }
 
 #ifdef __cplusplus

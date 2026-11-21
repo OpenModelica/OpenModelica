@@ -1853,9 +1853,10 @@ macro_rules! me_instance_methods {
         if st.mode == Mode::Failed {
             return Ok((0..st.layout.n_zc).map(|i| st.read_f64(st.layout.zc_off + i * 8)).collect());
         }
+        // As C's `internalGetEventIndicators`: `need_update` stays set, so that the
+        // next getter also evaluates the algebraic variables.
         if st.need_update {
             st.eval_ode()?;
-            st.need_update = false;
         }
         if st.layout.n_zc == 0 {
             return Ok(Vec::new());

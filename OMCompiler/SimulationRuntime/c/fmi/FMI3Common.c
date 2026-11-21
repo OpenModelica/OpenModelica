@@ -110,8 +110,26 @@ void fmi3SetReal_OMC(void* in_fmi3, int numberOfValueReferences, double* realVal
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
   if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
     fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, realValuesReferences);
-    fmi3_status_t status = fmi3_import_set_float64(FMI3ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences,
-                                                   (const fmi3_float64_t*)realValues, numberOfValueReferences);
+    fmi3_float64_t* values = (fmi3_float64_t*)realValues;
+    size_t n = numberOfValueReferences;
+    fmi3_status_t status;
+    /* Continuous-Time Mode allows only continuous-time inputs. The event update sets
+       the discrete ones in Event Mode. */
+    if (FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+      size_t i;
+      values = (fmi3_float64_t*)malloc(numberOfValueReferences * sizeof(fmi3_float64_t));
+      for (i = 0, n = 0; i < (size_t)numberOfValueReferences; i++) {
+        fmi3_import_variable_t* v = fmi3_import_get_variable_by_vr(FMI3ME->FMIImportInstance, valuesReferences_int[i]);
+        if (!v || fmi3_import_get_variable_variability(v) == fmi3_variability_enu_continuous) {
+          valuesReferences_int[n] = valuesReferences_int[i];
+          values[n++] = realValues[i];
+        }
+      }
+    }
+    status = n ? fmi3_import_set_float64(FMI3ME->FMIImportInstance, valuesReferences_int, n, values, n) : fmi3_status_ok;
+    if (values != (fmi3_float64_t*)realValues) {
+      free(values);
+    }
     free(valuesReferences_int);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
       fmi3Failed(FMI3ME, "fmi3SetFloat64", status);
