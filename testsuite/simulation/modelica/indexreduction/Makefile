@@ -13,7 +13,8 @@ ForLoopAlgorithm.mos \
 StateSetArrayEq.mos \
 StateSetDerivativeCandidate.mos \
 UnusedFunctionInput.mos \
-StateSetInitialSelection.mos
+StateSetInitialSelection.mos \
+SqrtDistanceConstraint.mos
 
 
 # test that currently fail. Move up when fixed. 
