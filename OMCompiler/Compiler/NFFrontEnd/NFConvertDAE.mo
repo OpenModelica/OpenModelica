@@ -876,9 +876,9 @@ algorithm
         e2 := Expression.toDAE(eq.rhs);
       then
         (if Type.isComplex(eq.ty) then
-           DAE.Element.INITIAL_COMPLEX_EQUATION(e1, e2, eq.source)
+           DAE.Element.INITIAL_COMPLEX_EQUATION(e1, e2, eq.source, eq.origin)
          elseif Type.isArray(eq.ty) then
-           DAE.Element.INITIAL_ARRAY_EQUATION(list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty)), e1, e2, eq.source)
+           DAE.Element.INITIAL_ARRAY_EQUATION(list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty)), e1, e2, eq.source, eq.origin)
          else
            DAE.Element.INITIALEQUATION(e1, e2, eq.source)) :: elements;
 

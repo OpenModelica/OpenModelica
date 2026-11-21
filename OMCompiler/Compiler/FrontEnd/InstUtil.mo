@@ -261,7 +261,7 @@ algorithm
       algorithm
         outElems := makeDAEElementInitial(elems);
       then
-        DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s)::outElems;
+        DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s,DAE.EquationOrigin.EQUATION)::outElems;
 
     case DAE.EQUATION(e1,e2,s)::elems
       algorithm
@@ -285,7 +285,7 @@ algorithm
       algorithm
         outElems := makeDAEElementInitial(elems);
       then
-        DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s)::outElems;
+        DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s,DAE.EquationOrigin.EQUATION)::outElems;
 
     case elem::elems // safe "last case" since we can not fail in cases above.
       algorithm

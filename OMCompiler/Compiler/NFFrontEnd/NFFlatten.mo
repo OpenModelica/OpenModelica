@@ -726,7 +726,8 @@ algorithm
        or fillVectorizedBindingFails then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
       eq := Equation.makeEquality(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
-        ElementSource.createElementSource(info), scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
+        ElementSource.createElementSource(info), scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE,
+        origin = DAE.EquationOrigin.BINDING);
       sections := Sections.prependEquation(eq, sections);
       binding := NFBinding.EMPTY_BINDING;
 
@@ -1024,7 +1025,7 @@ algorithm
       if not settings.newBackend then
         name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
         eq := Equation.makeEquality(Expression.CREF(ty, name),  binding_exp, ty,
-          ElementSource.createElementSource(info));
+          ElementSource.createElementSource(info), origin = DAE.EquationOrigin.BINDING);
         sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.NON_STRUCTURAL_PARAMETER);
       end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
@@ -1396,7 +1397,7 @@ algorithm
           ty := Type.liftArrayLeftList(eq.ty, dimensions);
           lhs := Expression.CREF(ty, lhs.cref);
           rhs := Expression.CREF(ty, rhs.cref);
-        then Equation.EQUALITY(lhs, rhs, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
+        then Equation.EQUALITY(lhs, rhs, ty, eq.scope, eq.source, eq.scalarizeMode, eq.origin) :: equations;
 
       // Pass Connections.* operators as they are and let the connection
       // handling deal with them.
@@ -2099,7 +2100,7 @@ algorithm
         ty := flattenType(eq.ty, prefix, info);
         checkEqualityEquation(e1, e2, eq.source);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode, eq.origin) :: equations;
 
     case Equation.FOR()
       algorithm

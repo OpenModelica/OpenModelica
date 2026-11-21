@@ -231,8 +231,9 @@ protected
   DAE.ElementSource src;
   NFInstNode.ScopeRef scope;
   Equation.ScalarizeMode scalarize_mode;
+  DAE.EquationOrigin origin;
 algorithm
-  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode) := eq;
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode, origin = origin) := eq;
   ty := Type.mapDims(ty, simplifyDimension);
 
   if Type.isAlwaysEmptyArray(ty) then
@@ -247,9 +248,9 @@ algorithm
   equations := match (lhs, rhs)
     case (Expression.TUPLE(), Expression.TUPLE())
       then simplifyTupleElement(lhs.elements, rhs.elements, ty, src,
-        function Equation.makeEquality(scope = InstNode.fromCell(scope), scalarizeMode = scalarize_mode), equations);
+        function Equation.makeEquality(scope = InstNode.fromCell(scope), scalarizeMode = scalarize_mode, origin = origin), equations);
 
-    else Equation.EQUALITY(lhs, rhs, ty, scope, src, scalarize_mode) :: equations;
+    else Equation.EQUALITY(lhs, rhs, ty, scope, src, scalarize_mode, origin) :: equations;
   end match;
 end simplifyEqualityEquation;
 

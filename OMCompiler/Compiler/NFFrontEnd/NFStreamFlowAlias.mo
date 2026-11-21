@@ -696,7 +696,7 @@ public
     if Binding.isBound(var.binding) then
       var_exp := Expression.fromTypedCref(var.name, var.ty);
       bind_exp := Binding.getExp(var.binding);
-      bind_eq := Equation.makeEquality(var_exp, bind_exp, var.ty);
+      bind_eq := Equation.makeEquality(var_exp, bind_exp, var.ty, origin = DAE.EquationOrigin.BINDING);
       equations := bind_eq :: equations;
     end if;
 
