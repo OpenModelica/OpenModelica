@@ -2115,11 +2115,18 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let &preExp += 'assign_array(<%tvar%>,cross_array<<%type%>>(<%var1%>,<%var2%>));<%\n%>'
     '<%tvar%>'
 
-  case CALL(path=IDENT(name="identity"), expLst={A}) then
+  case CALL(path=IDENT(name="identity"), expLst={A}, attr=CALL_ATTR(ty=ty)) then
     let var1 = daeExp(A, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let tvar = tempDecl('DynArrayDim2<int>', &varDecls)
     let &preExp += 'identity_alloc(<%var1%>, <%tvar%>);<%\n%>'
-    '<%tvar%>'
+    match ty
+    case T_ARRAY(ty=T_REAL(__)) then
+      let rvar = tempDecl('DynArrayDim2<double>', &varDecls)
+      let &preExp += 'cast_array<int, double>(<%tvar%>, <%rvar%>);<%\n%>'
+      '<%rvar%>'
+    else
+      '<%tvar%>'
+    end match
 
   case CALL(path=IDENT(name="diagonal"), expLst={v}, attr=CALL_ATTR(ty=ty as T_ARRAY(ty=elty))) then
     let var1 = daeExp(v, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

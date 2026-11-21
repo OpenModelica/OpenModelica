@@ -399,7 +399,7 @@ protected function simplifyCall
 algorithm
   outExp := matchcontinue inExp
     local
-      DAE.Exp e,e1,e2,exp,zero;
+      DAE.Exp e,e1,e2,exp,zero,one;
       list<DAE.Exp> matrix,expl;
       DAE.CallAttributes attr;
       DAE.Type tp;
@@ -493,10 +493,13 @@ algorithm
       then simplifyBuiltinCalls(inExp);
 
     // simplify identity
-    case DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)})
+    case DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)}, attr = DAE.CALL_ATTR(ty = tp))
       algorithm
-        matrix := list(DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)}),true,list(if i==j then DAE.ICONST(1) else DAE.ICONST(0) for i in 1:n)) for j in 1:n);
-      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),false,matrix);
+        tp := if Types.isRealOrSubTypeReal(Types.arrayElementType(tp)) then DAE.T_REAL_DEFAULT else DAE.T_INTEGER_DEFAULT;
+        one := Expression.makeConstOne(tp);
+        zero := Expression.makeConstZero(tp);
+        matrix := list(DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n)}),true,list(if i==j then one else zero for i in 1:n)) for j in 1:n);
+      then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),false,matrix);
 
     case DAE.CALL(path = Absyn.IDENT(name = "diagonal"), expLst = {DAE.ARRAY(array=expl,ty=tp)})
       algorithm
