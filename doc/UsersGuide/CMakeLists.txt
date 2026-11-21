@@ -193,11 +193,11 @@ add_custom_target(usersguide-prepare
   # script already keeps out of these two pages; the complaints that reached the
   # guide came from the omc and simulation output sphinx-build embeds.
   COMMAND ${CMAKE_COMMAND} -E env ${UG_ENV}
-          ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=+help=simulation-sphinxoutput
+          ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=--help=simulation-sphinxoutput
           -DOUTPUT=${UG_SOURCE}/simoptions.inc
           -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/omc_help_to_file.cmake"
   COMMAND ${CMAKE_COMMAND} -E env ${UG_ENV}
-          ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=+help=omcall-sphinxoutput
+          ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=--help=omcall-sphinxoutput
           -DOUTPUT=${UG_SOURCE}/omchelptext.rst
           -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/omc_help_to_file.cmake"
 

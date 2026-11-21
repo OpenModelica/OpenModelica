@@ -113,7 +113,7 @@ language. They are listed and commented below.
    .. code-block :: modelica
 
       __OpenModelica_simulationFlags(s = "optimization", optimizerNP="1"),
-      __OpenModelica_commandLineOptions = "+g=Optimica",
+      __OpenModelica_commandLineOptions = "-g=Optimica",
 
    OptimizerNP gives the number of colloction points and can be only 1
    or 3. As already said the RadauIIA order is 2*OptimizerNP-1.
@@ -330,7 +330,7 @@ The code is very simple and it is as follows:
 
    annotation(experiment(StartTime = 0, StopTime = 1, Tolerance = 1e-07, Interval = 0.01),
    __OpenModelica_simulationFlags(s="optimization", optimizerNP="1"),
-   __OpenModelica_commandLineOptions="+g=Optimica");
+   __OpenModelica_commandLineOptions="-g=Optimica");
 
    end BangBang2021;
 
