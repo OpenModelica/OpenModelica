@@ -70,6 +70,21 @@ modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelic
   return m ? (1 / result) : result;
 }
 
+modelica_real real_real_pow(modelica_real base, modelica_real exponent)
+{
+  modelica_real n, k;
+  if(base < 0.0)
+  {
+    n = round(exponent);
+    if(fabs(exponent - n) < 1e-10)
+      return pow(base, n);
+    k = round(1.0 / exponent);
+    if(fabs(1.0 / exponent - k) < 1e-10 && fmod(k, 2.0) != 0.0)
+      return -pow(-base, exponent);
+  }
+  return pow(base, exponent);
+}
+
 #if !defined(OMC_MINIMAL_RUNTIME)
 
 #include <regex.h>
