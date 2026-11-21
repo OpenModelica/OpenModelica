@@ -327,7 +327,10 @@ public
         var := Pointer.access(var_ptr);
         simVars := create(var, uniq, idx, if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS()) :: simVars;
         uniq := uniq + 1;
-        idx := idx + (if elementIndex then Variable.size(var) else 1);
+        idx := idx + (if not elementIndex then 1
+          // the runtime Jacobian offsets use the index, also an empty array needs its own
+          elseif BVariable.isResizable(var_ptr) then max(1, Variable.size(var))
+          else Variable.size(var));
       end for;
       simVars := listReverseInPlace(simVars);
       indices.uniqueIndex := uniq;
