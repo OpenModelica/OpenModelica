@@ -7,6 +7,7 @@ ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
 FmuAssertSolverRetry.mos \
+FmuDelayOutputDerivative.mos \
 FmuEquationAssertLog.mos \
 FmuExitInitAssert.mos \
 FmuMatV7Table.mos \
@@ -39,6 +40,7 @@ FmuAssertSolverRetry.py \
 FmuResourcePlus \
 FmuResourcePlus.py \
 FmuDiscreteInputEvent.py \
+FmuDelayOutputDerivative.py \
 FmuEquationAssertLog.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
