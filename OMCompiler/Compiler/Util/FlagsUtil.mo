@@ -1408,8 +1408,7 @@ algorithm
     case {"debug"}
       algorithm
         s := IOStream.create("debug");
-        s := IOStream.append(s, "The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
-        s := IOStream.append(s, "The available flags are (+ are enabled by default, - are disabled):\n\n");
+        s := IOStream.append(s, debugFlagsIntro(sphinx=false));
         s := IOStream.appendList(s, list(printDebugFlag(flag) for flag in List.sort(allDebugFlags,compareDebugFlags)));
       then
         IOStream.string(s);
@@ -1417,6 +1416,7 @@ algorithm
     case {"optmodules"}
       algorithm
         s := IOStream.create("optmodules");
+        s := IOStream.append(s, optModulesIntro(sphinx=false));
         // pre-optimization
         s := IOStream.append(s, wrapToTerminal("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list."));
         Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.PRE_OPT_MODULES;
@@ -1613,8 +1613,7 @@ algorithm
   Print.printBuf("\n");
   Print.printBuf(sum("-" for e in 1:stringLength(s)));
   Print.printBuf("\n\n");
-  Print.printBuf("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
-  Print.printBuf("The available flags are (+ are enabled by default, - are disabled):\n\n");
+  Print.printBuf(debugFlagsIntro(sphinx=true));
   for flag in List.sort(allDebugFlags,compareDebugFlags) loop
     Print.printBuf(printDebugFlag(flag, sphinx=true));
   end for;
@@ -1627,6 +1626,7 @@ algorithm
   Print.printBuf("\n\n");
 
   Print.printBuf("Flags that determine which symbolic methods are used to produce the causalized equation system.\n\n");
+  Print.printBuf(optModulesIntro(sphinx=true));
 
   Print.printBuf("The :ref:`--preOptModules <omcflag-preOptModules>` flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.");
   Print.printBuf("\n\n");
@@ -1642,6 +1642,40 @@ algorithm
   usage := Print.getString();
   Print.clearBuf();
 end printUsageSphinxAll;
+
+protected function debugFlagsIntro
+  input Boolean sphinx;
+  output String str;
+algorithm
+  str := "The debug flag takes a comma-separated list of flags which are used by the\n" +
+    "compiler for debugging or experimental purposes. A flag prefixed with \"-\" or\n" +
+    "\"no\" is disabled, other flags are enabled. Flags that are not in the list\n" +
+    "keep their value.\n\n" +
+    (if sphinx then "Examples::" else "Examples:") + "\n\n" +
+    "  omc -d=failtrace Model.mo\n" +
+    "  omc -d=execstat,-parallelCodegen,noinlineFunctions Model.mo\n" +
+    "  setCommandLineOptions(\"-d=execstat,-parallelCodegen\")\n\n" +
+    "The second example enables execstat and disables parallelCodegen and\n" +
+    "inlineFunctions, which are enabled by default.\n\n" +
+    (if sphinx then "The available flags are:" else "The available flags are (+ are enabled by default, - are disabled):") + "\n\n";
+end debugFlagsIntro;
+
+protected function optModulesIntro
+  input Boolean sphinx;
+  output String str;
+algorithm
+  str := "The flags --preOptModules, --initOptModules and --postOptModules each take a\n" +
+    "comma-separated list of modules. Use = to replace the default list, += to add\n" +
+    "modules to it, and -= to remove modules from it. A list given with = replaces\n" +
+    "all default modules, and many models need some of them, so prefer += and -=.\n" +
+    "With --defaultOptModulesOrdering (enabled by default), the modules run in the\n" +
+    "recommended order, not in the order of the list.\n\n" +
+    (if sphinx then "Examples::" else "Examples:") + "\n\n" +
+    "  omc --preOptModules-=comSubExp Model.mo\n" +
+    "  omc --postOptModules+=cseBinary Model.mo\n" +
+    "  omc --initOptModules-=solveSimpleEquations Model.mo\n" +
+    "  setCommandLineOptions(\"--preOptModules+=removeUnusedVariables\")\n\n";
+end optModulesIntro;
 
 protected function checkEnumFlagOptions
   "Exits if an enumeration flag lists other valid options than its values.

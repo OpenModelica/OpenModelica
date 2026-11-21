@@ -777,8 +777,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("reshufflePost", "Reshuffles algebraic loops."),
     ("simplifyAllExpressions", "Does simplifications on all expressions."),
     ("simplifyComplexFunction", "Some simplifications on complex functions (complex refers to the internal data structure)"),
-    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt."),
-    ("simplifyLoops", "Simplifies algebraic loops. This modules requires +simplifyLoops."),
+    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires --gDynOpt."),
+    ("simplifyLoops", "Simplifies algebraic loops. This module requires --simplifyLoops=1 or --simplifyLoops=2."),
     ("simplifyTimeIndepFuncCalls", "Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false."),
     ("simplifysemiLinear", "Simplifies calls to semiLinear."),
     ("solveLinearSystem", "solve linear system with newton step"),
@@ -946,7 +946,7 @@ constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(55, "maxSize
   "Max size for solveLinearSystem.");
 constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(56, "cppFlags",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
-  "Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)");
+  "Sets extra flags for compilation with the C++ compiler (e.g. --cppFlags=-O3,-Wall)");
 constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(57, "removeSimpleEquations",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
@@ -1029,8 +1029,8 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(67, "initOptModules",
     ("replaceHomotopyWithSimplified", "Replaces the homotopy expression homotopy(actual, simplified) with the simplified part."),
     ("simplifyAllExpressions", "Does simplifications on all expressions."),
     ("simplifyComplexFunction", "Some simplifications on complex functions (complex refers to the internal data structure)"),
-    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt."),
-    ("simplifyLoops", "Simplifies algebraic loops. This modules requires +simplifyLoops."),
+    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires --gDynOpt."),
+    ("simplifyLoops", "Simplifies algebraic loops. This module requires --simplifyLoops=1 or --simplifyLoops=2."),
     ("solveSimpleEquations", "Solves simple equations"),
     ("tearingSystem", "For method selection use flag tearingMethod."),
     ("wrapFunctionCalls", "This module introduces variables for each function call and substitutes all these calls with the newly introduced variables.")
