@@ -1835,10 +1835,10 @@ pub extern "C" fn rt_invalid_root(base: f64, exp: f64, loc: u32) {
 }
 
 /// Scalar `base ^ exp` for a non-integer-literal exponent, replicating the C
-/// target's inlined generic real-power semantics so the result stays
-/// byte-identical. A negative base with an (effectively) integer exponent or an
-/// odd-root fractional exponent gives a real value; any other negative-base
-/// fractional exponent is an "invalid root"; and any nan/inf result is rejected.
+/// runtime's `real_real_pow` so the result stays byte-identical. A negative
+/// base with an (effectively) integer exponent or an odd-root fractional
+/// exponent gives a real value; any other negative-base fractional exponent is
+/// an "invalid root"; and any nan/inf result is rejected.
 /// The error cases go through [`rt_invalid_root`], as C's `throwStreamPrint`
 /// does: fatal unless a nonlinear solver can back off.
 #[unsafe(no_mangle)]

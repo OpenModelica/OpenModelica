@@ -1,0 +1,40 @@
+// name: powOddRoot
+// keywords: #4890
+// status: correct
+
+loadString("
+model OddRoots
+  parameter Real b = -8;
+  parameter Real p1 = 1/3;
+  parameter Real p2 = -1/3;
+  parameter Real p3 = 0.2;
+  parameter Real p4 = 3;
+  Real x1 = b^p1;
+  Real x2 = b^p2;
+  Real x3 = b^p3;
+  Real x4 = b^p4;
+end OddRoots;
+"); getErrorString();
+
+simulate(OddRoots, stopTime = 0.1, numberOfIntervals = 1); getErrorString();
+val(x1, 0.1);
+val(x2, 0.1);
+val(x3, 0.1);
+val(x4, 0.1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "OddRoots_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'OddRoots', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0
+// -0.5
+// -1.5157165665103982
+// -512.0
+// endResult

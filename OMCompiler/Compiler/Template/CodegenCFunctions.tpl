@@ -6664,60 +6664,11 @@ case BINARY(__) then
         let tmp1 = tempDecl("modelica_real", &varDecls, &varFrees)
         let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
         let tmp3 = tempDecl("modelica_real", &varDecls, &varFrees)
-        let tmp4 = tempDecl("modelica_real", &varDecls, &varFrees) //fractpart
-        let tmp5 = tempDecl("modelica_real", &varDecls, &varFrees) //intpart
-        let tmp6 = tempDecl("modelica_real", &varDecls, &varFrees) //intpart
-        let tmp7 = tempDecl("modelica_real", &varDecls, &varFrees) //fractpart
         let &preExp +=
           <<
           <%tmp1%> = <%e1%>;
           <%tmp2%> = <%e2%>;
-          if(<%tmp1%> < 0.0 && <%tmp2%> != 0.0)
-          {
-            <%tmp4%> = modf(<%tmp2%>, &<%tmp5%>);
-
-            if(<%tmp4%> > 0.5)
-            {
-              <%tmp4%> -= 1.0;
-              <%tmp5%> += 1.0;
-            }
-            else if(<%tmp4%> < -0.5)
-            {
-              <%tmp4%> += 1.0;
-              <%tmp5%> -= 1.0;
-            }
-
-            if(fabs(<%tmp4%>) < 1e-10)
-              <%tmp3%> = pow(<%tmp1%>, <%tmp5%>);
-            else
-            {
-              <%tmp7%> = modf(1.0/<%tmp2%>, &<%tmp6%>);
-              if(<%tmp7%> > 0.5)
-              {
-                <%tmp7%> -= 1.0;
-                <%tmp6%> += 1.0;
-              }
-              else if(<%tmp7%> < -0.5)
-              {
-                <%tmp7%> += 1.0;
-                <%tmp6%> -= 1.0;
-              }
-              if(fabs(<%tmp7%>) < 1e-10 && ((unsigned long)<%tmp6%> & 1))
-              {
-                <%tmp3%> = -pow(-<%tmp1%>, <%tmp4%>)*pow(<%tmp1%>, <%tmp5%>);
-              }
-              else
-              {
-                <%if metaModelicaRuntime()
-                  then '<%generateThrow()%>;<%\n%>'
-                  else 'raiseStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
-              }
-            }
-          }
-          else
-          {
-            <%tmp3%> = pow(<%tmp1%>, <%tmp2%>);
-          }
+          <%tmp3%> = real_real_pow(<%tmp1%>, <%tmp2%>);
           if(isnan(<%tmp3%>) || isinf(<%tmp3%>))
           {
             <%if metaModelicaRuntime()
