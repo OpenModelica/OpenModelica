@@ -10341,10 +10341,6 @@ Variability: %4</source>
         <translation>Vous ne pouvez pas resimuler cette classe.&lt;br /&gt;Ceci est juste un fichier résultat chargé depuis le menu &lt;b&gt;Fichier-&gt;Ouvrir un ou des fichier(s) résultat(s))&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Impossible de paramétrer le contenu de QDomDocument à partir du fichier %1</translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation type="unfinished"></translation>
     </message>

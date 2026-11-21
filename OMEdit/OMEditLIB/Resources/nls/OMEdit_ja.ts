@@ -10303,10 +10303,6 @@ Variability: %4</source>
         <translation>このクラスを再実行できません&lt;br /&gt; これはメニュー &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.でロードされた結果ファイルです.</translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>ファイル %1 からQDomDocumentの内容を設定できません</translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation type="unfinished"></translation>
     </message>

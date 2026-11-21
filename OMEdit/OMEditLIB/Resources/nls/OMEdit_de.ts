@@ -10386,10 +10386,6 @@ Variabilität: %4</translation>
         <translation>Diese Klasse kann nicht erneut simuliert werden.&lt;br /&gt;Das ist nur eine Ergebnisdatei, die über das Menü &lt;b&gt;Datei-&gt;Ergebnisdatei(en) öffnen&lt;/b&gt; geladen wurde.</translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Der Inhalt von QDomDocument kann nicht aus der Datei %1 gesetzt werden</translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation>Aktiviert für %1</translation>
     </message>

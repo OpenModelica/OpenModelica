@@ -10318,10 +10318,6 @@ Variability: %4</source>
         <translation>该类不能进行重新仿真。 &lt;br /&gt;这只是一个通过菜单&lt;b&gt;文件→打开结果文件&lt;b&gt;加载的结果文件。</translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>从文件%1不能设置QDomDocument内容</translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation>已为 %1 启用</translation>
     </message>

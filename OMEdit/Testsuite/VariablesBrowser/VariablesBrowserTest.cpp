@@ -215,6 +215,73 @@ void VariablesBrowserTest::resultFileUnits()
   }
 }
 
+void VariablesBrowserTest::overrideFile()
+{
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  QTemporaryDir workingDirectory;
+  QVERIFY(workingDirectory.isValid());
+  pOMCProxy->changeDirectory(workingDirectory.path());
+
+  const QString model = "model OverrideFileTest\n"
+                        "  parameter Real p = 1;\n"
+                        "  parameter Real q = 2;\n"
+                        "  parameter String s = \"default\";\n"
+                        "  Real x(start = 0, fixed = true);\n"
+                        "equation\n"
+                        "  der(x) = p + q;\n"
+                        "end OverrideFileTest;\n";
+  QVERIFY(pOMCProxy->loadString(model, "OverrideFileTest.mo"));
+  pOMCProxy->sendCommand("simulate(OverrideFileTest, stopTime=1)");
+  const QString simulationResult = pOMCProxy->getResult();
+  QVERIFY2(QFile::exists(workingDirectory.filePath("OverrideFileTest_res.mat")), qPrintable(simulationResult + pOMCProxy->getErrorString()));
+  QFile initFile(workingDirectory.filePath("OverrideFileTest_init.xml"));
+  QVERIFY(initFile.open(QIODevice::ReadOnly));
+  const QByteArray initXml = initFile.readAll();
+  initFile.close();
+
+  SimulationOptions simulationOptions;
+  simulationOptions.setClassName("OverrideFileTest");
+  simulationOptions.setWorkingDirectory(workingDirectory.path());
+  simulationOptions.setIsValid(true);
+  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+  VariablesTreeModel *pVariablesTreeModel = pVariablesWidget->getVariablesTreeModel();
+  auto findItem = [&](const QString &name) {
+    return pVariablesTreeModel->findVariablesTreeItem("OverrideFileTest_res.mat" + name, pVariablesTreeModel->getRootVariablesTreeItem());
+  };
+  auto changeValue = [&](const QString &name, const QString &value) {
+    VariablesTreeItem *pVariablesTreeItem = findItem("." + name);
+    QVERIFY(pVariablesTreeItem && pVariablesTreeItem->isEditable());
+    pVariablesTreeItem->setData(1, value, Qt::EditRole);
+    pVariablesWidget->writeOverrideFile(findItem(""), &simulationOptions);
+  };
+  const QString overrideFileName = workingDirectory.filePath("OverrideFileTest_override.txt");
+  auto readOverrideFile = [&]() {
+    QFile overrideFile(overrideFileName);
+    return overrideFile.open(QIODevice::ReadOnly) ? overrideFile.readAll() : QByteArray();
+  };
+
+  pVariablesWidget->insertVariablesItemsToTree("OverrideFileTest_res.mat", workingDirectory.path(), QStringList(), simulationOptions);
+  changeValue("p", "3");
+  changeValue("s", "a,b \"c\"");
+  QCOMPARE(readOverrideFile(), QByteArray("p=3\ns=\"a,b \\\"c\\\"\"\n"));
+  QCOMPARE(simulationOptions.getSimulationFlags(), QStringList("-overrideFile=" + overrideFileName));
+  QCOMPARE(simulationOptions.getAdditionalSimulationFlags(), "-overrideFile=" + overrideFileName);
+  QVERIFY(initFile.open(QIODevice::ReadOnly));
+  QCOMPARE(initFile.readAll(), initXml);
+  initFile.close();
+
+  pOMCProxy->sendCommand(QString("simulate(OverrideFileTest, stopTime=1, simflags=\"-overrideFile=%1\")").arg(overrideFileName));
+  pOMCProxy->sendCommand("val(x, 1)");
+  QCOMPARE(pOMCProxy->getResult().trimmed().toDouble(), 5.0);
+
+  pVariablesWidget->insertVariablesItemsToTree("OverrideFileTest_res.mat", workingDirectory.path(), QStringList(), simulationOptions);
+  foreach (const QStringList &value, QList<QStringList>({{"p", "3"}, {"q", "2.0"}, {"s", "a,b \"c\""}})) {
+    VariablesTreeItem *pVariablesTreeItem = findItem("." + value.at(0));
+    QVERIFY(pVariablesTreeItem);
+    QCOMPARE(pVariablesTreeItem->data(1, Qt::DisplayRole).toString(), value.at(1));
+  }
+}
+
 void VariablesBrowserTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

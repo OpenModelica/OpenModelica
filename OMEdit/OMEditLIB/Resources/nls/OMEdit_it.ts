@@ -10385,10 +10385,6 @@ Variabilità: %4</translation>
         <translation>Non è possibile simulare di nuovo questa classe.&lt;br /&gt;È solo un file di risultati caricato tramite il menu &lt;b&gt;File-&gt;Apri file di risultati&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Impossibile impostare il contenuto di QDomDocument dal file %1</translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation>Abilitato per %1</translation>
     </message>
