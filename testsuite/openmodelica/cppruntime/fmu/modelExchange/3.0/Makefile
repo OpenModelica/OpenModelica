@@ -4,6 +4,7 @@ TESTFILES = \
 testCppFMI3.mos \
 fmi3_array_cpp.mos \
 fmi3LogFormatCpp.mos \
+fmi3TimeEventsCpp.mos \
 fmi3LoggerInstancesCpp.mos
 
 # Dependency files that are not .mo .mos or Makefile
@@ -13,6 +14,7 @@ DEPENDENCIES = \
 *.mos \
 Makefile \
 fmi3LogFormatCpp.py \
+fmi3TimeEventsCpp.py \
 fmi3LoggerInstancesCpp.py
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
