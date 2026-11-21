@@ -102,6 +102,7 @@ Issue17162.mos \
 Issue18209.mos \
 redundantTupleEquation.mos \
 UnfixedParameterStart.mos \
+DiscreteStartUnfixedParameter.mos \
 
 
 # test that currently fail. Move up when fixed.

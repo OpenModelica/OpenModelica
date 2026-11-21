@@ -2690,6 +2690,20 @@ algorithm
       preUsed := BaseHashSet.has(cr, hs);
       startValue := BackendVariable.varStartValueOption(var);
 
+      startExp := BackendVariable.varStartValue(var);
+      parameters := Expression.getAllCrefs(startExp);
+      if not min(UnorderedSet.contains(p, allPrimaryParameters) for p in parameters) then
+        startCR := ComponentReference.crefPrefixStart(cr);
+        startVar := BackendVariable.copyVarNewName(startCR, var);
+        startVar := BackendVariable.setBindExp(startVar, NONE());
+        startVar := BackendVariable.setVarDirection(startVar, DAE.BIDIR());
+        startVar := BackendVariable.setVarFixed(startVar, false);
+        startVar := BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
+        startVar := BackendVariable.setVarStartValueOption(startVar, NONE());
+        vars := BackendVariable.addVar(startVar, vars);
+        eqns := BackendEquation.add(BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+      end if;
+
       var := BackendVariable.setVarFixed(var, false);
 
       preCR := ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
