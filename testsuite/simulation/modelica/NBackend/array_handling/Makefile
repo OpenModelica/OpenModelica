@@ -63,6 +63,7 @@ resizableEmptyRange.mos \
 resizableReverseRange.mos \
 resizableEmptyInitSlice.mos \
 resizableStateCandidates.mos \
+resizableEmptyJacobianVars.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \

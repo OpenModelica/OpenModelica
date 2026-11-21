@@ -1,0 +1,55 @@
+// name: resizableEmptyJacobianVars
+// keywords: NewBackend resizable Jacobian sparsity
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableEmptyJacobianVars resizableEmptyJacobianVars_* resizableEmptyJacobianVars.log resizableEmptyJacobianVars.c resizableEmptyJacobianVars.o resizableEmptyJacobianVars.makefile resizableEmptyJacobianVars.libs
+//
+// Index reduction gives two dummy state arrays of size N - 2, which is
+// zero at the start value N = 2. Each array has its own position in the
+// Jacobian, also if it is empty at the start value.
+
+loadString("
+model resizableEmptyJacobianVars
+  parameter Integer N = 2;
+  Real p[N](each start = 1.5e5), p2[N](each start = 1.5e5);
+  Real n[N](each stateSelect = StateSelect.never), n2[N](each stateSelect = StateSelect.never);
+  Real q[N + 1], q2[N + 1];
+equation
+  for i in 1:N loop
+    der(n[i]) = q[i] - q[i + 1];
+    n[i] = p[i]*1e-5;
+    der(n2[i]) = q2[i] - q2[i + 1];
+    n2[i] = p2[i]*1e-5;
+  end for;
+  for i in 1:N - 1 loop
+    q[i + 1] = 1e-5*(p[i] - p[i + 1]);
+    q2[i + 1] = 1e-5*(p2[i] - p2[i + 1]);
+  end for;
+  p[1] = 2e5;
+  p[N] = 1e5 + 1e4*time;
+  p2[1] = 2e5 - 1e4*time;
+  p2[N] = 1e5;
+initial equation
+  for i in 2:N - 1 loop
+    p[i] = 1.5e5;
+    p2[i] = 1.4e5;
+  end for;
+end resizableEmptyJacobianVars;
+"); getErrorString();
+
+buildModel(resizableEmptyJacobianVars, stopTime = 1); getErrorString();
+system("grep -q '_jac_off_seed\\[1\\] = ' resizableEmptyJacobianVars_12jac.c");
+system("./resizableEmptyJacobianVars -override=N=4", "resizableEmptyJacobianVars.log");
+val(p[2], 1, "resizableEmptyJacobianVars_res.mat");
+val(p2[3], 1, "resizableEmptyJacobianVars_res.mat");
+// Result:
+// true
+// ""
+// {"resizableEmptyJacobianVars", "resizableEmptyJacobianVars_init.xml"}
+// ""
+// 0
+// 0
+// 166537.45903255185
+// 129783.74645631977
+// endResult
