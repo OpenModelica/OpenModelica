@@ -1,0 +1,94 @@
+// name:     InitialArrayEquationRows
+// keywords: initialization, array equation, redundant equation
+// status:   correct
+//
+// The rows of an initial array equation are balanced one by one. In
+// ConstantRow, der(v[3, :]) = 0 is redundant because v[3, :] = 0. In
+// DependentRow, v[2, 2] is a dummy state and its row is redundant, not the
+// initial equation of p.
+
+loadString("
+package InitialArrayEquationRows
+  function jj
+    input Real xx[:, :];
+    output Real yy[size(xx, 1), size(xx, 2)];
+  algorithm
+    yy := cat(1, {-xx[2, :], xx[1, :]}, zeros(size(xx, 1) - 2, size(xx, 2)));
+    annotation(Inline = true);
+  end jj;
+
+  model ConstantRow
+    parameter Real w = 1;
+    Real v[3, 2];
+  initial equation
+    der(v) = w*jj(v);
+  equation
+    der(v[1, :]) = -v[2, :]*w - v[1, :] + {sin(time), 0};
+    der(v[2, :]) = v[1, :]*w - v[2, :] + {0, cos(time)};
+    v[3, :] = {0, 0};
+  end ConstantRow;
+
+  model DependentRow
+    parameter Real p0 = 1;
+    parameter Real p(fixed = false);
+    Real v[3, 2];
+  initial equation
+    p = 2*p0;
+    der(v) = p*jj(v);
+  equation
+    der(v[1, :]) = -v[2, :]*p - v[1, :] + {sin(time), 0};
+    der(v[2, 1]) = v[1, 1]*p - v[2, 1];
+    v[2, 2] = 2*v[1, 2];
+    v[3, :] = {0, 0};
+  end DependentRow;
+end InitialArrayEquationRows;
+"); getErrorString();
+setCommandLineOptions("-d=initialization"); getErrorString();
+
+simulate(InitialArrayEquationRows.ConstantRow, stopTime = 1); getErrorString();
+val(v[1, 1], 0.0);
+val(v[2, 2], 0.0);
+val(v[1, 1], 1.0);
+val(v[2, 2], 1.0);
+
+simulate(InitialArrayEquationRows.DependentRow, stopTime = 1); getErrorString();
+val(p, 0.0);
+val(v[1, 1], 1.0);
+val(v[1, 2], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InitialArrayEquationRows.ConstantRow_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'InitialArrayEquationRows.ConstantRow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: der(v[3,1]) = 0.0 -> 0.0 = 0.0
+// Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: der(v[3,2]) = 0.0 -> 0.0 = 0.0
+// "
+// 0.0
+// 1.0
+// 0.31275149995569657
+// 0.6338931897538225
+// record SimulationResult
+//     resultFile = "InitialArrayEquationRows.DependentRow_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'InitialArrayEquationRows.DependentRow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: der(v[3,1]) = 0.0 -> 0.0 = 0.0
+// Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: der(v[3,2]) = 0.0 -> 0.0 = 0.0
+// Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
+//          $DER.v[2,2] = v[1,2] * p.
+// "
+// 2.0
+// 0.25487641067166683
+// 0.0
+// endResult

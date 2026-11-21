@@ -134,7 +134,7 @@ val(y[10], 1.0);
 //
 // Initial Equations (1, 1)
 // ========================================
-// 1/1 (10): integrator1.y = integrator1.y_start   [dynamic |0|0|0|0|]
+// 1/1 (10): integrator1.y = integrator1.y_start   [initial |0|0|0|0|]
 //
 //
 // Base partitions (1)
