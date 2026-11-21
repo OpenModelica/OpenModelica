@@ -3670,6 +3670,10 @@ algorithm
                    instCrefFunction(cref, found_scope, context, info)
                  else
                    instCrefTypename(cref, ComponentRef.node(cref), info);
+          // Allow using undeclared expandable connector variables in annotations,
+          // needed by e.g. Curve.
+          case InstNode.NAME_NODE() guard InstContext.inAnnotation(context)
+            then Expression.CREF(Type.UNKNOWN(), ComponentRef.appendScope(found_scope, cref));
           else
             algorithm
               Error.terminate(getInstanceName() + " got invalid instance node", sourceInfo());

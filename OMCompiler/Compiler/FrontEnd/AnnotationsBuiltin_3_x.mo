@@ -384,9 +384,9 @@ end Axis;
 
 type YAxisSelection = enumeration(Left, Right);
 
-record Curve
-  String x = "time" "X coordinate values";
-  Real y "Y coordinate values";
+record Curve<__ResultReference>
+  __ResultReference x = time "X coordinate values";
+  __ResultReference y "Y coordinate values";
   String legend = "" "Legend";
   YAxisSelection yAxis = YAxisSelection.Left "Associated y axis";
   Integer zOrder = 0 "Drawing order control";
@@ -415,7 +415,7 @@ record Documentation
   String revisions = "" "Class revision history";
   String __OpenModelica_infoHeader = "";
   String[:] styleSheets "Style sheets for documentation";
-  Figure[:] figures = fill(Figure(plots = fill(Plot(curves = fill(Curve(y = 0), 0)), 0)), 0) "Simulation result figures";
+  Figure[:] figures = fill(Figure(plots = fill(Plot(curves = fill(Curve(y = time), 0)), 0)), 0) "Simulation result figures";
 end Documentation;
 
 type TearingSelect = enumeration(never, avoid, default, prefer, always);
