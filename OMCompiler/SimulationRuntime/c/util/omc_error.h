@@ -69,6 +69,12 @@ void deactivateLogging(void);
 void reactivateLogging(void);
 void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
+/* A warning assert warns once for each instance (each threadData). site is a
+   static int of the generated code, 0 at the start, which keeps the index of the
+   assert in the bit vector of each threadData. */
+DLLExport int omc_assert_warning_done(threadData_t *threadData, int *site);
+DLLExport void omc_assert_warning_set_done(threadData_t *threadData, int *site);
+DLLExport void omc_assert_warnings_free(threadData_t *threadData);
 /* omc reads its own copy of the message buffer, so an assert in a function
    library dlopened into it reports through these instead of to stderr. The
    raise still belongs to this runtime: the frame owes its releases. */
