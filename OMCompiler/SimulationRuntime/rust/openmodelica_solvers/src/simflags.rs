@@ -1152,8 +1152,11 @@ fn push_raw_str(dst: &mut String, v: String) {
 /// dropped, joined with commas into one `-override` string.
 #[cfg(feature = "std")]
 fn read_override_file(path: &str) -> Result<String, String> {
-    let text = std::fs::read_to_string(path)
-        .map_err(|e| format!("simulation_input_xml.c: could not read overrideFile {path}: {e}"))?;
+    #[cfg(feature = "vfs")]
+    let text = openmodelica_wasi::fs::read_to_string(path);
+    #[cfg(not(feature = "vfs"))]
+    let text = std::fs::read_to_string(path);
+    let text = text.map_err(|e| format!("simulation_input_xml.c: could not read overrideFile {path}: {e}"))?;
     let mut out = Vec::new();
     for line in text.split_inclusive('\n').filter(|l| l.ends_with('\n')) {
         let line = line.trim();

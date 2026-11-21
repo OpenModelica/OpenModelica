@@ -443,8 +443,10 @@ fn session() -> &'static mut Option<Session> {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
-    let argv = simflags::argv_from_bytes(bytes);
-    // The host resolves `-variableFilter` (`rt_sim_set_result`'s `keep`).
+    let mut argv = simflags::argv_from_bytes(bytes);
+    // The host resolves `-variableFilter` (`rt_sim_set_result`'s `keep`) and
+    // `-overrideFile` (`rt_sim_set_overrides`); this runtime has no filesystem.
+    drop_override_file(&mut argv);
     match simflags::parse(&argv).and_then(|f| {
         let cap = simflags::Capabilities {
             variable_filter: true,
@@ -458,6 +460,19 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
             0
         }
         Err(_) => -1,
+    }
+}
+
+fn drop_override_file(argv: &mut Vec<String>) {
+    let mut i = 1;
+    while i < argv.len() {
+        if argv[i] == "-overrideFile" {
+            argv.drain(i..(i + 2).min(argv.len()));
+        } else if argv[i].starts_with("-overrideFile=") {
+            argv.remove(i);
+        } else {
+            i += 1;
+        }
     }
 }
 

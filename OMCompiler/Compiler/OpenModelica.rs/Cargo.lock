@@ -5061,6 +5061,7 @@ version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "openmodelica_wasi",
  "rsparse",
 ]
 

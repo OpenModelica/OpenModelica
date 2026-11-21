@@ -226,7 +226,7 @@ openmodelica_mat_reader = { path = "../../SimulationRuntime/rust/openmodelica_ma
 openmodelica_result_diff = { path = "../../SimulationRuntime/rust/openmodelica_result_diff" }
 openmodelica_result_files = { path = "../../SimulationRuntime/rust/openmodelica_result_files", features = ["vfs"] }
 openmodelica_plt_writer = { path = "../../SimulationRuntime/rust/openmodelica_plt_writer" }
-openmodelica_sim_meta = { path = "../../SimulationRuntime/rust/openmodelica_sim_meta" }
+openmodelica_sim_meta = { path = "../../SimulationRuntime/rust/openmodelica_sim_meta", features = ["vfs"] }
 openmodelica_backend = { path = "openmodelica_backend" }
 openmodelica_backend_tools = { path = "openmodelica_backend_tools" }
 openmodelica_backend_types = { path = "openmodelica_backend_types" }
