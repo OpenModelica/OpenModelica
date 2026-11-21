@@ -1,0 +1,65 @@
+// Name:     SqrtDistanceConstraint
+// keywords: index reduction, dynamic state selection, linear system, jacobian, #4122
+// status:   correct
+//
+// Two masses with the distance constraint sqrt(d*d) = len. The differentiated
+// constraint has the form 0 = N/(d*d). The residual of the linear system for f
+// has no denominator, and its symbolic Jacobian must not have it either.
+// TwoMassesSquared has the constraint d*d = len^2 and is the reference.
+
+loadString("
+partial model TwoMasses
+  parameter Real m1 = 0.8, m2 = 1.2, len = 2.5;
+  Real x1[3](start = {0, 0, 0}, each fixed = true);
+  Real x2[3](start = {len, 0, 0}, fixed = {true, true, false});
+  Real v1[3](each start = 0, each fixed = true);
+  Real v2[3](each start = 0, fixed = {true, true, false});
+  Real f;
+  Real u[3];
+equation
+  der(x1) = v1;
+  der(x2) = v2;
+  m1*der(v1) = {0, 2, 0} - u*f;
+  m2*der(v2) = {0, -2, 0} + u*f;
+  u = (x2 - x1)/sqrt((x2 - x1)*(x2 - x1));
+end TwoMasses;
+
+model TwoMassesSqrt
+  extends TwoMasses;
+equation
+  sqrt((x1 - x2)*(x1 - x2)) = len;
+end TwoMassesSqrt;
+
+model TwoMassesSquared
+  extends TwoMasses;
+equation
+  (x1 - x2)*(x1 - x2) = len^2;
+end TwoMassesSquared;
+"); getErrorString();
+
+simulate(TwoMassesSqrt, stopTime = 5); getErrorString();
+simulate(TwoMassesSquared, stopTime = 5); getErrorString();
+diffSimulationResults("TwoMassesSqrt_res.mat", "TwoMassesSquared_res.mat", "SqrtDistanceConstraint_diff", relTol = 1e-3, vars = {"x1[1]", "x1[2]", "x2[1]", "x2[2]", "f"}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TwoMassesSqrt_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TwoMassesSqrt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "TwoMassesSquared_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TwoMassesSquared', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// ""
+// endResult
