@@ -656,13 +656,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies a path for writing the output files i.e., model_res.mat, model_prof.intdata, model_prof.realdata etc.",
   /* FLAG_OVERRIDE */
   "  Override the variables in the XML setup file\n"
-  "  For example: var1=start1,var2=start2,par3=start3",
+  "  For example: var1=start1,var2=start2,par3=start3\n"
+  "  A value in double quotes is a Modelica string literal: str=\"a,b\"",
   /* FLAG_OVERRIDE_FILE */
   "  Will override the variables in the XML setup file\n"
   "  with the values from the file.\n"
   "  Note that: -overrideFile CANNOT be used with -override.\n"
   "  Use when variables for -override are too many.\n"
-  "  overrideFileName contains lines of the form: var=start",
+  "  overrideFileName contains lines of the form: var=start\n"
+  "  with start as for -override.",
   /* FLAG_PORT */
   "  Value specifies the port for simulation status (default disabled).",
   /* FLAG_R */

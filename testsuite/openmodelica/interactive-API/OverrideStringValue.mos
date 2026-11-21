@@ -1,0 +1,38 @@
+// name: OverrideStringValue.mos
+// keywords: -overrideFile
+// status: correct
+// teardown_command: rm -rf QuotedOverride* quotedOverride.txt
+//
+// A value in double quotes is a Modelica string literal. See issue #3962.
+//
+
+loadString("
+model QuotedOverride
+  parameter String s = \"s\";
+  parameter String t = \"t\";
+  parameter Real p = 1;
+initial algorithm
+  assert(false, \"s=\" + s + \", t=\" + t + \", p=\" + String(p), AssertionLevel.warning);
+end QuotedOverride;
+"); getErrorString();
+
+writeFile("quotedOverride.txt", "s=\"a,b! \\\"c\\\" \\\\ d\"\nt=\"x\",p=3\n"); getErrorString();
+simulate(QuotedOverride, stopTime=0, simflags="-overrideFile=quotedOverride.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "QuotedOverride_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'QuotedOverride', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-overrideFile=quotedOverride.txt'",
+//     messages = "LOG_ASSERT        | warning | [<interactive>:7:3-7:84:writable]
+// |                 | |       | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | ((false)) --> \"s=a,b! \"c\" \\ d, t=x, p=3\"
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
