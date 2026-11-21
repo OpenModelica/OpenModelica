@@ -63,7 +63,9 @@ pub(super) fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::
 /// assert (`AssertionLevel.warning`, `level` enum index 1 — the min/max attribute
 /// checks) calls `rt_assert_warning` and continues instead, as C's
 /// `omc_assert_warning`, and latches a per-site flag so it reports once — C's
-/// `if(!warningTriggered)` around the whole test. Shared by `STMT_ASSERT` and the
+/// `if(!warningTriggered)` around the whole test. The flag is 1 until the host
+/// writes the warning (`commitAssertWarnings`) or drops it for a rejected point
+/// (`dropAssertWarnings`). Shared by `STMT_ASSERT` and the
 /// `when`-body `ASSERT`.
 pub(super) fn emit_assert(
     ctx: &mut FnCtx,
