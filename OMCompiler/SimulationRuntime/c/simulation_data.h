@@ -353,6 +353,7 @@ typedef struct STATIC_REAL_DATA
   REAL_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
 } STATIC_REAL_DATA;
 
 /* An enumeration type: value k is literals[k-1]. */
@@ -370,6 +371,7 @@ typedef struct STATIC_INTEGER_DATA
   INTEGER_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
   const ENUMERATION_TYPE *enumeration; /* the declared type of an enumeration variable, NULL otherwise */
 } STATIC_INTEGER_DATA;
 
@@ -380,6 +382,7 @@ typedef struct STATIC_BOOLEAN_DATA
   BOOLEAN_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
 } STATIC_BOOLEAN_DATA;
 
 typedef struct STATIC_STRING_DATA
@@ -389,6 +392,7 @@ typedef struct STATIC_STRING_DATA
   STRING_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
 } STATIC_STRING_DATA;
 
 /**

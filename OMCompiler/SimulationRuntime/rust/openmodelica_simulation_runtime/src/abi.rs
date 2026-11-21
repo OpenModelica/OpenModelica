@@ -307,6 +307,7 @@ pub struct STATIC_REAL_DATA {
     pub attribute: REAL_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
 }
 
 #[repr(C)]
@@ -323,6 +324,7 @@ pub struct STATIC_INTEGER_DATA {
     pub attribute: INTEGER_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
     pub enumeration: *const ENUMERATION_TYPE,
 }
 
@@ -333,6 +335,7 @@ pub struct STATIC_BOOLEAN_DATA {
     pub attribute: BOOLEAN_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
 }
 
 #[repr(C)]
@@ -342,6 +345,7 @@ pub struct STATIC_STRING_DATA {
     pub attribute: STRING_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
 }
 
 #[repr(C)]

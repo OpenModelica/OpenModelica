@@ -358,6 +358,7 @@ package SimCodeVar
       Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref)";
       Boolean relativeQuantity           "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
       Boolean isConnectorFlow            "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
+      Boolean startFromEquation          "initialValue is the value a removed initial equation gave the variable";
     end SIMVAR;
   end SimVar;
 
