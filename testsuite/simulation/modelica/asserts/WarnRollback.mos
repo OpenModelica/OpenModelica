@@ -1,0 +1,41 @@
+// name:     WarnRollback
+// keywords: assert warning event
+// status:   correct
+//
+// Euler evaluates the end of the step before the event location. The point
+// t = 0.8, x = 0.8 is rejected by the event at t = 0.5. The warning must not
+// come from there: it comes at the first accepted point with x > 0.6.
+// wasm-jit still gives the warning of the rejected point (#18263), so a
+// wasm target uses C.
+//
+
+setCommandLineOptions(if regexBool(getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET"), "^wasm") then "--simCodeTarget=C" else ""); getErrorString();
+loadString("
+model WarnRollback
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  when x > 0.5 and time < 0.9 then
+    reinit(x, 0);
+  end when;
+  assert(x < 0.6, \"x is too large\", AssertionLevel.warning);
+end WarnRollback;
+"); getErrorString();
+echo(false);
+res := simulate(WarnRollback, stopTime = 2.0, method = "euler", numberOfIntervals = 5);
+echo(true);
+res.messages;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | info    | [<interactive>:9:3-9:60:writable]
+// |                 | |       | The following assertion has been violated at time 1.200000
+// |                 | |       | ((x < 0.6), x=0.6999999998493875) --> \"x is too large\"
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// endResult

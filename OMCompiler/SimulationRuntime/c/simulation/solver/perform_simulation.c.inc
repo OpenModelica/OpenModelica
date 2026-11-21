@@ -109,18 +109,21 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   int timerWasActivated = 0 /* false */;
   data->simulationInfo->noThrowAsserts = 1 /* true */;
   data->simulationInfo->needToReThrow = 0 /* false */;
+  data->simulationInfo->holdWarnings = 1;
 
   prefixedName_updateContinuousSystem(data, threadData);
   /* Everything below would evaluate the model again, on the point that just
      failed. */
   if (OMC_ERROR_RAISED()) {
     data->simulationInfo->noThrowAsserts = 0 /* false */;
+    data->simulationInfo->holdWarnings = 0;
     return NO_TIMER_FIRED;
   }
 
   saveZeroCrossings(data, threadData);
   if (OMC_ERROR_RAISED()) {
     data->simulationInfo->noThrowAsserts = 0 /* false */;
+    data->simulationInfo->holdWarnings = 0;
     return NO_TIMER_FIRED;
   }
 
@@ -134,6 +137,19 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   do
   {
     int eventType = checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, /*out*/ &solverInfo->currentTime);
+    /* The warnings of the end of the step waited for the event location. Without
+       an event the point is accepted: evaluate it again to write them. A held error
+       ends the simulation below. */
+    if (data->simulationInfo->holdWarnings == 2 && eventType == 0 && syncRet != TIMER_FIRED_EVENT && !data->simulationInfo->needToReThrow) {
+      data->simulationInfo->holdWarnings = 0;
+      if (compiledInDAEMode) {
+        data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
+      } else {
+        data->callback->functionODE(data, threadData);
+        data->callback->functionAlgebraics(data, threadData);
+      }
+    }
+    data->simulationInfo->holdWarnings = 0;
     if(eventType > 0 || syncRet == TIMER_FIRED_EVENT) /* event */
     {
       foundEvent = 1;

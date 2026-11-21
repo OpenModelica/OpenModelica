@@ -4939,6 +4939,9 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let assertCheck = match level case ENUM_LITERAL(index=1) then '' else errorCheck(context)
   // A when-body runs only at its event, which would excuse a held error.
   let neverHeld = match context case SIMULATION_CONTEXT(whenBody=true) then (match level case ENUM_LITERAL(index=1) then '' else '1')
+  // A warning waits for the accepted point (holdWarnings, C runtime), except in a when-body.
+  let holdWarning = match level case ENUM_LITERAL(index=1) then (match context case SIMULATION_CONTEXT(whenBody=true) then '' else '1')
+  let warningTriggered = tempDeclZero("static int", &varDecls, &varFrees)
   let assertCode = match context
     case FUNCTION_CONTEXT(__) then
     if messageOnly then
@@ -4964,6 +4967,21 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
     <%assertCheck%>
     >>
+    else if holdWarning then
+    <<
+    const char* assert_cond = "(<%assertExpStr%>)";
+    if (data->simulationInfo->holdWarnings) {
+      data->simulationInfo->holdWarnings = 2;
+    } else if (data->simulationInfo->noThrowAsserts) {
+      FILE_INFO info = {<%infoArgs(info)%>};
+      infoStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);
+      <%warningTriggered%> = 1;
+    } else {
+      FILE_INFO info = {<%infoArgs(info)%>};
+      <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
+      <%warningTriggered%> = 1;
+    }
+    >>
     else
     <<
     const char* assert_cond = "(<%assertExpStr%>)";
@@ -4976,9 +4994,8 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
       <%assertCheck%>
     }
     >>
-  let warningTriggered = tempDeclZero("static int", &varDecls, &varFrees)
   let TriggerIf = match level case ENUM_LITERAL(index=1) then 'if(!<%warningTriggered%>)<%\n%>' else ''
-  let TriggerVarSet = match level case ENUM_LITERAL(index=1) then '<%warningTriggered%> = 1;<%\n%>' else ''
+  let TriggerVarSet = match level case ENUM_LITERAL(index=1) then (match context case FUNCTION_CONTEXT(__) then '<%warningTriggered%> = 1;<%\n%>' else if holdWarning then '' else '<%warningTriggered%> = 1;<%\n%>') else ''
   <<
   <%TriggerIf%>
   {
