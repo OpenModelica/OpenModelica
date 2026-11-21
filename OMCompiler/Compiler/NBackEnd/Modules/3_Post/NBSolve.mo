@@ -999,7 +999,7 @@ public
       case Equation.ARRAY_EQUATION(rhs = Expression.CREF(cref = side)) guard(ComponentRef.isEqual(side, name))
       then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Expression.applySubscripts(subs, eqn.lhs, true), Expression.fromCref(cref), eqn.source, eqn.attr);
       // expanding the equation for every element is quadratic, only do it for small arrays
-      case Equation.ARRAY_EQUATION() guard(Type.sizeOf(eqn.ty) <= 64) then scalarElementEquation(eqn, cref);
+      case Equation.ARRAY_EQUATION() guard(Type.sizeOf(eqn.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION)) then scalarElementEquation(eqn, cref);
       else eqn;
     end match;
   end arrayElementEquation;

@@ -1274,7 +1274,7 @@ public
           // elementwise, everything else that is not in diff_map gets differentiated to zero
           hasSetSub := false;
           elem_crefs := {};
-          if Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             for c in elem_crefs loop
               if UnorderedMap.contains(c, diff_map) then
@@ -1365,7 +1365,7 @@ public
             end if;
           end for;
           // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
-          if not hasSetSub and Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if not hasSetSub and Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             for c in listReverse(ComponentRef.scalarizeAll(exp.cref, false)) loop
               if UnorderedMap.contains(c, diff_map) then
                 hasSetSub := true;
@@ -1615,7 +1615,7 @@ public
     end match;
     if listEmpty(subs) or List.all(subs, Subscript.isLiteral) then return; end if;
     base_ty := ComponentRef.getSubscriptedType(base, true);
-    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > 256 then return; end if;
+    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then return; end if;
     elem_crefs := listReverse(ComponentRef.scalarizeAll(base, false));
     found := false;
     for c in elem_crefs loop
