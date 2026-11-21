@@ -1,0 +1,65 @@
+// name: resizableLoopSeeds
+// keywords: NewBackend resizable Jacobian sparsity algebraic loop
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableLoopSeeds resizableLoopSeeds_* resizableLoopSeeds.log resizableLoopSeeds.c resizableLoopSeeds.o resizableLoopSeeds.makefile resizableLoopSeeds.libs
+//
+// The algebraic loops of der(pa) and der(pc) use q[2], which depends on
+// the dummy state array p[2:N-1] of size N - 2. Its size is zero at the
+// start value N = 2, the sparsity pattern must still have these entries.
+
+loadString("
+model resizableLoopSeeds
+  parameter Integer N = 2;
+  Real p[N](each start = 1.5e5), p2[N](each start = 1.5e5);
+  Real n[N](each stateSelect = StateSelect.never), n2[N](each stateSelect = StateSelect.never);
+  Real q[N + 1], q2[N + 1];
+  Real pa(start = 2e5, fixed = true, stateSelect = StateSelect.prefer);
+  Real pb(start = 1e5, fixed = true, stateSelect = StateSelect.prefer);
+  Real pc(start = 2e5, fixed = true, stateSelect = StateSelect.prefer);
+  Real pd(start = 1e5, fixed = true, stateSelect = StateSelect.prefer);
+equation
+  for i in 1:N loop
+    der(n[i]) = q[i] - q[i + 1];
+    n[i] = p[i]*1e-5;
+    der(n2[i]) = q2[i] - q2[i + 1];
+    n2[i] = p2[i]*1e-5;
+  end for;
+  for i in 1:N - 1 loop
+    q[i + 1] = 1e-5*(p[i] - p[i + 1]);
+    q2[i + 1] = 1e-5*(p2[i] - p2[i + 1]);
+  end for;
+  p[1] = pa;
+  p[N] = pb;
+  p2[1] = pc;
+  p2[N] = pd;
+  der(pa) = 1e3 - 10*q[1];
+  der(pb) = 10*q[N + 1] - 1e3;
+  der(pc) = 1e3 - 10*q2[1];
+  der(pd) = 10*q2[N + 1] - 1e3;
+initial equation
+  for i in 2:N - 1 loop
+    p[i] = 1.5e5;
+    p2[i] = 1.5e5;
+  end for;
+end resizableLoopSeeds;
+"); getErrorString();
+
+buildModel(resizableLoopSeeds, stopTime = 1); getErrorString();
+system("awk '/der\\(pa\\)\\] fill/{f=1;next} /\\] fill/{f=0} f' resizableLoopSeeds_12jac.c | grep -q 'SEED_ODE_JAC.\\$DUM_'");
+system("awk '/der\\(pc\\)\\] fill/{f=1;next} /\\] fill/{f=0} f' resizableLoopSeeds_12jac.c | grep -q 'SEED_ODE_JAC.\\$DUM_'");
+system("./resizableLoopSeeds -override=N=4", "resizableLoopSeeds.log");
+val(p[2], 1, "resizableLoopSeeds_res.mat");
+val(p2[3], 1, "resizableLoopSeeds_res.mat");
+// Result:
+// true
+// ""
+// {"resizableLoopSeeds", "resizableLoopSeeds_init.xml"}
+// ""
+// 0
+// 0
+// 0
+// 166063.60042393516
+// 133936.39957606487
+// endResult

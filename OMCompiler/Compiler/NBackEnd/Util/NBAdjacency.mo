@@ -2549,7 +2549,8 @@ public
                   Expression e;
                   Dimension d;
                 case (Subscript.INDEX(index = e), d) guard(Expression.isInteger(e) and Dimension.isKnown(d)) algorithm
-                  if Expression.integerValue(e) < 1 or Expression.integerValue(e) > Dimension.size(d) then
+                  // the size of a resizable dimension is only known at runtime
+                  if Expression.integerValue(e) < 1 or (not Dimension.isResizable(d) and Expression.integerValue(e) > Dimension.size(d)) then
                     b := false;
                   end if;
                 then ();
@@ -2742,7 +2743,8 @@ public
           crefs := UnorderedMap.getSafe(base, seed_elements, sourceInfo());
         else
           ty := ComponentRef.getSubscriptedType(base);
-          crefs := if Type.isArray(ty) and Type.sizeOf(ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then ComponentRef.scalarizeAll(base, false) else {base};
+          // the elements of a resizable array are only known at runtime
+          crefs := if Type.isArray(ty) and not Type.isResizable(ty) and Type.sizeOf(ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then ComponentRef.scalarizeAll(base, false) else {base};
         end if;
       end if;
     end sparsityExpandForeignIterators;
