@@ -15,6 +15,7 @@ FmuNlsSameTime.mos \
 FmuUnknownDependencies.mos \
 FmuUnknownsWithoutFmiIndex.mos \
 FmuExportFlags.mos \
+FmuFilterInternalVars.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
 issue10523.mos \
