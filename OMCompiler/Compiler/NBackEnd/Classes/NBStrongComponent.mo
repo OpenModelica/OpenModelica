@@ -1290,6 +1290,22 @@ public
     end match;
   end getVariableCrefs;
 
+  function getSolvedCrefs
+    "Like getVariableCrefs, but the variables of the inner equations of an
+    algebraic loop keep the subscripts of the solved slices."
+    input StrongComponent comp;
+    output list<ComponentRef> crefs;
+  algorithm
+    crefs := match removeAlias(comp)
+      local
+        Tearing strict;
+      case ALGEBRAIC_LOOP(strict = strict) then listAppend(
+        list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars),
+        List.flatten(list(getSolvedCrefs(c) for c in strict.innerEquations)));
+      else getVariableCrefs(comp);
+    end match;
+  end getSolvedCrefs;
+
   function getVarCref
     input StrongComponent comp;
     output ComponentRef var_cref;
