@@ -18,7 +18,8 @@ ticket6296.mos \
 testCombiTable2D.mos \
 fmi2FreeInstanceNull.mos \
 fmi2LogFormatCpp.mos \
-fmi2LoggerInstancesCpp.mos
+fmi2LoggerInstancesCpp.mos \
+fmi2SampleEventIndicatorsCpp.mos
 
 FAILINGTESTFILES = \
 Crane_FMU2_CPP.mos \
@@ -30,7 +31,8 @@ DEPENDENCIES = \
 Makefile \
 fmi2FreeInstanceNull.py \
 fmi2LogFormatCpp.py \
-fmi2LoggerInstancesCpp.py
+fmi2LoggerInstancesCpp.py \
+fmi2SampleEventIndicatorsCpp.py
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

@@ -1,0 +1,46 @@
+// name:     fmi2SampleEventIndicatorsCpp
+// keywords: FMI 2.0 export Cpp event indicator sample
+// status:   correct
+// teardown_command: rm -rf fmi2SampleEventIndicatorsCpp_M.fmu fmi2SampleEventIndicatorsCpp_M.so fmi2SampleEventIndicatorsCpp_M.log fmi2SampleEventIndicatorsCpp_M.fmutmp/ fmi2SampleEventIndicatorsCpp_py.log fmi2SampleEventIndicatorsCpp_out.txt
+//
+// sample() makes time events. The Cpp FMU must not give it an event indicator
+// (the runtime has no value for it), and fmi2GetEventIndicators must set the
+// value of each event indicator.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi2SampleEventIndicatorsCpp_M
+  output Integer n(start = 0, fixed = true);
+  output Integer m(start = 0, fixed = true);
+  output Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+algorithm
+  when {sample(0, 0.001), sample(0.0001, 0.001)} then
+    n := pre(n) + 1;
+  end when;
+  when x > 0.0005 then
+    m := pre(m) + 1;
+  end when;
+end fmi2SampleEventIndicatorsCpp_M;
+"); getErrorString();
+
+buildModelFMU(fmi2SampleEventIndicatorsCpp_M, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2SampleEventIndicatorsCpp.py fmi2SampleEventIndicatorsCpp_out.txt fmi2SampleEventIndicatorsCpp_M.fmu > fmi2SampleEventIndicatorsCpp_py.log 2>&1"); getErrorString();
+readFile("fmi2SampleEventIndicatorsCpp_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2SampleEventIndicatorsCpp_M.fmu"
+// ""
+// 0
+// ""
+// "event indicators: 1
+// values not set: none
+// "
+// ""
+// endResult

@@ -623,7 +623,8 @@ match simCode
   case SIMCODE(zeroCrossings = zeroCrossings, modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
     match Config.simCodeTarget()
       case "Cpp"
-          then listLength(zeroCrossings)
+          // the zero crossings of sample() come last and are time events
+          then intSub(listLength(zeroCrossings), vi.numTimeEvents)
       else vi.numZeroCrossings
     end match
   else ""
