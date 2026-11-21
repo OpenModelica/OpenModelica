@@ -44,9 +44,9 @@ readFile("FmuUnknownDependencies.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"7\" />
+//       <Unknown index=\"6\" />
+//       <Unknown index=\"9\" />
 //       <Unknown index=\"10\" />
-//       <Unknown index=\"11\" />
 //     </Outputs>
 //     <Derivatives>
 //       <Unknown index=\"3\" />
@@ -55,10 +55,10 @@ readFile("FmuUnknownDependencies.xml"); getErrorString();
 //     <InitialUnknowns>
 //       <Unknown index=\"3\" />
 //       <Unknown index=\"4\" />
-//       <Unknown index=\"7\" />
+//       <Unknown index=\"6\" />
+//       <Unknown index=\"8\" />
 //       <Unknown index=\"9\" />
 //       <Unknown index=\"10\" />
-//       <Unknown index=\"11\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "
