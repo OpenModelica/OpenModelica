@@ -12,6 +12,7 @@ Bug1987.mos \
 Bug2432.mos \
 Bug2536.mos \
 Bug2633.mos \
+parameterDivisors.mos \
 Bug2704.mos \
 FuncViaCompArray.mos \
 FuncViaCompArrayRecord.mos \

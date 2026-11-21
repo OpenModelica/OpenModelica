@@ -708,11 +708,11 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
     let b = compile_exp(ctx, e2)?;
     coerce(ctx, b, wty);
     // C's `daeExpBinary` guards every division: `FUNCTION_CONTEXT` throws outright,
-    // an equation's is `DIVISION_SIM`.
+    // an equation's is `DIVISION_SIM` unless the divisor is checked.
     if matches!(op, O::DIV { .. }) {
         if ctx.sim.is_none() {
             emit_div_zero_guard(ctx, e1, op, e2, wty)?;
-        } else if wty == WTy::F64 {
+        } else if wty == WTy::F64 && !is_checked_divisor(ctx, e2)? {
             return emit_div_sim(ctx, e2);
         }
     }
@@ -782,6 +782,18 @@ fn emit_div_zero_guard(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &
     ctx.emit(I::End);
     ctx.emit(I::LocalGet(t));
     Ok(())
+}
+
+/// C's `SimCodeCodegenUtil.isCheckedDivisor`.
+fn is_checked_divisor(ctx: &FnCtx, e: &DAE::Exp) -> Result<bool> {
+    Ok(match e {
+        DAE::Exp::RCONST { real } => *real != 0.0,
+        DAE::Exp::ICONST { integer } => *integer != 0,
+        _ => {
+            let divisors = &ctx.sim()?.checked_divisors;
+            !divisors.is_empty() && divisors.contains(&dumped_exp(e)?)
+        }
+    })
 }
 
 /// C's `DIVISION_SIM` (`__OMC_DIV_SIM`), with `a` and `b` on the stack. The quotient

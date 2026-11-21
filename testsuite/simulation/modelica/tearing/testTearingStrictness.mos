@@ -32,9 +32,9 @@ simulate(testTearingStrictness, simflags="-ls=lapack -override b=0"); getErrorSt
 //     messages = "Simulation execution failed for model: testTearingStrictness
 // LOG_STDOUT        | warning | You are overriding b with a small value or zero.
 // |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
-// LOG_STDOUT        | warning | Solving linear system 10 fails at time 0. For more information use -lv LOG_LS.
-// LOG_ASSERT        | debug   | Solving linear system 10 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_LS.
+// LOG_ASSERT        | error   | [<interactive>:9:3-9:16:writable]
+// |                 | |       | The following assertion has been violated at time 0.000000
+// |                 | |       | ((b <> 0.0), b=0) --> \"Division by zero.\"
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;

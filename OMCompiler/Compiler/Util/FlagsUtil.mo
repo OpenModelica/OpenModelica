@@ -265,7 +265,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.CHECK_USED_ELEMENTS_LOOKUP,
   Flags.NF_SCRIPTING,
   Flags.HOMOTOPY_IN_RESIDUALS,
-  Flags.TIME_INVARIANT_BLOCKS
+  Flags.TIME_INVARIANT_BLOCKS,
+  Flags.PARAMETER_DIVISORS
 };
 
 protected

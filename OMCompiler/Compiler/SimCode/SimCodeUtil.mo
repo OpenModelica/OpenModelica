@@ -307,6 +307,7 @@ protected
   list<SimCode.SimEqSystem> localKnownVars;
   list<SimCode.SimEqSystem> allEquations;
   list<SimCode.SimEqSystem> equationsForZeroCrossings, timeInvariantEquations;
+  Option<UnorderedSet<DAE.Exp>> checkedDivisors;
   list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
   list<SimCode.SimEqSystem> initialEquations_lambda0;   // --> initial_equations_lambda0
   list<SimCode.SimEqSystem> jacobianEquations = {};
@@ -453,6 +454,7 @@ algorithm
     (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars,
       List.unionOnTrue(listReverse(shared.parameterAsserts), listReverse(inInitDAE.shared.parameterAsserts), ExpressionSolve.assertCondEqual));
     if debug then execStat("simCode: createParameterEquations"); end if;
+    (uniqueEqIndex, parameterEquations, checkedDivisors) := createDivisorChecks(allEquations, globalKnownVars, uniqueEqIndex, parameterEquations);
     //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     //parameterEquations := listAppend(parameterEquations, paramAssertSimEqs);
 
@@ -770,7 +772,8 @@ algorithm
       scalarized                  = true,
       fmiFigures                  = {},
       paramDeps                   = SimCode.emptyParamDeps,
-      timeInvariantEquations      = list(SimCodeCodegenUtil.simEqSystemIndex(e) for e in timeInvariantEquations)
+      timeInvariantEquations      = list(SimCodeCodegenUtil.simEqSystemIndex(e) for e in timeInvariantEquations),
+      checkedDivisors             = checkedDivisors
     );
 
     (simCode, lits) := findSimCodeLiterals(simCode, literalsAcc);
@@ -6813,6 +6816,296 @@ algorithm
   outParameterEquations := List.append_reverse(acc, outParameterEquations);
   outParameterEquations := listReverse(outParameterEquations);
 end createParameterEquations;
+
+protected function createDivisorChecks
+  "Finds the divisors that only depend on parameters in the divisions that run
+   each time allEquations is evaluated. A parameter equation checks that each
+   one is not zero, after the equations that calculate it, unless an
+   error-level assert already does. The code generators
+   divide by them without a check, see SimCodeCodegenUtil.isCheckedDivisor."
+  input list<SimCode.SimEqSystem> allEquations;
+  input BackendDAE.Variables knownVars;
+  input output Integer uniqueEqIndex;
+  input output list<SimCode.SimEqSystem> parameterEquations;
+  output Option<UnorderedSet<DAE.Exp>> checkedDivisors = NONE();
+protected
+  UnorderedMap<DAE.Exp, DAE.ElementSource> divisors;
+  UnorderedSet<DAE.Exp> checked;
+  UnorderedMap<String, Integer> lastAssigned;
+  UnorderedMap<DAE.Exp, Integer> nonzeroAsserts;
+  Integer barrier, pos;
+  list<tuple<Integer, SimCode.SimEqSystem>> checks = {};
+  DAE.Exp divisor, cond;
+  DAE.ElementSource source;
+  String target = Config.simCodeTarget();
+algorithm
+  if not (Flags.isSet(Flags.PARAMETER_DIVISORS) and (target == "C" or target == "wasm-jit" or target == "wasm")) then
+    return;
+  end if;
+
+  divisors := UnorderedMap.new<DAE.ElementSource>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
+  for eq in allEquations loop
+    collectEquationDivisors(eq, knownVars, divisors);
+  end for;
+
+  (lastAssigned, barrier, nonzeroAsserts) := scanParameterEquations(parameterEquations);
+  checked := UnorderedSet.new(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
+  for d in UnorderedMap.toList(divisors) loop
+    (divisor, source) := d;
+    pos := barrier;
+    for cr in Expression.extractCrefsFromExp(divisor) loop
+      pos := max(pos, lastAssignment(cr, lastAssigned));
+    end for;
+    if UnorderedMap.getOrDefault(divisor, nonzeroAsserts, 0) <= pos then
+      cond := DAE.RELATION(divisor, DAE.NEQUAL(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), -1, NONE());
+      checks := (pos, SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_ASSERT(cond, DAE.SCONST("Division by zero."), DAE.ASSERTIONLEVEL_ERROR, source)},
+                                            BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)) :: checks;
+      uniqueEqIndex := uniqueEqIndex + 1;
+    end if;
+    UnorderedSet.add(divisor, checked);
+  end for;
+
+  parameterEquations := placeDivisorChecks(parameterEquations, listReverse(checks));
+  checkedDivisors := SOME(checked);
+end createDivisorChecks;
+
+protected function collectEquationDivisors
+  input SimCode.SimEqSystem eq;
+  input BackendDAE.Variables knownVars;
+  input UnorderedMap<DAE.Exp, DAE.ElementSource> divisors;
+algorithm
+  () := match eq
+    case SimCode.SES_SIMPLE_ASSIGN()
+      algorithm collectDivisors(eq.exp, eq.source, knownVars, divisors); then ();
+    case SimCode.SES_RESIDUAL()
+      algorithm collectDivisors(eq.exp, eq.source, knownVars, divisors); then ();
+    case SimCode.SES_ARRAY_CALL_ASSIGN()
+      algorithm collectDivisors(eq.exp, eq.source, knownVars, divisors); then ();
+    case SimCode.SES_NONLINEAR()
+      algorithm
+        for e in eq.nlSystem.eqs loop
+          collectEquationDivisors(e, knownVars, divisors);
+        end for;
+      then ();
+    case SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM(tornSystem = true))
+      algorithm
+        for e in eq.lSystem.residual loop
+          collectEquationDivisors(e, knownVars, divisors);
+        end for;
+      then ();
+    case SimCode.SES_MIXED()
+      algorithm collectEquationDivisors(eq.cont, knownVars, divisors); then ();
+    else ();
+  end match;
+end collectEquationDivisors;
+
+protected function collectDivisors
+  "Adds the parameter divisors of the divisions that run each time exp does."
+  input DAE.Exp exp;
+  input DAE.ElementSource source;
+  input BackendDAE.Variables knownVars;
+  input UnorderedMap<DAE.Exp, DAE.ElementSource> divisors;
+algorithm
+  () := match exp
+    case DAE.BINARY()
+      algorithm
+        collectDivisors(exp.exp1, source, knownVars, divisors);
+        collectDivisors(exp.exp2, source, knownVars, divisors);
+        if isRealDivision(exp.operator) and not Expression.isConst(exp.exp2) and isParameterDivisor(exp.exp2, knownVars) then
+          UnorderedMap.tryAdd(exp.exp2, source, divisors);
+        end if;
+      then ();
+    case DAE.UNARY()
+      algorithm collectDivisors(exp.exp, source, knownVars, divisors); then ();
+    case DAE.LUNARY()
+      algorithm collectDivisors(exp.exp, source, knownVars, divisors); then ();
+    case DAE.LBINARY()
+      algorithm collectDivisors(exp.exp1, source, knownVars, divisors); then ();
+    case DAE.RELATION()
+      algorithm
+        collectDivisors(exp.exp1, source, knownVars, divisors);
+        collectDivisors(exp.exp2, source, knownVars, divisors);
+      then ();
+    case DAE.IFEXP()
+      algorithm collectDivisors(exp.expCond, source, knownVars, divisors); then ();
+    case DAE.CAST()
+      algorithm collectDivisors(exp.exp, source, knownVars, divisors); then ();
+    case DAE.CALL() guard not exp.attr.builtin or isEagerBuiltin(exp.path)
+      algorithm
+        for e in exp.expLst loop
+          collectDivisors(e, source, knownVars, divisors);
+        end for;
+      then ();
+    else ();
+  end match;
+end collectDivisors;
+
+protected function isRealDivision
+  input DAE.Operator op;
+  output Boolean b;
+algorithm
+  b := match op
+    case DAE.DIV(ty = DAE.T_REAL()) then true;
+    else false;
+  end match;
+end isRealDivision;
+
+protected function isEagerBuiltin
+  "Builtin functions whose generated code evaluates all arguments."
+  input Absyn.Path path;
+  output Boolean b;
+algorithm
+  b := match path
+    case Absyn.IDENT() then listMember(path.name, {"abs", "sign", "sqrt", "exp", "log", "log10", "sin", "cos", "tan",
+      "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "min", "max", "noEvent", "smooth", "semiLinear", "$_signNoNull"});
+    else false;
+  end match;
+end isEagerBuiltin;
+
+protected function isParameterDivisor
+  "Whether exp only uses literals and variables that the parameter equations calculate."
+  input DAE.Exp exp;
+  input BackendDAE.Variables knownVars;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.CREF() then isFixedKnownVar(exp.componentRef, knownVars);
+    case DAE.UNARY() then isParameterDivisor(exp.exp, knownVars);
+    case DAE.BINARY() then isParameterDivisor(exp.exp1, knownVars) and isParameterDivisor(exp.exp2, knownVars);
+    case DAE.CAST() then isParameterDivisor(exp.exp, knownVars);
+    case DAE.CALL(attr = DAE.CALL_ATTR(builtin = true)) guard isEagerBuiltin(exp.path)
+      then List.all(exp.expLst, function isParameterDivisor(knownVars = knownVars));
+    else false;
+  end match;
+end isParameterDivisor;
+
+protected function isFixedKnownVar
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables knownVars;
+  output Boolean b;
+protected
+  BackendDAE.Var v;
+algorithm
+  try
+    (v, _) := BackendVariable.getVarSingle(cr, knownVars);
+    b := BackendVariable.varFixed(v) and (BackendVariable.isParam(v) or BackendVariable.isConst(v) or
+         BackendVariable.isVarAlg(v) and not BackendVariable.isInput(v));
+  else
+    b := false;
+  end try;
+end isFixedKnownVar;
+
+protected function scanParameterEquations
+  "The last position that assigns each variable, the last position with unknown
+   outputs, and the last position of an error-level assert(d <> 0) for each d."
+  input list<SimCode.SimEqSystem> parameterEquations;
+  output UnorderedMap<String, Integer> lastAssigned = UnorderedMap.new<Integer>(stringHashDjb2, stringEq);
+  output Integer barrier = 0;
+  output UnorderedMap<DAE.Exp, Integer> nonzeroAsserts = UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
+protected
+  Integer i = 0;
+  Option<list<DAE.ComponentRef>> assigned;
+  Option<DAE.Exp> asserted;
+algorithm
+  for eq in parameterEquations loop
+    i := i + 1;
+    assigned := parameterEquationOutputs(eq);
+    if isSome(assigned) then
+      for cr in Util.getOption(assigned) loop
+        UnorderedMap.add(stripSubsKey(cr), i, lastAssigned);
+      end for;
+    else
+      barrier := i;
+    end if;
+    asserted := nonzeroAssertExp(eq);
+    if isSome(asserted) then
+      UnorderedMap.add(Util.getOption(asserted), i, nonzeroAsserts);
+    end if;
+  end for;
+end scanParameterEquations;
+
+protected function nonzeroAssertExp
+  "d if eq is assert(d <> 0) with level error."
+  input SimCode.SimEqSystem eq;
+  output Option<DAE.Exp> exp;
+algorithm
+  exp := match eq
+    local
+      DAE.Exp d, z, level;
+    case SimCode.SES_ALGORITHM(statements = {DAE.STMT_ASSERT(cond = DAE.RELATION(exp1 = d, operator = DAE.NEQUAL(), exp2 = z), level = level)})
+      guard Expression.isZero(z) and ExpressionBasics.expEqual(level, DAE.ASSERTIONLEVEL_ERROR)
+      then SOME(d);
+    else NONE();
+  end match;
+end nonzeroAssertExp;
+
+protected function placeDivisorChecks
+  "Puts each check after the parameter equation at its position."
+  input list<SimCode.SimEqSystem> parameterEquations;
+  input list<tuple<Integer, SimCode.SimEqSystem>> checks;
+  output list<SimCode.SimEqSystem> outEquations;
+protected
+  array<list<SimCode.SimEqSystem>> after = arrayCreate(listLength(parameterEquations) + 1, {});
+  Integer i, pos;
+  SimCode.SimEqSystem check;
+algorithm
+  for c in checks loop
+    (pos, check) := c;
+    arrayUpdate(after, pos + 1, check :: after[pos + 1]);
+  end for;
+
+  outEquations := after[1];
+  i := 1;
+  for eq in parameterEquations loop
+    i := i + 1;
+    outEquations := listAppend(after[i], eq :: outEquations);
+  end for;
+  outEquations := listReverse(outEquations);
+end placeDivisorChecks;
+
+protected function parameterEquationOutputs
+  "NONE() if it is not known what the equation assigns."
+  input SimCode.SimEqSystem eq;
+  output Option<list<DAE.ComponentRef>> outputs;
+algorithm
+  outputs := match eq
+    case SimCode.SES_SIMPLE_ASSIGN() then SOME({eq.cref});
+    case SimCode.SES_ARRAY_CALL_ASSIGN() then SOME(Expression.getAllCrefs(eq.lhs));
+    case SimCode.SES_ALGORITHM()
+      algorithm
+        try
+          outputs := SOME(CheckModel.algorithmStatementListOutputs(eq.statements, DAE.EXPAND()));
+        else
+          outputs := NONE();
+        end try;
+      then outputs;
+    else NONE();
+  end match;
+end parameterEquationOutputs;
+
+protected function lastAssignment
+  "The last position that assigns cr or a record that contains it."
+  input DAE.ComponentRef cr;
+  input UnorderedMap<String, Integer> lastAssigned;
+  output Integer pos = 0;
+protected
+  DAE.ComponentRef prefix = ComponentReference.crefStripSubs(cr);
+algorithm
+  while true loop
+    pos := max(pos, UnorderedMap.getOrDefault(ComponentReferenceBasics.printComponentRefStr(prefix), lastAssigned, 0));
+    if ComponentReference.crefIsIdent(prefix) then
+      break;
+    end if;
+    prefix := ComponentReference.crefStripLastIdent(prefix);
+  end while;
+end lastAssignment;
+
+protected function stripSubsKey
+  input DAE.ComponentRef cr;
+  output String key = ComponentReferenceBasics.printComponentRefStr(ComponentReference.crefStripSubs(cr));
+end stripSubsKey;
 
 
 protected function createSimEqsForGlobalKnownVars

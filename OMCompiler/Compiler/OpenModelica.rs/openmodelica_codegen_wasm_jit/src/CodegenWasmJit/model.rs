@@ -698,6 +698,13 @@ pub(super) fn build_sim_model(
             .map(|c| (generic_call_index(c), c.clone()))
             .collect(),
     );
+    if let Some(divisors) = &sim_code.checkedDivisors {
+        var_map.checked_divisors = Arc::new(
+            lst(&openmodelica_util::UnorderedSet::toList(divisors.clone()))
+                .map(|e| crate::CodegenWasmJitFunctions::dumped_exp(e))
+                .collect::<Result<_>>()?,
+        );
+    }
 
     // --- Type section: one type per import, per model function, per equation
     // function (all take one i32 `SimData` ptr, no result), then `simulate`
@@ -2853,6 +2860,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         generic_calls: var_map.generic_calls.clone(),
+        checked_divisors: var_map.checked_divisors.clone(),
         n_samples: var_map.n_samples,
         sample_active_off: var_map.sample_active_off,
         relations_off: var_map.relations_off,

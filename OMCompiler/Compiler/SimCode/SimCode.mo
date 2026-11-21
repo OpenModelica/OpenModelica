@@ -66,6 +66,7 @@ import HashTableCrefSimVar;
 import HpcOmSimCode;
 import SimCodeFunction;
 import SimCodeVar;
+import UnorderedSet;
 
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
@@ -204,6 +205,7 @@ uniontype SimCode
     list<FmiFigure> fmiFigures "set by SimCodeUtil.addFMI3Figures for an FMI 3.0 export";
     ParamDeps paramDeps "set by ParamDeps.add for an FMI 2.0 or 3.0 export";
     list<Integer> timeInvariantEquations "indices of the allEquations that cannot change during the simulation (see BackendDAEUtil.markTimeVaryingEquations); odeEquations, algebraicEquations and equationsForZeroCrossings leave them out";
+    Option<UnorderedSet<DAE.Exp>> checkedDivisors "divisors that a parameter equation checks, see SimCodeUtil.createDivisorChecks";
   end SIMCODE;
 end SimCode;
 

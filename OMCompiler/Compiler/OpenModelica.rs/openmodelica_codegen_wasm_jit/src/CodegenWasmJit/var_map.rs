@@ -54,6 +54,8 @@ pub(crate) struct SimVarMap {
     pub(super) nls_jobs: Arc<HashMap<i32, NlsJob>>,
     /// `SimGenericCall` index -> the shared for-loop body (`generic_loop_calls`).
     pub(super) generic_calls: Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    /// `SimCode.checkedDivisors`, as `dumped_exp` keys.
+    pub(super) checked_divisors: Arc<HashSet<String>>,
     /// Number of `sample(...)` time events (see [`SampleInfo`]).
     pub(super) n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags (`SimLayout`).
@@ -1054,6 +1056,7 @@ pub(super) fn build_var_map(
         nls_fail_off: layout.nls_fail_off,
         nls_jobs: Arc::new(HashMap::default()),
         generic_calls: Arc::new(HashMap::default()),
+        checked_divisors: Arc::default(),
         n_samples: 0,
         sample_active_off: layout.sample_active_off,
         relations_off: layout.relations_off,
