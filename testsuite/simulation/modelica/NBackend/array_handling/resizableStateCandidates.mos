@@ -1,0 +1,47 @@
+// name: resizableStateCandidates
+// keywords: NewBackend resizable index reduction state candidates
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableStateCandidates resizableStateCandidates_* resizableStateCandidates.log
+//
+// Index reduction compares the number of state candidates with the
+// number of constraint equations, both with their resizable sizes.
+
+loadString("
+model resizableStateCandidates
+  parameter Integer N = 3;
+  parameter Real V = 1, k = 1e-4;
+  Real p[N](each stateSelect = StateSelect.prefer, each start = 1.5e5);
+  Real n[N](each stateSelect = StateSelect.never);
+  Real rho[N];
+  Real q[N + 1];
+equation
+  for i in 1:N loop
+    der(n[i]) = q[i] - q[i + 1];
+    rho[i] = p[i]/(287*300);
+  end for;
+  n[1] = rho[1]*V/(2*(N - 1));
+  for i in 2:N - 1 loop
+    n[i] = rho[i]*V/(N - 1);
+  end for;
+  n[N] = rho[N]*V/(2*(N - 1));
+  for i in 1:N - 1 loop
+    q[i + 1] = k*(p[i] - p[i + 1]);
+  end for;
+  p[1] = 2e5;
+  q[N + 1] = 0.1 + time;
+end resizableStateCandidates;
+"); getErrorString();
+
+buildModel(resizableStateCandidates, stopTime = 1); getErrorString();
+system("./resizableStateCandidates -override=N=2", "resizableStateCandidates.log");
+val(p[2], 1, "resizableStateCandidates_res.mat");
+// Result:
+// true
+// ""
+// {"resizableStateCandidates", "resizableStateCandidates_init.xml"}
+// ""
+// 0
+// 189580.72562808963
+// endResult

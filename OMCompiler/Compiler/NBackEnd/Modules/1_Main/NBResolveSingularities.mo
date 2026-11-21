@@ -205,7 +205,7 @@ public
         new_eqns := listAppend(der_alias_eqns, new_eqns);
       end if;
 
-      if VariablePointers.scalarSize(candidate_ptrs) < sum(Slice.size(eq, function Equation.size(resize = true)) for eq in constraint_eqns) then
+      if VariablePointers.scalarSize(candidate_ptrs, true) < sum(Slice.size(eq, function Equation.size(resize = true)) for eq in constraint_eqns) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations.\n"
           + EquationPointers.toString(constraint_ptrs, "Constraint") + "\n" + VariablePointers.toString(candidate_ptrs, "State Candidate")});
        fail();

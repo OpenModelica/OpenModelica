@@ -62,6 +62,7 @@ resizableCalcSizeParam.mos \
 resizableEmptyRange.mos \
 resizableReverseRange.mos \
 resizableEmptyInitSlice.mos \
+resizableStateCandidates.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \
