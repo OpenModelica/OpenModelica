@@ -1,0 +1,102 @@
+// name: StartFromEquation
+// keywords: initialization, start value, iif
+// status: correct
+// teardown_command: rm -rf InitialLiterals*
+//
+// The initial equations x = $START.x and v = <literal> give no code: the
+// literal becomes the start value of v. -iif keeps such a start value, except
+// with -iim=none, which does not solve the initial equations. A start value
+// that the runtime computes from parameters stays.
+
+loadString("
+model InitialLiterals
+  Real r(fixed = false, start = 0);
+  Real x(fixed = true, start = 2);
+  discrete Integer i;
+  discrete Boolean b;
+initial equation
+  r = 1;
+  i = 3;
+  b = true;
+equation
+  der(r) = 1;
+  der(x) = -x;
+  when sample(0.5, 1) then
+    i = pre(i) + 1;
+    b = not pre(b);
+  end when;
+end InitialLiterals;
+
+model InitialLiteralsParamStart
+  parameter Real p = 2;
+  Real y(start = p);
+initial equation
+  y = 5;
+equation
+  der(y) = 0;
+end InitialLiteralsParamStart;
+"); getErrorString();
+
+echo(false);
+simulate(InitialLiterals, stopTime = 1, outputFormat = "csv");
+echo(true);
+getErrorString();
+{val(r, 0), val(x, 0), val(i, 0), val(b, 0)};
+{val(r, 1), val(x, 1), val(i, 1), val(b, 1)};
+
+writeFile("InitialLiterals_prev.csv", readFile("InitialLiterals_res.csv")); getErrorString();
+echo(false);
+simulate(InitialLiterals, stopTime = 1, outputFormat = "csv", simflags = "-iif=InitialLiterals_prev.csv -iit=1", resimulateExecutable = "InitialLiterals");
+echo(true);
+getErrorString();
+{val(r, 0), val(x, 0), val(i, 0), val(b, 0)};
+
+echo(false);
+simulate(InitialLiterals, stopTime = 1, outputFormat = "csv", simflags = "-iif=InitialLiterals_prev.csv -iit=1 -iim=none", resimulateExecutable = "InitialLiterals");
+echo(true);
+getErrorString();
+{val(r, 0), val(x, 0), val(i, 0), val(b, 0)};
+
+// The targets that write C code and an _init.xml.
+writeFile("InitialLiterals_06inz.c", "", append = true);
+writeFile("InitialLiterals_init.xml", "", append = true);
+echo(false);
+inz := readFile("InitialLiterals_06inz.c");
+xml := readFile("InitialLiterals_init.xml");
+echo(true);
+not regexBool(inz, "\n(r|x|i|b) = ");
+xml == "" or (regexBool(xml, "name = \"r\"[^<]*startFromEquation = \"true\"") and
+              regexBool(xml, "name = \"i\"[^<]*startFromEquation = \"true\"") and
+              regexBool(xml, "name = \"b\"[^<]*startFromEquation = \"true\"") and
+              not regexBool(xml, "name = \"x\"[^<]*startFromEquation"));
+
+echo(false);
+simulate(InitialLiteralsParamStart, stopTime = 1, outputFormat = "csv");
+echo(true);
+getErrorString();
+val(y, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {1.0, 2.0, 3.0, 1.0}
+// {2.0, 0.7357589683891687, 4.0, 0.0}
+// true
+// ""
+// true
+// ""
+// {1.0, 0.7357589683891687, 3.0, 1.0}
+// true
+// ""
+// {2.0, 0.7357589683891687, 4.0, 0.0}
+// true
+// true
+// true
+// true
+// true
+// true
+// ""
+// 5.0
+// endResult

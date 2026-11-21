@@ -427,6 +427,9 @@ algorithm
   File.write(file, getCausality(simVar.causality));
   File.write(file, "\" isValueChangeable = \"");
   File.write(file, String(simVar.isValueChangeable));
+  if simVar.startFromEquation then
+    File.write(file, "\" startFromEquation = \"true");
+  end if;
   File.write(file, "\"\n");
 
   if inputIndex <> -1 then

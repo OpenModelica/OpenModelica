@@ -1111,6 +1111,412 @@ algorithm
   omodelInfo.varInfo := varInfo;
 end addNumEqns;
 
+public function startValuesFromInitialEquations
+  "Removes the initial equations x = $START.x, and x = <literal> when nothing
+   but the start value sets x before the initialization: the literal becomes
+   the start value, and startFromEquation keeps -iif from replacing it. The
+   runtimes set all variables to their start values before they solve the
+   initial equations. Variables whose $START.x the runtime computes, or whose
+   $START.x or pre(x) another equation of the initialization reads, keep
+   their equations."
+  input output SimCode.SimCode simCode;
+  input Boolean fmu "the importer can set variables with initial exact or approx";
+protected
+  UnorderedMap<DAE.ComponentRef, DAE.Exp> candidates = UnorderedMap.new<DAE.Exp>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  UnorderedMap<DAE.ComponentRef, DAE.Exp> moved = UnorderedMap.new<DAE.Exp>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  UnorderedMap<Integer, SimCode.SimEqSystem> removed = UnorderedMap.new<SimCode.SimEqSystem>(Util.id, intEq);
+  HashTableCrefSimVar.HashTable ht = simCode.crefToSimVarHT;
+  UnorderedSet<Integer> called = aliasTargets(simCode);
+  UnorderedSet<DAE.ComponentRef> attrRefs = startAndPreRefs(simCode);
+  SimCode.ModelInfo modelInfo;
+  SimCodeVar.SimVars vars;
+  SimCodeVar.SimVar sv;
+  Option<DAE.Exp> start;
+  Integer i;
+algorithm
+  for eq in simCode.initialEquations loop
+    () := match eq
+      case SimCode.SES_SIMPLE_ASSIGN(index = i) guard not UnorderedSet.contains(i, called)
+        algorithm
+          start := match SimCodeCodegenUtil.simVarExactFromHT(eq.cref, ht)
+            case SOME(sv) then startLiteral(sv, eq.exp, fmu, attrRefs);
+            else NONE();
+          end match;
+          if isSome(start) then
+            UnorderedMap.add(eq.cref, Util.getOption(start), candidates);
+          end if;
+        then ();
+      else ();
+    end match;
+  end for;
+
+  if not UnorderedMap.isEmpty(candidates) then
+    modelInfo := simCode.modelInfo;
+    vars := modelInfo.vars;
+    vars.stateVars := list(setStartFromEquation(v, candidates, moved) for v in vars.stateVars);
+    vars.derivativeVars := list(setStartFromEquation(v, candidates, moved) for v in vars.derivativeVars);
+    vars.algVars := list(setStartFromEquation(v, candidates, moved) for v in vars.algVars);
+    vars.discreteAlgVars := list(setStartFromEquation(v, candidates, moved) for v in vars.discreteAlgVars);
+    vars.intAlgVars := list(setStartFromEquation(v, candidates, moved) for v in vars.intAlgVars);
+    vars.boolAlgVars := list(setStartFromEquation(v, candidates, moved) for v in vars.boolAlgVars);
+    modelInfo.vars := vars;
+    simCode.modelInfo := modelInfo;
+
+    for cr in UnorderedMap.keyList(moved) loop
+      sv := BaseHashTable.get(cr, ht);
+      sv.initialValue := UnorderedMap.get(cr, moved);
+      sv.startFromEquation := true;
+      ht := BaseHashTable.add((cr, sv), ht);
+    end for;
+    simCode.crefToSimVarHT := ht;
+  end if;
+
+  simCode.initialEquations := list(eq for eq guard not isRemovedInitialEquation(eq, ht, moved, called, attrRefs, removed) in simCode.initialEquations);
+  simCode.initialEquations_lambda0 := list(eq for eq guard not isRemovedInitialEquation(eq, ht, moved, called, attrRefs, removed) in simCode.initialEquations_lambda0);
+  if not UnorderedMap.isEmpty(removed) then
+    simCode.parameterEquations := list(unaliasRemoved(eq, removed) for eq in simCode.parameterEquations);
+  end if;
+end startValuesFromInitialEquations;
+
+protected function aliasTargets
+  "The equations that an SES_ALIAS outside the initial and the parameter
+   equations calls."
+  input SimCode.SimCode simCode;
+  output UnorderedSet<Integer> targets = UnorderedSet.new(Util.id, intEq);
+algorithm
+  for eqs in listAppend({simCode.allEquations, simCode.removedEquations, simCode.removedInitialEquations,
+                         simCode.algorithmAndEquationAsserts, simCode.jacobianEquations,
+                         simCode.equationsForZeroCrossings, simCode.startValueEquations, simCode.nominalValueEquations,
+                         simCode.minValueEquations, simCode.maxValueEquations},
+                        listAppend(simCode.odeEquations, simCode.algebraicEquations)) loop
+    for eq in eqs loop
+      () := match eq
+        case SimCode.SES_ALIAS() algorithm UnorderedSet.add(eq.aliasOf, targets); then ();
+        else ();
+      end match;
+    end for;
+  end for;
+end aliasTargets;
+
+protected function startAndPreRefs
+  "The crefs $START.x and $PRE.x that the initialization sets or reads,
+   other than in the equations x = $START.x."
+  input SimCode.SimCode simCode;
+  output UnorderedSet<DAE.ComponentRef> refs = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+protected
+  UnorderedSet<Integer> calls = UnorderedSet.new(Util.id, intEq);
+algorithm
+  for eq in simCode.startValueEquations loop
+    () := match eq
+      case SimCode.SES_SIMPLE_ASSIGN() algorithm UnorderedSet.add(eq.cref, refs); then ();
+      else ();
+    end match;
+  end for;
+  for eqs in {simCode.initialEquations, simCode.initialEquations_lambda0,
+              simCode.removedInitialEquations, simCode.parameterEquations} loop
+    addStartAndPreRefs(eqs, refs, calls);
+  end for;
+  for call in simCode.generic_loop_calls loop
+    () := match call
+      case SimCode.SINGLE_GENERIC_CALL() guard UnorderedSet.contains(call.index, calls)
+        algorithm
+          Expression.traverseExpBottomUp(call.lhs, addStartOrPreRef, refs);
+          Expression.traverseExpBottomUp(call.rhs, addStartOrPreRef, refs);
+        then ();
+      case SimCode.IF_GENERIC_CALL() guard UnorderedSet.contains(call.index, calls)
+        algorithm addBranchStartAndPreRefs(call.branches, refs); then ();
+      case SimCode.WHEN_GENERIC_CALL() guard UnorderedSet.contains(call.index, calls)
+        algorithm addBranchStartAndPreRefs(call.branches, refs); then ();
+      else ();
+    end match;
+  end for;
+end startAndPreRefs;
+
+protected function addStartAndPreRefs
+  input list<SimCode.SimEqSystem> eqs;
+  input UnorderedSet<DAE.ComponentRef> refs;
+  input UnorderedSet<Integer> calls "the generic calls that eqs use";
+protected
+  SimCode.LinearSystem ls;
+algorithm
+  for eq in eqs loop
+    () := match eq
+      local
+        DAE.ComponentRef cr;
+      case SimCode.SES_SIMPLE_ASSIGN(exp = DAE.CREF(componentRef = cr))
+        guard ComponentReferenceBasics.crefEqual(cr, ComponentReference.crefPrefixStart(eq.cref))
+        then ();
+      case SimCode.SES_LINEAR(lSystem = ls)
+        algorithm
+          for e in ls.beqs loop
+            Expression.traverseExpBottomUp(e, addStartOrPreRef, refs);
+          end for;
+          addStartAndPreRefs(list(Util.tuple33(t) for t in ls.simJac), refs, calls);
+          addStartAndPreRefs(ls.residual, refs, calls);
+        then ();
+      case SimCode.SES_NONLINEAR()
+        algorithm
+          addStartAndPreRefs(eq.nlSystem.eqs, refs, calls);
+        then ();
+      case SimCode.SES_MIXED()
+        algorithm
+          addStartAndPreRefs(eq.cont :: eq.discEqs, refs, calls);
+        then ();
+      case SimCode.SES_IFEQUATION()
+        algorithm
+          for branch in eq.ifbranches loop
+            Expression.traverseExpBottomUp(Util.tuple21(branch), addStartOrPreRef, refs);
+            addStartAndPreRefs(Util.tuple22(branch), refs, calls);
+          end for;
+          addStartAndPreRefs(eq.elsebranch, refs, calls);
+        then ();
+      case SimCode.SES_FOR_EQUATION()
+        algorithm
+          addStartAndPreRefs(eq.body, refs, calls);
+        then ();
+      case SimCode.SES_FOR_LOOP()
+        algorithm
+          Expression.traverseExpBottomUp(eq.exp, addStartOrPreRef, refs);
+        then ();
+      case SimCode.SES_RESIZABLE_ASSIGN()
+        algorithm UnorderedSet.add(eq.call_index, calls); then ();
+      case SimCode.SES_GENERIC_ASSIGN()
+        algorithm UnorderedSet.add(eq.call_index, calls); then ();
+      case SimCode.SES_ENTWINED_ASSIGN()
+        algorithm
+          addStartAndPreRefs(eq.single_calls, refs, calls);
+        then ();
+      else
+        algorithm
+          traverseExpsEqSystem(eq, Expression.traverseSubexpressionsHelper, (addStartOrPreRef, refs));
+        then ();
+    end match;
+  end for;
+end addStartAndPreRefs;
+
+protected function addBranchStartAndPreRefs
+  input list<SimCode.SimBranch> branches;
+  input UnorderedSet<DAE.ComponentRef> refs;
+algorithm
+  for branch in branches loop
+    () := match branch
+      case SimCode.SIM_BRANCH()
+        algorithm
+          if isSome(branch.condition) then
+            Expression.traverseExpBottomUp(Util.getOption(branch.condition), addStartOrPreRef, refs);
+          end if;
+          for e in branch.body loop
+            Expression.traverseExpBottomUp(Util.tuple21(e), addStartOrPreRef, refs);
+            Expression.traverseExpBottomUp(Util.tuple22(e), addStartOrPreRef, refs);
+          end for;
+        then ();
+      case SimCode.SIM_BRANCH_STMT()
+        algorithm
+          if isSome(branch.condition) then
+            Expression.traverseExpBottomUp(Util.getOption(branch.condition), addStartOrPreRef, refs);
+          end if;
+          DAEUtil.traverseDAEStmts(branch.body, addStmtStartAndPreRefs, refs);
+        then ();
+    end match;
+  end for;
+end addBranchStartAndPreRefs;
+
+protected function addStmtStartAndPreRefs
+  input output DAE.Exp exp;
+  input DAE.Statement stmt;
+  input output UnorderedSet<DAE.ComponentRef> refs;
+algorithm
+  Expression.traverseExpBottomUp(exp, addStartOrPreRef, refs);
+end addStmtStartAndPreRefs;
+
+protected function addStartOrPreRef
+  input output DAE.Exp exp;
+  input output UnorderedSet<DAE.ComponentRef> refs;
+algorithm
+  () := match exp
+    case DAE.CREF() guard ComponentReference.isStartCref(exp.componentRef) or ComponentReference.isPreCref(exp.componentRef)
+      algorithm
+        addAttributeRef(exp.componentRef, refs);
+      then ();
+    case DAE.CALL(path = Absyn.IDENT("pre"), expLst = {DAE.CREF()})
+      algorithm
+        addAttributeRef(ComponentReference.crefPrefixPre(Expression.expCref(listHead(exp.expLst))), refs);
+      then ();
+    else ();
+  end match;
+end addStartOrPreRef;
+
+protected function addAttributeRef
+  "A cref with non-constant subscripts stands for all elements of its array."
+  input DAE.ComponentRef cr;
+  input UnorderedSet<DAE.ComponentRef> refs;
+algorithm
+  UnorderedSet.add(if Expression.subscriptConstants(ComponentReferenceBasics.crefSubs(cr)) then cr else ComponentReference.crefStripSubs(cr), refs);
+end addAttributeRef;
+
+protected function containsAttributeRef
+  input DAE.ComponentRef cr;
+  input UnorderedSet<DAE.ComponentRef> refs;
+  output Boolean b = UnorderedSet.contains(cr, refs) or UnorderedSet.contains(ComponentReference.crefStripSubs(cr), refs);
+end containsAttributeRef;
+
+protected function isRemovedInitialEquation
+  input SimCode.SimEqSystem eq;
+  input HashTableCrefSimVar.HashTable ht;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> moved;
+  input UnorderedSet<Integer> called;
+  input UnorderedSet<DAE.ComponentRef> attrRefs;
+  input UnorderedMap<Integer, SimCode.SimEqSystem> removed;
+  output Boolean b;
+algorithm
+  b := match eq
+    case SimCode.SES_ALIAS() then UnorderedMap.contains(eq.aliasOf, removed);
+    else not UnorderedSet.contains(SimCodeCodegenUtil.simEqSystemIndex(eq), called) and isStartValueEquation(eq, ht, moved, attrRefs);
+  end match;
+  if b then
+    UnorderedMap.add(SimCodeCodegenUtil.simEqSystemIndex(eq), eq, removed);
+  end if;
+end isRemovedInitialEquation;
+
+protected function unaliasRemoved
+  "An alias of a removed equation becomes a copy of it."
+  input output SimCode.SimEqSystem eq;
+  input UnorderedMap<Integer, SimCode.SimEqSystem> removed;
+algorithm
+  eq := match eq
+    local
+      SimCode.SimEqSystem target;
+    case SimCode.SES_ALIAS()
+      then match UnorderedMap.get(eq.aliasOf, removed)
+        case SOME(target as SimCode.SES_SIMPLE_ASSIGN())
+          algorithm
+            target.index := eq.index;
+          then target;
+        else eq;
+      end match;
+    else eq;
+  end match;
+end unaliasRemoved;
+
+protected function setStartFromEquation
+  input output SimCodeVar.SimVar var;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> candidates;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> moved;
+algorithm
+  () := match UnorderedMap.get(var.name, candidates)
+    local
+      DAE.Exp start;
+    case SOME(start)
+      algorithm
+        var.initialValue := SOME(start);
+        var.startFromEquation := true;
+        UnorderedMap.add(var.name, start, moved);
+      then ();
+    else ();
+  end match;
+end setStartFromEquation;
+
+protected function isStartValueEquation
+  input SimCode.SimEqSystem eq;
+  input HashTableCrefSimVar.HashTable ht;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> moved;
+  input UnorderedSet<DAE.ComponentRef> attrRefs;
+  output Boolean b;
+algorithm
+  b := match eq
+    local
+      DAE.ComponentRef cr, x;
+      DAE.Exp start, e;
+      SimCodeVar.SimVar sv;
+    case SimCode.SES_SIMPLE_ASSIGN(cref = x, exp = DAE.CREF(componentRef = cr))
+      guard ComponentReference.isStartCref(cr) and ComponentReferenceBasics.crefEqual(cr, ComponentReference.crefPrefixStart(x))
+            and not containsAttributeRef(cr, attrRefs)
+      then match SimCodeCodegenUtil.simVarExactFromHT(x, ht)
+        case SOME(sv) then isSetOnlyByStart(sv);
+        else false;
+      end match;
+    case SimCode.SES_SIMPLE_ASSIGN(cref = x, exp = e)
+      then match UnorderedMap.get(x, moved)
+        case SOME(start) then valueEq(SOME(start), typedLiteral(e, Expression.typeof(start)));
+        else false;
+      end match;
+    else false;
+  end match;
+end isStartValueEquation;
+
+protected function startLiteral
+  "The literal as the start value of sv, or NONE() if something other than
+   its start value can set sv before the initialization, or if the
+   initialization uses its start value elsewhere."
+  input SimCodeVar.SimVar sv;
+  input DAE.Exp exp;
+  input Boolean fmu;
+  input UnorderedSet<DAE.ComponentRef> attrRefs;
+  output Option<DAE.Exp> start;
+algorithm
+  if sv.isValueChangeable or not isSetOnlyByStart(sv) or (fmu and isSetByImporter(sv.initial_))
+     or containsAttributeRef(ComponentReference.crefPrefixStart(sv.name), attrRefs)
+     or containsAttributeRef(ComponentReference.crefPrefixPre(sv.name), attrRefs) then
+    start := NONE();
+  else
+    start := typedLiteral(exp, sv.type_);
+  end if;
+end startLiteral;
+
+protected function isSetByImporter
+  input Option<SimCodeVar.Initial> initial_;
+  output Boolean b;
+algorithm
+  b := match initial_
+    case SOME(SimCodeVar.EXACT()) then true;
+    case SOME(SimCodeVar.APPROX()) then true;
+    else false;
+  end match;
+end isSetByImporter;
+
+protected function isSetOnlyByStart
+  "True for a variable that only its start value sets before the
+   initialization: not an input, an alias or a parameter."
+  input SimCodeVar.SimVar sv;
+  output Boolean b;
+algorithm
+  b := match sv
+    case SimCodeVar.SIMVAR(causality = SOME(SimCodeVar.INPUT())) then false;
+    case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NOALIAS())
+      then match sv.varKind
+        case BackendDAE.VARIABLE() then true;
+        case BackendDAE.STATE() then true;
+        case BackendDAE.STATE_DER() then true;
+        case BackendDAE.DUMMY_DER() then true;
+        case BackendDAE.DUMMY_STATE() then true;
+        case BackendDAE.CLOCKED_STATE() then true;
+        case BackendDAE.DISCRETE() then true;
+        else false;
+      end match;
+    else false;
+  end match;
+end isSetOnlyByStart;
+
+protected function typedLiteral
+  input DAE.Exp exp;
+  input DAE.Type ty;
+  output Option<DAE.Exp> lit;
+algorithm
+  lit := match (exp, ty)
+    local
+      Integer i;
+      Real r;
+    case (DAE.RCONST(), DAE.T_REAL()) then SOME(exp);
+    case (DAE.ICONST(i), DAE.T_REAL()) then SOME(DAE.RCONST(intReal(i)));
+    case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.RCONST(r)), DAE.T_REAL()) then SOME(DAE.RCONST(-r));
+    case (DAE.ICONST(), DAE.T_INTEGER()) then SOME(exp);
+    case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.ICONST(i)), DAE.T_INTEGER()) then SOME(DAE.ICONST(-i));
+    case (DAE.BCONST(), DAE.T_BOOL()) then SOME(exp);
+    case (DAE.ENUM_LITERAL(), DAE.T_ENUMERATION()) then SOME(exp);
+    else NONE();
+  end match;
+end typedLiteral;
+
 protected function getSystemIndexMap
   input SimCode.SimEqSystem inEqn;
   input array<Integer> inSysIndexMap;
@@ -3008,9 +3414,9 @@ algorithm
     case DAE.CREF(cr, ty)::rest algorithm
       slst := List.map(dims, intString);
       if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
       else
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
       end if;
       tempvars := createTempVarsforCrefs(rest, {var});
     then List.append_reverse(tempvars, itempvars);
@@ -3048,9 +3454,9 @@ algorithm
       inst_dims := ComponentReferenceBasics.crefDims(cr);
       numArrayElement := List.map(inst_dims, ExpressionBasics.dimensionString);
       if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
       else
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
       end if;
     then createTempVarsforCrefs(rest, var::itempvars);
   end match;
@@ -3097,9 +3503,9 @@ algorithm
         numArrayElement := List.map(ComponentReferenceBasics.crefDims(cr), ExpressionBasics.dimensionString);
         ty := ComponentReference.crefTypeFull(cr);
         if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
         else
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
         end if;
 
         /* The rest don't need to be marked i.e. we have 'NONE()'. Just create simvars. */
@@ -3107,9 +3513,9 @@ algorithm
         for cr in crlst loop
           ty := ComponentReference.crefTypeFull(cr);
           if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
           else
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false, false);
           end if;
           ttmpvars := var::ttmpvars;
         end for;
@@ -4942,12 +5348,12 @@ algorithm
     outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
-        SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false);
+        SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false, false);
   else
     outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
-        SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false);
+        SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false, false);
   end if;
 end makeTmpRealSimCodeVar;
 
@@ -9478,7 +9884,7 @@ algorithm
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), initVal, NONE(), isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), NONE(), relativeQuantity,
-        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
+        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match, false);
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.PARAM(),
@@ -9517,7 +9923,7 @@ algorithm
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
-        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
+        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match, false);
 
     // Start value of states may be changeable
     case ((BackendDAE.VAR(varName = cr,
@@ -9565,7 +9971,7 @@ algorithm
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
-        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
+        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match, false);
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
@@ -9613,7 +10019,7 @@ algorithm
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
           minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
-          match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
+          match dlowVar.connectorType case DAE.FLOW() then true; else false; end match, false);
   end match;
 end dlowvarToSimvar;
 

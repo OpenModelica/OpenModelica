@@ -1211,6 +1211,11 @@ pub struct SotiVars {
     pub checked_reals: Vec<bool>,
     pub checked_ints: Vec<bool>,
     pub checked_bools: Vec<bool>,
+    /// Which entries of `reals`, `ints` and `bools` an initial equation gives the
+    /// `start` of (`startFromEquation`); `-iif` keeps these.
+    pub start_from_eq_reals: Vec<bool>,
+    pub start_from_eq_ints: Vec<bool>,
+    pub start_from_eq_bools: Vec<bool>,
 }
 
 /// C's `modelData` parameter arrays (name, `start`, `fixed`) in the order of the
@@ -1873,6 +1878,19 @@ impl SimMeta {
         }
     }
 
+    /// Whether `-iif` leaves entry `i` of roster group `g` alone: an initial equation
+    /// gives its `start`, and that equation is solved unless `-iim=none`.
+    pub fn keeps_start(&self, g: usize, i: usize) -> bool {
+        let flags = match g {
+            0 => &self.soti.start_from_eq_reals,
+            1 => &self.soti.start_from_eq_ints,
+            2 => &self.soti.start_from_eq_bools,
+            _ => return false,
+        };
+        flags.get(i).copied().unwrap_or(false)
+            && crate::simflags::with_flags(|f| f.init_method) != crate::simflags::InitMethod::None
+    }
+
     /// [`ImportRoster`] for this model: the codegen resolves the `-iif` file against
     /// it and the driver applies the result, so both index the same list.
     pub fn import_roster(&self) -> ImportRoster<'_> {
@@ -2090,10 +2108,11 @@ impl SimMeta {
         self.soti.reals = expand_entries(core::mem::take(&mut self.soti.reals), &arrays, |a, n, out| {
             out.extend(a.names(n))
         });
-        self.soti.checked_reals =
-            expand_entries(core::mem::take(&mut self.soti.checked_reals), &arrays, |a, &c, out| {
+        for flags in [&mut self.soti.checked_reals, &mut self.soti.start_from_eq_reals] {
+            *flags = expand_entries(core::mem::take(flags), &arrays, |a, &c, out| {
                 out.extend(core::iter::repeat_n(c, a.dims.iter().product::<u32>() as usize))
             });
+        }
     }
 
     pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
@@ -2504,7 +2523,14 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, n);
         put_str(&mut o, v);
     }
-    for flags in [&m.soti.checked_reals, &m.soti.checked_ints, &m.soti.checked_bools] {
+    for flags in [
+        &m.soti.checked_reals,
+        &m.soti.checked_ints,
+        &m.soti.checked_bools,
+        &m.soti.start_from_eq_reals,
+        &m.soti.start_from_eq_ints,
+        &m.soti.start_from_eq_bools,
+    ] {
         put_u32(&mut o, flags.len() as u32);
         o.extend(flags.iter().map(|&c| c as u8));
     }
@@ -3076,7 +3102,14 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..r.u32()? {
         soti.strings.push((r.string()?, r.string()?));
     }
-    for flags in [&mut soti.checked_reals, &mut soti.checked_ints, &mut soti.checked_bools] {
+    for flags in [
+        &mut soti.checked_reals,
+        &mut soti.checked_ints,
+        &mut soti.checked_bools,
+        &mut soti.start_from_eq_reals,
+        &mut soti.start_from_eq_ints,
+        &mut soti.start_from_eq_bools,
+    ] {
         for _ in 0..r.u32()? {
             flags.push(r.u8()? != 0);
         }

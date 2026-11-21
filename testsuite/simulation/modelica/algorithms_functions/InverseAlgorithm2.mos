@@ -36,7 +36,7 @@ simulate(InverseAlgorithm2, simflags="-lv=LOG_SOTI"); getErrorString();
 // |                 | |       | | | [3] Real z(start=0, nominal=1) = 0.5 (pre: 0)
 // |                 | |       | | derivatives variables
 // |                 | |       | | | [4] Real der(x) = 0 (pre: 0)
-// |                 | |       | | | [5] Real der(y) = 0.5 (pre: 0)
+// |                 | |       | | | [5] Real der(y) = 0.5 (pre: 0.5)
 // |                 | |       | | | [6] Real der(z) = 0 (pre: 0)
 // |                 | |       | | other real variables
 // |                 | |       | | | [7] Real der_x(start=0, nominal=1) = 1 (pre: 0)
