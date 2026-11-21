@@ -96,9 +96,14 @@ static void dumpRealVars(DATA *simData, long from, long to, modelica_boolean wit
     for (k = 0; k < var->dimension.scalar_length; ++k) {
       idx = sInfo->realVarsIndex[i] + k;
       printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
-      if (withAttributes) {
+      if (withAttributes && !var->startFromEquation) {
         infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Real %s(start=%g, nominal=%g) = %g (pre: %g)", idx+1, name,
                         real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                        real_get(var->attribute.positiveNominal, attributeElementIndex(&var->attribute.positiveNominal, k)),
+                        simData->localData[0]->realVars[idx],
+                        sInfo->realVarsPre[idx]);
+      } else if (withAttributes) {
+        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Real %s(nominal=%g) = %g (pre: %g)", idx+1, name,
                         real_get(var->attribute.positiveNominal, attributeElementIndex(&var->attribute.positiveNominal, k)),
                         simData->localData[0]->realVars[idx],
                         sInfo->realVarsPre[idx]);
@@ -162,10 +167,16 @@ void dumpInitialSolution(DATA *simData)
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->integerVarsIndex[i] + k;
         printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
-        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Integer %s(start=" OMC_INT_FORMAT ") = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name,
-                        integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
-                        simData->localData[0]->integerVars[idx],
-                        sInfo->integerVarsPre[idx]);
+        if (var->startFromEquation) {
+          infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Integer %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name,
+                          simData->localData[0]->integerVars[idx],
+                          sInfo->integerVarsPre[idx]);
+        } else {
+          infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Integer %s(start=" OMC_INT_FORMAT ") = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name,
+                          integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                          simData->localData[0]->integerVars[idx],
+                          sInfo->integerVarsPre[idx]);
+        }
       }
     }
     messageClose(OMC_LOG_SOTI);
@@ -179,10 +190,16 @@ void dumpInitialSolution(DATA *simData)
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->booleanVarsIndex[i] + k;
         printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
-        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Boolean %s(start=%s) = %s (pre: %s)", idx+1, name,
-                        boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
-                        simData->localData[0]->booleanVars[idx] ? "true" : "false",
-                        sInfo->booleanVarsPre[idx] ? "true" : "false");
+        if (var->startFromEquation) {
+          infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Boolean %s = %s (pre: %s)", idx+1, name,
+                          simData->localData[0]->booleanVars[idx] ? "true" : "false",
+                          sInfo->booleanVarsPre[idx] ? "true" : "false");
+        } else {
+          infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Boolean %s(start=%s) = %s (pre: %s)", idx+1, name,
+                          boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
+                          simData->localData[0]->booleanVars[idx] ? "true" : "false",
+                          sInfo->booleanVarsPre[idx] ? "true" : "false");
+        }
       }
     }
     messageClose(OMC_LOG_SOTI);
@@ -670,9 +687,11 @@ static void importStartValue(omc_result *reader,
   *                     OpenModelica writes (.mat, .csv, .plt, .arrow),
   *                     selected by its suffix.
   * @param initTime     Initialization time (simulation start time).
+  * @param keepStartFromEquation  Do not import the variables whose start
+  *                     value an initial equation gives.
   * @return int         0 on success, 1 otherwise.
   */
-int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFile, const double initTime)
+int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFile, const double initTime, modelica_boolean keepStartFromEquation)
 {
   omc_result *reader;
   char *pError = NULL;
@@ -710,18 +729,27 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import real variables");
   for(i=0; importVariables && i<mData->nVariablesRealArray; ++i) {
+    if (keepStartFromEquation && mData->realVarsData[i].startFromEquation) {
+      continue;
+    }
     importStartValue(reader, initTime, &mData->realVarsData[i].info, &mData->realVarsData[i].dimension,
                      &mData->realVarsData[i].attribute.start, IMPORT_REAL, NULL, "variable");
   }
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import integer variables");
   for(i=0; importVariables && i<mData->nVariablesIntegerArray; ++i) {
+    if (keepStartFromEquation && mData->integerVarsData[i].startFromEquation) {
+      continue;
+    }
     importStartValue(reader, initTime, &mData->integerVarsData[i].info, &mData->integerVarsData[i].dimension,
                      &mData->integerVarsData[i].attribute.start, IMPORT_INTEGER, NULL, "variable");
   }
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import boolean variables");
   for(i=0; importVariables && i<mData->nVariablesBooleanArray; ++i) {
+    if (keepStartFromEquation && mData->booleanVarsData[i].startFromEquation) {
+      continue;
+    }
     importStartValue(reader, initTime, &mData->booleanVarsData[i].info, &mData->booleanVarsData[i].dimension,
                      &mData->booleanVarsData[i].attribute.start, IMPORT_BOOLEAN, NULL, "variable");
   }
@@ -809,7 +837,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     data->callback->updateBoundVariableAttributes(data, threadData);
     OMC_ERROR_CHECK_RETURN(1);
 
-    if(importStartValues(data, threadData, pInitFile, initTime)) {
+    if(importStartValues(data, threadData, pInitFile, initTime, !(pInitMethod && !strcmp(pInitMethod, INIT_METHOD_NAME[IIM_NONE])))) {
       return 1;
     }
   }

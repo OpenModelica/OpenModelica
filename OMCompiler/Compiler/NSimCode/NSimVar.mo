@@ -570,7 +570,8 @@ public
         initial_            = convertInitial(convertVariability(simVar.varKind), Util.applyOption(simVar.causality, convertCausality)),
         exportVar           = convertExportVar(simVar.exportVar, simVar.name, name),
         relativeQuantity    = false,
-        isConnectorFlow     = simVar.isConnectorFlow);
+        isConnectorFlow     = simVar.isConnectorFlow,
+        startFromEquation   = false);
     end convert;
 
     function convertExportVar

@@ -177,6 +177,7 @@ pub(super) fn soti_vars(
         }
     }
     let mut checked_reals = Vec::new();
+    let mut start_from_eq_reals = Vec::new();
     let sections: [(Vec<&SimCodeVar::SimVar>, Vec<DynVar>); 3] = [
         (svs(&vars.stateVars).collect(), dynv.states.clone()),
         (svs(&vars.derivativeVars).collect(), dynv.ders.clone()),
@@ -184,13 +185,18 @@ pub(super) fn soti_vars(
     ];
     for (list, dyns) in sections {
         let mut skip = 0usize;
-        for sv in list {
+        for (k, sv) in list.iter().copied().enumerate() {
             if skip > 0 {
                 skip -= 1;
                 continue;
             }
             let name = named(sv)?;
-            if let Some(run) = runs.get(&run_key(sv)) {
+            // One entry stands for the run, so its elements must agree on the flag.
+            if let Some(run) = runs.get(&run_key(sv)).filter(|run| {
+                list[k..(k + run.len).min(list.len())]
+                    .iter()
+                    .all(|e| e.startFromEquation == sv.startFromEquation)
+            }) {
                 if let Some((template, at)) = array_name_template(&name, run.dims.len(), brackets) {
                     real_arrays.push(VarArray {
                         var: reals.len() as u32,
@@ -201,12 +207,14 @@ pub(super) fn soti_vars(
                     soti_dims.push(Vec::new());
                     reals.push(template);
                     checked_reals.push(compared.contains(&run_key(sv)));
+                    start_from_eq_reals.push(sv.startFromEquation);
                     skip = run.len - 1;
                     continue;
                 }
             }
             reals.push(name);
             checked_reals.push(compared.contains(&run_key(sv)));
+            start_from_eq_reals.push(sv.startFromEquation);
         }
         for dv in dyns {
             let ones = vec![1; dv.dims.len()];
@@ -221,6 +229,7 @@ pub(super) fn soti_vars(
             });
             soti_dims.push(dv.dims.clone());
             reals.push(template);
+            start_from_eq_reals.push(false);
             checked_reals.push(
                 dynv.discrete_algs.iter().any(|d| run_key(&d.sv) == run_key(&dv.sv))
                     && !SimCodeCodegenUtil::isCommonSubexpression(&dv.sv)?,
@@ -229,15 +238,19 @@ pub(super) fn soti_vars(
     }
     let mut ints = Vec::new();
     let mut checked_ints = Vec::new();
+    let mut start_from_eq_ints = Vec::new();
     for sv in lst(&vars.intAlgVars) {
         ints.push((named(sv)?, const_int(&sv.initialValue).unwrap_or(0)));
         checked_ints.push(!SimCodeCodegenUtil::isCommonSubexpression(sv)?);
+        start_from_eq_ints.push(sv.startFromEquation);
     }
     let mut bools = Vec::new();
     let mut checked_bools = Vec::new();
+    let mut start_from_eq_bools = Vec::new();
     for sv in lst(&vars.boolAlgVars) {
         bools.push((named(sv)?, const_int(&sv.initialValue).unwrap_or(0)));
         checked_bools.push(!SimCodeCodegenUtil::isCommonSubexpression(sv)?);
+        start_from_eq_bools.push(sv.startFromEquation);
     }
     let mut strings = Vec::new();
     for sv in lst(&vars.stringAlgVars) {
@@ -253,6 +266,9 @@ pub(super) fn soti_vars(
             checked_reals,
             checked_ints,
             checked_bools,
+            start_from_eq_reals,
+            start_from_eq_ints,
+            start_from_eq_bools,
         },
         soti_dims,
     ))
