@@ -1,0 +1,58 @@
+// name:     fmi_tunable_divisor
+// keywords: FMI 2.0 3.0 export tunable parameter division
+// status:   correct
+// teardown_command: rm -rf fmi_tunable_divisor_2.fmu fmi_tunable_divisor_3.fmu fmi_tunable_divisor*.fmutmp/ fmi_tunable_divisor*_info.json fmi_tunable_divisor_*.log fmi_tunable_divisor_*.txt fmi_tunable_divisor_*_FMU.libs fmi_tunable_divisor_*_FMU.makefile fmi_tunable_divisor_*_external_functions.json
+//
+// The divisor 2*tau only depends on parameters, so it is checked once after
+// the parameter equations and again after a change of the tunable tau
+// (#4871). The step after tau=0 fails; tau=2 halves the decay rate.
+
+loadString("
+model fmi_tunable_divisor
+  parameter Real tau = 1;
+  parameter Real c = 2*tau;
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x/c;
+end fmi_tunable_divisor;
+"); getErrorString();
+buildModelFMU(fmi_tunable_divisor, version="2.0", fmuType="me_cs", fileNamePrefix="fmi_tunable_divisor_2"); getErrorString();
+buildModelFMU(fmi_tunable_divisor, version="3.0", fmuType="me_cs", fileNamePrefix="fmi_tunable_divisor_3"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_tunable_divisor.py fmi_tunable_divisor_2.fmu fmi_tunable_divisor_2.txt", "fmi_tunable_divisor_2.log"); getErrorString();
+readFile("fmi_tunable_divisor_2.txt");
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_tunable_divisor.py fmi_tunable_divisor_3.fmu fmi_tunable_divisor_3.txt", "fmi_tunable_divisor_3.log"); getErrorString();
+readFile("fmi_tunable_divisor_3.txt");
+// Result:
+// true
+// ""
+// "fmi_tunable_divisor_2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi_tunable_divisor_3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "c: calculatedParameter tunable
+// tau: parameter tunable
+// CS set tau=0: ok, doStep: error
+// CS set tau=2: ok, doStep: ok
+// CS x(2)=0.4724 c=4
+// ME set tau=0 in event mode: ok, event update: error
+// ME set tau=4 in event mode: ok, event update: ok
+// ME der(x)=-0.1250
+// "
+// 0
+// ""
+// "c: calculatedParameter tunable
+// tau: parameter tunable
+// CS set tau=0: ok, doStep: error
+// CS set tau=2: ok, doStep: ok
+// CS x(2)=0.4724 c=4
+// ME set tau=0 in event mode: ok, event update: error
+// ME set tau=4 in event mode: ok, event update: ok
+// ME der(x)=-0.1250
+// "
+// endResult

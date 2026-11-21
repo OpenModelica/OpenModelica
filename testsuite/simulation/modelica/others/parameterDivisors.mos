@@ -1,0 +1,58 @@
+// name:     parameterDivisors
+// keywords: simulation division parameter
+// status:   correct
+// teardown_command: rm -rf ParamDiv ParamDiv.exe ParamDiv.c ParamDiv_* ParamDiv.libs ParamDiv.log ParamDiv.makefile output.log
+//
+// A divisor that only depends on parameters is checked once, after the
+// parameter equation of b (#4871). p is only a divisor in an if-branch, so it
+// can be zero. k has fixed = false, so the division by k keeps its own check.
+
+loadString("
+model ParamDiv
+  parameter Real a = 2;
+  parameter Real b = 3*a;
+  parameter Real p = 0;
+  parameter Real k(fixed = false);
+  Real x(start = 1, fixed = true);
+  Real y;
+  Real z;
+initial equation
+  k = 2*a;
+equation
+  der(x) = -x/(a*b);
+  y = if p > 0 then x/p else 0;
+  z = x/k;
+end ParamDiv;
+"); getErrorString();
+
+simulate(ParamDiv, stopTime = 1); getErrorString();
+val(x, 1.0, "ParamDiv_res.mat");
+val(z, 1.0, "ParamDiv_res.mat");
+simulate(ParamDiv, stopTime = 1, simflags = "-override a=0"); getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ParamDiv_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ParamDiv', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.9200425726990263
+// 0.23001064317475658
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ParamDiv', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override a=0'",
+//     messages = "Simulation execution failed for model: ParamDiv
+// LOG_STDOUT        | warning | You are overriding a with a small value or zero.
+// |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
+// LOG_ASSERT        | error   | [<interactive>:13:3-13:20:writable]
+// |                 | |       | The following assertion has been violated at time 0.000000
+// |                 | |       | ((b * a <> 0.0), b=0, a=0) --> \"Division by zero.\"
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

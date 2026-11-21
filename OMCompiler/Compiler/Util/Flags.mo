@@ -591,6 +591,8 @@ constant DebugFlag HOMOTOPY_IN_RESIDUALS = DEBUG_FLAG(204, "homotopyInResiduals"
   "Keeps homotopy() in the DAE residuals, the generated code evaluates the branches that lambda selects.");
 constant DebugFlag TIME_INVARIANT_BLOCKS = DEBUG_FLAG(205, "timeInvariantBlocks", EXTERNAL(), true,
   "Solves the blocks whose values cannot change during the simulation in the initialization and at events, not at every step.");
+constant DebugFlag PARAMETER_DIVISORS = DEBUG_FLAG(206, "parameterDivisors", EXTERNAL(), true,
+  "Checks the divisors that only depend on parameters once after the parameter equations, not at each division.");
 
 public
 // CONFIGURATION FLAGS

@@ -6592,6 +6592,16 @@ template daeExpOperand(Exp exp, Text expText, Type ty, Text &preExp, Text &varDe
   else '(<%expText%>)'
 end daeExpOperand;
 
+template daeExpUncheckedDivision(Exp exp1, Text e1, Exp exp2, Text e2, Type ty, Text &preExp, Text &varDecls, Text &varFrees)
+ "A Real division by a divisor that the parameter equations check, see SimCodeCodegenUtil.isCheckedDivisor."
+::=
+  let num = daeExpOperand(exp1, e1, ty, &preExp, &varDecls, &varFrees)
+  let den = daeExpOperand(exp2, e2, ty, &preExp, &varDecls, &varFrees)
+  match typeof(exp2)
+    case T_REAL(__) then '(<%num%> / <%den%>)'
+    else '(<%num%> / (modelica_real)<%den%>)'
+end daeExpUncheckedDivision;
+
 template daeExpBinary(Exp exp, Context context, Text &preExp,
                       Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a binary expression."
@@ -6621,8 +6631,15 @@ case BINARY(__) then
         let tvar = checkedDivisor(e2, expTypeModelica(ty), '<%ExpressionDumpTpl.dumpExp(exp,"\"")%> in function context', context, &preExp, &varDecls, &varFrees)
         '(<%e1%>) / <%tvar%>'
       case SIMULATION_CONTEXT() then
-        let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
-        'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+        if isCheckedDivisor(ty, exp2) then daeExpUncheckedDivision(exp1, e1, exp2, e2, ty, &preExp, &varDecls, &varFrees)
+        else
+          let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+          'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+      case JACOBIAN_CONTEXT(__) then
+        if isCheckedDivisor(ty, exp2) then daeExpUncheckedDivision(exp1, e1, exp2, e2, ty, &preExp, &varDecls, &varFrees)
+        else
+          let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+          'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
       else
         let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
         'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'

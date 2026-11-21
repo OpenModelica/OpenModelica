@@ -2492,6 +2492,31 @@ algorithm
   runs := listReverse(runs);
 end simVarIndexRuns;
 
+public function isCheckedDivisor
+  "Whether the generated equations can divide by exp without a check: a Real
+   division by a literal that is not zero, or by a divisor of
+   SimCode.checkedDivisors."
+  input DAE.Type ty "of the division";
+  input DAE.Exp exp;
+  output Boolean checked;
+protected
+  Option<SimCode.SimCode> code;
+  UnorderedSet<DAE.Exp> divisors;
+algorithm
+  checked := match (ty, exp)
+    case (DAE.T_REAL(), DAE.RCONST()) then exp.real <> 0.0;
+    case (DAE.T_REAL(), DAE.ICONST()) then exp.integer <> 0;
+    case (DAE.T_REAL(), _)
+      algorithm
+        code := getGlobalRoot(Global.optionSimCode);
+      then match code
+        case SOME(SimCode.SIMCODE(checkedDivisors = SOME(divisors))) then UnorderedSet.contains(exp, divisors);
+        else false;
+      end match;
+    else false;
+  end match;
+end isCheckedDivisor;
+
 public function getSimCode
   output SimCode.SimCode code;
 protected

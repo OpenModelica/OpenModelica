@@ -200,6 +200,8 @@ pub(crate) struct SimCtx {
     /// `SimGenericCall` index -> the shared for-loop body it runs (C's
     /// `sc.generic_loop_calls`).
     pub(crate) generic_calls: Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    /// The divisors a parameter equation checks; dividing by one needs no check.
+    pub(crate) checked_divisors: Arc<HashSet<String>>,
     /// Number of `sample(...)` time events, bounding the `active` flag region.
     pub(crate) n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags.

@@ -2629,7 +2629,8 @@ algorithm
       scalarized                  = true,
       fmiFigures                  = {},
       paramDeps                   = SimCode.emptyParamDeps,
-      timeInvariantEquations      = {}
+      timeInvariantEquations      = {},
+      checkedDivisors             = NONE()
     );
 
     (simCode, lits) := SimCodeUtil.findSimCodeLiterals(simCode, literals);

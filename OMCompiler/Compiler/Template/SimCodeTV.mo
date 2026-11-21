@@ -1823,6 +1823,12 @@ package SimCodeCodegenUtil
     output SimCode.SimCode code;
   end getSimCode;
 
+  function isCheckedDivisor
+    input DAE.Type ty;
+    input DAE.Exp exp;
+    output Boolean checked;
+  end isCheckedDivisor;
+
   function isSimulationCodegen
     output Boolean simulation;
   end isSimulationCodegen;

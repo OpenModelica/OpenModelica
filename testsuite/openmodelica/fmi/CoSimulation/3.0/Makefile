@@ -26,6 +26,7 @@ fmi3_wasm_solver_me.mos \
 fmi3_wasm_terminate_init.mos \
 fmi_cs_daemode.mos \
 fmi_cs_output_no_der.mos \
+fmi_tunable_divisor.mos \
 fmi_tunable_parameters.mos \
 fmi_tunable_parameters_loop.mos \
 fmi_tunable_parameters_state.mos
@@ -43,6 +44,7 @@ fmi3_cs_event_mode_set.py \
 fmi3_cs_exitinit_assert.py \
 fmi3_cs_tolerance.py \
 fmi3_wasm_logging_off.py \
+fmi_tunable_divisor.py \
 fmi_tunable_parameters.py \
 fmi_tunable_parameters_loop.py \
 fmi_tunable_parameters_state.py \

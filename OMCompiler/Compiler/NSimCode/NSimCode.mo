@@ -682,7 +682,8 @@ public
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
         fmiFigures                    = {},
         paramDeps                     = OldSimCode.PARAM_DEPS(false, {}, {}),
-        timeInvariantEquations        = {});
+        timeInvariantEquations        = {},
+        checkedDivisors               = NONE());
     end convert;
 
     function indexDelay
