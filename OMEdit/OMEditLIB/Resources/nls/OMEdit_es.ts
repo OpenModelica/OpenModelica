@@ -10293,10 +10293,6 @@ Variability: %4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation type="unfinished"></translation>
     </message>

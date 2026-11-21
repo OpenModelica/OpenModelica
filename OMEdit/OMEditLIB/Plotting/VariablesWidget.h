@@ -46,7 +46,7 @@
 #include "omc_result.h"
 typedef omc::ResultFile ResultFileReader;
 
-#include <QDomDocument>
+#include <QMap>
 #include <QSet>
 #include <QTreeView>
 
@@ -258,12 +258,10 @@ public:
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
-  void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
-                                 QHash<QString, QHash<QString, QString> > *variables);
-  void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
+  void readChangedVariables(VariablesTreeItem *pVariablesTreeItem, const QString &outputFileName, QMap<QString, QString> *variables);
   void reSimulate(bool showSetup);
   void reSimulate(SimulationOptions simulationOptions, VariablesTreeItem *pVariablesTreeItem, bool showSetup);
-  void updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions);
+  void writeOverrideFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions *pSimulationOptions);
   void initializeVisualization();
   void updateVisualization();
   void updatePlotWindows();

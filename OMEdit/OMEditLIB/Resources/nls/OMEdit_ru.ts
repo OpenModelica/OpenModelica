@@ -10331,10 +10331,6 @@ Variability: %4</source>
         <translation>Невозможно повторно моделировать данный класс. &lt;br /&gt; Это всего лишь выходной файл, загруженный с помощью меню &lt;b&gt;Файл-&gt;Открыть выходной файл(ы)&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Не удалось задать содержимое QDomDocument из файла %1</translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation type="unfinished"></translation>
     </message>

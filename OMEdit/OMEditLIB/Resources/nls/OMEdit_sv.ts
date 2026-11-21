@@ -10386,10 +10386,6 @@ Variabilitet: %4</translation>
         <translation>Du kan inte simulera om den här klassen.&lt;br /&gt;Det är bara en resultatfil som har lästs in via menyn &lt;b&gt;Arkiv-&gt;Öppna resultatfil(er)&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Kunde inte sätta innehållet i QDomDocument från filen %1</translation>
-    </message>
-    <message>
         <source>Enabled for %1</source>
         <translation>Aktiverat för %1</translation>
     </message>
