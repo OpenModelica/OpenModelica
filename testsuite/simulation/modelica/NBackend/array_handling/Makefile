@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+identityRealCast.mos \
 sumRecordArraySlice.mos \
 arrayEquationRowLoop.mos \
 scalarProductSlice.mos \

@@ -213,7 +213,9 @@ public
       input Call_Id id2;
       output Boolean b;
     algorithm
-      b := Expression.isEqual(id1.call, id2.call) and Iterator.isEqual(id1.iter, id2.iter);
+      // the type is compared as well, e.g. identity(2) can be Integer or Real
+      b := Expression.isEqual(id1.call, id2.call) and Type.isEqual(Expression.typeOf(id1.call), Expression.typeOf(id2.call))
+        and Iterator.isEqual(id1.iter, id2.iter);
     end isEqual;
   end Call_Id;
 
