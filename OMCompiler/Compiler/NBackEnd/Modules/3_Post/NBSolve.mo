@@ -1000,9 +1000,38 @@ public
       then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Expression.applySubscripts(subs, eqn.lhs, true), Expression.fromCref(cref), eqn.source, eqn.attr);
       // expanding the equation for every element is quadratic, only do it for small arrays
       case Equation.ARRAY_EQUATION() guard(Type.sizeOf(eqn.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION)) then scalarElementEquation(eqn, cref);
+      case Equation.ARRAY_EQUATION() then subscriptedElementEquation(eqn, cref);
       else eqn;
     end match;
   end arrayElementEquation;
+
+  function subscriptedElementEquation
+    "the element equation lhs[k] = rhs[k] of an array equation, with k the trailing
+    subscripts of the cref, if the cref is the only part of its array in it. Unchanged otherwise."
+    input Equation eqn;
+    input ComponentRef cref;
+    output Equation result = eqn;
+  protected
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    Integer n = Type.dimensionCount(Equation.getType(eqn));
+    Equation elem;
+    list<ComponentRef> occurrences;
+  algorithm
+    if listLength(subs) < n then
+      return;
+    end if;
+    subs := List.lastN(subs, n);
+    elem := match eqn
+      case Equation.ARRAY_EQUATION() then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty),
+        SimplifyExp.simplify(Expression.applySubscripts(subs, eqn.lhs, true)),
+        SimplifyExp.simplify(Expression.applySubscripts(subs, eqn.rhs, true)), eqn.source, eqn.attr);
+      else eqn;
+    end match;
+    occurrences := Equation.collectCrefs(elem, function Slice.getSliceCandidates(name = ComponentRef.stripSubscriptsAll(cref)));
+    if not listEmpty(occurrences) and List.all(occurrences, function ComponentRef.isEqual(cref2 = cref)) then
+      result := elem;
+    end if;
+  end subscriptedElementEquation;
 
   function solveIfBranches
     "solves every branch of an if-equation with a single equation per branch for the cref"
