@@ -2939,6 +2939,10 @@ fmiXStatus FMIX(NewDiscreteStates)(fmiXComponent c, fmiXEventInfo* eventInfo)
     return fmiXError;
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "NewDiscreteStates")
 
+  /* All fields are return values (FMI 2.0.4, section 3.2.2). */
+  if (eventInfo) {
+    memset(eventInfo, 0, sizeof(fmiXEventInfo));
+  }
   returnValue = internalEventUpdate(comp, eventInfo);
 
   return returnValue;
