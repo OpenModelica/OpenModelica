@@ -1,0 +1,37 @@
+// name:     fmi3_cs_step_past_stop
+// keywords: FMI 3.0 export Co-Simulation fmi3DoStep stopTime
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_step_past_stop.fmu fmi3_cs_step_past_stop.fmutmp/ fmi3_cs_step_past_stop_info.json fmi3_cs_step_past_stop_FMU.* fmi3_cs_step_past_stop_external_functions.json fmi3_cs_step_past_stop.log fmi3_cs_step_past_stop_out.txt
+//
+// The last step of t += 0.1 ends one ulp after the stop time 0.3 of
+// fmi3EnterInitializationMode, which the FMU accepts. A step that ends
+// later fails with an error, and the FMU logs why.
+
+loadString("
+model fmi3_cs_step_past_stop
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end fmi3_cs_step_past_stop;
+"); getErrorString();
+buildModelFMU(fmi3_cs_step_past_stop, version = "3.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_step_past_stop.py fmi3_cs_step_past_stop.fmu fmi3_cs_step_past_stop_out.txt > fmi3_cs_step_past_stop.log 2>&1"); getErrorString();
+readFile("fmi3_cs_step_past_stop_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_cs_step_past_stop.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "doStep(0.0, 0.1): OK
+// doStep(0.1, 0.1): OK
+// doStep(0.2, 0.1): OK
+// status 3: DoStep: The step from 0.3 with size 0.1 ends 0.1 after the stop time 0.3.
+// doStep(0.30000000000000004, 0.1): fmi3DoStep failed with status 3 (error).
+// "
+// ""
+// endResult
