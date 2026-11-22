@@ -232,8 +232,16 @@ algorithm
 
     case DAE.ASUB(exp = e, sub = subs)
       algorithm
-        expl := list(Expression.getSubscriptExp(sub) for sub in subs);
-        e := simplifyAsubExp(inExp,e,expl);
+        if List.any(subs, Expression.isWholeDimSubscript) then
+          try
+            e := Expression.applyExpSubscriptsFoldCheckSimplify(e, subs);
+          else
+            e := inExp;
+          end try;
+        else
+          expl := list(Expression.getSubscriptExp(sub) for sub in subs);
+          e := simplifyAsubExp(inExp,e,expl);
+        end if;
       then (e,options);
 
     case DAE.TSUB() then (simplifyTSub(inExp),options);
@@ -745,7 +753,12 @@ algorithm
       algorithm
         // print("simplify1 start: " + ExpressionBasics.printExpStr(exp) + "\n");
         ErrorExt.setCheckpoint("ExpressionSimplify");
-        (expAfterSimplify,options) := Expression.traverseExpBottomUp(exp,simplifyWork,options);
+        try
+          (expAfterSimplify,options) := Expression.traverseExpBottomUp(exp,simplifyWork,options);
+        else
+          ErrorExt.delCheckpoint("ExpressionSimplify");
+          fail();
+        end try;
         b := not referenceEq(expAfterSimplify, exp);
         if b then
           ErrorExt.rollBack("ExpressionSimplify");

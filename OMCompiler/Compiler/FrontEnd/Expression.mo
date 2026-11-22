@@ -969,14 +969,15 @@ algorithm
         return;
       end if;
     end if;
-    // Apply one subscript at a time, so simplify works fine on it.
-    try
+    if isWholeDimSubscript(sub) then
+      // Only a trailing : can be skipped.
+      true := List.all(rest, isWholeDimSubscript);
+    else
+      // Apply one subscript at a time, so simplify works fine on it.
       s := getSubscriptExp(sub);
       (exp,b) := ExpressionSimplify.simplify(makeASUB(exp,{s}));
       checkSimplify := b or checkSimplify;
-    else
-      // skipped DAE.WHOLEDIM
-    end try;
+    end if;
   end for;
 end applyExpSubscriptsFoldCheckSimplify;
 
@@ -997,7 +998,7 @@ algorithm
   end match;
 end selectedIndices;
 
-protected function isWholeDimSubscript
+public function isWholeDimSubscript
   input DAE.Subscript sub;
   output Boolean b;
 algorithm
