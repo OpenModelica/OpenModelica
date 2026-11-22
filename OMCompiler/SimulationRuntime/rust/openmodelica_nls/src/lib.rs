@@ -4115,7 +4115,8 @@ fn omc_newton(
 
 /// C's `solveNewton`: [`omc_newton`] under a retry ladder that varies the start point,
 /// refreshes the Jacobian every iteration, then relaxes the acceptance bound. `warm` is
-/// C's `nlsxOld`.
+/// C's `nlsxOld`. A model assert fails the solve, as C's `solveNLS` does after
+/// `solveNewton`.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn solve_newton_c(
     n: usize,
@@ -4134,8 +4135,12 @@ pub(crate) fn solve_newton_c(
     let mut every_jac = false;
     let mut retries = 0i32;
     let mut retries2 = 0i32;
+    arm_attempt();
     loop {
         let (ok, xerror, xerror_scaled) = omc_newton(n, x, &mut fvec, res_scaling, every_jac, eval, jaceval, has_jac);
+        if attempt_aborted() {
+            return false;
+        }
         if ok && (xerror <= local_tol || xerror_scaled <= local_tol) {
             return true;
         }
@@ -5437,5 +5442,36 @@ mod tests {
         for (k, (a, b)) in jac.iter().zip(&fd).enumerate() {
             assert!((a - b).abs() <= 1e-5 * (1.0 + b.abs()), "entry {k}: {a} vs {b}");
         }
+    }
+
+    // y^0.763767 + y^3 = -5 has no real root, and the model asserts for y < 0. The
+    // `ASSERT_RESIDUAL` of those trials must not pass the scaled acceptance test.
+    #[test]
+    fn newton_fails_after_assert() {
+        let mut eval = |xs: &[f64], r: &mut [f64]| {
+            let hit = xs[0] < 0.0;
+            note_eval_hit(hit, hit);
+            r[0] = if hit {
+                ASSERT_RESIDUAL
+            } else {
+                fmath::pow(xs[0], 0.763767) + xs[0] * xs[0] * xs[0] + 5.0
+            };
+        };
+        let start = [0.6527124034851399];
+        let mut x = start;
+        let mut res_scaling = [0.0];
+        let ok = solve_newton_c(
+            1,
+            &mut x,
+            &start,
+            &[1.0],
+            &[1.0],
+            &mut res_scaling,
+            true,
+            &mut eval,
+            &mut |_, _| {},
+            false,
+        );
+        assert!(!ok, "accepted x = {}", x[0]);
     }
 }
