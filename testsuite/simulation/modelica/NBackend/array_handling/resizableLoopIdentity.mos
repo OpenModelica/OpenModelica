@@ -1,0 +1,57 @@
+// name: resizableLoopIdentity
+// keywords: NewBackend resizable override algebraic loop sorting
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableLoopIdentity*.log resizableLoopIdentity*.mat resizableLoopIdentity_ref*
+//
+// The loops of all elements of x and y are one loop for every size. Element
+// N - 1 is reached first through its second equation (w = y[N - 1]), which
+// must not make its loop a different one.
+
+loadString("
+model resizableLoopIdentity
+  parameter Integer N = 5;
+  Real w, x[N](each start = 1), z[N], y[N](each start = 1);
+equation
+  w = y[N - 1];
+  x[1] = 1 + time;
+  y[1] = x[1];
+  for i in 2:N loop
+    x[i] + 0.1*y[i]^3 = i*(1 + time);
+  end for;
+  for i in 1:N loop
+    z[i] = 2*x[i];
+  end for;
+  for i in 2:N loop
+    y[i] + 0.1*x[i]^3 = 1;
+  end for;
+end resizableLoopIdentity;
+model resizableLoopIdentity_ref = resizableLoopIdentity(N = 7);
+"); getErrorString();
+
+buildModel(resizableLoopIdentity, stopTime = 1); getErrorString();
+system("./resizableLoopIdentity -override=N=7 -r=resizableLoopIdentity_7.mat", "resizableLoopIdentity_7.log");
+
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+buildModel(resizableLoopIdentity_ref, stopTime = 1); getErrorString();
+system("./resizableLoopIdentity_ref", "resizableLoopIdentity_ref.log");
+
+abs(val(x[4], 0, "resizableLoopIdentity_7.mat") - val(x[4], 0, "resizableLoopIdentity_ref_res.mat")) < 1e-6;
+abs(val(y[5], 0, "resizableLoopIdentity_7.mat") - val(y[5], 0, "resizableLoopIdentity_ref_res.mat")) < 1e-6;
+abs(val(w, 1, "resizableLoopIdentity_7.mat") - val(w, 1, "resizableLoopIdentity_ref_res.mat")) < 1e-6;
+// Result:
+// true
+// ""
+// {"resizableLoopIdentity", "resizableLoopIdentity_init.xml"}
+// ""
+// 0
+// true
+// ""
+// {"resizableLoopIdentity_ref", "resizableLoopIdentity_ref_init.xml"}
+// ""
+// 0
+// true
+// true
+// true
+// endResult

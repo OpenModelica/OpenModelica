@@ -377,7 +377,9 @@ public
       input LoopIdentifier li;
       output String str;
     algorithm
-      str := " eqns: " + UnorderedSet.toString(li.eqns, intString) + "\n vars:" + UnorderedSet.toString(li.vars, intString) + "\n";
+      // sorted, the order of a set depends on the insertion order
+      str := " eqns: " + List.toString(List.sort(UnorderedSet.toList(li.eqns), intGt), intString)
+        + "\n vars:" + List.toString(List.sort(UnorderedSet.toList(li.vars), intGt), intString) + "\n";
     end toString;
 
     function fromSCC
