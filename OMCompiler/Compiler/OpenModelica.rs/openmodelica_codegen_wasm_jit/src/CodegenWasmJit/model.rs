@@ -1314,7 +1314,8 @@ pub(super) fn build_sim_model(
     };
     // C's `inputNames` / `nInputVars`. No slot ⇒ no column to receive.
     let mut input_vars: Vec<openmodelica_sim_meta::InputVar> = Vec::new();
-    for sv in lst(&vars.inputVars) {
+    let numeric_inputs = openmodelica_codegen_util::SimCodeCodegenUtil::numericInputVars(vars.inputVars.clone());
+    for sv in lst(&numeric_inputs) {
         let key = sim_cref_key(&sv.name)?;
         let name = cref_display(&sv.name)?;
         match all_reals

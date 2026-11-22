@@ -10,6 +10,7 @@ FmuSparseSolvers.mos \
 FmuLinkLibraries.mos \
 FmuUserCFlags.mos \
 FmuUserTab.mos \
+FmuStringInputs.mos \
 FmuValueAccess.mos \
 StateDerivativeAliases.mos \
 derivativeUnits.mos \

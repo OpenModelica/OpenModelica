@@ -4254,8 +4254,6 @@ fn apply_external_input(_e: &mut dyn SimEngine, _sim_data: u32, _inputs: &[crate
     Ok(())
 }
 
-/// C's `setAllVarsToStart` for the reals: every real variable takes its `start`
-/// attribute. Integer/Boolean/String starts are still the emitted equations'.
 /// C's `setAllVarsToStart`. `with_imports` is false for the pass before
 /// `initialization` ([`copy_start_values_to_init_values`]), which predates `-iif`.
 fn set_all_vars_to_start(
@@ -4274,10 +4272,27 @@ fn set_all_vars_to_start(
         for (i, (_, start)) in m.soti.bools.iter().enumerate() {
             write_i32(e, sim_data + layout.bool_off + i as u32 * 4, *start)?;
         }
+        for (i, (_, start)) in m.soti.strings.iter().enumerate() {
+            e.set_string(sim_data + layout.str_off + i as u32 * 4, start.as_bytes())?;
+        }
         // `-iif` replaced those constants, and C's `attribute.start` is what it wrote.
         if with_imports {
             for (off, start) in imported_discrete_starts(m) {
                 write_i32(e, sim_data + off, start)?;
+            }
+        }
+        // So did `-override`, which names the live slot of such a variable.
+        let discrete = |off: u32| {
+            (layout.int_off..layout.iparam_off).contains(&off) || (layout.bool_off..layout.bparam_off).contains(&off)
+        };
+        for (off, _, v) in overrides_store::starts() {
+            if discrete(off) {
+                write_i32(e, sim_data + off, v as i32)?;
+            }
+        }
+        for (off, v) in overrides_store::strings() {
+            if (layout.str_off..layout.sparam_off).contains(&off) {
+                e.set_string(sim_data + off, v.as_bytes())?;
             }
         }
     }
