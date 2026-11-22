@@ -1249,7 +1249,14 @@ impl<E: FmiHost + 'static> MeState<E> {
             .call1_if_present("callExternalObjectDestructors", self.sim_data);
     }
 
+    /// The driver's override store is per process: load this instance's sets, which
+    /// a reset has cleared, or the previous run's overrides land in the start values.
     fn seed_start_state(&mut self) {
+        set_param_overrides(
+            self.init_overrides.clone(),
+            self.init_start_overrides.clone(),
+            Vec::new(),
+        );
         let e = &mut self.engine;
         let _ = driver::seed_start_state(&mut *e, self.sim_data, &self.meta);
     }

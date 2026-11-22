@@ -8,6 +8,7 @@ fmi3_cs_cvode.mos \
 fmi3_cs_state_event.mos \
 fmi3_cs_event_mode_reinit.mos \
 fmi3_cs_event_mode_set.mos \
+fmi3_cs_reset.mos \
 fmi3_cs_exitinit_assert.mos \
 fmi3_cs_step_past_stop.mos \
 fmi3_cs_tolerance.mos \
@@ -42,6 +43,7 @@ fmi3_cs_assert_solver_retry.py \
 fmi3_cs_state_event.py \
 fmi3_cs_event_mode_reinit.py \
 fmi3_cs_event_mode_set.py \
+fmi3_cs_reset.py \
 fmi3_cs_exitinit_assert.py \
 fmi3_cs_step_past_stop.py \
 fmi3_cs_tolerance.py \
