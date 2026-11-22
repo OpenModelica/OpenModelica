@@ -1112,6 +1112,12 @@ algorithm
   numScalars := List.applyAndFold(vars, intAdd, SimCodeUtilShared.getNumElems, 0);
 end getNumScalars;
 
+public function numericInputVars
+  "The inputs that simulationInfo->inputVars holds: all but the String inputs."
+  input list<SimCodeVar.SimVar> inputVars;
+  output list<SimCodeVar.SimVar> vars = list(v for v guard not Types.isString(Types.arrayElementType(v.type_)) in inputVars);
+end numericInputVars;
+
 public function numScalarElems
   "Total number of scalar elements over a list of SimVars (rolling out arrays).
    Equals listLength for scalarized variables. Public wrapper around getNumScalars

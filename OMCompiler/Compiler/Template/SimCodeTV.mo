@@ -1590,6 +1590,11 @@ package SimCodeCodegenUtil
     output Boolean b;
   end hasSymbolicDims;
 
+  function numericInputVars
+    input list<SimCodeVar.SimVar> inputVars;
+    output list<SimCodeVar.SimVar> vars;
+  end numericInputVars;
+
   function isSymbolicArrayVar
     input SimCodeVar.SimVar var;
     output Boolean b;

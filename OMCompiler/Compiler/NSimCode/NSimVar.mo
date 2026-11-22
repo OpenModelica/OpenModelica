@@ -1623,8 +1623,8 @@ public
         numIntParams                 = listScalarSize(vars.intParamVars),
         numBoolParams                = listScalarSize(vars.boolParamVars),
         numOutVars                   = listLength(vars.outputVars),
-        // one value per scalar input in simulationInfo->inputVars, also for the C target
-        numInVars                    = sum(if Type.isArray(v.type_) then product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) else 1 for v in vars.inputVars),
+        // one value per scalar non-String input in simulationInfo->inputVars, also for the C target
+        numInVars                    = sum(if Type.isArray(v.type_) then product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) else 1 for v guard not Type.isString(Type.arrayElementType(v.type_)) in vars.inputVars),
         numExternalObjects           = listLength(vars.extObjVars),
         numStringAlgVars             = listScalarSize(vars.stringAlgVars),
         numStringParamVars           = listScalarSize(vars.stringParamVars),

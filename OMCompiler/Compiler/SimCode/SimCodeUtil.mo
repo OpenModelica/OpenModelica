@@ -7785,7 +7785,7 @@ algorithm
     ny_int := SimCodeCodegenUtil.getNumScalars(vars.intAlgVars);
     ny_bool := SimCodeCodegenUtil.getNumScalars(vars.boolAlgVars);
     numOutVars := SimCodeCodegenUtil.getNumScalars(vars.outputVars);
-    numInVars := SimCodeCodegenUtil.getNumScalars(vars.inputVars);
+    numInVars := SimCodeCodegenUtil.getNumScalars(SimCodeCodegenUtil.numericInputVars(vars.inputVars));
     na := SimCodeCodegenUtil.getNumScalars(vars.aliasVars);
     na_int := SimCodeCodegenUtil.getNumScalars(vars.intAliasVars);
     na_bool := SimCodeCodegenUtil.getNumScalars(vars.boolAliasVars);
