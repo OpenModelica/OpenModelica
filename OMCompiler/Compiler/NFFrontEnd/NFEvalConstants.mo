@@ -654,7 +654,7 @@ algorithm
         e1 := evaluateExp(eq.lhs, info);
         e2 := evaluateExp(eq.rhs, info);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode);
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode, eq.origin);
 
     case Equation.FOR()
       algorithm

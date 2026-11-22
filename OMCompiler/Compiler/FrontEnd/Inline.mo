@@ -250,6 +250,7 @@ algorithm
       String i;
       list<DAE.Exp> explst,explst_1;
       DAE.ElementSource source;
+      DAE.EquationOrigin origin;
       Boolean b1,b2,b3;
 
     case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,ct,
@@ -288,13 +289,13 @@ algorithm
       then
         (DAE.ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
 
-    case(DAE.INITIAL_ARRAY_EQUATION(dimension,exp1,exp2,source),fns)
+    case(DAE.INITIAL_ARRAY_EQUATION(dimension,exp1,exp2,source,origin),fns)
       algorithm
         (exp1_1,source,b1,_) := inlineExp(exp1,fns,source);
         (exp2_1,source,b2,_) := inlineExp(exp2,fns,source);
         true := b1 or b2;
       then
-        (DAE.INITIAL_ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
+        (DAE.INITIAL_ARRAY_EQUATION(dimension,exp1_1,exp2_1,source,origin),true);
 
     case(DAE.COMPLEX_EQUATION(exp1,exp2,source),fns)
       algorithm
@@ -304,13 +305,13 @@ algorithm
       then
         (DAE.COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
 
-    case(DAE.INITIAL_COMPLEX_EQUATION(exp1,exp2,source),fns)
+    case(DAE.INITIAL_COMPLEX_EQUATION(exp1,exp2,source,origin),fns)
       algorithm
         (exp1_1,source,b1,_) := inlineExp(exp1,fns,source);
         (exp2_1,source,b2,_) := inlineExp(exp2,fns,source);
         true := b1 or b2;
       then
-        (DAE.INITIAL_COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
+        (DAE.INITIAL_COMPLEX_EQUATION(exp1_1,exp2_1,source,origin),true);
 
     case(DAE.WHEN_EQUATION(exp,elist,SOME(el),source),fns)
       algorithm

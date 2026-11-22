@@ -3701,7 +3701,7 @@ algorithm
     fail();
   end if;
 
-  eq := Equation.EQUALITY(e1, e2, ty, scope, source, NFEquation.ScalarizeMode.NO_PREFERENCE);
+  eq := Equation.EQUALITY(e1, e2, ty, scope, source, NFEquation.ScalarizeMode.NO_PREFERENCE, DAE.EquationOrigin.EQUATION);
 
   if Expression.isExternalCall(e2) then
     Call.updateExternalRecordArgs(Expression.tupleElements(e1));

@@ -1913,6 +1913,7 @@ algorithm
       DAE.Exp e1, e1_1, e2, e2_1, msg;
       DAE.ComponentRef cr1, cr2;
       DAE.ElementSource source;
+      DAE.EquationOrigin origin;
       Boolean b1;
       DAE.Dimensions dims;
       list<DAE.Exp> explst, explst1;
@@ -2014,11 +2015,11 @@ algorithm
       then
         (eqns,inREquations,inIEquations);
 
-    case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source)
+    case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source,origin = origin)
       algorithm
          //TODO: remove inline
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
-        eqns := lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL,functionTree,inIEquations);
+        eqns := lowerExtendedRecordEqn(e1_1,e2_1,source,initialEquationAttributes(origin),functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
 
@@ -2040,10 +2041,10 @@ algorithm
       then
         (eqns,inREquations,inIEquations);
 
-    case DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source)
+    case DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source,origin = origin)
       algorithm
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns := lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL,inIEquations);
+        eqns := lowerArrayEqn(dims,e1_1,e2_1,source,initialEquationAttributes(origin),inIEquations);
       then
         (inEquations,inREquations,eqns);
 
@@ -2147,6 +2148,15 @@ algorithm
 
   end match;
 end lowerEqn;
+
+protected function initialEquationAttributes
+  "A binding that the frontend moved to the initial equations keeps the
+   binding kind, so that balancing removes initial equations instead."
+  input DAE.EquationOrigin origin;
+  output BackendDAE.EquationAttributes attr;
+algorithm
+  attr := if origin == DAE.EquationOrigin.BINDING then BackendDAE.EQ_ATTR_DEFAULT_BINDING else BackendDAE.EQ_ATTR_DEFAULT_INITIAL;
+end initialEquationAttributes;
 
 protected
 function lowerForEquation

@@ -2384,13 +2384,13 @@ algorithm
       then
         (DAE.COMPLEX_EQUATION(e1_1,e2_1,source)::elts_1);
 
-    case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source)::elts
+    case (elt as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source))::elts
       algorithm
         e1_1 := toModelicaFormExp(e1);
         e2_1 := toModelicaFormExp(e2);
         elts_1 := toModelicaFormElts(elts);
       then
-        (DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1,source)::elts_1);
+        (DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1,source,elt.origin)::elts_1);
 
     case DAE.EQUEQUATION(cr1 = cr1,cr2 = cr2,source = source)::elts
       algorithm
@@ -3784,7 +3784,7 @@ algorithm
         (new_e1, arg) := func(e1, arg);
         (new_e2, arg) := func(e2, arg);
         if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
-          element := DAE.INITIAL_COMPLEX_EQUATION(new_e1, new_e2, element.source);
+          element := DAE.INITIAL_COMPLEX_EQUATION(new_e1, new_e2, element.source, element.origin);
         end if;
       then
         ();
@@ -3804,7 +3804,7 @@ algorithm
         (new_e1, arg) := func(e1, arg);
         (new_e2, arg) := func(e2, arg);
         if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
-          element := DAE.INITIAL_ARRAY_EQUATION(element.dimension, new_e1, new_e2, element.source);
+          element := DAE.INITIAL_ARRAY_EQUATION(element.dimension, new_e1, new_e2, element.source, element.origin);
         end if;
       then
         ();
@@ -6115,14 +6115,14 @@ algorithm
 
 end mergeAlgorithmSections;
 
-public function moveElementToInitialSection "Converts DAE.Element from the equation section to the initial equation section"
+public function moveElementToInitialSection "Moves the binding equations of a parameter from the equation section to the initial equation section"
   input output DAE.Element elt;
 algorithm
   elt := match elt
     case DAE.EQUATION() then DAE.INITIALEQUATION(elt.exp, elt.scalar, elt.source);
     case DAE.DEFINE() then DAE.INITIALDEFINE(elt.componentRef, elt.exp, elt.source);
-    case DAE.ARRAY_EQUATION() then DAE.INITIAL_ARRAY_EQUATION(elt.dimension, elt.exp, elt.array, elt.source);
-    case DAE.COMPLEX_EQUATION() then DAE.INITIAL_COMPLEX_EQUATION(elt.lhs, elt.rhs, elt.source);
+    case DAE.ARRAY_EQUATION() then DAE.INITIAL_ARRAY_EQUATION(elt.dimension, elt.exp, elt.array, elt.source, DAE.EquationOrigin.BINDING);
+    case DAE.COMPLEX_EQUATION() then DAE.INITIAL_COMPLEX_EQUATION(elt.lhs, elt.rhs, elt.source, DAE.EquationOrigin.BINDING);
     case DAE.IF_EQUATION() then DAE.INITIAL_IF_EQUATION(elt.condition1, elt.equations2, elt.equations3, elt.source);
     case DAE.ALGORITHM() then DAE.INITIALALGORITHM(elt.algorithm_, elt.source);
     case DAE.ASSERT() then DAE.INITIAL_ASSERT(elt.condition, elt.message, elt.level, elt.source);

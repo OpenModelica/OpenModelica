@@ -189,6 +189,11 @@ public uniontype EquationExp "An equation on residual or equality form has 1 or 
   end EQUALITY_EXPS;
 end EquationExp;
 
+public type EquationOrigin = enumeration(
+  EQUATION, // Written in an equation section
+  BINDING   // The binding of a component, moved to an equation by the frontend
+);
+
 public uniontype Element
   record VAR
     ComponentRef componentRef " The variable name";
@@ -243,6 +248,7 @@ public uniontype Element
     Exp exp;
     Exp array;
     ElementSource source "the origin of the component/equation/algorithm" ;
+    EquationOrigin origin;
   end INITIAL_ARRAY_EQUATION;
 
   record CONNECT_EQUATION "a connect equation"
@@ -263,6 +269,7 @@ public uniontype Element
     Exp lhs;
     Exp rhs;
     ElementSource source "the origin of the component/equation/algorithm" ;
+    EquationOrigin origin;
   end INITIAL_COMPLEX_EQUATION;
 
   record WHEN_EQUATION " a when equation"
