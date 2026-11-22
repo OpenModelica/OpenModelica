@@ -1581,6 +1581,11 @@ public
                   sparsityAddTemplate(sparsityTemplateKey(cref, template_crefs), inner_deps, template_map);
                 end for;
 
+                if StrongComponent.isAlgebraicLoop(comp) then
+                  pder_crefs := sparsityLoopRows(comp, pder_crefs);
+                  eqn_iter := Iterator.EMPTY();
+                end if;
+
                 if isAdjoint then
                   // The adjoint evaluates rows of the primal Jacobian. Map each
                   // primal result row to its adjoint seed variable. The runtime
@@ -2421,6 +2426,43 @@ public
       output Boolean b = List.any(list(sparsityHasIterator(Subscript.toExp(s))
         for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)), Util.id);
     end sparsityCrefHasIterator;
+
+    function sparsityLoopRows
+      "The rows of an algebraic loop are the elements it solves, e.g. der(x)[1] and
+      der(x)[N]. Elements selected by the iterators of an equation give the whole array."
+      input StrongComponent comp;
+      input list<ComponentRef> pder_crefs;
+      output list<ComponentRef> rows;
+    protected
+      ComponentRef base;
+      list<ComponentRef> whole = {};
+    algorithm
+      rows := {};
+      for cref in StrongComponent.getSolvedCrefs(comp) loop
+        base := ComponentRef.stripSubscriptsAll(cref);
+        if List.contains(pder_crefs, base, ComponentRef.isEqual) then
+          if sparsityCrefHasIterator(cref) or not ComponentRef.hasSubscripts(cref) then
+            whole := base :: whole;
+          else
+            rows := cref :: rows;
+          end if;
+        end if;
+      end for;
+      // variables without a solved element keep all rows
+      for cref in pder_crefs loop
+        if not List.any(rows, function sparsityHasBase(base = cref)) then
+          whole := cref :: whole;
+        end if;
+      end for;
+      rows := list(c for c guard not List.contains(whole, ComponentRef.stripSubscriptsAll(c), ComponentRef.isEqual) in rows);
+      rows := UnorderedSet.unique_list(listAppend(whole, rows), ComponentRef.hash, ComponentRef.isEqual);
+    end sparsityLoopRows;
+
+    function sparsityHasBase
+      input ComponentRef cref;
+      input ComponentRef base;
+      output Boolean b = ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(cref), base);
+    end sparsityHasBase;
 
     function sparsitySimplify
       "with the sums combined, so that equal subscripts (e.g. 1 + i - 1 and i) are equal crefs"
