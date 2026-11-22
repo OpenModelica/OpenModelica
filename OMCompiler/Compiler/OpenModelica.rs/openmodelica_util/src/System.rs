@@ -595,6 +595,19 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
             }
             Err(_) => return -1,
         }
+    } else {
+        // Where C's stdout/stderr write, as a fork inherits on Unix. OMEdit
+        // freopens them; in a GUI application that does not change the Win32
+        // std handles that Stdio::inherit passes on.
+        #[cfg(windows)]
+        {
+            if let Some(h) = c_stream_stdio(1) {
+                cmd.stdout(h);
+            }
+            if let Some(h) = c_stream_stdio(2) {
+                cmd.stderr(h);
+            }
+        }
     }
     let status = match cmd.status() {
         Ok(s) => s.code().unwrap_or(-1),
@@ -602,6 +615,13 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     };
     metamodelica::host_flush();
     status
+}
+
+#[cfg(windows)]
+fn c_stream_stdio(fd: u32) -> Option<std::process::Stdio> {
+    let h = openmodelica_wasi::stdio::os_handle(fd)?;
+    let h = unsafe { std::os::windows::io::BorrowedHandle::borrow_raw(h) };
+    h.try_clone_to_owned().ok().map(Into::into)
 }
 
 pub fn popen(command: ArcStr) -> (ArcStr, i32) {
