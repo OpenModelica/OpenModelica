@@ -1202,8 +1202,8 @@ algorithm
 end aliasTargets;
 
 protected function startAndPreRefs
-  "The crefs $START.x and $PRE.x that the initialization sets or reads,
-   other than in the equations x = $START.x."
+  "The crefs $START.x that the initialization sets, and $START.x and $PRE.x
+   that it reads, other than in the equations x = $START.x."
   input SimCode.SimCode simCode;
   output UnorderedSet<DAE.ComponentRef> refs = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 protected
@@ -1248,6 +1248,11 @@ algorithm
         DAE.ComponentRef cr;
       case SimCode.SES_SIMPLE_ASSIGN(exp = DAE.CREF(componentRef = cr))
         guard ComponentReferenceBasics.crefEqual(cr, ComponentReference.crefPrefixStart(eq.cref))
+        then ();
+      case SimCode.SES_SIMPLE_ASSIGN() guard ComponentReference.isStartCref(eq.cref)
+        algorithm
+          addAttributeRef(eq.cref, refs);
+          Expression.traverseExpBottomUp(eq.exp, addStartOrPreRef, refs);
         then ();
       case SimCode.SES_LINEAR(lSystem = ls)
         algorithm
