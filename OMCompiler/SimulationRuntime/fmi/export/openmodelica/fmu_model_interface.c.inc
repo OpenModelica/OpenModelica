@@ -3396,6 +3396,18 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   if (invalidState(comp, FMIX_STR "DoStep", 0, model_state_cs_step_complete))
     return fmiXError;
 
+  tEnd = currentCommunicationPoint + communicationStepSize;
+  if (comp->stopTimeDefined && tEnd > comp->stopTime)
+  {
+    /* The sum of the two arguments can round one ulp past the stop time. */
+    if (tEnd > nextafter(comp->stopTime, INFINITY))
+    {
+      FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "DoStep: The step from %.16g with size %.16g ends %.16g after the stop time %.16g.",
+                   currentCommunicationPoint, communicationStepSize, tEnd - comp->stopTime, comp->stopTime)
+      return fmiXError;
+    }
+    tEnd = comp->stopTime;
+  }
 
   setThreadData(comp);
 
@@ -3411,9 +3423,6 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   eventInfo.nextEventTime                     = comp->eventInfo.nextEventTime;
 
   comp->fmuData->localData[0]->timeValue = currentCommunicationPoint;
-  tEnd = currentCommunicationPoint + communicationStepSize;
-  if (comp->stopTimeDefined && (tEnd > comp->stopTime))
-    status=fmiXError;
 
   // copy the input values
 #if NUMBER_OF_REAL_INPUTS > 0

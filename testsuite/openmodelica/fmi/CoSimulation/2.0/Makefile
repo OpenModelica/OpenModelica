@@ -12,6 +12,7 @@ FmuExitInitAssert.mos \
 FmuMatV7Table.mos \
 FmuZlibLinkOrder.mos \
 FmuNlsSameTime.mos \
+FmuStepPastStopTime.mos \
 FmuUnknownDependencies.mos \
 FmuUnknownsWithoutFmiIndex.mos \
 FmuExportFlags.mos \
@@ -44,6 +45,7 @@ FmuEquationAssertLog.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
 FmuStartEventError.py \
+FmuStepPastStopTime.py \
 FmuThreadCalls.py \
 FmuZlibLinkOrder-f.c \
 Makefile \
