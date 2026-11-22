@@ -49,6 +49,7 @@ package SimplifyTest "Run ExpressionSimplify.simplify on some sample expressions
     constant Exp lnrx = Expression.makePureBuiltinCall("log",{rx},T_REAL_DEFAULT);
     constant Exp lnSqrtrx = Expression.makePureBuiltinCall("log",{sqrtrx},T_REAL_DEFAULT);
     constant Exp lnExprx = Expression.makePureBuiltinCall("exp",{lnrx},T_REAL_DEFAULT);
+    constant Exp logExprx = Expression.makePureBuiltinCall("log",{exprx},T_REAL_DEFAULT);
     constant Exp lnExpMulrx = Expression.makePureBuiltinCall("exp",{BINARY(lnrx,mulr,ry)},T_REAL_DEFAULT);
     constant Exp lnExpMulMulrx = Expression.makePureBuiltinCall("exp",{BINARY(rz,mulr,BINARY(lnrx,mulr,ry))},T_REAL_DEFAULT);
     constant Exp lnExpMulMulDivrx = Expression.makePureBuiltinCall("exp",{BINARY(BINARY(rz,mulr,BINARY(lnrx,mulr,ry)),divr,rw)},T_REAL_DEFAULT);
@@ -176,6 +177,7 @@ package SimplifyTest "Run ExpressionSimplify.simplify on some sample expressions
 
     Exp Exp39_1 = BINARY(BINARY(coshrx,powr,RCONST(2.0)),addr,UNARY(usubr,BINARY(sinhrx,powr,RCONST(2.0)))) "cosh^2(x) + (-sinh^2(x)) = 1";
     Exp Exp39_2 = BINARY(UNARY(usubr,BINARY(sinhrx,powr,RCONST(2.0))),addr,BINARY(coshrx,powr,RCONST(2.0))) "(-sinh^2(x)) + cosh^2(x) = 1";
+    Exp Exp39_3 = BINARY(BINARY(coshrx,powr,RCONST(2.0)),subr,BINARY(sinhrx,powr,RCONST(2.0))) "cosh^2(x) - sinh^2(x) = 1";
 
     Exp Exp40_1 = BINARY(cosrx, mulr, tanrx) "tanh(x)*cosh(x) = sinh(x)";
     Exp Exp40_2 = BINARY(tanrx, mulr, cosrx) "tanh(x)*cosh(x) = sinh(x)";
@@ -218,6 +220,12 @@ package SimplifyTest "Run ExpressionSimplify.simplify on some sample expressions
     Exp Exp57 = lnInvrx "ln(1/x)";
     Exp Exp58 = lnSqrtrx "ln(sqrt(x))";
     Exp Exp59 = BINARY(BINARY(lnInvrx, subr, lnrx),addr,BINARY(RCONST(4.0),mulr,lnSqrtrx)) "ln(1/x) - ln(x) + 2*ln(sqrt(x))";
+    Exp Exp59_1 = logExprx "ln(exp(x)) = x";
+    Exp Exp59_2 = lnExprx "exp(ln(x)) is kept";
+    Exp Exp59_3 = Expression.makePureBuiltinCall("exp",{BINARY(RCONST(0.5),mulr,lnrx)},T_REAL_DEFAULT) "exp(0.5*ln(x)) = x^0.5";
+    Exp Exp59_4 = Expression.makePureBuiltinCall("exp",{lnSqrtrx},T_REAL_DEFAULT) "exp(ln(sqrt(x))) = x^0.5";
+    Exp Exp59_5 = Expression.makePureBuiltinCall("exp",{BINARY(RCONST(1.0/3.0),mulr,lnrx)},T_REAL_DEFAULT) "exp(ln(x)/3) is kept";
+    Exp Exp59_6 = Expression.makePureBuiltinCall("exp",{BINARY(RCONST(2.0),mulr,Expression.makePureBuiltinCall("log",{absrx},T_REAL_DEFAULT))},T_REAL_DEFAULT) "exp(2*ln(abs(x))) = abs(x)^2";
 
     Exp Exp60 = lnExpMulrx;
     Exp Exp61 = lnExpMulMulrx;
@@ -265,7 +273,7 @@ package SimplifyTest "Run ExpressionSimplify.simplify on some sample expressions
 
 
   algorithm
-    base     := {i1,i2,i3,add1_2,r1,rx,rxMulr1,r1Mulrx,rxAddrx,rxAddrxMulrx,add2r1,add3r1,add4r1,add5r1,rxPow2,rxPow2Mul1,bigExp,divExp,Exp1,Exp2, Exp3, Exp4, Exp5, Exp6, Exp7, Exp8_1, Exp8_2, Exp8_3, Exp8_4, Exp9_1, Exp9_2, Exp10_1, Exp10_2, Exp11_1, Exp11_2, Exp11_3, Exp11_4, Exp12_1, Exp12_2, Exp12_3, Exp12_4, Exp13_1, Exp13_2, Exp13_3, Exp13_4, Exp14_1, Exp14_2, Exp14_3, Exp14_4, Exp15, Exp16, Exp17_1, Exp17_2, Exp17_3, Exp17_4, Exp17_5,Exp17_6,Exp17_7, Exp17_8, Exp18_1, Exp18_2, Exp18_3, Exp18_4, Exp18_5, Exp18_6, Exp18_7, Exp18_8, Exp19_1, Exp19_2, Exp19_2, Exp19_3, Exp19_4, Exp19_5, Exp19_6, Exp19_7, Exp19_8, Exp20_1, Exp20_2, Exp20_3, Exp20_4, Exp21, Exp22_1, Exp22_2, Exp23_1, Exp23_2, Exp24_1, Exp24_2, Exp25, Exp26, Exp27, Exp28, Exp29, Exp30, Exp31,Exp32, Exp33, Exp34, Exp35_1, Exp35_2, Exp35_3, Exp36_1, Exp36_1, Exp37_1, Exp37_2, Exp38_1, Exp38_2, Exp39_1, Exp39_2, Exp40_1, Exp40_2, Exp41_1, Exp41_2, Exp42_1, Exp42_2, Exp43_1, Exp43_2, Exp44_1, Exp44_2, Exp44_3, Exp44_4, Exp45_1, Exp45_2, Exp46_1, Exp46_2, Exp47_1, Exp47_2, Exp48, Exp49, Exp50, Exp51, Exp52, Exp53, Exp54, Exp55, Exp56, Exp57, Exp58, Exp59, Exp60, Exp61, Exp62, Exp63, Exp64, Exp65, Exp66, Exp67, Exp68, Exp68_1, Exp68_2, Exp68_3, Exp68_4, Exp68_5, Exp68_6, Exp68_7, Exp68_8, Exp68_9, Exp68_10, Exp68_11, Exp68_12, Exp68_13, Exp68_14, Exp68_15, Exp68_16, Exp68_17, Exp68_18, Exp68_19, Exp68_20, Exp68_21, Exp68_22, Exp68_23, Exp68_24, Exp68_25, Exp68_26, Exp68_27};
+    base     := {i1,i2,i3,add1_2,r1,rx,rxMulr1,r1Mulrx,rxAddrx,rxAddrxMulrx,add2r1,add3r1,add4r1,add5r1,rxPow2,rxPow2Mul1,bigExp,divExp,Exp1,Exp2, Exp3, Exp4, Exp5, Exp6, Exp7, Exp8_1, Exp8_2, Exp8_3, Exp8_4, Exp9_1, Exp9_2, Exp10_1, Exp10_2, Exp11_1, Exp11_2, Exp11_3, Exp11_4, Exp12_1, Exp12_2, Exp12_3, Exp12_4, Exp13_1, Exp13_2, Exp13_3, Exp13_4, Exp14_1, Exp14_2, Exp14_3, Exp14_4, Exp15, Exp16, Exp17_1, Exp17_2, Exp17_3, Exp17_4, Exp17_5,Exp17_6,Exp17_7, Exp17_8, Exp18_1, Exp18_2, Exp18_3, Exp18_4, Exp18_5, Exp18_6, Exp18_7, Exp18_8, Exp19_1, Exp19_2, Exp19_2, Exp19_3, Exp19_4, Exp19_5, Exp19_6, Exp19_7, Exp19_8, Exp20_1, Exp20_2, Exp20_3, Exp20_4, Exp21, Exp22_1, Exp22_2, Exp23_1, Exp23_2, Exp24_1, Exp24_2, Exp25, Exp26, Exp27, Exp28, Exp29, Exp30, Exp31,Exp32, Exp33, Exp34, Exp35_1, Exp35_2, Exp35_3, Exp36_1, Exp36_1, Exp37_1, Exp37_2, Exp38_1, Exp38_2, Exp39_1, Exp39_2, Exp39_3, Exp40_1, Exp40_2, Exp41_1, Exp41_2, Exp42_1, Exp42_2, Exp43_1, Exp43_2, Exp44_1, Exp44_2, Exp44_3, Exp44_4, Exp45_1, Exp45_2, Exp46_1, Exp46_2, Exp47_1, Exp47_2, Exp48, Exp49, Exp50, Exp51, Exp52, Exp53, Exp54, Exp55, Exp56, Exp57, Exp58, Exp59, Exp59_1, Exp59_2, Exp59_3, Exp59_4, Exp59_5, Exp59_6, Exp60, Exp61, Exp62, Exp63, Exp64, Exp65, Exp66, Exp67, Exp68, Exp68_1, Exp68_2, Exp68_3, Exp68_4, Exp68_5, Exp68_6, Exp68_7, Exp68_8, Exp68_9, Exp68_10, Exp68_11, Exp68_12, Exp68_13, Exp68_14, Exp68_15, Exp68_16, Exp68_17, Exp68_18, Exp68_19, Exp68_20, Exp68_21, Exp68_22, Exp68_23, Exp68_24, Exp68_25, Exp68_26, Exp68_27};
     simpl    := ExpressionSimplify.simplifyList(base);
     baseStr  := List.map(base, ExpressionBasics.printExpStr);
     simplStr := List.map(simpl, ExpressionBasics.printExpStr);
