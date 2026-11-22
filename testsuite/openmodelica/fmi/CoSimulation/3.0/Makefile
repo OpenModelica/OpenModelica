@@ -8,6 +8,7 @@ fmi3_cs_cvode.mos \
 fmi3_cs_state_event.mos \
 fmi3_cs_event_mode_reinit.mos \
 fmi3_cs_event_mode_set.mos \
+fmi3_cs_reset.mos \
 fmi3_cs_exitinit_assert.mos \
 fmi3_cs_tolerance.mos \
 fmi3_msl_clocked_drive.mos \
@@ -41,6 +42,7 @@ fmi3_cs_assert_solver_retry.py \
 fmi3_cs_state_event.py \
 fmi3_cs_event_mode_reinit.py \
 fmi3_cs_event_mode_set.py \
+fmi3_cs_reset.py \
 fmi3_cs_exitinit_assert.py \
 fmi3_cs_tolerance.py \
 fmi3_wasm_logging_off.py \
