@@ -29,6 +29,7 @@ Modelica.Electrical.Analog.Examples.HeatingNPN_NORGate.mos \
 Modelica.Electrical.Analog.Examples.HeatingRectifier.mos \
 Modelica.Electrical.Analog.Examples.IdealTriacCircuit.mos \
 Modelica.Electrical.Analog.Examples.NandGate.mos \
+Modelica.Electrical.Analog.Examples.OpAmps.SignalGenerator.mos \
 Modelica.Electrical.Analog.Examples.OvervoltageProtection.mos \
 Modelica.Electrical.Analog.Examples.Rectifier.mos \
 Modelica.Electrical.Analog.Examples.Resistor.mos \

@@ -469,6 +469,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   NLS_SOLVER_STATUS solved;            /* Specifiex if the NLS could be solved (with less accuracy) or failed */
   modelica_real lastTimeSolved;        /* save last successful solved point in time */
+  modelica_real latestTimeSolved;      /* latest time of a successful solve */
+  modelica_real *latestSolution;       /* the solution at latestTimeSolved, to try again from after a failed solve */
 
   modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
                                           false if `-lv_system` is specified but equationIndex is not in the list, else true */

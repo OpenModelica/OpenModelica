@@ -450,62 +450,6 @@ fn nls_ls_backend() -> solverflags::Sparse {
     }
 }
 
-/// A ring of `HIST_DEPTH` × (time, `n` values) from `base`. The word at
-/// `count_addr` holds the count in its low half and the slot of entry 0 in its
-/// high half, so storing a solution moves no other entry.
-struct MemHistory {
-    count_addr: u32,
-    base: u32,
-    n: usize,
-}
-
-impl MemHistory {
-    fn head(&self) -> usize {
-        (unsafe { load_u32(self.count_addr) } >> 16) as usize % HIST_DEPTH
-    }
-    fn entry(&self, k: usize) -> u32 {
-        let slot = (self.head() + k) % HIST_DEPTH;
-        self.base + (slot * (8 + self.n * 8)) as u32
-    }
-    fn set_word(&self, len: usize, head: usize) {
-        unsafe { store_u32(self.count_addr, len as u32 | (head as u32) << 16) };
-    }
-}
-
-impl History for MemHistory {
-    fn len(&self) -> usize {
-        (unsafe { load_u32(self.count_addr) } as usize & 0xffff).min(HIST_DEPTH)
-    }
-    fn time(&self, k: usize) -> f64 {
-        unsafe { load_f64(self.entry(k)) }
-    }
-    fn value(&self, k: usize, i: usize) -> f64 {
-        unsafe { load_f64(self.entry(k) + 8 + (i * 8) as u32) }
-    }
-    fn shift(&mut self, from: usize, to: usize) {
-        let (src, dst) = (self.entry(from), self.entry(to));
-        for b in 0..(1 + self.n) as u32 {
-            unsafe { store_f64(dst + b * 8, load_f64(src + b * 8)) };
-        }
-    }
-    fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]) {
-        let at = self.entry(k);
-        unsafe { store_f64(at, time) };
-        for (i, v) in x.iter().enumerate() {
-            unsafe { store_f64(at + 8 + (i * 8) as u32, *v) };
-        }
-        self.set_word(len, self.head());
-    }
-    fn set_len(&mut self, len: usize) {
-        self.set_word(len, self.head());
-    }
-    fn push_front(&mut self, time: f64, x: &[f64]) {
-        let len = (self.len() + 1).min(HIST_DEPTH);
-        self.set_word(len, (self.head() + HIST_DEPTH - 1) % HIST_DEPTH);
-        self.put(0, len, time, x);
-    }
-}
-
 /// C's `simulationInfo->nonlinearSystemData`: each system's (state address, size),
 /// filled by the module `start`. `index` is the reverse map, wanted per solve.
 struct Roster {
@@ -606,13 +550,11 @@ pub(crate) fn set_diag(systems: &[openmodelica_sim_meta::NlsVars]) {
 /// C's `cleanUpOldValueListAfterEvent`, called once per event.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_clean_history(time: f64) {
-    for &(addr, n) in &unsafe { &*ROSTER.0.get() }.sys {
-        let mut hist = MemHistory {
-            count_addr: addr,
-            base: addr + 16 + 2 * (n * 8) as u32,
-            n,
-        };
-        history_clean(&mut hist, time);
+    for &(addr, _) in &unsafe { &*ROSTER.0.get() }.sys {
+        let list = unsafe { load_u32(addr) };
+        if list != 0 {
+            history_clean(unsafe { &mut *(list as usize as *mut History) }, time);
+        }
     }
 }
 
@@ -1128,17 +1070,26 @@ impl NlsBackend for WasmBackend<'_> {
 }
 
 /// The per-system block the codegen reserved (`nls_hist_bytes`):
-/// `count: u32 (padded to 8) | lastTimeSolved: f64 | resScaling[n] |
-/// nlsxExtrapolation[n] | HIST_DEPTH × (time: f64, x[n])`. [`MemHistory`] is the
-/// [`History`] over its tail.
+/// `history: u32 | flags: u32 | lastTimeSolved: f64 | resScaling[n] |
+/// nlsxExtrapolation[n] | latestTimeSolved: f64 | latestSolution[n]`. `history` is
+/// the address of the system's [`History`], 0 until the first solve.
 struct MemBlock {
     hist_addr: u32,
     n: usize,
 }
 
 impl MemBlock {
-    /// The header's spare word, zeroed by `rt_alloc`: 0 is C's `useXScaling = 1`.
-    fn xscaling_off(&self) -> u32 {
+    fn history(&self) -> &'static mut History {
+        let mut list = unsafe { load_u32(self.hist_addr) };
+        if list == 0 {
+            list = alloc::boxed::Box::into_raw(alloc::boxed::Box::new(History::default())) as usize as u32;
+            unsafe { store_u32(self.hist_addr, list) };
+        }
+        unsafe { &mut *(list as usize as *mut History) }
+    }
+    /// The header's flags word, zeroed by `rt_alloc`: bit 0 clear is C's
+    /// `useXScaling = 1`, bit 1 set says `latestTimeSolved` holds a time.
+    fn flags_off(&self) -> u32 {
         self.hist_addr + 4
     }
     fn last_solved(&self) -> u32 {
@@ -1149,6 +1100,12 @@ impl MemBlock {
     }
     fn extrap(&self) -> u32 {
         self.scale() + (self.n * 8) as u32
+    }
+    fn latest_time(&self) -> u32 {
+        self.extrap() + (self.n * 8) as u32
+    }
+    fn latest(&self) -> u32 {
+        self.latest_time() + 8
     }
 }
 
@@ -1253,12 +1210,14 @@ pub extern "C" fn rt_solve_nls(
     // The history block is an `rt_alloc` object, so its f64 fields are aligned.
     let res_scaling = unsafe { core::slice::from_raw_parts_mut(block.scale() as *mut f64, hist_n) };
     let extrapolation = unsafe { core::slice::from_raw_parts_mut(block.extrap() as *mut f64, hist_n) };
+    let latest = unsafe { core::slice::from_raw_parts_mut(block.latest() as *mut f64, hist_n) };
     let mut last_solved = unsafe { load_f64(block.last_solved()) };
-    let mut use_xscaling = unsafe { load_u32(block.xscaling_off()) } == 0;
-    let mut hist = MemHistory {
-        count_addr: hist_addr,
-        base: block.extrap() + (hist_n * 8) as u32,
-        n: hist_n,
+    let flags = unsafe { load_u32(block.flags_off()) };
+    let mut use_xscaling = flags & 1 == 0;
+    let mut latest_time = if flags & 2 != 0 {
+        unsafe { load_f64(block.latest_time()) }
+    } else {
+        f64::MIN
     };
 
     let spec = NlsSpec {
@@ -1286,16 +1245,20 @@ pub extern "C" fn rt_solve_nls(
     };
     let ret = {
         let mut mem = NlsPersistent {
-            history: &mut hist,
+            history: block.history(),
             res_scaling,
             extrapolation,
             last_solved: &mut last_solved,
+            latest_time: &mut latest_time,
+            latest,
             use_xscaling: &mut use_xscaling,
         };
         solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
     };
     unsafe { store_f64(block.last_solved(), last_solved) };
-    unsafe { store_u32(block.xscaling_off(), u32::from(!use_xscaling)) };
+    unsafe { store_f64(block.latest_time(), latest_time) };
+    let latest_set = latest_time > f64::MIN;
+    unsafe { store_u32(block.flags_off(), u32::from(!use_xscaling) | u32::from(latest_set) << 1) };
 
     if heap {
         rt_free(base);

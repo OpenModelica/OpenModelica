@@ -608,8 +608,8 @@ impl DynScratch {
         if n.is_const() {
             return None;
         }
-        // `nls_hist_bytes`: count + last solved, scaling, extrapolation, 10 stored solutions.
-        let hist_off = self.take(Sz::lit(16) + n.clone() * 16 + (Sz::lit(8) + n.clone() * 8) * 10)?;
+        // `nls_hist_bytes`.
+        let hist_off = self.take(Sz::lit(24) + n.clone() * 24)?;
         let nominal_off = self.take(n.clone() * 16)?;
         let bounds_off = self.take(n.clone() * 16)?;
         // The magnitudes and then the signs, all 1.

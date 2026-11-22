@@ -309,7 +309,13 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
     }
     else if(elem->time < time)
     {
+      /* The list is in the order of storage. A solution for a later time, e.g.
+       * of a rejected step, can be on another branch. */
       old2 = listNextNode(old);
+      if(old2 && ((VALUE*)listNodeData(old2))->time > time)
+      {
+        old2 = NULL;
+      }
       infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "found element to use for extrapolation.");
       break;
     }
