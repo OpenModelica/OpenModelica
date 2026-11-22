@@ -374,6 +374,8 @@ openmodelica_frontend/Cargo.toml
 openmodelica_frontend/src/Globals.rs
 openmodelica_frontend_base/Cargo.toml
 openmodelica_frontend_base/src/Globals.rs
+openmodelica_frontend_base/src/unittests/expression_simplify_tests.rs
+openmodelica_frontend_base/src/unittests/mod.rs
 openmodelica_frontend_dump/Cargo.toml
 openmodelica_frontend_dump/src/Globals.rs
 openmodelica_frontend_dump/src/unittests/component_reference_basics_tests.rs
