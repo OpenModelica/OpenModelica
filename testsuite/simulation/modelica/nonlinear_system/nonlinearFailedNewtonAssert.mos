@@ -1,0 +1,42 @@
+// name: nonlinearFailedNewtonAssert
+// keywords: NLS, newton, assert
+// status: correct
+// teardown_command: rm -f NewtonAssert* output.log
+//
+// For time > 0.5 the system has no real root, and every trial point with
+// y < 0 asserts. The Newton solve must fail, not accept such a point (#18336).
+
+loadString("
+function newtonAssertRoot
+  input Real x;
+  output Real y;
+algorithm
+  y := x^0.763767;
+end newtonAssertRoot;
+
+model NewtonAssert
+  Real y(start = 1);
+  discrete Real k(start = 1, fixed = true);
+equation
+  newtonAssertRoot(y) + y^3 = k;
+  when time > 0.5 then
+    k = -5;
+  end when;
+end NewtonAssert;
+"); getErrorString();
+simulate(NewtonAssert, stopTime = 1, simflags = "-nls=newton"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'NewtonAssert', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=newton'",
+//     messages = "Simulation execution failed for model: NewtonAssert
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | debug   | Solving non-linear system 10 failed at time=0.5.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// "
+// end SimulationResult;
+// ""
+// endResult

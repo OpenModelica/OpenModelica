@@ -5247,10 +5247,12 @@ fn fire_time_event_inner(
 ) -> Result<()> {
     write_time(e, sim_data, te)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     refresh_relations(e, sim_data, layout)?;
     samples.fire(e, sim_data, layout, te)?;
     iterate_discrete_after_eval(e, sim_data, layout, dae)?;
-    store_relations(e, sim_data, layout)
+    store_relations(e, sim_data, layout)?;
+    check_nls(e, sim_data, layout)
 }
 
 /// The clock half of C's `simulationUpdate`: fire every timer due at `time`,

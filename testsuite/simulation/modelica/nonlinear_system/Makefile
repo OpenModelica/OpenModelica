@@ -16,6 +16,7 @@ mixedSingleEquation.mos \
 nonlinearDelayTest.mos \
 nonlinearFailed.mos \
 nonlinearFailed_kinsol.mos \
+nonlinearFailedNewtonAssert.mos \
 nonlinearMixed.mos \
 nonlinearMixed_kinsol.mos \
 problem1.mos \
