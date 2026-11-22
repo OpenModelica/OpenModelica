@@ -39,6 +39,15 @@ pub fn write(fd: u32, bytes: &[u8]) -> bool {
     bytes.is_empty() || unsafe { libc::fwrite(bytes.as_ptr().cast(), 1, bytes.len(), stream(fd)) } == bytes.len()
 }
 
+/// The OS handle C's `stdout` (`fd` 1) or `stderr` (2) writes to; `None` when
+/// the stream has none, as in a GUI application without a console.
+#[cfg(windows)]
+pub fn os_handle(fd: u32) -> Option<std::os::windows::io::RawHandle> {
+    let n = unsafe { libc::fileno(stream(fd)) };
+    let h = if n < 0 { -1 } else { unsafe { libc::get_osfhandle(n) } };
+    (h != -1 && h != -2).then_some(h as std::os::windows::io::RawHandle)
+}
+
 /// `fflush(NULL)`.
 pub fn flush() {
     unsafe { libc::fflush(std::ptr::null_mut()) };
