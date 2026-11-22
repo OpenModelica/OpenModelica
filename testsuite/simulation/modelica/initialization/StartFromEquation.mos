@@ -6,7 +6,8 @@
 // The initial equations x = $START.x and v = <literal> give no code: the
 // literal becomes the start value of v. -iif keeps such a start value, except
 // with -iim=none, which does not solve the initial equations. A start value
-// that the runtime computes from parameters stays.
+// that the runtime computes from parameters stays, also from a parameter
+// with fixed = false.
 
 loadString("
 model InitialLiterals
@@ -29,11 +30,16 @@ end InitialLiterals;
 
 model InitialLiteralsParamStart
   parameter Real p = 2;
+  parameter Real q(fixed = false);
   Real y(start = p);
+  Real z(start = q);
 initial equation
   y = 5;
+  q = 2;
+  z = 6;
 equation
   der(y) = 0;
+  der(z) = 0;
 end InitialLiteralsParamStart;
 "); getErrorString();
 
@@ -74,7 +80,7 @@ echo(false);
 simulate(InitialLiteralsParamStart, stopTime = 1, outputFormat = "csv");
 echo(true);
 getErrorString();
-val(y, 0);
+{val(y, 0), val(z, 0)};
 
 // Result:
 // true
@@ -98,5 +104,5 @@ val(y, 0);
 // true
 // true
 // ""
-// 5.0
+// {5.0, 6.0}
 // endResult
