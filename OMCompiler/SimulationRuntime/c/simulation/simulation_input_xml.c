@@ -975,6 +975,12 @@ int shouldFilterOutput(omc_ModelVariable *variable, const char *name)
   return shouldFilter;
 }
 
+static modelica_boolean read_start_from_equation(omc_ModelVariable *v)
+{
+  const char *s = findHashStringStringNull(v, "startFromEquation");
+  return s != NULL && 0 == strcmp(s, "true");
+}
+
 /**
  * @brief Read all static data from File for every variable
  *
@@ -1027,6 +1033,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_real(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          realVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       case VAR_TYPE_INTEGER:
@@ -1040,6 +1047,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_int(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          intVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       case VAR_TYPE_BOOLEAN:
@@ -1053,6 +1061,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_bool(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          boolVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       case VAR_TYPE_STRING:
@@ -1066,6 +1075,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_string(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          stringVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       default:

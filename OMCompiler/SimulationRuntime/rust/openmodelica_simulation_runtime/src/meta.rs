@@ -777,7 +777,10 @@ pub(crate) fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
     unsafe {
         for a in 0..md.nVariablesRealArray as usize {
             let d = &*md.realVarsData.add(a);
-            v.reals.extend(scalar_names(&cstr(d.info.name), &d.dimension, false));
+            let names = scalar_names(&cstr(d.info.name), &d.dimension, false);
+            v.start_from_eq_reals
+                .extend(core::iter::repeat_n(d.startFromEquation != 0, names.len()));
+            v.reals.extend(names);
         }
         for a in 0..md.nVariablesIntegerArray as usize {
             let d = &*md.integerVarsData.add(a);
@@ -787,6 +790,7 @@ pub(crate) fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
             {
                 v.ints
                     .push((name, d.attribute.start.elem_at::<modelica_integer>(k, 0) as i32));
+                v.start_from_eq_ints.push(d.startFromEquation != 0);
             }
         }
         for a in 0..md.nVariablesBooleanArray as usize {
@@ -796,6 +800,7 @@ pub(crate) fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
                 .enumerate()
             {
                 v.bools.push((name, d.attribute.start.elem_at(k, 0)));
+                v.start_from_eq_bools.push(d.startFromEquation != 0);
             }
         }
         for a in 0..md.nVariablesStringArray as usize {

@@ -2088,6 +2088,9 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
                 next += 1;
             }
             flat += 1;
+            if model.keeps_start(g, i) {
+                continue;
+            }
             if overridden_on_command_line(name) {
                 omclog::info!(
                     omclog::INIT_V,
@@ -2138,9 +2141,11 @@ fn imported_slots(model: &SimMeta) -> Vec<(usize, u32, f64)> {
     let mut next = 0usize;
     let mut flat = 0u32;
     for (g, entries) in model.import_roster().iter().enumerate() {
-        for &(_, off, _) in entries {
+        for (i, &(_, off, _)) in entries.iter().enumerate() {
             if let Some(&(_, v)) = imports.values.get(next).filter(|(i, _)| *i == flat) {
-                out.push((g, off, v));
+                if !model.keeps_start(g, i) {
+                    out.push((g, off, v));
+                }
                 next += 1;
             }
             flat += 1;
@@ -4388,13 +4393,18 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
     let pre_real = |off: u32| layout.pre_slot_off(off).map_or(0.0, |p| real(p));
     let g = |v: f64| format_g(v, 6);
     omclog::info(omclog::SOTI, true, "### SOLUTION OF THE INITIALIZATION ###");
+    let from_eq = |flags: &[bool], i: usize| flags.get(i).copied().unwrap_or(false);
     let real_line = |i: usize| {
         let off = layout.real_off + i as u32 * 8;
         let name = &soti.reals[i];
+        let start = if from_eq(&soti.start_from_eq_reals, i) {
+            String::new()
+        } else {
+            format!("start={}, ", g(real(layout.real_start_off(i as u32))))
+        };
         format!(
-            "[{}] Real {name}(start={}, nominal={}) = {} (pre: {})",
+            "[{}] Real {name}({start}nominal={}) = {} (pre: {})",
             i + 1,
-            g(real(layout.real_start_off(i as u32))),
             g(real(layout.real_nominal_off(i as u32))),
             g(real(off)),
             g(pre_real(off))
@@ -4431,10 +4441,14 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
         omclog::info(omclog::SOTI, true, "integer variables");
         for (i, (name, start)) in soti.ints.iter().enumerate() {
             let off = layout.int_off + i as u32 * 4;
+            let start = if from_eq(&soti.start_from_eq_ints, i) {
+                String::new()
+            } else {
+                format!("(start={})", start_of(off, *start))
+            };
             let line = format!(
-                "[{}] Integer {name}(start={}) = {} (pre: {})",
+                "[{}] Integer {name}{start} = {} (pre: {})",
                 i + 1,
-                start_of(off, *start),
                 i32_at(off),
                 pre_i32(off)
             );
@@ -4447,10 +4461,14 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
         let b = |v: i32| if v != 0 { "true" } else { "false" };
         for (i, (name, start)) in soti.bools.iter().enumerate() {
             let off = layout.bool_off + i as u32 * 4;
+            let start = if from_eq(&soti.start_from_eq_bools, i) {
+                String::new()
+            } else {
+                format!("(start={})", b(start_of(off, *start)))
+            };
             let line = format!(
-                "[{}] Boolean {name}(start={}) = {} (pre: {})",
+                "[{}] Boolean {name}{start} = {} (pre: {})",
                 i + 1,
-                b(start_of(off, *start)),
                 b(i32_at(off)),
                 b(pre_i32(off))
             );

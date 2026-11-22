@@ -186,7 +186,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
        else{
          rotateRingBuffer(data->simulationData, 1);
          lookupRingBuffer(data->simulationData, (void**) data->localData);
-         importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
+         importStartValues(data, threadData, cflags, (double)optData->time.t[i][j], 0);
          for(l=0; l<nReal; ++l){
             data->localData[0]->realVars[l] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, l);
          }

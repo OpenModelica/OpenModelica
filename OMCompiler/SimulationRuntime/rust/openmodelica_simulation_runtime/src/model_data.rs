@@ -335,6 +335,7 @@ macro_rules! read_group {
             read_dimension(v, &mut slot.dimension);
             slot.filterOutput = should_filter(v);
             slot.time_unvarying = 0;
+            slot.startFromEquation = (v.get("startFromEquation") == "true") as c_int;
             $attr(v, slot);
             $alias_map.insert(v.get("name").to_string(), ($start + i) as i64);
         }
