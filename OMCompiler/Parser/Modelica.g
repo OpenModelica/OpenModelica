@@ -165,6 +165,16 @@ goto rule ## func ## Ex; }}
     #endif
     parser_members members;
     void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
+
+    /* c[10] is Absyn.CLASS.info; info[5] and info[6] are the end line and column. */
+    static void* class_with_info_end(void *cl, void *endInfo)
+    {
+      void **c = MMC_STRUCTDATA(cl);
+      void **info = MMC_STRUCTDATA(c[10]);
+      void **end = MMC_STRUCTDATA(endInfo);
+      return Absyn__CLASS(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9],
+        SourceInfo__SOURCEINFO(info[1], info[2], info[3], info[4], end[5], end[6], info[7]));
+    }
 }
 
 /*------------------------------------------------------------------
@@ -526,6 +536,9 @@ element returns [void* ast]
     | (REPLACEABLE ( cdef=class_definition[f != NULL, 0] | cc=component_clause ) constr=constraining_clause_comment? )
         {
            redecl = mmc_mk_some(make_redeclare_keywords(true,r != NULL));
+           if (constr && !cc) {
+             cdef.ast = class_with_info_end(cdef.ast, PARSER_INFO($start));
+           }
            constr = mmc_mk_some_or_none(constr);
            if (cc) {
              $ast = Absyn__ELEMENT(final, redecl, innerouter,
@@ -852,7 +865,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast]
 @init { void *redecl; OM_PUSHZ5($ast, e_spec, cd.ast, constr, redecl); } :
   REPLACEABLE ( cd=class_definition[final, 0] | e_spec=component_clause1 ) constr=constraining_clause_comment?
   {
-      e_spec = e_spec ? e_spec : Absyn__CLASSDEF(MMC_TRUE, $cd.ast);
+      e_spec = e_spec ? e_spec : Absyn__CLASSDEF(MMC_TRUE, constr ? class_with_info_end($cd.ast, PARSER_INFO($start)) : $cd.ast);
       constr = mmc_mk_some_or_none(constr);
       redecl = make_redeclare_keywords(true,redeclare);
       $ast = Absyn__REDECLARATION(mmc_mk_bcon(final), redecl,

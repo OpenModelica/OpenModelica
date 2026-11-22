@@ -81,6 +81,7 @@ getClassDiagram1.mos \
 getClassDiagram2.mos \
 getClassDiagram3.mos \
 getClassDiagram4.mos \
+getClassInformationConstrainedby.mos \
 getInstanceDiagram1.mos \
 getInstanceDiagram2.mos \
 getInstanceDiagram3.mos \
