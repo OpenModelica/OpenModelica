@@ -1,18 +1,9 @@
-Just run sh upload.sh and all should work.
+openmodelica.bib is the bibliography of OpenModelica. The User's Guide
+cites it, and the Research menu of www.openmodelica.org shows it: its
+build downloads the file from the master branch and generates one page
+per BibTeX type (article, inproceedings, phdthesis, mastersthesis).
 
-More information for the curious:
+When the file changes on master, the Jenkins stage
+update-website-bibliography starts the build of the website.
 
-Dependencies:
-  bibtex2html
-
-Files:
-openmodelica.bib
-  bibtex database used to generate the html includes
-*.cite
-  Determines which bibtex files will be shown on the homepage
-upload.sh
-  Run this; it tries to upload stuff to the openmodelica.org server ;)
-generate.sh
-  Call this to generate the includes for all groups
-bib2html.sh
-  Generates an include-file from bib+cite
+extrarefs.bib has further references of the User's Guide.

@@ -1697,12 +1697,6 @@ void checks() {
   sh 'bash cmake/source_checks.sh utf8-error .'
   sh 'bash cmake/source_checks.sh thumbsdb-error .'
   sh 'bash cmake/spellcheck.sh . aspell'
-  sh '''
-  cd doc/bibliography
-  mkdir -p openmodelica.org-bibgen
-  sh generate.sh "$PWD/openmodelica.org-bibgen"
-  '''
-  stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
 }
 
 // The suites the gcc testsuite shards run. The CMake build links the system
@@ -2083,26 +2077,6 @@ void pushToMaster() {
   sshagent (credentials: ['Hudson-SSH-Key']) {
     sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
     sh 'git push git@github.com:OpenModelica/OpenModelica.git omlib-staging:master || (echo "Trying to update the repository if that is the problem" ; git pull --rebase && git push --force  git@github.com:OpenModelica/OpenModelica.git omlib-staging:omlib-staging && false)'
-  }
-}
-
-void pushBibliography() {
-  git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'git@github.com:OpenModelica/www.openmodelica.org.git'
-  standardSetup()
-  unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
-  sh "git remote -v | grep www.openmodelica.org"
-  sh "mv doc/bibliography/openmodelica.org-bibgen/*.md content/research/"
-  sh "git add content/research/*.md"
-  sshagent (credentials: ['Hudson-SSH-Key']) {
-    sh """
-    if ! git diff-index --quiet HEAD; then
-      git config user.name "OpenModelica Jenkins"
-      git config user.email "openmodelicabuilds@ida.liu.se"
-      git commit -m 'Updated bibliography'
-      ssh-keyscan github.com >> ~/.ssh/known_hosts
-      git push --set-upstream origin main
-    fi
-    """
   }
 }
 

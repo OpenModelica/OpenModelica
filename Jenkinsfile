@@ -945,23 +945,17 @@ pipeline {
             script { common.pushToMaster() }
           }
         }
-        stage('push-bibliography') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica-Bibliography'
-            }
-          }
+        stage('update-website-bibliography') {
+          // www.openmodelica.org generates its bibliography pages from
+          // doc/bibliography/openmodelica.bib on master when it is built
           when {
             beforeAgent true
             branch 'master'
+            changeset 'doc/bibliography/openmodelica.bib'
             expression { return currentBuild.currentResult == 'SUCCESS' }
           }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
           steps {
-            script { common.pushBibliography() }
+            build job: '/www.openmodelica.org/main', wait: false
           }
         }
       }
