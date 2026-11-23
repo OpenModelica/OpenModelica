@@ -2309,6 +2309,31 @@ public
     res := contains(exp, function containsIterator2(iterator = iterator));
   end containsIterator;
 
+  function uniformArrayElement
+    "The value of all elements of an array expression if they are all the same."
+    input Expression exp;
+    output Option<Expression> elem;
+  protected
+    function iteratorOccursIn
+      input tuple<InstNode, Expression> iter;
+      input Expression exp;
+      output Boolean b = containsIterator(exp, Util.tuple21(iter));
+    end iteratorOccursIn;
+  algorithm
+    elem := match exp
+      local
+        Expression body;
+        list<tuple<InstNode, Expression>> iters;
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = iters))
+        guard not List.any(iters, function iteratorOccursIn(exp = body))
+        then uniformArrayElement(body);
+      case CALL() guard Call.isNamed(exp.call, "fill")
+        then uniformArrayElement(listHead(Call.arguments(exp.call)));
+      case _ guard not Type.isArray(typeOf(exp)) then SOME(exp);
+      else NONE();
+    end match;
+  end uniformArrayElement;
+
   function isIteratorNamed
     input Expression exp;
     input list<String> names;

@@ -1988,7 +1988,7 @@ algorithm
             bexp := Binding.getTypedExp(flattenBinding(binding, prefix));
             if isInComponentArray(exp.cref) then
               // a parameter of an array of components, e.g. s.N or s[$s1].N for s[M]
-              bexp := uniformArrayElement(bexp);
+              bexp := Util.getOptionOrDefault(Expression.uniformArrayElement(bexp), bexp);
               if not Type.isArray(Expression.typeOf(bexp)) then
                 outExp := bexp;
               end if;
@@ -2006,26 +2006,6 @@ algorithm
   end match;
 end resizableDimensionAlias;
 
-function uniformArrayElement
-  "The value of all elements of an array expression if they are all the same:
-   the body of an array constructor that does not depend on its iterators, or
-   the expression itself if it is no array. Fails otherwise."
-  input Expression exp;
-  output Expression elem;
-algorithm
-  elem := match exp
-    local
-      Expression body;
-      list<tuple<InstNode, Expression>> iters;
-    case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = iters))
-      guard not List.any(iters, function iteratorOccursIn(exp = body))
-      then uniformArrayElement(body);
-    case Expression.CALL() guard Call.isNamed(exp.call, "fill")
-      then uniformArrayElement(listHead(Call.arguments(exp.call)));
-    case _ guard not Type.isArray(Expression.typeOf(exp)) then exp;
-  end match;
-end uniformArrayElement;
-
 function isInComponentArray
   "true if a cref is a component of an array of components, e.g. s.N for s[M]"
   input ComponentRef cref;
@@ -2036,12 +2016,6 @@ algorithm
   rest := ComponentRef.rest(cref);
   b := not ComponentRef.isEmpty(rest) and Type.isArray(ComponentRef.nodeType(ComponentRef.stripSubscripts(rest)));
 end isInComponentArray;
-
-function iteratorOccursIn
-  input tuple<InstNode, Expression> iter;
-  input Expression exp;
-  output Boolean b = Expression.containsIterator(exp, Util.tuple21(iter));
-end iteratorOccursIn;
 
 function flattenSections
   input Sections sections;

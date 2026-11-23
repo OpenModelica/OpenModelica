@@ -6,6 +6,7 @@ AliasParameterFixedFalse.mos \
 AliasIntegerNonTrivial.mos \
 AliasBoundsNegated.mos \
 AliasBoundsThree.mos \
+ArrayAliasBoundsNegated.mos \
 Alias.mos \
 Alias2.mos \
 Alias_test1.mos \
