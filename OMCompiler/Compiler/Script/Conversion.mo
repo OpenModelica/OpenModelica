@@ -509,7 +509,9 @@ protected
     String str;
   algorithm
     Absyn.Exp.STRING(value = str) := mod;
-    outMod := Parser.stringMod(quotePlaceholders(str, info));
+    str := System.unescapedString(str);
+    str := quotePlaceholders(str, info);
+    outMod := Parser.stringMod(str);
   end parseModifier;
 
   function quotePlaceholders

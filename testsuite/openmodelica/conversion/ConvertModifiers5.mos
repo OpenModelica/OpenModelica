@@ -1,0 +1,26 @@
+// name:   ConvertModifiers5
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertModifiers5
+    ConversionTestLib.MainModel mainModel(someEnum = \"Option2\");
+  equation
+  end ConvertModifiers5;
+");
+
+runConversionScript(ConvertModifiers5, "scripts/ConvertModifiers5.mos");
+getErrorString();
+list(ConvertModifiers5);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertModifiers5
+//   ConversionTestLib.MainModel mainModel(someEnum = if \"Option2\" == \"Option1\" then ConversionTestLib.SomeEnum.Option1 elseif \"Option2\" == \"Option2\" then ConversionTestLib.SomeEnum.Option2 else ConversionTestLib.SomeEnum.Option1);
+// equation
+//
+// end ConvertModifiers5;"
+// endResult
