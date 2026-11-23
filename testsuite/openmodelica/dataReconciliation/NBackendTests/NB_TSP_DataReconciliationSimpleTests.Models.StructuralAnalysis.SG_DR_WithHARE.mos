@@ -61,9 +61,9 @@ getErrorString();
 // 10: GV.Puit_purge.Q:VARIABLE((start = 5.0) uncertain=Uncertainty.refine)  type: Real
 // 11: GV.Puit_purge.P:VARIABLE((min = 0.0, nominal = 1e5))  type: Real
 // 12: GV.heatSink.C[1].W:VARIABLE()  type: Real
-// 13: GV.heatSink.C[1].T:VARIABLE((start = {288.15 for $f2 in 1:1}, min = {0.0 for $f3 in 1:1}, nominal = {300.0 for $f1 in 1:1}))  type: Real
+// 13: GV.heatSink.C[1].T:VARIABLE((start = {288.15 for $i_$f2 in 1:1}, min = {0.0 for $i_$f3 in 1:1}, nominal = {300.0 for $i_$f1 in 1:1}))  type: Real
 // 14: GV.heatSink.W[1]:VARIABLE()  type: Real
-// 15: GV.heatSink.T[1]:VARIABLE((start = {288.15 for $f2 in 1:1}, min = {0.0 for $f3 in 1:1}, nominal = {300.0 for $f1 in 1:1}))  type: Real
+// 15: GV.heatSink.T[1]:VARIABLE((start = {288.15 for $i_$f2 in 1:1}, min = {0.0 for $i_$f3 in 1:1}, nominal = {300.0 for $i_$f1 in 1:1}))  type: Real
 // 16: GV.singularPressureLoss_VVP.C2.b:DISCRETE()  type: Boolean
 // 17: GV.singularPressureLoss_VVP.C2.a:DISCRETE()  type: Boolean
 // 18: GV.singularPressureLoss_VVP.C2.h:VARIABLE((start = 1e5))  type: Real
@@ -962,9 +962,9 @@ getErrorString();
 // 10: GV.Puit_purge.Q:VARIABLE((start = 5.0) uncertain=Uncertainty.refine)  type: Real
 // 11: GV.Puit_purge.P:VARIABLE((min = 0.0, nominal = 1e5))  type: Real
 // 12: GV.heatSink.C[1].W:VARIABLE()  type: Real
-// 13: GV.heatSink.C[1].T:VARIABLE((start = {288.15 for $f2 in 1:1}, min = {0.0 for $f3 in 1:1}, nominal = {300.0 for $f1 in 1:1}))  type: Real
+// 13: GV.heatSink.C[1].T:VARIABLE((start = {288.15 for $i_$f2 in 1:1}, min = {0.0 for $i_$f3 in 1:1}, nominal = {300.0 for $i_$f1 in 1:1}))  type: Real
 // 14: GV.heatSink.W[1]:VARIABLE()  type: Real
-// 15: GV.heatSink.T[1]:VARIABLE((start = {288.15 for $f2 in 1:1}, min = {0.0 for $f3 in 1:1}, nominal = {300.0 for $f1 in 1:1}))  type: Real
+// 15: GV.heatSink.T[1]:VARIABLE((start = {288.15 for $i_$f2 in 1:1}, min = {0.0 for $i_$f3 in 1:1}, nominal = {300.0 for $i_$f1 in 1:1}))  type: Real
 // 16: GV.singularPressureLoss_VVP.C2.b:DISCRETE()  type: Boolean
 // 17: GV.singularPressureLoss_VVP.C2.a:DISCRETE()  type: Boolean
 // 18: GV.singularPressureLoss_VVP.C2.h:VARIABLE((start = 1e5))  type: Real
