@@ -2052,7 +2052,7 @@ interactive_stmt returns [void* ast]
 @declarations { int last_sc = 0; }
 @init{ ss = 0; } :
   // A list of expressions or algorithms separated by semicolons and optionally ending with a semicolon
-  BOM? ss=interactive_stmt_list (SEMICOLON {last_sc=1;})? EOF
+  BOM? ss=interactive_stmt_list? (SEMICOLON {last_sc=1;})? EOF
     {
       ast = GlobalScript__ISTMTS(or_nil(ss), mmc_mk_bcon(last_sc));
     }
