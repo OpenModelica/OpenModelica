@@ -1,0 +1,40 @@
+// name: AliasBoundsNegatedOneSided
+// keywords: NewBackend, alias, min, max
+// status: correct
+// suite: cSources
+//
+// A negated alias with only one bound: x >= 0.5 with y = -x gives y <= -0.5.
+
+loadString("
+model AliasBoundsNegatedOneSided
+  Real x(min = 0.5);
+  Real y(stateSelect = StateSelect.prefer);
+equation
+  y = -x;
+  x = 1 + 0.4*sin(time);
+end AliasBoundsNegatedOneSided;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(AliasBoundsNegatedOneSided, stopTime = 1); getErrorString();
+writeFile("bounds.log", "");
+system("awk '/name = \"y\"/{f=1} f && /alias =/{print} f && /<Real/{print; exit}' AliasBoundsNegatedOneSided_init.xml", "bounds.log"); readFile("bounds.log");
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasBoundsNegatedOneSided_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AliasBoundsNegatedOneSided', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// 0
+// "    alias = \"noAlias\"
+//     <Real fixed=\"false\" useNominal=\"false\" max=\"-0.5\" />
+// "
+// endResult

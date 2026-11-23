@@ -2443,9 +2443,15 @@ protected
         diff_rhs := SimplifyExp.simplify(diff_rhs);
         swap_min_max := Expression.isNegative(diff_rhs);
       end if;
-      if swap_min_max and isSome(min_val_opt) and isSome(max_val_opt) then
-        UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
-        UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
+      if swap_min_max then
+        UnorderedMap.remove(var_cref, attrcollector.min_val_map);
+        UnorderedMap.remove(var_cref, attrcollector.max_val_map);
+        if isSome(max_val_opt) then
+          UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
+        end if;
+        if isSome(min_val_opt) then
+          UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
+        end if;
       end if;
 
       // start:
