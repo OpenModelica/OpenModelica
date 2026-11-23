@@ -8342,6 +8342,10 @@ Endpunkt: %2</translation>
         <translation>%1 - %2 - Live-Ansicht</translation>
     </message>
     <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
+        <translation>Die Live-Ansicht ist nicht verfügbar, weil omuq beendet wurde. Die vollständige Ausgabe steht im Fenster Meldungen.</translation>
+    </message>
+    <message>
         <source>The run is recorded in %1
 </source>
         <translation>Der Lauf ist in %1 aufgezeichnet

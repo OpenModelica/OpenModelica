@@ -8266,6 +8266,10 @@ Endpoint: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>The run is recorded in %1
 </source>
         <translation type="unfinished"></translation>
