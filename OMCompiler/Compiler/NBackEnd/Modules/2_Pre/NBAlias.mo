@@ -1251,14 +1251,18 @@ protected
         Pointer.update(ok_ptr, ok);
       then Expression.fromCref(name);
 
-      // constant arrays subscripted by the iterators, e.g. {1.0, 0.0, -1.0}[i]
+      // constant arrays subscripted by the iterators, e.g. {1.0, 0.0, -1.0}[i] or {{1, 2}, {3, 4}}[i]
       case Expression.SUBSCRIPTED_EXP(split = false) guard(not Expression.contains(exp.exp, Expression.isCref)) algorithm
         ty   := Expression.typeOf(exp.exp);
         dims := Type.arrayDims(ty);
         subs := exp.subscripts;
-        ok   := listLength(subs) == listLength(dims)
-          and List.all(subs, Subscript.isIndex)
-          and List.all(list(isFullIteratorSubscript(sub, dim, iter_sizes) threaded for sub in subs, dim in dims), Util.id);
+        ok   := listLength(subs) <= listLength(dims) and List.all(subs, Subscript.isIndex);
+        if ok then
+          // the dimensions without subscript as in ComponentRef.subscriptsAllWithWholeFlat
+          subs := listAppend(exp.subscripts, list(Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(d)))
+            for d in List.stripN(dims, listLength(subs))));
+          ok := List.all(list(isFullIteratorSubscript(sub, dim, iter_sizes) threaded for sub in subs, dim in dims), Util.id);
+        end if;
         if ok then
           ok := match Pointer.access(subs_ptr)
             local
@@ -1267,7 +1271,7 @@ protected
             else algorithm
               Pointer.update(subs_ptr, SOME(subs));
               Pointer.update(ty_ptr, SOME(ty));
-            then listLength(List.uniqueOnTrue(subs, Subscript.isEqual)) == listLength(subs);
+            then listLength(List.uniqueOnTrue(exp.subscripts, Subscript.isEqual)) == listLength(exp.subscripts);
           end match;
         end if;
         Pointer.update(ok_ptr, ok);
