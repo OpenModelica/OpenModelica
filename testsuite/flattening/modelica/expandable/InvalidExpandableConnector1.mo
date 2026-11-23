@@ -1,7 +1,6 @@
 // name: InvalidExpandableConnector1
 // keywords:
 // status: incorrect
-// suite: disabled
 //
 
 
@@ -21,7 +20,8 @@ end InvalidExpandableConnector1;
 
 // Result:
 // Error processing file: InvalidExpandableConnector1.mo
-// [InvalidExpandableConnector1.mo:20:3-20:17:writable] Error: Cannot connect expandable connector ec with non-expandable connector c.
+// [flattening/modelica/expandable/InvalidExpandableConnector1.mo:16:3-16:6:writable] Warning: Connector c is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/expandable/InvalidExpandableConnector1.mo:18:3-18:17:writable] Error: Cannot connect expandable connector ec with non-expandable connector c.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

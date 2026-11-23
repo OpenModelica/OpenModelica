@@ -2,15 +2,44 @@
 TEST = ../../../rtest
 
 TESTFILES = \
-ExpandableConnectors.mos \
-ExpandableVariableUsed.mo \
-ConnectorTest.mos \
-TestModelTotal.mos \
-
+ExpandableConnector1.mo \
+ExpandableConnector2.mo \
+ExpandableConnector3.mo \
+ExpandableConnector4.mo \
+ExpandableConnector5.mo \
+ExpandableConnector6.mo \
+ExpandableConnector7.mo \
+ExpandableConnector8.mo \
+ExpandableConnector9.mo \
+ExpandableConnector10.mo \
+ExpandableConnector11.mo \
+ExpandableConnector12.mo \
+ExpandableConnector13.mo \
+ExpandableConnectorArray1.mo \
+ExpandableConnectorArray2.mo \
+ExpandableConnectorArray3.mo \
+ExpandableConnectorArray4.mo \
+ExpandableConnectorComplex1.mo \
+ExpandableConnectorFlow1.mo \
+ExpandableConnectorFlow2.mo \
+ExpandableConnectorHierarchy1.mo \
+ExpandableConnectorHierarchy2.mo \
+ExpandableConnectorNonDecl1.mo \
+ExpandableConnectorNonDecl2.mo \
+ExpandableConnectorNonDecl3.mo \
+ExpandableConnectorNonDecl4.mo \
+ExpandableConnectorPresent1.mo \
+ExpandableConnectorPresent2.mo \
+InvalidExpandableConnector1.mo \
+QHP_Electrolytes_test_T2.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
-FAILINGTESTFILES= 
+FAILINGTESTFILES = \
+ExpandableConnectorArray5.mo \
+ExpandableConnectorArray6.mo \
+ExpandableConnectorHierarchy3.mo \
+ExpandableVariableUsed.mo \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

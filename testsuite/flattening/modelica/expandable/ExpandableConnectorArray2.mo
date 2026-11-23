@@ -1,4 +1,4 @@
-// name: ExpandableConnector4
+// name: ExpandableConnectorArray2
 // keywords: expandable connector
 // status: correct
 //
@@ -15,12 +15,12 @@ equation
   connect(ec.y, y);
 end A;
 
-model ExpandableConnector4
+model ExpandableConnectorArray2
   A a[3];
-end ExpandableConnector4;
+end ExpandableConnectorArray2;
 
 // Result:
-// class ExpandableConnector4
+// class ExpandableConnectorArray2
 //   Real a[3].ec.y "variable added to expandable connector";
 //   Real a[2].ec.y "variable added to expandable connector";
 //   Real a[1].ec.y "variable added to expandable connector";
@@ -31,5 +31,5 @@ end ExpandableConnector4;
 //   a[1].ec.y = a[1].y;
 //   a[2].ec.y = a[2].y;
 //   a[3].ec.y = a[3].y;
-// end ExpandableConnector4;
+// end ExpandableConnectorArray2;
 // endResult

@@ -1,0 +1,18 @@
+// name:        QHP_Electrolytes_test_T2
+// keyword:     expandable
+// status:      correct
+//
+// model by Pavol Privitzer
+//
+
+loadFile("QHP_Electrolytes_test_T2.mo"); getErrorString();
+checkModel(QHP.Electrolytes.test.T2); getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of QHP.Electrolytes.test.T2 completed successfully.
+// The model is globally balanced with 1565 equation(s) and variable(s).
+// 1389 of these are trivial equation(s)."
+// ""
+// endResult
