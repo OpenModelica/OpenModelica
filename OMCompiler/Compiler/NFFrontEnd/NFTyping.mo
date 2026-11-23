@@ -1510,8 +1510,8 @@ algorithm
     case Expression.BINARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
-        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info, retype);
+        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info, retype);
         (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info, retype);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
@@ -1519,7 +1519,7 @@ algorithm
     case Expression.UNARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info, retype);
         (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, var1, exp.operator, context, info);
       then
         (exp, ty, var1, pur1);
@@ -1527,8 +1527,8 @@ algorithm
     case Expression.LBINARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
-        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info, retype);
+        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info, retype);
         (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
@@ -1536,7 +1536,7 @@ algorithm
     case Expression.LUNARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info, retype);
         (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, var1, exp.operator, context, info);
       then
         (exp, ty, var1, pur1);
@@ -1544,8 +1544,8 @@ algorithm
     case Expression.RELATION()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
-        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info, retype);
+        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info, retype);
         (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, exp.index, context, info);
         variability := Prefixes.variabilityMax(var1, var2);
         purity := Prefixes.purityMin(pur1, pur2);
