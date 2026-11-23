@@ -2217,7 +2217,7 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
       const auto &plot = figure->getPlots().at(plotIndex);
       QMap<QString, QVector<QPair<const ModelInstance::Curve*, VariablesTreeItem*>>> curvesByXVariable;
       for (const auto &curve : plot->getCurves()) {
-        const QString xVariable = curve->getX().isEmpty() ? QStringLiteral("time") : curve->getX();
+        const QString xVariable = curve->getX().toQString();
         const QString yVariable = curve->getY().toQString();
         VariablesTreeItem *pYVariable = findResultVariable(yVariable);
         if (yVariable.isEmpty() || !pYVariable) {
