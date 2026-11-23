@@ -256,18 +256,21 @@ public
     input Boolean keepSingleConnectedArrays;
   protected
     UnorderedMap<Connector, Integer> connect_counts;
+    UnorderedMap<Connector, Connector> connected;
     list<Connector> flows = {};
     list<Connection> connections = {};
     Integer count;
   algorithm
     if keepSingleConnectedArrays then
-      connect_counts := analyseArrayConnections(conns);
+      (connect_counts, connected) := analyseArrayConnections(conns);
 
       for f in conns.flows loop
         count := connectCount(f, connect_counts);
 
         if count == 0 then
           flows := f :: flows;
+        elseif count == 1 then
+          flows := listAppend(unconnectedElements(f, UnorderedMap.getOrFail(f, connected)), flows);
         elseif count > 1 or count == -1 then
           flows := listAppend(Connector.scalarize(f), flows);
         end if;
@@ -293,19 +296,23 @@ public
   function analyseArrayConnections
     input Connections conns;
     output UnorderedMap<Connector, Integer> connectCounts;
+    output UnorderedMap<Connector, Connector> connected "the connected array or slice of each array connector";
   algorithm
     connectCounts := UnorderedMap.new<Integer>(Connector.hashNoSubs, Connector.isEqualNoSubs,
       listLength(conns.connections));
+    connected := UnorderedMap.new<Connector>(Connector.hashNoSubs, Connector.isEqualNoSubs,
+      listLength(conns.connections));
 
     for conn in conns.connections loop
-      analyseArrayConnector(conn.lhs, connectCounts);
-      analyseArrayConnector(conn.rhs, connectCounts);
+      analyseArrayConnector(conn.lhs, connectCounts, connected);
+      analyseArrayConnector(conn.rhs, connectCounts, connected);
     end for;
   end analyseArrayConnections;
 
   function analyseArrayConnector
     input Connector conn;
     input UnorderedMap<Connector, Integer> connectCounts;
+    input UnorderedMap<Connector, Connector> connected;
   protected
     function update
       input Option<Integer> count;
@@ -319,11 +326,29 @@ public
   algorithm
     if Connector.isArray(conn) then
       UnorderedMap.addUpdate(conn, update, connectCounts);
+      UnorderedMap.add(conn, conn, connected);
     elseif ComponentRef.hasSubscripts(conn.name) then
       // Always scalarize connector arrays that are partially connected.
       UnorderedMap.add(conn, -1, connectCounts);
     end if;
   end analyseArrayConnector;
+
+  function unconnectedElements
+    "The elements of an array flow variable that are not in the connected slice
+     of it, they get the equations of unconnected flow variables."
+    input Connector flowConn;
+    input Connector slice;
+    output list<Connector> elements = {};
+  protected
+    UnorderedSet<ComponentRef> connected_elements;
+  algorithm
+    if ComponentRef.hasSubscripts(slice.name) then
+      connected_elements := UnorderedSet.fromList(list(Connector.name(c) for c in Connector.scalarize(slice)),
+        ComponentRef.hash, ComponentRef.isEqual);
+      elements := list(e for e guard not UnorderedSet.contains(Connector.name(e), connected_elements)
+        in Connector.scalarize(flowConn));
+    end if;
+  end unconnectedElements;
 
   function toString
     input Connections conns;
