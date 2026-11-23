@@ -132,7 +132,10 @@ void ModelInstanceTest::documentationFigures()
     return QJsonObject{{"$kind", "enum"}, {"name", "YAxisSelection." + literal}, {"index", index}};
   };
   const QJsonObject curve = makeRecord("Curve", QJsonArray{
-                                         "time",
+                                         QJsonObject{
+                                           {"$kind", "cref"},
+                                           {"parts", QJsonArray{QJsonObject{{"name", "time"}}}}
+                                         },
                                          QJsonObject{
                                            {"$kind", "cref"},
                                            {"parts", QJsonArray{QJsonObject{{"name", "h"}}}}
@@ -177,8 +180,14 @@ void ModelInstanceTest::documentationFigures()
   QVERIFY(pPlot->getXAxis()->getScale());
   QCOMPARE(pPlot->getXAxis()->getScale()->getScaleType(), QString("Log"));
   QCOMPARE(pPlot->getXAxis()->getScale()->getBase(), 2);
+  QCOMPARE(pPlot->getCurves().at(0)->getX().toQString(), QString("time"));
   QCOMPARE(pPlot->getCurves().at(0)->getY().toQString(), QString("h"));
   QCOMPARE(pPlot->getCurves().at(0)->getLegend(), QString("Height of ball"));
+
+  ModelInstance::Curve parametricCurve;
+  parametricCurve.setX(FlatModelica::Expression::parse(QString("h")));
+  parametricCurve.setY(FlatModelica::Expression::parse(QString("v")));
+  QCOMPARE(parametricCurve.toString(), QString("Curve(x=h,y=v)"));
 
   const QString serialized =
       "Documentation(info=\"Model information\",revisions=\"Model revisions\",__OpenModelica_infoHeader=\"Header\","
@@ -231,7 +240,10 @@ void ModelInstanceTest::documentationFigures()
 
   // yAxis is written only when it is Right, the default is Left.
   const QJsonObject rightCurve = makeRecord("Curve", QJsonArray{
-                                              "time",
+                                              QJsonObject{
+                                                {"$kind", "cref"},
+                                                {"parts", QJsonArray{QJsonObject{{"name", "time"}}}}
+                                              },
                                               QJsonObject{
                                                 {"$kind", "cref"},
                                                 {"parts", QJsonArray{QJsonObject{{"name", "v"}}}}

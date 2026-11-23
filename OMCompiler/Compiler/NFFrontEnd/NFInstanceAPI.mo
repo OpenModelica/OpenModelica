@@ -122,7 +122,7 @@ algorithm
               "/lib/omc/AnnotationsBuiltin_" +
               Util.stringReplaceChar(annotationVersion, ".", "_") +
               ".mo";
-  program := Parser.parse(filename, "UTF-8");
+  program := Parser.parse(filename, "UTF-8", acceptedGram = Flags.METAMODELICA);
 end annotationProgram;
 
 public function mkTop

@@ -46,7 +46,14 @@ getErrorString();
 //                       \"$kind\": \"record\",
 //                       \"name\": \"Curve\",
 //                       \"elements\": [
-//                         \"time\",
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"time\"
+//                             }
+//                           ]
+//                         },
 //                         {
 //                           \"$kind\": \"cref\",
 //                           \"parts\": [
@@ -68,7 +75,14 @@ getErrorString();
 //                       \"$kind\": \"record\",
 //                       \"name\": \"Curve\",
 //                       \"elements\": [
-//                         \"time\",
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"time\"
+//                             }
+//                           ]
+//                         },
 //                         {
 //                           \"$kind\": \"cref\",
 //                           \"parts\": [
