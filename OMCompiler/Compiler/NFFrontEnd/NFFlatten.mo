@@ -1553,7 +1553,7 @@ algorithm
         if index > 0 and index <= listLength(subscripts) then Subscript.toExp(listGet(subscripts, index)) else exp;
     case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
       algorithm
-        restString := ComponentRef.toString(restCref);
+        restString := ComponentRef.toString(stripWholeSubscripts(restCref));
         if StringUtil.startsWith(restString, prefixString) then
           exp.cref := mergeIterator(exp.cref, ref, subscripts);
         end if;
@@ -1572,6 +1572,8 @@ algorithm
     case ComponentRef.CREF() algorithm
       if ComponentRef.isEqual(cref, ref) then
         cref.subscripts := listAppend(cref.subscripts, subscripts);
+      elseif List.all(cref.subscripts, Subscript.isWhole) and ComponentRef.isEqual(stripWholeSubscripts(cref), ref) then
+        cref.subscripts := subscripts;
       else
         cref.restCref := mergeIterator(cref.restCref, ref, subscripts);
       end if;
@@ -1579,6 +1581,24 @@ algorithm
     else cref;
   end match;
 end mergeIterator;
+
+function stripWholeSubscripts
+  "Removes the subscripts of the nodes that only have : subscripts. Typing fills
+   them in for the dimensions of component arrays, see Typing.typeCref."
+  input output ComponentRef cref;
+algorithm
+  () := match cref
+    case ComponentRef.CREF()
+      algorithm
+        if List.all(cref.subscripts, Subscript.isWhole) then
+          cref.subscripts := {};
+        end if;
+        cref.restCref := stripWholeSubscripts(cref.restCref);
+      then
+        ();
+    else ();
+  end match;
+end stripWholeSubscripts;
 
 function containsPrefix
   input Expression exp;
@@ -1600,7 +1620,7 @@ algorithm
       ComponentRef restCref;
     case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
       algorithm
-        restString := ComponentRef.toString(restCref);
+        restString := ComponentRef.toString(stripWholeSubscripts(restCref));
         if StringUtil.startsWith(restString, prefixString) then
           contains := true;
         end if;
