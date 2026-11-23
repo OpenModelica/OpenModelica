@@ -1,0 +1,83 @@
+// name: resizableUnexpandedLoops
+// keywords: NewBackend resizable algebraic loop maxArrayExpansion
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false --maxArrayExpansion=0
+// suite: cSources
+// teardown_command: rm -f resizableUnexpanded*.log resizableUnexpanded*.mat resizableUnexpanded*_ref*
+//
+// A loop per phase of vector connectors. Each loop solves one element of the
+// array equations, which is taken without expanding them into elements.
+
+loadString("
+package resizableUnexpanded
+  connector VPin
+    Real v[3];
+    flow Real i[3];
+  end VPin;
+  model VResistor
+    VPin a, b;
+  equation
+    a.v - b.v = a.i;
+    a.i + b.i = zeros(3);
+  end VResistor;
+  model VSource
+    VPin p;
+  equation
+    p.v = {1, 2, 3}*(1 + time);
+  end VSource;
+  model VGround
+    VPin p;
+  equation
+    p.v = zeros(3);
+  end VGround;
+  model VSplitter
+    parameter Integer N = 2;
+    VPin a;
+    VPin b[N];
+  equation
+    for k in 1:N loop
+      connect(a, b[k]);
+    end for;
+  end VSplitter;
+  model VSplit
+    parameter Integer N = 3;
+    VSource src;
+    VResistor r0;
+    VSplitter s(N = N);
+    VResistor r[N];
+    VGround g[N];
+  equation
+    connect(src.p, r0.a);
+    connect(r0.b, s.a);
+    for k in 1:N loop
+      connect(s.b[k], r[k].a);
+      connect(r[k].b, g[k].p);
+    end for;
+  end VSplit;
+  model VSplit6 = VSplit(N = 6);
+end resizableUnexpanded;
+"); getErrorString();
+
+buildModel(resizableUnexpanded.VSplit, stopTime = 1, fileNamePrefix = "resizableUnexpanded"); getErrorString();
+system("./resizableUnexpanded -override=N=6 -r=resizableUnexpanded_6.mat", "resizableUnexpanded_6.log");
+
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+buildModel(resizableUnexpanded.VSplit6, stopTime = 1, fileNamePrefix = "resizableUnexpanded_ref"); getErrorString();
+system("./resizableUnexpanded_ref", "resizableUnexpanded_ref.log");
+
+abs(val(r.a.i[6,3], 1, "resizableUnexpanded_6.mat") - val(r.a.i[6,3], 1, "resizableUnexpanded_ref_res.mat")) < 1e-6;
+abs(val(r0.a.i[2], 1, "resizableUnexpanded_6.mat") - val(r0.a.i[2], 1, "resizableUnexpanded_ref_res.mat")) < 1e-6;
+// Result:
+// true
+// ""
+// {"resizableUnexpanded", "resizableUnexpanded_init.xml"}
+// ""
+// 0
+// true
+// ""
+// {"resizableUnexpanded_ref", "resizableUnexpanded_ref_init.xml"}
+// ""
+// 0
+// true
+// true
+// endResult

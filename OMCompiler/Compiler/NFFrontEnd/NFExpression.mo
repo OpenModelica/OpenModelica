@@ -1700,6 +1700,9 @@ public
       case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
         then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
 
+      case MULTARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
+        then applySubscriptMultary(subscript, exp, restSubscripts, applyToScope);
+
       case UNARY() guard Type.isArray(Operator.typeOf(exp.operator))
         algorithm
           outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
@@ -2139,6 +2142,39 @@ public
       else false;
     end match;
   end isCheapSubscript;
+
+  function applySubscriptMultary
+    "Moves the subscripts into the arguments of an element-wise sum or product:
+     (a + b - c)[i] = a[i] + b[i] - c[i]."
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
+    output Expression outExp;
+  protected
+    import NFOperator.Op;
+    list<Expression> args, inv_args, all_args;
+    Operator op;
+  algorithm
+    MULTARY(args, inv_args, op) := exp;
+    all_args := listAppend(args, inv_args);
+
+    if not (Type.isArray(op.ty) and (op.op == Op.ADD or op.op == Op.ADD_EW or op.op == Op.MUL_EW))
+       or listEmpty(all_args) or List.any(all_args, isScalar) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
+    args := list(applySubscript(subscript, e, restSubscripts, applyToScope) for e in args);
+    inv_args := list(applySubscript(subscript, e, restSubscripts, applyToScope) for e in inv_args);
+    op.ty := typeOf(listHead(if listEmpty(args) then inv_args else args));
+
+    if Type.isScalar(op.ty) then
+      op.op := if op.op == Op.MUL_EW then Op.MUL else Op.ADD;
+    end if;
+
+    outExp := MULTARY(args, inv_args, op);
+  end applySubscriptMultary;
 
   function applySubscriptBinary
     "Moves the subscripts into the operands of an element-wise operator:
