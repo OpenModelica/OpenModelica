@@ -275,8 +275,11 @@ public:
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
+  void updateChildClasses(LibraryTreeItem *pLibraryTreeItem, bool isSaved = false);
+  bool loadClassText(LibraryTreeItem *pLibraryTreeItem, const QString &classText, bool isSaved);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  QList<LibraryTreeItem*> getLibraryTreeItemsInFile(LibraryTreeItem *pLibraryTreeItem);
   static LibraryTreeItem* getTopLevelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
@@ -482,6 +485,8 @@ public:
   void setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary);
   void setAutoSaving(bool autoSaving) {mAutoSaving = autoSaving;}
   void addModelToUpdate(const QString &model) {mModelsToUpdate.append(model);}
+  enum FileReloadProblem {ReloadOptionOff, UnsavedChanges, LibraryFileDeleted, FileErrors};
+  QList<QPair<QString, FileReloadProblem>> reloadChangedLibraryFiles();
 protected:
   virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 private:
@@ -500,6 +505,14 @@ private:
   QStringList mPendingChangedFiles;
   QStringList mPendingDeletedFiles;
   bool mHandlingLibraryFileChanges = false;
+  struct LibraryFileChanges {
+    QStringList changedFiles;
+    QStringList deletedFiles;
+    bool rootFileDeleted = false;
+    bool hasUnsavedChanges = false;
+  };
+  QList<LibraryTreeItem*> collectLibraryFileChanges(const QStringList &changedFiles, const QStringList &deletedFiles,
+                                                    QHash<LibraryTreeItem*, LibraryFileChanges> *pLibraryChanges);
   bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
   void openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, int row);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);

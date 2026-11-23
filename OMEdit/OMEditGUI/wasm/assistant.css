@@ -186,6 +186,12 @@ body.assistant-dragging #main { pointer-events: none; }
 .as-tool .body, .as-thinking .body { padding: 0 9px 9px; }
 .as-tool .body h5 { margin: 6px 0 4px; font-size: 12px; color: var(--as-muted); font-weight: 600; }
 .as-tool .body pre { white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+.as-diff span { display: block; min-height: 1.4em; }
+.as-diff .add { background: rgba(46, 160, 67, .2); }
+.as-diff .del { background: rgba(248, 81, 73, .2); }
+.as-diff .hunk { color: var(--as-link); }
+.as-diff .meta { color: var(--as-muted); }
+.as-msg pre.as-diff { white-space: pre-wrap; max-height: 360px; overflow-y: auto; }
 .as-tool img, .as-msg img { max-width: 100%; border: 1px solid var(--as-border); border-radius: 6px; background: #ffffff; }
 .as-thinking { color: var(--as-muted); }
 .as-thinking .body { white-space: pre-wrap; font-size: 12.5px; max-height: 240px; overflow-y: auto; }

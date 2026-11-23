@@ -909,7 +909,10 @@
         node.classList.add(result.isError ? 'failed' : 'ok');
         state.textContent = result.isError ? 'failed' : 'done';
         body.append(el('h5', { text: 'Result' }));
-        if (result.text) body.append(el('pre', { text: result.text.length > 20000 ? `${result.text.slice(0, 20000)}\n...` : result.text }));
+        const text = result.text.length > 20000 ? `${result.text.slice(0, 20000)}\n...` : result.text;
+        const isDiff = !result.isError && /^@@ -\d+(,\d+)? \+\d+(,\d+)? @@/m.test(text);
+        if (text) body.append(isDiff ? diffView(text) : el('pre', { text }));
+        if (isDiff) add(el('div', { class: 'as-msg' }, diffView(text)));
         for (const image of result.images) {
           const img = el('img', { src: `data:${image.mimeType};base64,${image.data}`, alt: `Image from ${name}` });
           body.append(img);
@@ -917,6 +920,12 @@
         }
       },
     };
+  }
+
+  function diffView(text) {
+    const kind = (line) => (/^(---|\+\+\+) /.test(line) ? 'meta' : line.startsWith('@@') ? 'hunk'
+      : line.startsWith('+') ? 'add' : line.startsWith('-') ? 'del' : null);
+    return el('pre', { class: 'as-diff' }, ...text.split('\n').map((line) => el('span', { class: kind(line), text: line })));
   }
 
   function setRunning(isRunning) {
