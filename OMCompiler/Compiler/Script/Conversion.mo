@@ -240,6 +240,7 @@ protected
           end match;
 
           args := list(expandArg(a) for a in args);
+          args := list(concatStringExps(a) for a in args);
 
           for a in vectorizeArgs(args, fn_type, stmt) loop
             rules := parse_fn(a, stmt.info, rules);
@@ -270,6 +271,28 @@ protected
       else exp;
     end match;
   end expandArg;
+
+  function concatStringExps
+    "Concatenates \"str1\" + \"str2\" expressions into \"str1str2\"."
+    input Absyn.Exp exp;
+    output Absyn.Exp outExp;
+  protected
+    String str1, str2;
+  algorithm
+    outExp := match exp
+      case Absyn.Exp.BINARY(op = Absyn.Operator.ADD())
+        algorithm
+          Absyn.Exp.STRING(value = str1) := concatStringExps(exp.exp1);
+          Absyn.Exp.STRING(value = str2) := concatStringExps(exp.exp2);
+        then
+          Absyn.Exp.STRING(str1 + str2);
+
+      case Absyn.Exp.ARRAY()
+        then Absyn.Exp.ARRAY(list(concatStringExps(e) for e in exp.arrayExp));
+
+      else exp;
+    end match;
+  end concatStringExps;
 
   function vectorizeArgs
     "Vectorizes a list of function arguments using the vectorization rules."

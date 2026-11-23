@@ -12,12 +12,15 @@ ConvertClass8.mos \
 ConvertClassVectorize1.mos \
 ConvertClassVectorize2.mos \
 ConvertClassVectorize3.mos \
+ConvertEmptyScript1.mos \
 ConvertElement1.mos \
 ConvertElement2.mos \
 ConvertModifiers1.mos \
 ConvertModifiers2.mos \
 ConvertModifiers3.mos \
 ConvertModifiers4.mos \
+ConvertModifiers5.mos \
+ConvertModifiers6.mos \
 ConvertModifiersMissingValue1.mos \
 ConvertPackage1.mos \
 ConvertPackage2.mos \
