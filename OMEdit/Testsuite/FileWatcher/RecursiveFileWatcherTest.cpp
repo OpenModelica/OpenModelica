@@ -72,6 +72,7 @@ class RecursiveFileWatcherTest : public QObject
 private slots:
   void detectsChangedFile();
   void checksChangesBeforeWatcherFlush();
+  void rescanReportsChangesAtOnce();
   void detectsCreatedAndDeletedFile();
   void ignorePathDoesNotReportChange();
   void watchesSingleFileRoot();
@@ -110,6 +111,25 @@ void RecursiveFileWatcherTest::checksChangesBeforeWatcherFlush()
 
   watcher.ignorePath(filePath);
   QVERIFY(!watcher.hasChangedSinceSnapshot(filePath));
+}
+
+void RecursiveFileWatcherTest::rescanReportsChangesAtOnce()
+{
+  QTemporaryDir tempDir;
+  QVERIFY(tempDir.isValid());
+  const QString filePath = tempDir.filePath(QStringLiteral("A.mo"));
+  QVERIFY(writeFile(filePath, "model A\nend A;\n"));
+
+  RecursiveFileWatcher watcher;
+  watcher.setRoots(QStringList{tempDir.path()});
+  QSignalSpy spy(&watcher, &RecursiveFileWatcher::filesChanged);
+  QVERIFY(writeFile(filePath, "model A\n  Real x;\nend A;\n"));
+  watcher.rescan();
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(pathsOf(spy, 0), QStringList{filePath});
+
+  watcher.rescan();
+  QCOMPARE(spy.count(), 1);
 }
 
 void RecursiveFileWatcherTest::detectsCreatedAndDeletedFile()

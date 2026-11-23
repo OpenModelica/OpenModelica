@@ -6588,7 +6588,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure(), false);
     }
     // update child classes
-    updateChildClasses(mpLibraryTreeItem);
+    pLibraryTreeModel->updateChildClasses(mpLibraryTreeItem);
   } else {
     /* if user has changed the class name then delete this class.
      * Update the LibraryTreeItem with new class name and then refresh it.
@@ -6630,47 +6630,6 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     *pLibraryTreeItem = pNewLibraryTreeItem;
   }
   return true;
-}
-
-void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
-{
-  MainWindow *pMainWindow = MainWindow::instance();
-  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
-  QStringList classNames = pMainWindow->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure());
-  // first remove the classes that are removed by the user
-  int i = 0;
-  while(i != pLibraryTreeItem->childrenSize()) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (!classNames.contains(pChildLibraryTreeItem->getName())) {
-      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem, false);
-      i = 0;  //Restart iteration if list has changed
-    } else {
-      i++;
-    }
-  }
-  // update and create any new classes
-  int index = 0;
-  foreach (QString className, classNames) {
-    QString classNameStructure = QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(className);
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(classNameStructure);
-    // if the class already exists then we update it if needed.
-    if (pChildLibraryTreeItem) {
-      if (pChildLibraryTreeItem->isInPackageOneFile()) {
-        // update the class information
-        pChildLibraryTreeItem->updateClassInformation();
-        if (pLibraryTreeItem->isExpanded()) {
-          if (pChildLibraryTreeItem->getModelWidget()) {
-            pChildLibraryTreeItem->getModelWidget()->reDrawModelWidget();
-            pLibraryTreeModel->readLibraryTreeItemClassText(pChildLibraryTreeItem);
-          }
-          updateChildClasses(pChildLibraryTreeItem);
-        }
-      }
-    } else if (!pChildLibraryTreeItem) {  // if the class doesn't exists then create one.
-      pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeItem, false, false, true, index);
-    }
-    index++;
-  }
 }
 
 /*!

@@ -58,6 +58,7 @@ public:
   bool hasChangedSinceSnapshot(const QString &filePath) const;
   void ignorePath(const QString &filePath);
   void resync();
+  void rescan();
 
 signals:
   void filesChanged(const QStringList &changedFiles, const QStringList &createdFiles, const QStringList &deletedFiles);

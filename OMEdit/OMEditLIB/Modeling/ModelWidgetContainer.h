@@ -585,7 +585,6 @@ public:
   void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
-  void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
   bool omsimulatorEditorTextChanged();
   void clearSelection();
   void updateClassAnnotationIfNeeded();
