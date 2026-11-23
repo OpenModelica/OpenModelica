@@ -5,6 +5,7 @@ aliasAttributeLookup.mos \
 AliasParameterFixedFalse.mos \
 AliasIntegerNonTrivial.mos \
 AliasBoundsNegated.mos \
+AliasBoundsNegatedOneSided.mos \
 AliasBoundsThree.mos \
 Alias.mos \
 Alias2.mos \
