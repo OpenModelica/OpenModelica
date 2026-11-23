@@ -906,7 +906,7 @@ impl StepRetry {
     /// C's `retrySimulationStep`: restore the last accepted point, settle the
     /// discrete system over it and save the zero crossings as after an event.
     /// `None` ⇒ the throw ends the run.
-    fn undo(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Option<f64>> {
+    fn undo(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, settle: bool) -> Result<Option<f64>> {
         // Only a model error the region absorbed reaches C's catch; a rethrown
         // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
         let caught = self.end(e) || self.threw || RUNTIME_ERROR.load(Ordering::Relaxed);
@@ -956,7 +956,7 @@ impl StepRetry {
         // The marks may come from the rejected point.
         discard_relations_outside(e, sim_data, layout)?;
         update_discrete_system(e, sim_data, layout)?;
-        save_zero_crossings_after_event(e, sim_data, layout)?;
+        save_zero_crossings_after_event(e, sim_data, layout, settle)?;
         if first {
             omclog::warning(
                 omclog::STDOUT,
@@ -6388,7 +6388,7 @@ impl Driver for EulerDriver {
     }
 
     fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
-        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout)? else {
+        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout, true)? else {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
@@ -8050,7 +8050,7 @@ impl Driver for DasslDriver {
 
     fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
         let layout = &model.layout;
-        let Some(t) = self.retry.undo(e, self.sim_data, layout)? else {
+        let Some(t) = self.retry.undo(e, self.sim_data, layout, true)? else {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
@@ -10587,7 +10587,7 @@ impl CsDriver {
         let out = match self.attempt(e, model, t_target, defer, dss) {
             // C's `performSimulation` catch: back to the accepted point, half the
             // interval, then the rest; the rest failing leaves the master at half way.
-            Err(err) if is_model_throw(err) => match self.retry.undo(e, sim_data, layout)? {
+            Err(err) if is_model_throw(err) => match self.retry.undo(e, sim_data, layout, false)? {
                 None => return Err(err),
                 Some(t0) => {
                     self.resync(e, layout, t0)?;
@@ -10596,7 +10596,7 @@ impl CsDriver {
                             self.retry.store(e, sim_data, layout)?;
                             match self.attempt(e, model, t_target, defer, dss) {
                                 Err(err) if is_model_throw(err) => {
-                                    let Some(t1) = self.retry.undo(e, sim_data, layout)? else {
+                                    let Some(t1) = self.retry.undo(e, sim_data, layout, false)? else {
                                         return Err(err);
                                     };
                                     self.resync(e, layout, t1)?;
@@ -11505,7 +11505,10 @@ impl Driver for EventsDriver {
 
     fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
         let layout = &model.layout;
-        let Some(t) = self.retry.undo(e, self.core.sim_data, layout)? else {
+        let Some(t) = self
+            .retry
+            .undo(e, self.core.sim_data, layout, self.core.settle_relations)?
+        else {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
@@ -12067,7 +12070,7 @@ impl Driver for CvodeDriver {
     }
 
     fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
-        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout)? else {
+        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout, true)? else {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
@@ -13069,7 +13072,7 @@ impl Driver for IdaDriver {
     }
 
     fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
-        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout)? else {
+        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout, true)? else {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
