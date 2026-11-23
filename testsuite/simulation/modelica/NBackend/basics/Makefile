@@ -24,6 +24,7 @@ promotePreferStates.mos \
 simpleForLoop.mos \
 simpleNonlinearLoop.mos \
 solveSingleEquation.mos \
+topLevelInputTypes.mos \
 underdetermined_init.mos \
 variability.mos \
 loadResource.mos \
