@@ -7184,14 +7184,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Esegue l&apos;analisi di sensibilità e l&apos;ottimizzazione</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>Documentazione di sistema di OpenModelica</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Apre la documentazione di sistema di OpenModelica</translation>
-    </message>
-    <message>
         <source>Draws a line shape</source>
         <translation>Traccia una linea</translation>
     </message>

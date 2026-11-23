@@ -7161,14 +7161,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>Exécute l’analyse de sensibilité et l’optimisation</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>Documentation Système OpenModelica</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Ouvre la Documentation du Système OpenModelica</translation>
-    </message>
-    <message>
         <source>Draws a line shape</source>
         <translation>Dessine une ligne</translation>
     </message>
