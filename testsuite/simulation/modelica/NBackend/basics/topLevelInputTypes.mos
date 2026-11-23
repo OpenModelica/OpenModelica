@@ -1,0 +1,54 @@
+// name: topLevelInputTypes
+// keywords: NewBackend input
+// status: correct
+// cflags: --newBackend
+//
+// Top-level inputs of type Integer, Boolean, String and enumeration (#1884).
+
+loadString("
+model TopLevelInputTypes
+  type E = enumeration(a, b, c);
+  input Real r(start = 0.5);
+  input Integer i(start = 2);
+  input Boolean b(start = true);
+  input String s(start = \"abc\");
+  input E e(start = E.b);
+  output Real y;
+  output Integer n;
+equation
+  y = r + i;
+  n = (if b then 10 else 0) + (if s == \"abc\" then 100 else 0) + 1000 * Integer(e);
+end TopLevelInputTypes;
+"); getErrorString();
+
+simulate(TopLevelInputTypes, stopTime = 0.1); getErrorString();
+val(y, 0.1);
+val(n, 0.1);
+simulate(TopLevelInputTypes, stopTime = 0.1, simflags = "-override=r=1.5,i=5,b=false,s=xyz,e=3"); getErrorString();
+val(y, 0.1);
+val(n, 0.1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TopLevelInputTypes_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TopLevelInputTypes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.5
+// 2110.0
+// record SimulationResult
+//     resultFile = "TopLevelInputTypes_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TopLevelInputTypes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=r=1.5,i=5,b=false,s=xyz,e=3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 6.5
+// 3000.0
+// endResult
