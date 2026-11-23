@@ -794,7 +794,7 @@ algorithm
   columark := arrayCreate(size,-1);
 
   // Collect variables with annotation attribute '__OpenModelica_tearingSelect in [always, prefer, avoid, never]'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never,_) := tearingSelect(var_lst, {}, DAEtypeStr);
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never,_,_) := tearingSelect(var_lst, {}, DAEtypeStr);
 
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
@@ -2232,7 +2232,7 @@ protected
   Integer size, tornsize;
   array<Integer> ass1, ass2, mapIncRowEqn, eqnNonlinPoints;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_alwaysByUser, tSel_prefer, tSel_avoid, tSel_never;
+  list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_alwaysByUser, tSel_prefer, tSel_avoid, tSel_never, tSel_withStart;
   BackendDAE.InnerEquations innerEquations;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
@@ -2400,7 +2400,7 @@ algorithm
   end if;
 
   // Collect variables with annotation attribute '__OpenModelica_tearingSelect in [always, prefer, avoid, never]'
-  (tSel_always, tSel_prefer, tSel_avoid, tSel_never, tSel_alwaysByUser) := tearingSelect(var_lst, tearingSelect_always, DAEtypeStr);
+  (tSel_always, tSel_prefer, tSel_avoid, tSel_never, tSel_alwaysByUser, tSel_withStart) := tearingSelect(var_lst, tearingSelect_always, DAEtypeStr);
   if not listEmpty(tSel_alwaysByUser) then
     Error.addMessage(Error.USER_TEARING_VARS, {intString(strongComponentIndex), BackendDump.printBackendDAEType2String(DAEtype), BackendDump.dumpMarkedVarList(var_lst, tSel_alwaysByUser)});
   end if;
@@ -2422,7 +2422,7 @@ algorithm
   // the copy entirely (meTFull is then never read).
   meTFull := if forceDegree1 then arrayCopy(meT) else meT;
   // First pass: plain Cellier tearing, never forced.
-  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
+  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,tSel_withStart,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
   end if;
@@ -2449,7 +2449,7 @@ algorithm
     ass1 := arrayCreate(size,-1);
     ass2 := arrayCreate(size,-1);
     order := {};
-    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,true);
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,tSel_withStart,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,true);
   end if;
 
   // check if tearing makes sense
@@ -2536,7 +2536,7 @@ algorithm
     end if;
     // ticket #15433: the degree-1 forcing is only applied to the strict set (above) when its plain
     // pass is singular; never force the casual/dynamic set.
-    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,tSel_withStart,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
     end if;
@@ -2627,6 +2627,7 @@ protected function tearingSelect
   output list<Integer> avoid = {};
   output list<Integer> never = {};
   output list<Integer> alwaysByUser = always "distinguish between user choice and compiler choice";
+  output list<Integer> withStart = {} "variables with a start value, also one from their type";
 protected
   BackendDAE.Var var;
   Integer index = 1;
@@ -2666,6 +2667,9 @@ algorithm
       elseif preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) and not BackendVariable.varStartFromType(var) then
         prefer := index :: prefer;
       end if;
+    end if;
+    if preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) then
+      withStart := index :: withStart;
     end if;
     index := index + 1;
   end for;
@@ -2802,7 +2806,7 @@ protected function CellierTearing2 " function to call tearing heuristic and matc
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
   input array<Integer> ass1In,ass2In;
-  input list<Integer> Unsolvables,tvarsIn,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,orderIn;
+  input list<Integer> Unsolvables,tvarsIn,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,tSel_withStart,orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
@@ -2831,7 +2835,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of selectTearingVar\n\n");
       end if;
-      tvar := selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
+      tvar := selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,tSel_withStart,mapEqnIncRow,mapIncRowEqn);
       if debug then execStat("Tearing.CellierTearing2 - 1.0"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of selectTearingVar\n" + BORDER + "\n\n");
@@ -2881,7 +2885,7 @@ algorithm
       if debug then execStat("Tearing.CellierTearing2 - 1 done"); end if;
 
       // repeat until system is causal
-      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,tSel_withStart,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
 
    then
      (tvars,order);
@@ -2940,7 +2944,7 @@ algorithm
       if debug then execStat("Tearing.CellierTearing2 - 2"); end if;
 
       // repeat until system is causal
-      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,tSel_withStart,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
 
    then
      (tvars, order);
@@ -2957,11 +2961,12 @@ protected function selectTearingVar
   input BackendDAE.AdjacencyMatrixT mt;
   input array<Integer> ass1In,ass2In;
   input list<Integer> discreteVars,tSel_prefer,tSel_avoid,tSel_never;
+  input list<Integer> tSel_withStart "preferred among the equally good candidates of the heuristic";
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   output Integer OutTVar;
 protected
-  list<Integer> potentials;
+  list<Integer> potentials, withStart;
   String heuristic;
   TearingHeuristic tearingHeuristic;
 algorithm
@@ -2993,7 +2998,8 @@ algorithm
   // get potential tearing variables
   try
     potentials := tearingHeuristic(m,mt,me,meT,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
-    {OutTVar} := potentials;
+    withStart := list(v for v guard listMember(v, tSel_withStart) in potentials);
+    OutTVar := listHead(if listEmpty(withStart) then potentials else withStart);
   else
     print("\nThe selection of a new tearing variable failed.\n");
     Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use -d=tearingdump or -d=tearingdumpV for more information.");
@@ -3578,7 +3584,7 @@ algorithm
   // ************************************************************************************
   (edges,potentials) := getVarOccurringInMostEquations(mtIn,bestPotentialTVars);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("6th: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Chosen tearing variable. One from (5th) with most occurrence in equations (" + intString(edges) +" times))\n\n");
+    print("6th: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (5th) with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
   if debug then execStat("TEARINGHEURISTIC6"); end if;
 end ModifiedCellierHeuristic_3;
@@ -3633,7 +3639,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nHeuristic [MC3]\n"+ BORDER +"\n");
   end if;
-  potentials10 := ModifiedCellierHeuristic_3(mIn,mtIn,meIn,metIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
+  potentials10 := List.firstOrEmpty(ModifiedCellierHeuristic_3(mIn,mtIn,meIn,metIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn));
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(BORDER + "\n\nSynopsis:\n=========\n[MC1]: " + stringDelimitList(List.map(potentials1,intString),",")+"\n");
     print("[MC2]: " + stringDelimitList(List.map(potentials2,intString),",")+"\n");
@@ -3663,7 +3669,7 @@ algorithm
   (edges,potentials) := getVarOccurringInMostEquations(mtIn, selectedvars);
 
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("3rd: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Chosen tearing variable. One from from (2nd) with most occurrence in equations (" + intString(edges) +" times))\n\n\n");
+    print("3rd: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (2nd) with most occurrence in equations (" + intString(edges) +" times))\n\n\n");
   end if;
 end ModifiedCellierHeuristic_4;
 
@@ -4707,7 +4713,7 @@ end getVarsOccurringInMostEquations;
 
 
 protected function getVarOccurringInMostEquations "find rows in transposed adjacency matrix enhanced with most nonzero
-  elements. Return the first found row index with most entries.
+  elements. Return the row indices with most entries, in the order of inSelect.
 author: ptaeuber"
   input BackendDAE.AdjacencyMatrixT mtIn;
   input list<Integer> inSelect;
@@ -4723,8 +4729,11 @@ algorithm
     if intGt(length1,length) then
       length := length1;
       outLst := {sel};
+    elseif length1 == length and length > 0 then
+      outLst := sel :: outLst;
     end if;
   end for;
+  outLst := listReverse(outLst);
 end getVarOccurringInMostEquations;
 
 
