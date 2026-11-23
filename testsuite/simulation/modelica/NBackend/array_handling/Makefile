@@ -18,6 +18,7 @@ sparsityNegatedAlias.mos \
 raggedComponentArrays.mos \
 scalarDivArray.mos \
 retypeNestedArrayDivision.mos \
+bindingArrayOperand.mos \
 arrayRowScalar.mos \
 emptyArrayTupleArgument.mos \
 algorithmForSubscript.mos \
