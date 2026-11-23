@@ -69,6 +69,7 @@ protected
     record MODIFIERS "convertModifiers"
       list<Absyn.ElementArg> oldMods;
       list<Absyn.ElementArg> newMods;
+      Boolean simplify;
       SourceInfo info;
     end MODIFIERS;
 
@@ -519,7 +520,7 @@ protected
     cls_path := parsePathList(className);
     old_mods := list(parseModifier(m, info) for m in oldMods);
     new_mods := list(parseModifier(m, info) for m in newMods);
-    rules := addRule(cls_path, ConversionRule.MODIFIERS(old_mods, new_mods, info), rules);
+    rules := addRule(cls_path, ConversionRule.MODIFIERS(old_mods, new_mods, simplify, info), rules);
   end parseConvertModifiers2;
 
   function parseModifier
@@ -1165,9 +1166,10 @@ protected
   protected
     list<Absyn.ElementArg> old_mods, new_mods, matching_mods, rest_mods;
     UnorderedMap<String, Option<Absyn.Exp>> placeholders;
+    Boolean simplify;
     SourceInfo info;
   algorithm
-    ConversionRule.MODIFIERS(oldMods = old_mods, newMods = new_mods, info = info) := rule;
+    ConversionRule.MODIFIERS(oldMods = old_mods, newMods = new_mods, simplify = simplify, info = info) := rule;
 
     if listEmpty(old_mods) then
       // If the list of old modifiers is empty, just add the new modifiers.
@@ -1181,7 +1183,7 @@ protected
       if not listEmpty(matching_mods) then
         // If any old modifiers matched, replace them with the new modifiers.
         placeholders := makePlaceholderTable(listAppend(old_mods, matching_mods));
-        new_mods := list(replacePlaceholders(m, placeholders, info) for m in new_mods);
+        new_mods := list(replacePlaceholders(m, placeholders, simplify, info) for m in new_mods);
         elemArgs := mergeModifiers(rest_mods, new_mods);
       end if;
     end if;
@@ -1243,6 +1245,7 @@ protected
     "Replaces placeholders with their respective values in a modifier."
     input output Absyn.ElementArg arg;
     input UnorderedMap<String, Option<Absyn.Exp>> placeholders;
+    input Boolean simplify;
     input SourceInfo info;
   protected
     Absyn.Modification mod;
@@ -1253,8 +1256,8 @@ protected
       case Absyn.ElementArg.MODIFICATION(modification = SOME(mod))
         algorithm
           Absyn.Modification.CLASSMOD(args, eq_mod) := mod;
-          args := list(replacePlaceholders(a, placeholders, info) for a in args);
-          eq_mod := replacePlaceholdersEqMod(eq_mod, placeholders, {arg.info, info});
+          args := list(replacePlaceholders(a, placeholders, simplify, info) for a in args);
+          eq_mod := replacePlaceholdersEqMod(eq_mod, placeholders, simplify, {arg.info, info});
           arg.modification := SOME(Absyn.Modification.CLASSMOD(args, eq_mod));
         then
           ();
@@ -1267,6 +1270,7 @@ protected
     "Replaces placeholders with their respective values in an Absyn.EqMod."
     input output Absyn.EqMod eqMod;
     input UnorderedMap<String, Option<Absyn.Exp>> placeholders;
+    input Boolean simplify;
     input list<SourceInfo> info;
   algorithm
     () := match eqMod
@@ -1274,6 +1278,10 @@ protected
         algorithm
           eqMod.exp := AbsynUtil.traverseExp(eqMod.exp,
             function replacePlaceholdersExp(info = info), placeholders);
+
+          if simplify then
+            eqMod.exp := simplifyExp(eqMod.exp);
+          end if;
         then
           ();
 
@@ -2843,6 +2851,351 @@ protected
       else ();
     end match;
   end addComponentTypesToEnv2;
+
+  // Functions for applying trivial simplifications when using convertModifiers with simplify = true.
+  function simplifyExp
+    input Absyn.Exp exp;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := AbsynUtil.traverseExp(exp, simplifyExp_traverser, 0);
+  end simplifyExp;
+
+  function simplifyExp_traverser
+    input Absyn.Exp exp;
+    input Integer dummy;
+    output Absyn.Exp outExp;
+    output Integer outDummy = dummy;
+  algorithm
+    outExp := match exp
+      case Absyn.Exp.BINARY()
+        guard AbsynUtil.isLiteralExp(exp.exp1) and AbsynUtil.isLiteralExp(exp.exp2)
+        then simplifyExpBinary(exp.exp1, exp.op, exp.exp2);
+
+      case Absyn.Exp.UNARY()
+        guard AbsynUtil.isLiteralExp(exp.exp)
+        then simplifyExpUnary(exp.exp, exp.op);
+
+      case Absyn.Exp.LBINARY()
+        guard AbsynUtil.isLiteralExp(exp.exp1) and AbsynUtil.isLiteralExp(exp.exp2)
+        then simplifyExpLBinary(exp.exp1, exp.op, exp.exp2);
+
+      case Absyn.Exp.LUNARY()
+        guard AbsynUtil.isLiteralExp(exp.exp)
+        then simplifyExpLUnary(exp.exp, exp.op);
+
+      case Absyn.Exp.RELATION()
+        guard AbsynUtil.isLiteralExp(exp.exp1) and AbsynUtil.isLiteralExp(exp.exp2)
+        then simplifyExpRelation(exp.exp1, exp.op, exp.exp2);
+
+      case Absyn.Exp.IFEXP()
+        guard AbsynUtil.isLiteralExp(exp.ifExp)
+        then simplifyIfExp(exp.ifExp, exp.trueBranch, exp.elseBranch, exp.elseIfBranch);
+
+      else exp;
+    end match;
+  end simplifyExp_traverser;
+
+  function simplifyExpBinary
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match op
+      case Absyn.Operator.ADD()    then simplifyExpBinaryAdd(exp1, op, exp2);
+      case Absyn.Operator.SUB()    then simplifyExpBinarySub(exp1, op, exp2);
+      case Absyn.Operator.MUL()    then simplifyExpBinaryMul(exp1, op, exp2);
+      case Absyn.Operator.DIV()    then simplifyExpBinaryDiv(exp1, op, exp2);
+      case Absyn.Operator.POW()    then simplifyExpBinaryPow(exp1, op, exp2);
+      case Absyn.Operator.ADD_EW() then simplifyExpBinaryAdd(exp1, op, exp2);
+      case Absyn.Operator.SUB_EW() then simplifyExpBinarySub(exp1, op, exp2);
+      case Absyn.Operator.MUL_EW() then simplifyExpBinaryMul(exp1, op, exp2);
+      case Absyn.Operator.DIV_EW() then simplifyExpBinaryDiv(exp1, op, exp2);
+      case Absyn.Operator.POW_EW() then simplifyExpBinaryPow(exp1, op, exp2);
+      else Absyn.Exp.BINARY(exp1, op, exp2);
+    end match;
+  end simplifyExpBinary;
+
+  function simplifyExpBinaryAdd
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.INTEGER(exp1.value + exp2.value);
+      case (Absyn.Exp.REAL(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) + stringReal(exp2.value)));
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(intReal(exp1.value) + stringReal(exp2.value)));
+      case (Absyn.Exp.REAL(), Absyn.Exp.INTEGER())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) + intReal(exp2.value)));
+      case (Absyn.Exp.STRING(), Absyn.Exp.STRING())
+        then Absyn.Exp.STRING(exp1.value + exp2.value);
+      else Absyn.Exp.BINARY(exp1, op, exp2);
+    end match;
+  end simplifyExpBinaryAdd;
+
+  function simplifyExpBinarySub
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.INTEGER(exp1.value - exp2.value);
+      case (Absyn.Exp.REAL(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) - stringReal(exp2.value)));
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(intReal(exp1.value) - stringReal(exp2.value)));
+      case (Absyn.Exp.REAL(), Absyn.Exp.INTEGER())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) - intReal(exp2.value)));
+      else Absyn.Exp.BINARY(exp1, op, exp2);
+    end match;
+  end simplifyExpBinarySub;
+
+  function simplifyExpBinaryMul
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.INTEGER(exp1.value * exp2.value);
+      case (Absyn.Exp.REAL(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) * stringReal(exp2.value)));
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(intReal(exp1.value) * stringReal(exp2.value)));
+      case (Absyn.Exp.REAL(), Absyn.Exp.INTEGER())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) * intReal(exp2.value)));
+      else Absyn.Exp.BINARY(exp1, op, exp2);
+    end match;
+  end simplifyExpBinaryMul;
+
+  function simplifyExpBinaryDiv
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.REAL(String(exp1.value / exp2.value));
+      case (Absyn.Exp.REAL(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) / stringReal(exp2.value)));
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())
+        then Absyn.Exp.REAL(String(intReal(exp1.value) / stringReal(exp2.value)));
+      case (Absyn.Exp.REAL(), Absyn.Exp.INTEGER())
+        then Absyn.Exp.REAL(String(stringReal(exp1.value) / intReal(exp2.value)));
+      else Absyn.Exp.BINARY(exp1, op, exp2);
+    end match;
+  end simplifyExpBinaryDiv;
+
+  function simplifyExpBinaryPow
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match exp2
+      // Exponentiation is probably best left as is, except for the special
+      // cases a^0 = 1 and a^1 = a.
+      case Absyn.Exp.INTEGER(value = 0) then Absyn.Exp.REAL("1.0");
+      case Absyn.Exp.INTEGER(value = 1) then exp1;
+      else Absyn.Exp.BINARY(exp1, op, exp2);
+    end match;
+  end simplifyExpBinaryPow;
+
+  function simplifyExpUnary
+    input Absyn.Exp exp;
+    input Absyn.Operator op;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp, op)
+      // -(n) => n (but not for Real, they're better kept as is due to being stored as strings).
+      case (Absyn.Exp.INTEGER(), Absyn.Operator.UMINUS()) then Absyn.Exp.INTEGER(-exp.value);
+      // -(-(exp)) => exp
+      case (Absyn.Exp.UNARY(op = Absyn.Operator.UMINUS()), Absyn.Operator.UMINUS()) then exp.exp;
+      else Absyn.Exp.UNARY(op, exp);
+    end match;
+  end simplifyExpUnary;
+
+  function simplifyExpLBinary
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, op, exp2)
+      case (Absyn.Exp.BOOL(), Absyn.Operator.AND(), Absyn.Exp.BOOL()) then Absyn.Exp.BOOL(exp1.value and exp2.value);
+      case (Absyn.Exp.BOOL(), Absyn.Operator.OR(), Absyn.Exp.BOOL())  then Absyn.Exp.BOOL(exp1.value or exp2.value);
+      else Absyn.Exp.LBINARY(exp1, op, exp2);
+    end match;
+  end simplifyExpLBinary;
+
+  function simplifyExpLUnary
+    input Absyn.Exp exp;
+    input Absyn.Operator op;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp, op)
+      // not false => true, not true => false
+      case (Absyn.Exp.BOOL(), Absyn.Operator.NOT()) then Absyn.Exp.BOOL(not exp.value);
+      // not (not exp) => exp
+      case (Absyn.Exp.LUNARY(op = Absyn.Operator.UMINUS()), Absyn.Operator.UMINUS()) then exp.exp;
+      else Absyn.Exp.LUNARY(op, exp);
+    end match;
+  end simplifyExpLUnary;
+
+  function simplifyExpRelation
+    input Absyn.Exp exp1;
+    input Absyn.Operator op;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match op
+      case Absyn.Operator.LESS() then simplifyExpLess(exp1, exp2);
+      case Absyn.Operator.LESSEQ() then simplifyExpLessEq(exp1, exp2);
+      case Absyn.Operator.GREATER() then simplifyExpGreater(exp1, exp2);
+      case Absyn.Operator.GREATEREQ() then simplifyExpGreaterEq(exp1, exp2);
+      case Absyn.Operator.EQUAL() then simplifyExpEqual(exp1, exp2);
+      case Absyn.Operator.NEQUAL() then simplifyExpNotEqual(exp1, exp2);
+      else Absyn.Exp.RELATION(exp1, op, exp2);
+    end match;
+  end simplifyExpRelation;
+
+  function simplifyExpLess
+    input Absyn.Exp exp1;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(exp1.value < exp2.value);
+      case (Absyn.Exp.REAL(),    Absyn.Exp.REAL())    then Absyn.Exp.BOOL(exp1.value < exp2.value);
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())    then Absyn.Exp.BOOL(intReal(exp1.value) < stringReal(exp2.value));
+      case (Absyn.Exp.REAL(),    Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(stringReal(exp1.value) < intReal(exp2.value));
+      case (Absyn.Exp.BOOL(),    Absyn.Exp.BOOL())    then Absyn.Exp.BOOL(exp1.value < exp2.value);
+      case (Absyn.Exp.STRING(),  Absyn.Exp.STRING())  then Absyn.Exp.BOOL(exp1.value < exp2.value);
+      case (_, _) guard AbsynUtil.expEqual(exp1, exp2) then Absyn.Exp.BOOL(false);
+      else Absyn.Exp.RELATION(exp1, Absyn.Operator.LESS(), exp2);
+    end match;
+  end simplifyExpLess;
+
+  function simplifyExpLessEq
+    input Absyn.Exp exp1;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(exp1.value <= exp2.value);
+      case (Absyn.Exp.REAL(),    Absyn.Exp.REAL())    then Absyn.Exp.BOOL(exp1.value <= exp2.value);
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())    then Absyn.Exp.BOOL(intReal(exp1.value) <= stringReal(exp2.value));
+      case (Absyn.Exp.REAL(),    Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(stringReal(exp1.value) <= intReal(exp2.value));
+      case (Absyn.Exp.BOOL(),    Absyn.Exp.BOOL())    then Absyn.Exp.BOOL(exp1.value <= exp2.value);
+      case (Absyn.Exp.STRING(),  Absyn.Exp.STRING())  then Absyn.Exp.BOOL(exp1.value <= exp2.value);
+      case (_, _) guard AbsynUtil.expEqual(exp1, exp2) then Absyn.Exp.BOOL(true);
+      else Absyn.Exp.RELATION(exp1, Absyn.Operator.LESSEQ(), exp2);
+    end match;
+  end simplifyExpLessEq;
+
+  function simplifyExpGreater
+    input Absyn.Exp exp1;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(exp1.value > exp2.value);
+      case (Absyn.Exp.REAL(),    Absyn.Exp.REAL())    then Absyn.Exp.BOOL(exp1.value > exp2.value);
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())    then Absyn.Exp.BOOL(intReal(exp1.value) > stringReal(exp2.value));
+      case (Absyn.Exp.REAL(),    Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(stringReal(exp1.value) > intReal(exp2.value));
+      case (Absyn.Exp.BOOL(),    Absyn.Exp.BOOL())    then Absyn.Exp.BOOL(exp1.value > exp2.value);
+      case (Absyn.Exp.STRING(),  Absyn.Exp.STRING())  then Absyn.Exp.BOOL(exp1.value > exp2.value);
+      case (_, _) guard AbsynUtil.expEqual(exp1, exp2) then Absyn.Exp.BOOL(false);
+      else Absyn.Exp.RELATION(exp1, Absyn.Operator.GREATER(), exp2);
+    end match;
+  end simplifyExpGreater;
+
+  function simplifyExpGreaterEq
+    input Absyn.Exp exp1;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(exp1.value >= exp2.value);
+      case (Absyn.Exp.REAL(),    Absyn.Exp.REAL())    then Absyn.Exp.BOOL(exp1.value >= exp2.value);
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())    then Absyn.Exp.BOOL(intReal(exp1.value) >= stringReal(exp2.value));
+      case (Absyn.Exp.REAL(),    Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(stringReal(exp1.value) >= intReal(exp2.value));
+      case (Absyn.Exp.BOOL(),    Absyn.Exp.BOOL())    then Absyn.Exp.BOOL(exp1.value >= exp2.value);
+      case (Absyn.Exp.STRING(),  Absyn.Exp.STRING())  then Absyn.Exp.BOOL(exp1.value >= exp2.value);
+      case (_, _) guard AbsynUtil.expEqual(exp1, exp2) then Absyn.Exp.BOOL(true);
+      else Absyn.Exp.RELATION(exp1, Absyn.Operator.GREATEREQ(), exp2);
+    end match;
+  end simplifyExpGreaterEq;
+
+  function simplifyExpEqual
+    input Absyn.Exp exp1;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(exp1.value == exp2.value);
+      case (Absyn.Exp.REAL(),    Absyn.Exp.REAL())    then Absyn.Exp.BOOL(exp1.value == exp2.value);
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())    then Absyn.Exp.BOOL(intReal(exp1.value) == stringReal(exp2.value));
+      case (Absyn.Exp.REAL(),    Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(stringReal(exp1.value) == intReal(exp2.value));
+      case (Absyn.Exp.BOOL(),    Absyn.Exp.BOOL())    then Absyn.Exp.BOOL(exp1.value == exp2.value);
+      case (Absyn.Exp.STRING(),  Absyn.Exp.STRING())  then Absyn.Exp.BOOL(exp1.value == exp2.value);
+      case (_, _) guard AbsynUtil.expEqual(exp1, exp2) then Absyn.Exp.BOOL(true);
+      else Absyn.Exp.RELATION(exp1, Absyn.Operator.EQUAL(), exp2);
+    end match;
+  end simplifyExpEqual;
+
+  function simplifyExpNotEqual
+    input Absyn.Exp exp1;
+    input Absyn.Exp exp2;
+    output Absyn.Exp outExp;
+  algorithm
+    outExp := match (exp1, exp2)
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(exp1.value <> exp2.value);
+      case (Absyn.Exp.REAL(),    Absyn.Exp.REAL())    then Absyn.Exp.BOOL(exp1.value <> exp2.value);
+      case (Absyn.Exp.INTEGER(), Absyn.Exp.REAL())    then Absyn.Exp.BOOL(intReal(exp1.value) <> stringReal(exp2.value));
+      case (Absyn.Exp.REAL(),    Absyn.Exp.INTEGER()) then Absyn.Exp.BOOL(stringReal(exp1.value) <> intReal(exp2.value));
+      case (Absyn.Exp.BOOL(),    Absyn.Exp.BOOL())    then Absyn.Exp.BOOL(exp1.value <> exp2.value);
+      case (Absyn.Exp.STRING(),  Absyn.Exp.STRING())  then Absyn.Exp.BOOL(exp1.value <> exp2.value);
+      case (_, _) guard AbsynUtil.expEqual(exp1, exp2) then Absyn.Exp.BOOL(false);
+      else Absyn.Exp.RELATION(exp1, Absyn.Operator.NEQUAL(), exp2);
+    end match;
+  end simplifyExpNotEqual;
+
+  function simplifyIfExp
+    input Absyn.Exp condition;
+    input Absyn.Exp trueBranch;
+    input Absyn.Exp elseBranch;
+    input list<tuple<Absyn.Exp, Absyn.Exp>> elseIfBranches;
+    output Absyn.Exp outExp;
+  protected
+    Absyn.Exp cond, true_branch;
+    list<tuple<Absyn.Exp, Absyn.Exp>> rest_branches;
+  algorithm
+    outExp := match condition
+      case Absyn.Exp.BOOL()
+        algorithm
+          if condition.value then
+            // if true then exp else ... => exp
+            outExp := trueBranch;
+          elseif not listEmpty(elseIfBranches) then
+            // if false then exp elseif cond then ... => if cond then ...
+            (cond, true_branch) :: rest_branches := elseIfBranches;
+            outExp := simplifyIfExp(cond, true_branch, elseBranch, rest_branches);
+          else
+            // if false then ... else exp => exp
+            outExp := elseBranch;
+          end if;
+        then
+          outExp;
+
+      else Absyn.Exp.IFEXP(condition, trueBranch, elseBranch, elseIfBranches);
+    end match;
+  end simplifyIfExp;
+
 
   annotation(__OpenModelica_Interface="backend_tools");
 end Conversion;

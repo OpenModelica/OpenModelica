@@ -19,7 +19,7 @@ list(ConvertModifiers5);
 // true
 // ""
 // "model ConvertModifiers5
-//   ConversionTestLib.MainModel mainModel(someEnum = if \"Option2\" == \"Option1\" then ConversionTestLib.SomeEnum.Option1 elseif \"Option2\" == \"Option2\" then ConversionTestLib.SomeEnum.Option2 else ConversionTestLib.SomeEnum.Option1);
+//   ConversionTestLib.MainModel mainModel(someEnum = ConversionTestLib.SomeEnum.Option2);
 // equation
 //
 // end ConvertModifiers5;"
