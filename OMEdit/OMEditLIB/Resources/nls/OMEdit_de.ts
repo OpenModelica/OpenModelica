@@ -7157,14 +7157,6 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
         <translation>Führt die Sensitivitätsanalyse und Optimierung aus</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>OpenModelica-Systemdokumentation</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Öffnet die OpenModelica-Systemdokumentation</translation>
-    </message>
-    <message>
         <source>OpenModelica Scripting Documentation</source>
         <translation>OpenModelica-Skriptdokumentation</translation>
     </message>

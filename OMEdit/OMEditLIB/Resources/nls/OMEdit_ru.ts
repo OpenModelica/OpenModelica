@@ -7082,14 +7082,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>Запускает анализ и оптимизацию чувствительности</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>Документация по системе OpenModelica</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Открывает документацию по системе OpenModelica</translation>
-    </message>
-    <message>
         <source>OpenModelica Scripting Documentation</source>
         <translation>Документация по сценариям OpenModelica</translation>
     </message>

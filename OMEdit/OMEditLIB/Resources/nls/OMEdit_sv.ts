@@ -7149,14 +7149,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Kör känslighetsanalysen och optimeringen</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>OpenModelicas systemdokumentation</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Öppnar OpenModelicas systemdokumentation</translation>
-    </message>
-    <message>
         <source>OpenModelica Scripting Documentation</source>
         <translation>OpenModelicas skriptdokumentation</translation>
     </message>

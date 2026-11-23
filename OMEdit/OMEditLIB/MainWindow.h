@@ -469,7 +469,6 @@ private:
   // Help Menu
   QAction *mpUsersGuideAction;
   QAction *mpUsersGuidePdfAction;
-  QAction *mpSystemDocumentationAction;
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
   QAction *mpOMSimulatorUsersGuideAction;
@@ -633,7 +632,6 @@ public slots:
   void openConfigurationOptions();
   void openUsersGuide();
   void openUsersGuidePdf();
-  void openSystemDocumentation();
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();
   void openOMSimulatorUsersGuide();

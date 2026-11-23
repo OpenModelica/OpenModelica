@@ -7140,14 +7140,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Draws a line shape</source>
         <translation type="unfinished"></translation>
     </message>

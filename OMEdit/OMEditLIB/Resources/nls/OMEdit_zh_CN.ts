@@ -7143,14 +7143,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>执行灵敏度分析和优化计算</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>OpenModelica系统文档</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>打开OpenModelica系统文档</translation>
-    </message>
-    <message>
         <source>Draws a line shape</source>
         <translation>绘制直线</translation>
     </message>
