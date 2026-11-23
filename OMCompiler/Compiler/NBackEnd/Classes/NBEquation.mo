@@ -2893,7 +2893,7 @@ public
     function renameIterators
       "renames the for-loop iterators to newBaseName + index and the iterators
       of array constructors and reductions to newBaseName + _ + name, so that
-      they cannot have the name of a variable"
+      they cannot have the name of a variable or of a for-loop iterator"
       input Pointer<Equation> eqn_ptr;
       input String newBaseName;
     protected
@@ -2950,7 +2950,7 @@ public
         (node, range) := iter;
         range := Expression.replaceIteratorsByName(range, values);
         name := InstNode.name(node);
-        if not StringUtil.startsWith(name, "$") then
+        if not StringUtil.startsWith(name, prefix) then
           ty := Type.arrayElementType(Expression.typeOf(range));
           node := InstNode.newIterator(prefix + name, ty, InstNode.info(node));
           UnorderedMap.add(name, Expression.fromCref(ComponentRef.makeIterator(node, ty)), values);

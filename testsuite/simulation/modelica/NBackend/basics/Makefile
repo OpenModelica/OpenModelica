@@ -29,6 +29,7 @@ variability.mos \
 loadResource.mos \
 ifBranchFunctionCalls.mos \
 iteratorNameClash.mos \
+generatedIteratorNameClash.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
