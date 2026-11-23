@@ -7,6 +7,7 @@ AliasIntegerNonTrivial.mos \
 AliasBoundsNegated.mos \
 AliasBoundsNegatedOneSided.mos \
 AliasBoundsThree.mos \
+ArrayAliasBoundsNegated.mos \
 Alias.mos \
 Alias2.mos \
 Alias_test1.mos \

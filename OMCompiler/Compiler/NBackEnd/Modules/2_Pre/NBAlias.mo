@@ -2047,6 +2047,7 @@ protected
     input AliasSet set;
   protected
     list<Expression> current, lst_values = UnorderedMap.valueList(map);
+    list<Option<Expression>> uniform;
     array<ExpressionIterator> arr_iter;
     ExpressionIterator iter;
     Expression exp;
@@ -2059,6 +2060,12 @@ protected
     if not List.allEqual(list(Type.sizeOf(Expression.typeOf(e)) for e in lst_values), intEq) then
       Error.addCompilerWarning(getInstanceName() + " failed because array nominal values have different size. Use -d=dumprepl for more information.\n");
       fail();
+    end if;
+
+    uniform := list(Expression.uniformArrayElement(e) for e in lst_values);
+    if List.all(uniform, isSome) then
+      checkNominalThresholdSingle(list(Util.getOption(e) for e in uniform), map, set, index);
+      return;
     end if;
 
     // array handling: create expression iterators and loop while there is a next element
@@ -2416,6 +2423,7 @@ protected
       Option<Expression> start_opt = UnorderedMap.get(var_cref, attrcollector.start_map);
       Option<Expression> nominal_opt = UnorderedMap.get(var_cref, attrcollector.nominal_map);
       Type ty;
+      list<Subscript> subs;
     algorithm
       SOME(rhs) := Equation.getRHS(solved_eq);
       // min:
@@ -2438,12 +2446,23 @@ protected
 
       // if linear factor is negative => swap min and max. skip discontinuous and record types
       ty := Expression.typeOf(rhs);
-      if Type.isRecord(ty) or not (Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty))) then
+      if (isNone(min_val_opt) and isNone(max_val_opt)) or Type.isRecord(ty) or not (Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty))) then
         swap_min_max := false;
       else
         args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
         args.diffCref := var_cref;
-        diff_rhs := Differentiate.differentiateExpression(rhs, args);
+        diff_rhs := rhs;
+        if Type.isArray(ty) and not Type.isEmptyArray(ty) then
+          // the factor is scalar (see knownArrayFactors), the first element has its sign
+          subs := list(Subscript.INDEX(Expression.INTEGER(1)) for d in Type.arrayDims(ty));
+          diff_rhs := Expression.applySubscripts(subs, rhs);
+          if Expression.contains(diff_rhs, Expression.isSubscriptedExp) then
+            diff_rhs := rhs;
+          else
+            args.diffCref := ComponentRef.mergeSubscripts(subs, var_cref);
+          end if;
+        end if;
+        diff_rhs := Differentiate.differentiateExpression(diff_rhs, args);
         diff_rhs := SimplifyExp.simplify(diff_rhs);
         swap_min_max := Expression.isNegative(diff_rhs);
       end if;
