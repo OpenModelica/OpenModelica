@@ -240,7 +240,10 @@ void ModelInstanceTest::documentationFigures()
 
   // yAxis is written only when it is Right, the default is Left.
   const QJsonObject rightCurve = makeRecord("Curve", QJsonArray{
-                                              "time",
+                                              QJsonObject{
+                                                {"$kind", "cref"},
+                                                {"parts", QJsonArray{QJsonObject{{"name", "time"}}}}
+                                              },
                                               QJsonObject{
                                                 {"$kind", "cref"},
                                                 {"parts", QJsonArray{QJsonObject{{"name", "v"}}}}
