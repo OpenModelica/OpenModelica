@@ -60,9 +60,10 @@ public function readVariables
   input String filename;
   input Boolean readParameters = true;
   input Boolean openmodelicaStyle = false;
+  input Boolean readDerivatives = true;
   output list<String> vars;
 
-  external "C" vars=SimulationResults_readVariables(filename, readParameters, openmodelicaStyle) annotation(Library = "omcruntime");
+  external "C" vars=SimulationResults_readVariables(filename, readParameters, openmodelicaStyle, readDerivatives) annotation(Library = "omcruntime");
 end readVariables;
 
 public function readDataset

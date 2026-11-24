@@ -145,7 +145,7 @@ typedef struct omc_result_messages {
 void omc_result_script_close(void);
 double omc_result_script_val(const omc_result_messages *m, const char *filename, const char *var, double time);
 char **omc_result_script_variables(const omc_result_messages *m, const char *filename, int parameters,
-                                   int omc_style, size_t *n_out);
+                                   int omc_style, int derivatives, size_t *n_out);
 int omc_result_script_size(const omc_result_messages *m, const char *filename);
 /* n rows of *n_rows values, for omc_result_free_doubles; NULL on failure. */
 double *omc_result_script_dataset(const omc_result_messages *m, const char *filename, const char *const *vars,

@@ -92,10 +92,10 @@ double SimulationResults_val(const char *filename, const char *varname, double t
   return omc_result_script_val(&messages, filename, varname, timeStamp);
 }
 
-void* SimulationResults_readVariables(const char *filename, int readParameters, int omcStyle)
+void* SimulationResults_readVariables(const char *filename, int readParameters, int omcStyle, int readDerivatives)
 {
   size_t n = 0;
-  char **vars = omc_result_script_variables(&messages, filename, readParameters, omcStyle, &n);
+  char **vars = omc_result_script_variables(&messages, filename, readParameters, omcStyle, readDerivatives, &n);
   return vars ? to_list(vars, n) : mmc_mk_nil();
 }
 

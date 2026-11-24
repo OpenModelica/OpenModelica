@@ -77,13 +77,20 @@ pub extern "C" fn omc_result_script_variables(
     filename: *const c_char,
     parameters: c_int,
     omc_style: c_int,
+    derivatives: c_int,
     n_out: *mut usize,
 ) -> *mut *mut c_char {
     if n_out.is_null() {
         return ptr::null_mut();
     }
     guard(ptr::null_mut(), || {
-        let vars = scripting::read_variables(&mut Sink(msgs), &cstr(filename), parameters != 0, omc_style != 0);
+        let vars = scripting::read_variables(
+            &mut Sink(msgs),
+            &cstr(filename),
+            parameters != 0,
+            omc_style != 0,
+            derivatives != 0,
+        );
         malloc_strings(&vars, n_out)
     })
 }

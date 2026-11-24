@@ -3478,12 +3478,14 @@ impure function readSimulationResultVars
   input String fileName;
   input Boolean readParameters = true;
   input Boolean openmodelicaStyle = false;
+  input Boolean readDerivatives = true;
   output String[:] vars;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes a simulation results file and returns the variables stored in it. These names can be used with e.g. <a href=\"modelica://OpenModelica.Scripting.val\">val()</a> or <a href=\"modelica://OpenModelica.Scripting.plot\">plot()</a></p>
 <p>If readParameters is true, parameter names are also returned.</p>
 <p>If openmodelicaStyle is true, the stored variable names are converted to the canonical form used by OpenModelica variables (a.der(b) becomes der(a.b), and so on).</p>
+<p>If readDerivatives is false, derivatives (der(x)) are not returned.</p>
 </html>"),preferredView="text");
 end readSimulationResultVars;
 

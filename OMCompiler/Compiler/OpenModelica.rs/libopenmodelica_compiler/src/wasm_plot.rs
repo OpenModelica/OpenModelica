@@ -170,7 +170,7 @@ fn render(a: &PlotArgs) -> Result<String, String> {
     let names: Vec<String> = if a.variables.split_whitespace().next().is_some() {
         a.variables.split_whitespace().map(str::to_owned).collect()
     } else {
-        let all = SimulationResults::readVariables(filename.clone(), false, false).map_err(|e| e.to_string())?;
+        let all = SimulationResults::readVariables(filename.clone(), false, false, true).map_err(|e| e.to_string())?;
         // Drop the independent variable and internal helper variables.
         list_to_vec(&all)
             .into_iter()

@@ -90,6 +90,7 @@ pub fn readVariables(
     mut filename: ArcStr,
     mut readParameters: bool,
     mut openmodelicaStyle: bool,
+    mut readDerivatives: bool,
 ) -> Result<metamodelica::List<ArcStr>> {
     reporting(|m| {
         list(scripting::read_variables(
@@ -97,6 +98,7 @@ pub fn readVariables(
             &filename,
             readParameters,
             openmodelicaStyle,
+            readDerivatives,
         ))
     })
 }
