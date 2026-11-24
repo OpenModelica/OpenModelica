@@ -158,8 +158,14 @@ You can set which version of FMI to export through OMEdit settings, see section
 
 `File > Export > FMU` exports with these settings. `File > Export > FMU with Setup`
 shows the settings first: the FMI version, the interfaces, the solver for
-Co-Simulation, DAE mode, the model description filter, the source code and the
-platforms. They apply to this export only, unless `Save as default` is selected.
+Co-Simulation, DAE mode, the model description filter, the source code, the
+default experiment and the platforms. They apply to this export only, unless
+`Save as default` is selected. The default experiment (start time, stop time,
+interval and tolerance) goes into the ``DefaultExperiment`` element of
+``modelDescription.xml``. It starts with the values of the ``experiment``
+annotation of the model and is never saved as default. The arguments
+``startTime``, ``stopTime``, ``stepSize`` and ``tolerance`` of
+:ref:`buildModelFMU()<buildModelFMU>` do the same.
 `Recommend Settings` asks how the FMU will be used and proposes values for the
 settings. The export dialog of the simulator in the web browser has the same
 function, see :ref:`webbrowser`.

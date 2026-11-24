@@ -78,6 +78,7 @@ extern "C" {
 class OMCProxy;
 class CloudAccount;
 struct CloudMount;
+struct FMUDefaultExperiment;
 class TransformationsWidget;
 class LibraryWidget;
 class ElementWidget;
@@ -266,6 +267,7 @@ public:
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFMU(LibraryTreeItem *pLibraryTreeItem);
+  void exportModelFMU(LibraryTreeItem *pLibraryTreeItem, const FMUDefaultExperiment &experiment);
   void exportEncryptedPackage(LibraryTreeItem *pLibraryTreeItem);
   void exportReadonlyPackage(LibraryTreeItem *pLibraryTreeItem);
   void exportModelXML(LibraryTreeItem *pLibraryTreeItem);

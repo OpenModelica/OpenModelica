@@ -442,10 +442,70 @@ algorithm
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
+public function experimentOptions
+  "The experiment of a simulation call or an FMU export: the arguments that are
+   given, else the experiment annotation, else the defaults. A given stepSize
+   sets numberOfIntervals to (stopTime - startTime) / stepSize, rounded down.
+   Without it, a given startTime, stopTime or numberOfIntervals sets stepSize to
+   (stopTime - startTime) / numberOfIntervals."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs "The given arguments";
+  input String fileNamePrefix;
+  input Option<InteractiveTypes.SimulationOptions> defaultOptions;
+  input Boolean optimization = false;
+  output InteractiveTypes.SimulationOptions opts;
+protected
+  Option<Real> step_size = NONE();
+  Boolean span_given = false;
+  Real span, step;
+algorithm
+  opts := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, defaultOptions, optimization);
+
+  for arg in namedArgs loop
+    () := match arg
+      local
+        Values.Value v;
+      case ("startTime", v)
+        algorithm
+          opts.startTime := DAE.RCONST(ValuesUtil.valueReal(v));
+          span_given := true;
+        then ();
+      case ("stopTime", v)
+        algorithm
+          opts.stopTime := DAE.RCONST(ValuesUtil.valueReal(v));
+          span_given := true;
+        then ();
+      case ("numberOfIntervals", v)
+        algorithm
+          opts.numberOfIntervals := DAE.ICONST(ValuesUtil.valueInteger(v));
+          span_given := true;
+        then ();
+      case ("stepSize", v)
+        algorithm
+          step_size := SOME(ValuesUtil.valueReal(v));
+        then ();
+      case ("tolerance", v)
+        algorithm
+          opts.tolerance := DAE.RCONST(ValuesUtil.valueReal(v));
+        then ();
+      else ();
+    end match;
+  end for;
+
+  span := Expression.toReal(opts.stopTime) - Expression.toReal(opts.startTime);
+  if isSome(step_size) then
+    SOME(step) := step_size;
+    opts.stepSize := DAE.RCONST(step);
+    opts.numberOfIntervals := DAE.ICONST(realInt(span / step));
+  elseif span_given then
+    opts.stepSize := DAE.RCONST(span / max(Expression.toReal(opts.numberOfIntervals), 1.0));
+  end if;
+end experimentOptions;
+
 public function simulationArguments
   "Returns the arguments of simulate, buildModel and the other simulation calls
    in the order they are declared. Arguments that are not given are taken from
-   the experiment annotation. stepSize, if given, sets numberOfIntervals."
+   the experiment annotation, see experimentOptions."
   input Absyn.Path className;
   input list<tuple<String, Values.Value>> namedArgs;
   input String callName;
@@ -453,27 +513,16 @@ public function simulationArguments
   output list<Values.Value> args;
 protected
   InteractiveTypes.SimulationOptions opts;
-  Values.Value start_time, stop_time, intervals;
-  list<Values.Value> rest;
 algorithm
-  opts := buildSimulationOptionsFromModelExperimentAnnotation(className,
+  opts := experimentOptions(className, namedArgs,
     AbsynUtil.pathString(AbsynUtil.unqotePathIdents(className)), defaultOptions,
     optimization = callName == "optimize");
 
-  args := list(simulationArgument(name, namedArgs, opts) for name in
-    {"startTime", "stopTime", "numberOfIntervals", "tolerance", "method", "fileNamePrefix",
-     "options", "outputFormat", "variableFilter", "cflags", "simflags"});
-
-  for arg in namedArgs loop
-    if Util.tuple21(arg) == "stepSize" then
-      start_time :: stop_time :: intervals :: rest := args;
-      intervals := Values.INTEGER(realInt((ValuesUtil.valueReal(stop_time) - ValuesUtil.valueReal(start_time)) /
-                                          ValuesUtil.valueReal(Util.tuple22(arg))));
-      args := start_time :: stop_time :: intervals :: rest;
-    end if;
-  end for;
-
-  args := ValuesMake.makeCodeTypeName(className) :: args;
+  args := ValuesMake.makeCodeTypeName(className) :: listAppend(
+    list(ValuesUtil.expValue(getSimulationOption(opts, name)) for name in
+      {"startTime", "stopTime", "numberOfIntervals", "tolerance"}),
+    list(simulationArgument(name, namedArgs, opts) for name in
+      {"method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"}));
 
   if callName == "simulate" then
     args := List.appendElt(simulationArgumentOrDefault("resimulateExecutable", namedArgs, Values.STRING("")), args);
@@ -504,7 +553,6 @@ protected
   Absyn.Path className;
   list<Values.Value> rest;
   list<String> names;
-  list<tuple<String, Values.Value>> named = {};
 algorithm
   if not listMember(callName, {"simulate", "translateModel", "buildModel", "linearize", "optimize", "moo",
                                "translateAcausalDAE", "buildAcausalDAE", "simulateAcausalDAE"}) then
@@ -514,22 +562,31 @@ algorithm
   names := simulationArgumentNames(callName);
   args := match inArgs
     case Values.CODE(Absyn.C_TYPENAME(className)) :: rest guard listLength(rest) == listLength(names)
-      algorithm
-        for arg in List.zip(names, rest) loop
-          if not isUnsetSimulationArgument(Util.tuple22(arg)) then
-            named := arg :: named;
-          end if;
-        end for;
-      then
-        simulationArguments(className, listReverse(named), callName);
+      then simulationArguments(className, givenArguments(names, rest), callName);
     else inArgs;
   end match;
 end simulationCallArguments;
 
+protected function givenArguments
+  "The arguments of a call that are not a sentinel, by name."
+  input list<String> names;
+  input list<Values.Value> values;
+  output list<tuple<String, Values.Value>> given = {};
+algorithm
+  for arg in List.zip(names, values) loop
+    if not isUnsetSimulationArgument(Util.tuple22(arg)) then
+      given := arg :: given;
+    end if;
+  end for;
+  given := listReverse(given);
+end givenArguments;
+
+protected constant list<String> experimentArgumentNames = {"startTime", "stopTime", "numberOfIntervals", "stepSize", "tolerance"};
+
 protected function simulationArgumentNames
   input String callName;
-  output list<String> names = {"startTime", "stopTime", "numberOfIntervals", "stepSize", "tolerance",
-    "method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"};
+  output list<String> names = listAppend(experimentArgumentNames,
+    {"method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"});
 algorithm
   if callName == "simulate" then
     names := List.appendElt("resimulateExecutable", names);
@@ -1279,18 +1336,19 @@ algorithm
     case ("modelEquationsUC",_)
       then Values.STRING("There were errors during extraction of uncertainty equations. Use getErrorString() to see them.");
 
-    case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_)
+    case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::vals)
       algorithm
-        (b, outCache,_) := translateModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
+        simSettings := fmuSimulationSettings(className, filenameprefix, str3, givenArguments(experimentArgumentNames, vals));
+        (b, outCache,_) := translateModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings), str3);
       then
         Values.BOOL(b);
 
     case ("translateModelFMU", _)
       then Values.STRING("");
 
-    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
+    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::vals)
       algorithm
-        simSettings := fmuSimulationSettings(className, filenameprefix, str3);
+        simSettings := fmuSimulationSettings(className, filenameprefix, str3, givenArguments(experimentArgumentNames, vals));
         (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings), str3);
       then
         ret_val;
@@ -4141,6 +4199,7 @@ protected function translateModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  input String method = "<default>" "`translateModelFMU(method=)`, folded into --fmiFlags where the FMU accepts it";
   output Boolean success = false;
   output FCore.Cache cache;
   output Values.Value outValue;
@@ -4148,6 +4207,7 @@ protected
   Flags.Flag flags;
 algorithm
   flags := loadCommandLineOptionsFromModel(className);
+  fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
 
   try
     (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
@@ -4486,10 +4546,10 @@ algorithm
 end insertBeforeTerminalClose;
 
 protected function fmuMethodToSimulationFlag
-  "`buildModelFMU(method=...)` names the integrator a Co-Simulation FMU embeds,
-   but an FMU reads its solver from `resources/<prefix>_flags.json`, which only
-   `--fmiFlags` writes. So fold an explicit method in there, unless the caller
-   already said `s:`.
+  "`buildModelFMU(method=...)` and `translateModelFMU(method=...)` name the
+   integrator a Co-Simulation FMU embeds, but an FMU reads its solver from
+   `resources/<prefix>_flags.json`, which only `--fmiFlags` writes. So fold an
+   explicit method in there, unless the caller already said `s:`.
 
    Only a method the FMU can integrate with: C's `FMI2CS_initializeSolverData`
    takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
@@ -4616,19 +4676,20 @@ algorithm
 end reportFMUPlatformsBuilt;
 
 protected function fmuSimulationSettings
-  "The SimulationSettings an FMU export runs with: the model's experiment defaults,
+  "The SimulationSettings an FMU export runs with: the experiment (experimentOptions),
    with `method` folded in when it is not \"<default>\" (a Co-Simulation FMU embeds
    its integrator, so the solver is chosen at export time)."
   input Absyn.Path className;
   input String inFileNamePrefix;
   input String method = "<default>";
+  input list<tuple<String, Values.Value>> experimentArgs = {} "The given experiment arguments";
   output SimCode.SimulationSettings simSettings;
 protected
   String filenameprefix;
 algorithm
   filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
   simSettings := convertSimulationOptionsToSimCode(
-    buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions)));
+    experimentOptions(className, experimentArgs, filenameprefix, SOME(defaultSimulationOptions)));
   if method <> "<default>" then
     simSettings.method := method;
   end if;

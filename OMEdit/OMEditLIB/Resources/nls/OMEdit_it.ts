@@ -3554,11 +3554,27 @@ Se non è selezionata alcuna piattaforma, la FMU viene esportata come FMI 3.0 (f
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Default Experiment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interval</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tolerance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Save as default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Keep these settings, except the DAE mode, for the next export</source>
+        <source>Keep these settings, except the DAE mode and the default experiment, for the next export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The interval and the tolerance must be greater than zero.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

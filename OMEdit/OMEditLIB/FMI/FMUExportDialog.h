@@ -45,6 +45,7 @@ class QComboBox;
 class QLineEdit;
 class QPushButton;
 class LibraryTreeItem;
+struct FMUDefaultExperiment;
 
 /*!
  * \class FMUExportDialog
@@ -79,9 +80,14 @@ private:
   QCheckBox *mpIncludeSourceCodeCheckBox;
   QList<QCheckBox*> mPlatformCheckBoxes;
   QLineEdit *mpCustomPlatformsTextBox;
+  QLineEdit *mpStartTimeTextBox;
+  QLineEdit *mpStopTimeTextBox;
+  QLineEdit *mpIntervalTextBox;
+  QLineEdit *mpToleranceTextBox;
   QCheckBox *mpSaveAsDefaultCheckBox;
   QPushButton *mpExportButton;
   Choices choices() const;
+  FMUDefaultExperiment defaultExperiment() const;
   static void writeToOptions(const Choices &choices);
 private slots:
   void updateControls();
