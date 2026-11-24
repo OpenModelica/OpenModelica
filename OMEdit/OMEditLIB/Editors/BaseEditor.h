@@ -56,6 +56,7 @@ class ReloadAsModelicaInfoBar;
 class LineNumberArea;
 class FindReplaceWidget;
 class Label;
+class GitLineChanges;
 
 class TabSettings
 {
@@ -262,6 +263,7 @@ public:
   int lineNumberAreaWidth();
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   void lineNumberAreaMouseEvent(QMouseEvent *event);
+  int gitMarkerWidth();
   void goToLineNumber(int lineNumber);
   void moveToNavigationPoint(int position);
   QCompleter *completer();
@@ -303,6 +305,7 @@ private slots:
 public slots:
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
+  void gitLineChangesUpdated(bool headTextChanged);
   void updateHighlights();
   void updateCursorPosition();
   void textSettingsChanged();
@@ -342,11 +345,13 @@ public:
   QAction* getFoldAllAction() {return mpFoldAllAction;}
   QAction* getUnFoldAllAction() {return mpUnFoldAllAction;}
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
+  GitLineChanges* getGitLineChanges() {return mpGitLineChanges;}
   void setForceSetPlainText(bool forceSetPlainText) {mForceSetPlainText = forceSetPlainText;}
   virtual void popUpCompleter () = 0;
   virtual QString wordUnderCursor();
   virtual void symbolAtPosition(const QPoint &pos);
   bool isModelicaModelInPackageOneFile();
+  virtual QString fileTextForGitDiff(int &lineOffset);
   static QStringList completerItemsToStringList(const QList<CompleterItem> &items);
 private:
   void initialize();
@@ -370,6 +375,7 @@ protected:
   QAction *mpFoldAllAction;
   QAction *mpUnFoldAllAction;
   DocumentMarker *mpDocumentMarker = nullptr;
+  GitLineChanges *mpGitLineChanges = nullptr;
   bool mForceSetPlainText;
   QPoint mContextMenuStartPosition;
   bool mContextMenuStartPositionValid = false;

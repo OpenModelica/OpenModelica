@@ -544,6 +544,8 @@ public slots:
   void scrollToActiveLibraryTreeItem();
   void searchClasses();
   void refreshLibraryFileWatcher();
+signals:
+  void fileSaved(const QString &fileName);
 };
 
 #endif // LIBRARYTREEWIDGET_H

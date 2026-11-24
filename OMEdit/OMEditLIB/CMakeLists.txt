@@ -62,6 +62,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Search/SearchWidget.cpp
                       Options/OptionsDialog.cpp
                       Editors/BaseEditor.cpp
+                      Editors/GitLineChanges.cpp
                       Editors/ModelicaEditor.cpp
                       Editors/TransformationsEditor.cpp
                       Editors/TextEditor.cpp
@@ -229,6 +230,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Options/OptionsDefaults.h
                       Options/OptionsDialog.h
                       Editors/BaseEditor.h
+                      Editors/GitLineChanges.h
                       Editors/ModelicaEditor.h
                       Editors/TransformationsEditor.h
                       Editors/TextEditor.h
