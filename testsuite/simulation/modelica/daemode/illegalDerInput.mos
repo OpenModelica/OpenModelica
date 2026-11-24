@@ -25,6 +25,7 @@ buildModel(illegalDerInput); getErrorString();
 // {"", ""}
 // "Error: The model requires derivatives of some inputs as listed below:
 // der(u)
+// Use --inputDerivatives=input to make them additional inputs.
 // Error: post-optimization module inputDerivativesUsed (simulation) failed.
 // "
 // true
@@ -32,6 +33,7 @@ buildModel(illegalDerInput); getErrorString();
 // {"", ""}
 // "Error: The model requires derivatives of some inputs as listed below:
 // der(u)
+// Use --inputDerivatives=input to make them additional inputs.
 // Error: post-optimization module inputDerivativesUsed (simulation) failed.
 // Error: Internal error SimCode DAEmode: The model illegalDerInput could not be translated
 // "
