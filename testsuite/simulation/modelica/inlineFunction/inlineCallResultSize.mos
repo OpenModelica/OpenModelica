@@ -1,0 +1,74 @@
+// name: inlineCallResultSize
+// keywords: inline, wrapFunctionCalls, array #3117
+// status: correct
+//
+// The result size of a call in the body of an inlined function depends on
+// the function inputs. Inlining replaces them with the arguments. The call
+// depends only on parameters, so it is not evaluated in every step.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+writeFile("inlineCallResultSize_calls.txt", "");
+loadString("
+model inlineCallResultSize
+  function coeff
+    input Real a[:];
+    output Real c[2, size(a, 1)];
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"coeff\", \"inlineCallResultSize_calls.txt\"));
+    for j in 1:size(a, 1) loop
+      c[1, j] := a[j]^2;
+      c[2, j] := 2*a[j];
+    end for;
+  end coeff;
+
+  function g
+    input Real x;
+    input Real c[:, :];
+    output Real y;
+  algorithm
+    y := x*c[1, 2] + c[2, 3];
+  end g;
+
+  function w
+    input Real x;
+    input Real a[:];
+    output Real y;
+  algorithm
+    y := g(x, coeff(a));
+    annotation(Inline = true);
+  end w;
+
+  parameter Real p[3] = {1, 2, 3};
+  Real x(start = 1, fixed = true);
+  Real z(start = 1, fixed = true);
+equation
+  der(x) = -w(x, p);
+  der(z) = -w(z, {2, 1, 3});
+end inlineCallResultSize;
+"); getErrorString();
+
+simulate(inlineCallResultSize, stopTime = 1.0); getErrorString();
+// 2.5*exp(-4) - 1.5
+val(x, 1.0);
+// 7*exp(-1) - 6
+val(z, 1.0);
+sum(1 for l in strtok(readFile("inlineCallResultSize_calls.txt"), "\n")) < 10;
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "inlineCallResultSize_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'inlineCallResultSize', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -1.4542097776383844
+// -3.4248439284647474
+// true
+// endResult

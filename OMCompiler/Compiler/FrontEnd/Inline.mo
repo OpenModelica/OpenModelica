@@ -1671,6 +1671,8 @@ algorithm
       DAE.Type ty,ty2;
       DAE.InlineType inlineType;
       DAE.TailCall tc;
+      DAE.CallAttributes attr;
+      DAE.Dimensions dims, dims2;
       HashTableCG.HashTable checkcr;
       ArgMemo memo;
 
@@ -1739,9 +1741,42 @@ algorithm
         true := BaseHashTable.hasKey(cref,checkcr);
       then (e,(argmap,checkcr,false,memo));
 
+    case (DAE.CALL(path,expLst,attr as DAE.CALL_ATTR(ty=DAE.T_ARRAY(ty,dims))),(_,_,true,_))
+      algorithm
+        dims2 := list(replaceArgsInDim(dim,inTuple) for dim in dims);
+        false := List.allReferenceEq(dims,dims2);
+        attr.ty := DAE.T_ARRAY(ty,dims2);
+      then (DAE.CALL(path,expLst,attr),inTuple);
+
     else (inExp,inTuple);
   end matchcontinue;
 end replaceArgs;
+
+protected function replaceArgsInDim
+  "Replaces the function inputs in a dimension expression, or keeps the
+   dimension if that is not possible."
+  input DAE.Dimension dim;
+  input ReplaceArgsTuple inTuple;
+  output DAE.Dimension outDim = dim;
+protected
+  DAE.Exp exp;
+  Boolean ok;
+algorithm
+  () := match dim
+    case DAE.DIM_EXP()
+      algorithm
+        (exp,(_,_,ok,_)) := Expression.traverseExpBottomUp(dim.exp,replaceArgs,inTuple);
+        if ok and not referenceEq(exp,dim.exp) then
+          (exp,_) := ExpressionSimplify.simplify(exp);
+          outDim := match exp
+            case DAE.ICONST() then DAE.DIM_INTEGER(exp.integer);
+            else DAE.DIM_EXP(exp);
+          end match;
+        end if;
+      then ();
+    else ();
+  end match;
+end replaceArgsInDim;
 
 protected function boxIfUnboxedFunRef
   "Replacing a function pointer with a regular function means that you:
