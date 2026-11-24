@@ -531,25 +531,6 @@
     </message>
 </context>
 <context>
-    <name>CleanDialog</name>
-    <message>
-        <source>Clean Repository</source>
-        <translation>Rensa repository</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Välj alla</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Namn</translation>
-    </message>
-    <message>
-        <source>Clean</source>
-        <translation>Rensa</translation>
-    </message>
-</context>
-<context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
@@ -878,69 +859,6 @@ Den lokala kopian och dess synkroniseringsstatus tas bort. Ingenting i molnet p�
     <message>
         <source>Preview:</source>
         <translation>Förhandsgranskning:</translation>
-    </message>
-</context>
-<context>
-    <name>CommitChangesDialog</name>
-    <message>
-        <source>Commit</source>
-        <translation>Commit</translation>
-    </message>
-    <message>
-        <source>Repository:</source>
-        <translation>Repository:</translation>
-    </message>
-    <message>
-        <source>Branch:</source>
-        <translation>Branch:</translation>
-    </message>
-    <message>
-        <source>Repository Information:</source>
-        <translation>Information om repository:</translation>
-    </message>
-    <message>
-        <source>Commit Information:</source>
-        <translation>Information om commit:</translation>
-    </message>
-    <message>
-        <source>Author:</source>
-        <translation>Författare:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>E-post:</translation>
-    </message>
-    <message>
-        <source>Description:</source>
-        <translation>Beskrivning:</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Välj alla</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation>Status</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>Fil</translation>
-    </message>
-    <message>
-        <source>Files:</source>
-        <translation>Filer:</translation>
-    </message>
-    <message>
-        <source>commit</source>
-        <translation>Committa</translation>
-    </message>
-    <message>
-        <source>Commit Message </source>
-        <translation>Commit-meddelande </translation>
-    </message>
-    <message>
-        <source>Commit description:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4365,13 +4283,6 @@ Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusfo
     </message>
 </context>
 <context>
-    <name>GitCommands</name>
-    <message>
-        <source>Repository Creation Failed</source>
-        <translation>Det gick inte att skapa repository</translation>
-    </message>
-</context>
-<context>
     <name>GoogleDriveProvider</name>
     <message>
         <source>The file changed in Google Drive since it was last synchronised.</source>
@@ -5132,10 +5043,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Filtrera element</translation>
     </message>
     <message>
-        <source>Committing modified files to the repository</source>
-        <translation>Committar ändrade filer till repositoryt</translation>
-    </message>
-    <message>
         <source>Report Issue</source>
         <translation>Rapportera problem</translation>
     </message>
@@ -5458,42 +5365,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
     <message>
         <source>Manage debug configurations</source>
         <translation>Hantera debug-konfigurationer</translation>
-    </message>
-    <message>
-        <source>Create Repository</source>
-        <translation>Skapa repository</translation>
-    </message>
-    <message>
-        <source>Create a Git repository</source>
-        <translation>Skapa ett Git-repository</translation>
-    </message>
-    <message>
-        <source>Log Current File</source>
-        <translation>Logg för aktuell fil</translation>
-    </message>
-    <message>
-        <source>Logging current file</source>
-        <translation>Visar Git-loggen för den aktuella filen</translation>
-    </message>
-    <message>
-        <source>Stage Current File</source>
-        <translation>Stagea aktuell fil</translation>
-    </message>
-    <message>
-        <source>Staging current file for next commit</source>
-        <translation>Stagear den aktuella filen för nästa commit</translation>
-    </message>
-    <message>
-        <source>Unstage Current File</source>
-        <translation>Unstagea aktuell fil</translation>
-    </message>
-    <message>
-        <source>Unstaging current file from next commit</source>
-        <translation>Tar bort den aktuella filen från nästa commit</translation>
-    </message>
-    <message>
-        <source>Commit</source>
-        <translation>Committa</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -6529,25 +6400,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     </message>
 </context>
 <context>
-    <name>LogCommitDialog</name>
-    <message>
-        <source>Select Commit</source>
-        <translation>Välj commit</translation>
-    </message>
-    <message>
-        <source>Subject</source>
-        <translation>Ämne</translation>
-    </message>
-    <message>
-        <source>SHA-1</source>
-        <translation>SHA-1</translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation>OK</translation>
-    </message>
-</context>
-<context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
@@ -7311,14 +7163,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
     <message>
         <source>No active simulation output window. Please select a simulation output window for the re-simulation.</source>
         <translation>Inget fönster för simuleringsutmatning är aktivt. Välj ett fönster för simuleringsutmatning för omsimulering.</translation>
-    </message>
-    <message>
-        <source>&amp;Git</source>
-        <translation>&amp;Git</translation>
-    </message>
-    <message>
-        <source>Traceability</source>
-        <translation>Spårbarhet</translation>
     </message>
     <message>
         <source>&amp;Tools</source>
@@ -8508,10 +8352,6 @@ Ange vilken Python-tolk som har omuq installerat i Verktyg &gt; Alternativ &gt; 
         <translation>Är du säker på att du vill återställa OMEdit? Det går inte att ångra. </translation>
     </message>
     <message>
-        <source>Traceability</source>
-        <translation>Spårbarhet</translation>
-    </message>
-    <message>
         <source>Language Server</source>
         <translation>Språkserver</translation>
     </message>
@@ -9054,33 +8894,6 @@ Ange värdet 0 om du inte vill ha någon fördröjning.</translation>
     <message>
         <source>Warning</source>
         <translation>Varning</translation>
-    </message>
-</context>
-<context>
-    <name>RevertCommitsDialog</name>
-    <message>
-        <source>Revert Commit</source>
-        <translation>Reverta commit</translation>
-    </message>
-    <message>
-        <source>Working Directory:</source>
-        <translation>Arbetskatalog:</translation>
-    </message>
-    <message>
-        <source>Browse Directory</source>
-        <translation>Bläddra efter katalog</translation>
-    </message>
-    <message>
-        <source>Commit:</source>
-        <translation>Commit:</translation>
-    </message>
-    <message>
-        <source>Browse Commit</source>
-        <translation>Bläddra efter commit</translation>
-    </message>
-    <message>
-        <source>Revert</source>
-        <translation>Reverta</translation>
     </message>
 </context>
 <context>
@@ -10070,40 +9883,6 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
     <message>
         <source>Font</source>
         <translation>Teckensnitt</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityGraphViewWidget</name>
-    <message>
-        <source>Traceability Graph View</source>
-        <translation>Spårbarhetsgraf</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityPage</name>
-    <message>
-        <source>Traceability</source>
-        <translation>Spårbarhet</translation>
-    </message>
-    <message>
-        <source>User Name:</source>
-        <translation>Användarnamn:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>E-post:</translation>
-    </message>
-    <message>
-        <source>Git Repository:</source>
-        <translation>Git-repository:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon IP Address:</source>
-        <translation>IP-adress för spårbarhetsdemonen:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon Port:</source>
-        <translation>Port för spårbarhetsdemonen:</translation>
     </message>
 </context>
 <context>

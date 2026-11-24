@@ -80,7 +80,6 @@ class FMIPage;
 class LanguageServerPage;
 class OMSimulatorPage;
 class SensitivityOptimizationPage;
-class TraceabilityPage;
 class CloudStoragePage;
 class TabSettings;
 class StackFramesWidget;
@@ -131,7 +130,6 @@ public:
   void readFMISettings();
   void readOMSimulatorSettings();
   void readSensitivityOptimizationSettings();
-  void readTraceabilitySettings();
   void readLanguageServerSettings();
   void readCloudStorageSettings();
   void saveGeneralSettings();
@@ -147,7 +145,6 @@ public:
   void saveHTMLEditorSettings();
   void saveOMSimulatorSettings();
   void saveSensitivityOptimizationSettings();
-  void saveTraceabilitySettings();
   void saveLanguageServerSettings();
   void saveCloudStorageSettings();
   void saveGraphicalViewsSettings();
@@ -190,7 +187,6 @@ public:
   void saveFMIExportDefaults() {saveFMISettings();}
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   SensitivityOptimizationPage* getSensitivityOptimizationPage() {return mpSensitivityOptimizationPage;}
-  TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
   LanguageServerPage* getLanguageServerPage() {return mpLanguageServerPage;}
   CloudStoragePage* getCloudStoragePage() {return mpCloudStoragePage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
@@ -246,7 +242,6 @@ private:
   FMIPage *mpFMIPage;
   OMSimulatorPage *mpOMSimulatorPage;
   SensitivityOptimizationPage *mpSensitivityOptimizationPage;
-  TraceabilityPage *mpTraceabilityPage;
   LanguageServerPage *mpLanguageServerPage;
   CloudStoragePage *mpCloudStoragePage;
   QSettings *mpSettings;
@@ -1123,41 +1118,6 @@ private:
 private slots:
   void browseOMSensBackendPath();
   void browsePythonExecutable();
-};
-
-class TraceabilityPage : public QWidget
-{
-  Q_OBJECT
-public:
-  TraceabilityPage(OptionsDialog *pOptionsDialog);
-  QGroupBox* getTraceabilityGroupBox() {return mpTraceabilityGroupBox;}
-//  QLineEdit* getFMUOutputDirectory() {return mpFMUOutputDirectoryTextBox;}
-//  QPushButton *mpBrowseFMUOutputDirectoryButton;
-  QPushButton *mpBrowseGitRepositoryButton;
-  QLineEdit* getTraceabilityDaemonIpAdress() {return mpTraceabilityDaemonIpAdressTextBox;}
-  QLineEdit* getTraceabilityDaemonPort() {return mpTraceabilityDaemonPortTextBox;}
-  QLineEdit* getUserName() {return mpUserNameTextBox;}
-  QLineEdit* getEmail() {return mpEmailTextBox;}
-  QLineEdit* getGitRepository() {return mpGitRepositoryTextBox;}
-private:
-  OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpTraceabilityGroupBox;
-  Label *mpUserNameLabel;
-  QLineEdit *mpUserNameTextBox;
-  Label *mpEmailLabel;
-  QLineEdit *mpEmailTextBox;
-  Label *mpGitRepositoryLabel;
-  QLineEdit *mpGitRepositoryTextBox;
-//  Label *mpFMUOutputDirectoryLabel;
-//  QLineEdit *mpFMUOutputDirectoryTextBox;
-  Label *mpTraceabilityDaemonIpAdressLabel;
-  QLineEdit *mpTraceabilityDaemonIpAdressTextBox;
-  Label *mpTraceabilityDaemonPortLabel;
-  QLineEdit *mpTraceabilityDaemonPortTextBox;
-private slots:
-//  void browseFMUOutputDirectory();
-  void browseGitRepository();
-
 };
 
 class DiscardLocalTranslationFlagsDialog : public QDialog

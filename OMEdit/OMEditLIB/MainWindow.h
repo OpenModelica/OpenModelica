@@ -101,11 +101,7 @@ class AboutOMEditDialog;
 class Label;
 class FileDataNotifier;
 class LibraryTreeItem;
-class GitCommands;
-class CommitChangesDialog;
-class TraceabilityInformationURI;
 class StatusBar;
-class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
 class NavigationManagerView;
@@ -171,9 +167,6 @@ public:
   OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
-  GitCommands* getGitCommands() {return mpGitCommands;}
-  CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
-  TraceabilityInformationURI* getTraceabilityInformationURI() {return mpTraceabilityInformationURI;}
   QTabWidget* getMessagesTabWidget() {return mpMessagesTabWidget;}
   StatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
@@ -237,12 +230,6 @@ public:
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
-  QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
-  QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
-  QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
-  QAction* getCommitFilesAction() {return mpCommitFilesAction;}
-  QAction* getRevertCommitAction() {return mpRevertCommitAction;}
-  QAction* getCleanWorkingDirectoryAction() {return mpCleanWorkingDirectoryAction;}
   QMenu* getNewModelMenu() const {return mpNewModelMenu;}
   QMenu* getLibrariesMenu() const {return mpLibrariesMenu;}
   QToolBar* getShapesToolBar() const {return mpShapesToolBar;}
@@ -344,15 +331,11 @@ private:
   PlotWindowContainer *mpPlotWindowContainer;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
-  TraceabilityGraphViewWidget *mpTraceabilityGraphViewWidget;
   SimulationDialog *mpSimulationDialog;
   OMSSimulationDialog *mpOMSSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
   QObject *mpOMSensPlugin;
-  GitCommands *mpGitCommands;
-  CommitChangesDialog *mpCommitChangesDialog;
-  TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QTabWidget *mpMessagesTabWidget;
   QProgressBar *mpProgressBar = nullptr;
@@ -447,14 +430,6 @@ private:
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
-  // Git Menu
-  QAction *mpCreateGitRepositoryAction;
-  QAction *mpLogCurrentFileAction;
-  QAction *mpStageCurrentFileForCommitAction;
-  QAction *mpUnstageCurrentFileFromCommitAction;
-  QAction *mpCommitFilesAction;
-  QAction *mpRevertCommitAction;
-  QAction *mpCleanWorkingDirectoryAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
 #ifdef Q_OS_WIN
@@ -666,13 +641,6 @@ private slots:
   void runCRMLTestsuite();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
-  void createGitRepository();
-  void logCurrentFile();
-  void stageCurrentFileForCommit();
-  void unstageCurrentFileFromCommit();
-  void commitFiles();
-  void revertCommit();
-  void cleanWorkingDirectory();
   void directReSimulate();
   void showReSimulateSetup();
 private:

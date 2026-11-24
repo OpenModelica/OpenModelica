@@ -528,25 +528,6 @@
     </message>
 </context>
 <context>
-    <name>CleanDialog</name>
-    <message>
-        <source>Clean Repository</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>すべて選択</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名前</translation>
-    </message>
-    <message>
-        <source>Clean</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
@@ -873,69 +854,6 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     <message>
         <source>Preview:</source>
         <translation>プレビュー:</translation>
-    </message>
-</context>
-<context>
-    <name>CommitChangesDialog</name>
-    <message>
-        <source>Commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Repository:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Branch:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Repository Information:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit Information:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Author:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Description:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>すべて選択</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation>状態</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>ファイル</translation>
-    </message>
-    <message>
-        <source>Files:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit Message </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit description:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4344,13 +4262,6 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
 </context>
 <context>
-    <name>GitCommands</name>
-    <message>
-        <source>Repository Creation Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>GoogleDriveProvider</name>
     <message>
         <source>The file changed in Google Drive since it was last synchronised.</source>
@@ -5087,10 +4998,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Committing modified files to the repository</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Report Issue</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5408,42 +5315,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Manage debug configurations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Repository</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a Git repository</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Log Current File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Logging current file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stage Current File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Staging current file for next commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unstage Current File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unstaging current file from next commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6476,25 +6347,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
 </context>
 <context>
-    <name>LogCommitDialog</name>
-    <message>
-        <source>Select Commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Subject</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>SHA-1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
@@ -7271,14 +7123,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>SSP Toolbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Git</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Traceability</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8433,10 +8277,6 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Traceability</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Language Server</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8976,33 +8816,6 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <source>Warning</source>
         <translation type="unfinished">警告</translation>
-    </message>
-</context>
-<context>
-    <name>RevertCommitsDialog</name>
-    <message>
-        <source>Revert Commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Working Directory:</source>
-        <translation>作業ディレクトリ:</translation>
-    </message>
-    <message>
-        <source>Browse Directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browse Commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Revert</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9990,40 +9803,6 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Font</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityGraphViewWidget</name>
-    <message>
-        <source>Traceability Graph View</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityPage</name>
-    <message>
-        <source>Traceability</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Git Repository:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Traceability Daemon IP Address:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Traceability Daemon Port:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

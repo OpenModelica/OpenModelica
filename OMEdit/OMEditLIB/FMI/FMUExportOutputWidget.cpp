@@ -41,7 +41,6 @@
 #include "Util/Style.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
-#include "Git/CommitChangesDialog.h"
 #include "omcruntime_rust.h"
 #ifdef OMC_RUST_ABI
 #include "omc_rust_embedding.h" // Rust omc port: box-based mmc_mk_scon + stringHashDjb2 (no MMC runtime)
@@ -553,11 +552,6 @@ void FmuExportOutputWidget::zipFMU()
   mpCancelButton->setEnabled(false);
   if (!error) {
     writePostCompilationOutput(tr("The FMU is generated at: %1").arg(mFmuLocationPath), Style::messagesCommandColor());
-    //trace export FMU
-    if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked()) {
-      //Push traceability information automaticaly to Daemon
-      MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", mpLibraryTreeItem->getFileName(), mpLibraryTreeItem->getNameStructure(), mFmuLocationPath);
-    }
     mpProgressBar->setValue(1);
     mpProgressLabel->setText(tr("Export of FMU %1 finished.").arg(mpLibraryTreeItem->getName()));
   } else {

@@ -531,25 +531,6 @@
     </message>
 </context>
 <context>
-    <name>CleanDialog</name>
-    <message>
-        <source>Clean Repository</source>
-        <translation>Pulisci repository</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Seleziona tutto</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nome</translation>
-    </message>
-    <message>
-        <source>Clean</source>
-        <translation>Pulisci</translation>
-    </message>
-</context>
-<context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
@@ -878,69 +859,6 @@ La copia locale e il suo stato di sincronizzazione vengono rimossi. Nel cloud no
     <message>
         <source>Preview:</source>
         <translation>Anteprima:</translation>
-    </message>
-</context>
-<context>
-    <name>CommitChangesDialog</name>
-    <message>
-        <source>Commit</source>
-        <translation>Commit</translation>
-    </message>
-    <message>
-        <source>Repository:</source>
-        <translation>Repository:</translation>
-    </message>
-    <message>
-        <source>Branch:</source>
-        <translation>Branch:</translation>
-    </message>
-    <message>
-        <source>Repository Information:</source>
-        <translation>Informazioni sul repository:</translation>
-    </message>
-    <message>
-        <source>Commit Information:</source>
-        <translation>Informazioni sul commit:</translation>
-    </message>
-    <message>
-        <source>Author:</source>
-        <translation>Autore:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>Email:</translation>
-    </message>
-    <message>
-        <source>Description:</source>
-        <translation>Descrizione:</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Seleziona tutto</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation>Stato</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>File</translation>
-    </message>
-    <message>
-        <source>Files:</source>
-        <translation>File:</translation>
-    </message>
-    <message>
-        <source>commit</source>
-        <translation>Esegui commit</translation>
-    </message>
-    <message>
-        <source>Commit Message </source>
-        <translation>Messaggio di commit </translation>
-    </message>
-    <message>
-        <source>Commit description:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4365,13 +4283,6 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
 </context>
 <context>
-    <name>GitCommands</name>
-    <message>
-        <source>Repository Creation Failed</source>
-        <translation>Creazione del repository non riuscita</translation>
-    </message>
-</context>
-<context>
     <name>GoogleDriveProvider</name>
     <message>
         <source>The file changed in Google Drive since it was last synchronised.</source>
@@ -5107,10 +5018,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Filtra elementi</translation>
     </message>
     <message>
-        <source>Committing modified files to the repository</source>
-        <translation>Esegue il commit dei file modificati nel repository</translation>
-    </message>
-    <message>
         <source>Report Issue</source>
         <translation>Segnala un problema</translation>
     </message>
@@ -5433,42 +5340,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Manage debug configurations</source>
         <translation>Gestisce le configurazioni di debug</translation>
-    </message>
-    <message>
-        <source>Create Repository</source>
-        <translation>Crea repository</translation>
-    </message>
-    <message>
-        <source>Create a Git repository</source>
-        <translation>Crea un repository Git</translation>
-    </message>
-    <message>
-        <source>Log Current File</source>
-        <translation>Log del file corrente</translation>
-    </message>
-    <message>
-        <source>Logging current file</source>
-        <translation>Mostra il log Git del file corrente</translation>
-    </message>
-    <message>
-        <source>Stage Current File</source>
-        <translation>Aggiungi il file corrente all&apos;area di stage</translation>
-    </message>
-    <message>
-        <source>Staging current file for next commit</source>
-        <translation>Aggiunge il file corrente all&apos;area di stage per il prossimo commit</translation>
-    </message>
-    <message>
-        <source>Unstage Current File</source>
-        <translation>Rimuovi il file corrente dall&apos;area di stage</translation>
-    </message>
-    <message>
-        <source>Unstaging current file from next commit</source>
-        <translation>Rimuove il file corrente dal prossimo commit</translation>
-    </message>
-    <message>
-        <source>Commit</source>
-        <translation>Esegui commit</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -6528,25 +6399,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     </message>
 </context>
 <context>
-    <name>LogCommitDialog</name>
-    <message>
-        <source>Select Commit</source>
-        <translation>Seleziona commit</translation>
-    </message>
-    <message>
-        <source>Subject</source>
-        <translation>Oggetto</translation>
-    </message>
-    <message>
-        <source>SHA-1</source>
-        <translation>SHA-1</translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation>OK</translation>
-    </message>
-</context>
-<context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
@@ -7322,14 +7174,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
     <message>
         <source>SSP Toolbar</source>
         <translation>Barra degli strumenti SSP</translation>
-    </message>
-    <message>
-        <source>&amp;Git</source>
-        <translation>&amp;Git</translation>
-    </message>
-    <message>
-        <source>Traceability</source>
-        <translation>Tracciabilità</translation>
     </message>
     <message>
         <source>&amp;Tools</source>
@@ -8507,10 +8351,6 @@ Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; O
         <translation>Sei sicuro di voler ripristinare OMEdit? Questa operazione non può essere annullata. </translation>
     </message>
     <message>
-        <source>Traceability</source>
-        <translation>Tracciabilità</translation>
-    </message>
-    <message>
         <source>Language Server</source>
         <translation>Server di linguaggio</translation>
     </message>
@@ -9053,33 +8893,6 @@ Impostare il valore a 0 per non avere alcun ritardo.</translation>
     <message>
         <source>Warning</source>
         <translation>Avvertimento</translation>
-    </message>
-</context>
-<context>
-    <name>RevertCommitsDialog</name>
-    <message>
-        <source>Revert Commit</source>
-        <translation>Revert del commit</translation>
-    </message>
-    <message>
-        <source>Working Directory:</source>
-        <translation>Directory di lavoro:</translation>
-    </message>
-    <message>
-        <source>Browse Directory</source>
-        <translation>Sfoglia directory</translation>
-    </message>
-    <message>
-        <source>Commit:</source>
-        <translation>Commit:</translation>
-    </message>
-    <message>
-        <source>Browse Commit</source>
-        <translation>Sfoglia commit</translation>
-    </message>
-    <message>
-        <source>Revert</source>
-        <translation>Esegui revert</translation>
     </message>
 </context>
 <context>
@@ -10069,40 +9882,6 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
     <message>
         <source>Font</source>
         <translation>Carattere</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityGraphViewWidget</name>
-    <message>
-        <source>Traceability Graph View</source>
-        <translation>Grafo di tracciabilità</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityPage</name>
-    <message>
-        <source>Traceability</source>
-        <translation>Tracciabilità</translation>
-    </message>
-    <message>
-        <source>User Name:</source>
-        <translation>Nome utente:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>Email:</translation>
-    </message>
-    <message>
-        <source>Git Repository:</source>
-        <translation>Repository Git:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon IP Address:</source>
-        <translation>Indirizzo IP del demone di tracciabilità:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon Port:</source>
-        <translation>Porta del demone di tracciabilità:</translation>
     </message>
 </context>
 <context>

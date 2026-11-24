@@ -176,7 +176,6 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpFMIPage = new FMIPage(this);
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpSensitivityOptimizationPage = new SensitivityOptimizationPage(this);
-  mpTraceabilityPage = new TraceabilityPage(this);
   mpLanguageServerPage = new LanguageServerPage(this);
   mpCloudStoragePage = new CloudStoragePage(this);
   // Get the settings.
@@ -229,7 +228,6 @@ void OptionsDialog::readSettings()
   readFMISettings();
   readOMSimulatorSettings();
   readSensitivityOptimizationSettings();
-  readTraceabilitySettings();
   readLanguageServerSettings();
   readCloudStorageSettings();
 }
@@ -1574,50 +1572,6 @@ void OptionsDialog::readSensitivityOptimizationSettings()
     mpSensitivityOptimizationPage->getPythonTextBox()->setText(mpSettings->value("OMSens/python").toString());
   } else {
     mpSensitivityOptimizationPage->getPythonTextBox()->setText(OptionsDefaults::SensitivityOptimization::python);
-  }
-}
-
-/*!
- * \brief OptionsDialog::readTraceabilitySettings
- * Reads the  Traceability settings from omedit.ini
- */
-void OptionsDialog::readTraceabilitySettings()
-{
-  // read traceability checkbox
-  if (mpSettings->contains("traceability/Traceability")) {
-    mpTraceabilityPage->getTraceabilityGroupBox()->setChecked(mpSettings->value("traceability/Traceability").toBool());
-  } else {
-    mpTraceabilityPage->getTraceabilityGroupBox()->setChecked(OptionsDefaults::Traceability::traceability);
-  }
-  // read user name
-  if (mpSettings->contains("traceability/UserName")) {
-    mpTraceabilityPage->getUserName()->setText(mpSettings->value("traceability/UserName").toString());
-  } else {
-    mpTraceabilityPage->getUserName()->setText(OptionsDefaults::Traceability::username);
-  }
-  // read Email
-  if (mpSettings->contains("traceability/Email")) {
-    mpTraceabilityPage->getEmail()->setText(mpSettings->value("traceability/Email").toString());
-  } else {
-    mpTraceabilityPage->getEmail()->setText(OptionsDefaults::Traceability::email);
-  }
-  // read Git repository
-  if (mpSettings->contains("traceability/GitRepository")) {
-    mpTraceabilityPage->getGitRepository()->setText(mpSettings->value("traceability/GitRepository").toString());
-  } else {
-    mpTraceabilityPage->getGitRepository()->setText(OptionsDefaults::Traceability::gitRepository);
-  }
-  // read the  traceability daemon IP-adress
-  if (mpSettings->contains("traceability/IPAdress")) {
-    mpTraceabilityPage->getTraceabilityDaemonIpAdress()->setText(mpSettings->value("traceability/IPAdress").toString());
-  } else {
-    mpTraceabilityPage->getTraceabilityDaemonIpAdress()->setText(OptionsDefaults::Traceability::ipAdress);
-  }
-  // read the traceability daemon Port
-  if (mpSettings->contains("traceability/Port")) {
-    mpTraceabilityPage->getTraceabilityDaemonPort()->setText(mpSettings->value("traceability/Port").toString());
-  } else {
-    mpTraceabilityPage->getTraceabilityDaemonPort()->setText(OptionsDefaults::Traceability::port);
   }
 }
 
@@ -3192,56 +3146,6 @@ void OptionsDialog::saveSensitivityOptimizationSettings()
 }
 
 /*!
- * \brief OptionsDialog::saveTraceabilitySettings
- * Saves the traceability settings in omedit.ini
- */
-void OptionsDialog::saveTraceabilitySettings()
-{
-  // save traceability checkBox
-  bool traceability = mpTraceabilityPage->getTraceabilityGroupBox()->isChecked();
-  if (traceability == OptionsDefaults::Traceability::traceability) {
-    mpSettings->remove("traceability/Traceability");
-  } else {
-    mpSettings->setValue("traceability/Traceability", traceability);
-  }
-  // save user name
-  QString username = mpTraceabilityPage->getUserName()->text();
-  if (username.compare(OptionsDefaults::Traceability::username) == 0) {
-    mpSettings->remove("traceability/UserName");
-  } else {
-    mpSettings->setValue("traceability/UserName", username);
-  }
-  // save email
-  QString email = mpTraceabilityPage->getEmail()->text();
-  if (email.compare(OptionsDefaults::Traceability::email) == 0) {
-    mpSettings->remove("traceability/Email");
-  } else {
-    mpSettings->setValue("traceability/Email", email);
-  }
-  // save Git repository
-  QString gitRepository = mpTraceabilityPage->getGitRepository()->text();
-  if (gitRepository.compare(OptionsDefaults::Traceability::gitRepository) == 0) {
-    mpSettings->remove("traceability/GitRepository");
-  } else {
-    mpSettings->setValue("traceability/GitRepository", gitRepository);
-  }
-  // save the traceability daemon IP-Adress
-  QString ipAdress = mpTraceabilityPage->getTraceabilityDaemonIpAdress()->text();
-  if (ipAdress.compare(OptionsDefaults::Traceability::ipAdress) == 0) {
-    mpSettings->remove("traceability/IPAdress");
-  } else {
-    mpSettings->setValue("traceability/IPAdress", ipAdress);
-  }
-  // save the traceability daemon port
-  QString port = mpTraceabilityPage->getTraceabilityDaemonPort()->text();
-  if (port.compare(OptionsDefaults::Traceability::port) == 0) {
-    mpSettings->remove("traceability/Port");
-  } else {
-    mpSettings->setValue("traceability/Port", port);
-  }
-}
-
-/*!
  * \brief OptionsDialog::readLanguageServerSettings
  * Reads language server settings from omedit.ini.
  */
@@ -3437,10 +3341,6 @@ void OptionsDialog::addListItems()
   // Sensitivity Optimization Item
   QListWidgetItem *pSensitivityOptimizationItem = new QListWidgetItem(mpOptionsList);
   pSensitivityOptimizationItem->setText(Helper::sensitivityOptimization);
-  // Traceability Item
-  QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
-  pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
-  pTraceabilityItem->setText(tr("Traceability"));
   // Language Server Item
   QListWidgetItem *pLanguageServerItem = new QListWidgetItem(mpOptionsList);
   pLanguageServerItem->setIcon(QIcon(":/Resources/icons/language-server.svg"));
@@ -3478,7 +3378,6 @@ void OptionsDialog::createPages()
   addPage(mpFMIPage);
   addPage(mpOMSimulatorPage);
   addPage(mpSensitivityOptimizationPage);
-  addPage(mpTraceabilityPage);
   addPage(mpLanguageServerPage);
   addPage(mpCloudStoragePage);
 }
@@ -3587,7 +3486,6 @@ void OptionsDialog::saveSettings()
   saveFMISettings();
   saveOMSimulatorSettings();
   saveSensitivityOptimizationSettings();
-  saveTraceabilitySettings();
   saveLanguageServerSettings();
   saveCloudStorageSettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
@@ -6999,76 +6897,6 @@ void SensitivityOptimizationPage::browseOMSensBackendPath()
 void SensitivityOptimizationPage::browsePythonExecutable()
 {
   mpPythonTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile)));
-}
-
-/*!
- * \class TraceabilityPage
- * Creates an interface for Traceability settings.
- */
-TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
-  : QWidget(pOptionsDialog)
-{
-  mpOptionsDialog = pOptionsDialog;
-  mpTraceabilityGroupBox = new QGroupBox(tr("Traceability"));
-  mpTraceabilityGroupBox->setCheckable(true);
-  mpTraceabilityGroupBox->setChecked(false);
-  // User name
-  mpUserNameLabel = new Label(tr("User Name:"));
-  mpUserNameTextBox = new QLineEdit;
-  // Email
-  mpEmailLabel = new Label(tr("Email:"));
-  mpEmailTextBox = new QLineEdit;
-  // Git repository
-  mpGitRepositoryLabel = new Label(tr("Git Repository:"));
-  mpGitRepositoryTextBox = new QLineEdit;
-  mpBrowseGitRepositoryButton = new QPushButton(Helper::browse);
-  mpBrowseGitRepositoryButton->setAutoDefault(false);
-  connect(mpBrowseGitRepositoryButton, SIGNAL(clicked()), SLOT(browseGitRepository()));
-  // Traceability Daemon Ip Adress
-  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Address:"));
-  mpTraceabilityDaemonIpAdressTextBox = new QLineEdit;
-  // Traceability Daemon Port
-  mpTraceabilityDaemonPortLabel = new Label(tr("Traceability Daemon Port:"));
-  mpTraceabilityDaemonPortTextBox = new QLineEdit;
-   // set the layout
-  QGridLayout *pTraceabilityGroupBoxLayout = new QGridLayout;
-  pTraceabilityGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pTraceabilityGroupBoxLayout->addWidget(mpUserNameLabel, 0, 0);
-  pTraceabilityGroupBoxLayout->addWidget(mpUserNameTextBox, 0, 1);
-  pTraceabilityGroupBoxLayout->addWidget(mpEmailLabel, 1, 0);
-  pTraceabilityGroupBoxLayout->addWidget(mpEmailTextBox, 1, 1);
-  pTraceabilityGroupBoxLayout->addWidget(mpGitRepositoryLabel, 2, 0);
-  pTraceabilityGroupBoxLayout->addWidget(mpGitRepositoryTextBox, 2, 1);
-  pTraceabilityGroupBoxLayout->addWidget(mpBrowseGitRepositoryButton, 2, 2);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressLabel, 3, 0);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressTextBox, 3, 1);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortLabel, 4, 0);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortTextBox, 4, 1);
-  mpTraceabilityGroupBox->setLayout(pTraceabilityGroupBoxLayout);
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setAlignment(Qt::AlignTop);
-  pMainLayout->addWidget(mpTraceabilityGroupBox);
-  setLayout(pMainLayout);
-}
-
-/*!
- * \brief TraceabilityPage::browseFMUOutputDirectory
- * Browse FMU Output Directory.
- */
-//void TraceabilityPage::browseFMUOutputDirectory()
-//{
-//  mpFMUOutputDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
-//                                                                         .arg(Helper::chooseDirectory), NULL));
-//}
-
-/*!
- * \brief TraceabilityPage::browseFMUOutputDirectory
- * Browse FMU Output Directory.
- */
-void TraceabilityPage::browseGitRepository()
-{
-  mpGitRepositoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
-                                                                         .arg(Helper::chooseDirectory), NULL));
 }
 
 /*!
