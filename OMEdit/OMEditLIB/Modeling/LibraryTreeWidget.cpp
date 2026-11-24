@@ -4758,6 +4758,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     textStream << newContents;
     file.close();
     ignoreFileChange(fileName);
+    emit fileSaved(fileName);
     return true;
   } else {
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)

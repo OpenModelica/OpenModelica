@@ -66,6 +66,9 @@ public:
   static QColor lineNumberColor();
   static QColor currentLineNumberColor();
   static QColor currentLineHighlightColor();
+  static QColor gitAddedLineColor();
+  static QColor gitModifiedLineColor();
+  static QColor gitDeletedLineColor();
   static QString readOnlyEditorStyleSheet();
   static QColor infoBarBackgroundColor();
   static QColor infoBarTextColor();
