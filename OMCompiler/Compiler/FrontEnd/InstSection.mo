@@ -3047,7 +3047,7 @@ algorithm
       algorithm
         vars := List.sort(vars, connectorCompGt);
       then
-        DAE.T_COMPLEX(ci_state, vars, ec, inType.usedExternally);
+        DAE.T_COMPLEX(ci_state, vars, ec);
 
     else inType;
 
