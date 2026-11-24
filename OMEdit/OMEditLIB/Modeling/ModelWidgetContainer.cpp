@@ -135,6 +135,7 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
   : QGraphicsScene(pModelWidget), mViewType(viewType)
 {
   mpModelWidget = pModelWidget;
+  connect(this, SIGNAL(selectionChanged()), mpModelWidget, SLOT(updatePositionLabel()));
 }
 
 /*!
@@ -4672,10 +4673,8 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     QGraphicsView::mouseMoveEvent(event);
     return;
   }
-  // update the position label
   mLastMouseScenePosition = mapToScene(event->pos()).toPoint();
   mHasLastMouseScenePosition = true;
-  updatePositionLabel();
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if user mouse over connector show Qt::CrossCursor.
   bool setCrossCursor = false;
@@ -4726,6 +4725,8 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     }
   }
   QGraphicsView::mouseMoveEvent(event);
+  // after the base class has moved the dragged items
+  updatePositionLabel();
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
@@ -5282,18 +5283,72 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
   }
 }
 
+static QString positionLabelNumber(qreal value)
+{
+  // two decimals at most; also hides rounding noise of rotations and -0
+  return QString::number(qRound(value * 100) / 100.0);
+}
+
 /*!
  * \brief GraphicsView::updatePositionLabel
  * Shows the last mouse position of the view in the status bar.
+ * If items are selected, also shows the origin and size of their placement and the distance they are dragged.
  */
 void GraphicsView::updatePositionLabel()
 {
-  Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
-  if (mHasLastMouseScenePosition) {
-    pPositionLabel->setText(QString("X: %1, Y: %2").arg(mLastMouseScenePosition.x()).arg(mLastMouseScenePosition.y()));
-  } else {
-    pPositionLabel->clear();
+  QStringList fields;
+  int selectedItemsCount = 0;
+  QPointF origin;
+  QRectF selectionRect;
+  QPointF delta;
+  foreach (QGraphicsItem *pItem, scene()->selectedItems()) {
+    if (pItem->parentItem()) {
+      continue;
+    }
+    QPointF itemOrigin;
+    qreal rotation;
+    QRectF rect;
+    if (Element *pElement = dynamic_cast<Element*>(pItem)) {
+      if (!pElement->mTransformation.isValid()) {
+        continue;
+      }
+      const ExtentAnnotation extent = pElement->mTransformation.getExtent();
+      itemOrigin = pElement->mTransformation.getOrigin();
+      rotation = pElement->mTransformation.getRotateAngle();
+      rect = QRectF(extent.at(0), extent.at(1)).normalized();
+    } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(pItem)) {
+      const QVector<QPointF> &points = pShapeAnnotation->getPoints();
+      itemOrigin = pShapeAnnotation->getOrigin();
+      rotation = pShapeAnnotation->getRotation();
+      rect = points.isEmpty() ? pShapeAnnotation->getBoundingRect().normalized() : QPolygonF(points).boundingRect();
+    } else {
+      continue;
+    }
+    // pos() is the offset of an item that is dragged but not yet moved in the annotation.
+    itemOrigin += pItem->pos();
+    if (!pItem->pos().isNull()) {
+      delta = pItem->pos();
+    }
+    // Placement points are relative to the origin and rotated around it.
+    rect = QTransform().translate(itemOrigin.x(), itemOrigin.y()).rotate(rotation).mapRect(rect);
+    selectionRect = selectedItemsCount == 0 ? rect : selectionRect.united(rect);
+    origin = itemOrigin;
+    selectedItemsCount++;
   }
+  if (selectedItemsCount > 0) {
+    if (selectedItemsCount > 1) {
+      origin = selectionRect.center();
+    }
+    fields << QString("Origin: %1, %2").arg(positionLabelNumber(origin.x()), positionLabelNumber(origin.y()));
+    fields << QString("Size: %1 x %2").arg(positionLabelNumber(selectionRect.width()), positionLabelNumber(selectionRect.height()));
+    if (isMovingComponentsAndShapes() && !delta.isNull()) {
+      fields << QString("Delta: %1, %2").arg(positionLabelNumber(delta.x()), positionLabelNumber(delta.y()));
+    }
+  }
+  if (mHasLastMouseScenePosition) {
+    fields << QString("X: %1, Y: %2").arg(mLastMouseScenePosition.x()).arg(mLastMouseScenePosition.y());
+  }
+  MainWindow::instance()->getPositionLabel()->setText(fields.join(" | "));
 }
 
 WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
@@ -5815,6 +5870,13 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
 
 ModelWidget::~ModelWidget()
 {
+  // the scenes are deleted after this destructor and can emit selectionChanged() while they remove their items
+  if (mpIconGraphicsScene) {
+    mpIconGraphicsScene->disconnect(this);
+  }
+  if (mpDiagramGraphicsScene) {
+    mpDiagramGraphicsScene->disconnect(this);
+  }
   if (mpModelInstance) {
     delete mpModelInstance;
   }
@@ -7222,6 +7284,8 @@ void ModelWidget::createUndoStack()
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
   }
+  // items moved, rotated or resized by keys, dialogs, undo or redo
+  connect(mpUndoStack, SIGNAL(indexChanged(int)), SLOT(updatePositionLabel()));
   if (MainWindow::instance()->isDebug()) {
     mpUndoView = new QUndoView(mpUndoStack);
   }
@@ -7790,6 +7854,17 @@ void ModelWidget::handleCanRedoChanged(bool canRedo)
 {
   Q_UNUSED(canRedo);
   handleCanUndoRedoChanged();
+}
+
+/*!
+ * \brief ModelWidget::updatePositionLabel
+ * Updates the position label in the status bar if this ModelWidget is shown.
+ */
+void ModelWidget::updatePositionLabel()
+{
+  if (mpModelWidgetContainer->getCurrentModelWidget() == this) {
+    mpModelWidgetContainer->updatePositionLabel(this);
+  }
 }
 
 void ModelWidget::closeEvent(QCloseEvent *event)
