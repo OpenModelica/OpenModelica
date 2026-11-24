@@ -55,7 +55,6 @@ import Interactive.Access;
 import InteractiveUtil;
 import Values;
 import SimCode;
-import UnitAbsyn;
 
 // protected imports
 protected
@@ -106,15 +105,16 @@ import Lookup;
 import ModelicaDiff;
 import NFApi;
 import NFCheckModel;
+import NFClassDiagram;
 import NFConvertDAE;
+import NFDefUseChains;
 import NFFlatModel;
 import NFFlatten;
 import NFInst;
+import NFRestriction;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
-import NFClassDiagram;
-import NFDefUseChains;
 import NFUsedElements;
 import Obfuscate;
 import OMGraphics;
@@ -136,7 +136,6 @@ import SimCodeFunctionUtil;
 import SimCodeUtil;
 import StateMachineFlatten;
 import SimulationResults;
-import StaticScript;
 import StringUtil;
 import SymbolTable;
 import System;
@@ -145,7 +144,7 @@ import TotalModelDebug;
 import Tpl;
 import Types;
 import Uncertainties;
-import UnitAbsynBuilder;
+import UnitConversion;
 import UnitParserExt;
 import UnorderedSet;
 import Unzip;
@@ -204,7 +203,7 @@ constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)       "default stopT
 constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)       "default numberOfIntervals";
 constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)       "default stepSize";
 constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)       "default tolerance";
-constant DAE.Exp defaultMethod            = DAE.SCONST("dassl")          "default method";
+constant DAE.Exp defaultMethod            = DAE.SCONST("auto")           "default method";
 constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("") "default fileNamePrefix";
 constant DAE.Exp defaultOptions           = DAE.SCONST("")         "default options";
 constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
@@ -334,7 +333,7 @@ public function buildSimulationOptions
   input DAE.Exp numberOfIntervals "number of intervals, default 500";
   input DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
   input DAE.Exp tolerance "tolerance, default 1e-6";
-  input DAE.Exp method "method, default 'dassl'";
+  input DAE.Exp method "method, default 'auto'";
   input DAE.Exp fileNamePrefix "file name prefix, default ''";
   input DAE.Exp options "options, default ''";
   input DAE.Exp outputFormat "output format, default 'plt'";
@@ -622,7 +621,7 @@ algorithm
   InteractiveTypes.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   if UseOtimica then
     method := DAE.SCONST("optimization");
-  elseif  Flags.getConfigBool(Flags.DAE_MODE) then
+  elseif Flags.getConfigBool(Flags.DAE_MODE) and ExpressionBasics.expEqual(method, defaultMethod) then
     method := DAE.SCONST("ida");
   end if;
   numberOfIntervals := if UseOtimica then DAE.ICONST(50) else numberOfIntervals;
@@ -794,7 +793,7 @@ algorithm
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
       list<String> strs,strs1,strs2;
-      Real timeTotal,timeSimulation,linearizeTime,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
+      Real timeTotal,timeSimulation,linearizeTime,offset,scaleFactor;
       Boolean bval, b, b1, b2, b3, b4, b5, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, lineEndingIsCRLF;
       Boolean symLinFlag, dynOptFlag;
       Integer grammarFlag;
@@ -806,7 +805,6 @@ algorithm
       Absyn.Within within_;
       Boolean dumpExtractionSteps;
       list<Boolean> blst;
-      UnitAbsyn.Unit u1,u2;
       SymbolTable forkedSymbolTable;
       SimCode.SimulationSettings simSettings;
 
@@ -850,11 +848,8 @@ algorithm
 
     case ("getUsedClassNames",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        sp := SymbolTable.getSCode();
-        (sp, _) := NFSCodeFlatten.flattenClassInProgram(path, sp);
-        sp := SCodeUtil.removeBuiltinsFromTopScope(sp);
+        (sp, _) := getTotalProgramNF(path);
         paths := Interactive.getSCodeClassNamesRecursive(sp);
-        // paths = bcallret2(sort, List.sort, paths, AbsynUtil.pathGe, paths);
       then
         ValuesMake.makeCodeTypeNameArray(paths);
 
@@ -888,15 +883,7 @@ algorithm
       algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        (u1,scaleFactor1,offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
-        (u2,scaleFactor2,offset2) := UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
-        b := valueEq(u1,u2);
-        /* How to calculate the final scale factor and offset:
-        F = C*1.8 + 32
-        C = (F - 32)/1.8 = F/1.8 - 32/1.8
-        */
-        scaleFactor := realDiv(scaleFactor2, scaleFactor1);
-        offset := realDiv(realSub(offset2, offset1), scaleFactor1);
+        (b,scaleFactor,offset) := UnitConversion.convertUnits(str1,str2);
       then
         Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)});
 
@@ -907,8 +894,7 @@ algorithm
       algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        u1 := UnitAbsynBuilder.str2unit(str1, NONE());
-        strs := UnitAbsynBuilder.getDerivedUnits(u1, str1);
+        strs := UnitConversion.derivedUnits(str1);
       then
         ValuesMake.makeArray(List.map(strs, ValuesMake.makeString));
 
@@ -1331,15 +1317,13 @@ algorithm
 
     case ("checkModel",{Values.CODE(Absyn.C_TYPENAME(className))})
       algorithm
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
-        (outCache, ret_val) := checkModel(outCache, inEnv, className, msg);
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
+        (outCache, ret_val) := checkModel(outCache, inEnv, className);
       then
         ret_val;
 
     case ("checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected),Values.BOOL(b)})
       algorithm
-        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, b, msg);
+        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, b);
       then
         ret_val;
 
@@ -1719,7 +1703,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiTypeDefinitionsList := listReverse(quoteFMIEnumerationItems(td) for td in fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         name := AbsynUtil.pathString(classpath);
@@ -1765,7 +1749,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiTypeDefinitionsList := listReverse(quoteFMIEnumerationItems(td) for td in fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         str := Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
@@ -1815,6 +1799,44 @@ algorithm
 
   end matchcontinue;
 end cevalInteractiveFunctions3;
+
+protected function quoteFMIEnumerationItems
+  "Makes each item name of an FMI enumeration type a Modelica identifier
+   for importFMU. See fmiEnumerationItemIdent."
+  input output FMI.TypeDefinitions typeDefinition;
+algorithm
+  () := match typeDefinition
+    case FMI.ENUMERATIONTYPE()
+      algorithm
+        typeDefinition.items := list(FMI.ENUMERATIONITEM(fmiEnumerationItemIdent(item.name), item.description)
+          for item in typeDefinition.items);
+      then
+        ();
+  end match;
+end quoteFMIEnumerationItems;
+
+protected function fmiEnumerationItemIdent
+  "Returns the name of an FMI enumeration item as a Modelica identifier.
+   FMI allows any string as the name, for example \"Option 1\". A name that
+   is not a Modelica identifier becomes a quoted identifier, for example
+   'Option 1'. A name that is an identifier stays unchanged."
+  input String name;
+  output String ident;
+protected
+  String id;
+algorithm
+  // Use the Modelica parser: it knows the identifier rules and the keywords.
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    Absyn.IDENT(name = id) := Parser.stringPath(name);
+    // The parser ignores white space and comments around the identifier.
+    true := id == name;
+    ident := name;
+  else
+    ident := Util.makeQuotedIdentifier(name);
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+end fmiEnumerationItemIdent;
 
 public function cevalInteractiveFunctions4
 "defined in the interactive environment."
@@ -2412,14 +2434,14 @@ algorithm
     case ("filterSimulationResults",_)
       then Values.BOOL(false);
 
-    case ("diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b)})
+    case ("diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.ENUM_LITERAL(index=i)})
       algorithm
         filename := Util.absoluteOrRelative(filename);
         filename_1 := Testsuite.friendlyPath(filename_1);
         filename_1 := Util.absoluteOrRelative(filename_1);
         filename2 := Util.absoluteOrRelative(filename2);
         vars_1 := List.map(cvars, ValuesUtil.extractValueString);
-        (b,strings) := SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
+        (b,strings) := SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,i-1,vars_1,b);
         cvars := List.map(strings,ValuesMake.makeString);
         v1 := ValuesMake.makeArray(cvars);
       then
@@ -3440,10 +3462,10 @@ algorithm
 
     case ("renameClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        (p, v) := Interactive.renameClass(classpath, path, SymbolTable.getAbsyn());
+        (p, paths) := NFApi.renameClass(classpath, path, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        v;
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("renameComponent", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_VARIABLENAME(cr)),
                               Values.CODE(Absyn.C_VARIABLENAME(cr2))})
@@ -4284,6 +4306,7 @@ public function generateFMI3GraphicalRepresentation
   input Absyn.Path className;
   input String fmutmp;
   input String modelIdentifier;
+  input Boolean modelPng = false "also write icon.png as model.png, the FMI 2.0 icon";
 protected
   Integer handle, nConn, i;
   String svg, grepr, modelName, taiDir, taiFile, content;
@@ -4314,6 +4337,9 @@ algorithm
         Util.createDirectoryTree(taiDir);
         if OMGraphics.writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png") then
           System.writeFile(taiDir + "icon.svg", svg);
+          if modelPng then
+            System.copyFile(taiDir + "icon.png", fmutmp + "/model.png");
+          end if;
         else
           // icon.png is mandatory for the <Icon> in <GraphicalRepresentation>;
           // drop the block rather than reference a file we failed to write.
@@ -4386,6 +4412,24 @@ algorithm
   end try;
 end generateFMI3GraphicalRepresentation;
 
+public function generateFMI1ModelIcon
+  "Writes model.png, the FMI 1.0 icon of the FMU. As the FMI 3.0 icon.png, it
+   has no connectors: the importer draws them. No file if the model has no icon."
+  input Absyn.Path className;
+  input String fmutmp;
+protected
+  Integer handle;
+algorithm
+  try
+    Values.INTEGER(handle) := NFApi.getModelInstanceIconReference(className);
+    if handle > 0 then
+      OMGraphics.writeIconPNGFromHandle(handle, AbsynUtil.pathLastIdent(className), fmutmp + "/model.png");
+      Values.BOOL(_) := NFApi.releaseModelInstanceReference(handle);
+    end if;
+  else
+  end try;
+end generateFMI1ModelIcon;
+
 protected function spliceGraphicalRepresentation
   "Insert a <GraphicalRepresentation> block in FMI 3.0 schema order: right before
    the <Terminals> open tag when present, otherwise before the closing root tag."
@@ -4451,7 +4495,7 @@ protected function fmuMethodToSimulationFlag
    takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
    `dassl` default must not become `s:dassl`); a wasm FMU serves the whole
    wasm-jit driver set. An unaccepted method is left out, and the FMU falls back
-   to what it defaults to without one: euler for C, the model's own method (else
+   to what it defaults to without one: CVODE for C, the model's own method (else
    DASKR) for wasm."
   input String method;
   input Boolean isWasmFMU;
@@ -6722,21 +6766,36 @@ algorithm
   end matchcontinue;
 end createSimulationResultFromcallModelExecutable;
 
-
-
-public function checkModel " checks a model and returns number of variables and equations"
+public function checkModel
+  "Checks a model and returns the number of variables and equations."
   input output FCore.Cache cache;
   input FCore.Graph env;
   input Absyn.Path className;
-  input Absyn.Msg inMsg;
         output Values.Value outValue;
+algorithm
+  FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
+
+  if Flags.isSet(Flags.SCODE_INST) then
+    outValue := checkModelNF(className);
+  else
+    (cache, outValue) := checkModelOF(cache, env, className);
+  end if;
+
+  FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
+end checkModel;
+
+public function checkModelNF " checks a model and returns number of variables and equations"
+  input Absyn.Path className;
+  output Values.Value outValue;
 protected
   DAE.DAElist dae;
   Integer eqnSize, varSize, simpleEqnSize, warnings, errors;
-  String retStr, classNameStr, eqnsStr, simpleEqnsStr, varsStr, errStr;
+  String retStr, classNameStr, eqnsStr, simpleEqnsStr, varsStr, errStr, resStr;
   Flags.Flag flags;
   NFFlatModel flatModel;
   NFExpression eqnSizeExp, varSizeExp, simpleEqnsExp;
+  list<String> msg_lines = {};
+  Boolean isIntegerSize, isPartial;
 
   function format_errors
     input Integer warnings;
@@ -6768,27 +6827,46 @@ algorithm
   flags := loadCommandLineOptionsFromModel(className);
 
   try
-    if Flags.isSet(Flags.SCODE_INST) then
-      flatModel := runFrontEndNF(className);
-      (varSizeExp, eqnSizeExp, simpleEqnsExp) := NFCheckModel.checkModel(flatModel);
-      varsStr := NFExpression.toString(varSizeExp);
-      eqnsStr := NFExpression.toString(eqnSizeExp);
-      simpleEqnsStr := NFExpression.toString(simpleEqnsExp);
-    else
-      (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
-      (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
-      varsStr := String(varSize);
-      eqnsStr := String(eqnSize);
-      simpleEqnsStr := String(simpleEqnSize);
-    end if;
+    flatModel := runFrontEndNF(className);
+    (varSizeExp, eqnSizeExp, simpleEqnsExp) := NFCheckModel.checkModel(flatModel);
+    varsStr := NFExpression.toString(varSizeExp);
+    eqnsStr := NFExpression.toString(eqnSizeExp);
+    simpleEqnsStr := NFExpression.toString(simpleEqnsExp);
 
     warnings := ErrorExt.getNumWarningMessages() - warnings;
     errors := ErrorExt.getNumErrorMessages() - errors;
 
-    retStr := stringAppendList({
-      "Check of ", classNameStr, " completed successfully", format_errors(warnings, errors), ".\n",
-      "Class ", classNameStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variable(s).\n",
-      simpleEqnsStr, " of these are trivial equation(s)."});
+    msg_lines := {stringAppendList({"Check of ", classNameStr, " completed successfully",
+                                    format_errors(warnings, errors), "."})};
+
+    if not NFRestriction.isFunction(flatModel.restriction) then
+      resStr := NFRestriction.toString(flatModel.restriction);
+      simpleEqnsStr := stringAppendList({simpleEqnsStr, " of these are trivial equation(s)."});
+
+      if varsStr == eqnsStr and not System.getHasPartialInstances() then
+        msg_lines := stringAppendList({"The ", resStr, " is globally balanced with ", varsStr,
+                                        " equation(s) and variable(s)."}) :: msg_lines;
+        msg_lines := simpleEqnsStr :: msg_lines;
+      else
+        msg_lines := stringAppendList({"The ", resStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variables(s)."}) :: msg_lines;
+        msg_lines := simpleEqnsStr :: msg_lines;
+
+        if not flatModel.isPartial then
+          if System.getHasPartialInstances() then
+            msg_lines := stringAppendList({"The ", resStr, " contains replaceable partial components that must be redeclared to determine global balancedness."}) :: msg_lines;
+          elseif not (NFExpression.isInteger(varSizeExp) and NFExpression.isInteger(eqnSizeExp)) then
+            msg_lines := stringAppendList({"The global balance of the ", resStr, " depends on parameters with no default values."}) :: msg_lines;
+          else
+            varSize := stringInt(varsStr);
+            eqnSize := stringInt(eqnsStr);
+            msg_lines := stringAppendList({"Error: The ", resStr, " has ", String(abs(eqnSize - varSize)),
+                                           " equation(s) too ", if eqnSize > varSize then "many." else "few."}) :: msg_lines;
+          end if;
+        end if;
+      end if;
+    end if;
+
+    retStr := stringDelimitList(MetaModelica.Dangerous.listReverseInPlace(msg_lines), "\n");
   else
     if Interactive.existClass(className, SymbolTable.getAbsyn()) then
       warnings := ErrorExt.getNumWarningMessages() - warnings;
@@ -6804,7 +6882,44 @@ algorithm
 
   FlagsUtil.saveFlags(flags);
   outValue := Values.STRING(retStr);
-end checkModel;
+end checkModelNF;
+
+public function checkModelOF
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Path className;
+        output Values.Value outValue;
+protected
+  DAE.DAElist dae;
+  Integer eqnSize, varSize, simpleEqnSize;
+  String retStr, classNameStr;
+  Flags.Flag flags;
+algorithm
+  classNameStr := AbsynUtil.pathString(className);
+  ExecStat.execStatReset();
+  flags := loadCommandLineOptionsFromModel(className);
+
+  try
+    (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
+    (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+
+    retStr := stringAppendList({
+      "Check of ", classNameStr, " completed successfully.\n",
+      "Class ", classNameStr, " has ", String(eqnSize), " equation(s) and ", String(varSize), " variable(s).\n",
+      String(simpleEqnSize), " of these are trivial equation(s)."
+    });
+  else
+    if Interactive.existClass(className, SymbolTable.getAbsyn()) then
+      retStr := stringAppendList({"Check of ", classNameStr, " failed."});
+    else
+      // Return nothing if the class doesn't exist, the frontend will emit an error in that case.
+      retStr := "";
+    end if;
+  end try;
+
+  FlagsUtil.saveFlags(flags);
+  outValue := Values.STRING(retStr);
+end checkModelOF;
 
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
   input Absyn.Path ip;
@@ -7115,12 +7230,11 @@ public function checkAllModelsRecursive
   input Absyn.Path className;
   input Boolean inCheckProtected;
   input Boolean reportTimes;
-  input Absyn.Msg inMsg;
   output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache,outValue):=
-  matchcontinue (inCache, inEnv, inCheckProtected, inMsg)
+  matchcontinue (inCache, inEnv, inCheckProtected)
     local
       list<Absyn.Path> allClassPaths;
       Absyn.Msg msg;
@@ -7130,21 +7244,21 @@ algorithm
       Boolean b;
       Integer failed;
 
-    case (cache, env, b, msg)
+    case (cache, env, b)
       algorithm
         allClassPaths := getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths:\n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
-        failed := checkAll(cache, env, allClassPaths, msg, reportTimes and not Testsuite.isRunning(), 0);
+        failed := checkAll(cache, env, allClassPaths, reportTimes and not Testsuite.isRunning(), 0);
         ret := "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
 
-    case (cache, _, _, _)
+    else
       algorithm
         ret := stringAppend("Error checking: ", AbsynUtil.pathString(className));
-    then
-      (cache,Values.STRING(ret));
+      then
+        (inCache,Values.STRING(ret));
   end matchcontinue;
 end checkAllModelsRecursive;
 
@@ -7177,7 +7291,6 @@ function checkAll
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<Absyn.Path> allClasses;
-  input Absyn.Msg inMsg;
   input Boolean reportTimes;
   input output Integer failed;
 protected
@@ -7206,9 +7319,7 @@ algorithm
         false := Interactive.isType(className, p);
         print("Checking: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... ");
         t1 := clock();
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
-        (_,Values.STRING(str)) := checkModel(FCore.emptyCache(), inEnv, className, inMsg);
-        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
+        (_,Values.STRING(str)) := checkModel(FCore.emptyCache(), inEnv, className);
         t2 := clock();
         elapsedTime := t2 - t1;
         s := realString(elapsedTime);
@@ -7233,14 +7344,14 @@ algorithm
           (if reportTimes then realString(elapsedTime) + ", " else "") +
           AbsynUtil.pathString(className) + "\n");
         print ("-------------------------------------------------------------------------\n");
-        failed := checkAll(inCache, inEnv, rest, inMsg, reportTimes, failed);
+        failed := checkAll(inCache, inEnv, rest, reportTimes, failed);
       then ();
 
     case className::rest
       algorithm
         c := ProgramUtil.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "...\n");
-        failed := checkAll(inCache, inEnv, rest, inMsg, reportTimes, failed);
+        failed := checkAll(inCache, inEnv, rest, reportTimes, failed);
       then
         ();
   end matchcontinue;
@@ -9088,6 +9199,8 @@ protected function getAnnotationInEquation
   string of values  from the flat record of an equation annotation that
   is found in the `EquationItem\'."
   input Absyn.EquationItem inEquationItem;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
   output String outString;
 algorithm
   outString := match inEquationItem
@@ -9098,7 +9211,7 @@ algorithm
 
     case Absyn.EQUATIONITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annotations)),_)))
       algorithm
-        annotationList := getAnnotationInEquationElArgs(annotations);
+        annotationList := NFApi.evaluateAnnotationRecords(program, classPath, annotations);
         annotationStr := stringDelimitList(annotationList, ", ");
       then
         annotationStr;
@@ -9107,48 +9220,6 @@ algorithm
         "";
   end match;
 end getAnnotationInEquation;
-
-protected function getAnnotationInEquationElArgs
-  input list<Absyn.ElementArg> inElArgLst;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := matchcontinue inElArgLst
-    local
-      Absyn.FunctionArgs fargs;
-      list<SCode.Element> p_1;
-      FCore.Graph env;
-      DAE.Exp newexp;
-      String gexpstr, gexpstr_1, annName;
-      list<String> res;
-      list<Absyn.ElementArg>  mod, rest;
-      FCore.Cache cache;
-      DAE.Properties prop;
-      Absyn.Program lineProgram;
-
-    // handle empty
-    case {} then {};
-
-    case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = SOME(Absyn.CLASSMOD(mod,_))) :: rest
-      algorithm
-        lineProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
-        fargs := Interactive.createFuncargsFromElementargs(mod);
-        p_1 := AbsynToSCode.translateAbsyn2SCode(lineProgram);
-        (cache,env) := Inst.makeEnvFromProgram(p_1);
-        (_,newexp,prop) := StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs,{}), false,DAE.NOPRE(), sourceInfo()) "impl" ;
-        (cache, newexp, prop) := Ceval.cevalIfConstant(cache, env, newexp, prop, false, sourceInfo());
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
-        gexpstr := ExpressionBasics.printExpStr(newexp);
-        res := getAnnotationInEquationElArgs(rest);
-      then
-        (gexpstr :: res);
-    case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = SOME(Absyn.CLASSMOD(_,Absyn.NOMOD()))) :: rest
-      algorithm
-        gexpstr_1 := stringAppendList({annName,"(error)"});
-        res := getAnnotationInEquationElArgs(rest);
-      then
-        (gexpstr_1 :: res);
-  end matchcontinue;
-end getAnnotationInEquationElArgs;
 
 protected function getTransitions
   input Absyn.Path path;
@@ -9159,13 +9230,15 @@ protected
   Absyn.Class cdef;
 algorithm
   cdef := ProgramUtil.getPathedClassInProgram(path, p);
-  transitions := listReverse(getTransitionsInClass(cdef));
+  transitions := listReverse(getTransitionsInClass(cdef, p, path));
   res := ValuesMake.makeArray(List.map(transitions, ValuesMake.makeStringArray));
 end getTransitions;
 
 protected function getTransitionsInClass
   "Gets the list of transitions in a class."
   input Absyn.Class inClass;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
   output list<list<String>> outTransitions;
 algorithm
   outTransitions := match inClass
@@ -9175,14 +9248,14 @@ algorithm
 
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
       algorithm
-        transitions := getTransitionsInClassParts(parts);
+        transitions := getTransitionsInClassParts(parts, program, classPath);
       then
         transitions;
 
     // handle also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
       algorithm
-        transitions := getTransitionsInClassParts(parts);
+        transitions := getTransitionsInClassParts(parts, program, classPath);
       then
         transitions;
 
@@ -9194,6 +9267,8 @@ end getTransitionsInClass;
 protected function getTransitionsInClassParts
   "Helper function for getTransitionsInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
   output list<list<String>> outTransitions;
 algorithm
   outTransitions := matchcontinue inAbsynClassPartLst
@@ -9204,14 +9279,14 @@ algorithm
 
     case Absyn.EQUATIONS(contents = eqlist) :: xs
       algorithm
-        transitions1 := getTransitionsInEquations(eqlist, {});
-        transitions2 := getTransitionsInClassParts(xs);
+        transitions1 := getTransitionsInEquations(eqlist, {}, program, classPath);
+        transitions2 := getTransitionsInClassParts(xs, program, classPath);
       then
         listAppend(transitions1, transitions2);
 
     case _ :: xs
       algorithm
-        transitions1 := getTransitionsInClassParts(xs);
+        transitions1 := getTransitionsInClassParts(xs, program, classPath);
       then
         transitions1;
 
@@ -9225,6 +9300,8 @@ protected function getTransitionsInEquations
   "Helper function for getTransitionsInClass."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   input list<list<String>> inTransitions;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
   output list<list<String>> outTransitions;
 algorithm
   outTransitions := match (inAbsynEquationItemLst, inTransitions)
@@ -9238,14 +9315,14 @@ algorithm
     case (((eqItem as Absyn.EQUATIONITEM(equation_ = eq as Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "transition")))) :: xs),transitions)
       algorithm
         transition := getTransitionInEquation(eq);
-        transition := List.insert(transition, listLength(transition) + 1, getAnnotationInEquation(eqItem));
+        transition := List.insert(transition, listLength(transition) + 1, getAnnotationInEquation(eqItem, program, classPath));
         transitions := listAppend({transition}, transitions);
       then
-        getTransitionsInEquations(xs, transitions);
+        getTransitionsInEquations(xs, transitions, program, classPath);
 
     case ((_ :: xs), _)
       then
-        getTransitionsInEquations(xs, inTransitions);
+        getTransitionsInEquations(xs, inTransitions, program, classPath);
 
     case ({}, _)
       then
@@ -9292,13 +9369,15 @@ protected
   Absyn.Class cdef;
 algorithm
   cdef := ProgramUtil.getPathedClassInProgram(path, p);
-  initialStates := listReverse(getInitialStatesInClass(cdef));
+  initialStates := listReverse(getInitialStatesInClass(cdef, p, path));
   res := ValuesMake.makeArray(List.map(initialStates, ValuesMake.makeStringArray));
 end getInitialStates;
 
 protected function getInitialStatesInClass
   "Gets the list of initial states in a class."
   input Absyn.Class inClass;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
   output list<list<String>> outInitialStates;
 algorithm
   outInitialStates := match inClass
@@ -9308,14 +9387,14 @@ algorithm
 
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
       algorithm
-        initialStates := getInitialStatesInClassParts(parts);
+        initialStates := getInitialStatesInClassParts(parts, program, classPath);
       then
         initialStates;
 
     // handle also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
       algorithm
-        initialStates := getInitialStatesInClassParts(parts);
+        initialStates := getInitialStatesInClassParts(parts, program, classPath);
       then
         initialStates;
 
@@ -9327,6 +9406,8 @@ end getInitialStatesInClass;
 protected function getInitialStatesInClassParts
   "Helper function for getInitialStatesInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
   output list<list<String>> outInitialStates;
 algorithm
   outInitialStates := matchcontinue inAbsynClassPartLst
@@ -9337,14 +9418,14 @@ algorithm
 
     case Absyn.EQUATIONS(contents = eqlist) :: xs
       algorithm
-        initialStates1 := getInitialStatesInEquations(eqlist, {});
-        initialStates2 := getInitialStatesInClassParts(xs);
+        initialStates1 := getInitialStatesInEquations(eqlist, {}, program, classPath);
+        initialStates2 := getInitialStatesInClassParts(xs, program, classPath);
       then
         listAppend(initialStates1, initialStates2);
 
     case _ :: xs
       algorithm
-        initialStates1 := getInitialStatesInClassParts(xs);
+        initialStates1 := getInitialStatesInClassParts(xs, program, classPath);
       then
         initialStates1;
 
@@ -9358,6 +9439,8 @@ protected function getInitialStatesInEquations
   "Helper function for getInitialStatesInClass."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   input list<list<String>> inInitialStates;
+  input Absyn.Program program;
+  input Absyn.Path classPath;
   output list<list<String>> outInitialStates;
 algorithm
   outInitialStates := match (inAbsynEquationItemLst, inInitialStates)
@@ -9371,14 +9454,14 @@ algorithm
     case (((eqItem as Absyn.EQUATIONITEM(equation_ = eq as Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "initialState")))) :: xs),initialStates)
       algorithm
         initialState := getInitialStateInEquation(eq);
-        initialState := List.insert(initialState, listLength(initialState) + 1, getAnnotationInEquation(eqItem));
+        initialState := List.insert(initialState, listLength(initialState) + 1, getAnnotationInEquation(eqItem, program, classPath));
         initialStates := listAppend({initialState}, initialStates);
       then
-        getInitialStatesInEquations(xs, initialStates);
+        getInitialStatesInEquations(xs, initialStates, program, classPath);
 
     case ((_ :: xs), _)
       then
-        getInitialStatesInEquations(xs, inInitialStates);
+        getInitialStatesInEquations(xs, inInitialStates, program, classPath);
 
     case ({}, _)
       then

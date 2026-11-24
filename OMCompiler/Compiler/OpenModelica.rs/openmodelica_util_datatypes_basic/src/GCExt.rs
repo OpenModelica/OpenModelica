@@ -1,13 +1,23 @@
 // Manually written file
 #![allow(warnings)]
-#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
+#![allow(
+    unreachable_patterns,
+    unreachable_code,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code,
+    unused_imports,
+    unused_variables,
+    non_upper_case_globals,
+    unused_mut
+)]
 
-use std::sync::Arc;
 use arcstr::ArcStr;
-use metamodelica::Result;
-use loop_unwrap::unwrap_break_err;
-use metamodelica::*; // Built-in types and functions
 use const_str;
+use loop_unwrap::unwrap_break_err;
+use metamodelica::Result;
+use metamodelica::*; // Built-in types and functions
+use std::sync::Arc;
 
 /// The Rust port has real weak semantics, so a cell needs an explicit owner.
 pub const cellsNeedOwners: bool = true;
@@ -27,7 +37,6 @@ pub struct ProfStats {
 }
 
 pub type PROFSTATS = ProfStats;
-
 
 pub fn disable() {}
 
@@ -118,14 +127,26 @@ pub fn getForceUnmapOnGcollect() -> bool {
 }
 
 pub fn getProfStats() -> ProfStats {
-    ProfStats { heapsize_full: 0, free_bytes_full: 0, unmapped_bytes: 0, bytes_allocd_since_gc: 0, allocd_bytes_before_gc: 0, non_gc_bytes: 0, gc_no: 0, markers_m1: 0, bytes_reclaimed_since_gc: 0, reclaimed_bytes_before_gc: 0 }
+    ProfStats {
+        heapsize_full: 0,
+        free_bytes_full: 0,
+        unmapped_bytes: 0,
+        bytes_allocd_since_gc: 0,
+        allocd_bytes_before_gc: 0,
+        non_gc_bytes: 0,
+        gc_no: 0,
+        markers_m1: 0,
+        bytes_reclaimed_since_gc: 0,
+        reclaimed_bytes_before_gc: 0,
+    }
 }
 
 // `profStatsStr` calls `intString` to format each field. `intString` is
 // infallible and now returns `ArcStr` directly (no `.unwrap()` needed).
 pub fn profStatsStr(stats: ProfStats, head: ArcStr, delimiter: ArcStr) -> ArcStr {
     let s: ArcStr = (match stats.clone() {
-        PROFSTATS { .. } => { let mut __mm_s = String::new();
+        PROFSTATS { .. } => {
+            let mut __mm_s = String::new();
             __mm_s.push_str(&*head);
             __mm_s.push_str(&*delimiter);
             __mm_s.push_str("heapsize_full: ");
@@ -144,7 +165,9 @@ pub fn profStatsStr(stats: ProfStats, head: ArcStr, delimiter: ArcStr) -> ArcStr
             __mm_s.push_str(&*intString(stats.allocd_bytes_before_gc.clone()));
             __mm_s.push_str(&*delimiter);
             __mm_s.push_str(&*("total_allocd_bytes: "));
-            __mm_s.push_str(&*intString(stats.bytes_allocd_since_gc.clone() + stats.allocd_bytes_before_gc.clone()));
+            __mm_s.push_str(&*intString(
+                stats.bytes_allocd_since_gc.clone() + stats.allocd_bytes_before_gc.clone(),
+            ));
             __mm_s.push_str(&*delimiter);
             __mm_s.push_str(&*("non_gc_bytes: "));
             __mm_s.push_str(&*intString(stats.non_gc_bytes.clone()));
@@ -160,7 +183,8 @@ pub fn profStatsStr(stats: ProfStats, head: ArcStr, delimiter: ArcStr) -> ArcStr
             __mm_s.push_str(&*delimiter);
             __mm_s.push_str(&*("reclaimed_bytes_before_gc: "));
             __mm_s.push_str(&*intString(stats.reclaimed_bytes_before_gc.clone()));
-            ArcStr::from(__mm_s) },
+            ArcStr::from(__mm_s)
+        }
     });
     s
 }

@@ -42,6 +42,7 @@ import SimCode;
 
 protected
 import Algorithm;
+import ComponentReference;
 import DAEDump;
 import Error;
 import Expression;
@@ -248,6 +249,8 @@ algorithm
       File.write(file, ",\"display\":\"linear\",\"unknowns\":" + intString(lSystem.nUnknowns) + ",\"defines\":[");
       serializeUses(file,list(match v case SimCodeVar.SIMVAR() then v.name; end match
                               for v in lSystem.vars));
+      File.write(file, "],\"uses\":[");
+      serializeUses(file,linearSystemUses(lSystem));
       File.write(file, "],\"equation\":[{\"size\":");
       File.write(file,intString(i));
       if i <> 0 then
@@ -743,6 +746,25 @@ algorithm
     then fail();
   end match;
 end serializeEquation;
+
+function linearSystemUses
+  "The variables A and b of a linear system Ax=b are computed from."
+  input SimCode.LinearSystem lSystem;
+  output list<DAE.ComponentRef> crefs = {};
+algorithm
+  for cell in lSystem.simJac loop
+    crefs := match cell
+      local
+        DAE.Exp e;
+      case (_,_,SimCode.SES_RESIDUAL(exp=e)) then listAppend(Expression.extractCrefsFromExpDerPreStart(e), crefs);
+      else crefs;
+    end match;
+  end for;
+  for e in lSystem.beqs loop
+    crefs := listAppend(Expression.extractCrefsFromExpDerPreStart(e), crefs);
+  end for;
+  crefs := ComponentReference.uniqueList(crefs);
+end linearSystemUses;
 
 function serializeLinearCell
   input File.File file;

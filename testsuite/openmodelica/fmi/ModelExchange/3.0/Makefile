@@ -14,6 +14,7 @@ fmi3_import_discrete_inputs.mos \
 fmi3_arrays_approx.mos \
 fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \
+fmi3_attributes_02.mos \
 fmi3_binary_extobj.mos \
 fmi3_builddescription.mos \
 fmi3_c_daemode_me.mos \
@@ -26,9 +27,13 @@ fmi3_directional_derivatives.mos \
 fmi3_directional_derivatives_unlisted.mos \
 fmi3_documentation.mos \
 fmi3_fmustate.mos \
+fmi3_fmustate_bounds.mos \
+fmi3_fmustate_recover.mos \
+fmi3_instantiate_args.mos \
 fmi3_me_exitinit_assert.mos \
 fmi3_graphics.mos \
 fmi3_graphics_inherited.mos \
+fmi3_icon_text_bitmap.mos \
 fmi3_msl_adder4.mos \
 fmi3_msl_engine1a.mos \
 fmi3_terminals_alias_nb.mos \

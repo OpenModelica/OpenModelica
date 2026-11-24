@@ -7,7 +7,7 @@ model parameterTest3
   parameter Boolean b1 = false;
   parameter Real p1 = if b1 then sub(p2,2) else 0;
   parameter Real p2 = if b1 then 0 else sub(p1,3);
-  
+
   function sub
     input Real x;
     input Real y;
@@ -15,7 +15,7 @@ model parameterTest3
   algorithm
     res := x - y;
   end sub;
-  
+
 equation
 
 end parameterTest3;
@@ -187,7 +187,7 @@ simulate(parameterTest3); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "parameterTest3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'parameterTest3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

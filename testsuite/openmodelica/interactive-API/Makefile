@@ -26,11 +26,16 @@ CheckModel3.mos \
 CheckModel4.mos \
 CheckModel5.mos \
 CheckModel6.mos \
-CheckModelNonexistentClass1.mos \
+CheckModel7.mos \
 CheckModelExtObj1.mos \
+CheckModelNonexistentClass1.mos \
+CheckModelPartial1.mos \
+CheckModelPartial2.mos \
+CheckModelPartial3.mos \
 choicesAllMatching.mos \
 Cmd1.mos \
 Cmd2.mos \
+ConnectionAnnotation.mos \
 ConnectionList.mos \
 ConversionVersions.mos \
 ConvertUnits.mos \
@@ -76,6 +81,7 @@ getClassDiagram1.mos \
 getClassDiagram2.mos \
 getClassDiagram3.mos \
 getClassDiagram4.mos \
+getClassInformationConstrainedby.mos \
 getInstanceDiagram1.mos \
 getInstanceDiagram2.mos \
 getInstanceDiagram3.mos \
@@ -117,6 +123,7 @@ getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \
 getSimulationOptions4.mos \
+GetUsedClassNames.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 IllegalGraphics.mos\
@@ -129,6 +136,7 @@ interactive_api_loadsave.mos \
 interactive_api_param.mos \
 interactive_api_simulations.mos \
 interactive_test.mos \
+interactiveDumpFormatJSON.mos \
 isConstant.mos \
 isExperiment.mos \
 isParameter.mos \
@@ -157,6 +165,8 @@ Obfuscation2.mos \
 Obfuscation3.mos \
 Obfuscation4.mos \
 Obfuscation5.mos \
+Obfuscation6.mos \
+OverrideStringValue.mos \
 Promote1.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
@@ -165,6 +175,8 @@ refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
 regex.mos \
 Rename.mos \
+RenameComponent.mos \
+RenameClass.mos \
 ReverseLookup1.mos \
 ReverseLookup2.mos \
 ReverseLookup3.mos \

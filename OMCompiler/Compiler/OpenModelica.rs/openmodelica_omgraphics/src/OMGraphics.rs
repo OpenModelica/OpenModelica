@@ -6,11 +6,18 @@
 // The entry points keep their MetaModelica names, which mmtorust calls.
 #![allow(non_snake_case)]
 
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex, OnceLock};
+
 use arcstr::ArcStr;
+use base64::Engine;
 use openmodelica_util::JSON::JSON;
 use openmodelica_util::ModelInstanceReference;
 use openmodelica_util::UnorderedMap;
 use openmodelica_util::Vector;
+use resvg::tiny_skia;
+use resvg::usvg::{self, fontdb};
+use skrifa::MetadataProvider;
 
 /// `printf("%g")`, matching the C++ renderer's `ostringstream` precision(6).
 fn num(v: f64) -> String {
@@ -159,11 +166,7 @@ impl LinePattern {
 impl FillPattern {
     /// Gradients/hatches are approximated as solid, as in the C++ renderer.
     fn from_index(i: i32) -> FillPattern {
-        if i == 1 {
-            FillPattern::None
-        } else {
-            FillPattern::Solid
-        }
+        if i == 1 { FillPattern::None } else { FillPattern::Solid }
     }
 }
 
@@ -301,13 +304,7 @@ fn dash_array(p: LinePattern, w: f64) -> String {
     match p {
         LinePattern::Dash => format!("{},{}", num(4.0 * u), num(4.0 * u)),
         LinePattern::Dot => format!("{},{}", num(u), num(2.0 * u)),
-        LinePattern::DashDot => format!(
-            "{},{},{},{}",
-            num(4.0 * u),
-            num(2.0 * u),
-            num(u),
-            num(2.0 * u)
-        ),
+        LinePattern::DashDot => format!("{},{},{},{}", num(4.0 * u), num(2.0 * u), num(u), num(2.0 * u)),
         LinePattern::DashDotDot => format!(
             "{},{},{},{},{},{}",
             num(4.0 * u),
@@ -396,8 +393,7 @@ fn emit_polygon(svg: &mut String, s: &Shape) {
 }
 
 fn is_full_ellipse(s: &Shape) -> bool {
-    (s.end_angle - s.start_angle).abs() >= 359.999
-        || (s.start_angle == 0.0 && s.end_angle == 0.0)
+    (s.end_angle - s.start_angle).abs() >= 359.999 || (s.start_angle == 0.0 && s.end_angle == 0.0)
 }
 
 fn emit_ellipse(svg: &mut String, s: &Shape) {
@@ -422,15 +418,12 @@ fn emit_ellipse(svg: &mut String, s: &Shape) {
     let a1 = s.end_angle.to_radians();
     let (x0, y0) = (cx + rx * a0.cos(), cy + ry * a0.sin());
     let (x1, y1) = (cx + rx * a1.cos(), cy + ry * a1.sin());
-    let large = if (s.end_angle - s.start_angle).abs() > 180.0 { 1 } else { 0 };
-    let arc = format!(
-        "A {} {} 0 {} 1 {} {}",
-        num(rx),
-        num(ry),
-        large,
-        num(x1),
-        num(y1)
-    );
+    let large = if (s.end_angle - s.start_angle).abs() > 180.0 {
+        1
+    } else {
+        0
+    };
+    let arc = format!("A {} {} 0 {} 1 {} {}", num(rx), num(ry), large, num(x1), num(y1));
     match s.closure {
         EllipseClosure::None => svg.push_str(&format!(
             "    <path d=\"M {} {} {}\" style=\"fill:none;{}\"/>\n",
@@ -460,11 +453,8 @@ fn emit_ellipse(svg: &mut String, s: &Shape) {
     }
 }
 
-fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
-    let (x0, x1) = (
-        s.extent.p1.x.min(s.extent.p2.x),
-        s.extent.p1.x.max(s.extent.p2.x),
-    );
+fn emit_text(svg: &mut String, s: &Shape, name_text: &str, measure: Measure) {
+    let (x0, x1) = (s.extent.p1.x.min(s.extent.p2.x), s.extent.p1.x.max(s.extent.p2.x));
     // The anchor belongs at the edge the text is aligned to, not at the centre
     // of the extent: anchoring "start" in the middle of the box indents the
     // text by half its width.
@@ -491,7 +481,7 @@ fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
     } else {
         let by_height = if h > 0.0 { h * 0.8 } else { 10.0 };
         let width = x1 - x0;
-        let advance = text_advance(&txt);
+        let advance = measure(s, &txt);
         if width > 0.0 && advance > 0.0 && by_height * advance > width {
             width / advance
         } else {
@@ -499,7 +489,11 @@ fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
         }
     };
 
-    let col = if s.text_color.is_set() { s.text_color } else { s.line_color };
+    let col = if s.text_color.is_set() {
+        s.text_color
+    } else {
+        s.line_color
+    };
     let anchor = match s.horizontal_alignment {
         TextAlignment::Left => "start",
         TextAlignment::Right => "end",
@@ -528,9 +522,7 @@ fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
         anchor,
         num(size)
     ));
-    if !s.font_name.is_empty() {
-        svg.push_str(&format!(" font-family=\"{}\"", escape_xml(&s.font_name)));
-    }
+    svg.push_str(&format!(" font-family=\"{}\"", escape_xml(&font_family(&s.font_name))));
     svg.push_str(&format!(
         " style=\"fill:{};{}\">{}</text>\n    </g>\n",
         col.to_svg(),
@@ -539,10 +531,12 @@ fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
     ));
 }
 
+/// The width of `text` at font size 1 in the font of `s`.
+type Measure<'a> = &'a dyn Fn(&Shape, &str) -> f64;
+
 /// Width of a string at font size 1, estimated from per-character advances for
-/// a Helvetica-like face. Enough to decide how far to shrink text that does
-/// not fit; there is no font engine here to measure it properly.
-fn text_advance(text: &str) -> f64 {
+/// a Helvetica-like face: the SVG cannot know the font of whoever shows it.
+fn text_advance(_: &Shape, text: &str) -> f64 {
     text.chars()
         .map(|c| match c {
             'i' | 'j' | 'l' | '.' | ',' | ':' | ';' | '\'' | '|' | '!' => 0.26,
@@ -558,33 +552,152 @@ fn text_advance(text: &str) -> f64 {
         .sum()
 }
 
+#[derive(Clone, Copy)]
+enum Generic {
+    SansSerif,
+    Serif,
+    Monospace,
+}
+
+impl Generic {
+    /// In order of preference: Liberation, and Arimo, Tinos and Cousine, have
+    /// the widths of the first ones.
+    fn names(self) -> [&'static str; 4] {
+        match self {
+            Generic::SansSerif => ["Arial", "Helvetica", "Liberation Sans", "Arimo"],
+            Generic::Serif => ["Times New Roman", "Times", "Liberation Serif", "Tinos"],
+            Generic::Monospace => ["Courier New", "Courier", "Liberation Mono", "Cousine"],
+        }
+    }
+
+    /// The font files of web/fonts.
+    fn served(self) -> &'static str {
+        match self {
+            Generic::SansSerif => "LiberationSans",
+            Generic::Serif => "LiberationSerif",
+            Generic::Monospace => "LiberationMono",
+        }
+    }
+
+    fn css(self) -> &'static str {
+        match self {
+            Generic::SansSerif => "sans-serif",
+            Generic::Serif => "serif",
+            Generic::Monospace => "monospace",
+        }
+    }
+
+    fn family(self) -> fontdb::Family<'static> {
+        match self {
+            Generic::SansSerif => fontdb::Family::SansSerif,
+            Generic::Serif => fontdb::Family::Serif,
+            Generic::Monospace => fontdb::Family::Monospace,
+        }
+    }
+}
+
+/// A Modelica `fontName` as a font of its own, if it names one, and the generic
+/// family. The specification requires serif, sans-serif and monospace.
+fn font_stack(name: &str) -> (Option<String>, Generic) {
+    match name.to_ascii_lowercase().as_str() {
+        "" | "sans-serif" | "arial" | "helvetica" => (None, Generic::SansSerif),
+        "serif" | "times" | "times new roman" => (None, Generic::Serif),
+        "monospace" | "courier" | "courier new" => (None, Generic::Monospace),
+        _ => (Some(name.replace(['\'', '"', '\\'], "")), Generic::SansSerif),
+    }
+}
+
+/// The CSS font list for a Modelica `fontName`, the same fonts the PNG looks for.
+fn font_family(name: &str) -> String {
+    let (own, generic) = font_stack(name);
+    own.iter()
+        .map(String::as_str)
+        .chain(generic.names())
+        .map(|n| {
+            if n.contains(' ') {
+                format!("'{n}'")
+            } else {
+                n.to_string()
+            }
+        })
+        .chain([generic.css().to_string()])
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn image_mime(data: &[u8]) -> &'static str {
+    let text = data.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(data).trim_ascii_start();
+    match data {
+        [0x89, b'P', b'N', b'G', ..] => "image/png",
+        [0xFF, 0xD8, 0xFF, ..] => "image/jpeg",
+        [b'G', b'I', b'F', b'8', ..] => "image/gif",
+        [b'B', b'M', ..] => "image/bmp",
+        [b'R', b'I', b'F', b'F', _, _, _, _, b'W', b'E', b'B', b'P', ..] => "image/webp",
+        _ if text.starts_with(b"<") => "image/svg+xml",
+        _ => "image/png",
+    }
+}
+
+fn read_uri(uri: &str) -> Option<Vec<u8>> {
+    let scheme = uri.split_once(':')?.0.to_ascii_lowercase();
+    if scheme != "modelica" && scheme != "file" {
+        return None;
+    }
+    let path = metamodelica::uriToFilename(ArcStr::from(uri)).ok()?;
+    openmodelica_wasi::fs::read(&path).ok()
+}
+
+/// `imageSource`, or else the file `fileName` names, as a data URI, so that the
+/// SVG does not depend on files outside it.
+fn bitmap_href(s: &Shape) -> Option<String> {
+    let b64 = base64::engine::general_purpose::STANDARD;
+    if !s.image_source.is_empty() {
+        let data: String = s.image_source.chars().filter(|c| !c.is_ascii_whitespace()).collect();
+        let head = b64
+            .decode(&data.as_bytes()[..data.len().min(64) / 4 * 4])
+            .unwrap_or_default();
+        return Some(format!("data:{};base64,{}", image_mime(&head), data));
+    }
+    if s.file_name.is_empty() {
+        return None;
+    }
+    Some(match read_uri(&s.file_name) {
+        Some(data) => format!("data:{};base64,{}", image_mime(&data), b64.encode(&data)),
+        None => escape_xml(&s.file_name),
+    })
+}
+
 fn emit_bitmap(svg: &mut String, s: &Shape) {
-    let x = s.extent.p1.x.min(s.extent.p2.x);
-    let y = s.extent.p1.y.min(s.extent.p2.y);
-    let w = (s.extent.p2.x - s.extent.p1.x).abs();
-    let h = (s.extent.p2.y - s.extent.p1.y).abs();
-    let href = if !s.image_source.is_empty() {
-        format!("data:image/png;base64,{}", s.image_source)
-    } else if !s.file_name.is_empty() {
-        escape_xml(&s.file_name)
-    } else {
+    let Some(href) = bitmap_href(s) else {
         return;
     };
-    // undo the y-flip so the image is not upside down
+    let (p1, p2) = (s.extent.p1, s.extent.p2);
+    let w = (p2.x - p1.x).abs();
+    let h = (p2.y - p1.y).abs();
+    // x2 < x1 and y2 < y1 flip the image (Modelica specification, Bitmap).
+    // Otherwise y is flipped back, as the root group flips it.
+    let sx = if p2.x < p1.x { -1 } else { 1 };
+    let sy = if p2.y < p1.y { 1 } else { -1 };
     svg.push_str(&format!(
-        "    <g transform=\"translate({},{}) scale(1,-1)\">\n",
-        num(x),
-        num(y + h)
+        "    <g transform=\"translate({},{}) scale({},{})\">\n",
+        num((p1.x + p2.x) / 2.0),
+        num((p1.y + p2.y) / 2.0),
+        sx,
+        sy
     ));
+    // The default preserveAspectRatio, xMidYMid meet, scales and centres the
+    // image as Modelica asks.
     svg.push_str(&format!(
-        "      <image x=\"0\" y=\"0\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" xlink:href=\"{}\"/>\n    </g>\n",
+        "      <image x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" xlink:href=\"{}\"/>\n    </g>\n",
+        num(-w / 2.0),
+        num(-h / 2.0),
         num(w),
         num(h),
         href
     ));
 }
 
-fn emit_shape(svg: &mut String, s: &Shape, name_text: &str) {
+fn emit_shape(svg: &mut String, s: &Shape, name_text: &str, measure: Measure) {
     if !s.visible {
         return;
     }
@@ -592,11 +705,7 @@ fn emit_shape(svg: &mut String, s: &Shape, name_text: &str) {
     if transformed {
         svg.push_str("  <g transform=\"");
         if s.origin.x != 0.0 || s.origin.y != 0.0 {
-            svg.push_str(&format!(
-                "translate({},{}) ",
-                num(s.origin.x),
-                num(s.origin.y)
-            ));
+            svg.push_str(&format!("translate({},{}) ", num(s.origin.x), num(s.origin.y)));
         }
         if s.rotation != 0.0 {
             svg.push_str(&format!("rotate({})", num(s.rotation)));
@@ -608,7 +717,7 @@ fn emit_shape(svg: &mut String, s: &Shape, name_text: &str) {
         ShapeKind::Line => emit_line(svg, s),
         ShapeKind::Polygon => emit_polygon(svg, s),
         ShapeKind::Ellipse => emit_ellipse(svg, s),
-        ShapeKind::Text => emit_text(svg, s, name_text),
+        ShapeKind::Text => emit_text(svg, s, name_text, measure),
         ShapeKind::Bitmap => emit_bitmap(svg, s),
     }
     if transformed {
@@ -658,7 +767,11 @@ fn view_box(icon: &Icon) -> ViewBox {
     let h = ymax - ymin;
     let mut max_stroke: f64 = 0.0;
     for s in &icon.graphics {
-        let tw = if s.kind == ShapeKind::Line { s.thickness } else { s.line_thickness };
+        let tw = if s.kind == ShapeKind::Line {
+            s.thickness
+        } else {
+            s.line_thickness
+        };
         max_stroke = max_stroke.max(stroke_width(tw));
     }
     let margin = max_stroke.max(0.005 * w.max(h));
@@ -727,11 +840,11 @@ fn thumbnail_strokes(icon: &Icon) -> Icon {
 /// `None` when nothing is drawn. An icon layer can hold shapes that all draw
 /// nothing — every one invisible, or of a kind this renderer has no output for
 /// — and an empty frame on the page is worse than no icon at all.
-fn render_icon_svg(icon: &Icon, name_text: &str) -> Option<String> {
+fn render_icon_svg(icon: &Icon, name_text: &str, measure: Measure) -> Option<String> {
     let icon = &thumbnail_strokes(icon);
     let mut body = String::new();
     for s in &icon.graphics {
-        emit_shape(&mut body, s, name_text);
+        emit_shape(&mut body, s, name_text, measure);
     }
     if body.trim().is_empty() {
         return None;
@@ -758,52 +871,11 @@ fn render_icon_svg(icon: &Icon, name_text: &str) -> Option<String> {
     Some(svg)
 }
 
-// PNG rasteriser. FMI 3.0 requires the icons referenced from
-// terminalsAndIcons.xml to be PNG; the SVG is an optional companion.
-// Anti-aliasing is by supersampling: drawn at SS x, then box-downsampled.
+// PNG renderer. FMI 3.0 requires the icons referenced from
+// terminalsAndIcons.xml to be PNG; the SVG is an optional companion. The PNG is
+// rendered from the SVG, so the two show the same.
 
-const SS: usize = 3; // supersampling factor (per axis)
-const MAX_DIM: f64 = 512.0; // clamp for the final image size (px)
-
-/// RGBA8, row-major, transparent background.
-struct Raster {
-    w: usize,
-    h: usize,
-    px: Vec<u8>,
-}
-
-impl Raster {
-    fn new(w: usize, h: usize) -> Raster {
-        Raster { w, h, px: vec![0; w * h * 4] }
-    }
-
-    fn set(&mut self, x: i64, y: i64, c: Color) {
-        if x < 0 || y < 0 || x as usize >= self.w || y as usize >= self.h {
-            return;
-        }
-        let i = ((y as usize) * self.w + x as usize) * 4;
-        self.px[i] = c.r.max(0) as u8;
-        self.px[i + 1] = c.g.max(0) as u8;
-        self.px[i + 2] = c.b.max(0) as u8;
-        self.px[i + 3] = 255;
-    }
-}
-
-/// Icon coordinates to supersampled device pixels, y flipped.
-struct DeviceMap {
-    vb: ViewBox,
-    sw: f64,
-    sh: f64,
-}
-
-impl DeviceMap {
-    fn map(&self, x: f64, y: f64) -> Point {
-        Point {
-            x: (x - self.vb.x) / self.vb.w * self.sw,
-            y: ((self.vb.y + self.vb.h) - y) / self.vb.h * self.sh,
-        }
-    }
-}
+const MAX_DIM: f32 = 512.0; // clamp for the image size (px)
 
 /// The shape's local transform, mirroring the SVG `translate() rotate()` group.
 fn apply_shape_transform(s: &Shape, p: Point) -> Point {
@@ -815,274 +887,233 @@ fn apply_shape_transform(s: &Shape, p: Point) -> Point {
     }
 }
 
-/// Even-odd scanline fill of device-space vertices.
-fn fill_polygon(r: &mut Raster, pts: &[Point], c: Color) {
-    if pts.len() < 3 {
-        return;
-    }
-    let ymin = pts.iter().fold(f64::INFINITY, |a, p| a.min(p.y));
-    let ymax = pts.iter().fold(f64::NEG_INFINITY, |a, p| a.max(p.y));
-    let y0 = (ymin.floor() as i64).max(0);
-    let y1 = (ymax.ceil() as i64).min(r.h as i64 - 1);
-    let mut xs: Vec<f64> = Vec::new();
-    for y in y0..=y1 {
-        let yc = y as f64 + 0.5;
-        xs.clear();
-        for i in 0..pts.len() {
-            let (a, b) = (pts[i], pts[(i + 1) % pts.len()]);
-            if (a.y <= yc && b.y > yc) || (b.y <= yc && a.y > yc) {
-                let t = (yc - a.y) / (b.y - a.y);
-                xs.push(a.x + t * (b.x - a.x));
-            }
-        }
-        if xs.len() < 2 {
-            continue;
-        }
-        xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        for pair in xs.chunks_exact(2) {
-            let xa = ((pair[0] - 0.5).ceil() as i64).max(0);
-            let xb = ((pair[1] - 0.5).floor() as i64).min(r.w as i64 - 1);
-            for x in xa..=xb {
-                r.set(x, y, c);
-            }
-        }
-    }
+/// Reads a font file of web/fonts on the web, where omc has no system fonts.
+pub type FontSource = fn(&str) -> Option<Vec<u8>>;
+
+static FONT_SOURCE: OnceLock<FontSource> = OnceLock::new();
+
+pub fn set_font_source(source: FontSource) {
+    let _ = FONT_SOURCE.set(source);
 }
 
-/// Round line caps/joins.
-fn fill_disk(r: &mut Raster, cx: f64, cy: f64, rad: f64, c: Color) {
-    if rad <= 0.0 {
-        return;
-    }
-    let x0 = ((cx - rad).floor() as i64).max(0);
-    let x1 = ((cx + rad).ceil() as i64).min(r.w as i64 - 1);
-    let y0 = ((cy - rad).floor() as i64).max(0);
-    let y1 = ((cy + rad).ceil() as i64).min(r.h as i64 - 1);
-    let r2 = rad * rad;
-    for y in y0..=y1 {
-        for x in x0..=x1 {
-            let dx = x as f64 + 0.5 - cx;
-            let dy = y as f64 + 0.5 - cy;
-            if dx * dx + dy * dy <= r2 {
-                r.set(x, y, c);
-            }
-        }
-    }
+/// The fonts of the PNG: the system's, read once per process, or on the web
+/// the served files a text has needed so far.
+struct Fonts {
+    db: Arc<fontdb::Database>,
+    served: HashSet<String>,
 }
 
-/// A quad per segment plus a disk at every vertex.
-fn stroke_polyline(r: &mut Raster, pts: &[Point], closed: bool, c: Color, width_px: f64) {
-    let hw = width_px.max(1.0) / 2.0;
-    let n = pts.len();
-    if n < 2 {
-        if n == 1 {
-            fill_disk(r, pts[0].x, pts[0].y, hw, c);
-        }
-        return;
-    }
-    let segs = if closed { n } else { n - 1 };
-    for i in 0..segs {
-        let (a, b) = (pts[i], pts[(i + 1) % n]);
-        let (dx, dy) = (b.x - a.x, b.y - a.y);
-        let len = (dx * dx + dy * dy).sqrt();
-        if len < 1e-9 {
-            continue;
-        }
-        let (nx, ny) = (-dy / len * hw, dx / len * hw);
-        let quad = [
-            Point { x: a.x + nx, y: a.y + ny },
-            Point { x: b.x + nx, y: b.y + ny },
-            Point { x: b.x - nx, y: b.y - ny },
-            Point { x: a.x - nx, y: a.y - ny },
-        ];
-        fill_polygon(r, &quad, c);
-    }
-    for p in pts {
-        fill_disk(r, p.x, p.y, hw, c);
-    }
-}
-
-fn ellipse_points(s: &Shape) -> Vec<Point> {
-    let cx = (s.extent.p1.x + s.extent.p2.x) / 2.0;
-    let cy = (s.extent.p1.y + s.extent.p2.y) / 2.0;
-    let rx = (s.extent.p2.x - s.extent.p1.x).abs() / 2.0;
-    let ry = (s.extent.p2.y - s.extent.p1.y).abs() / 2.0;
-    let full = is_full_ellipse(s);
-    let (a0, a1) = if full {
-        (0.0, std::f64::consts::TAU)
-    } else {
-        (s.start_angle.to_radians(), s.end_angle.to_radians())
-    };
-    const N: i32 = 64;
-    let mut pts = Vec::with_capacity(N as usize + 2);
-    if !full && s.closure == EllipseClosure::Radial {
-        pts.push(Point { x: cx, y: cy }); // pie centre
-    }
-    for i in 0..=N {
-        let a = a0 + (a1 - a0) * f64::from(i) / f64::from(N);
-        pts.push(Point { x: cx + rx * a.cos(), y: cy + ry * a.sin() });
-    }
-    pts
-}
-
-fn to_device(m: &DeviceMap, s: &Shape, pts: &[Point]) -> Vec<Point> {
-    pts.iter()
-        .map(|p| {
-            let w = apply_shape_transform(s, *p);
-            m.map(w.x, w.y)
+fn fonts() -> &'static Mutex<Fonts> {
+    static FONTS: OnceLock<Mutex<Fonts>> = OnceLock::new();
+    FONTS.get_or_init(|| {
+        #[allow(unused_mut)]
+        let mut db = fontdb::Database::new();
+        #[cfg(not(target_arch = "wasm32"))]
+        db.load_system_fonts();
+        Mutex::new(Fonts {
+            db: Arc::new(db),
+            served: HashSet::new(),
         })
-        .collect()
+    })
 }
 
-fn raster_shape(r: &mut Raster, m: &DeviceMap, s: &Shape) {
-    if !s.visible {
-        return;
+impl Fonts {
+    fn serve(&mut self, file: &str) {
+        let Some(source) = FONT_SOURCE.get() else {
+            return;
+        };
+        if self.served.insert(file.to_string())
+            && let Some(data) = source(file)
+        {
+            Arc::make_mut(&mut self.db).load_font_data(data);
+        }
     }
-    // stroke width: coordinate units -> pixels
-    let px_per_unit = m.sw / m.vb.w;
-    match s.kind {
-        ShapeKind::Rectangle => {
-            let x0 = s.extent.p1.x.min(s.extent.p2.x);
-            let x1 = s.extent.p1.x.max(s.extent.p2.x);
-            let y0 = s.extent.p1.y.min(s.extent.p2.y);
-            let y1 = s.extent.p1.y.max(s.extent.p2.y);
-            let corners = [
-                Point { x: x0, y: y0 },
-                Point { x: x1, y: y0 },
-                Point { x: x1, y: y1 },
-                Point { x: x0, y: y1 },
-            ];
-            let dev = to_device(m, s, &corners);
-            if s.fill_pattern != FillPattern::None {
-                fill_polygon(r, &dev, s.fill_color);
-            }
-            if s.line_pattern != LinePattern::None {
-                stroke_polyline(r, &dev, true, s.line_color, stroke_width(s.line_thickness) * px_per_unit);
-            }
+
+    /// Before the PNG is drawn, on the web: the served file for the text of `s`,
+    /// and DejaVu Sans if that lacks one of its characters, as for ∠ and ∨ in
+    /// MSL icons.
+    fn prepare(&mut self, s: &Shape, text: &str) {
+        let (_, generic) = font_stack(&s.font_name);
+        let style = match (
+            s.text_styles.contains(&TextStyle::Bold),
+            s.text_styles.contains(&TextStyle::Italic),
+        ) {
+            (false, false) => "Regular",
+            (true, false) => "Bold",
+            (false, true) => "Italic",
+            (true, true) => "BoldItalic",
+        };
+        self.serve(&format!("{}-{style}.ttf", generic.served()));
+        if self
+            .face(s)
+            .is_some_and(|id| advances(&self.db, id, text).contains(&None))
+        {
+            self.serve("DejaVuSans.ttf");
         }
-        ShapeKind::Polygon => {
-            let dev = to_device(m, s, &s.points);
-            if s.fill_pattern != FillPattern::None {
-                fill_polygon(r, &dev, s.fill_color);
-            }
-            if s.line_pattern != LinePattern::None {
-                stroke_polyline(r, &dev, true, s.line_color, stroke_width(s.line_thickness) * px_per_unit);
-            }
-        }
-        ShapeKind::Ellipse => {
-            let dev = to_device(m, s, &ellipse_points(s));
-            // a partial ellipse is only closed for Chord/Radial
-            let closed = is_full_ellipse(s) || s.closure != EllipseClosure::None;
-            if closed && s.fill_pattern != FillPattern::None {
-                fill_polygon(r, &dev, s.fill_color);
-            }
-            if s.line_pattern != LinePattern::None {
-                stroke_polyline(r, &dev, closed, s.line_color, stroke_width(s.line_thickness) * px_per_unit);
-            }
-        }
-        ShapeKind::Line => {
-            let dev = to_device(m, s, &s.points);
-            if s.line_pattern != LinePattern::None {
-                stroke_polyline(r, &dev, false, s.color, stroke_width(s.thickness) * px_per_unit);
-            }
-        }
-        // no font / image decoder in this Qt-free path
-        ShapeKind::Text | ShapeKind::Bitmap => {}
+    }
+
+    /// The face resvg draws the text of `s` with: the same query its font
+    /// resolver makes for the families `font_family` lists.
+    fn face(&self, s: &Shape) -> Option<fontdb::ID> {
+        let (own, generic) = font_stack(&s.font_name);
+        let mut families: Vec<fontdb::Family> = own.iter().map(|n| fontdb::Family::Name(n)).collect();
+        families.extend(generic.names().map(fontdb::Family::Name));
+        families.push(generic.family());
+        self.db.query(&fontdb::Query {
+            families: &families,
+            weight: if s.text_styles.contains(&TextStyle::Bold) {
+                fontdb::Weight::BOLD
+            } else {
+                fontdb::Weight::NORMAL
+            },
+            stretch: fontdb::Stretch::Normal,
+            style: if s.text_styles.contains(&TextStyle::Italic) {
+                fontdb::Style::Italic
+            } else {
+                fontdb::Style::Normal
+            },
+        })
     }
 }
 
-/// Average RGBA over each SS x SS block, so edges come out anti-aliased.
-fn downsample(hi: &Raster, factor: usize) -> Raster {
-    let mut lo = Raster::new(hi.w / factor, hi.h / factor);
-    for y in 0..lo.h {
-        for x in 0..lo.w {
-            let (mut sr, mut sg, mut sb, mut sa) = (0u64, 0u64, 0u64, 0u64);
-            for dy in 0..factor {
-                for dx in 0..factor {
-                    let i = ((y * factor + dy) * hi.w + (x * factor + dx)) * 4;
-                    let p = &hi.px[i..i + 4];
-                    // premultiply so transparent texels don't bleed black into edges
-                    sr += u64::from(p[0]) * u64::from(p[3]);
-                    sg += u64::from(p[1]) * u64::from(p[3]);
-                    sb += u64::from(p[2]) * u64::from(p[3]);
-                    sa += u64::from(p[3]);
-                }
+/// The advance of each character of `text` at size 1 in face `id`; `None`
+/// where the face lacks the character.
+fn advances(db: &fontdb::Database, id: fontdb::ID, text: &str) -> Vec<Option<f64>> {
+    db.with_face_data(id, |data, index| {
+        let Ok(font) = skrifa::FontRef::from_index(data, index) else {
+            return vec![None; text.chars().count()];
+        };
+        let charmap = font.charmap();
+        let size = skrifa::instance::Size::unscaled();
+        let glyphs = font.glyph_metrics(size, skrifa::instance::LocationRef::default());
+        let upem = f64::from(
+            font.metrics(size, skrifa::instance::LocationRef::default())
+                .units_per_em
+                .max(1),
+        );
+        text.chars()
+            .map(|c| {
+                charmap
+                    .map(c)
+                    .and_then(|g| glyphs.advance_width(g))
+                    .map(|w| f64::from(w) / upem)
+            })
+            .collect()
+    })
+    .unwrap_or_default()
+}
+
+/// A face for a character the faces in `used` lack: one of `used[0]`'s style,
+/// weight and spacing if there is one, and DejaVu Sans, which the web build
+/// has, before others. usvg's own choice accepts an oblique face for upright
+/// text, and draws all of the text with it when it has every character.
+fn fallback_face(db: &fontdb::Database, c: char, used: &[fontdb::ID]) -> Option<fontdb::ID> {
+    type Key = (Vec<fontdb::ID>, char);
+    static CHOSEN: OnceLock<Mutex<std::collections::HashMap<Key, Option<fontdb::ID>>>> = OnceLock::new();
+    let key = (used.to_vec(), c);
+    if let Some(id) = CHOSEN.get_or_init(Default::default).lock().ok()?.get(&key) {
+        return *id;
+    }
+    let base = db.face(*used.first()?)?;
+    let id = db
+        .faces()
+        .filter(|f| !used.contains(&f.id))
+        .filter(|f| {
+            advances(db, f.id, c.encode_utf8(&mut [0; 4]))
+                .first()
+                .is_some_and(Option::is_some)
+        })
+        .min_by_key(|f| {
+            (
+                f.style != base.style,
+                f.weight != base.weight,
+                f.monospaced != base.monospaced,
+                !f.families.iter().any(|(n, _)| n == "DejaVu Sans"),
+            )
+        })
+        .map(|f| f.id);
+    CHOSEN.get_or_init(Default::default).lock().ok()?.insert(key, id);
+    id
+}
+
+/// The width of `text` at size 1 as usvg lays it out: in face `id`, and in
+/// fallback faces for the characters it lacks.
+fn text_width(db: &fontdb::Database, id: fontdb::ID, text: &str) -> f64 {
+    let chars: Vec<char> = text.chars().collect();
+    let mut used = vec![id];
+    let mut widths = advances(db, id, text);
+    while let Some(i) = widths.iter().position(Option::is_none) {
+        let Some(fallback) = fallback_face(db, chars[i], &used) else {
+            break;
+        };
+        used.push(fallback);
+        let other = advances(db, fallback, text);
+        if other.iter().all(Option::is_some) {
+            widths = other;
+            break;
+        }
+        for (w, o) in widths.iter_mut().zip(other) {
+            if w.is_none() {
+                *w = o;
             }
-            let o = (y * lo.w + x) * 4;
-            if sa > 0 {
-                lo.px[o] = (sr / sa) as u8;
-                lo.px[o + 1] = (sg / sa) as u8;
-                lo.px[o + 2] = (sb / sa) as u8;
-            }
-            lo.px[o + 3] = (sa / (factor * factor) as u64) as u8;
         }
     }
-    lo
+    widths.into_iter().map(|w| w.unwrap_or(0.55)).sum()
 }
 
-fn put_u32(out: &mut Vec<u8>, v: u32) {
-    out.extend_from_slice(&v.to_be_bytes());
+fn svg_to_png(svg: &str, db: Arc<fontdb::Database>) -> Option<Vec<u8>> {
+    let opt = usvg::Options {
+        fontdb: db,
+        font_resolver: usvg::FontResolver {
+            select_font: usvg::FontResolver::default_font_selector(),
+            select_fallback: Box::new(|c, used, db| fallback_face(db, c, used)),
+        },
+        // emit_bitmap inlines every file it can read
+        image_href_resolver: usvg::ImageHrefResolver {
+            resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
+            resolve_string: Box::new(|_, _| None),
+        },
+        ..usvg::Options::default()
+    };
+    let tree = usvg::Tree::from_str(svg, &opt).ok()?;
+    let size = tree.size();
+    // ~1 px per coordinate unit, clamped, aspect preserved
+    let scale = (MAX_DIM / size.width().max(size.height())).min(1.0);
+    let mut pixmap = tiny_skia::Pixmap::new(
+        ((size.width() * scale).round() as u32).max(1),
+        ((size.height() * scale).round() as u32).max(1),
+    )?;
+    resvg::render(
+        &tree,
+        tiny_skia::Transform::from_scale(scale, scale),
+        &mut pixmap.as_mut(),
+    );
+    pixmap.encode_png().ok()
 }
 
-/// length + type + data + CRC over type+data.
-fn put_chunk(out: &mut Vec<u8>, tag: &[u8; 4], data: &[u8]) {
-    put_u32(out, data.len() as u32);
-    out.extend_from_slice(tag);
-    out.extend_from_slice(data);
-    let mut crc = flate2::Crc::new();
-    crc.update(tag);
-    crc.update(data);
-    put_u32(out, crc.sum());
-}
-
-/// PNG colour type 6, filter 0 per row.
-fn encode_png(img: &Raster) -> Vec<u8> {
-    use std::io::Write;
-
-    let mut ihdr = Vec::with_capacity(13);
-    put_u32(&mut ihdr, img.w as u32);
-    put_u32(&mut ihdr, img.h as u32);
-    ihdr.extend_from_slice(&[8, 6, 0, 0, 0]); // bit depth, RGBA, deflate, filter, no interlace
-
-    let mut raw = Vec::with_capacity(img.h * (img.w * 4 + 1));
-    for y in 0..img.h {
-        raw.push(0); // filter type: none
-        raw.extend_from_slice(&img.px[y * img.w * 4..(y + 1) * img.w * 4]);
-    }
-
-    let mut enc = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::best());
-    if enc.write_all(&raw).is_err() {
-        return Vec::new();
-    }
-    let Ok(idat) = enc.finish() else {
+/// Empty when nothing is drawn. Text that fits its extent is sized with the
+/// font it is drawn with, not with the estimate of the SVG.
+fn render_icon_png(icon: &Icon, name_text: &str) -> Vec<u8> {
+    let substitute = |s: &Shape| {
+        if name_text.is_empty() {
+            s.text_string.to_string()
+        } else {
+            s.text_string.replace("%name", name_text)
+        }
+    };
+    let Ok(mut fonts) = fonts().lock() else {
         return Vec::new();
     };
-
-    let mut out = Vec::with_capacity(idat.len() + 64);
-    out.extend_from_slice(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
-    put_chunk(&mut out, b"IHDR", &ihdr);
-    put_chunk(&mut out, b"IDAT", &idat);
-    put_chunk(&mut out, b"IEND", &[]);
-    out
-}
-
-fn render_icon_png(icon: &Icon) -> Vec<u8> {
-    if icon.graphics.is_empty() {
-        return Vec::new();
+    for s in icon.graphics.iter().filter(|s| s.kind == ShapeKind::Text) {
+        fonts.prepare(s, &substitute(s));
     }
-    let vb = view_box(icon);
-    // ~1 px per coordinate unit, clamped, aspect preserved
-    let maxc = vb.w.max(vb.h);
-    let scale = if maxc > MAX_DIM { MAX_DIM / maxc } else { 1.0 };
-    let out_w = ((vb.w * scale).round() as usize).max(1);
-    let out_h = ((vb.h * scale).round() as usize).max(1);
-
-    let mut hi = Raster::new(out_w * SS, out_h * SS);
-    let m = DeviceMap { sw: hi.w as f64, sh: hi.h as f64, vb };
-    for s in &icon.graphics {
-        raster_shape(&mut hi, &m, s);
-    }
-    encode_png(&downsample(&hi, SS))
+    let measure = |s: &Shape, text: &str| match fonts.face(s) {
+        Some(id) => text_width(&fonts.db, id, text),
+        None => text_advance(s, text),
+    };
+    render_icon_svg(icon, name_text, &measure)
+        .and_then(|svg| svg_to_png(&svg, fonts.db.clone()))
+        .unwrap_or_default()
 }
 
 // JSON accessors. `None` plays the role of the C++ renderer's null Json
@@ -1110,9 +1141,7 @@ impl JsonExt for J {
                 .into_iter()
                 .find(|(k, _)| k.as_str() == key)
                 .map(|(_, v)| v.clone()),
-            JSON::OBJECT { values } => {
-                UnorderedMap::get(ArcStr::from(key), values.clone()).ok().flatten()
-            }
+            JSON::OBJECT { values } => UnorderedMap::get(ArcStr::from(key), values.clone()).ok().flatten(),
             _ => None,
         }
     }
@@ -1120,9 +1149,7 @@ impl JsonExt for J {
     fn at(&self, index: usize) -> J {
         match self.as_deref()? {
             JSON::LIST { values } => (&**values).into_iter().nth(index).cloned(),
-            JSON::ARRAY { values } => {
-                Vector::get(values.clone(), index as i32 + 1).ok()
-            }
+            JSON::ARRAY { values } => Vector::get(values.clone(), index as i32 + 1).ok(),
             _ => None,
         }
     }
@@ -1146,10 +1173,7 @@ impl JsonExt for J {
     }
 
     fn is_object(&self) -> bool {
-        matches!(
-            self.as_deref(),
-            Some(JSON::OBJECT { .. } | JSON::LIST_OBJECT { .. })
-        )
+        matches!(self.as_deref(), Some(JSON::OBJECT { .. } | JSON::LIST_OBJECT { .. }))
     }
 
     fn is_array(&self) -> bool {
@@ -1186,7 +1210,10 @@ impl JsonExt for J {
 
 fn parse_point(j: &J) -> Point {
     if j.len() >= 2 {
-        Point { x: j.at(0).as_num(), y: j.at(1).as_num() }
+        Point {
+            x: j.at(0).as_num(),
+            y: j.at(1).as_num(),
+        }
     } else {
         Point::default()
     }
@@ -1194,7 +1221,10 @@ fn parse_point(j: &J) -> Point {
 
 fn parse_extent(j: &J) -> Extent {
     if j.len() >= 2 {
-        Extent { p1: parse_point(&j.at(0)), p2: parse_point(&j.at(1)) }
+        Extent {
+            p1: parse_point(&j.at(0)),
+            p2: parse_point(&j.at(1)),
+        }
     } else {
         Extent::default()
     }
@@ -1206,7 +1236,11 @@ fn parse_points(j: &J) -> Vec<Point> {
 
 fn parse_color(j: &J) -> Color {
     if j.len() >= 3 {
-        Color { r: j.at(0).as_int(), g: j.at(1).as_int(), b: j.at(2).as_int() }
+        Color {
+            r: j.at(0).as_int(),
+            g: j.at(1).as_int(),
+            b: j.at(2).as_int(),
+        }
     } else {
         Color::BLACK
     }
@@ -1296,8 +1330,7 @@ fn parse_shape(name: &str, elements: &J) -> Option<Shape> {
                 .into_iter()
                 .map(|st| TextStyle::from_index(enum_index(&Some(st), TextStyle::Bold as i32)))
                 .collect();
-            s.horizontal_alignment =
-                TextAlignment::from_index(enum_index(&el[14], TextAlignment::Center as i32));
+            s.horizontal_alignment = TextAlignment::from_index(enum_index(&el[14], TextAlignment::Center as i32));
         }
         "Bitmap" => {
             s.kind = ShapeKind::Bitmap;
@@ -1443,11 +1476,7 @@ fn collect_placed_connectors(root: &J) -> Vec<PlacedConnector> {
         if !t.is_object() || t.get("restriction").as_str() != "connector" {
             continue;
         }
-        let ext = e
-            .get("annotation")
-            .get("Placement")
-            .get("transformation")
-            .get("extent");
+        let ext = e.get("annotation").get("Placement").get("transformation").get("extent");
         let Some(b) = placement_box(&ext) else {
             continue; // no placement -> not drawn
         };
@@ -1511,10 +1540,7 @@ struct Placement {
 }
 
 fn parse_placement(component: &J) -> Option<Placement> {
-    let t = component
-        .get("annotation")
-        .get("Placement")
-        .get("transformation");
+    let t = component.get("annotation").get("Placement").get("transformation");
     let b = placement_box(&t.get("extent"))?;
     let origin_json = t.get("origin");
     let origin = if origin_json.len() >= 2 {
@@ -1554,7 +1580,7 @@ pub fn diagram_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -
     let mut svg = &mut body;
 
     for s in &diagram.graphics {
-        emit_shape(&mut svg, s, model_name);
+        emit_shape(&mut svg, s, model_name, &text_advance);
     }
 
     for component in &components {
@@ -1596,7 +1622,7 @@ pub fn diagram_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -
             num(sy)
         ));
         for s in &icon.graphics {
-            emit_shape(&mut svg, s, &component.get("name").as_str());
+            emit_shape(&mut svg, s, &component.get("name").as_str(), &text_advance);
         }
         svg.push_str("    </g>\n    </g>\n");
     }
@@ -1604,7 +1630,7 @@ pub fn diagram_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -
     for connection in &connections {
         let connection = Some(connection.clone());
         if let Some(shape) = parse_line_annotation(&connection.get("annotation").get("Line")) {
-            emit_shape(&mut svg, &shape, "");
+            emit_shape(&mut svg, &shape, "", &text_advance);
         }
     }
 
@@ -1633,16 +1659,13 @@ pub fn diagram_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -
 /// cannot pass a JSON value across the `external "C"` boundary; Rust callers
 /// need neither the reference table nor its 256 slots.
 pub fn icon_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -> Option<String> {
-    render_icon_svg(&icon_from_json(&Some(json.clone())), model_name)
+    render_icon_svg(&icon_from_json(&Some(json.clone())), model_name, &text_advance)
 }
 
 /// The same icon as a PNG, for hosts that cannot render SVG.
-pub fn icon_png_from_json(json: &metamodelica::Ref<JSON>) -> Option<Vec<u8>> {
-    let icon = icon_from_json(&Some(json.clone()));
-    if icon.graphics.is_empty() {
-        return None;
-    }
-    Some(render_icon_png(&icon))
+pub fn icon_png_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -> Option<Vec<u8>> {
+    let png = render_icon_png(&icon_from_json(&Some(json.clone())), model_name);
+    if png.is_empty() { None } else { Some(png) }
 }
 
 // The bodies of Compiler/Util/OMGraphics.mo. `handle` is an in-memory
@@ -1655,24 +1678,21 @@ fn model_icon(handle: i32) -> Option<Icon> {
 
 pub fn iconSVGFromHandle(handle: i32, modelName: ArcStr) -> ArcStr {
     match model_icon(handle) {
-        Some(icon) => render_icon_svg(&icon, &modelName).map_or_else(ArcStr::new, ArcStr::from),
+        Some(icon) => render_icon_svg(&icon, &modelName, &text_advance).map_or_else(ArcStr::new, ArcStr::from),
         None => ArcStr::new(),
     }
 }
 
 pub fn graphicalRepresentationXMLFromHandle(handle: i32, scaleToMm: metamodelica::Real) -> ArcStr {
     match model_icon(handle) {
-        Some(icon) => ArcStr::from(render_graphical_representation_xml(
-            &icon,
-            scaleToMm.into_inner(),
-        )),
+        Some(icon) => ArcStr::from(render_graphical_representation_xml(&icon, scaleToMm.into_inner())),
         None => ArcStr::new(),
     }
 }
 
-pub fn writeIconPNGFromHandle(handle: i32, _modelName: ArcStr, path: ArcStr) -> bool {
+pub fn writeIconPNGFromHandle(handle: i32, modelName: ArcStr, path: ArcStr) -> bool {
     match model_icon(handle) {
-        Some(icon) => write_binary_file(&path, &render_icon_png(&icon)),
+        Some(icon) => write_binary_file(&path, &render_icon_png(&icon, &modelName)),
         None => false,
     }
 }
@@ -1699,14 +1719,14 @@ pub fn placedConnectorInfo(handle: i32, index: i32) -> ArcStr {
 
 pub fn placedConnectorIconSVG(handle: i32, index: i32) -> ArcStr {
     match connector_icon(handle, index) {
-        Some(icon) => render_icon_svg(&icon, "").map_or_else(ArcStr::new, ArcStr::from),
+        Some(icon) => render_icon_svg(&icon, "", &text_advance).map_or_else(ArcStr::new, ArcStr::from),
         None => ArcStr::new(),
     }
 }
 
 pub fn writePlacedConnectorIconPNG(handle: i32, index: i32, path: ArcStr) -> bool {
     match connector_icon(handle, index) {
-        Some(icon) => write_binary_file(&path, &render_icon_png(&icon)),
+        Some(icon) => write_binary_file(&path, &render_icon_png(&icon, "")),
         None => false,
     }
 }

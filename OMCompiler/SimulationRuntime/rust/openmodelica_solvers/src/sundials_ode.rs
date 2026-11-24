@@ -331,7 +331,7 @@ fn fail(c: &mut Ctx, r: Result<()>) -> c_int {
 /// C's `dasslTolerances`: the per-state nominal scales the absolute tolerance.
 fn abs_tolerances(tolerance: f64, n: usize, nominals: &[f64]) -> Vec<f64> {
     (0..n)
-        .map(|i| tolerance * nominals.get(i).copied().unwrap_or(1.0).abs().max(1e-32))
+        .map(|i| tolerance * nominals.get(i).copied().unwrap_or(1.0))
         .collect()
 }
 

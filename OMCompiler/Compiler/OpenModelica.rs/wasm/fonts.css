@@ -1,0 +1,16 @@
+/* The fonts the web omc draws icon text with, for pages that want the same:
+   Liberation Sans, Serif and Mono have the widths of Arial, Times New Roman
+   and Courier New. */
+@font-face { font-family: "Liberation Sans"; src: url("LiberationSans-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("LiberationSans-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("LiberationSans-Italic.ttf") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("LiberationSans-BoldItalic.ttf") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Liberation Serif"; src: url("LiberationSerif-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Serif"; src: url("LiberationSerif-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Serif"; src: url("LiberationSerif-Italic.ttf") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Liberation Serif"; src: url("LiberationSerif-BoldItalic.ttf") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Liberation Mono"; src: url("LiberationMono-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Mono"; src: url("LiberationMono-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Mono"; src: url("LiberationMono-Italic.ttf") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Liberation Mono"; src: url("LiberationMono-BoldItalic.ttf") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "DejaVu Sans"; src: url("DejaVuSans.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }

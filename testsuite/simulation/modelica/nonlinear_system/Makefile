@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 kinsolBoundStart.mos \
+negativeNominal.mos \
 bug_2841.mos \
 bug_3527.mos \
 externalErrorThenThrow.mos \
@@ -11,9 +12,11 @@ nonlinear.mos \
 nonlinear_kinsol.mos \
 kinsolSignConstraint.mos \
 kinsolStatistics.mos \
+mixedSingleEquation.mos \
 nonlinearDelayTest.mos \
 nonlinearFailed.mos \
 nonlinearFailed_kinsol.mos \
+nonlinearFailedNewtonAssert.mos \
 nonlinearMixed.mos \
 nonlinearMixed_kinsol.mos \
 problem1.mos \
@@ -57,6 +60,7 @@ TestFalseIterationNLS.mos \
 ScalingTest1.mos \
 inverseTest.mos \
 scalarKinsol.mos \
+timeInvariantLoops.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

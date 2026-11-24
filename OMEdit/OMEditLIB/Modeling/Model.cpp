@@ -58,7 +58,11 @@ namespace ModelInstance
     /*! Returns positional record fields emitted by the model-instance JSON API. */
     QJsonArray getRecordElements(const QJsonValue &jsonValue)
     {
-      return jsonValue.toObject().value("elements").toArray();
+      const QJsonObject recordObject = jsonValue.toObject();
+      if (recordObject.contains("$error")) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, recordObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+      }
+      return recordObject.value("elements").toArray();
     }
 
     /*!
@@ -77,6 +81,24 @@ namespace ModelInstance
       escaped.replace("\t", "\\t");
       escaped.replace("\v", "\\v");
       return QString("\"%1\"").arg(escaped);
+    }
+
+    /*!
+     * Like FlatModelica::Expression::toQString, but prints numbers with all their digits instead of 6.
+     */
+    QString expressionToString(const FlatModelica::Expression &expression)
+    {
+      if (expression.isNumber()) {
+        return StringHandler::number(expression.realValue());
+      }
+      if (expression.isArray()) {
+        QStringList elements;
+        for (const auto &element : expression.elements()) {
+          elements.append(expressionToString(element));
+        }
+        return QString("{%1}").arg(elements.join(", "));
+      }
+      return expression.toQString();
     }
 
   }
@@ -622,10 +644,10 @@ namespace ModelInstance
   {
     QStringList fields;
     if (!mMin.isNull() && (!mMin.isArray() || mMin.size() > 0)) {
-      fields.append(QString("min=%1").arg(mMin.toQString()));
+      fields.append(QString("min=%1").arg(expressionToString(mMin)));
     }
     if (!mMax.isNull() && (!mMax.isArray() || mMax.size() > 0)) {
-      fields.append(QString("max=%1").arg(mMax.toQString()));
+      fields.append(QString("max=%1").arg(expressionToString(mMax)));
     }
     if (!mUnit.isEmpty()) {
       fields.append(QString("unit=%1").arg(quoteModelicaString(mUnit)));
@@ -645,13 +667,13 @@ namespace ModelInstance
    */
   /*!
    * \brief Curve::deserialize
-   * Reads the curve's positional JSON elements, preserving y as a Modelica expression.
+   * Reads the curve's positional JSON elements, preserving x and y as Modelica expressions.
    */
   void Curve::deserialize(const QJsonValue &jsonValue)
   {
     const QJsonArray elements = getRecordElements(jsonValue);
     if (elements.size() > 0) {
-      mX = elements.at(0).toString();
+      mX.deserialize(elements.at(0));
     }
     if (elements.size() > 1) {
       mY.deserialize(elements.at(1));
@@ -660,23 +682,31 @@ namespace ModelInstance
       mLegend = elements.at(2).toString();
     }
     if (elements.size() > 3) {
-      mZOrder = elements.at(3).toInt();
+      // An enumeration literal, e.g. {"$kind": "enum", "name": "YAxisSelection.Right", "index": 2}.
+      const QString yAxis = elements.at(3).toObject().value("name").toString();
+      mYAxis = yAxis.section('.', -1) == QStringLiteral("Right") ? YAxis::Right : YAxis::Left;
+    }
+    if (elements.size() > 4) {
+      mZOrder = elements.at(4).toInt();
     }
   }
 
   /*!
    * \brief Curve::toString
-   * Omits default x, legend, and z-order values.
+   * Omits default x, legend, yAxis, and z-order values.
    */
   QString Curve::toString() const
   {
     QStringList fields;
-    if (mX != QStringLiteral("time")) {
-      fields.append(QString("x=%1").arg(quoteModelicaString(mX)));
+    if (mX.toQString() != QStringLiteral("time")) {
+      fields.append(QString("x=%1").arg(mX.toQString()));
     }
     fields.append(QString("y=%1").arg(mY.toQString()));
     if (!mLegend.isEmpty()) {
       fields.append(QString("legend=%1").arg(quoteModelicaString(mLegend)));
+    }
+    if (mYAxis == YAxis::Right) {
+      fields.append("yAxis=YAxisSelection.Right");
     }
     if (mZOrder != 0) {
       fields.append(QString("zOrder=%1").arg(mZOrder));
@@ -720,6 +750,10 @@ namespace ModelInstance
       mpYAxis = std::make_unique<Axis>();
       mpYAxis->deserialize(elements.at(4));
     }
+    if (elements.size() > 5 && elements.at(5).isObject()) {
+      mpYRightAxis = std::make_unique<Axis>();
+      mpYRightAxis->deserialize(elements.at(5));
+    }
   }
 
   /*!
@@ -745,6 +779,9 @@ namespace ModelInstance
     }
     if (mpYAxis && mpYAxis->toString() != QStringLiteral("Axis()")) {
       fields.append(QString("y=%1").arg(mpYAxis->toString()));
+    }
+    if (mpYRightAxis && mpYRightAxis->toString() != QStringLiteral("Axis()")) {
+      fields.append(QString("yRight=%1").arg(mpYRightAxis->toString()));
     }
     return QString("Plot(%1)").arg(fields.join(","));
   }
@@ -821,13 +858,10 @@ namespace ModelInstance
   /*!
    * \class DocumentationAnnotation
    * \brief Stores Documentation text, stylesheets, and simulation figure annotations.
-   *
-   * Figure titles and serialized forms are cached so later saves can replace one
-   * figure without rebuilding the other serialized figures.
    */
   /*!
    * \brief DocumentationAnnotation::deserialize
-   * Reads documentation text, stylesheets, and figures; cache figures for safe replacement.
+   * Reads documentation text, stylesheets, and figures.
    */
   void DocumentationAnnotation::deserialize(const QJsonObject &jsonObject)
   {
@@ -843,16 +877,12 @@ namespace ModelInstance
     }
 
     mFigures.clear();
-    mSerializedFigures.clear();
-    mSerializedFigureTitles.clear();
     const QJsonArray figures = jsonObject.value("figures").toArray();
     mFigures.reserve(figures.size());
     for (const QJsonValue &figureValue : figures) {
       if (figureValue.isObject()) {
         auto figure = std::make_unique<Figure>();
         figure->deserialize(figureValue);
-        mSerializedFigures.append(figure->toString());
-        mSerializedFigureTitles.append(figure->getTitle());
         mFigures.push_back(std::move(figure));
       }
     }
@@ -870,20 +900,18 @@ namespace ModelInstance
   }
 
   /*!
-   * \brief DocumentationAnnotation::setFigureAnnotation
+   * \brief DocumentationAnnotation::setFigure
    * Replaces a figure with the matching title or appends it if no title matches.
    */
-  void DocumentationAnnotation::setFigureAnnotation(const QString &figureTitle, const QString &figureAnnotation)
+  void DocumentationAnnotation::setFigure(std::unique_ptr<Figure> pFigure)
   {
-    // Keep the serialized list synchronized with titles so a later save can replace by title.
-    for (int i = 0; i < mSerializedFigureTitles.size(); ++i) {
-      if (mSerializedFigureTitles.at(i) == figureTitle) {
-        mSerializedFigures[i] = figureAnnotation;
+    for (auto &figure : mFigures) {
+      if (figure->getTitle() == pFigure->getTitle()) {
+        figure = std::move(pFigure);
         return;
       }
     }
-    mSerializedFigures.append(figureAnnotation);
-    mSerializedFigureTitles.append(figureTitle);
+    mFigures.push_back(std::move(pFigure));
   }
 
   /*!
@@ -892,7 +920,7 @@ namespace ModelInstance
    */
   QString DocumentationAnnotation::toString() const
   {
-    return toString(mInfo, mRevisions, mInfoHeader, QString(), QString(), false);
+    return toString(mInfo, mRevisions, mInfoHeader, nullptr);
   }
 
   /*!
@@ -901,20 +929,20 @@ namespace ModelInstance
    */
   QString DocumentationAnnotation::toString(const QString &info, const QString &revisions, const QString &infoHeader) const
   {
-    return toString(info, revisions, infoHeader, QString(), QString(), false);
+    return toString(info, revisions, infoHeader, nullptr);
   }
 
   /*!
    * \brief DocumentationAnnotation::toString
-   * Serializes a figure replacement or append while retaining other Documentation fields.
+   * Serializes with figure replacing the figure with the same title, or appended if no title matches.
    */
-  QString DocumentationAnnotation::toString(const QString &figureTitle, const QString &figureAnnotation) const
+  QString DocumentationAnnotation::toString(const Figure &figure) const
   {
-    return toString(mInfo, mRevisions, mInfoHeader, figureTitle, figureAnnotation, true);
+    return toString(mInfo, mRevisions, mInfoHeader, &figure);
   }
 
   QString DocumentationAnnotation::toString(const QString &info, const QString &revisions, const QString &infoHeader,
-                                            const QString &figureTitle, const QString &figureAnnotation, bool replaceFigure) const
+                                            const Figure *pNewFigure) const
   {
     QStringList fields;
     if (!info.isEmpty()) {
@@ -934,21 +962,20 @@ namespace ModelInstance
       fields.append(QString("styleSheets={%1}").arg(styleSheets.join(",")));
     }
 
-    // Reuse the cached figures so updating text or one figure leaves other figures intact.
-    QStringList figures = mSerializedFigures;
+    QStringList figures;
     bool replacedFigure = false;
-    if (replaceFigure) {
-      for (int i = 0; i < mSerializedFigureTitles.size(); ++i) {
-        if (!replacedFigure && mSerializedFigureTitles.at(i) == figureTitle) {
-          figures[i] = figureAnnotation;
-          replacedFigure = true;
-        }
+    for (const auto &figure : mFigures) {
+      if (pNewFigure && !replacedFigure && figure->getTitle() == pNewFigure->getTitle()) {
+        figures.append(pNewFigure->toString());
+        replacedFigure = true;
+      } else {
+        figures.append(figure->toString());
       }
     }
-    if (replaceFigure && !replacedFigure) {
-      figures.append(figureAnnotation);
+    if (pNewFigure && !replacedFigure) {
+      figures.append(pNewFigure->toString());
     }
-    if (!figures.isEmpty() || replaceFigure) {
+    if (!figures.isEmpty()) {
       fields.append(QString("figures={%1}").arg(figures.join(",")));
     }
     return QString("Documentation(%1)").arg(fields.join(","));
@@ -1158,35 +1185,34 @@ namespace ModelInstance
         mGraphics.reserve(graphicsArray.size());
         for (int i = 0; i < graphicsArray.size(); ++i) {
           QJsonObject graphicObject = graphicsArray.at(i).toObject();
+          const QJsonArray elements = getRecordElements(graphicObject);
           if (graphicObject.contains("name") && graphicObject.contains("elements")) {
             const QString name = graphicObject.value("name").toString();
             if (name.compare(QStringLiteral("Line")) == 0) {
               Line *pLine = new Line(mpParentModel);
-              pLine->deserialize(graphicObject.value("elements").toArray());
+              pLine->deserialize(elements);
               mGraphics.append(pLine);
             } else if (name.compare(QStringLiteral("Polygon")) == 0) {
               Polygon *pPolygon = new Polygon(mpParentModel);
-              pPolygon->deserialize(graphicObject.value("elements").toArray());
+              pPolygon->deserialize(elements);
               mGraphics.append(pPolygon);
             } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
               Rectangle *pRectangle = new Rectangle(mpParentModel);
-              pRectangle->deserialize(graphicObject.value("elements").toArray());
+              pRectangle->deserialize(elements);
               mGraphics.append(pRectangle);
             } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
               Ellipse *pEllipse = new Ellipse(mpParentModel);
-              pEllipse->deserialize(graphicObject.value("elements").toArray());
+              pEllipse->deserialize(elements);
               mGraphics.append(pEllipse);
             } else if (name.compare(QStringLiteral("Text")) == 0) {
               Text *pText = new Text(mpParentModel);
-              pText->deserialize(graphicObject.value("elements").toArray());
+              pText->deserialize(elements);
               mGraphics.append(pText);
             } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
               Bitmap *pBitmap = new Bitmap(mpParentModel);
-              pBitmap->deserialize(graphicObject.value("elements").toArray());
+              pBitmap->deserialize(elements);
               mGraphics.append(pBitmap);
             }
-          } else if (graphicObject.contains("$error")) {
-            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
           }
         }
       }

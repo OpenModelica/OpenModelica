@@ -34,7 +34,7 @@
  */
 
 // Persistence for the web target, over localStorage. The page filesystem and the
-// omc worker's VFS are both in memory, so the tree under /persist (settings, the
+// omc worker's VFS are both in memory, so the tree under /omedit (settings, the
 // mount list, the sync manifests) is mirrored into browser storage; tokens get
 // keys of their own so clearing one does not clear the other.
 //
@@ -43,7 +43,8 @@
 // suspend, which hangs the application. Working-copy contents are too big for
 // this store and belong in IndexedDB, which is fine long after startup.
 //
-// /persist stays in the page MEMFS; worker_vfs_engine.cpp excludes that prefix.
+// /omedit stays in the page MEMFS; worker_vfs_engine.cpp excludes that prefix.
+// /persist is the omc worker's, for the user's files (wasm/omc-store.js).
 
 #if defined(__EMSCRIPTEN__)
 
@@ -149,7 +150,8 @@ EM_JS(int, omedit_storage_restore_tree, (const char *prefix, const char *root), 
 
 namespace {
 
-const QLatin1String kPersistRoot("/persist");
+const QLatin1String kPersistRoot("/omedit");
+// Stored keys: changing them loses the users' settings.
 const char *const kFilePrefix = "omedit/persist/";
 const char *const kAuthPrefix = "omedit/auth/";
 

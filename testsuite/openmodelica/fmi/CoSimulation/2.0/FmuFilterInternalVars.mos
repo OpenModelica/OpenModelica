@@ -1,0 +1,45 @@
+// name: FmuFilterInternalVars.mos
+// keywords: FMI 2.0 export fmiFilter
+// status: correct
+// teardown_command: rm -rf FilterInternal.* FilterInternal_*
+//
+// --fmiFilter=internal hides the variables introduced by the symbolic
+// transformations, here $cse1, $cse2, $y1_der and $y2_der (#5267).
+
+loadString("
+model FilterInternal
+  function f
+    input Real x;
+    output Real y;
+  algorithm
+    y := x^2 + 1;
+    annotation(Inline = false);
+  end f;
+  input Real u;
+  output Real y1, y2;
+equation
+  y1 = f(u) + 1;
+  y2 = 2*f(u);
+end FilterInternal;
+"); getErrorString();
+
+setCommandLineOptions("--fmiFilter=internal"); getErrorString();
+buildModelFMU(FilterInternal, version = "2.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+system("unzip -p FilterInternal.fmu modelDescription.xml | grep -E \"_D_cse|_D_y[12]_der\""); getErrorString();
+system("unzip -p FilterInternal.fmu modelDescription.xml | grep -o \"maxOutputDerivativeOrder=.[0-9].\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FilterInternal.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 1
+// ""
+// maxOutputDerivativeOrder="1"
+// 0
+// ""
+// endResult

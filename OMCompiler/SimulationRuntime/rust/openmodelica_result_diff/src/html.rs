@@ -1,13 +1,13 @@
 //! The dygraph HTML page `diffSimulationResultsHtml` returns for one variable,
 //! and the CSV file `diffSimulationResults` writes for it.
 
+use crate::Comparison;
 use crate::format::{format_g_prec, format_g_prec15};
-use crate::{Algorithm, Comparison};
 
-/// The rows `[time,reference,actual,high,low,error,actual(original)]` of an
-/// `Ellipse2014` comparison of the actual `(time, data)`, like C `cmpDataTubes`.
+/// The rows `[time,reference,actual,high,low,error,actual(original)]` of a
+/// resampled comparison of the actual `(time, data)`, like C `cmpDataTubes`.
 fn rows(out: &mut String, time: &[f64], data: &[f64], cmp: &Comparison, html: bool) {
-    debug_assert_eq!(cmp.algorithm, Algorithm::Ellipse2014);
+    debug_assert!(cmp.resampled);
     let (reftime, refdata) = (&cmp.reference.x, &cmp.reference.y);
     let n = cmp.time.len();
     let error = (cmp.error_count > 0).then_some(&cmp.error);
@@ -52,9 +52,55 @@ fn rows(out: &mut String, time: &[f64], data: &[f64], cmp: &Comparison, html: bo
 /// The comparison as `diffSimulationResults` writes it to `<prefix>.<var>.csv`.
 pub fn tube_csv(time: &[f64], data: &[f64], cmp: &Comparison) -> String {
     let mut csv = String::from("time,reference,actual,high,low,error,actual (raw)\n");
-    rows(&mut csv, time, data, cmp, false);
+    if cmp.resampled {
+        rows(&mut csv, time, data, cmp, false);
+    } else {
+        rows_on_actual_time(&mut csv, cmp);
+    }
     csv.push('\n');
     csv
+}
+
+/// The csv-compare algorithms test the actual timeline, so the reference points
+/// go in between.
+fn rows_on_actual_time(out: &mut String, cmp: &Comparison) {
+    let (reftime, refdata) = (&cmp.reference.x, &cmp.reference.y);
+    let error = (cmp.error_count > 0).then_some(&cmp.error);
+    let mut j = 0usize;
+    for i in 0..cmp.time.len() {
+        while j < reftime.len() && reftime[j] < cmp.time[i] {
+            out.push_str(&format!(
+                "{},{},,,,,\n",
+                format_g_prec15(reftime[j]),
+                format_g_prec15(refdata[j])
+            ));
+            j += 1;
+        }
+        let reference = if j < reftime.len() && reftime[j] == cmp.time[i] {
+            j += 1;
+            format_g_prec15(refdata[j - 1])
+        } else {
+            String::new()
+        };
+        let e = match error {
+            Some(e) if !e[i].is_nan() => format_g_prec15(e[i]),
+            _ => String::new(),
+        };
+        let v = format_g_prec15(cmp.values[i]);
+        out.push_str(&format!(
+            "{},{reference},{v},{},{},{e},{v}\n",
+            format_g_prec15(cmp.time[i]),
+            format_g_prec15(cmp.high[i]),
+            format_g_prec15(cmp.low[i])
+        ));
+    }
+    for k in j..reftime.len() {
+        out.push_str(&format!(
+            "{},{},,,,,\n",
+            format_g_prec15(reftime[k]),
+            format_g_prec15(refdata[k])
+        ));
+    }
 }
 
 /// The dygraph HTML report of the comparison of the actual `(time, data)`.

@@ -84,12 +84,14 @@ pub(super) fn elem_load(ctx: &mut FnCtx, elem: &SigTy) {
         WTy::I32 => ctx.emit(we::Instruction::I32Load(we::MemArg {
             offset: 0,
             align: 2,
-            memory_index: 0,
+            target: we::MemArgTarget::Memory(0),
+            ordering: None,
         })),
         WTy::F64 => ctx.emit(we::Instruction::F64Load(we::MemArg {
             offset: 0,
             align: 3,
-            memory_index: 0,
+            target: we::MemArgTarget::Memory(0),
+            ordering: None,
         })),
     }
 }

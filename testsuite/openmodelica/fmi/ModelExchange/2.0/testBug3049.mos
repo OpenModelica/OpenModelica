@@ -456,7 +456,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"3\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
+//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\" displayUnit=\"bar\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
@@ -464,7 +464,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"4\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\" displayUnit=\"bar\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
@@ -472,7 +472,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"5\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"0.0\" nominal=\"1e7\" unit=\"Pa\"/>
+//     <Real min=\"0.0\" nominal=\"1e7\" unit=\"Pa\" displayUnit=\"bar\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>

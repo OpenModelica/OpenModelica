@@ -442,11 +442,12 @@ protected
   DAE.Algorithm alg;
   DAE.ElementSource source;
   DAE.Expand crefExpand;
-  HashSet.HashSet leftCrs;
+  HashSet.HashSet leftCrs, initOutputs;
   Integer size;
   list<BackendDAE.Equation> eqns;
   list<BackendDAE.Equation> accEq;
   list<DAE.Statement> stmts;
+  list<DAE.ComponentRef> outputs;
 algorithm
   (accEq, leftCrs) := inTpl;
   outTpl := match inEq
@@ -456,11 +457,22 @@ algorithm
     then (eqns, leftCrs);
 
     // algorithm
-    case BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) algorithm
+    case BackendDAE.ALGORITHM(size=size, alg=alg, source=source, expand=crefExpand) algorithm
       DAE.ALGORITHM_STMTS(statementLst=stmts) := alg;
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
-      alg := DAE.ALGORITHM_STMTS(stmts);
-      size := listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
+      // the size of an algorithm differentiated by the index reduction is not the number of its outputs
+      if List.any(stmts, isWhenStatement) then
+        outputs := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND());
+        stmts := inlineWhenForInitializationWhenAlgorithm(stmts);
+        // outputs that only inactive when-branches assign keep pre(v)
+        initOutputs := List.fold(CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()), BaseHashSet.add, HashSet.emptyHashSet());
+        for cr in outputs loop
+          if not BaseHashSet.has(cr, initOutputs) then
+            leftCrs := BaseHashSet.add(cr, leftCrs);
+          end if;
+        end for;
+        alg := DAE.ALGORITHM_STMTS(stmts);
+        size := listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
+      end if;
       eqns := List.consOnTrue(not listEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), accEq);
     then (eqns, leftCrs);
 
@@ -488,7 +500,7 @@ algorithm
 
     case BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(statementLst = stmts)) algorithm
       stmts := list(s for s guard (match s case DAE.STMT_WHEN() then true; else false; end match) in stmts);
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
+      stmts := inlineWhenForInitializationWhenAlgorithm(stmts);
       if not listEmpty(stmts) then
         eqns := BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS(stmts), inEq.source, inEq.expand, BackendDAE.EQ_ATTR_DEFAULT_INITIAL) :: eqns;
       end if;
@@ -568,73 +580,62 @@ algorithm
   end match;
 end inlineWhenForInitializationWhenEquation;
 
+protected function isWhenStatement
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match stmt
+    case DAE.STMT_WHEN() then true;
+    else false;
+  end match;
+end isWhenStatement;
+
 protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input list< DAE.Statement> inStmts;
-  input list< DAE.Statement> inAcc "={}";
-  input HashSet.HashSet inLeftCrs;
+  input list< DAE.Statement> inAcc = {};
   output list< DAE.Statement> outStmts;
-  output HashSet.HashSet outLeftCrs;
 algorithm
-  (outStmts, outLeftCrs) := match inStmts
+  outStmts := match inStmts
     local
       DAE.Statement stmt;
-      list<DAE.Statement> stmts, rest;
-      HashSet.HashSet leftCrs;
+      list<DAE.Statement> rest;
 
     case {}
-    then (listReverse(inAcc), inLeftCrs);
+    then listReverse(inAcc);
 
-    // when statement
-    case (stmt as DAE.STMT_WHEN())::rest algorithm
-      // for when statements it is not necessary that all branches have the same left hand side variables
-      // -> take care that for each left hand side an assigment is generated
-      (stmts, leftCrs) := inlineWhenForInitializationWhenStmt(stmt, inLeftCrs, inAcc);
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(rest, stmts, leftCrs);
-    then (stmts, leftCrs);
+    case (stmt as DAE.STMT_WHEN())::rest
+    then inlineWhenForInitializationWhenAlgorithm(rest, inlineWhenForInitializationWhenStmt(stmt, inAcc));
 
-    // no when statement
-    case stmt::rest algorithm
-      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(rest, stmt::inAcc, inLeftCrs);
-    then (stmts, leftCrs);
+    case stmt::rest
+    then inlineWhenForInitializationWhenAlgorithm(rest, stmt::inAcc);
   end match;
 end inlineWhenForInitializationWhenAlgorithm;
 
 protected function inlineWhenForInitializationWhenStmt "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input DAE.Statement inWhenStatement;
-  input HashSet.HashSet inLeftCrs;
   input list< DAE.Statement> inAcc;
   output list< DAE.Statement> outStmts;
-  output HashSet.HashSet outLeftCrs;
 algorithm
-  (outStmts, outLeftCrs) := match inWhenStatement
+  outStmts := match inWhenStatement
     local
       DAE.Exp condition;
-      list<DAE.ComponentRef> crefLst;
       DAE.Statement stmt;
       list<DAE.Statement> stmts;
-      HashSet.HashSet leftCrs;
 
     // active when equation during initialization
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts) guard
       Expression.containsInitialCall(condition)
-    algorithm
-      stmts := List.foldr(stmts, List.consr, inAcc);
-    then (stmts, inLeftCrs);
+    then List.foldr(stmts, List.consr, inAcc);
 
     // inactive when equation during initialization
-    case DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()) algorithm
-      crefLst := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs := List.fold(crefLst, BaseHashSet.add, inLeftCrs);
-    then (inAcc, leftCrs);
+    case DAE.STMT_WHEN(elseWhen=NONE())
+    then inAcc;
 
     // inactive when equation during initialization with elsewhen part
-    case DAE.STMT_WHEN(statementLst=stmts, elseWhen=SOME(stmt)) algorithm
-      crefLst := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs := List.fold(crefLst, BaseHashSet.add, inLeftCrs);
-      (stmts, leftCrs) := inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
-    then (stmts, leftCrs);
+    case DAE.STMT_WHEN(elseWhen=SOME(stmt))
+    then inlineWhenForInitializationWhenStmt(stmt, inAcc);
 
     else algorithm
       Error.addInternalError("function inlineWhenForInitializationWhenStmt failed", sourceInfo());
@@ -1357,7 +1358,9 @@ end constraintHandlerFunc;
 protected function balanceInitialSystem "author: kabdelhak
   New algorithm to handle under-, over-, and mixed-determined systems.
   1. split off initial equations and match the system without them
-     (ensures that the correct equations are left unmatched)
+     (ensures that the correct equations are left unmatched; bindings stay in
+     this system, because MLS 3.7, section 8.6 allows to remove initial
+     equations and start values, but not bindings)
   2. sort fixables to be matched last
      (ensures that the correct variables are left unmatched)
   3. compute adjacency matrix
@@ -2689,6 +2692,20 @@ algorithm
       preUsed := BaseHashSet.has(cr, hs);
       startValue := BackendVariable.varStartValueOption(var);
 
+      startExp := BackendVariable.varStartValue(var);
+      parameters := Expression.getAllCrefs(startExp);
+      if not min(UnorderedSet.contains(p, allPrimaryParameters) for p in parameters) then
+        startCR := ComponentReference.crefPrefixStart(cr);
+        startVar := BackendVariable.copyVarNewName(startCR, var);
+        startVar := BackendVariable.setBindExp(startVar, NONE());
+        startVar := BackendVariable.setVarDirection(startVar, DAE.BIDIR());
+        startVar := BackendVariable.setVarFixed(startVar, false);
+        startVar := BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
+        startVar := BackendVariable.setVarStartValueOption(startVar, NONE());
+        vars := BackendVariable.addVar(startVar, vars);
+        eqns := BackendEquation.add(BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+      end if;
+
       var := BackendVariable.setVarFixed(var, false);
 
       preCR := ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
@@ -2736,7 +2753,7 @@ algorithm
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
-      eqn := BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqn := BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       eqns := BackendEquation.add(eqn, eqns);
 
       vars := BackendVariable.addVar(var, vars);
@@ -2781,8 +2798,23 @@ algorithm
     then (var, (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon));
 
     // secondary parameter
-    case (var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) algorithm
+    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM()), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) algorithm
       //true = BackendVariable.varFixed(var);
+      // the guess of an unfixed parameter may depend on parameters solved here
+      if not (BackendVariable.varFixed(var) or BackendVariable.varHasBindExp(var) or BackendVariable.varHasConstantStartExp(var)) then
+        startExp := BackendVariable.varStartValue(var);
+        parameters := Expression.getAllCrefs(startExp);
+        if not min(UnorderedSet.contains(p, allPrimaryParameters) for p in parameters) then
+          startCR := ComponentReference.crefPrefixStart(cr);
+          startVar := BackendVariable.copyVarNewName(startCR, var);
+          startVar := BackendVariable.setVarDirection(startVar, DAE.BIDIR());
+          startVar := BackendVariable.setVarFixed(startVar, false);
+          startVar := BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
+          startVar := BackendVariable.setVarStartValueOption(startVar, NONE());
+          vars := BackendVariable.addVar(startVar, vars);
+          eqns := BackendEquation.add(BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+        end if;
+      end if;
       var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars := BackendVariable.addVar(var, vars);
     then (var, (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon));
@@ -3052,7 +3084,7 @@ algorithm
 
     // external object with binding
     case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varKind=BackendDAE.EXTOBJ(), source=source), (eqns, reeqns)) algorithm
-      eqn := BackendDAE.SOLVED_EQUATION(cr, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqn := BackendDAE.SOLVED_EQUATION(cr, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       eqns := BackendEquation.add(eqn, eqns);
     then (var, (eqns, reeqns));
 
@@ -3062,9 +3094,9 @@ algorithm
       if Types.isArray(ty) then
         basic_ty := Types.getBasicType(ty);
         record_size := if Types.isRecord(basic_ty) then SOME(Types.getDimensionProduct(basic_ty)) else NONE();
-        eqn := BackendDAE.ARRAY_EQUATION(Types.getDimensionSizes(ty), crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL, record_size);
+        eqn := BackendDAE.ARRAY_EQUATION(Types.getDimensionSizes(ty), crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_BINDING, record_size);
       else
-        eqn := BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+        eqn := BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       end if;
       eqns := BackendEquation.add(eqn, eqns);
     then (var, (eqns, reeqns));
@@ -3074,6 +3106,170 @@ algorithm
     then fail();
   end match;
 end collectInitialBindings;
+
+
+// =============================================================================
+// section for addStateSetJacobianInputs
+//
+// =============================================================================
+
+public function addStateSetJacobianInputs
+  "The runtime selects the states of the dynamic state sets on the initial
+   solution. The Jacobians of the sets can read variables that only the
+   simulation system has, e.g. the $cse variables of wrapFunctionCalls. This
+   adds the equations of these variables to the end of the initial system."
+  input BackendDAE.BackendDAE inInitDAE;
+  input BackendDAE.BackendDAE inSimDAE;
+  output BackendDAE.BackendDAE outInitDAE = inInitDAE;
+protected
+  list<DAE.ComponentRef> crefs;
+  list<BackendDAE.Var> vars = {};
+  list<BackendDAE.Equation> eqns = {};
+  BackendDAE.BackendDAE dae;
+algorithm
+  for syst in inSimDAE.eqs loop
+    if not listEmpty(syst.stateSets) then
+      crefs := {};
+      for stateSet in syst.stateSets loop
+        crefs := stateSetJacobianCrefs(stateSet.jacobian, crefs);
+      end for;
+      (vars, eqns) := simulationOnlyEquations(syst, crefs, inInitDAE, vars, eqns);
+    end if;
+  end for;
+  if listEmpty(eqns) then
+    return;
+  end if;
+
+  dae := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.listVar1(vars), BackendEquation.listEquation(eqns))}, inInitDAE.shared);
+  dae := BackendDAEUtil.causalizeDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),
+    BackendDAEUtil.getMatchingAlgorithm(NONE()), BackendDAEUtil.getIndexReductionMethod(SOME("none")), false);
+  outInitDAE.eqs := listAppend(inInitDAE.eqs, dae.eqs);
+end addStateSetJacobianInputs;
+
+protected function stateSetJacobianCrefs
+  input BackendDAE.Jacobian inJacobian;
+  input output list<DAE.ComponentRef> crefs;
+algorithm
+  () := match inJacobian
+    local
+      BackendDAE.BackendDAE jacDAE;
+    case BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((jacDAE, _, _, _, _, _)))
+      algorithm
+        for syst in jacDAE.eqs loop
+          crefs := List.append_reverse(BackendEquation.getAllCrefFromEquations(syst.orderedEqs), crefs);
+        end for;
+      then ();
+    else ();
+  end match;
+end stateSetJacobianCrefs;
+
+protected function simulationOnlyEquations
+  "Collects the equations of inSyst that solve the variables in inCrefs that
+   the initial system does not have, and recursively those of the variables
+   these equations use."
+  input BackendDAE.EqSystem inSyst;
+  input list<DAE.ComponentRef> inCrefs;
+  input BackendDAE.BackendDAE inInitDAE;
+  input output list<BackendDAE.Var> vars;
+  input output list<BackendDAE.Equation> eqns;
+protected
+  list<tuple<Integer, list<Integer>>> solved = {};
+  array<Integer> varEqn;
+  array<list<Integer>> eqnVars;
+  array<Boolean> added, seen;
+  Integer maxEqn = 0, e;
+  list<Integer> vs, indices;
+  list<DAE.ComponentRef> work = inCrefs;
+  DAE.ComponentRef cr;
+  BackendDAE.Equation eqn;
+algorithm
+  for comp in BackendDAEUtil.getStrongComponents(inSyst) loop
+    solved := solvedEquations(comp, solved);
+  end for;
+  for s in solved loop
+    (e, _) := s;
+    maxEqn := max(maxEqn, e);
+  end for;
+  varEqn := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), 0);
+  seen := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
+  eqnVars := arrayCreate(maxEqn, {});
+  added := arrayCreate(maxEqn, false);
+  for s in solved loop
+    (e, vs) := s;
+    arrayUpdate(eqnVars, e, vs);
+    for v in vs loop
+      arrayUpdate(varEqn, v, e);
+    end for;
+  end for;
+
+  while not listEmpty(work) loop
+    cr :: work := work;
+    try
+      (_, indices) := BackendVariable.getVar(cr, inSyst.orderedVars);
+    else
+      indices := {};
+    end try;
+    for i in indices loop
+      e := varEqn[i];
+      if e > 0 and not seen[i] then
+        arrayUpdate(seen, i, true);
+        if not (added[e] or isInitialSystemVar(BackendVariable.varCref(BackendVariable.getVarAt(inSyst.orderedVars, i)), inInitDAE)) then
+          arrayUpdate(added, e, true);
+          eqn := BackendEquation.get(inSyst.orderedEqs, e);
+          eqns := eqn :: eqns;
+          vars := List.append_reverse(list(BackendVariable.getVarAt(inSyst.orderedVars, v) for v in eqnVars[e]), vars);
+          work := List.append_reverse(BackendEquation.equationCrefs(eqn), work);
+        end if;
+      end if;
+    end for;
+  end while;
+end simulationOnlyEquations;
+
+protected function solvedEquations
+  input BackendDAE.StrongComponent inComp;
+  input output list<tuple<Integer, list<Integer>>> solved;
+algorithm
+  solved := match inComp
+    local
+      Integer e, v;
+      list<Integer> vs;
+      list<BackendDAE.InnerEquation> innerEqns;
+    case BackendDAE.SINGLEEQUATION(eqn = e, var = v) then (e, {v}) :: solved;
+    case BackendDAE.SINGLEARRAY(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.SINGLEALGORITHM(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.SINGLEIFEQUATION(eqn = e, vars = vs) then (e, vs) :: solved;
+    case BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(innerEquations = innerEqns))
+      then List.fold(innerEqns, innerSolvedEquation, solved);
+    else solved;
+  end match;
+end solvedEquations;
+
+protected function innerSolvedEquation
+  input BackendDAE.InnerEquation inInner;
+  input output list<tuple<Integer, list<Integer>>> solved;
+protected
+  Integer e;
+  list<Integer> vs;
+algorithm
+  (e, vs, _) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(inInner);
+  solved := (e, vs) :: solved;
+end innerSolvedEquation;
+
+protected function isInitialSystemVar
+  input DAE.ComponentRef inCref;
+  input BackendDAE.BackendDAE inInitDAE;
+  output Boolean b;
+algorithm
+  for syst in inInitDAE.eqs loop
+    if BackendVariable.containsCref(inCref, syst.orderedVars) then
+      b := true;
+      return;
+    end if;
+  end for;
+  b := BackendVariable.containsCref(inCref, inInitDAE.shared.globalKnownVars) or
+       BackendVariable.containsCref(inCref, inInitDAE.shared.aliasVars);
+end isInitialSystemVar;
 
 
 // =============================================================================

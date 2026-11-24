@@ -36,6 +36,7 @@
 #include <exception>
 #include <string>
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 #include <sstream>
 #ifdef __cplusplus
@@ -120,6 +121,17 @@ char* ModelicaAllocateStringWithErrorReturn(size_t len)
     res[len] = '\0';
   }
   return res;
+}
+
+char* ModelicaDuplicateString(const char* str)
+{
+  return strcpy(ModelicaAllocateString(strlen(str)), str);
+}
+
+char* ModelicaDuplicateStringWithErrorReturn(const char* str)
+{
+  char *res = ModelicaAllocateStringWithErrorReturn(strlen(str));
+  return res ? strcpy(res, str) : res;
 }
 
 void _ModelicaFreeStringIfAllocated(const char *str)

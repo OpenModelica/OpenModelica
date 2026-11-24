@@ -1,0 +1,60 @@
+// name: delayVectorized
+// keywords: NewBackend
+// status: correct
+//
+// Each element of a vectorized delay, and each iteration of a delay in an
+// array constructor, reduction or for-loop, has its own buffer.
+
+loadString("
+model DelayVectorized
+  parameter Integer n = 3;
+  parameter Real d[n] = {0.1, 0.2, 0.3};
+  Real x[n] = {i*time for i in 1:n};
+  Real y1[n], y2[n], y3[n], y4[n], y5[n];
+  Real s, a, b, c;
+equation
+  y1 = delay(x, 0.1);
+  y2 = delay(x, d);
+  y3 = {delay(x[i], d[i]) for i in 1:n};
+  s = sum(delay(x[i], d[i]) for i in 1:n);
+  a = delay(x[1], 0.1);
+  b = delay(x[1], 0.1);
+  c = delay(x[3], 0.2);
+algorithm
+  y4 := delay(x, d, 0.5);
+  for i in 1:n loop
+    y5[i] := delay(x[i], d[i], 0.5);
+  end for;
+end DelayVectorized;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(DelayVectorized, stopTime = 1); getErrorString();
+
+{val(y1[1], 0.5), val(y1[2], 0.5), val(y1[3], 0.5)};
+{val(y2[1], 0.5), val(y2[2], 0.5), val(y2[3], 0.5)};
+{val(y3[1], 0.5), val(y3[2], 0.5), val(y3[3], 0.5)};
+{val(y4[1], 0.5), val(y4[2], 0.5), val(y4[3], 0.5)};
+{val(y5[1], 0.5), val(y5[2], 0.5), val(y5[3], 0.5)};
+{val(s, 0.5), val(a, 0.5), val(b, 0.5), val(c, 0.5)};
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DelayVectorized_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'DelayVectorized', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.4, 0.8, 1.2000000000000002}
+// {0.4, 0.6, 0.6000000000000001}
+// {0.4, 0.6, 0.6000000000000001}
+// {0.4, 0.6, 0.6000000000000001}
+// {0.4, 0.6, 0.6000000000000001}
+// {1.6, 0.4, 0.4, 0.8999999999999999}
+// endResult

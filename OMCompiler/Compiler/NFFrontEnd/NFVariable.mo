@@ -55,6 +55,7 @@ encapsulated uniontype NFVariable
 protected
   import Absyn;
   import Ceval = NFCeval;
+  import DAE;
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import Inst = NFInst;
@@ -779,7 +780,7 @@ public
     if variability(var) >= Variability.DISCRETE and Binding.isBound(var.binding) then
       equations := Equation.makeEquality(Expression.fromCref(var.name),
         Binding.getExp(var.binding), var.ty,
-        ElementSource.createElementSource(var.info)) :: equations;
+        ElementSource.createElementSource(var.info), origin = DAE.EquationOrigin.BINDING) :: equations;
       var.binding := NFBinding.EMPTY_BINDING;
     end if;
   end moveBinding;

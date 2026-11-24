@@ -283,6 +283,7 @@ private:
   bool mIsUndoAvailable;
   bool mIsRedoAvailable;
   QString mCompletionCharacters;
+  QCursor mDefaultCursor;
 
   void highlightCurrentLine();
   void highlightParentheses();
@@ -483,6 +484,7 @@ private:
 
 class ReloadAsModelicaInfoBar : public QFrame
 {
+  Q_OBJECT
 public:
   ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor);
 private:

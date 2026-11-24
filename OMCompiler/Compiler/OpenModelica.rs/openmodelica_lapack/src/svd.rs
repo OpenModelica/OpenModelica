@@ -8,7 +8,7 @@
 use crate::bdsqr::dbdsqr;
 use crate::bidiag::{dgebd2, dorgbr};
 use crate::hqr::dlascl;
-use crate::{dlacpy, dlange, opt, sqrt, PREC, SAFMIN};
+use crate::{PREC, SAFMIN, dlacpy, dlange, opt, sqrt};
 
 /// `A = U * diag(S) * VT` (`DGESVD`). `jobu`/`jobvt` are LAPACK's `"A"` (all
 /// columns/rows), `"S"` (the first `min(m, n)`), `"O"` (the first `min(m, n)`,
@@ -50,10 +50,8 @@ pub fn dgesvd_ref(
     ldvt: usize,
 ) -> i32 {
     let (ju, jvt) = (opt(jobu), opt(jobvt));
-    let (wntua, wntus, wntuo, wntun) =
-        (ju == b'A', ju == b'S', ju == b'O', ju == b'N');
-    let (wntva, wntvs, wntvo, wntvn) =
-        (jvt == b'A', jvt == b'S', jvt == b'O', jvt == b'N');
+    let (wntua, wntus, wntuo, wntun) = (ju == b'A', ju == b'S', ju == b'O', ju == b'N');
+    let (wntva, wntvs, wntvo, wntvn) = (jvt == b'A', jvt == b'S', jvt == b'O', jvt == b'N');
     let (wntuas, wntvas) = (wntua || wntus, wntva || wntvs);
     if !(wntua || wntus || wntuo || wntun) {
         return -1;

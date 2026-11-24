@@ -1,0 +1,50 @@
+// name: ArrayAliasBoundsNegated
+// keywords: NewBackend, alias, min, max, nominal
+// status: correct
+// suite: cSources
+//
+// AliasBoundsNegated for arrays: the bounds of y = -x are negated and swapped,
+// the kept variable is in [-1, 0.5]. The nominal values of the alias set are
+// the same for all elements and are compared once.
+
+loadString("
+model ArrayAliasBoundsNegated
+  parameter Integer n = 3;
+  Real x[n](each min = -1, each max = 5, each nominal = 1e4);
+  Real y[n](each min = -0.5, each max = 2, each nominal = 1);
+  Real z[n](each min = -3, each max = 3);
+equation
+  y = -x;
+  z = x;
+  for i in 1:n loop
+    x[i] = 0.4*sin(i*time);
+  end for;
+end ArrayAliasBoundsNegated;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ArrayAliasBoundsNegated, stopTime = 1); getErrorString();
+val(y[3], 1);
+writeFile("bounds.log", "");
+system("awk '/name = \"z\\[3\\]\"/{f=1} f && /alias =/{print} f && /<Real/{print; exit}' ArrayAliasBoundsNegated_init.xml", "bounds.log"); readFile("bounds.log");
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayAliasBoundsNegated_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayAliasBoundsNegated', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: NBAlias.checkNominalThresholdSingle: The quotient of the greatest and lowest nominal value is greater than the nominal threshold = 1000.0. Use -d=dumprepl for more information.
+// "
+// -0.056448003223946885
+// true
+// 0
+// "    alias = \"noAlias\"
+//     <Real fixed=\"false\" useNominal=\"false\" min=\"-1.0\" max=\"0.5\" />
+// "
+// endResult

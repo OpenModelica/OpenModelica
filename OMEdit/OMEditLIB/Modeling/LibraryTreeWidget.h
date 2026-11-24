@@ -48,7 +48,9 @@
 
 #include <QTreeView>
 #include <QRegularExpression>
+#include <QSet>
 #include <QSortFilterProxyModel>
+#include <QStringList>
 
 class CompleterItem;
 class GraphicsView;
@@ -57,6 +59,7 @@ class ShapeAnnotation;
 class Element;
 class LineAnnotation;
 class LibraryTreeModel;
+class LibraryFileWatcher;
 class LibraryTreeItem : public QObject
 {
   Q_OBJECT
@@ -103,6 +106,7 @@ public:
   const QString& getNameStructure() const {return mNameStructure;}
   QString getWhereToMoveFMU();
   void updateClassInformation();
+  void updateClassInformation(const OMCInterface::getClassInformation_res &classInformation, const QSet<QString> *pExistingFiles = nullptr);
   void setFileName(QString fileName) {mFileName = fileName;}
   const QString& getFileName() const {return mFileName;}
   const QString& getVersion() const;
@@ -271,8 +275,11 @@ public:
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
+  void updateChildClasses(LibraryTreeItem *pLibraryTreeItem, bool isSaved = false);
+  bool loadClassText(LibraryTreeItem *pLibraryTreeItem, const QString &classText, bool isSaved);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  QList<LibraryTreeItem*> getLibraryTreeItemsInFile(LibraryTreeItem *pLibraryTreeItem);
   static LibraryTreeItem* getTopLevelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
@@ -305,7 +312,9 @@ private:
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                             bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
+                                             bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false,
+                                             const OMCInterface::getClassInformation_res *pClassInformation = nullptr,
+                                             const QSet<QString> *pExistingFiles = nullptr);
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
@@ -372,6 +381,7 @@ private:
   QAction *mpDeleteAction;
   QAction *mpConvertClassUsesLibrariesAction;
   QAction *mpExportFMUAction;
+  QAction *mpExportFMUWithSetupAction;
   QAction *mpExportReadonlyPackageAction;
   QAction *mpExportEncryptedPackageAction;
   QAction *mpExportXMLAction;
@@ -428,6 +438,7 @@ public slots:
   void deleteTextFile();
   void convertClassUsesLibraries();
   void exportModelFMU();
+  void exportModelFMUWithSetup();
   void exportEncryptedPackage();
   void exportReadonlyPackage();
   void exportModelXML();
@@ -461,6 +472,8 @@ public:
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
+  void ignoreFileChange(const QString &filePath);
+  void resyncLibraryFileWatcher();
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool skipValidate = false);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -470,10 +483,16 @@ public:
   void setLoadingLibraries(bool loadingLibraries);
   bool isCreatingAutoLoadedLibrary() const {return mCreatingAutoLoadedLibrary;}
   void setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary);
+  void setAutoSaving(bool autoSaving) {mAutoSaving = autoSaving;}
   void addModelToUpdate(const QString &model) {mModelsToUpdate.append(model);}
+  enum FileReloadProblem {ReloadOptionOff, UnsavedChanges, LibraryFileDeleted, FileErrors};
+  QList<QPair<QString, FileReloadProblem>> reloadChangedLibraryFiles();
+protected:
+  virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 private:
   bool mLoadingLibraries = false;
   bool mCreatingAutoLoadedLibrary = false;
+  bool mAutoSaving = false;
   QTimer mAutoLoadedLibrariesTimer;
   QStringList mAutoLoadedLibrariesList;
   QStringList mModelsToUpdate;
@@ -481,6 +500,19 @@ private:
   LibraryTreeModel *mpLibraryTreeModel;
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
+  LibraryFileWatcher *mpLibraryFileWatcher;
+  QSet<QString> mExternallyChangedFiles;
+  QStringList mPendingChangedFiles;
+  QStringList mPendingDeletedFiles;
+  bool mHandlingLibraryFileChanges = false;
+  struct LibraryFileChanges {
+    QStringList changedFiles;
+    QStringList deletedFiles;
+    bool rootFileDeleted = false;
+    bool hasUnsavedChanges = false;
+  };
+  QList<LibraryTreeItem*> collectLibraryFileChanges(const QStringList &changedFiles, const QStringList &deletedFiles,
+                                                    QHash<LibraryTreeItem*, LibraryFileChanges> *pLibraryChanges);
   bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
   void openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, int row);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
@@ -497,13 +529,21 @@ private:
   bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
   static void cancelLoadingLibraries(const QStringList classes);
   void reDrawModelsToUpdate();
+  QString libraryFileWatcherRootForItem(LibraryTreeItem *pLibraryTreeItem) const;
+  LibraryTreeItem* topLevelLibraryTreeItemForFile(const QString &filePath) const;
+  bool libraryHasUnsavedChanges(LibraryTreeItem *pLibraryTreeItem);
+  void clearExternallyChangedFilesForLibrary(LibraryTreeItem *pLibraryTreeItem);
+  void reloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void processPendingLibraryFileWatcherChanges();
 private slots:
   void handleAutoLoadedLibrary();
+  void handleLibraryFileWatcherChanges(const QStringList &changedFiles, const QStringList &createdFiles, const QStringList &deletedFiles);
 public slots:
   void loadSystemLibrary();
   void loadSystemLibrary(const QString &library, QString version = QString("default"), bool secondAttempt = false);
   void scrollToActiveLibraryTreeItem();
   void searchClasses();
+  void refreshLibraryFileWatcher();
 };
 
 #endif // LIBRARYTREEWIDGET_H

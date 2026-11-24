@@ -22,6 +22,9 @@ getErrorString();
 readFile("TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE_Outputs.csv");
 getErrorString();
 
+loadFile("Reconciled_TSP_DataReconciliationSimpleTests_Models_StructuralAnalysis_SG_DR_WithHARE.mo");
+getErrorString();
+
 
 // Result:
 // true
@@ -2057,7 +2060,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_WithHARE_OS.csv -variableFilter=.*'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_WithHARE_OS.csv -variableFilter=.*'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -2096,5 +2099,7 @@ getErrorString();
 // GV.staticDrum.x,1,1,1e-06,1e-06,TRUE,0,
 // GV.singularPressureLoss_VVP.K,11,11,3.6,3.6,TRUE,9.33243e-06,
 // "
+// ""
+// true
 // ""
 // endResult

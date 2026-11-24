@@ -564,7 +564,7 @@ pub fn resample(time: &[f64], vals: &[f64], grid: &[f64]) -> Vec<f64> {
 }
 
 /// The tolerances of `diffSimulationResults`, with its defaults, plus the
-/// choice of comparison algorithm — `Ellipse2014` is what omc has always run.
+/// choice of comparison algorithm.
 #[derive(Clone, Copy, Debug)]
 pub struct Tolerances {
     pub reltol: f64,
@@ -581,7 +581,7 @@ impl Default for Tolerances {
             reltol: 1e-3,
             reltol_diff_min_max: 1e-4,
             range_delta: 0.002,
-            algorithm: Algorithm::Ellipse2014,
+            algorithm: Algorithm::Rectangle,
             nominal_value: cmp::DEFAULT_NOMINAL_VALUE,
         }
     }
@@ -596,6 +596,7 @@ impl Tolerances {
             reltol_diff_min_max: self.reltol_diff_min_max,
             nominal_value: self.nominal_value,
             legacy_base: true,
+            resample: true,
         }
     }
 }
@@ -641,8 +642,10 @@ impl Pair<'_> {
         })
     }
 
-    /// Both trajectories of `var`, leading duplicates dropped.
-    fn data(&mut self, var: &str) -> Result<(Vec<f64>, Vec<f64>), Missing> {
+    /// Both trajectories of `var`, leading duplicates dropped. The csv-compare
+    /// tubes keep those of the reference: they take a jump at the start like
+    /// any other.
+    fn data(&mut self, var: &str, algorithm: Algorithm) -> Result<(Vec<f64>, Vec<f64>), Missing> {
         let var = var.replace('"', "");
         let mut dataref = self
             .reference
@@ -657,12 +660,14 @@ impl Pair<'_> {
             .filter(|d| !d.is_empty())
             .ok_or(Missing::Actual)?;
         drop_leading_dups(&mut data, self.offset);
-        drop_leading_dups(&mut dataref, self.offset_ref);
+        if algorithm == Algorithm::Ellipse2014 {
+            drop_leading_dups(&mut dataref, self.offset_ref);
+        }
         Ok((data, dataref))
     }
 
     fn compare(&mut self, var: &str, settings: &Settings) -> Result<Compared, Missing> {
-        let (data, dataref) = self.data(var)?;
+        let (data, dataref) = self.data(var, settings.algorithm)?;
         let timeref = self.reference.time.as_deref().unwrap();
         let time = self.actual.time.clone().unwrap();
         let cmp = compare(&time, &data, timeref, &dataref, settings);
@@ -767,9 +772,7 @@ pub fn diff_variable(
     let n = cmp.time.len();
     Ok(TubeDiff {
         differs: cmp.differs(),
-        // Ellipse2014 compares on the reference's own timeline, so the
-        // reference is already aligned; the others compare on the test's.
-        reference: if cmp.algorithm == Algorithm::Ellipse2014 {
+        reference: if cmp.resampled {
             cmp.reference.y[..n].to_vec()
         } else {
             resample(&cmp.reference.x, &cmp.reference.y, &cmp.time)

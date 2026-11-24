@@ -52,14 +52,29 @@ impl Series {
 }
 
 /// MTSF `/ModelDescription/Variables.causality`.
-const CAUSALITY: [(&str, u8); 5] =
-    [("parameter", 1), ("input", 2), ("output", 3), ("local", 4), ("option", 5)];
+const CAUSALITY: [(&str, u8); 5] = [
+    ("parameter", 1),
+    ("input", 2),
+    ("output", 3),
+    ("local", 4),
+    ("option", 5),
+];
 /// MTSF `/ModelDescription/Variables.variability`.
-const VARIABILITY: [(&str, u8); 5] =
-    [("constant", 1), ("fixed", 2), ("tunable", 3), ("discrete", 4), ("continuous", 5)];
+const VARIABILITY: [(&str, u8); 5] = [
+    ("constant", 1),
+    ("fixed", 2),
+    ("tunable", 3),
+    ("discrete", 4),
+    ("continuous", 5),
+];
 const BOOL: [(&str, u8); 2] = [("false", 0), ("true", 1)];
-const DATA_TYPE: [(&str, u8); 5] =
-    [("Real", 1), ("Integer", 2), ("Boolean", 3), ("String", 4), ("Enumeration", 5)];
+const DATA_TYPE: [(&str, u8); 5] = [
+    ("Real", 1),
+    ("Integer", 2),
+    ("Boolean", 3),
+    ("String", 4),
+    ("Enumeration", 5),
+];
 const UNIT_MODE: [(&str, u8); 3] = [("BaseUnit", 0), ("Unit", 1), ("DefaultDisplayUnit", 2)];
 
 /// One row of `/ModelDescription/Variables`, laid out as HDF5 reads it.
@@ -183,10 +198,22 @@ impl MtsfStream {
                 // A chunked dataset allocates its chunks as they are written
                 // whatever extent it declares, so reserving the known length
                 // costs nothing and saves an `H5Dset_extent` per block.
-                let rows0 = if series == Series::Fixed { 1 } else { opts.expected_rows.unwrap_or(0) as u64 };
+                let rows0 = if series == Series::Fixed {
+                    1
+                } else {
+                    opts.expected_rows.unwrap_or(0) as u64
+                };
                 let max_rows = if series == Series::Fixed { Some(1) } else { None };
-                let chunk_rows = if series == Series::Fixed { 1 } else { opts.chunk_height() };
-                let chunk_cols = if opts.chunk_cols == 0 { n_cols } else { opts.chunk_cols.min(n_cols) };
+                let chunk_rows = if series == Series::Fixed {
+                    1
+                } else {
+                    opts.chunk_height()
+                };
+                let chunk_cols = if opts.chunk_cols == 0 {
+                    n_cols
+                } else {
+                    opts.chunk_cols.min(n_cols)
+                };
                 let layout = Layout {
                     chunk: Some([chunk_rows as u64, chunk_cols.max(1) as u64]),
                     deflate: opts.deflate,
@@ -228,7 +255,11 @@ impl MtsfStream {
                     ty: *ty,
                     n_cols,
                     n_rows: 0,
-                    extent: if series == Series::Fixed { 1 } else { opts.expected_rows.unwrap_or(0) as u64 },
+                    extent: if series == Series::Fixed {
+                        1
+                    } else {
+                        opts.expected_rows.unwrap_or(0) as u64
+                    },
                     src: column_sources(&plan, series, *ty, n_cols),
                     buf: Vec::new(),
                 });
@@ -327,7 +358,14 @@ impl Matrix {
             self.ds.set_extent(&[end, self.n_cols as u64])?;
             self.extent = end;
         }
-        write_block(&self.ds, self.ty, single, &[start, 0], &[n as u64, self.n_cols as u64], &self.buf)?;
+        write_block(
+            &self.ds,
+            self.ty,
+            single,
+            &[start, 0],
+            &[n as u64, self.n_cols as u64],
+            &self.buf,
+        )?;
         self.n_rows += n;
         Ok(())
     }
@@ -340,12 +378,7 @@ impl Matrix {
 /// and a `-x` reference to the same signal share it whichever of the two the
 /// variable list mentions first; MTSF's table can say `negated` but nothing
 /// else, so any other transform gets a column of its own.
-fn plan(
-    vars: &[Var],
-    params: &[f64],
-    first_row: &[f64],
-    n_reals: usize,
-) -> Plan {
+fn plan(vars: &[Var], params: &[f64], first_row: &[f64], n_reals: usize) -> Plan {
     let mut widths: HashMap<(Series, VarTy), usize> = HashMap::new();
     let mut fixed: HashMap<VarTy, Vec<f64>> = HashMap::new();
     let mut placement: Vec<Option<Placement>> = Vec::with_capacity(vars.len());
@@ -370,12 +403,20 @@ fn plan(
             }
             Kind::Column { col, affine } if v.unvarying => {
                 let c = col as usize;
-                let raw = if c < n_reals { first_row.get(c).copied().unwrap_or(0.0) } else { 0.0 };
+                let raw = if c < n_reals {
+                    first_row.get(c).copied().unwrap_or(0.0)
+                } else {
+                    0.0
+                };
                 (Series::Fixed, Some(affine.apply(raw)), usize::MAX, Affine::IDENTITY)
             }
             Kind::Time => (Series::Continuous, None, 0, Affine::IDENTITY),
             Kind::Column { col, affine } => {
-                let s = if v.discrete { Series::Discrete } else { Series::Continuous };
+                let s = if v.discrete {
+                    Series::Discrete
+                } else {
+                    Series::Continuous
+                };
                 (s, None, col as usize, affine)
             }
         };
@@ -385,7 +426,12 @@ fn plan(
         if let Some(value) = value {
             let row = fixed.entry(category).or_default();
             row.push(value);
-            placement.push(Some(Placement { series, category, column: *width, negated: false }));
+            placement.push(Some(Placement {
+                series,
+                category,
+                column: *width,
+                negated: false,
+            }));
             *width += 1;
             continue;
         }
@@ -394,19 +440,39 @@ fn plan(
         let key = (series, category, col);
         if affine.is_identity() || negated {
             if let Some(existing) = owner.get(&key) {
-                placement.push(Some(Placement { series, category, column: *existing, negated }));
+                placement.push(Some(Placement {
+                    series,
+                    category,
+                    column: *existing,
+                    negated,
+                }));
                 continue;
             }
             owner.insert(key, *width);
             sources.insert((series, category, *width), (col, Affine::IDENTITY));
-            placement.push(Some(Placement { series, category, column: *width, negated }));
+            placement.push(Some(Placement {
+                series,
+                category,
+                column: *width,
+                negated,
+            }));
         } else {
             sources.insert((series, category, *width), (col, affine));
-            placement.push(Some(Placement { series, category, column: *width, negated: false }));
+            placement.push(Some(Placement {
+                series,
+                category,
+                column: *width,
+                negated: false,
+            }));
         }
         *width += 1;
     }
-    Plan { placement, widths, fixed, sources }
+    Plan {
+        placement,
+        widths,
+        fixed,
+        sources,
+    }
 }
 
 struct Plan {
@@ -420,7 +486,12 @@ struct Plan {
 
 fn column_sources(plan: &Plan, series: Series, category: VarTy, n_cols: usize) -> Vec<(usize, Affine)> {
     (0..n_cols)
-        .map(|c| plan.sources.get(&(series, category, c)).copied().unwrap_or((0, Affine::IDENTITY)))
+        .map(|c| {
+            plan.sources
+                .get(&(series, category, c))
+                .copied()
+                .unwrap_or((0, Affine::IDENTITY))
+        })
         .collect()
 }
 
@@ -433,7 +504,14 @@ fn elem_type(ty: VarTy, single: bool) -> Type {
     }
 }
 
-fn write_block(ds: &Dataset, ty: VarTy, single: bool, start: &[u64], count: &[u64], data: &[f64]) -> Result<(), String> {
+fn write_block(
+    ds: &Dataset,
+    ty: VarTy,
+    single: bool,
+    start: &[u64],
+    count: &[u64],
+    data: &[f64],
+) -> Result<(), String> {
     match ty {
         VarTy::Real if single => {
             let v: Vec<f32> = data.iter().map(|x| *x as f32).collect();
@@ -505,7 +583,12 @@ fn write_model_description(
         let names: Vec<CString> = units.iter().map(|(n, _)| cstring(n)).collect();
         let rows: Vec<UnitRow> = names
             .iter()
-            .map(|n| UnitRow { name: n.as_ptr(), factor: 1.0, offset: 0.0, mode: 1 })
+            .map(|n| UnitRow {
+                name: n.as_ptr(),
+                factor: 1.0,
+                offset: 0.0,
+                mode: 1,
+            })
             .collect();
         let ty = Type::compound(
             size_of::<UnitRow>(),
@@ -539,11 +622,23 @@ fn write_model_description(
             size_of::<SimpleTypeRow>(),
             &[
                 ("name", std::mem::offset_of!(SimpleTypeRow, name), &vlen),
-                ("dataType", std::mem::offset_of!(SimpleTypeRow, data_type), &Type::enum_u8(&DATA_TYPE)?),
+                (
+                    "dataType",
+                    std::mem::offset_of!(SimpleTypeRow, data_type),
+                    &Type::enum_u8(&DATA_TYPE)?,
+                ),
                 ("quantity", std::mem::offset_of!(SimpleTypeRow, quantity), &vlen),
-                ("relativeQuantity", std::mem::offset_of!(SimpleTypeRow, relative_quantity), &bool_ty),
+                (
+                    "relativeQuantity",
+                    std::mem::offset_of!(SimpleTypeRow, relative_quantity),
+                    &bool_ty,
+                ),
                 ("description", std::mem::offset_of!(SimpleTypeRow, description), &vlen),
-                ("unitOrEnumerationRow", std::mem::offset_of!(SimpleTypeRow, unit_or_enumeration_row), &Type::i32()),
+                (
+                    "unitOrEnumerationRow",
+                    std::mem::offset_of!(SimpleTypeRow, unit_or_enumeration_row),
+                    &Type::i32(),
+                ),
             ],
         )?;
         table(&group, "SimpleTypes", &ty, &rows)?;
@@ -571,9 +666,21 @@ fn write_model_description(
             size_of::<VarRow>(),
             &[
                 ("name", std::mem::offset_of!(VarRow, name), &vlen),
-                ("simpleTypeRow", std::mem::offset_of!(VarRow, simple_type_row), &Type::u32()),
-                ("causality", std::mem::offset_of!(VarRow, causality), &Type::enum_u8(&CAUSALITY)?),
-                ("variability", std::mem::offset_of!(VarRow, variability), &Type::enum_u8(&VARIABILITY)?),
+                (
+                    "simpleTypeRow",
+                    std::mem::offset_of!(VarRow, simple_type_row),
+                    &Type::u32(),
+                ),
+                (
+                    "causality",
+                    std::mem::offset_of!(VarRow, causality),
+                    &Type::enum_u8(&CAUSALITY)?,
+                ),
+                (
+                    "variability",
+                    std::mem::offset_of!(VarRow, variability),
+                    &Type::enum_u8(&VARIABILITY)?,
+                ),
                 ("description", std::mem::offset_of!(VarRow, description), &vlen),
                 ("objectId", std::mem::offset_of!(VarRow, object_id), &Type::obj_ref()),
                 ("column", std::mem::offset_of!(VarRow, column), &Type::u32()),
@@ -711,11 +818,21 @@ impl MtsfFile {
             .map_or(0, |m| m.n_rows);
         let time = md
             .read_attr_i32("independentVariableRow")
-            .or_else(|| Group::open(&file, "/Results/Continuous").ok()?.read_attr_i32("independentVariableRow"))
+            .or_else(|| {
+                Group::open(&file, "/Results/Continuous")
+                    .ok()?
+                    .read_attr_i32("independentVariableRow")
+            })
             .and_then(|r| usize::try_from(r).ok())
             .filter(|r| *r < vars.len())
             .or_else(|| vars.iter().position(|v| v.name == "time" || v.name == "Time"));
-        Ok(MtsfFile { file, vars, matrices, n_rows, time })
+        Ok(MtsfFile {
+            file,
+            vars,
+            matrices,
+            n_rows,
+            time,
+        })
     }
 
     pub fn read_column(&self, idx: usize) -> Result<Vec<f64>, String> {
@@ -779,7 +896,11 @@ fn read_table<T>(group: &Group, name: &str, ty: &Type) -> Result<(Vec<T>, Type, 
     // vlen fields), so a failed read leaves nothing dangling.
     let mut rows: Vec<T> = (0..n).map(|_| unsafe { std::mem::zeroed() }).collect();
     ds.read_all(ty, &mut rows)?;
-    Ok((rows, Type::from_raw(unsafe { hdf5_metno_sys::h5t::H5Tcopy(ty.id()) }), space))
+    Ok((
+        rows,
+        Type::from_raw(unsafe { hdf5_metno_sys::h5t::H5Tcopy(ty.id()) }),
+        space,
+    ))
 }
 
 fn owned(p: *const i8) -> String {
@@ -823,11 +944,23 @@ fn read_simple_types(md: &Group) -> Result<Vec<(VarTy, bool, i32)>, String> {
         size_of::<SimpleTypeRow>(),
         &[
             ("name", std::mem::offset_of!(SimpleTypeRow, name), &vlen),
-            ("dataType", std::mem::offset_of!(SimpleTypeRow, data_type), &Type::enum_u8(&DATA_TYPE)?),
+            (
+                "dataType",
+                std::mem::offset_of!(SimpleTypeRow, data_type),
+                &Type::enum_u8(&DATA_TYPE)?,
+            ),
             ("quantity", std::mem::offset_of!(SimpleTypeRow, quantity), &vlen),
-            ("relativeQuantity", std::mem::offset_of!(SimpleTypeRow, relative_quantity), &Type::enum_u8(&BOOL)?),
+            (
+                "relativeQuantity",
+                std::mem::offset_of!(SimpleTypeRow, relative_quantity),
+                &Type::enum_u8(&BOOL)?,
+            ),
             ("description", std::mem::offset_of!(SimpleTypeRow, description), &vlen),
-            ("unitOrEnumerationRow", std::mem::offset_of!(SimpleTypeRow, unit_or_enumeration_row), &Type::i32()),
+            (
+                "unitOrEnumerationRow",
+                std::mem::offset_of!(SimpleTypeRow, unit_or_enumeration_row),
+                &Type::i32(),
+            ),
         ],
     )?;
     let (mut rows, mem, space) = read_table::<SimpleTypeRow>(md, "SimpleTypes", &ty)?;
@@ -861,9 +994,21 @@ fn read_variables(
         size_of::<VarRow>(),
         &[
             ("name", std::mem::offset_of!(VarRow, name), &vlen),
-            ("simpleTypeRow", std::mem::offset_of!(VarRow, simple_type_row), &Type::u32()),
-            ("causality", std::mem::offset_of!(VarRow, causality), &Type::enum_u8(&CAUSALITY)?),
-            ("variability", std::mem::offset_of!(VarRow, variability), &Type::enum_u8(&VARIABILITY)?),
+            (
+                "simpleTypeRow",
+                std::mem::offset_of!(VarRow, simple_type_row),
+                &Type::u32(),
+            ),
+            (
+                "causality",
+                std::mem::offset_of!(VarRow, causality),
+                &Type::enum_u8(&CAUSALITY)?,
+            ),
+            (
+                "variability",
+                std::mem::offset_of!(VarRow, variability),
+                &Type::enum_u8(&VARIABILITY)?,
+            ),
             ("description", std::mem::offset_of!(VarRow, description), &vlen),
             ("objectId", std::mem::offset_of!(VarRow, object_id), &Type::obj_ref()),
             ("column", std::mem::offset_of!(VarRow, column), &Type::u32()),
@@ -888,8 +1033,15 @@ fn read_variables(
         .map(|r| {
             let matrix = by_ref.get(&r.object_id).copied().unwrap_or(0);
             let (ty, relative_quantity, unit_row) =
-                simple.get(r.simple_type_row as usize).copied().unwrap_or((VarTy::Real, false, -1));
-            let unit = usize::try_from(unit_row).ok().and_then(|u| units.get(u)).cloned().unwrap_or_default();
+                simple
+                    .get(r.simple_type_row as usize)
+                    .copied()
+                    .unwrap_or((VarTy::Real, false, -1));
+            let unit = usize::try_from(unit_row)
+                .ok()
+                .and_then(|u| units.get(u))
+                .cloned()
+                .unwrap_or_default();
             Info {
                 name: owned(r.name),
                 comment: owned(r.description),

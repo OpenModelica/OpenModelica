@@ -7,10 +7,10 @@
 
 loadString("
   model BouncingBall
-    Real h;
+    Real h, v;
     annotation(Documentation(figures = {
       Figure(title = \"Bouncing ball\", identifier = \"height\", preferred = true,
-        plots = {Plot(curves = {Curve(y = h, legend = \"Height of ball\")})})}));
+        plots = {Plot(curves = {Curve(y = h, legend = \"Height of ball\"), Curve(y = v, legend = \"Velocity\", yAxis = YAxisSelection.Right, zOrder = 1)})})}));
   end BouncingBall;");
 getErrorString();
 
@@ -46,7 +46,14 @@ getErrorString();
 //                       \"$kind\": \"record\",
 //                       \"name\": \"Curve\",
 //                       \"elements\": [
-//                         \"time\",
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"time\"
+//                             }
+//                           ]
+//                         },
 //                         {
 //                           \"$kind\": \"cref\",
 //                           \"parts\": [
@@ -56,7 +63,41 @@ getErrorString();
 //                           ]
 //                         },
 //                         \"Height of ball\",
+//                         {
+//                           \"$kind\": \"enum\",
+//                           \"name\": \"YAxisSelection.Left\",
+//                           \"index\": 1
+//                         },
 //                         0
+//                       ]
+//                     },
+//                     {
+//                       \"$kind\": \"record\",
+//                       \"name\": \"Curve\",
+//                       \"elements\": [
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"time\"
+//                             }
+//                           ]
+//                         },
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"v\"
+//                             }
+//                           ]
+//                         },
+//                         \"Velocity\",
+//                         {
+//                           \"$kind\": \"enum\",
+//                           \"name\": \"YAxisSelection.Right\",
+//                           \"index\": 2
+//                         },
+//                         1
 //                       ]
 //                     }
 //                   ],
@@ -64,12 +105,8 @@ getErrorString();
 //                     \"$kind\": \"record\",
 //                     \"name\": \"Axis\",
 //                     \"elements\": [
-//                       [
-//
-//                       ],
-//                       [
-//
-//                       ],
+//                       0,
+//                       0,
 //                       \"\",
 //                       \"\",
 //                       {
@@ -86,12 +123,26 @@ getErrorString();
 //                     \"$kind\": \"record\",
 //                     \"name\": \"Axis\",
 //                     \"elements\": [
-//                       [
-//
-//                       ],
-//                       [
-//
-//                       ],
+//                       0,
+//                       0,
+//                       \"\",
+//                       \"\",
+//                       {
+//                         \"$kind\": \"record\",
+//                         \"name\": \"AxisScale\",
+//                         \"elements\": [
+//                           \"Linear\",
+//                           10
+//                         ]
+//                       }
+//                     ]
+//                   },
+//                   {
+//                     \"$kind\": \"record\",
+//                     \"name\": \"Axis\",
+//                     \"elements\": [
+//                       0,
+//                       0,
 //                       \"\",
 //                       \"\",
 //                       {

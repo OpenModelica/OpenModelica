@@ -12,8 +12,8 @@
 //! These tests make collection *observable*: a payload with a `Drop` impl
 //! that increments a shared counter, plus a `Weak` handle to the payload.
 
-use metamodelica::gc::{collect, MMTrace, MMVisitor};
 use crate::Mutable;
+use metamodelica::gc::{MMTrace, MMVisitor, collect};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
 
@@ -107,7 +107,10 @@ fn build_self_cycle() -> (Weak<DropProbe>, Arc<AtomicUsize>) {
     let cell = Mutable::create(metamodelica::Ref::new(Node::Empty));
     Mutable::update(
         cell.clone(),
-        metamodelica::Ref::new(Node::Link { probe: p, next: cell.clone() }),
+        metamodelica::Ref::new(Node::Link {
+            probe: p,
+            next: cell.clone(),
+        }),
     );
     // `cell` (the last external handle) is dropped here.
     (weak, drops)
@@ -118,7 +121,10 @@ fn build_self_cycle() -> (Weak<DropProbe>, Arc<AtomicUsize>) {
 fn build_two_cell_cycle() -> (Weak<DropProbe>, Arc<AtomicUsize>) {
     let (p, weak, drops) = probe();
     let a = Mutable::create(metamodelica::Ref::new(Node::Empty));
-    let b = Mutable::create(metamodelica::Ref::new(Node::Link { probe: p, next: a.clone() }));
+    let b = Mutable::create(metamodelica::Ref::new(Node::Link {
+        probe: p,
+        next: a.clone(),
+    }));
     Mutable::update(a.clone(), metamodelica::Ref::new(Node::Empty)); // exercise update on a too
     Mutable::update(
         a,
@@ -155,7 +161,10 @@ fn live_cycle_survives_collect() {
     let cell = Mutable::create(metamodelica::Ref::new(Node::Empty));
     Mutable::update(
         cell.clone(),
-        metamodelica::Ref::new(Node::Link { probe: p, next: cell.clone() }),
+        metamodelica::Ref::new(Node::Link {
+            probe: p,
+            next: cell.clone(),
+        }),
     );
     collect();
     assert_eq!(drops.load(Ordering::SeqCst), 0, "live cycle was freed");
@@ -176,13 +185,18 @@ fn live_cycle_survives_collect() {
 fn content_shared_with_stack_survives_collect() {
     let (p, weak, drops) = probe();
     let cell = Mutable::create(metamodelica::Ref::new(Node::Empty));
-    let link = metamodelica::Ref::new(Node::Link { probe: p, next: cell.clone() });
+    let link = metamodelica::Ref::new(Node::Link {
+        probe: p,
+        next: cell.clone(),
+    });
     Mutable::update(cell.clone(), link.clone());
     drop(cell);
     collect();
     assert_eq!(drops.load(Ordering::SeqCst), 0, "live payload was freed");
     assert!(weak.upgrade().is_some(), "live payload was freed");
-    let Node::Link { next, .. } = &*link else { unreachable!() };
+    let Node::Link { next, .. } = &*link else {
+        unreachable!()
+    };
     // Accessing the still-live cell must not panic on a poisoned cell.
     let _ = Mutable::access(next.clone());
     // Dropping the last shared handle makes the cycle garbage.
@@ -197,7 +211,7 @@ fn content_shared_with_stack_survives_collect() {
 // reporting in `List`'s MMTrace impl.
 #[test]
 fn cycle_through_shared_list_spine() {
-    use metamodelica::{cons, nil, List};
+    use metamodelica::{List, cons, nil};
 
     #[derive(Clone, Debug)]
     enum ListNode {
@@ -223,7 +237,13 @@ fn cycle_through_shared_list_spine() {
     let (p, weak, drops) = probe();
     let cell = Mutable::create(Arc::new(ListNode::Empty));
     let spine = cons(cell.clone(), nil());
-    Mutable::update(cell.clone(), Arc::new(ListNode::Many { probe: p, nodes: spine.clone() }));
+    Mutable::update(
+        cell.clone(),
+        Arc::new(ListNode::Many {
+            probe: p,
+            nodes: spine.clone(),
+        }),
+    );
     drop(cell);
     // The spine is still on the stack: everything must survive.
     collect();

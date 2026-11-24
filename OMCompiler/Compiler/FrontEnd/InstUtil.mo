@@ -261,7 +261,7 @@ algorithm
       algorithm
         outElems := makeDAEElementInitial(elems);
       then
-        DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s)::outElems;
+        DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s,DAE.EquationOrigin.EQUATION)::outElems;
 
     case DAE.EQUATION(e1,e2,s)::elems
       algorithm
@@ -285,7 +285,7 @@ algorithm
       algorithm
         outElems := makeDAEElementInitial(elems);
       then
-        DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s)::outElems;
+        DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s,DAE.EquationOrigin.EQUATION)::outElems;
 
     case elem::elems // safe "last case" since we can not fail in cases above.
       algorithm
@@ -1129,22 +1129,6 @@ algorithm outComps := matchcontinue(inAcrefs, inExisting)
       outComps;
   end matchcontinue;
 end extractConstantPlusDeps3;
-
-public function removeSelfReference
-"@author adrpo
- Removes self reference from a path if it exists.
- Examples:
-   removeSelfReference('Icons', 'Icons.BaseLibrary') => 'BaseLibrary'
-   removeSelfReference('Icons', 'BlaBla.BaseLibrary') => 'BlaBla.BaseLibrary'"
-  input  String     className;
-  input  Absyn.Path path;
-  output Absyn.Path outPath;
-algorithm
-  outPath := if stringEq(className, AbsynUtil.pathFirstIdent(path)) then
-      AbsynUtil.removePrefix(Absyn.IDENT(className), path)
-    else
-      path;
-end removeSelfReference;
 
 public function printExtcomps
 "prints the tuple of elements and modifiers to stdout"

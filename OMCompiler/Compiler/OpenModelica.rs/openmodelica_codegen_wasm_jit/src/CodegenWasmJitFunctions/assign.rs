@@ -43,7 +43,12 @@ pub(super) fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) ->
     if let DAE::ComponentRef::CREF_QUAL { .. } = &**componentRef {
         return compile_cref_assign_qual(ctx, componentRef, rhs);
     }
-    let DAE::ComponentRef::CREF_IDENT { ident, identType, subscriptLst } = &**componentRef else {
+    let DAE::ComponentRef::CREF_IDENT {
+        ident,
+        identType,
+        subscriptLst,
+    } = &**componentRef
+    else {
         return Err("CodegenWasmJit: assignment to qualified/record lhs not supported");
     };
     let name = ident.to_string();
@@ -114,7 +119,13 @@ fn store_fresh_into_local(ctx: &mut FnCtx, idx: u32, dst_sty: &SigTy, vt: u32) -
 /// Store a freshly-owned value held in temp `vt` into record field `name` of the
 /// record whose handle is in local/temp `rec_idx`, releasing the previous field
 /// value first. The value is already owned (a call result), so no copy is made.
-pub(super) fn store_fresh_into_field(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr, SigTy)], name: &str, vt: u32) -> Result<()> {
+pub(super) fn store_fresh_into_field(
+    ctx: &mut FnCtx,
+    rec_idx: u32,
+    fields: &[(ArcStr, SigTy)],
+    name: &str,
+    vt: u32,
+) -> Result<()> {
     let (off, fty) = record_field(fields, name)?;
     if let Some(release_fn) = fty.release_fn() {
         ctx.emit(we::Instruction::LocalGet(rec_idx));
@@ -191,7 +202,12 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
         }
         return Ok(());
     }
-    let DAE::ComponentRef::CREF_IDENT { ident, identType, subscriptLst } = cref else {
+    let DAE::ComponentRef::CREF_IDENT {
+        ident,
+        identType,
+        subscriptLst,
+    } = cref
+    else {
         return Err("CodegenWasmJit: unsupported tuple-assignment target");
     };
     let name = ident.to_string();
@@ -217,7 +233,11 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
 /// generated function (which leaves its results on the stack, first result
 /// deepest), then move each owned result into its target local. A `_` (wildcard)
 /// target discards its value (releasing it if heap).
-pub(super) fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &List<metamodelica::Ref<DAE::Exp>>, call: &DAE::Exp) -> Result<()> {
+pub(super) fn compile_tuple_assign(
+    ctx: &mut FnCtx,
+    lhs: &List<metamodelica::Ref<DAE::Exp>>,
+    call: &DAE::Exp,
+) -> Result<()> {
     let DAE::Exp::CALL { path, expLst, attr } = call else {
         return Err("CodegenWasmJit: tuple assignment rhs is not a function call");
     };
@@ -368,7 +388,11 @@ pub(super) fn compile_private_value(ctx: &mut FnCtx, e: &DAE::Exp, sty: &SigTy) 
     if flat_var_ref(ctx, e).is_some() {
         return compile_exp(ctx, e);
     }
-    if let DAE::Exp::IFEXP { expCond, expThen, expElse } = e
+    if let DAE::Exp::IFEXP {
+        expCond,
+        expThen,
+        expElse,
+    } = e
         && !shared_lits::is_shared(e)
     {
         let c = compile_exp(ctx, expCond)?;

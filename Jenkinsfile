@@ -6,6 +6,7 @@ def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
 def shouldWeRunTests
+def isPublishedBranch
 
 pipeline {
   agent none
@@ -64,6 +65,7 @@ pipeline {
             checkout(scm).each { k, v -> env.setProperty(k, v) }
           }
           common = load("${env.workspace}/.CI/common.groovy")
+          common.checkBranch()
           def buildFlags = common.evaluateBuildFlags()
           isPR = buildFlags.isPR
           shouldWeBuildAlpine = buildFlags.shouldWeBuildAlpine
@@ -72,6 +74,7 @@ pipeline {
           shouldWeEnableMacOSCMakeBuild = buildFlags.shouldWeEnableMacOSCMakeBuild
           shouldWeBuildWindows = buildFlags.shouldWeBuildWindows
           shouldWeRunTests = buildFlags.shouldWeRunTests
+          isPublishedBranch = buildFlags.isPublishedBranch
         }
       }
     }
@@ -911,8 +914,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            branch 'master'
-            expression { shouldWeRunTests }
+            expression { isPublishedBranch }
           }
           steps {
             script { common.checkoutSCM() }
@@ -943,23 +945,17 @@ pipeline {
             script { common.pushToMaster() }
           }
         }
-        stage('push-bibliography') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica-Bibliography'
-            }
-          }
+        stage('update-website-bibliography') {
+          // www.openmodelica.org generates its bibliography pages from
+          // doc/bibliography/openmodelica.bib on master when it is built
           when {
             beforeAgent true
             branch 'master'
+            changeset 'doc/bibliography/openmodelica.bib'
             expression { return currentBuild.currentResult == 'SUCCESS' }
           }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
           steps {
-            script { common.pushBibliography() }
+            build job: '/www.openmodelica.org/main', wait: false
           }
         }
       }

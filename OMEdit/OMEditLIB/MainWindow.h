@@ -214,6 +214,7 @@ public:
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCalculateDataReconciliationAction() {return mpCalculateDataReconciliationAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
+  QAction* getExportFMUWithSetupAction() {return mpExportFMUWithSetupAction;}
   QAction* getExportReadonlyPackageAction() {return mpExportReadonlyPackageAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
   QAction* getExportXMLAction() {return mpExportXMLAction;}
@@ -392,12 +393,15 @@ private:
   QAction *mpExportToClipboardAction;
   QAction *mpExportAsImageAction;
   QAction *mpExportFMUAction;
+  QAction *mpExportFMUWithSetupAction;
   QAction *mpExportReadonlyPackageAction;
   QAction *mpExportEncryptedPackageAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpInstallLibraryAction;
+  QAction *mpInstallLibraryFromFileAction;
+  QAction *mpInstallLibraryFromDirectoryAction;
   QAction *mpUpgradeInstalledLibrariesAction;
   QAction *mpUpdateLibraryIndexAction;
   QAction *mpClearRecentFilesAction;
@@ -465,7 +469,6 @@ private:
   // Help Menu
   QAction *mpUsersGuideAction;
   QAction *mpUsersGuidePdfAction;
-  QAction *mpSystemDocumentationAction;
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
   QAction *mpOMSimulatorUsersGuideAction;
@@ -599,6 +602,7 @@ public slots:
   void simulateModelWithAnimation();
   void simulateModelInteractive();
   void exportModelFMU();
+  void exportModelFMUWithSetup();
   void importModelFMU();
   void importFMUModelDescription();
   void exportEncryptedPackage();
@@ -611,6 +615,8 @@ public slots:
   void runOMSensPlugin();
   void exportModelToOMNotebook();
   bool openInstallLibraryDialog();
+  void installLibraryFromFile();
+  void installLibraryFromDirectory();
   void upgradeInstalledLibraries();
   void updateLibraryIndex();
   void updateLibraryIndex(bool forceUpdate);
@@ -626,7 +632,6 @@ public slots:
   void openConfigurationOptions();
   void openUsersGuide();
   void openUsersGuidePdf();
-  void openSystemDocumentation();
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();
   void openOMSimulatorUsersGuide();

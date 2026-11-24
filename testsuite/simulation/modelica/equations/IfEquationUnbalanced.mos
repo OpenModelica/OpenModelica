@@ -15,7 +15,7 @@ simulate(IfEquationUnbalancedMissingElse); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IfEquationUnbalanced', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'IfEquationUnbalanced', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: IfEquationUnbalanced"
 // end SimulationResult;
 // "Error: Too few equations, under-determined system. The model has 1 equation(s) and 2 variable(s).
@@ -32,7 +32,7 @@ simulate(IfEquationUnbalancedMissingElse); getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IfEquationUnbalancedMissingElse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'IfEquationUnbalancedMissingElse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: IfEquationUnbalancedMissingElse"
 // end SimulationResult;
 // "Error: Too few equations, under-determined system. The model has 0 equation(s) and 2 variable(s).

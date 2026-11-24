@@ -163,7 +163,7 @@ getModelInstance(M, prettyPrint = true);
 //               \"lineStart\": 13,
 //               \"columnStart\": 17,
 //               \"lineEnd\": 13,
-//               \"columnEnd\": 29
+//               \"columnEnd\": 51
 //             }
 //           }
 //         ],

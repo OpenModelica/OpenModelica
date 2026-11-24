@@ -849,6 +849,11 @@ pub struct SpatialState {
 }
 
 impl SpatialState {
+    /// The number of spatialDistribution operators.
+    pub fn count(&self) -> usize {
+        self.ops.len()
+    }
+
     /// Every operator as flat words, for an FMU state.
     pub fn to_words(&self, out: &mut Vec<f64>) {
         out.push(self.ops.len() as f64);
@@ -877,7 +882,7 @@ impl SpatialState {
     /// [`SpatialState::to_words`]'s inverse.
     pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
         let n = w.next()? as usize;
-        let mut ops = Vec::with_capacity(n);
+        let mut ops = Vec::with_capacity(n.min(w.size_hint().0));
         for _ in 0..n {
             let mut s = Spatial::new();
             for _ in 0..w.next()? as usize {

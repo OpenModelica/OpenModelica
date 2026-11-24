@@ -74,9 +74,20 @@ set(OMEDIT_TEST_DYNAMICANNOTATION_SOURCES DynamicAnnotation/DynamicAnnotationTes
                                            DynamicAnnotation/DynamicAnnotationTest.h)
 add_omedit_test(DynamicAnnotation "${OMEDIT_TEST_DYNAMICANNOTATION_SOURCES}")
 
+set(OMEDIT_TEST_ELEMENTMODEMODIFIERS_SOURCES ElementModeModifiers/ElementModeModifiersTest.cpp
+                                             ElementModeModifiers/ElementModeModifiersTest.h)
+add_omedit_test(ElementModeModifiers "${OMEDIT_TEST_ELEMENTMODEMODIFIERS_SOURCES}")
+
 set(OMEDIT_TEST_EXPRESSION_SOURCES Expression/ExpressionTest.cpp
                                    Expression/ExpressionTest.h)
 add_omedit_test(Expression "${OMEDIT_TEST_EXPRESSION_SOURCES}")
+
+set(OMEDIT_TEST_FILEWATCHER_SOURCES FileWatcher/RecursiveFileWatcherTest.cpp)
+add_omedit_test(RecursiveFileWatcher "${OMEDIT_TEST_FILEWATCHER_SOURCES}")
+
+set(OMEDIT_TEST_FMIGUIDE_SOURCES FMIGuide/FMIGuideTest.cpp
+                                 FMIGuide/FMIGuideTest.h)
+add_omedit_test(FMIGuide "${OMEDIT_TEST_FMIGUIDE_SOURCES}")
 
 set(OMEDIT_TEST_HOMOTOPY_SOURCES Homotopy/HomotopyTest.cpp
                                  Homotopy/HomotopyTest.h)
@@ -108,6 +119,14 @@ if(MODELICA_LS_STAGE_EXE AND NOT CMAKE_CROSSCOMPILING)
 else()
   message(STATUS "LanguageServerNavigation not registered: no runnable staged language server")
 endif()
+
+set(OMEDIT_TEST_INSTALLLIBRARYFROMPATH_SOURCES InstallLibraryFromPath/InstallLibraryFromPathTest.cpp
+                                               InstallLibraryFromPath/InstallLibraryFromPathTest.h)
+add_omedit_test(InstallLibraryFromPath "${OMEDIT_TEST_INSTALLLIBRARYFROMPATH_SOURCES}")
+
+set(OMEDIT_TEST_MCPSERVER_SOURCES MCPServer/MCPServerTest.cpp
+                                  MCPServer/MCPServerTest.h)
+add_omedit_test(MCPServer "${OMEDIT_TEST_MCPSERVER_SOURCES}")
 
 set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
                                               MergeExtendsModifiers/MergeExtendsModifiersTest.h)
@@ -164,3 +183,7 @@ add_omedit_test(Utilities "${OMEDIT_TEST_UTILITIES_SOURCES}")
 set(OMEDIT_TEST_VARIABLEVALUE_SOURCES VariableValue/VariableValueTest.cpp
                                       VariableValue/VariableValueTest.h)
 add_omedit_test(VariableValue "${OMEDIT_TEST_VARIABLEVALUE_SOURCES}")
+
+set(OMEDIT_TEST_WORKINGDIRECTORY_SOURCES WorkingDirectory/WorkingDirectoryTest.cpp
+                                         WorkingDirectory/WorkingDirectoryTest.h)
+add_omedit_test(WorkingDirectory "${OMEDIT_TEST_WORKINGDIRECTORY_SOURCES}")

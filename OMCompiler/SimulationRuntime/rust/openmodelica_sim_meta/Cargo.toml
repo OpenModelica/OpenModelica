@@ -21,6 +21,7 @@ std = ["daskr/std", "openmodelica_solvers/std", "openmodelica_nls/std", "dep:ope
 # Compile the CVODE/IDA driver paths without linking an archive: the symbols stay
 # undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
 sundials_extern = ["openmodelica_solvers/sundials_extern", "openmodelica_nls/sundials_extern"]
+vfs = ["std", "openmodelica_solvers/vfs"]
 # `result` -- writing a run's rows to a `.mat`/`.csv`/`.plt`/`.arrow` file. An
 # exported FMU hands its rows to the importer and enables none of it, which is
 # what keeps the Arrow crates out of the FMU adapter whether or not LTO would

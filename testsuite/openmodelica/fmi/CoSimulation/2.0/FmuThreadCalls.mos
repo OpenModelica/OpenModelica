@@ -1,0 +1,51 @@
+// name:     FmuThreadCalls
+// keywords: FMI 2.0 export co-simulation thread
+// status:   correct
+// teardown_command: rm -rf FmuThreadCalls*.fmu FmuThreadCalls*.fmutmp/ FmuThreadCalls*.log FmuThreadCalls*_out.txt
+//
+// An importer can make each call from a different thread (FMI 3.0 2.2.1).
+// The event iteration at t = 0.15 must find g and then c.
+
+loadString("
+model FmuThreadCalls
+  discrete Real a(start = 0, fixed = true);
+  Boolean f(start = false, fixed = true);
+  Boolean g(start = false, fixed = true);
+  Integer c(start = 0, fixed = true);
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = a + c;
+  when time >= 0.15 then
+    a = pre(a) + 1;
+    f = true;
+  end when;
+  when pre(f) then
+    g = true;
+  end when;
+  when pre(g) then
+    c = pre(c) + 1;
+  end when;
+end FmuThreadCalls;
+"); getErrorString();
+
+buildModelFMU(FmuThreadCalls, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuThreadCalls.py FmuThreadCalls.fmu FmuThreadCalls_out.txt > FmuThreadCalls.log 2>&1"); getErrorString();
+readFile("FmuThreadCalls_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuThreadCalls.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "t=0.1 a=0 f=0 g=0 c=0 x=0.0000
+// t=0.2 a=1 f=1 g=1 c=1 x=0.1000
+// t=0.3 a=1 f=1 g=1 c=1 x=0.3000
+// t=0.4 a=1 f=1 g=1 c=1 x=0.5000
+// same as on one thread: True
+// "
+// ""
+// endResult

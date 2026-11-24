@@ -60,12 +60,12 @@ readFile("Bug5673.xml"); getErrorString();
 //     name = \"b\"
 //     valueReference = \"1000\"
 //     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\" startFromEquation = \"true\"
 //     alias = \"noAlias\"
 //     classIndex = \"0\" classType = \"rAlg\"
 //     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"2\" endLine = \"5\" endColumn = \"13\" fileWritable = \"true\">
-//     <Real fixed=\"true\" useNominal=\"false\" />
+//     <Real start=\"1.0\" fixed=\"true\" useNominal=\"false\" />
 //   </ScalarVariable>
 //   <ScalarVariable
 //     name = \"a\"

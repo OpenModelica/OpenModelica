@@ -187,6 +187,7 @@ public:
   CRMLPage* getCRMLPage() {return mpCRMLPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
+  void saveFMIExportDefaults() {saveFMISettings();}
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   SensitivityOptimizationPage* getSensitivityOptimizationPage() {return mpSensitivityOptimizationPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
@@ -304,6 +305,7 @@ public:
   ComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
   QString getWorkingDirectory();
+  void warnIfWorkingDirectoryUnusable();
   SpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
   void setPreserveUserCustomizations(bool value) {mpPreserveUserCustomizations->setChecked(value);}
   bool getPreserveUserCustomizations() {return mpPreserveUserCustomizations->isChecked();}
@@ -324,6 +326,7 @@ public:
   void setShowHiddenClasses(bool value) {mpShowHiddenClasses->setChecked(value);}
   bool getShowHiddenClasses() {return mpShowHiddenClasses->isChecked();}
   QCheckBox* getSynchronizeWithModelWidgetCheckBox() {return mpSynchronizeWithModelWidgetCheckBox;}
+  QCheckBox* getReloadLibraryOnFileChangeCheckBox() {return mpReloadLibraryOnFileChangeCheckBox;}
   QGroupBox* getEnableAutoSaveGroupBox() {return mpEnableAutoSaveGroupBox;}
   SpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
   int getWelcomePageView();
@@ -341,6 +344,7 @@ private:
   Label *mpWorkingDirectoryLabel;
   QLineEdit *mpWorkingDirectoryTextBox;
   QPushButton *mpWorkingDirectoryBrowseButton;
+  Label *mpWorkingDirectoryWarningLabel;
   Label *mpToolbarIconSizeLabel;
   SpinBox *mpToolbarIconSizeSpinBox;
   QCheckBox *mpPreserveUserCustomizations;
@@ -366,6 +370,7 @@ private:
   QCheckBox *mpShowProtectedClasses;
   QCheckBox *mpShowHiddenClasses;
   QCheckBox *mpSynchronizeWithModelWidgetCheckBox;
+  QCheckBox *mpReloadLibraryOnFileChangeCheckBox;
   QGroupBox *mpEnableAutoSaveGroupBox;
   Label *mpAutoSaveIntervalLabel;
   SpinBox *mpAutoSaveIntervalSpinBox;
@@ -375,10 +380,13 @@ private:
   QRadioButton *mpVerticalViewRadioButton;
   QCheckBox *mpShowLatestNewsCheckBox;
   SpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
+  QString workingDirectoryWarning() const;
 public slots:
   void selectWorkingDirectory();
   void selectTerminalCommand();
   void autoSaveIntervalValueChanged(int value);
+private slots:
+  void updateWorkingDirectoryWarning();
 };
 
 class LibrariesPage : public QWidget

@@ -16,6 +16,7 @@ clockedInitTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
+delayTest.mos \
 externalArrayInputTest.mos \
 externalIncludeDirectoryTest.mos \
 externalRecordTest.mos \
@@ -25,7 +26,7 @@ mslElectricalMachinesTest.mos \
 mslElectricalMachinesTestDAE.mos \
 mslElectricalSensorsTest.mos \
 mslMathFFT1Test.mos \
-mslMechanicsTestProtectedVector \
+mslMechanicsTestProtectedVector.mos \
 mslThermalMassesTestNB.mos \
 nameClashTest.mos \
 recordSizesTest.mos \

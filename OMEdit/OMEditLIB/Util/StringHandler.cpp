@@ -180,8 +180,19 @@ QString StringHandler::getViewType(int type)
   }
 }
 
+/*!
+ * \brief StringHandler::getErrorKind
+ * Maps an OpenModelica error kind to OMEdit enum.
+ * Accepts qualified names with or without a leading dot.
+ * \param errorKind
+ * \return
+ */
 StringHandler::OpenModelicaErrorKinds StringHandler::getErrorKind(QString errorKind)
 {
+  if (!errorKind.startsWith('.')) {
+    errorKind.prepend('.');
+  }
+
   if (errorKind.compare(Helper::syntaxKind) == 0) {
     return StringHandler::Syntax;
   } else if (errorKind.compare(Helper::grammarKind) == 0) {
@@ -221,8 +232,19 @@ QString StringHandler::getErrorKindString(OpenModelicaErrorKinds errorKind)
   }
 }
 
+/*!
+ * \brief StringHandler::getErrorType
+ * Maps an OpenModelica error type to OMEdit enum.
+ * Accepts qualified names with or without a leading dot.
+ * \param errorType
+ * \return
+ */
 StringHandler::OpenModelicaErrors StringHandler::getErrorType(QString errorType)
 {
+  if (!errorType.startsWith('.')) {
+    errorType.prepend('.');
+  }
+
   if (errorType.compare(Helper::internalLevel) == 0) {
     return StringHandler::Internal;
   } else if (errorType.compare(Helper::notificationLevel) == 0) {

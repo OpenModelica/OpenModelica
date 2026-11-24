@@ -10,7 +10,8 @@ runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 
-relTol := 0.015;
+// DASSL is about 1% off the reference after the switch at t=2
+simflags := "-s=cvode";
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Transformer);
 compareVars :=
@@ -34,11 +35,11 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// 0.015
+// "-s=cvode"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Transformer
 // {"aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.idq_sr[1]", "aimc.idq_sr[2]", "aimc.is[1]", "aimc.is[2]", "loadInertia.phi", "loadInertia.w", "transformer.l2sigma.inductor[2].i", "transformer.l2sigma.inductor[3].i"}
-// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Transformer', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|aimc.is.1.|aimc.is.2.|loadInertia.phi|loadInertia.w|transformer.l2sigma.inductor.2..i|transformer.l2sigma.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Transformer', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|aimc.is.1.|aimc.is.2.|loadInertia.phi|loadInertia.w|transformer.l2sigma.inductor.2..i|transformer.l2sigma.inductor.3..i', cflags = '', simflags = '-s=cvode -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Transformer_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

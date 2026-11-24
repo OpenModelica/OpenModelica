@@ -83,14 +83,16 @@ uniontype EvalTarget
   record EVAL_TARGET
     SourceInfo info;
     InstContext.Type context;
+    Boolean evalSubscripts;
     Option<EvalTargetData> extra;
   end EVAL_TARGET;
 
   function new
     input SourceInfo info;
     input InstContext.Type context = NFInstContext.NO_CONTEXT;
+    input Boolean evalSubscripts = true;
     input Option<EvalTargetData> extra = NONE();
-    output EvalTarget target = EVAL_TARGET(info, context, extra);
+    output EvalTarget target = EVAL_TARGET(info, context, evalSubscripts, extra);
   end new;
 
   function hasInfo
@@ -102,9 +104,16 @@ uniontype EvalTarget
     input EvalTarget target;
     output SourceInfo info = target.info;
   end getInfo;
+
+  function setEvalSubscripts
+    input output EvalTarget target;
+    input Boolean evalSubscripts;
+  algorithm
+    target.evalSubscripts := evalSubscripts;
+  end setEvalSubscripts;
 end EvalTarget;
 
-constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(Absyn.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
+constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(Absyn.dummyInfo, NFInstContext.NO_CONTEXT, true, NONE());
 
 uniontype EvalTargetData
   record DIMENSION_DATA
@@ -315,6 +324,7 @@ function evalExpPartial
   output Boolean outEvaluated "True if the whole expression is evaluated, otherwise false.";
 protected
   Expression e;
+  EvalTarget t;
 algorithm
   (e, outEvaluated) :=
     Expression.mapFoldShallow(exp, function evalExpPartial(target = target), true);
@@ -328,8 +338,14 @@ algorithm
           outEvaluated := false;
         else
           // Crefs can be evaluated even if they have non-evaluated subscripts.
-          outExp := evalCref(e.cref, e, target, evalSubscripts = false);
-          outEvaluated := Expression.isLiteral(outExp);
+          ErrorExt.setCheckpoint(getInstanceName());
+          try
+            outExp := evalCref(e.cref, e, EvalTarget.setEvalSubscripts(target, false));
+            outEvaluated := Expression.isLiteral(outExp);
+          else
+            outExp := e;
+          end try;
+          ErrorExt.rollBack(getInstanceName());
         end if;
       then
         outExp;
@@ -352,7 +368,6 @@ function evalCref
   input ComponentRef cref;
   input Expression defaultExp;
   input EvalTarget target;
-  input Boolean evalSubscripts = true;
   input Boolean liftExp = true;
   output Expression exp;
 protected
@@ -363,8 +378,7 @@ algorithm
       guard InstNode.isComponent(ComponentRef.node(cref)) and
             not ComponentRef.isIterator(cref) and
             ComponentRef.nodeVariability(cref) <= Variability.NON_STRUCTURAL_PARAMETER
-      then evalComponentBinding(ComponentRef.node(cref), cref, defaultExp, target,
-                                evalSubscripts, liftExp);
+      then evalComponentBinding(ComponentRef.node(cref), cref, defaultExp, target, liftExp);
 
     else defaultExp;
   end match;
@@ -375,7 +389,6 @@ function evalComponentBinding
   input ComponentRef cref;
   input Expression defaultExp "The expression returned if the binding couldn't be evaluated";
   input EvalTarget target;
-  input Boolean evalSubscripts = true;
   input Boolean liftExp = false "Ensure that the result has the same dimensions as the cref";
   output Expression exp;
 protected
@@ -400,7 +413,7 @@ algorithm
 
     if Binding.isUnbound(binding) then
       // If we couldn't construct a binding, try to use the start value instead.
-      start_exp := evalComponentStartBinding(node, comp, cref, target, evalSubscripts);
+      start_exp := evalComponentStartBinding(node, comp, cref, target);
 
       if isSome(start_exp) then
         // The component had a valid start value. The value has already been
@@ -425,7 +438,10 @@ algorithm
 
               // Evaluate the binding expression.
               try
-                exp := evalExp(binding.bindingExp, target);
+                // Evaluating the binding expression might not work if evalSubscripts is false
+                // (for example an expression such as a[n]*b[m]), so flip it to true here.
+                exp := evalExp(binding.bindingExp,
+                  if target.evalSubscripts then target else EvalTarget.setEvalSubscripts(target, true));
                 ErrorExt.delCheckpoint(getInstanceName());
               else
                 // Reset the flag if the evaluation failed.
@@ -478,7 +494,7 @@ algorithm
 
   // Apply subscripts from the cref to the binding expression as needed.
   if evaluated then
-    exp := subscriptBinding(exp, cref, evalSubscripts);
+    exp := subscriptBinding(exp, cref, target.evalSubscripts);
   end if;
 
   if liftExp and not Expression.contains(exp, Expression.isSplitSubscriptedExp) then
@@ -625,7 +641,6 @@ function evalComponentStartBinding
   input Component comp;
   input ComponentRef cref;
   input EvalTarget target;
-  input Boolean evalSubscripts;
   output Option<Expression> outExp = NONE();
 protected
   Variability var;
@@ -2092,15 +2107,17 @@ function evalBuiltinCallExp
 protected
   Function fn;
   list<Expression> args;
+  Type ty;
 algorithm
-  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := callExp;
-  result := evalBuiltinCall(fn, args, target);
+  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args, ty = ty)) := callExp;
+  result := evalBuiltinCall(fn, args, target, ty);
 end evalBuiltinCallExp;
 
 function evalBuiltinCall
   input Function fn;
   input list<Expression> args;
   input EvalTarget target;
+  input Type ty = Type.UNKNOWN() "the type of the call";
   output Expression result;
 protected
   Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
@@ -2127,7 +2144,7 @@ algorithm
     case "floor" then evalBuiltinFloor(listHead(args));
     // hold of a parameter expression is that value, MLS 3.7 section 16.5.1.
     case "hold" then listHead(args);
-    case "identity" then evalBuiltinIdentity(listHead(args));
+    case "identity" then evalBuiltinIdentity(listHead(args), ty);
     case "integer" then evalBuiltinInteger(listHead(args));
     case "Integer" then evalBuiltinIntegerEnum(listHead(args));
     case "log10" then evalBuiltinLog10(listHead(args), target);
@@ -2546,11 +2563,12 @@ end evalBuiltinFloor;
 
 function evalBuiltinIdentity
   input Expression arg;
+  input Type ty;
   output Expression result;
 algorithm
   result := match arg
     case Expression.INTEGER()
-      then Expression.makeIdentityMatrix(arg.value, Type.INTEGER());
+      then Expression.makeIdentityMatrix(arg.value, if Type.isReal(Type.arrayElementType(ty)) then Type.REAL() else Type.INTEGER());
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -3578,7 +3596,12 @@ algorithm
     else evalExp(exp, target);
   end match;
 
-  subs := list(Subscript.mapShallowExp(s, function evalExp(target = target)) for s in subscripts);
+  if target.evalSubscripts then
+    subs := list(Subscript.mapShallowExp(s, function evalExp(target = target)) for s in subscripts);
+  else
+    subs := subscripts;
+  end if;
+
   result := Expression.applySubscripts(subs, result);
 end evalSubscriptedExp;
 

@@ -347,6 +347,12 @@ File Menu
   -  *Install Library* - Opens a dialog to select and install a new library,
      see :ref:`omedit-install-library-label`
 
+  -  *Install Library From File* - Installs the libraries of a .mo or .zip file,
+     see :ref:`omedit-install-library-label`
+
+  -  *Install Library From Directory* - Installs the libraries of a directory,
+     see :ref:`omedit-install-library-label`
+
   -  *Upgrade Installed Libraries* - Opens a dialog to upgrade the installed libraries.
 
   -  *Update Library Index* - Updates the library index.
@@ -1522,7 +1528,7 @@ General Options
 
   -  *Terminal Command Arguments* - Sets the terminal command arguments.
 
-  -  *Hide Variables Browser* - Hides the variable browser when switching away from plotting perspective.
+  -  *Autohide Variable Browser* - Hides the variable browser when switching away from plotting perspective.
 
   -  *Activate Access Annotations* - Activates the access annotations
      for the non-encrypted libraries. Access annotations are always active
@@ -1532,6 +1538,9 @@ General Options
 
   -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
      are shown when using OMC API for graphical annotations.
+
+  -  *Read the model instance directly from memory instead of JSON (faster for large models)* - if true then
+     OMEdit reads the model instance from OMC directly, instead of from a JSON string.
 
   -  *Enable CRML Support* - Enables the CRML support.
      The user can create/open .crml files and translate them to Modelica.
@@ -1555,6 +1564,11 @@ General Options
   -  *Synchronize with Model Widget* - If enabled then Libraries Browser will scroll automatically
      to the active Model Widget i.e., the current model.
 
+  -  *Reload libraries when files change on disk* - If enabled then OMEdit reloads a loaded library
+     automatically when its files are changed outside OMEdit. If disabled then OMEdit asks which
+     libraries to reload. OMEdit always asks if the library has unsaved changes or if the
+     library file is deleted.
+
 -  Enable Auto Save - Enables/disables the auto save feature.
 
 -  *Auto Save interval* - Sets the auto save interval value. The minimum
@@ -1564,20 +1578,9 @@ General Options
 
   -  *Horizontal View/Vertical View* - Sets the view mode for welcome page.
 
-  -  *Show Latest News* - If enabled then the latest news from https://openmodelica.org are shown.
+  -  *Show Latest News & Events* - If enabled then the latest news from https://openmodelica.org are shown.
 
-  -  *Recent Files and Latest News Size* - Sets the display size for recent files and latest news items.
-
--  Optional Features
-
-  -  *Disable new instance-based graphical editing of models* - Enables/disables the use of instance-based graphical editing.
-     The instance-based graphical editing enables features like parameter-dependent conditional connectors, conditional dialog enable,
-     replaceable classes and models, etc. It also provides much faster rendering than the previously implemented graphical editing framework.
-     This feature has been thoroughly tested, but it could still have some issues;
-     in case the graphical rendering of models fails (blank screen) or is not correct,
-     you can disable the instance-based editing and fall back to the old editing framework.
-     In that case, please open a ticket on the `OpenModelica issue tracker <https://github.com/OpenModelica/OpenModelica/issues/new/choose>`_
-     so we can fix the issue for the next release.
+  -  *Recent Files and Latest News & Events Size* - Sets the display size for recent files and latest news items.
 
 Libraries Options
 ~~~~~~~~~~~~~~~~~
@@ -1724,7 +1727,7 @@ Graphical Views Options
 
 - General
 
-  -  Modeling View Mode
+  -  Default Modeling View Mode
 
     -  *Tabbed View/SubWindow View* - Sets the view mode for modeling.
 
@@ -1771,7 +1774,7 @@ Simulation Options
 
     -  *Enable FMU Import* - See :ref:`fmi-import`.
 
-    -  *Profiling* - creates a profiling HTML file.
+    -  *Profiling (enable performance measurements)* - creates a profiling HTML file.
 
     -  *Additional Translation Flags* - sets the translation flags see :ref:`omcflags-options`
 
@@ -1832,10 +1835,10 @@ Messages Options
      Browser may have. If there are more rows then the rows are removed
      from the beginning.
 
-  -  *Reset messages number before simulation* - Resets the messages
-     counter before starting the simulation.
+  -  *Reset messages number before checking, instantiation, and simulation* - Resets the messages
+     counter before checking, instantiation, and simulation of model.
 
-  -  *Clear messages browser before checking, instantiation & simulation* - If enabled then the
+  -  *Clear message browser before checking, instantiation, and simulation* - If enabled then the
      message browser is cleared before checking, instantiation & simulation of model.
 
   -  *Do not automatically enlarge message browser when a new message is available* - If enabled then the
@@ -1872,21 +1875,11 @@ Notifications Options
   -  *Show save model for bitmap insertion message* - If true then a message will pop-up
      when user tries to insert a bitmap from a local directory to an unsaved class.
 
-  -  *Always ask for the dragged component name* - If true then a message will pop-up when
-     user drag & drop the component on the graphical view.
+  -  *Always ask for the dragged/duplicated component name* - If true then a message will pop-up when
+     user drag & drop or duplicates the component on the graphical view.
 
   -  *Always ask for what to do with the text editor error* - If true then a
      message will always pop-up when there is an error in the text editor.
-
-  -  If new frontend for code generation fails
-
-    -  *Always ask for old frontend*
-
-    -  *Try with old frontend once*
-
-    -  *Switch to old frontend permanently*
-
-    -  *Keep using new frontend*
 
 Line Style Options
 ~~~~~~~~~~~~~~~~~~
@@ -1926,7 +1919,7 @@ Plotting Options
   -  *Prefix Units* - Automatically pick the right prefix for units for the new plot windows.
      For existing plot windows use the :ref:`omedit-plot-window-menu`.
 
--  Plotting View Mode
+-  Default Plotting View Mode
 
   -  *Tabbed View/SubWindow View* - Sets the view mode for plotting.
 
@@ -1975,9 +1968,9 @@ CRML Options
 
   -  *Compiler Jar* - the compiler jar file of CRML.
 
-  -  *Compiler Arguments* - arugments to the compiler process.
+  -  *Compiler Arguments* - arguments to the compiler process.
 
-  -  *Processor* - the CRML translator.
+  -  *Java Executable* - the Java executable that runs the CRML compiler.
 
   -  *Modelica Library Paths* - list of Modelica library paths that are needed to run the translated model.
 
@@ -2001,7 +1994,7 @@ Debugger Options
 
   -  *Clear old output on a new run* - if true then clears the output window on new run.
 
-  -  *Clear old log on new run* - if true then clears the log window on new run.
+  -  *Clear old log on a new run* - if true then clears the log window on new run.
 
 -  Transformational Debugger
 
@@ -2009,7 +2002,7 @@ Debugger Options
      then always open the Transformational Debugger window after model
      compilation.
 
-  -  *Generate operations in the info xml* - if true then adds the
+  -  *Generate Operations* - if true then adds the
      operations information in the info xml file.
 
 .. _omedit-options-fmi :
@@ -2038,8 +2031,6 @@ FMI Options
     -  *Model Exchange* - Sets the FMI export type to `Model Exchange`_ (ME).
 
     -  *Co-Simulation* - Sets the FMI export type to `Co-Simulation`_ (CS).
-
-    -  *Scheduled Execution* - Sets the FMI export type to `Scheduled Execution`_ (SE), needs at least FMI version 3.0.
 
     -  *Model Exchange and Co-Simulation* - Sets the FMI export type to Model Exchange and Co-Simulation.
 
@@ -2073,7 +2064,6 @@ FMI Options
 
 .. _Model Exchange: https://fmi-standard.org/docs/3.0.2/#_fmi_for_model_exchange_me
 .. _Co-Simulation: https://fmi-standard.org/docs/3.0.2/#_fmi_for_co_simulation_cs
-.. _Scheduled Execution: https://fmi-standard.org/docs/3.0.2/#_fmi_for_scheduled_execution_se
 
 OMSimulator/SSP Options
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -2084,6 +2074,12 @@ OMSimulator/SSP Options
 
   -  *Logging Level* - OMSimulator logging level.
 
+-  Uncertainty Quantification (omuq)
+
+  -  *Python* - sets the Python executable used to run the UQ activities of SSP models.
+     The `omuq <https://github.com/adrpo/omuq>`_ and OMSimulator Python packages must be
+     installed for this Python.
+
 Sensitivity Optimization Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2092,6 +2088,22 @@ Sensitivity Optimization Options
   -  *OMSens Backend Path* - sets the OMSens backend.
 
   -  *python* - sets the Python executable to run OMSens scripts.
+
+Traceability Options
+~~~~~~~~~~~~~~~~~~~~
+
+-  Traceability - when this group is checked, OMEdit sends traceability information to the
+   traceability daemon when you save a model in a Git repository and when you export or import an FMU.
+
+  -  *User Name* - the name of the user.
+
+  -  *Email* - the email of the user.
+
+  -  *Git Repository* - the path of the Git repository.
+
+  -  *Traceability Daemon IP Address* - the IP address of the traceability daemon.
+
+  -  *Traceability Daemon Port* - the port of the traceability daemon.
 
 .. _omedit-options-language-server:
 
@@ -2186,6 +2198,34 @@ hover text, missed definitions, the process crashing. OMEdit failing to
 start or manage the process is still an OMEdit issue. The same server is also
 available for Visual Studio Code and other editors, see
 :ref:`modelica-language-server`.
+
+Cloud Storage Options
+~~~~~~~~~~~~~~~~~~~~~
+
+-  Accounts - the Google Drive and OneDrive accounts that OMEdit is signed in to.
+
+  -  *Add Google Drive Account* - signs in to a Google Drive account. OMEdit shows only the
+     folders that it created itself, inside an OpenModelica folder in your Drive.
+
+  -  *Add OneDrive Account* - signs in to a OneDrive account. OMEdit can open any folder.
+
+  -  *Sign Out* - signs out of the selected account.
+
+-  Mounted Folders - the cloud folders that OMEdit uses. A checked folder is synchronized
+   after every save. Clear the check box to synchronize the folder only when you ask for it.
+
+  -  *Forget Folder* - removes the selected folder from the list.
+
+-  Advanced: OAuth Applications - when this group is checked, you can use your own registered
+   applications instead of the ones supplied in ``cloud_config.json``.
+
+  -  *Google Drive client ID* and *Google Drive client secret*
+
+  -  *Request access to the whole Google Drive* - if true then OMEdit asks for access to the
+     whole Drive, not only to the files it created. This requires your own client that passed
+     Google's app verification.
+
+  -  *OneDrive client ID*
 
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
@@ -2302,6 +2342,11 @@ that are available for installation through the package manager.
   :name: omedit-install-library
 
   Install Library.
+
+A library that is not in the package index can be installed from a .mo file, a .zip file or a directory
+with `File->Manage Libraries->Install Library From File` or `Install Library From Directory`. OMEdit lists
+the packages that it finds and copies the ones you select into the same directory as the package manager.
+An installed library is read-only. To change a library, open it with `File->Open Model/Library File(s)` instead.
 
 .. _omedit-convert-library-label :
 

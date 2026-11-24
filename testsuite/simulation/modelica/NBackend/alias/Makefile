@@ -1,9 +1,13 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+aliasAttributeLookup.mos \
+AliasParameterFixedFalse.mos \
 AliasIntegerNonTrivial.mos \
 AliasBoundsNegated.mos \
+AliasBoundsNegatedOneSided.mos \
 AliasBoundsThree.mos \
+ArrayAliasBoundsNegated.mos \
 Alias.mos \
 Alias2.mos \
 Alias_test1.mos \
@@ -16,6 +20,7 @@ ArrayAlias2.mos \
 ArrayAliasSizeOne.mos \
 ForEquationAlias.mos \
 LiteralArrayAlias.mos \
+LiteralMatrixRowAlias.mos \
 Alias_pre.mos \
 AliasCyclic.mos \
 AliasCyclic1.mos \

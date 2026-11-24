@@ -73,7 +73,7 @@ public
   // Backend imports
   import NFBackendExtension.BackendInfo;
   import NBEquation.{Equation, EquationAttributes, EquationPointer, EquationPointers, IfEquationBody, WhenEquationBody, WhenStatement};
-  import NBVariable.{VariablePointer};
+  import NBVariable.{StateOrder, VariablePointer};
   import BVariable = NBVariable;
   import Replacements = NBReplacements;
   import StrongComponent = NBStrongComponent;
@@ -102,6 +102,8 @@ public
       ComponentRef diffCref                                     "The input will be differentiated w.r.t. this cref (only SIMPLE).";
       list<Pointer<Variable>> new_vars                          "contains all new variables that need to be added to the system";
       Option<UnorderedMap<ComponentRef, ComponentRef>> diff_map "seed and temporary cref map x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y. Can be used for any differentiation rules";
+      Option<UnorderedMap<ComponentRef, StateOrder>> state_order "known time derivatives of states (only TIME)";
+      list<NBEquation.Iterator> iterators                       "the surrounding for-loops (only TIME)";
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                        "true if the variables are scalarized";
@@ -117,6 +119,8 @@ public
         diffCref    = ComponentRef.EMPTY(),
         new_vars    = {},
         diff_map    = NONE(),
+        state_order = NONE(),
+        iterators   = {},
         diffType    = ty,
         funcMap     = funcMap,
         scalarized  = false,
@@ -133,6 +137,8 @@ public
         diffCref    = cref,
         new_vars    = {},
         diff_map    = NONE(),
+        state_order = NONE(),
+        iterators   = {},
         diffType    = DifferentiationType.SIMPLE,
         funcMap     = funcMap,
         scalarized  = false,
@@ -391,10 +397,12 @@ public
       then (Equation.IF_EQUATION(eq.size, ifBody, eq.source, attr), Pointer.access(diffArguments_ptr));
 
       case Equation.FOR_EQUATION() algorithm
+        diffArguments.iterators := eq.iter :: diffArguments.iterators;
         for body_eqn in eq.body loop
           (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
           forBody := body_eqn :: forBody;
         end for;
+        diffArguments.iterators := listRest(diffArguments.iterators);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.FOR_EQUATION(eq.size,
                                   eq.iter,
@@ -1092,6 +1100,7 @@ public
       local
         Expression res;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
+        UnorderedMap<ComponentRef, StateOrder> state_order;
         list<Subscript> expCrefSubscripts;
         ComponentRef adjointKey;
         list<ComponentRef> elem_crefs;
@@ -1207,12 +1216,10 @@ public
 
       // Types: (TIME)
       // known derivatives by state order
-      case (Expression.CREF(), DifferentiationType.TIME, SOME(diff_map))
-        guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), diff_map)) algorithm
-        // get the derivative and reapply subscripts
-        derCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(exp.cref), diff_map);
-        derCref := ComponentRef.copySubscripts(exp.cref, derCref);
-        res     := Expression.fromCref(derCref);
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(hasStateOrder(exp.cref, diffArguments.state_order, diffArguments.iterators)) algorithm
+        SOME(state_order) := diffArguments.state_order;
+        res := StateOrder.derivative(UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(exp.cref), state_order), exp.cref);
       then (res, diffArguments);
 
       // Types: (TIME)
@@ -1267,7 +1274,7 @@ public
           // elementwise, everything else that is not in diff_map gets differentiated to zero
           hasSetSub := false;
           elem_crefs := {};
-          if Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             for c in elem_crefs loop
               if UnorderedMap.contains(c, diff_map) then
@@ -1358,7 +1365,7 @@ public
             end if;
           end for;
           // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
-          if not hasSetSub and Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if not hasSetSub and Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             for c in listReverse(ComponentRef.scalarizeAll(exp.cref, false)) loop
               if UnorderedMap.contains(c, diff_map) then
                 hasSetSub := true;
@@ -1395,6 +1402,25 @@ public
 
     end match;
   end differentiateComponentRef;
+
+  function hasStateOrder
+    input ComponentRef cref;
+    input Option<UnorderedMap<ComponentRef, StateOrder>> state_order;
+    input list<NBEquation.Iterator> iters;
+    output Boolean b;
+  protected
+    UnorderedMap<ComponentRef, StateOrder> map;
+  algorithm
+    b := match state_order
+      case SOME(map) then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), map)
+        local
+          StateOrder order;
+        case SOME(order) then StateOrder.covers(order, cref, iters);
+        else false;
+      end match;
+      else false;
+    end match;
+  end hasStateOrder;
 
   function makeShapedArray
     "Builds an array expression of type ty from its scalar elements given in row-major
@@ -1589,7 +1615,7 @@ public
     end match;
     if listEmpty(subs) or List.all(subs, Subscript.isLiteral) then return; end if;
     base_ty := ComponentRef.getSubscriptedType(base, true);
-    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > 256 then return; end if;
+    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then return; end if;
     elem_crefs := listReverse(ComponentRef.scalarizeAll(base, false));
     found := false;
     for c in elem_crefs loop
@@ -2475,6 +2501,7 @@ public
       case "ceil"     then Expression.REAL(0.0);
       case "floor"    then Expression.REAL(0.0);
       case "integer"  then Expression.INTEGER(0);
+      case "Integer"  then Expression.INTEGER(0);
 
       // abs(arg) -> sign(arg)
       case "abs" then Expression.CAST(
@@ -3571,16 +3598,16 @@ public
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           current_grad := diffArguments.current_grad; // upstream gradient
 
-          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2, Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, {}, makeMulFromOperator(operator));
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2, Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, {}, makePowerMul(operator));
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
 
-          diffArguments.current_grad := Expression.MULTARY({current_grad, exp, expLog(exp1)}, {}, makeMulFromOperator(operator));
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp, expLog(exp1)}, {}, makePowerMul(operator));
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
 
           diffArguments.current_grad := current_grad;
           diffExp1 := SimplifyExp.simplifyDump(diffExp1, true, getInstanceName());
           diffExp2 := SimplifyExp.simplifyDump(diffExp2, true, getInstanceName());
-          mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
+          mulOp := makePowerMul(operator);
 
           res := match (Expression.isZero(diffExp1), Expression.isZero(diffExp2))
             // Power (POW, POW_EW, ...) with constant exponent and constant base
@@ -4027,6 +4054,20 @@ protected
   algorithm
     mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, Operator.getSizeClassification(operator)), operator.ty);
   end makeMulFromOperator;
+
+  function makePowerMul
+    "The multiplication of the factors of the derivative of a power. For arrays
+     they are multiplied element-wise, e.g. (x .^ r)' = r * x .^ (r - 1) .* x'."
+    input Operator operator;
+    output Operator mulOp;
+  protected
+    NFOperator.SizeClassification sc = Operator.getSizeClassification(operator);
+  algorithm
+    if sc == NFOperator.SizeClassification.ARRAY_SCALAR or sc == NFOperator.SizeClassification.SCALAR_ARRAY then
+      sc := NFOperator.SizeClassification.ELEMENT_WISE;
+    end if;
+    mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sc), operator.ty);
+  end makePowerMul;
 
   function typeTransposeCall
     "Create a typed builtin transpose(mat) call without expanding mat.

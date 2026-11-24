@@ -18,14 +18,19 @@ implicitEquation.mos \
 minArr.mos \
 parameterIndex.mos \
 parameterSystem.mos \
+externalObjectEquations.mos \
 partitioning.mos \
 promotePreferStates.mos \
 simpleForLoop.mos \
 simpleNonlinearLoop.mos \
 solveSingleEquation.mos \
+topLevelInputTypes.mos \
 underdetermined_init.mos \
 variability.mos \
 loadResource.mos \
+ifBranchFunctionCalls.mos \
+iteratorNameClash.mos \
+generatedIteratorNameClash.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

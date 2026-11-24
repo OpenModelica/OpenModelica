@@ -378,7 +378,7 @@ static inline modelica_boolean adaptiveHomotopy(DATA *data, NONLINEAR_SYSTEM_DAT
  * @param sysNum            Number of non-linear system.
  */
 void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum) {
-  modelica_integer size;
+  modelica_integer size, i;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
   JACOBIAN* jacobian;
@@ -442,7 +442,11 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   nonlinsys->lastTimeSolved = 0.0;
 
   /* Allocate nomianl, min and max */
-  nonlinsys->nominal = (double*) malloc(size*sizeof(double));
+  nonlinsys->positiveNominal = (double*) malloc(size*sizeof(double));
+  nonlinsys->nominalSign = (double*) malloc(size*sizeof(double));
+  for (i = 0; i < size; i++) {
+    nonlinsys->nominalSign[i] = 1.0;
+  }
   nonlinsys->min = (double*) malloc(size*sizeof(double));
   nonlinsys->max = (double*) malloc(size*sizeof(double));
   /* Init sparsitiy pattern */
@@ -671,7 +675,8 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
   free(nonlinsys->nlsxExtrapolation);
   free(nonlinsys->nlsxOld);
   free(nonlinsys->resValues);
-  free(nonlinsys->nominal);
+  free(nonlinsys->positiveNominal);
+  free(nonlinsys->nominalSign);
   free(nonlinsys->min);
   free(nonlinsys->max);
   free(nonlinsys->eqn_simcode_indices);
@@ -823,7 +828,7 @@ void printNonLinearInitialInfo(int logName, DATA* data, NONLINEAR_SYSTEM_DATA *n
   for(i=0; i<nonlinsys->size; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g", i+1,
                     modelInfoGetEquationVar(&data->modelData->modelDataXml,nonlinsys->equationIndex, i),
-                    nonlinsys->nlsx[i], nonlinsys->nominal[i]);
+                    nonlinsys->nlsx[i], nonlinsys->positiveNominal[i]);
   messageClose(logName);
 }
 
@@ -1496,7 +1501,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
         {
         done = 1;
         real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-        real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
+        real_vector_to_string(&mData->realVarsData[k].attribute.positiveNominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
         warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%s, nominal=%s)",
                            j+1,
                            mData->realVarsData[k].info.name,

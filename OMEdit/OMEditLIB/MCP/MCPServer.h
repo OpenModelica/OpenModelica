@@ -38,26 +38,35 @@
 #include <QObject>
 #include <QtGlobal>
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0) && __has_include(<QtHttpServer>)
-#include <QtHttpServer/QHttpServer>
-#include <QTcpServer>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+#define OMEDIT_MCP 1
 #include <QJsonValue>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QImage>
+#if __has_include(<QtHttpServer>)
+#define OMEDIT_MCP_HTTP 1
+#include <QtHttpServer/QHttpServer>
+#include <QTcpServer>
+#endif
 #endif
 
 class MCPServer : public QObject
 {
   Q_OBJECT
   public:
-  explicit MCPServer(OMCProxy *proxy, QString hostAddress, int port, bool enableAdminTools, QObject *parent = nullptr);
+  explicit MCPServer(OMCProxy *proxy, bool enableAdminTools, QObject *parent = nullptr);
+  void listen(const QString &hostAddress, int port);
 
-  #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0) && __has_include(<QtHttpServer>)
+  #ifdef OMEDIT_MCP
+  QJsonObject handleMCPRequest(const QByteArray &body, const QString &baseUrl, bool vision, bool admin = false);
   private:
+  #ifdef OMEDIT_MCP_HTTP
   QHttpServer m_server;
   QTcpServer m_tcpServer;
+  #endif
   OMCProxy *m_proxy;
+  bool m_enableAdminTools;
   QJsonArray m_toolsArray;
   QJsonArray m_toolsArrayNoVision;
   QJsonObject m_toolsObject;
@@ -70,9 +79,12 @@ class MCPServer : public QObject
   QJsonObject makeMCPToolResponse(QJsonValue id, QJsonObject contents);
   QJsonObject makeMCPResourceResponse(QJsonValue id, QString uri, QImage image);
   QJsonObject makeMCPError(QJsonValue id, QString message);
-  QHttpServerResponse handleMCPRequest(const QHttpServerRequest &request, bool vision, bool admin = false);
-  QHttpServerResponse handleSimulationTool(const QString &toolName, QJsonValue id, QJsonObject arguments, bool vision);
-  QHttpServerResponse handleDiagramTool(const QString &toolName, QJsonValue id, QJsonObject arguments);
-  QHttpServerResponse applyShapeAnnotation(QJsonValue id, const QString &className, const QString &view, const QString &shapeStr);
+  QJsonObject handleSimulationTool(const QString &toolName, QJsonValue id, QJsonObject arguments, bool vision);
+  QJsonObject handleDiagramTool(const QString &toolName, QJsonValue id, QJsonObject arguments);
+  QJsonObject applyShapeAnnotation(QJsonValue id, const QString &className, const QString &view, const QString &shapeStr);
   #endif
 };
+
+#if defined(__EMSCRIPTEN__)
+void startMCPWebBridge(MCPServer *pMCPServer);
+#endif

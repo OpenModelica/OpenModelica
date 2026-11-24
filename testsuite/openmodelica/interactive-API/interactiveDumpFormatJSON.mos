@@ -1,0 +1,59 @@
+// name: interactiveDumpFormatJSON
+// keywords: interactiveDumpFormat json
+// status: correct
+//
+// Tests that --interactiveDumpFormat=json prints the results of the scripting
+// API as valid JSON, and that it does not change the strings the API returns.
+
+setCommandLineOptions("--interactiveDumpFormat=json");
+loadString("
+package P
+  type E = enumeration(a, b);
+  model M
+    parameter Real k = 2;
+    Real x(start = 1);
+    annotation(Icon(graphics = {Rectangle(extent = {{-100, -100}, {100, 100}})}));
+  equation
+    der(x) = -k*x;
+  end M;
+  model N
+    extends M(k = 3);
+  end N;
+  model Bad
+    Real x = y;
+  end Bad;
+end P;
+"); getErrorString();
+
+getClassNames();
+getClassNames(P);
+getClassNames(P, qualified = true);
+getNthInheritedClass(P.N, 1);
+getComponents(P.M);
+getIconAnnotation(P.M);
+P.E.b;
+x := {1.5, -2.0};
+1e300*1e300;
+-1e300*1e300;
+$Code(a + b);
+simulate(P.Bad);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// ["P"]
+// ["E","M","N","Bad"]
+// ["P.E","P.M","P.N","P.Bad"]
+// "P.M"
+// [["Real","k","","public",false,false,false,false,"parameter","none","unspecified",[]],["Real","x","","public",false,false,false,false,"unspecified","none","unspecified",[]]]
+// ["-,-,-,-,-,-,-,,{Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100.0, -100.0}, {100.0, 100.0}}, 0.0)}"]
+// "P.E.b"
+// [1.5,-2.0]
+// null
+// null
+// "a + b"
+// {"resultFile":"","simulationOptions":"startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'P.Bad', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''","messages":"Failed to build model: P.Bad"}
+// "[<interactive>:15:5-15:15:writable] Error: Variable y not found in scope Bad.\n"
+// endResult

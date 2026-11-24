@@ -535,6 +535,18 @@ public
     end match;
   end isEmptyArray;
 
+  function isAlwaysEmptyArray
+    "Empty array that cannot grow with a resizable parameter."
+    input Type ty;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match ty
+      case ARRAY() then List.any(ty.dimensions, Dimension.isAlwaysZero);
+      case CONDITIONAL_ARRAY() then isAlwaysEmptyArray(ty.trueType);
+      else false;
+    end match;
+  end isAlwaysEmptyArray;
+
   function isSingleElementArray
     input Type ty;
     output Boolean isSingleElement;

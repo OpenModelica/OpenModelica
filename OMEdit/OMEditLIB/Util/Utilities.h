@@ -63,6 +63,7 @@
 #include <QGroupBox>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QSet>
 #include <QScrollArea>
 #include <QScrollBar>
 
@@ -545,6 +546,7 @@ namespace Utilities {
 
   QString escapeForHtmlNonSecure(const QString &str);
   QString& tempDirectory();
+  QSet<QString> existingFilePaths(const QStringList &fileNames);
   QSettings* getApplicationSettings();
   QString generateHash(const QString &input);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);

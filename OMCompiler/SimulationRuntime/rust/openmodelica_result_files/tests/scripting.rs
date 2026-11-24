@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use openmodelica_mat_writer::{MatKind, MatVar, Neg, Precision, write_mat4};
+use openmodelica_result_files::cmp::Algorithm;
 use openmodelica_result_files::file::{ResultFile, Tolerances, diff_all};
 use openmodelica_result_files::scripting::{self, Messages, Severity};
 
@@ -57,6 +58,50 @@ fn csv_booleans_are_numbers() {
 }
 
 #[test]
+fn csv_val() {
+    let d = dir("val");
+    let file = path(&d, "res.csv");
+    std::fs::write(&file, "\"time\",\"x\",\"der(b.x)\"\n0,0,1\n0.5,1,1\n0.5,3,1\n1,5,2\n").unwrap();
+    let mut m = Collect::default();
+    let val = |m: &mut Collect, var: &str, t: f64| scripting::val(m, &file, var, t);
+    assert_eq!(
+        [0.0, 0.25, 0.5, 0.75, 1.0].map(|t| val(&mut m, "x", t)),
+        [0.0, 0.5, 3.0, 4.0, 5.0]
+    );
+    assert_eq!(val(&mut m, "time", 0.3), 0.3);
+    assert_eq!(val(&mut m, "b.der(x)", 0.75), 1.5);
+    assert!(m.0.is_empty());
+    assert!(val(&mut m, "x", 1.5).is_nan());
+    assert!(val(&mut m, "y", 0.5).is_nan());
+    assert_eq!(
+        m.0.iter().map(|(_, s)| s.as_str()).collect::<Vec<_>>(),
+        [
+            "x not defined at time 1.5 (startTime=0, stopTime=1).".to_owned(),
+            format!("y not found in {file}\n"),
+        ]
+    );
+    scripting::close();
+    std::fs::remove_dir_all(d).unwrap();
+}
+
+#[test]
+fn diff_all_finds_csv_names_as_in_mat_files() {
+    let d = dir("names");
+    let actual = path(&d, "actual.csv");
+    let reference = path(&d, "reference.csv");
+    std::fs::write(&actual, "time,\"a[1,2]\",der(b.x)\n0,1,0\n1,2,0\n").unwrap();
+    std::fs::write(&reference, "time,\"a[1, 2]\",b.der(x)\n0,1,0\n1,2,0\n").unwrap();
+    let mut a = ResultFile::open(&actual).unwrap();
+    let mut r = ResultFile::open(&reference).unwrap();
+    assert!(
+        diff_all(&mut a, &mut r, Vec::new(), Tolerances::default())
+            .unwrap()
+            .is_empty()
+    );
+    std::fs::remove_dir_all(d).unwrap();
+}
+
+#[test]
 fn filter_without_descriptions_reads_back() {
     let d = dir("filter");
     let input = path(&d, "in.mat");
@@ -95,5 +140,22 @@ fn filter_without_descriptions_reads_back() {
     assert_eq!(scripting::val(&mut msgs, &output, "x", 1.0), 0.5);
     assert_eq!(scripting::val(&mut msgs, &output, "k", 1.0), 2.0);
     assert!(msgs.0.is_empty(), "{:?}", msgs.0);
+    std::fs::remove_dir_all(d).unwrap();
+}
+
+#[test]
+fn csv_compare_tubes_keep_an_event_at_the_start_of_the_reference() {
+    let d = dir("start_event");
+    let actual = path(&d, "actual.csv");
+    let reference = path(&d, "reference.csv");
+    std::fs::write(&actual, "time,x\n0,0\n1e-9,0\n1e-9,1\n0.5,1\n1,1\n").unwrap();
+    std::fs::write(&reference, "time,x\n0,0\n0,1\n0.5,1\n1,1\n").unwrap();
+    let mut a = ResultFile::open(&actual).unwrap();
+    let mut r = ResultFile::open(&reference).unwrap();
+    let rectangle = Tolerances {
+        algorithm: Algorithm::Rectangle,
+        ..Tolerances::default()
+    };
+    assert!(diff_all(&mut a, &mut r, Vec::new(), rectangle).unwrap().is_empty());
     std::fs::remove_dir_all(d).unwrap();
 }

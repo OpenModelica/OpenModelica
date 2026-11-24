@@ -54,6 +54,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_DIR");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_INDEX_SIZE");
+    println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_LIBS");
     println!("cargo:rerun-if-env-changed=OMC_IPOPT_NATIVE_DIR");
     sundials();
     ipopt();
@@ -64,11 +65,17 @@ fn ipopt() {
     if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32") {
         return;
     }
-    let Some(dir) = std::env::var_os("OMC_IPOPT_NATIVE_DIR") else { return };
+    let Some(dir) = std::env::var_os("OMC_IPOPT_NATIVE_DIR") else {
+        return;
+    };
     let lib = Path::new(&dir).join("lib");
     let missing: Vec<_> = IPOPT_LIBS
         .iter()
-        .filter(|l| ![format!("lib{l}.a"), format!("{l}.lib")].iter().any(|n| lib.join(n).exists()))
+        .filter(|l| {
+            ![format!("lib{l}.a"), format!("{l}.lib")]
+                .iter()
+                .any(|n| lib.join(n).exists())
+        })
         .collect();
     if !missing.is_empty() {
         panic!(
@@ -116,7 +123,9 @@ fn link_lapack(system: &[&str]) {
     };
     let gnu = std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu");
     for lib in libs.split('|').map(std::path::Path::new) {
-        let (Some(dir), Some(name)) = (lib.parent(), link_name(lib, gnu)) else { continue };
+        let (Some(dir), Some(name)) = (lib.parent(), link_name(lib, gnu)) else {
+            continue;
+        };
         println!("cargo:rustc-link-search=native={}", dir.display());
         println!("cargo:rustc-link-lib=dylib={name}");
     }
@@ -129,9 +138,20 @@ fn link_name(lib: &std::path::Path, gnu: bool) -> Option<String> {
     if !gnu {
         return Some(lib.file_stem()?.to_string_lossy().into_owned());
     }
-    let stem = file.strip_suffix(".dll.a").or_else(|| file.strip_suffix(".a"))
+    let stem = file
+        .strip_suffix(".dll.a")
+        .or_else(|| file.strip_suffix(".a"))
         .or_else(|| file.strip_suffix(".dll"))?;
     Some(stem.strip_prefix("lib").unwrap_or(stem).to_string())
+}
+
+/// [`NATIVE_LIBS`], or the archives that `OMC_SUNDIALS_NATIVE_LIBS` names
+/// (comma-separated, in link order): a source FMU builds them all into one.
+fn native_libs() -> Vec<String> {
+    match std::env::var("OMC_SUNDIALS_NATIVE_LIBS") {
+        Ok(v) if !v.is_empty() => v.split(',').map(String::from).collect(),
+        _ => NATIVE_LIBS.iter().map(|l| l.to_string()).collect(),
+    }
 }
 
 fn sundials() {
@@ -151,12 +171,14 @@ fn sundials() {
         }
         return;
     }
-    let Some(dir) = std::env::var_os("OMC_SUNDIALS_NATIVE_DIR") else { return };
+    let Some(dir) = std::env::var_os("OMC_SUNDIALS_NATIVE_DIR") else {
+        return;
+    };
     let lib = Path::new(&dir).join("lib");
     // MSVC keeps the CMake target's `_static` suffix; openmodelica_solvers, which
     // links them, resolves the same way.
-    let missing: Vec<_> = NATIVE_LIBS
-        .iter()
+    let missing: Vec<_> = native_libs()
+        .into_iter()
         .filter(|l| {
             ![format!("lib{l}.a"), format!("{l}.lib"), format!("{l}_static.lib")]
                 .iter()
@@ -164,8 +186,11 @@ fn sundials() {
         })
         .collect();
     if !missing.is_empty() {
-        panic!("OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \
-                build failed (check the rust_sundials_native_collect CMake target)", lib.display());
+        panic!(
+            "OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \
+                build failed (check the rust_sundials_native_collect CMake target)",
+            lib.display()
+        );
     }
     // The archives are linked by `openmodelica_solvers`, which owns the
     // bindings; here the directory only decides the cfg.

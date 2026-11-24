@@ -33,12 +33,15 @@ install(
   FILES ${OMC_SIMRT_GC_HEADERS}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/gc)
 
-# The same sources for the MetaModelica runtime, on Boehm.
-add_library(OpenModelicaRuntimeCGCMMC OBJECT ${OMC_SIMRT_GC_SOURCES})
-add_library(omc::mmc::gc ALIAS OpenModelicaRuntimeCGCMMC)
-target_compile_definitions(OpenModelicaRuntimeCGCMMC PUBLIC OMC_METAMODELICA_RUNTIME=1)
-set_target_properties(OpenModelicaRuntimeCGCMMC PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_include_directories(OpenModelicaRuntimeCGCMMC PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
-target_link_libraries(OpenModelicaRuntimeCGCMMC PUBLIC omc::3rd::omcgc OMCPThreads::OMCPThreads)
+# The same sources for the MetaModelica runtime, on Boehm. The Rust omc has
+# no MetaModelica runtime.
+if(NOT OM_OMC_ENABLE_RUST)
+  add_library(OpenModelicaRuntimeCGCMMC OBJECT ${OMC_SIMRT_GC_SOURCES})
+  add_library(omc::mmc::gc ALIAS OpenModelicaRuntimeCGCMMC)
+  target_compile_definitions(OpenModelicaRuntimeCGCMMC PUBLIC OMC_METAMODELICA_RUNTIME=1)
+  set_target_properties(OpenModelicaRuntimeCGCMMC PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_include_directories(OpenModelicaRuntimeCGCMMC PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
+  target_link_libraries(OpenModelicaRuntimeCGCMMC PUBLIC omc::3rd::omcgc OMCPThreads::OMCPThreads)
+endif()

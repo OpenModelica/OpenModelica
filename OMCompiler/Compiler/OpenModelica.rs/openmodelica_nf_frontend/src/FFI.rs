@@ -43,22 +43,25 @@
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
 use libffi::middle::{Cif, Type as MiddleType};
+use metamodelica::Result;
 
 unsafe extern "C" {
     /// C++ shim (src/ffi_catch.cpp): performs the libffi call inside a
     /// `try { } catch (...) { }` so that an exception thrown by the external
     /// function becomes a plain failure instead of unwinding through Rust
-    /// frames (which aborts). Returns 0 on success, 1 if an exception was
-    /// caught — mirroring ffi_omc.cpp's `try { ffi_call(...) } catch (...)
-    /// { MMC_THROW(); }`.
+    /// frames (which aborts), mirroring ffi_omc.cpp's `try { ffi_call(...) }
+    /// catch (...) { MMC_THROW(); }`. `err_slot`/`verr_slot` are the runtime's
+    /// ModelicaError slots, redirected for the call. Returns 0 on success, 1 if
+    /// an exception was caught and 2 after a ModelicaError.
     fn omrs_ffi_call_catch(
         cif: *mut libc::c_void,
         f: Option<unsafe extern "C" fn()>,
         rvalue: *mut libc::c_void,
         avalue: *mut *mut libc::c_void,
+        err_slot: *mut libc::c_void,
+        verr_slot: *mut libc::c_void,
     ) -> libc::c_int;
 }
 
@@ -74,13 +77,19 @@ pub enum ArgSpec {
     LOCAL = 3,
 }
 impl PartialOrd for ArgSpec {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 impl Ord for ArgSpec {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { (*self as i32).cmp(&(*other as i32)) }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (*self as i32).cmp(&(*other as i32))
+    }
 }
 impl Default for ArgSpec {
-    fn default() -> Self { Self::INPUT }
+    fn default() -> Self {
+        Self::INPUT
+    }
 }
 
 /// The C type an expression or type maps to at the ffi level
@@ -185,12 +194,18 @@ fn array_scalar_count(ty: &Type::NFType) -> usize {
 /// `unlift_array_type`: the array type with its first dimension removed.
 fn unlift_array_type(ty: &metamodelica::Ref<Type::NFType>) -> metamodelica::Ref<Type::NFType> {
     match &**ty {
-        Type::NFType::ARRAY { elementType, dimensions } => {
+        Type::NFType::ARRAY {
+            elementType,
+            dimensions,
+        } => {
             let rest = match &**dimensions {
                 metamodelica::ListNode::Cons { tail, .. } => tail.clone(),
                 metamodelica::ListNode::Nil => metamodelica::nil(),
             };
-            metamodelica::Ref::new(Type::NFType::ARRAY { elementType: elementType.clone(), dimensions: rest })
+            metamodelica::Ref::new(Type::NFType::ARRAY {
+                elementType: elementType.clone(),
+                dimensions: rest,
+            })
         }
         _ => ty.clone(),
     }
@@ -202,9 +217,7 @@ fn size_of_type(ty: &Type::NFType) -> usize {
         Type::NFType::INTEGER | Type::NFType::BOOLEAN | Type::NFType::ENUMERATION { .. } => 4,
         Type::NFType::REAL => 8,
         Type::NFType::STRING => 8,
-        Type::NFType::ARRAY { elementType, .. } => {
-            size_of_type(elementType) * array_scalar_count(ty)
-        }
+        Type::NFType::ARRAY { elementType, .. } => size_of_type(elementType) * array_scalar_count(ty),
         _ => 0,
     }
 }
@@ -212,13 +225,9 @@ fn size_of_type(ty: &Type::NFType) -> usize {
 /// `type_to_type_spec`: the ffi-level C type for a type.
 fn type_ctype(ty: &Type::NFType) -> CType {
     match ty {
-        Type::NFType::INTEGER | Type::NFType::BOOLEAN | Type::NFType::ENUMERATION { .. } => {
-            CType::SInt
-        }
+        Type::NFType::INTEGER | Type::NFType::BOOLEAN | Type::NFType::ENUMERATION { .. } => CType::SInt,
         Type::NFType::REAL => CType::Double,
-        Type::NFType::STRING | Type::NFType::ARRAY { .. } | Type::NFType::COMPLEX { .. } => {
-            CType::Pointer
-        }
+        Type::NFType::STRING | Type::NFType::ARRAY { .. } | Type::NFType::COMPLEX { .. } => CType::Pointer,
         _ => CType::Void,
     }
 }
@@ -240,22 +249,45 @@ fn exp_alignment(exp: &Expression::NFExpression) -> Result<(CType, Alignment)> {
     Ok(match exp {
         Expression::NFExpression::INTEGER { .. }
         | Expression::NFExpression::BOOLEAN { .. }
-        | Expression::NFExpression::ENUM_LITERAL { .. } => {
-            (CType::SInt, Alignment { size: 4, align: 4, ..Default::default() })
-        }
-        Expression::NFExpression::REAL { .. } => {
-            (CType::Double, Alignment { size: 8, align: 8, ..Default::default() })
-        }
-        Expression::NFExpression::STRING { .. } => {
-            (CType::Pointer, Alignment { size: 8, align: 8, ..Default::default() })
-        }
+        | Expression::NFExpression::ENUM_LITERAL { .. } => (
+            CType::SInt,
+            Alignment {
+                size: 4,
+                align: 4,
+                ..Default::default()
+            },
+        ),
+        Expression::NFExpression::REAL { .. } => (
+            CType::Double,
+            Alignment {
+                size: 8,
+                align: 8,
+                ..Default::default()
+            },
+        ),
+        Expression::NFExpression::STRING { .. } => (
+            CType::Pointer,
+            Alignment {
+                size: 8,
+                align: 8,
+                ..Default::default()
+            },
+        ),
         Expression::NFExpression::ARRAY { elements, .. } => {
             let mut fields = Vec::new();
             let elems = elements.borrow();
             if let Some(first) = elems.first() {
                 fields.push(exp_alignment(first)?.1);
             }
-            (CType::Pointer, Alignment { size: 8, align: 8, offsets: Vec::new(), fields })
+            (
+                CType::Pointer,
+                Alignment {
+                    size: 8,
+                    align: 8,
+                    offsets: Vec::new(),
+                    fields,
+                },
+            )
         }
         Expression::NFExpression::RECORD { elements, .. } => {
             // Standard C struct layout, like `ffi_get_struct_offsets`:
@@ -276,11 +308,26 @@ fn exp_alignment(exp: &Expression::NFExpression) -> Result<(CType, Alignment)> {
                 cur = tail;
             }
             let size = round_up(off, max_align);
-            (CType::Pointer, Alignment { size, align: max_align, offsets, fields })
+            (
+                CType::Pointer,
+                Alignment {
+                    size,
+                    align: max_align,
+                    offsets,
+                    fields,
+                },
+            )
         }
         Expression::NFExpression::EMPTY { ty } => {
             let ctype = type_ctype(ty);
-            (ctype, Alignment { size: size_of_type(ty), align: ctype.align(), ..Default::default() })
+            (
+                ctype,
+                Alignment {
+                    size: size_of_type(ty),
+                    align: ctype.align(),
+                    ..Default::default()
+                },
+            )
         }
         _ => return Err("FFI.callFunction: unsupported argument expression"),
     })
@@ -326,8 +373,7 @@ unsafe fn write_exp_value(
                 ptr.add(8)
             }
             Expression::NFExpression::STRING { value } => {
-                let c = CString::new(value.as_bytes())
-                    .map_err(|_| "FFI.callFunction: string argument contains NUL")?;
+                let c = CString::new(value.as_bytes()).map_err(|_| "FFI.callFunction: string argument contains NUL")?;
                 (ptr as *mut *const libc::c_char).write_unaligned(c.as_ptr());
                 strings.push(c);
                 ptr.add(8)
@@ -417,13 +463,20 @@ unsafe fn mk_enum_exp(
         i += 1;
         cur = tail;
     }
-    return Err("FFI.callFunction: enumeration index {index} out of range")
+    return Err("FFI.callFunction: enumeration index {index} out of range");
 }
 
 /// `mk_array_exp` / `mk_array_exp_2`: deserialise a contiguous C array into
 /// a (possibly nested) ARRAY expression of the given array type.
-unsafe fn mk_array_exp(ptr: *const u8, ty: &metamodelica::Ref<Type::NFType>) -> Result<metamodelica::Ref<Expression::NFExpression>> {
-    let Type::NFType::ARRAY { elementType, dimensions } = &**ty else {
+unsafe fn mk_array_exp(
+    ptr: *const u8,
+    ty: &metamodelica::Ref<Type::NFType>,
+) -> Result<metamodelica::Ref<Expression::NFExpression>> {
+    let Type::NFType::ARRAY {
+        elementType,
+        dimensions,
+    } = &**ty
+    else {
         return Err("FFI.callFunction: expected an array type");
     };
     let dim_count = list_len(dimensions);
@@ -562,7 +615,10 @@ pub fn callFunction(
     args: metamodelica::Array<metamodelica::Ref<Expression::NFExpression>>,
     specs: metamodelica::Array<ArgSpec>,
     returnType: metamodelica::Ref<Type::NFType>,
-) -> Result<(metamodelica::Ref<Expression::NFExpression>, metamodelica::List<metamodelica::Ref<Expression::NFExpression>>)> {
+) -> Result<(
+    metamodelica::Ref<Expression::NFExpression>,
+    metamodelica::List<metamodelica::Ref<Expression::NFExpression>>,
+)> {
     let fn_addr = openmodelica_util::dynload::function_addr(fnHandle)?;
 
     let args_vec: Vec<metamodelica::Ref<Expression::NFExpression>> = args.borrow().clone();
@@ -584,8 +640,16 @@ pub fn callFunction(
         unsafe { write_exp_value(arg, data.as_mut_ptr(), &align, &mut strings)? };
 
         let by_pointer = *spec != ArgSpec::INPUT || is_exp_pointer_type(arg);
-        let wrapper = if by_pointer { Some(Box::new(data.as_mut_ptr())) } else { None };
-        ffi_types.push(if by_pointer { MiddleType::pointer() } else { ctype.middle_type() });
+        let wrapper = if by_pointer {
+            Some(Box::new(data.as_mut_ptr()))
+        } else {
+            None
+        };
+        ffi_types.push(if by_pointer {
+            MiddleType::pointer()
+        } else {
+            ctype.middle_type()
+        });
         marshalled.push(MarshalledArg { data, wrapper });
         aligns.push(align);
     }
@@ -600,26 +664,35 @@ pub fn callFunction(
     let mut ffi_args: Vec<*mut libc::c_void> = marshalled.iter().map(|m| m.ffi_addr()).collect();
     let mut ret_buf = vec![0u8; size_of_type(&returnType).max(8)];
 
-    let caught = unsafe {
-        omrs_ffi_call_catch(
-            cif.as_raw_ptr() as *mut libc::c_void,
-            Some(std::mem::transmute::<usize, unsafe extern "C" fn()>(fn_addr)),
-            ret_buf.as_mut_ptr() as *mut libc::c_void,
-            ffi_args.as_mut_ptr(),
-        )
+    // The error slots are process-wide, so one call at a time.
+    static CALL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let (err_slot, verr_slot) = openmodelica_util::dynload::modelica_error_slots();
+    let status = {
+        let _call = CALL.lock().unwrap_or_else(|e| e.into_inner());
+        unsafe {
+            omrs_ffi_call_catch(
+                cif.as_raw_ptr() as *mut libc::c_void,
+                Some(std::mem::transmute::<usize, unsafe extern "C" fn()>(fn_addr)),
+                ret_buf.as_mut_ptr() as *mut libc::c_void,
+                ffi_args.as_mut_ptr(),
+                err_slot as *mut libc::c_void,
+                verr_slot as *mut libc::c_void,
+            )
+        }
     };
-    if caught != 0 {
-        // Same as the C version's catch-all: the call failed, make the
-        // surrounding evaluation fail (NFEvalFunction reports it).
-        return Err("FFI.callFunction: external function threw an exception");
+    // Same as the C version: the call failed, make the surrounding
+    // evaluation fail (NFEvalFunction reports it).
+    match status {
+        0 => {}
+        1 => return Err("FFI.callFunction: external function threw an exception"),
+        _ => return Err("FFI.callFunction: external function called ModelicaError"),
     }
 
     // Read back the OUTPUT arguments, in declaration order.
     let mut outputs: Vec<metamodelica::Ref<Expression::NFExpression>> = Vec::new();
     for (i, spec) in specs_vec.iter().enumerate() {
         if *spec == ArgSpec::OUTPUT {
-            let value =
-                unsafe { mk_exp_from_arg(&args_vec[i], marshalled[i].data.as_ptr(), &aligns[i]) }?;
+            let value = unsafe { mk_exp_from_arg(&args_vec[i], marshalled[i].data.as_ptr(), &aligns[i]) }?;
             outputs.push(value);
         }
     }

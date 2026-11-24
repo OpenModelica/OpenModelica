@@ -1,0 +1,32 @@
+// name:   ConvertEmptyScript1
+// status: correct
+// depends: libs
+//
+// Checks the an empty conversion script is handled correctly.
+//
+
+setModelicaPath("libs/");
+loadString("
+  model ConversionTestModel
+    emptyconvlib.MainModel mainModel(boolParam = false)  annotation(
+      Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}})));
+  equation
+
+    annotation(
+      uses(emptyconvlib(version = \"1.0.0\")));
+  end ConversionTestModel;
+");
+getErrorString();
+
+convertPackageToLibrary(ConversionTestModel, emptyconvlib, "2.0.0");
+getErrorString();
+
+// Result:
+// true
+// true
+// "Notification: ConversionTestModel uses emptyconvlib 1.0.0, which is not available, but emptyconvlib 2.0.0 has a conversion from it. Use convertPackageToLibrary(ConversionTestModel, emptyconvlib, \"2.0.0\") to convert ConversionTestModel.
+// Notification: Automatically loaded package emptyconvlib 2.0.0 due to uses annotation from ConversionTestModel.
+// "
+// true
+// ""
+// endResult

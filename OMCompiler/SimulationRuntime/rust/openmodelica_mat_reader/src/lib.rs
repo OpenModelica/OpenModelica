@@ -38,16 +38,22 @@ pub struct MatVariable {
 /// exact match, then `time`/`Time`, then the Dymola / OpenModelica spelling of
 /// array indices and `der()`.
 pub fn find_var_in(allInfo: &[MatVariable], varName: &str) -> Option<usize> {
-    if let Ok(idx) = allInfo.binary_search_by(|v| iws_cmp(&v.name, varName)) {
+    find_sorted_by(allInfo, |v| &v.name, varName)
+}
+
+/// [`find_var_in`] over any slice sorted by [`iws_cmp`] of `name`.
+pub fn find_sorted_by<'a, T>(sorted: &'a [T], name: impl Fn(&'a T) -> &'a str, varName: &str) -> Option<usize> {
+    let find = |var: &str| sorted.binary_search_by(|v| iws_cmp(name(v), var)).ok();
+    if let Some(idx) = find(varName) {
         return Some(idx);
     }
     if varName == "time" {
-        return allInfo.binary_search_by(|v| iws_cmp(&v.name, "Time")).ok();
+        return find("Time");
     } else if varName == "Time" {
-        return allInfo.binary_search_by(|v| iws_cmp(&v.name, "time")).ok();
+        return find("time");
     }
     let converted = dymola_style_name(varName).or_else(|| openmodelica_style_name(varName))?;
-    allInfo.binary_search_by(|v| iws_cmp(&v.name, &converted)).ok()
+    find(&converted)
 }
 
 /// What every column-store result file offers: the `.mat`'s data model (a

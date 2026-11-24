@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+AssertInIf.mos \
 AssertInWhen.mos \
 AssertTest.mos \
 AssertTest1.mos \
@@ -11,12 +12,14 @@ AssertTest5.mos \
 AssertTest6.mos \
 AssertTest7.mos \
 AssertTest8.mos \
+AssertFunction.mos \
 AssertValues.mos \
 testAssertSolve.mos \
 TestAssert.mos \
 powAssert1.mos \
 powAssert2.mos \
 powAssert3.mos \
+powOddRoot.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

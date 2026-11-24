@@ -98,6 +98,18 @@ impl Tubes {
                     let x3 = self.x_high[(index - 1) as usize];
                     let y3 = self.y_high[(index - 1) as usize];
                     m2 = self.mh[(index - 1) as usize];
+                    if m2 == m1 {
+                        // Parallel lines do not intersect: keep the higher one.
+                        let y_new = self.y2 + m1 * (x3 - self.x2) + self.delta * (m1 * m1 + self.s * self.s).sqrt();
+                        if y_new <= y3 {
+                            self.i0h[(index - 1) as usize] = self.i0h[index as usize];
+                            self.count_high -= 1;
+                            break;
+                        }
+                        self.x_high[index as usize] = x3;
+                        self.y_high[index as usize] = y_new;
+                        continue;
+                    }
                     self.x_high[index as usize] = (m2 * x3 - m1 * self.x2 + self.y2 - y3
                         + self.delta * (m1 * m1 + self.s * self.s).sqrt())
                         / (m2 - m1);
@@ -168,6 +180,18 @@ impl Tubes {
                     let x3 = self.x_low[(index - 1) as usize];
                     let y3 = self.y_low[(index - 1) as usize];
                     m2 = self.ml[(index - 1) as usize];
+                    if m2 == m1 {
+                        // Parallel lines do not intersect: keep the lower one.
+                        let y_new = self.y2 + m1 * (x3 - self.x2) - self.delta * (m1 * m1 + self.s * self.s).sqrt();
+                        if y_new >= y3 {
+                            self.i0l[(index - 1) as usize] = self.i0l[index as usize];
+                            self.count_low -= 1;
+                            break;
+                        }
+                        self.x_low[index as usize] = x3;
+                        self.y_low[index as usize] = y_new;
+                        continue;
+                    }
                     self.x_low[index as usize] =
                         (m2 * x3 - m1 * self.x2 + self.y2 - y3 - self.delta * (m1 * m1 + self.s * self.s).sqrt())
                             / (m2 - m1);

@@ -1,0 +1,57 @@
+// name: resizableLoopRows
+// keywords: NewBackend resizable Jacobian sparsity algebraic loop
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableLoopRows resizableLoopRows_* resizableLoopRows.log resizableLoopRows.c resizableLoopRows.o resizableLoopRows.makefile resizableLoopRows.libs
+//
+// The algebraic loop at the node solves der(pa)[N] and its residual is a
+// for-equation over N:N. The sparsity rows of the loop are the solved
+// element der(pa)[N], not der(pa) at the iterations of the residual.
+
+loadString("
+model resizableLoopRows
+  parameter Integer N = 2;
+  Real pa[N](each start = 2, each stateSelect = StateSelect.prefer), pb[N](each start = 1, each stateSelect = StateSelect.prefer);
+  Real na[N], nb[N];
+  Real qa[N + 1], qb[N + 1];
+equation
+  for i in 1:N loop
+    der(na[i]) = qa[i] - qa[i + 1];
+    na[i] = 2*pa[i];
+    der(nb[i]) = qb[i] - qb[i + 1];
+    nb[i] = 3*pb[i];
+  end for;
+  for i in 1:N - 1 loop
+    qa[i + 1] = pa[i] - pa[i + 1];
+    qb[i + 1] = pb[i] - pb[i + 1];
+  end for;
+  qa[1] = 1;
+  qb[N + 1] = pb[N];
+  pa[N] = pb[1];
+  qa[N + 1] = qb[1];
+initial equation
+  for i in 1:N - 1 loop
+    pa[i] = 2;
+  end for;
+  for i in 1:N loop
+    pb[i] = 1;
+  end for;
+end resizableLoopRows;
+"); getErrorString();
+
+buildModel(resizableLoopRows, stopTime = 1); getErrorString();
+system("grep -q 'pDER_ODE_JAC.der(pa\\[WHOLEDIM\\])' resizableLoopRows_12jac.c");
+system("./resizableLoopRows -override=N=4", "resizableLoopRows.log");
+val(pa[2], 1, "resizableLoopRows_res.mat");
+val(pb[4], 1, "resizableLoopRows_res.mat");
+// Result:
+// true
+// ""
+// {"resizableLoopRows", "resizableLoopRows_init.xml"}
+// ""
+// 1
+// 0
+// 2.0158656761465528
+// 0.7530695135566536
+// endResult

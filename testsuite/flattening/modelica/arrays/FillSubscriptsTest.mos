@@ -13,7 +13,7 @@ checkModel(Manifold); getErrorString();
 // true
 // ""
 // "Check of Manifold completed successfully.
-// Class Manifold has 510 equation(s) and 510 variable(s).
+// The model is globally balanced with 510 equation(s) and variable(s).
 // 432 of these are trivial equation(s)."
 // ""
 // endResult

@@ -1,7 +1,10 @@
 TEST = ../../../rtest -v
 
 TESTFILES=\
-reuseConstantPartsJac1.mos
+algorithmSliceInForLoop.mos \
+maxArrayIntegerEnum.mos \
+reuseConstantPartsJac1.mos \
+tupleWildcard.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

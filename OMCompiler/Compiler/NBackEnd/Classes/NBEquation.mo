@@ -247,6 +247,34 @@ public
       end match;
     end getFrames;
 
+    function sliceSubscripts
+      "Replaces the subscripts that are iterators of iters by slices of their ranges.
+      Mapped iterators are kept."
+      input output list<Subscript> subs;
+      input list<Iterator> iters;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
+      UnorderedMap<ComponentRef, Expression> slices = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    algorithm
+      for iter in iters loop
+        (names, ranges, maps) := getFrames(iter);
+        for frame in List.zip3(names, ranges, maps) loop
+          if isNone(Util.tuple33(frame)) then
+            UnorderedMap.add(Util.tuple31(frame), Util.tuple32(frame), slices);
+          end if;
+        end for;
+      end for;
+      subs := list(match sub
+          local
+            ComponentRef name;
+          case Subscript.INDEX(index = Expression.CREF(cref = name)) guard(UnorderedMap.contains(name, slices))
+          then Subscript.SLICE(UnorderedMap.getOrFail(name, slices));
+          else sub;
+        end match for sub in subs);
+    end sliceSubscripts;
+
     function merge
       "merges multiple iterators to one NESTED() iterator"
       input list<Iterator> iterators;
@@ -684,8 +712,19 @@ public
       input UnorderedMap<list<Dimension>, CrefLst> dims_map = UnorderedMap.new<CrefLst>(Dimension.hashList, function List.isEqualOnTrue(inCompFunc = Dimension.isEqual));
     protected
       UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+      UnorderedSet<VariablePointer> iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+      Pointer<Boolean> indexable = Pointer.create(true);
+      Expression orig = exp;
     algorithm
-      (exp, iter) := extractFromCall(exp, EMPTY(), replacements, new_iters, dims_map);
+      (exp, iter) := extractFromCall(exp, EMPTY(), replacements, iters, dims_map, indexable);
+      if not isEmpty(iter) and not Pointer.access(indexable) then
+        iter := EMPTY();
+        exp := orig;
+        return;
+      end if;
+      for v in UnorderedSet.toList(iters) loop
+        UnorderedSet.add(v, new_iters);
+      end for;
       exp := Expression.map(exp, function Replacements.applySimpleExp(replacements = replacements));
       exp := Typing.typeExp(exp, NFInstContext.RHS, sourceInfo(), true);
     end extract;
@@ -697,6 +736,7 @@ public
       input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
       input UnorderedSet<VariablePointer> new_iters;
       input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
+      input Pointer<Boolean> indexable "false if an array operand is not an array constructor, e.g. p in p .* {1 for i in 1:3}";
     algorithm
       (exp, iter) := match exp
         local
@@ -740,16 +780,49 @@ public
         then (call.exp, iter);
 
         // do not iterate call arguments
-        case Expression.CALL() then (exp, iter);
+        case Expression.CALL() algorithm
+          checkIndexable(exp, indexable);
+        then (exp, iter);
 
         // only consider if expressions if all sub-expressions contain an array constructor
-        case Expression.IF() guard(extractFromCallIfException(exp)) then (exp, iter);
+        case Expression.IF() guard(extractFromCallIfException(exp)) algorithm
+          checkIndexable(exp, indexable);
+        then (exp, iter);
 
         else algorithm
-          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters, dims_map = dims_map), iter);
+          if not isOperation(exp) then
+            checkIndexable(exp, indexable);
+          end if;
+          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters, dims_map = dims_map, indexable = indexable), iter);
         then (exp, iter);
       end match;
     end extractFromCall;
+
+    function checkIndexable
+      input Expression exp;
+      input Pointer<Boolean> indexable;
+    algorithm
+      if Type.isArray(Expression.typeOf(exp)) then
+        Pointer.update(indexable, false);
+      end if;
+    end checkIndexable;
+
+    function isOperation
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.BINARY()   then true;
+        case Expression.UNARY()    then true;
+        case Expression.MULTARY()  then true;
+        case Expression.LBINARY()  then true;
+        case Expression.LUNARY()   then true;
+        case Expression.RELATION() then true;
+        case Expression.CAST()     then true;
+        case Expression.IF()       then true;
+        else false;
+      end match;
+    end isOperation;
 
     function extractFromCallIfException
       "returns true if any branch is not an array constructor"
@@ -2570,6 +2643,30 @@ public
       b := attr.exclusively_initial;
     end isInitial;
 
+    function setInitial
+      input output Equation eq;
+    protected
+      EquationAttributes attr = getAttributes(eq);
+    algorithm
+      attr.exclusively_initial := true;
+      eq := setAttributes(eq, attr);
+    end setInitial;
+
+    function isExternalObject
+      "true for an equation between external objects"
+      extends checkEqn;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+    algorithm
+      b := match eqn
+        case SCALAR_EQUATION() then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case ARRAY_EQUATION()  then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case RECORD_EQUATION() then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        case FOR_EQUATION()    then Type.isExternalObject(Type.arrayElementType(getType(eqn)));
+        else false;
+      end match;
+    end isExternalObject;
+
     function isWhenEquation extends checkEqn;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
@@ -2839,25 +2936,77 @@ public
     end splitIterators;
 
     function renameIterators
+      "renames the for-loop iterators to newBaseName + index and the iterators
+      of array constructors and reductions to newBaseName + _ + name, so that
+      they cannot have the name of a variable or of a for-loop iterator"
       input Pointer<Equation> eqn_ptr;
       input String newBaseName;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
+      UnorderedMap<ComponentRef, Expression> replacements;
     algorithm
-      () := match eqn
-        local
-          UnorderedMap<ComponentRef, Expression> replacements;
-
+      eqn := match eqn
         case FOR_EQUATION() algorithm
           replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
           eqn.iter := Iterator.rename(eqn.iter, newBaseName, replacements);
           eqn.body := list(map(body_eqn, function Replacements.applySimpleExp(replacements = replacements)) for body_eqn in eqn.body);
-          Pointer.update(eqn_ptr, eqn);
-        then ();
-
-        else ();
+        then eqn;
+        else eqn;
       end match;
+      eqn := map(eqn, function renameCallIterators(prefix = newBaseName + "_"));
+      Pointer.update(eqn_ptr, eqn);
     end renameIterators;
+
+    function renameCallIterators
+      input output Expression exp;
+      input String prefix;
+    algorithm
+      exp := match exp
+        local
+          Call call;
+          list<tuple<InstNode, Expression>> iters;
+        case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+          (exp, iters) := renameCallIteratorList(call.exp, call.iters, prefix);
+          call.exp := exp;
+          call.iters := iters;
+        then Expression.CALL(call);
+        case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+          (exp, iters) := renameCallIteratorList(call.exp, call.iters, prefix);
+          call.exp := exp;
+          call.iters := iters;
+        then Expression.CALL(call);
+        else exp;
+      end match;
+    end renameCallIterators;
+
+    function renameCallIteratorList
+      input output Expression exp;
+      input output list<tuple<InstNode, Expression>> iters;
+      input String prefix;
+    protected
+      UnorderedMap<String, Expression> values = UnorderedMap.new<Expression>(stringHashDjb2, stringEq);
+      list<tuple<InstNode, Expression>> new_iters = {};
+      InstNode node;
+      Expression range;
+      String name;
+      Type ty;
+    algorithm
+      for iter in iters loop
+        (node, range) := iter;
+        range := Expression.replaceIteratorsByName(range, values);
+        name := InstNode.name(node);
+        if not StringUtil.startsWith(name, prefix) then
+          ty := Type.arrayElementType(Expression.typeOf(range));
+          node := InstNode.newIterator(prefix + name, ty, InstNode.info(node));
+          UnorderedMap.add(name, Expression.fromCref(ComponentRef.makeIterator(node, ty)), values);
+        end if;
+        new_iters := (node, range) :: new_iters;
+      end for;
+      iters := listReverse(new_iters);
+      if not UnorderedMap.isEmpty(values) then
+        exp := Expression.replaceIteratorsByName(exp, values);
+      end if;
+    end renameCallIteratorList;
 
     function entwine
       input list<Equation> eqn_lst        "has to be for-loops with combinable ranges";
@@ -4188,7 +4337,10 @@ public
         assigned := match stmt
           local
             ComponentRef lhs;
+            list<Expression> elements;
           case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs)) then lhs :: assigned;
+          case WhenStatement.ASSIGN(lhs = Expression.TUPLE(elements = elements))
+          then listAppend(list(Expression.toCref(e) for e guard(Expression.isCref(e) and not ComponentRef.isWild(Expression.toCref(e))) in elements), assigned);
           else assigned;
         end match;
       end for;

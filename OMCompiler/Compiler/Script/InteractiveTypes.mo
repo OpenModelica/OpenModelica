@@ -52,7 +52,7 @@ uniontype SimulationOptions "these are the simulation/buildModel* options"
     DAE.Exp numberOfIntervals "number of intervals, default 500";
     DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
     DAE.Exp tolerance "tolerance, default 1e-6";
-    DAE.Exp method "method, default 'dassl'";
+    DAE.Exp method "method, default 'auto'";
     DAE.Exp fileNamePrefix "file name prefix, default ''";
     DAE.Exp options "options, default ''";
     DAE.Exp outputFormat "output format, default 'plt'";
@@ -71,50 +71,6 @@ uniontype Variable "- InteractiveTypes.Variable"
   end IVAR;
 
 end Variable;
-
-public
-uniontype Component "- a component in a class
-  this is used in extracting all the components in all the classes"
-  record COMPONENTITEM
-    Absyn.Path the1 "the class where the component is" ;
-    Absyn.Path the2 "the type of the component" ;
-    Absyn.ComponentRef the3 "the name of the component" ;
-  end COMPONENTITEM;
-
-  record EXTENDSITEM
-    Absyn.Path the1 "the class which is extended" ;
-    Absyn.Path the2 "the class which is the extension" ;
-  end EXTENDSITEM;
-
-end Component;
-
-public
-uniontype Components
-  record COMPONENTS
-    list<Component> componentLst;
-    Integer the "the number of components in list. used to optimize the get_dependency_on_class" ;
-  end COMPONENTS;
-
-end Components;
-
-public
-uniontype ComponentReplacement
-  record COMPONENTREPLACEMENT
-    Absyn.Path which1 "which class contain the old cref" ;
-    Absyn.ComponentRef the2 "the old cref" ;
-    Absyn.ComponentRef the3 "the new cref" ;
-  end COMPONENTREPLACEMENT;
-
-end ComponentReplacement;
-
-public
-uniontype ComponentReplacementRules
-  record COMPONENTREPLACEMENTRULES
-    list<ComponentReplacement> componentReplacementLst;
-    Integer the "the number of rules" ;
-  end COMPONENTREPLACEMENTRULES;
-
-end ComponentReplacementRules;
 
 annotation(__OpenModelica_Interface="frontend");
 end InteractiveTypes;

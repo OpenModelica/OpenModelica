@@ -779,7 +779,8 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
   attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
-  read_array_var_real(&attribute->nominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
+  read_array_var_real(&attribute->positiveNominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
+  normalizeNominal(attribute, findHashStringString(var_map, "name"));
   read_array_var_real(&attribute->min, findHashStringStringEmpty(var_map, "min"), REAL_MIN);
   read_array_var_real(&attribute->max, findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
@@ -798,7 +799,7 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
     assertStreamPrint(NULL, max_buffer != NULL, "Out of memory.");
 
     real_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
-    real_vector_to_string(&attribute->nominal, isScalar, nominal_buffer, buff_size);
+    real_vector_to_string(&attribute->positiveNominal, isScalar, nominal_buffer, buff_size);
     real_vector_to_string(&attribute->min, isScalar, min_buffer, buff_size);
     real_vector_to_string(&attribute->max, isScalar, max_buffer, buff_size);
 
@@ -974,6 +975,12 @@ int shouldFilterOutput(omc_ModelVariable *variable, const char *name)
   return shouldFilter;
 }
 
+static modelica_boolean read_start_from_equation(omc_ModelVariable *v)
+{
+  const char *s = findHashStringStringNull(v, "startFromEquation");
+  return s != NULL && 0 == strcmp(s, "true");
+}
+
 /**
  * @brief Read all static data from File for every variable
  *
@@ -1026,6 +1033,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_real(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          realVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       case VAR_TYPE_INTEGER:
@@ -1039,6 +1047,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_int(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          intVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       case VAR_TYPE_BOOLEAN:
@@ -1052,6 +1061,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_bool(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          boolVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       case VAR_TYPE_STRING:
@@ -1065,6 +1075,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           read_var_attribute_string(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
+          stringVarsData[j].startFromEquation = read_start_from_equation(v);
         }
         break;
       default:
@@ -1686,6 +1697,104 @@ static void singleOverride(omc_CommandLineOverrides *mOverrides,
 }
 
 /**
+ * @brief Unescape a value in double quotes in place, as a Modelica string literal.
+ *
+ * @param value   The value, starting with the opening quote.
+ */
+static void unquoteOverrideValue(char *value)
+{
+  char *end, *from, *to = value;
+  for (end = value + 1; *end && *end != '"'; end++) {
+    if (*end == '\\' && end[1]) {
+      end++;
+    }
+  }
+  if (*end != '"' || end[1] != '\0') {
+    throwStreamPrint(NULL, "Invalid string value in override flag: %s", value);
+  }
+  for (from = value + 1; from < end; from++) {
+    if (*from == '\\') {
+      switch (*++from) {
+        case 'a': *to++ = '\a'; break;
+        case 'b': *to++ = '\b'; break;
+        case 'f': *to++ = '\f'; break;
+        case 'n': *to++ = '\n'; break;
+        case 'r': *to++ = '\r'; break;
+        case 't': *to++ = '\t'; break;
+        case 'v': *to++ = '\v'; break;
+        default: *to++ = *from;
+      }
+    } else {
+      *to++ = *from;
+    }
+  }
+  *to = '\0';
+}
+
+/**
+ * @brief Add the name=value pairs of an override string to the overrides.
+ *
+ * Commas separate the pairs, except in subscripts and in a value in double
+ * quotes, which is a Modelica string literal.
+ *
+ * @param mOverrides      Overrides by name.
+ * @param mOverridesUses  Use of each override.
+ * @param str             The pairs. Changed in place.
+ * @param flag            Flag value for the error message.
+ */
+static void addOverrides(omc_CommandLineOverrides **mOverrides, omc_CommandLineOverridesUses **mOverridesUses, char *str, const char *flag)
+{
+  char *p = str, *end, *value, *ov;
+  int depth, quoted;
+
+  while (*p) {
+    depth = 0;
+    quoted = 0;
+    value = NULL;
+    for (end = p; *end; end++) {
+      if (quoted) {
+        if (*end == '\\' && end[1]) {
+          end++;
+        } else if (*end == '"') {
+          quoted = 0;
+        }
+      } else if (*end == '"') {
+        quoted = 1;
+      } else if (*end == '[') {
+        depth++;
+      } else if (*end == ']') {
+        depth--;
+      } else if (*end == '=' && !value) {
+        value = end;
+      } else if (*end == ',' && depth == 0) {
+        break;
+      }
+    }
+    if (end == p) {
+      p++;
+      continue;
+    }
+    if (*end) {
+      *end++ = '\0';
+    }
+    if (!value) {
+      throwStreamPrint(NULL, "Invalid format for value of override flag: %s", flag);
+    }
+    *value++ = '\0';
+    if (*value == '"') {
+      unquoteOverrideValue(value);
+    }
+    ov = (char*)findHashStringStringNull(*mOverrides, p);
+    if (ov) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "You are overriding variable: %s=%s again with %s=%s.", p, ov, p, value);
+    }
+    addHashStringString(mOverrides, p, value);
+    addHashStringLong(mOverridesUses, p, OMC_OVERRIDE_UNUSED);
+    p = end;
+  }
+}
+
+/**
  * @brief Read override values from simulation flags `-override` and `-overrideFile` and update variables.
  *
  * Return if step sizes needs to be re-calculated because start or stop time was changed, but step size wasn't changed.
@@ -1758,77 +1867,15 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   }
 
   if (overrideStr1 != NULL || overrideStr2 != NULL) {
-    char *value, *p, *ov;
     /* read override values */
     infoStreamPrint(OMC_LOG_SOLVER, 0, "-override=%s", overrideStr1 ? overrideStr1 : "[not given]");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "-overrideFile=%s", overrideStr2 ? overrideStr2 : "[not given]");
-    /* fix overrideStr to contain | instead of , for splitting */
-    if (overrideStr1)
-    {
-      parseVariableStr(overrideStr1);
-      p = strtok(overrideStr1, "!");
-
-      while (p) {
-        // split it key = value => map[key]=value
-        value = strchr(p, '=');
-
-        if (!value) {
-          throwStreamPrint(NULL, "Invalid format for value of override flag: %s", override);
-        }
-
-        if (*value == '\0') {
-          warningStreamPrint(OMC_LOG_SOLVER, 0, "failed to parse override string %s", p);
-          p = strtok(NULL, "!");
-        }
-        *value = '\0';
-        value++;
-        // map[key]=value
-        // check if we already overrided this variable
-        ov = (char*)findHashStringStringNull(mOverrides, p);
-        if (ov)
-        {
-          warningStreamPrint(OMC_LOG_STDOUT, 0, "You are overriding variable: %s=%s again with %s=%s.", p, ov, p, value);
-        }
-        addHashStringString(&mOverrides, p, value);
-        addHashStringLong(&mOverridesUses, p, OMC_OVERRIDE_UNUSED);
-
-        // move to next
-        p = strtok(NULL, "!");
-      }
+    if (overrideStr1) {
+      addOverrides(&mOverrides, &mOverridesUses, overrideStr1, override);
       free(overrideStr1);
     }
-
-    if (overrideStr2)
-    {
-      parseVariableStr(overrideStr2);
-      p = strtok(overrideStr2, "!");
-
-      while (p) {
-        // split it key = value => map[key]=value
-        value = strchr(p, '=');
-
-        if (!value) {
-          throwStreamPrint(NULL, "Invalid format for value of override flag: %s", override);
-        }
-
-        if (*value == '\0') {
-          warningStreamPrint(OMC_LOG_SOLVER, 0, "failed to parse override string %s", p);
-          p = strtok(NULL, "!");
-        }
-        *value = '\0';
-        value++;
-        // map[key]=value
-        ov = (char*)findHashStringStringNull(mOverrides, p);
-        if (ov)
-        {
-          warningStreamPrint(OMC_LOG_STDOUT, 0, "You are overriding variable: %s=%s again with %s=%s.", p, ov, p, value);
-        }
-        addHashStringString(&mOverrides, p, value);
-        addHashStringLong(&mOverridesUses, p, OMC_OVERRIDE_UNUSED);
-
-        // move to next
-        p = strtok(NULL, "!");
-      }
+    if (overrideStr2) {
+      addOverrides(&mOverrides, &mOverridesUses, overrideStr2, overrideFile);
       free(overrideStr2);
     }
 

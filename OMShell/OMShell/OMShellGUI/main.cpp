@@ -57,6 +57,10 @@ extern "C" {
 }
 #endif
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
+
 #ifndef __EMSCRIPTEN__
 #define CONSUME_CHAR(value, res, len, i) \
     if (value[i] == '\\' && i + 1 < len) { \
@@ -102,6 +106,18 @@ int main(int argc, char *argv[])
   MMC_TRY_TOP()
 
   QApplication app(argc, argv);
+
+#if defined(__EMSCRIPTEN__)
+  // The scheme selected in the launcher of the web clients, if any.
+  app.styleHints()->setColorScheme(static_cast<Qt::ColorScheme>(EM_ASM_INT({
+    try {
+      const theme = localStorage.getItem('om-theme');
+      return theme === 'dark' ? 2 : theme === 'light' ? 1 : 0;
+    } catch (e) {
+      return 0;
+    }
+  })));
+#endif
 
   IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance(threadData);
 

@@ -17,7 +17,11 @@ testDAEModeFileSplit_Issue4851.mos \
 testDAEModeNominal.mos \
 testDAEModeEventJacobianProbe.mos \
 testDAEModeNoResiduals.mos \
+testDAEModeVariableIndex.mos \
 illegalDerInput.mos \
+testDAEModeSolverMethod.mos \
+testDAEModeTimeEventTinyStep.mos \
+testDAEModeStateSetAndDummyStates.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

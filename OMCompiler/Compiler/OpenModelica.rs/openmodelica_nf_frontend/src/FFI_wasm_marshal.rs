@@ -152,12 +152,18 @@ fn array_scalar_count(ty: &Type::NFType) -> usize {
 
 fn unlift_array_type(ty: &metamodelica::Ref<Type::NFType>) -> metamodelica::Ref<Type::NFType> {
     match &**ty {
-        Type::NFType::ARRAY { elementType, dimensions } => {
+        Type::NFType::ARRAY {
+            elementType,
+            dimensions,
+        } => {
             let rest = match &**dimensions {
                 metamodelica::ListNode::Cons { tail, .. } => tail.clone(),
                 metamodelica::ListNode::Nil => metamodelica::nil(),
             };
-            metamodelica::Ref::new(Type::NFType::ARRAY { elementType: elementType.clone(), dimensions: rest })
+            metamodelica::Ref::new(Type::NFType::ARRAY {
+                elementType: elementType.clone(),
+                dimensions: rest,
+            })
         }
         _ => ty.clone(),
     }
@@ -184,7 +190,10 @@ fn type_ctype(ty: &Type::NFType) -> CType {
 
 /// Arguments passed by pointer even as INPUT.
 fn is_exp_pointer_type(exp: &Expression::NFExpression) -> bool {
-    matches!(exp, Expression::NFExpression::ARRAY { .. } | Expression::NFExpression::RECORD { .. })
+    matches!(
+        exp,
+        Expression::NFExpression::ARRAY { .. } | Expression::NFExpression::RECORD { .. }
+    )
 }
 
 /// `FFI::exp_alignment`, with wasm32's pointer size.
@@ -192,22 +201,45 @@ fn exp_alignment(exp: &Expression::NFExpression) -> Result<(CType, Alignment)> {
     Ok(match exp {
         Expression::NFExpression::INTEGER { .. }
         | Expression::NFExpression::BOOLEAN { .. }
-        | Expression::NFExpression::ENUM_LITERAL { .. } => {
-            (CType::SInt, Alignment { size: 4, align: 4, ..Default::default() })
-        }
-        Expression::NFExpression::REAL { .. } => {
-            (CType::Double, Alignment { size: 8, align: 8, ..Default::default() })
-        }
-        Expression::NFExpression::STRING { .. } => {
-            (CType::Pointer, Alignment { size: 4, align: 4, ..Default::default() })
-        }
+        | Expression::NFExpression::ENUM_LITERAL { .. } => (
+            CType::SInt,
+            Alignment {
+                size: 4,
+                align: 4,
+                ..Default::default()
+            },
+        ),
+        Expression::NFExpression::REAL { .. } => (
+            CType::Double,
+            Alignment {
+                size: 8,
+                align: 8,
+                ..Default::default()
+            },
+        ),
+        Expression::NFExpression::STRING { .. } => (
+            CType::Pointer,
+            Alignment {
+                size: 4,
+                align: 4,
+                ..Default::default()
+            },
+        ),
         Expression::NFExpression::ARRAY { elements, .. } => {
             let mut fields = Vec::new();
             let elems = elements.borrow();
             if let Some(first) = elems.first() {
                 fields.push(exp_alignment(first)?.1);
             }
-            (CType::Pointer, Alignment { size: 4, align: 4, offsets: Vec::new(), fields })
+            (
+                CType::Pointer,
+                Alignment {
+                    size: 4,
+                    align: 4,
+                    offsets: Vec::new(),
+                    fields,
+                },
+            )
         }
         Expression::NFExpression::RECORD { elements, .. } => {
             let mut fields = Vec::new();
@@ -224,11 +256,26 @@ fn exp_alignment(exp: &Expression::NFExpression) -> Result<(CType, Alignment)> {
                 fields.push(field);
                 cur = tail;
             }
-            (CType::Pointer, Alignment { size: round_up(off, max_align), align: max_align, offsets, fields })
+            (
+                CType::Pointer,
+                Alignment {
+                    size: round_up(off, max_align),
+                    align: max_align,
+                    offsets,
+                    fields,
+                },
+            )
         }
         Expression::NFExpression::EMPTY { ty } => {
             let ctype = type_ctype(ty);
-            (ctype, Alignment { size: size_of_type(ty), align: ctype.align(), ..Default::default() })
+            (
+                ctype,
+                Alignment {
+                    size: size_of_type(ty),
+                    align: ctype.align(),
+                    ..Default::default()
+                },
+            )
         }
         _ => return Err("FFI.callFunction: unsupported argument expression"),
     })
@@ -328,11 +375,15 @@ fn get_f64(buf: &[u8], at: usize) -> Result<f64> {
 }
 
 fn mk_int_exp(buf: &[u8], at: usize) -> Result<metamodelica::Ref<Expression::NFExpression>> {
-    Ok(metamodelica::Ref::new(Expression::NFExpression::INTEGER { value: get_i32(buf, at)? }))
+    Ok(metamodelica::Ref::new(Expression::NFExpression::INTEGER {
+        value: get_i32(buf, at)?,
+    }))
 }
 
 fn mk_bool_exp(buf: &[u8], at: usize) -> Result<metamodelica::Ref<Expression::NFExpression>> {
-    Ok(metamodelica::Ref::new(Expression::NFExpression::BOOLEAN { value: get_i32(buf, at)? != 0 }))
+    Ok(metamodelica::Ref::new(Expression::NFExpression::BOOLEAN {
+        value: get_i32(buf, at)? != 0,
+    }))
 }
 
 fn mk_real_exp(buf: &[u8], at: usize) -> Result<metamodelica::Ref<Expression::NFExpression>> {
@@ -368,7 +419,7 @@ fn mk_enum_exp(
         i += 1;
         cur = tail;
     }
-    return Err("FFI.callFunction: enumeration index out of range")
+    return Err("FFI.callFunction: enumeration index out of range");
 }
 
 fn mk_array_exp(
@@ -377,7 +428,11 @@ fn mk_array_exp(
     ty: &metamodelica::Ref<Type::NFType>,
     ctx: &Ctx,
 ) -> Result<metamodelica::Ref<Expression::NFExpression>> {
-    let Type::NFType::ARRAY { elementType, dimensions } = &**ty else {
+    let Type::NFType::ARRAY {
+        elementType,
+        dimensions,
+    } = &**ty
+    else {
         return Err("FFI.callFunction: expected an array type");
     };
     let dim_count = list_len(dimensions);
@@ -434,7 +489,13 @@ fn mk_record_exp(
         if i >= align.fields.len() {
             break;
         }
-        out.push(mk_exp_from_arg(head, buf, at + align.offsets[i], &align.fields[i], ctx)?);
+        out.push(mk_exp_from_arg(
+            head,
+            buf,
+            at + align.offsets[i],
+            &align.fields[i],
+            ctx,
+        )?);
         i += 1;
         cur = tail;
     }
@@ -494,14 +555,20 @@ pub fn callFunction(
     args: metamodelica::Array<metamodelica::Ref<Expression::NFExpression>>,
     specs: metamodelica::Array<ArgSpec>,
     returnType: metamodelica::Ref<Type::NFType>,
-) -> Result<(metamodelica::Ref<Expression::NFExpression>, metamodelica::List<metamodelica::Ref<Expression::NFExpression>>)> {
+) -> Result<(
+    metamodelica::Ref<Expression::NFExpression>,
+    metamodelica::List<metamodelica::Ref<Expression::NFExpression>>,
+)> {
     let args_vec: Vec<metamodelica::Ref<Expression::NFExpression>> = args.borrow().clone();
     let specs_vec: Vec<ArgSpec> = specs.borrow().clone();
     if args_vec.len() != specs_vec.len() {
         return Err("FFI.callFunction: argument/spec count mismatch");
     }
 
-    let mut ctx = Ctx { func: fnHandle, temps: Vec::new() };
+    let mut ctx = Ctx {
+        func: fnHandle,
+        temps: Vec::new(),
+    };
     let result = call_marshalled(&mut ctx, &args_vec, &specs_vec, &returnType);
     ctx.release();
     result
@@ -512,7 +579,10 @@ fn call_marshalled(
     args: &[metamodelica::Ref<Expression::NFExpression>],
     specs: &[ArgSpec],
     returnType: &metamodelica::Ref<Type::NFType>,
-) -> Result<(metamodelica::Ref<Expression::NFExpression>, metamodelica::List<metamodelica::Ref<Expression::NFExpression>>)> {
+) -> Result<(
+    metamodelica::Ref<Expression::NFExpression>,
+    metamodelica::List<metamodelica::Ref<Expression::NFExpression>>,
+)> {
     let mut call_args: Vec<Val> = Vec::with_capacity(args.len());
     let mut aligns: Vec<Alignment> = Vec::with_capacity(args.len());
     // Where each by-pointer argument's buffer landed, for the read-back.

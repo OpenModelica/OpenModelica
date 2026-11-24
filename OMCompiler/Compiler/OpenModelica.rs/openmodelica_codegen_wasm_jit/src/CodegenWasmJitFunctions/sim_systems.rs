@@ -550,9 +550,17 @@ fn emit_for_residual_at(
     ctx.emit(I::LocalSet(size_l));
     ctx.emit(I::Block(we::BlockType::Empty));
     ctx.emit(I::Loop(we::BlockType::Empty));
+    // leave when (step > 0 ? it > stop : it < stop)
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(stop_l));
     ctx.emit(I::I32GtS);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(stop_l));
+    ctx.emit(I::I32LtS);
+    ctx.emit(I::LocalGet(step_l));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::I32GtS);
+    ctx.emit(I::Select);
     ctx.emit(I::BrIf(1));
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(start_l));
@@ -2446,7 +2454,7 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
             ctx.emit(I::I32Const(plain_off(job.nominal_off)? as i32));
             ctx.emit(I::I32Add);
             ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
-            ctx.emit(I::I32Const(2 * plain_off(job.nominal_off)? as i32));
+            ctx.emit(I::I32Const(plain_off(job.nominal_off)? as i32));
             ctx.emit(I::I32Add);
         }
     }

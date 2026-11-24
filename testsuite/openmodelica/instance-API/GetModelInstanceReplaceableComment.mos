@@ -94,7 +94,7 @@ getModelInstance(ReplaceableRecordDescription.View, prettyPrint = true);
 //               \"lineStart\": 9,
 //               \"columnStart\": 17,
 //               \"lineEnd\": 9,
-//               \"columnEnd\": 92
+//               \"columnEnd\": 211
 //             }
 //           }
 //         ],

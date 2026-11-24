@@ -99,6 +99,7 @@ QPalette Style::darkPalette()
   palette.setColor(QPalette::Dark, QColor(24, 24, 27));
   palette.setColor(QPalette::Shadow, Qt::black);
   palette.setColor(QPalette::Disabled, QPalette::WindowText, disabledText);
+  palette.setColor(QPalette::Disabled, QPalette::Base, alternateBase);
   palette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
   palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledText);
   palette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(55, 65, 81));
@@ -185,6 +186,24 @@ QColor Style::infoBarBackgroundColor()
 QColor Style::infoBarTextColor()
 {
   return pick(Qt::black, QColor(232, 234, 237));
+}
+
+/*!
+ * \brief Style::warningBackgroundColor
+ * Background of an inline warning, e.g., below an input field.
+ */
+QColor Style::warningBackgroundColor()
+{
+  return pick(QColor(255, 243, 205), QColor(51, 39, 1));
+}
+
+/*!
+ * \brief Style::warningTextColor
+ * Text of an inline warning.
+ */
+QColor Style::warningTextColor()
+{
+  return pick(QColor(102, 77, 3), QColor(255, 218, 106));
 }
 
 /*!

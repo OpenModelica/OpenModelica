@@ -77,7 +77,11 @@ fn run(
     let mut opts = Options::from_model_description(md);
     if dae {
         opts.solver = openmodelica_fmi_driver::Solver::Ida;
-        opts.dae = Some(fmu.ls_dae_manifest().expect("no fmi-ls-dae manifest").expect("parse the manifest"));
+        opts.dae = Some(
+            fmu.ls_dae_manifest()
+                .expect("no fmi-ls-dae manifest")
+                .expect("parse the manifest"),
+        );
     }
     with(&mut opts);
 
@@ -95,7 +99,11 @@ fn run(
                 .instantiate_co_simulation(model, token, resources.as_deref(), false, event_mode, true)
                 .expect("instantiate");
             let run = cs::simulate(&mut inst as &mut dyn Fmi3CoSimulation, md, &opts).expect("run");
-            Sim { rec: run.recorder, events: run.events, event_times: run.event_times }
+            Sim {
+                rec: run.recorder,
+                events: run.events,
+                event_times: run.event_times,
+            }
         }
         _ => {
             let mut inst = lib
@@ -163,7 +171,9 @@ fn model_exchange_lands_on_the_bounce() {
 #[test]
 fn time_events_are_hit_exactly() {
     for kind in [InterfaceKind::ModelExchange, InterfaceKind::CoSimulation] {
-        let Some(sim) = simulate("Stair", kind, |o| o.stop_time = 5.0) else { return };
+        let Some(sim) = simulate("Stair", kind, |o| o.stop_time = 5.0) else {
+            return;
+        };
         assert_eq!(sim.events, 5, "{}: wrong number of events", kind.as_str());
         for k in 1..=5 {
             let counter = sim.at("counter", k as f64);
@@ -202,7 +212,9 @@ fn model_exchange_and_co_simulation_agree() {
 /// own column, so nothing is silently dropped.
 #[test]
 fn array_variables_get_a_column_each() {
-    let Some(sim) = simulate("StateSpace", InterfaceKind::CoSimulation, |_| {}) else { return };
+    let Some(sim) = simulate("StateSpace", InterfaceKind::CoSimulation, |_| {}) else {
+        return;
+    };
     let names: Vec<&str> = sim.rec.columns.iter().map(|c| c.name.as_str()).collect();
     assert!(names.contains(&"x[1]"), "no element columns: {names:?}");
 }
@@ -229,7 +241,10 @@ fn co_simulation_handles_events_at_the_time_they_happen() {
     );
     let v = sim.at("v", handled + 1e-9);
     assert!(v > 0.0, "the ball is still falling after the bounce (v = {v})");
-    assert!(sim.rec.times().last().unwrap_or(0.0) >= 1.0 - 1e-9, "the run stopped early");
+    assert!(
+        sim.rec.times().last().unwrap_or(0.0) >= 1.0 - 1e-9,
+        "the run stopped early"
+    );
 }
 
 /// fmi-ls-dae's own reference FMU states a *semi-explicit* DAE, so the master
@@ -248,7 +263,10 @@ fn dae_mode_solves_a_semi_explicit_dae() {
         let (x1, x2, z1, z2) = (sim.at("x1", t), sim.at("x2", t), sim.at("z1", t), sim.at("z2", t));
         let want_x1 = 2.0 * ((0.25f64).tan() * t.exp()).atan();
         assert!((x1 - want_x1).abs() < 1e-6, "x1({t}) = {x1}, not {want_x1}");
-        assert!(z1.abs() < 1e-6, "z1({t}) = {z1}, not 0 — the first constraint is not held");
+        assert!(
+            z1.abs() < 1e-6,
+            "z1({t}) = {z1}, not 0 — the first constraint is not held"
+        );
         let g = (z2 * x2).sin() - 1.0 / 3.0;
         assert!(g.abs() < 1e-6, "the second constraint is off by {g} at t = {t}");
     }

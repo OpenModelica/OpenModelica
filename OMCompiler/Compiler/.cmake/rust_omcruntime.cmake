@@ -22,7 +22,9 @@ function(omc_runtime_rust_library)
        ${_crate}/../../OpenModelica.rs/openmodelica_download/src/*.rs
        ${_crate}/../../OpenModelica.rs/openmodelica_package_manager/src/*.rs
        ${_crate}/../../OpenModelica.rs/openmodelica_version/src/*.rs
-       ${_crate}/../../OpenModelica.rs/openmodelica_modelica_diff/src/*.rs)
+       ${_crate}/../../OpenModelica.rs/openmodelica_modelica_diff/src/*.rs
+       ${_crate}/../../OpenModelica.rs/openmodelica_fmi_guide/src/*.rs
+       ${_crate}/../../OpenModelica.rs/openmodelica_fmi_guide/fmi-settings.json)
   add_custom_command(
     OUTPUT ${_lib}
     WORKING_DIRECTORY ${_crate}

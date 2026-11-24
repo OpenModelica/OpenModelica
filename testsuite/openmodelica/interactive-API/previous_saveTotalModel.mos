@@ -61,7 +61,7 @@ checkModel(PreviousSaveTotal_total); getErrorString();
 // true
 // ""
 // "Check of PreviousSaveTotal_total completed successfully.
-// Class PreviousSaveTotal_total has 1 equation(s) and 1 variable(s).
+// The model is globally balanced with 1 equation(s) and variable(s).
 // 1 of these are trivial equation(s)."
 // ""
 // endResult

@@ -10,7 +10,11 @@ fn ramp(n: usize, slope: f64) -> (Vec<f64>, Vec<f64>) {
 }
 
 fn settings(algorithm: Algorithm, tolerance: f64) -> Settings {
-    Settings { algorithm, tolerance, ..Settings::default() }
+    Settings {
+        algorithm,
+        tolerance,
+        ..Settings::default()
+    }
 }
 
 #[test]
@@ -43,7 +47,11 @@ fn rectangle_tube_stays_within_the_reference_time_span() {
         assert_eq!(c.x.len(), c.y.len());
         assert!(c.x[0] >= t[0], "tube starts at {} before {}", c.x[0], t[0]);
         assert!(*c.x.last().unwrap() <= *t.last().unwrap());
-        assert!(c.x.windows(2).all(|w| w[0] <= w[1]), "tube x is not monotonic: {:?}", c.x);
+        assert!(
+            c.x.windows(2).all(|w| w[0] <= w[1]),
+            "tube x is not monotonic: {:?}",
+            c.x
+        );
     }
     assert!(low.y.iter().zip(&high.y).all(|(l, h)| l < h) || low.y.len() != high.y.len());
 }
@@ -53,7 +61,12 @@ fn every_algorithm_passes_a_curve_compared_with_itself() {
     let (t, y) = ramp(101, 2.0);
     for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
         let c = compare(&t, &y, &t, &y, &settings(algorithm, 0.002)).unwrap();
-        assert!(!c.differs(), "{} flagged an identical curve ({} points)", algorithm.name(), c.error_count);
+        assert!(
+            !c.differs(),
+            "{} flagged an identical curve ({} points)",
+            algorithm.name(),
+            c.error_count
+        );
         assert_eq!(c.delta_error, 0.0);
     }
 }
@@ -82,7 +95,10 @@ fn the_algorithms_have_different_sensitivity() {
         let c = compare(&t, &off, &t, &y, &settings(algorithm, 0.002)).unwrap();
         differs.push(c.differs());
     }
-    assert_ne!(differs[0], differs[2], "rectangle and ellipse2014 agreed at an offset of 0.003: {differs:?}");
+    assert_ne!(
+        differs[0], differs[2],
+        "rectangle and ellipse2014 agreed at an offset of 0.003: {differs:?}"
+    );
 }
 
 /// `RemoveLoop` used to spin forever on a reference that reverses often
@@ -91,7 +107,11 @@ fn the_algorithms_have_different_sensitivity() {
 fn a_sawtooth_reference_terminates() {
     let n = 400;
     let t: Vec<f64> = (0..n).map(|i| i as f64 / (n - 1) as f64).collect();
-    let y: Vec<f64> = t.iter().enumerate().map(|(i, _)| if i % 2 == 0 { 0.0 } else { 1.0 }).collect();
+    let y: Vec<f64> = t
+        .iter()
+        .enumerate()
+        .map(|(i, _)| if i % 2 == 0 { 0.0 } else { 1.0 })
+        .collect();
     let mut size = TubeSize::legacy(&t, &y, 0.001);
     // wide enough that the rectangles overlap several neighbours
     size.calculate_relative_x(0.05).unwrap();
@@ -111,8 +131,7 @@ fn an_empty_curve_is_rejected_rather_than_panicking() {
 }
 
 /// A one-sample reference: the tube degenerates to a flat one rather than
-/// erroring. A one-sample curve *under test* is only usable by the algorithms
-/// that do not resample from it.
+/// erroring.
 #[test]
 fn a_single_sample_reference_still_compares() {
     let (t, y) = ramp(21, 1.0);
@@ -120,10 +139,72 @@ fn a_single_sample_reference_still_compares() {
         let c = compare(&t, &y, &[0.0], &[0.0], &settings(algorithm, 0.002)).unwrap();
         assert!(!c.differs(), "{} flagged a flat one-sample reference", algorithm.name());
     }
-    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
         compare(&[0.0], &[0.0], &t, &y, &settings(algorithm, 0.002)).unwrap();
     }
-    assert!(compare(&[0.0], &[0.0], &t, &y, &settings(Algorithm::Ellipse2014, 0.002)).is_err());
+}
+
+/// stopTime == startTime: an FMU importer writes one row where the C runtime
+/// writes the start and terminal rows.
+#[test]
+fn a_single_row_result_compares_like_the_start_and_terminal_rows() {
+    let t = [0.0, 0.0];
+    let y = [1.0, 1.0];
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
+        for resample in [false, true] {
+            let s = Settings {
+                resample,
+                ..settings(algorithm, 0.002)
+            };
+            for (time, value) in [(&[0.0][..], 1.0), (&t[..], 1.0)] {
+                let values = vec![value; time.len()];
+                assert!(!compare(time, &values, &t, &y, &s).unwrap().differs());
+                let off = vec![2.0; time.len()];
+                let c = compare(time, &off, &t, &y, &s).unwrap();
+                assert!(
+                    c.differs(),
+                    "{} resample={resample} rows={}",
+                    algorithm.name(),
+                    time.len()
+                );
+            }
+        }
+    }
+}
+
+/// A reference without a time span has no tube; its points are checked with
+/// relTol and an abstol of relTolDiffMinMax².
+#[test]
+fn a_zero_length_reference_is_checked_with_reltol_and_abstol() {
+    let t = [0.0, 0.0];
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
+        let s = settings(algorithm, 0.002);
+        let differs = |values: &[f64], reference: &[f64]| compare(&t, values, &t, reference, &s).unwrap().differs();
+        assert!(!differs(&[1.0005, 1.0005], &[1.0, 1.0]));
+        assert!(differs(&[1.002, 1.002], &[1.0, 1.0]));
+        assert!(!differs(&[1e-9, 1e-9], &[0.0, 0.0]));
+        assert!(differs(&[1e-6, 1e-6], &[0.0, 0.0]));
+        assert!(!differs(&[1.45e-7, 1.45e-7], &[1.4e-7, 1.4e-7]));
+        assert!(differs(&[-1e-6, -1e-6], &[0.0, 0.0]));
+        assert!(differs(&[f64::NAN, f64::NAN], &[1.0, 1.0]));
+        // an event at the start: the rows are compared in order
+        assert!(!differs(&[0.0, 1.0], &[0.0, 1.0]));
+        assert!(differs(&[1.0, 0.0], &[0.0, 1.0]));
+        assert!(differs(&[0.05, 1000.0], &[0.0, 1000.0]));
+    }
+}
+
+/// A short time span still gives a tube (stopTime = 1e-11 in
+/// Modelica.Electrical.Spice3.Examples.Inverter).
+#[test]
+fn a_short_time_span_is_not_zero() {
+    let scale = |(t, y): (Vec<f64>, Vec<f64>)| (t.iter().map(|x| x * 1e-11).collect::<Vec<f64>>(), y);
+    let (rt, ry) = scale(ramp(21, 1.0));
+    let (t, y) = scale(ramp(51, 1.0));
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
+        let c = compare(&t, &y, &rt, &ry, &settings(algorithm, 0.002)).unwrap();
+        assert!(!c.differs(), "{}", algorithm.name());
+    }
 }
 
 /// A trajectory one value short of its timeline (a truncated last CSV row).
@@ -180,15 +261,22 @@ fn a_reference_is_always_inside_its_own_tube() {
         let t = grid(n);
         // integrated noise: continuous, with slopes of order 1
         let mut acc = 0.0;
-        let y: Vec<f64> = noise(n, seed).iter().map(|d| {
-            acc += d / n as f64;
-            acc
-        })
-        .collect();
+        let y: Vec<f64> = noise(n, seed)
+            .iter()
+            .map(|d| {
+                acc += d / n as f64;
+                acc
+            })
+            .collect();
         for tol in [1e-4, 0.002, 0.02, 0.2] {
             for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse2014] {
                 let c = compare(&t, &y, &t, &y, &settings(algorithm, tol)).unwrap();
-                assert!(!c.differs(), "{} at tol {tol}, n {n}: {} points outside", algorithm.name(), c.error_count);
+                assert!(
+                    !c.differs(),
+                    "{} at tol {tol}, n {n}: {} points outside",
+                    algorithm.name(),
+                    c.error_count
+                );
             }
         }
     }
@@ -213,10 +301,137 @@ fn a_spiky_reference_still_yields_a_tube() {
                 let c = compare(&t, &y, &t, &y, &settings(algorithm, tol)).unwrap();
                 let what = algorithm.name();
                 assert_eq!(c.low.len(), c.high.len(), "{what}");
-                assert!(c.lower.x.windows(2).all(|w| w[0] <= w[1]), "{what} at tol {tol}: lower x not monotonic");
-                assert!(c.upper.x.windows(2).all(|w| w[0] <= w[1]), "{what} at tol {tol}: upper x not monotonic");
-                assert!(c.low.iter().zip(&c.high).all(|(l, h)| l <= h), "{what} at tol {tol}: tube inverted");
+                assert!(
+                    c.lower.x.windows(2).all(|w| w[0] <= w[1]),
+                    "{what} at tol {tol}: lower x not monotonic"
+                );
+                assert!(
+                    c.upper.x.windows(2).all(|w| w[0] <= w[1]),
+                    "{what} at tol {tol}: upper x not monotonic"
+                );
+                assert!(
+                    c.low.iter().zip(&c.high).all(|(l, h)| l <= h),
+                    "{what} at tol {tol}: tube inverted"
+                );
             }
         }
+    }
+}
+
+/// A short blip after an event on a flat signal makes the consolidation meet two
+/// parallel lines. Both sides of the tube have to survive that.
+#[test]
+fn ellipse2014_keeps_both_sides_of_the_tube_around_a_short_blip() {
+    for blip in [-1e-12, 1e-12, -1e-3, 1e-3] {
+        let mut t: Vec<f64> = (0..=5).map(f64::from).collect();
+        t.extend([5.0, 5.01, 5.01]);
+        t.extend((6..=10).map(f64::from));
+        let mut y = vec![0.0; t.len()];
+        y[6] = blip;
+        // the tube is at least tol * 4e-4 high
+        for tol in [0.001, 0.002] {
+            for off in [2e-7, -2e-7] {
+                let shifted: Vec<f64> = y.iter().map(|v| v + off).collect();
+                let c = compare(&t, &shifted, &t, &y, &settings(Algorithm::Ellipse2014, tol)).unwrap();
+                assert!(
+                    !c.differs(),
+                    "blip {blip}, tol {tol}, offset {off}: {} points outside",
+                    c.error_count
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn resampling_does_not_test_between_the_reference_points() {
+    let peak = |t: f64| (t * std::f64::consts::PI).sin();
+    let reftime: Vec<f64> = (0..=4).map(|i| i as f64 / 4.0).collect();
+    let refvalues: Vec<f64> = reftime.iter().map(|t| peak(*t)).collect();
+    let time: Vec<f64> = (0..=40).map(|i| i as f64 / 40.0).collect();
+    let values: Vec<f64> = time.iter().map(|t| peak(*t)).collect();
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        let on_actual = compare(&time, &values, &reftime, &refvalues, &settings(algorithm, 0.002)).unwrap();
+        assert!(on_actual.differs(), "{algorithm:?}");
+        let s = Settings {
+            resample: true,
+            ..settings(algorithm, 0.002)
+        };
+        let c = compare(&time, &values, &reftime, &refvalues, &s).unwrap();
+        assert!(!c.differs(), "{algorithm:?}: {:?}", c.error);
+        assert_eq!(c.time, reftime, "{algorithm:?}");
+    }
+}
+
+#[test]
+fn resampling_takes_the_left_value_of_an_event_the_reference_does_not_have() {
+    let reftime = [0.0, 1.0, 2.0];
+    let refvalues = [8.0, 8.0, 8.0];
+    let time = [0.0, 1.0, 2.0, 2.0];
+    let values = [8.0, 8.0, 8.0, 4.0];
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        let s = Settings {
+            resample: true,
+            ..settings(algorithm, 0.002)
+        };
+        assert!(
+            !compare(&time, &values, &reftime, &refvalues, &s).unwrap().differs(),
+            "{algorithm:?}"
+        );
+    }
+}
+
+#[test]
+fn resampling_changes_nothing_on_the_same_time_points() {
+    let mut t: Vec<f64> = (0..=40).map(|i| i as f64 / 40.0).collect();
+    t.insert(22, t[21]);
+    let reference: Vec<f64> = t
+        .iter()
+        .enumerate()
+        .map(|(i, x)| (x * 6.0).sin() + if i > 21 { 0.5 } else { 0.0 })
+        .collect();
+    let actual: Vec<f64> = reference
+        .iter()
+        .enumerate()
+        .map(|(i, y)| y + [0.0, 1e-4, -3e-3, 2e-2][i % 4])
+        .collect();
+    for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        let on_actual = compare(&t, &actual, &t, &reference, &settings(algorithm, 0.002)).unwrap();
+        let s = Settings {
+            resample: true,
+            ..settings(algorithm, 0.002)
+        };
+        let resampled = compare(&t, &actual, &t, &reference, &s).unwrap();
+        assert!(on_actual.differs(), "{algorithm:?}");
+        assert_eq!(on_actual.values, resampled.values, "{algorithm:?}");
+        assert_eq!(on_actual.error, resampled.error, "{algorithm:?}");
+    }
+}
+
+#[test]
+fn resampling_compares_the_left_limit_at_the_stop_time() {
+    let differs = |t: &[f64], v: &[f64], rt: &[f64], rv: &[f64], algorithm, resample| {
+        let s = Settings {
+            resample,
+            ..settings(algorithm, 0.002)
+        };
+        compare(t, v, rt, rv, &s).unwrap().differs()
+    };
+    // The reference repeats its last point; the actual has an event there.
+    let reftime = [0.0, 1.0, 2.0, 2.0];
+    let refvalues = [8.0, 8.0, 8.0, 8.0];
+    let time = [0.0, 1.0, 2.0, 2.0];
+    let values = [8.0, 8.0, 8.0, 4.0];
+    for a in [Algorithm::Rectangle, Algorithm::Ellipse] {
+        assert!(differs(&time, &values, &reftime, &refvalues, a, false));
+        assert!(!differs(&time, &values, &reftime, &refvalues, a, true));
+        assert!(!differs(&reftime, &refvalues, &time, &values, a, true));
+        // the stop time of the reference with a rounding error, and an actual that runs longer
+        let reftime = [0.0, 1.0, 2.0, 2.0 + 4e-12];
+        let time = [0.0, 1.0, 2.0, 2.0, 3.0];
+        let same = [8.0, 8.0, 8.0, 4.0, 4.0];
+        let off = [8.0, 8.0, 7.0, 4.0, 4.0];
+        assert!(!differs(&time, &same, &reftime, &refvalues, a, true));
+        assert!(differs(&time, &off, &reftime, &refvalues, a, true));
     }
 }

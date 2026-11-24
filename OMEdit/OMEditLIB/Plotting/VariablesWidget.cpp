@@ -613,6 +613,86 @@ QModelIndex VariablesTreeModel::variablesTreeItemIndex(VariablesTreeItem *pVaria
 }
 
 /*!
+ * \brief takeOverrideFile
+ * Removes the -overrideFile flags from the list.
+ * \param pFlags
+ * \return The file of the last one.
+ */
+static QString takeOverrideFile(QStringList *pFlags)
+{
+  const QString prefix = QStringLiteral("-overrideFile");
+  QString fileName;
+  int i = 0;
+  while (i < pFlags->size()) {
+    const QString flag = pFlags->at(i);
+    if (flag.startsWith(prefix + "=")) {
+      fileName = flag.mid(prefix.size() + 1);
+      pFlags->removeAt(i);
+    } else if (flag.compare(prefix) == 0) {
+      pFlags->removeAt(i);
+      if (i < pFlags->size()) {
+        fileName = pFlags->takeAt(i);
+      }
+    } else {
+      i++;
+    }
+  }
+  return fileName;
+}
+
+/*!
+ * \brief readOverrideFile
+ * Reads the name=value pairs of an -overrideFile as the simulation runtime does.
+ * \param fileName - relative to the working directory, where the simulation runs.
+ * \return
+ */
+static QMap<QString, QString> readOverrideFile(const QString &fileName)
+{
+  QMap<QString, QString> overrides;
+  if (fileName.isEmpty()) {
+    return overrides;
+  }
+  QFile file(QDir(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()).filePath(fileName));
+  if (!file.open(QIODevice::ReadOnly)) {
+    return overrides;
+  }
+  const QStringList lines = QString::fromUtf8(file.readAll()).split('\n');
+  file.close();
+  foreach (const QString &line, lines) {
+    if (line.trimmed().startsWith("//")) {
+      continue;
+    }
+    // Commas also separate the pairs, except in subscripts and in a value in double quotes.
+    int depth = 0, start = 0;
+    bool quoted = false;
+    for (int i = 0; i <= line.size(); i++) {
+      const QChar c = i < line.size() ? line.at(i) : QChar(',');
+      if (quoted) {
+        if (c == '\\') {
+          i++;
+        } else if (c == '"') {
+          quoted = false;
+        }
+      } else if (c == '"') {
+        quoted = true;
+      } else if (c == '[') {
+        depth++;
+      } else if (c == ']') {
+        depth--;
+      } else if (c == ',' && depth == 0) {
+        const QString pair = line.mid(start, i - start);
+        const int equal = pair.indexOf('=');
+        if (equal > 0) {
+          overrides.insert(pair.left(equal).trimmed(), pair.mid(equal + 1).trimmed());
+        }
+        start = i + 1;
+      }
+    }
+  }
+  return overrides;
+}
+
+/*!
  * \brief VariablesTreeModel::parseInitXml
  * Parses the model_init.xml file and returns the scalar variables information.
  * \param xmlReader
@@ -839,6 +919,14 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 #endif
+  QStringList simulationFlags = simulationOptions.getSimulationFlags();
+  const QMap<QString, QString> overrides = readOverrideFile(takeOverrideFile(&simulationFlags));
+  for (auto it = overrides.constBegin(); it != overrides.constEnd(); ++it) {
+    auto scalarVariable = mScalarVariablesHash.find(it.key());
+    if (scalarVariable != mScalarVariablesHash.end()) {
+      scalarVariable->start = it.value().startsWith('"') ? StringHandler::unparse(it.value()) : it.value();
+    }
+  }
 
   QMap<QString,QSet<QString>> usedInitialVars;
   QMap<QString,QSet<QString>> usedVars;
@@ -1836,66 +1924,30 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
 }
 
 /*!
- * \brief VariablesWidget::readVariablesAndUpdateXML
- * Reads the updated values
- * \sa VariablesWidget::findVariableAndUpdateValue()
+ * \brief VariablesWidget::readChangedVariables
+ * Reads the values that the user changed.
  * \param pVariablesTreeItem
  * \param outputFileName
  * \param variables
  */
-void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
-                                                QHash<QString, QHash<QString, QString> > *variables)
+void VariablesWidget::readChangedVariables(VariablesTreeItem *pVariablesTreeItem, const QString &outputFileName, QMap<QString, QString> *variables)
 {
   for (int i = 0 ; i < pVariablesTreeItem->mChildren.size() ; i++) {
     VariablesTreeItem *pChildVariablesTreeItem = pVariablesTreeItem->child(i);
     if (pChildVariablesTreeItem->isEditable() && pChildVariablesTreeItem->isValueChanged()) {
-      //QString value = pChildVariablesTreeItem->data(1, Qt::DisplayRole).toString();
       /* Ticket #2250, 4031
-       * We need to convert the value to base unit since the values stored in init xml are always in base unit.
+       * The simulation runtime takes the values in the base unit.
        */
       QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getDisplayUnit(),
                                                         pChildVariablesTreeItem->getUnit()).toString();
+      if (pChildVariablesTreeItem->isString()) {
+        value = QString("\"%1\"").arg(StringHandler::escapeString(value));
+      }
       QString variableToFind = pChildVariablesTreeItem->getVariableName();
       variableToFind.remove(QRegularExpression(outputFileName + "."));
-      QHash<QString, QString> hash;
-      hash["name"] = variableToFind;
-      hash["value"] = value;
-      variables->insert(variableToFind, hash);
+      variables->insert(variableToFind, value);
     }
-    readVariablesAndUpdateXML(pChildVariablesTreeItem, outputFileName, variables);
-  }
-}
-
-/*!
- * \brief VariablesWidget::findVariableAndUpdateValue
- * Writes the updated values in the init xml dom
- * \param xmlDocument
- * \param variables
- */
-void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables)
-{
-  /* if no variables are changed. */
-  if (variables.empty()) {
-    return;
-  }
-  /* update the variables */
-  int count = 0;
-  QDomNodeList scalarVariable = xmlDocument.elementsByTagName("ScalarVariable");
-  for (int i = 0; i < scalarVariable.size(); i++) {
-    if (count >= variables.size()) {
-      break;
-    }
-    QDomElement element = scalarVariable.at(i).toElement();
-    if (!element.isNull()) {
-      QHash<QString, QString> hash = variables.value(element.attribute("name"));
-      if (element.attribute("name").compare(hash["name"]) == 0) {
-        count++;
-        QDomElement el = scalarVariable.at(i).firstChild().toElement();
-        if (!el.isNull()) {
-          el.setAttribute("start", hash["value"]);
-        }
-      }
-    }
+    readChangedVariables(pChildVariablesTreeItem, outputFileName, variables);
   }
 }
 
@@ -1927,7 +1979,7 @@ void VariablesWidget::reSimulate(bool showSetup)
 
 /*!
  * \brief VariablesWidget::reSimulate
- * Re-simulates the model with the given simulation options and updates the model_init.xml file if needed.
+ * Re-simulates the model with the given simulation options and the changed values.
  * \param simulationOptions
  * \param pVariablesTreeItem
  * \param showSetup
@@ -1937,22 +1989,7 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
   simulationOptions.setReSimulate(true);
   if (pVariablesTreeItem) {
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
-    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
-    if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
-      // wasm-jit does not read _init.xml (only the Variables Browser does); it takes changes via -override.
-      QHash<QString, QHash<QString, QString> > changed;
-      readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
-      QStringList overrides;
-      for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
-        overrides << QString("%1=%2").arg(it.value().value("name"), it.value().value("value"));
-      }
-      if (!overrides.isEmpty()) {
-        const QString overrideFlag = QString("-override=%1").arg(overrides.join(","));
-        simulationOptions.setSimulationFlags(QStringList(simulationOptions.getSimulationFlags()) << overrideFlag);
-        // The setup dialog rebuilds the flags from its fields.
-        simulationOptions.setAdditionalSimulationFlags(QStringList({simulationOptions.getAdditionalSimulationFlags(), overrideFlag}).join(" ").trimmed());
-      }
-    }
+    writeOverrideFile(pVariablesTreeItem, &simulationOptions);
   }
 
   if (showSetup) {
@@ -1963,44 +2000,46 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
 }
 
 /*!
- * \brief VariablesWidget::updateInitXmlFile
- * Updates the model_init.xml file
+ * \brief VariablesWidget::writeOverrideFile
+ * Writes the changed values and those of the previous -overrideFile to model_override.txt,
+ * and replaces the -overrideFile flag of the simulation options with it.
+ * The model_init.xml file stays as the model was built.
  * \param pVariablesTreeItem
- * \param simulationOptions
+ * \param pSimulationOptions
  */
-void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions)
+void VariablesWidget::writeOverrideFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions *pSimulationOptions)
 {
-  /* Update the _init.xml file with new values. */
-  /* open the model_init.xml file for writing */
-  QString initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
-  QFile initFile(QString(simulationOptions.getWorkingDirectory()).append(QDir::separator()).append(initFileName));
-  QDomDocument initXmlDocument;
-  if (initFile.open(QIODevice::ReadOnly)) {
-    if (initXmlDocument.setContent(&initFile)) {
-      if (pVariablesTreeItem) {
-        QHash<QString, QHash<QString, QString> > variables;
-        readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &variables);
-        findVariableAndUpdateValue(initXmlDocument, variables);
-      }
-    } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to set the content of QDomDocument from file %1")
-                                                            .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
-    }
-    initFile.close();
-    if (initFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-      QTextStream textStream(&initFile);
-      textStream.setEncoding(QStringConverter::Utf8);
-      textStream.setGenerateByteOrderMark(false);
-      textStream << initXmlDocument.toString();
-      initFile.close();
-    } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
-    }
-  } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                          .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+  QStringList simulationFlags = pSimulationOptions->getSimulationFlags();
+  QMap<QString, QString> overrides = readOverrideFile(takeOverrideFile(&simulationFlags));
+  readChangedVariables(pVariablesTreeItem, pSimulationOptions->getFullResultFileName(), &overrides);
+  if (overrides.isEmpty()) {
+    return;
   }
+  QFile overrideFile(QString("%1/%2_override.txt").arg(pSimulationOptions->getWorkingDirectory(), pSimulationOptions->getOutputFileName()));
+  if (!overrideFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(overrideFile.fileName())
+                                                          .arg(overrideFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  QTextStream textStream(&overrideFile);
+  textStream.setEncoding(QStringConverter::Utf8);
+  textStream.setGenerateByteOrderMark(false);
+  for (auto it = overrides.constBegin(); it != overrides.constEnd(); ++it) {
+    textStream << it.key() << "=" << it.value() << "\n";
+  }
+  overrideFile.close();
+  const QString overrideFlag = QString("-overrideFile=%1").arg(overrideFile.fileName());
+  pSimulationOptions->setSimulationFlags(simulationFlags << overrideFlag);
+  // The setup dialog builds the simulation flags again from its fields.
+  QStringList additionalSimulationFlags = StringHandler::splitStringWithSpaces(pSimulationOptions->getAdditionalSimulationFlags());
+  takeOverrideFile(&additionalSimulationFlags);
+  additionalSimulationFlags << overrideFlag;
+  for (QString &flag : additionalSimulationFlags) {
+    if (flag.contains(' ')) {
+      flag = QString("\"%1\"").arg(flag);
+    }
+  }
+  pSimulationOptions->setAdditionalSimulationFlags(additionalSimulationFlags.join(" "));
 }
 
 /*!

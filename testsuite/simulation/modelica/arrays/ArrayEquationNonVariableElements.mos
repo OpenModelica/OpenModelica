@@ -1,0 +1,223 @@
+// name:     ArrayEquationNonVariableElements
+// keywords: array equation, function call, simplifyComplexFunction #1429
+// status:   correct
+//
+// An array equation {e1, e2, ...} = f(...) where an element is not a variable
+// is split into scalar equations, which are sorted and torn like any other.
+// Array literals from inlined functions can have elements that are arrays
+// themselves, e.g. {-x[2, :], x[1, :]}, and dimensions that are not known.
+
+loadString("
+package ArrayEquationNonVariableElements
+  function f
+    input Real t;
+    output Real y[2] = {sin(t), cos(t)};
+  end f;
+
+  function g
+    input Real t;
+    output Real y[2, 2] = {{sin(t), cos(t)}, {t, 1}};
+  end g;
+
+  function jj
+    input Real xx[:, :];
+    output Real yy[size(xx, 1), size(xx, 2)];
+  algorithm
+    yy := cat(1, {-xx[2, :], xx[1, :]}, zeros(size(xx, 1) - 2, size(xx, 2)));
+    annotation(Inline = true);
+  end jj;
+
+  function rot
+    input Real xx[:, :];
+    output Real yy[size(xx, 1), size(xx, 2)];
+  algorithm
+    yy := {2*xx[2, :], xx[1, :] + xx[2, :]};
+    annotation(Inline = true);
+  end rot;
+
+  function pointGravity
+    input Real r[3];
+    output Real g[3];
+  protected
+    Real k = 1;
+    Real n[3];
+  algorithm
+    n := -r/sqrt(r*r);
+    g := k/(r*r)*n;
+  end pointGravity;
+
+  model Particle
+    parameter Real m = 1;
+    Real r[3](start = {1, 1, 0}, each fixed = true);
+    Real v[3](start = {0, 1, 0}, each fixed = true);
+  equation
+    der(r) = v;
+    m*der(v) = m*pointGravity(r);
+  end Particle;
+
+  model Equations
+    Real a[2], b[2], c[2], d[2], e[2], u[2], w[2], z[2, 2];
+    Real x[2](each start = 0, each fixed = true);
+  equation
+    2*a = f(time);
+    b + {time, time} = f(time);
+    {c[1] + c[2], c[2]} = f(time);
+    {d[1] + d[2], d[2] - d[1]} = f(time);
+    f(time) = 2*e;
+    f(time) = -u;
+    -w = f(time);
+    2*z = g(time);
+    2*der(x) = f(time);
+  end Equations;
+
+  model InlinedRows \"Inlined functions give rows that are not array literals\"
+    Real a[2, 2], b[2, 2], c[2, 2];
+    Real x[2, 2](each start = 1, each fixed = true);
+  equation
+    jj(a) = g(time);
+    rot(b) = g(time);
+    g(time) = rot(c);
+    rot(der(x)) = g(time);
+  end InlinedRows;
+
+  model CallRow \"An element that cannot be expanded gives an array equation\"
+    Real x[2], y[2], a, b;
+  equation
+    {f(time), {a, b}} = {x, y};
+    a = time;
+    b = 1;
+  end CallRow;
+
+  model InlinedRowsInit \"As in PowerSystems.AC3ph.Lines with steady-state initialization\"
+    parameter Real w0 = 1;
+    Real w;
+    Real v[3, 2];
+  initial equation
+    der(v) = w*jj(v);
+  equation
+    w = w0;
+    der(v) = jj(v)*w - v + {{sin(time), 0}, {0, cos(time)}, {1, 2}};
+  end InlinedRowsInit;
+end ArrayEquationNonVariableElements;
+"); getErrorString();
+
+simulate(ArrayEquationNonVariableElements.Particle, stopTime = 2); getErrorString();
+val(r[1], 2.0);
+val(r[2], 2.0);
+val(v[1], 2.0);
+val(v[2], 2.0);
+
+simulate(ArrayEquationNonVariableElements.Equations, stopTime = 1); getErrorString();
+val(a[1], 1.0);
+val(b[2], 1.0);
+val(c[1], 1.0);
+val(c[2], 1.0);
+val(d[1], 1.0);
+val(d[2], 1.0);
+val(e[2], 1.0);
+val(u[2], 1.0);
+val(w[1], 1.0);
+val(z[1, 2], 1.0);
+val(z[2, 1], 1.0);
+val(x[1], 1.0);
+val(x[2], 1.0);
+
+simulate(ArrayEquationNonVariableElements.InlinedRows, stopTime = 1); getErrorString();
+val(a[1, 1], 1.0);
+val(a[2, 2], 1.0);
+val(b[1, 1], 1.0);
+val(b[2, 2], 1.0);
+val(c[1, 2], 1.0);
+val(c[2, 1], 1.0);
+val(x[1, 1], 1.0);
+val(x[2, 2], 1.0);
+
+simulate(ArrayEquationNonVariableElements.CallRow, stopTime = 1); getErrorString();
+val(x[2], 1.0);
+val(y[1], 1.0);
+val(y[2], 1.0);
+
+simulate(ArrayEquationNonVariableElements.InlinedRowsInit, stopTime = 1); getErrorString();
+val(v[1, 1], 0.0);
+val(v[2, 2], 0.0);
+val(v[1, 1], 1.0);
+val(v[2, 2], 1.0);
+val(v[3, 2], 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.Particle_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.Particle', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.6493405770576456
+// 2.4793623061532872
+// -0.26027745267844365
+// 0.5462496706804283
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.Equations_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.Equations', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.42073549240394825
+// -0.45969769413186023
+// 0.30116867893975674
+// 0.5403023058681398
+// 0.15058433946987843
+// 0.690886645338018
+// 0.2701511529340699
+// -0.5403023058681398
+// -0.8414709848078965
+// 0.2701511529340699
+// 0.5
+// 0.22984915338929526
+// 0.4207341374973617
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.InlinedRows_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.InlinedRows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// -0.5403023058681398
+// 0.5792645075960517
+// 0.2701511529340699
+// 0.7298488470659301
+// 0.42073549240394825
+// 1.270149705851976
+// 1.420732400403579
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.CallRow_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.CallRow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5403023058681398
+// 1.0
+// 1.0
+// record SimulationResult
+//     resultFile = "ArrayEquationNonVariableElements.InlinedRowsInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ArrayEquationNonVariableElements.InlinedRowsInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 0.3127511912500346
+// 0.6338958160348089
+// 2.0
+// endResult

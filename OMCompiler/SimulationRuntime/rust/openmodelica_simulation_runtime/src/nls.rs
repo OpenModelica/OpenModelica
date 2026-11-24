@@ -33,7 +33,7 @@ fn stage(outer: c_int) -> c_int {
 /// The driver's failed-system slot (`Layout::nls_fail_off`): the equation index
 /// plus one of the first system a pass could not solve, 0 for none. Mapped into the
 /// layout by `data::build_regions`.
-pub static mut nls_fail_slot: i32 = 0;
+pub static mut NLS_FAIL_SLOT: i32 = 0;
 
 /// `NLS_SOLVER_STATUS` (simulation_data.h).
 const NLS_FAILED: c_int = 0;
@@ -394,8 +394,8 @@ impl nls::NlsState for CState {
             (*self.sys).solved = NLS_FAILED;
             // First-writer-wins, as C throws out of the equation list at the first
             // failure and never reports a later one.
-            if nls_fail_slot == 0 {
-                nls_fail_slot = eq_index as i32 + 1;
+            if NLS_FAIL_SLOT == 0 {
+                NLS_FAIL_SLOT = eq_index as i32 + 1;
             }
         }
     }
@@ -452,7 +452,7 @@ impl nls::NlsBackend for CBackend<'_> {
             self.handle,
             req.n,
             &pat,
-            req.nominal,
+            req.positive_nominal,
             req.guess,
             req.old_values,
             req.x,
@@ -478,7 +478,7 @@ impl nls::NlsBackend for CBackend<'_> {
             req.n,
             0,
             None,
-            req.nominal,
+            req.positive_nominal,
             &start,
             req.old_values,
             req.x,
@@ -553,7 +553,9 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         sys.nlsxExtrapolation = crate::model_data::calloc(size.max(1));
         sys.nlsxOld = crate::model_data::calloc(size.max(1));
         sys.resValues = crate::model_data::calloc(size.max(1));
-        sys.nominal = crate::model_data::calloc(size.max(1));
+        sys.positiveNominal = crate::model_data::calloc(size.max(1));
+        sys.nominalSign = crate::model_data::calloc(size.max(1));
+        unsafe { core::slice::from_raw_parts_mut(sys.nominalSign, size.max(1)) }.fill(1.0);
         sys.min = crate::model_data::calloc(size.max(1));
         sys.max = crate::model_data::calloc(size.max(1));
         if let Some(f) = sys.initializeStaticNLSData {
@@ -625,8 +627,9 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
 }
 
 #[cfg(feature = "fmi")]
-/// What [`initialize_nonlinear_systems`] allocated per system.
-pub fn free_nonlinear_systems(data: *mut DATA) {
+/// C's `freeNonlinearSyst`: what [`initialize_nonlinear_systems`] and the model's
+/// `initialNonLinearSystem` allocated per system.
+pub fn free_nonlinear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
     if si.nonlinearSystemData.is_null() {
@@ -639,11 +642,24 @@ pub fn free_nonlinear_systems(data: *mut DATA) {
             &mut sys.nlsxExtrapolation,
             &mut sys.nlsxOld,
             &mut sys.resValues,
-            &mut sys.nominal,
+            &mut sys.positiveNominal,
+            &mut sys.nominalSign,
             &mut sys.min,
             &mut sys.max,
         ] {
             unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
+        }
+        unsafe { libc::free(core::mem::replace(&mut sys.eqn_simcode_indices, core::ptr::null_mut()) as *mut c_void) };
+        if let Some(f) = sys.freeStaticNLSData {
+            unsafe { f(data, thread_data, sys) };
+        }
+        let pattern = core::mem::replace(&mut sys.nonlinearPattern, core::ptr::null_mut());
+        if !pattern.is_null() {
+            let p = unsafe { &*pattern };
+            for a in [p.indexVar, p.indexEqn, p.columns, p.rows] {
+                unsafe { libc::free(a as *mut c_void) };
+            }
+            unsafe { libc::free(pattern as *mut c_void) };
         }
         let scratch = core::mem::replace(&mut sys.solverData, core::ptr::null_mut());
         if !scratch.is_null() {
@@ -824,7 +840,8 @@ pub extern "C" fn solve_nonlinear_system(data: *mut DATA, thread_data: *mut thre
         sparse_format: sys.matrixFormat == OMC_MATRIX_SPARSE,
     };
 
-    let nominal = unsafe { core::slice::from_raw_parts(sys.nominal, size) }.to_vec();
+    let positive_nominal = unsafe { core::slice::from_raw_parts(sys.positiveNominal, size) }.to_vec();
+    let nominal_sign = unsafe { core::slice::from_raw_parts(sys.nominalSign, size) }.to_vec();
     let mut bounds = vec![0.0f64; 2 * size];
     for i in 0..size {
         bounds[2 * i] = unsafe { *sys.min.add(i) };
@@ -845,7 +862,8 @@ pub extern "C" fn solve_nonlinear_system(data: *mut DATA, thread_data: *mut thre
         nnz: if csc || full_pattern { sd.rowidx.len() as u32 } else { 0 },
         jac_csc: csc,
         sys_num: sys_number as u32,
-        nominal: &nominal,
+        positive_nominal: &positive_nominal,
+        nominal_sign: &nominal_sign,
         bounds: &bounds,
         pattern: if csc || full_pattern { &sd.pattern } else { &[] },
         has_jacobian,

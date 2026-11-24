@@ -41,7 +41,11 @@ unsafe extern "C" {
 }
 
 fn s(p: *const c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
+    }
 }
 
 /// The exit code when `argv` asks for help (C's `helpFlagSet` / `FLAG_HELP`), after
@@ -73,7 +77,11 @@ fn usage(program: &str) {
 
 fn detailed(program: &str, option: &str) -> i32 {
     let Some(i) = (1..FLAG_MAX).find(|&i| unsafe { s(FLAG_NAME[i]) } == option) else {
-        omclog::warning(omclog::STDOUT, false, &format!("invalid command line option: -help={option}"));
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            &format!("invalid command line option: -help={option}"),
+        );
         omclog::warning(
             omclog::STDOUT,
             false,

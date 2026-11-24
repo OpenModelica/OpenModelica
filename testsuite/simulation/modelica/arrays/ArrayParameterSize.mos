@@ -13,7 +13,7 @@ getErrorString();
 // Result:
 // true
 // "Check of ArrayParameterSize completed successfully.
-// Class ArrayParameterSize has dimN equation(s) and dimN variable(s).
+// The model is globally balanced with dimN equation(s) and variable(s).
 // dimN of these are trivial equation(s)."
 // ""
 // endResult

@@ -305,6 +305,10 @@ public
           // Strip any contexts that don't apply inside the function itself.
           fn_context := NFInstContext.FUNCTION;
 
+          if InstContext.inAnnotation(context) then
+            fn_context := InstContext.set(fn_context, NFInstContext.ANNOTATION);
+          end if;
+
           if InstContext.inRelaxed(context) then
             fn_context := InstContext.set(fn_context, NFInstContext.RELAXED);
           end if;
@@ -472,6 +476,10 @@ public
         ty := resolvePolymorphicReturnType(call.fn, typed_args, ty);
 
         ty := evaluateCallType(ty, call.fn, args);
+        // keep the Real type that typeCast gave the call, e.g. identity(n) cast to Real
+        if Type.isReal(Type.arrayElementType(call.ty)) and Type.isInteger(Type.arrayElementType(ty)) then
+          ty := Type.setArrayElementType(ty, Type.REAL());
+        end if;
         ty_call := makeTypedCall(call.fn, args, call.var, call.purity, ty);
       then ty_call;
 
@@ -1474,6 +1482,8 @@ public
             // For diagonal we can type cast the argument rather than the
             // matrix that diagonal constructs.
             case "diagonal" then typeCastArgs(call, ty, cast_ty);
+            // identity has no argument to cast, it constructs a Real matrix if cast to Real.
+            case "identity" then if Type.isReal(ty) then Expression.CALL(setType(call, cast_ty)) else Expression.CAST(cast_ty, callExp);
             // For DynamicSelect we type cast both of the arguments.
             case "DynamicSelect" then typeCastArgs(call, ty, cast_ty);
             // Cast the argument of matrix unless it's more expensive than casting the result.
@@ -3367,7 +3377,7 @@ protected
           base_call.arguments := call_args;
 
           exp := if Function.isDefaultRecordConstructor(base_call.fn) then
-            toRecordExpression(base_call, base_call.ty) else Expression.CALL(base_call);
+            toRecordExpression(base_call, base_call.ty) else Inline.inlineCallExp(Expression.CALL(base_call));
         then
           TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, base_call.purity, exp, iters);
 

@@ -12,6 +12,7 @@ Exception1.mos \
 Integer1.mos \
 Integer2.mos \
 MissingFunction1.mos \
+ModelicaError1.mos \
 ModelicaInternal_countLines.mos \
 ModelicaIO_readRealMatrix.mos \
 ModelicaStrings_scanInteger.mos \

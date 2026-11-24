@@ -18,7 +18,7 @@ checkModel(Model1); getErrorString();
 // true
 // ""
 // "Check of Model1 completed successfully.
-// Class Model1 has 1732 equation(s) and 1732 variable(s).
+// The model is globally balanced with 1732 equation(s) and variable(s).
 // 1377 of these are trivial equation(s)."
 // ""
 // endResult

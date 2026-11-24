@@ -22,6 +22,42 @@ pub unsafe extern "C" fn omcrs_unzip_path(zip: *const c_char, path: *const c_cha
     unsafe { result(openmodelica_zip::unzip_path(&arg(zip), &arg(path), &arg(dest))) }
 }
 
+fn text(s: impl Into<Vec<u8>>) -> *mut c_char {
+    let mut bytes = s.into();
+    bytes.retain(|&b| b != 0);
+    CString::new(bytes).unwrap_or_default().into_raw()
+}
+
+/// # Safety
+/// `zip` is a NUL-terminated string and `entries` points to writable storage.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_zip_entries(zip: *const c_char, entries: *mut *mut c_char) -> *mut c_char {
+    match openmodelica_zip::entries(&unsafe { arg(zip) }) {
+        Ok(names) => {
+            unsafe { *entries = text(names.join("\n")) };
+            std::ptr::null_mut()
+        }
+        Err(e) => result(Err(e)),
+    }
+}
+
+/// # Safety
+/// `zip` and `path` are NUL-terminated strings and `contents` points to writable storage.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_zip_read(
+    zip: *const c_char,
+    path: *const c_char,
+    contents: *mut *mut c_char,
+) -> *mut c_char {
+    match openmodelica_zip::read(&unsafe { arg(zip) }, &unsafe { arg(path) }) {
+        Ok(bytes) => {
+            unsafe { *contents = text(bytes) };
+            std::ptr::null_mut()
+        }
+        Err(e) => result(Err(e)),
+    }
+}
+
 /// # Safety
 /// Every pointer is a NUL-terminated string.
 #[unsafe(no_mangle)]
@@ -71,6 +107,16 @@ pub unsafe extern "C" fn omcrs_zip_paths(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omcrs_package_manager(request: *const c_char) -> *mut c_char {
     let response = openmodelica_package_manager::call(&unsafe { arg(request) });
+    CString::new(response.replace('\0', " ")).unwrap_or_default().into_raw()
+}
+
+/// The JSON response of `openmodelica_fmi_guide::call`.
+///
+/// # Safety
+/// `request` is a NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_fmi_guide(request: *const c_char) -> *mut c_char {
+    let response = openmodelica_fmi_guide::call(&unsafe { arg(request) });
     CString::new(response.replace('\0', " ")).unwrap_or_default().into_raw()
 }
 

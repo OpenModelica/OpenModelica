@@ -1,0 +1,66 @@
+// name:     ForLoopAlgorithm
+// keywords: index reduction, algorithm, for loop, #7621
+// status:   correct
+//
+// der(b) needs the derivative of the algorithm that assigns b. In a for loop
+// b[i] and a[i] have to be differentiated as the array elements they refer to,
+// and the differentiated algorithm must not make the initial system over
+// specified.
+// c[i](t) = cos((sin(t) - i*sin(i*t*sin(t))*(t*cos(t) + sin(t)))*t)
+// c[1](1) = 0.98222794..., c[2](1) = -0.32774846...
+
+loadString("
+model ForLoopAlgorithm
+  parameter Integer N=2;
+  Real a[N];
+  Real b[N];
+  Real c[N];
+equation
+  for i in 1:N loop
+    a[i] = sin(time);
+    c[i] = cos((a[i]+der(b[i]))*time);
+  end for;
+algorithm
+  for i in 1:N loop
+    b[i] := cos(a[i]*time*i);
+  end for;
+end ForLoopAlgorithm;
+
+model ScalarAlgorithm
+  Real a, b, c;
+equation
+  a = sin(time);
+  c = cos((a+der(b))*time);
+algorithm
+  b := cos(a*time);
+end ScalarAlgorithm;
+"); getErrorString();
+simulate(ForLoopAlgorithm, stopTime=1); getErrorString();
+val(c[1], 1);
+val(c[2], 1);
+simulate(ScalarAlgorithm, stopTime=1); getErrorString();
+val(c, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ForLoopAlgorithm_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ForLoopAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.9822278052873001
+// -0.32774845102485484
+// record SimulationResult
+//     resultFile = "ScalarAlgorithm_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ScalarAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.9822278052873001
+// endResult

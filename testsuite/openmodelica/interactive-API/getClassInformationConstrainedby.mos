@@ -1,0 +1,50 @@
+// name: getClassInformationConstrainedby
+// keywords: getClassInformation, constrainedby, #5398
+// status: correct
+//
+// The source info of a replaceable class ends after its constraining clause.
+
+loadString("package P
+  model Q
+    Real x = 1;
+  end Q;
+
+  replaceable model M = Q(x = 2)
+    constrainedby Q \"Replaceable model\"
+    annotation(choicesAllMatching = true,
+      Documentation(info = \"<html>M</html>\"));
+
+  replaceable model N = Q;
+
+  replaceable model R
+    extends Q;
+  end R constrainedby Q;
+
+  model A
+    replaceable model M = Q;
+    M m;
+  end A;
+
+  model B
+    A a(redeclare replaceable model M = Undefined
+          constrainedby Q \"Undefined class\");
+  end B;
+end P;", "P.mo"); getErrorString();
+getClassInformation(P.M); getErrorString();
+getClassInformation(P.N); getErrorString();
+getClassInformation(P.R); getErrorString();
+instantiateModel(P.B); getErrorString();
+
+// Result:
+// true
+// ""
+// ("model", "", false, false, false, "P.mo", false, 6, 15, 9, 46, {}, false, false, "", "", false, "", "", "", "", "")
+// ""
+// ("model", "", false, false, false, "P.mo", false, 11, 15, 11, 26, {}, false, false, "", "", false, "", "", "", "", "")
+// ""
+// ("model", "", false, false, false, "P.mo", false, 13, 15, 15, 24, {}, false, false, "", "", false, "", "", "", "", "")
+// ""
+// ""
+// "[P.mo:23:31-24:44:writable] Error: Base class Undefined not found in scope B.
+// "
+// endResult

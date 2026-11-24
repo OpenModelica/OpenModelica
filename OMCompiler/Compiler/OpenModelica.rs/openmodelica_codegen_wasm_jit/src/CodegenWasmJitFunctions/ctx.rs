@@ -91,6 +91,9 @@ pub(crate) struct FnCtx<'a> {
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
     pub(crate) sim: Option<SimCtx>,
+    /// The function whose body this is and its scalar inputs, which a failed
+    /// assertion reports (C's `FUNCTION_CONTEXT` name and inputs).
+    pub(super) assert_fn: Option<(String, Vec<DAE::Exp>)>,
     /// Dynamic tearing: set while lowering the *casual* tearing set's residual, where
     /// a violated `localCon` constraint ends the evaluation (C's
     /// `residualFuncConstraints` returning 1 — see `createLocalConstraints`).
@@ -197,6 +200,8 @@ pub(crate) struct SimCtx {
     /// `SimGenericCall` index -> the shared for-loop body it runs (C's
     /// `sc.generic_loop_calls`).
     pub(crate) generic_calls: Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    /// The divisors a parameter equation checks; dividing by one needs no check.
+    pub(crate) checked_divisors: Arc<HashSet<String>>,
     /// Number of `sample(...)` time events, bounding the `active` flag region.
     pub(crate) n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags.
@@ -285,8 +290,9 @@ pub(crate) struct NlsJob {
     /// C's `NONLINEAR_SYSTEM_DATA::equationIndex`: the number its messages quote.
     pub(crate) eq_index: u32,
     pub(crate) hist_off: SimOff,
-    /// Byte offset of this system's `n` nominal values into the nominal block
-    /// (`NLS_NOMINAL_GLOBAL`), read by `rt_solve_nls` for x-scaling.
+    /// Byte offset of this system's `n` nominal magnitudes, followed by their `n`
+    /// signs, into the nominal block (`NLS_NOMINAL_GLOBAL`); its `min`/`max` pairs
+    /// start at the same offset into the bounds block.
     pub(crate) nominal_off: SimOff,
     /// The system has a symbolic Jacobian: shared-table slot `4k+2` holds an
     /// `nls_jac` callback and `rt_solve_nls` uses `hybrj`.
@@ -365,18 +371,27 @@ pub(crate) enum Attr {
     Start,
 }
 
-/// Where one variable's attribute lands: its entry in each nonlinear system that
-/// iterates on it (indexing the nominal block, and the `min`/`max` pair at twice that
-/// in the bounds block), and the `SimData` nominal slots the integrator scales by (a
+/// Byte offsets of one iteration variable in the nonlinear-system blocks: its
+/// `min`/`max` pair in the bounds block, its nominal's magnitude and sign in the
+/// nominal block.
+#[derive(Clone, Copy)]
+pub(crate) struct NlsSlot {
+    pub(crate) bounds: u32,
+    pub(crate) nominal: u32,
+    pub(crate) sign: u32,
+}
+
+/// Where one variable's attribute lands: its [`NlsSlot`] in each nonlinear system
+/// that iterates on it, and the `SimData` nominal slots the integrator scales by (a
 /// state's, and in DAE mode an algebraic unknown's).
 #[derive(Clone, Default)]
 pub(crate) struct AttrTargets {
-    pub(crate) nls: Vec<u32>,
+    pub(crate) nls: Vec<NlsSlot>,
     pub(crate) nom_offs: Vec<SimOff>,
     /// A state's `SimData` `max` slot, which the numeric linearization reads.
     pub(crate) max_offs: Vec<SimOff>,
-    /// C's `realVarsData[i].attribute` as declared (`Layout::real_nom_off` and the
-    /// optimizer's arrays): verbatim, without the `fmax(|nominal|, 1e-32)` clamp.
+    /// C's `realVarsData[i].attribute` (`Layout::real_nom_off` and the optimizer's
+    /// arrays).
     pub(crate) raw_min_offs: Vec<SimOff>,
     pub(crate) raw_max_offs: Vec<SimOff>,
     pub(crate) raw_nom_offs: Vec<SimOff>,
@@ -877,6 +892,7 @@ impl<'a> FnCtx<'a> {
             src_loc: None,
             eq: 0,
             sim: Some(sim),
+            assert_fn: None,
             dt_local_cons: false,
             dt_fallback: None,
             flat: HashMap::default(),
@@ -1142,23 +1158,25 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Emit `functionUpdateBoundVariableAttributes`: the constant `defaults`
-    /// (ascending by offset), then each attribute equation, into the slots the
+    /// (ascending by offset), then the attribute equations, into the slots the
     /// solvers read (C's `updateBoundVariableAttributes` +
-    /// `updateStaticDataOfNonlinearSystems`).
+    /// `updateStaticDataOfNonlinearSystems`). Stops after the first equation that
+    /// takes the body past `budget` instructions; returns how many it emitted.
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
         defaults: &[(SimOff, ConstSlot)],
         dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
         attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)],
         masks: &[Option<u32>],
-    ) -> Result<()> {
+        budget: usize,
+    ) -> Result<usize> {
         let data = self.sim()?.data_local;
         emit_const_slots(self, defaults)?;
         for (off, n, v, stride) in dyn_defaults {
             emit_fill_slots(self, *off, n, *v, *stride)?;
         }
         if attrs.is_empty() {
-            return Ok(());
+            return Ok(0);
         }
         let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
         for (i, (attr, exp, targets, log_off, var)) in attrs.iter().enumerate() {
@@ -1170,8 +1188,11 @@ impl<'a> FnCtx<'a> {
             if mask.is_some() {
                 self.sim_end_block();
             }
+            if self.instr_len() >= budget {
+                return Ok(i + 1);
+            }
         }
-        Ok(())
+        Ok(attrs.len())
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1189,18 +1210,33 @@ impl<'a> FnCtx<'a> {
         let w = compile_exp(self, exp)?;
         coerce(self, w, WTy::F64);
         self.emit(we::Instruction::LocalSet(raw));
+        // C stores a nominal as `normalizeNominal` splits it: magnitude and sign.
+        let stored = if matches!(attr, Attr::Nominal) {
+            self.emit(we::Instruction::LocalGet(raw));
+            self.emit(we::Instruction::F64Abs);
+            self.emit(we::Instruction::LocalTee(val));
+            self.emit(we::Instruction::F64Const(1.0f64.into()));
+            self.emit(we::Instruction::LocalGet(val));
+            self.emit(we::Instruction::F64Const(f64::MIN_POSITIVE.into()));
+            self.emit(we::Instruction::F64Ge);
+            self.emit(we::Instruction::LocalGet(val));
+            self.emit(we::Instruction::F64Const(f64::INFINITY.into()));
+            self.emit(we::Instruction::F64Lt);
+            self.emit(we::Instruction::I32And);
+            self.emit(we::Instruction::Select);
+            self.emit(we::Instruction::LocalSet(val));
+            val
+        } else {
+            raw
+        };
         // C prints the value from inside this function; the driver reads it here.
         self.emit(we::Instruction::LocalGet(data));
         self.emit(we::Instruction::LocalGet(raw));
         self.emit(we::Instruction::F64Store(sim_mem(log_off, 3)?));
         if matches!(attr, Attr::Nominal) {
             for off in &targets.nom_offs {
-                // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
                 let rel = self.emit_sim_base(*off)?;
-                self.emit(we::Instruction::LocalGet(raw));
-                self.emit(we::Instruction::F64Abs);
-                self.emit(we::Instruction::F64Const(1e-32f64.into()));
-                self.emit(we::Instruction::F64Max);
+                self.emit(we::Instruction::LocalGet(stored));
                 self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
             }
         }
@@ -1219,7 +1255,7 @@ impl<'a> FnCtx<'a> {
         };
         for off in raw_offs {
             let rel = self.emit_sim_base(*off)?;
-            self.emit(we::Instruction::LocalGet(raw));
+            self.emit(we::Instruction::LocalGet(stored));
             self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
         }
         // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
@@ -1235,37 +1271,31 @@ impl<'a> FnCtx<'a> {
                 }
             }
         }
-        if targets.nls.is_empty() {
-            return Ok(());
-        }
-        self.emit(we::Instruction::LocalGet(raw));
-        match attr {
-            // `start` has no nonlinear-solver slot; it only feeds the optimizer.
-            Attr::Start => {}
-            // A nonpositive nominal would collapse the x-scaling; 1 stands in.
-            Attr::Nominal => {
-                self.emit(we::Instruction::F64Abs);
-                self.emit(we::Instruction::LocalTee(val));
-                self.emit(we::Instruction::F64Const(1.0f64.into()));
-                self.emit(we::Instruction::LocalGet(val));
-                self.emit(we::Instruction::F64Const(0.0f64.into()));
-                self.emit(we::Instruction::F64Gt);
-                self.emit(we::Instruction::Select);
-            }
-            Attr::Min | Attr::Max => {}
-        }
-        self.emit(we::Instruction::LocalSet(val));
-        let (global, stride, slot) = match attr {
-            Attr::Nominal => (NLS_NOMINAL_GLOBAL, 8, 0),
-            Attr::Min => (NLS_BOUNDS_GLOBAL, 16, 0),
-            Attr::Max => (NLS_BOUNDS_GLOBAL, 16, 8),
+        let (global, offset): (u32, fn(&NlsSlot) -> u32) = match attr {
+            Attr::Nominal => (NLS_NOMINAL_GLOBAL, |s| s.nominal),
+            Attr::Min => (NLS_BOUNDS_GLOBAL, |s| s.bounds),
+            Attr::Max => (NLS_BOUNDS_GLOBAL, |s| s.bounds + 8),
             // Not a solver input; `targets.nls` is empty for a `start`.
             Attr::Start => return Ok(()),
         };
-        for idx in &targets.nls {
+        for slot in &targets.nls {
             self.emit(we::Instruction::GlobalGet(global));
-            self.emit(we::Instruction::LocalGet(val));
-            self.emit(we::Instruction::F64Store(mem_arg(idx * stride + slot, 3)));
+            self.emit(we::Instruction::LocalGet(stored));
+            self.emit(we::Instruction::F64Store(mem_arg(offset(slot), 3)));
+        }
+        if matches!(attr, Attr::Nominal) && !targets.nls.is_empty() {
+            self.emit(we::Instruction::F64Const((-1.0f64).into()));
+            self.emit(we::Instruction::F64Const(1.0f64.into()));
+            self.emit(we::Instruction::LocalGet(raw));
+            self.emit(we::Instruction::F64Const(0.0f64.into()));
+            self.emit(we::Instruction::F64Lt);
+            self.emit(we::Instruction::Select);
+            self.emit(we::Instruction::LocalSet(val));
+            for slot in &targets.nls {
+                self.emit(we::Instruction::GlobalGet(NLS_NOMINAL_GLOBAL));
+                self.emit(we::Instruction::LocalGet(val));
+                self.emit(we::Instruction::F64Store(mem_arg(slot.sign, 3)));
+            }
         }
         Ok(())
     }
@@ -1338,10 +1368,19 @@ impl<'a> FnCtx<'a> {
         for (i, rel) in relations.iter().enumerate() {
             let Some(rel) = rel else { continue };
             let DAE::Exp::RELATION {
-                exp1, operator, exp2, ..
+                exp1,
+                operator,
+                exp2,
+                index,
+                optionExpisASUB,
             } = &**rel
             else {
                 return Err("CodegenWasmJit: non-relation in the relations list");
+            };
+            let timed = time_event_relation(exp1, operator, exp2, *index, optionExpisASUB);
+            let (exp1, operator, exp2) = match &timed {
+                Some((a, o, b)) => (a, o, b),
+                None => (exp1, operator, exp2),
             };
             self.emit(we::Instruction::LocalGet(data));
             let w = compile_relation_fresh(self, exp1, operator, exp2)?;
@@ -1355,8 +1394,9 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Emit `functionNextTimeEvent`: replace the time in `SimData` by the earliest
-    /// later `trigger`, or `f64::MAX`.
-    pub(crate) fn emit_next_time_event(&mut self, triggers: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
+    /// later `trigger` (C's `nextafter(trigger, DBL_MAX)` when flagged), or
+    /// `f64::MAX`.
+    pub(crate) fn emit_next_time_event(&mut self, triggers: &[(metamodelica::Ref<DAE::Exp>, bool)]) -> Result<()> {
         use we::Instruction as I;
         let data = self.sim()?.data_local;
         let now = self.alloc_temp(WTy::F64);
@@ -1367,10 +1407,28 @@ impl<'a> FnCtx<'a> {
         self.emit(I::LocalSet(now));
         self.emit(I::F64Const(f64::MAX.into()));
         self.emit(I::LocalSet(next));
-        for e in triggers {
+        for (e, after) in triggers {
             let w = compile_exp(self, e)?;
             coerce(self, w, WTy::F64);
             self.emit(I::LocalSet(te));
+            if *after {
+                self.emit(I::F64Const(f64::from_bits(1).into()));
+                self.emit(I::LocalGet(te));
+                self.emit(I::I64ReinterpretF64);
+                self.emit(I::I64Const(1));
+                self.emit(I::I64Const(-1));
+                self.emit(I::LocalGet(te));
+                self.emit(I::F64Const(0.0.into()));
+                self.emit(I::F64Gt);
+                self.emit(I::Select);
+                self.emit(I::I64Add);
+                self.emit(I::F64ReinterpretI64);
+                self.emit(I::LocalGet(te));
+                self.emit(I::F64Const(0.0.into()));
+                self.emit(I::F64Eq);
+                self.emit(I::Select);
+                self.emit(I::LocalSet(te));
+            }
             self.emit(I::LocalGet(te));
             self.emit(I::LocalGet(now));
             self.emit(I::F64Gt);

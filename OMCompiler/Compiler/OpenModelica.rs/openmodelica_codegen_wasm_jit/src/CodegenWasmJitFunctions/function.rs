@@ -105,6 +105,27 @@ fn function_path(f: &SimCodeFunction::Function::Function) -> String {
         .unwrap_or_default()
 }
 
+/// The scalar Real, Integer and Boolean inputs, as `SimCodeFunctionUtil.functionBodyContext`.
+fn assert_inputs(args: &metamodelica::List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>) -> Vec<DAE::Exp> {
+    (&**args)
+        .into_iter()
+        .filter_map(|v| match &**v {
+            SimCodeFunction::Variable::Variable::VARIABLE { name, ty, .. }
+                if matches!(
+                    &**ty,
+                    DAE::Type::T_REAL { .. } | DAE::Type::T_INTEGER { .. } | DAE::Type::T_BOOL { .. }
+                ) =>
+            {
+                Some(DAE::Exp::CREF {
+                    componentRef: name.clone(),
+                    ty: ty.clone(),
+                })
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 fn compile_function_body(
     f: &SimCodeFunction::Function::Function,
     by_name: &HashMap<String, FnInfo>,
@@ -233,6 +254,7 @@ fn compile_function_body(
         src_loc: None,
         eq: 0,
         sim: None,
+        assert_fn: Some((function_path(f), assert_inputs(functionArguments))),
         dt_local_cons: false,
         dt_fallback: None,
         flat,
@@ -273,6 +295,41 @@ fn compile_function_body(
     Ok(func)
 }
 
+/// MLS 3.7, 12.9.8: an external object constructor returns a null pointer to
+/// indicate failure. Only the constructor may return an external object.
+fn emit_constructor_null_check(
+    ctx: &mut FnCtx,
+    outVars: &metamodelica::List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>,
+    info: &metamodelica::SourceInfo,
+) -> Result<()> {
+    let mut outs = (&**outVars).into_iter();
+    let (Some(out), None) = (outs.next(), outs.next()) else {
+        return Ok(());
+    };
+    let SimCodeFunction::Variable::Variable::VARIABLE { ty, .. } = &**out else {
+        return Ok(());
+    };
+    let DAE::Type::T_COMPLEX {
+        complexClassType: ClassInf::State::EXTERNAL_OBJ { path },
+        ..
+    } = &**ty
+    else {
+        return Ok(());
+    };
+    let class = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false).unwrap_or_default();
+    let (out_idx, _) = ctx.outputs[0].clone();
+    ctx.emit(we::Instruction::LocalGet(out_idx));
+    ctx.emit(we::Instruction::I32Eqz);
+    emit_unlikely_if(ctx, we::BlockType::Empty);
+    emit_function_assert(
+        ctx,
+        &format!("The constructor of external object {class} failed."),
+        info,
+    )?;
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
 /// Lower an `external "C"`/`"builtin"`/`"FORTRAN 77"` function to the wasm
 /// equivalent of C's `functionBodyExternalFunction`: allocate and bind the
 /// outputs and the protected `biVars` locals, call `extName` over `extArgs`,
@@ -288,9 +345,11 @@ fn compile_external_function(
         funArgs,
         outVars,
         biVars,
+        variableDeclarations,
         extName,
         extArgs,
         extReturn,
+        info,
         ..
     } = f
     else {
@@ -336,6 +395,7 @@ fn compile_external_function(
         src_loc: None,
         eq: 0,
         sim: None,
+        assert_fn: None,
         dt_local_cons: false,
         dt_fallback: None,
         flat: HashMap::default(),
@@ -344,15 +404,7 @@ fn compile_external_function(
         size_locals: Default::default(),
     };
     borrow_record_params(&mut ctx, funArgs, None)?;
-    // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
-    // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
-    // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
-    let lang = external_import_sig(f).map(|s| s.lang).unwrap_or(ExtLang::C);
-    let ordered: Vec<&metamodelica::Ref<SimCodeFunction::Variable::Variable>> = match lang {
-        ExtLang::Fortran77 => (&**biVars).into_iter().chain(&**outVars).collect(),
-        ExtLang::C => (&**outVars).into_iter().chain(&**biVars).collect(),
-    };
-    for v in ordered {
+    for v in &**variableDeclarations {
         let SimCodeFunction::Variable::Variable::VARIABLE {
             name,
             ty,
@@ -441,6 +493,7 @@ fn compile_external_function(
         // (`call_external_in_wasm`) are emitted here instead.
         if EXTERNALS_SHARED.with(|c| c.get()) {
             emit_shared_external_call(&mut ctx, &sig, extArgs, extReturn, &fn_path)?;
+            emit_constructor_null_check(&mut ctx, outVars, info)?;
             release_heap_locals(&mut ctx)?;
             push_outputs(&mut ctx)?;
             ctx.emit(we::Instruction::End);
@@ -512,6 +565,7 @@ fn compile_external_function(
             }
             ctx.emit(we::Instruction::LocalSet(out_idx));
         }
+        emit_constructor_null_check(&mut ctx, outVars, info)?;
     }
     // Release heap parameters (e.g. a String input consumed by the callee), as a
     // normal function body would; the outputs are excluded and moved out.

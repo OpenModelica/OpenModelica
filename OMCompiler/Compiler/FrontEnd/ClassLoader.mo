@@ -432,7 +432,7 @@ protected function getPackageContentNames
 algorithm
   po := matchcontinue cl
     local
-      String contents, duplicatesStr, differencesStr;
+      String contents, bom, duplicatesStr, differencesStr;
       list<String> duplicates, namesToFind, mofiles, subdirs, differences, intersection;
       list<Absyn.ClassPart> cp;
       SourceInfo info;
@@ -443,6 +443,8 @@ algorithm
         try
           true := System.regularFileExists(filename);
           contents := System.readFile(filename);
+          (contents, bom) := StringUtil.stripBOM(contents);
+          Error.assertionOrAddSourceMessage(stringEmpty(bom),Error.PACKAGE_ORDER_BOM,{},SOURCEINFO(filename,true,0,0,0,0,0.0));
           namesToFind := System.strtok(contents, "\n");
           namesToFind := List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
           duplicates := List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);

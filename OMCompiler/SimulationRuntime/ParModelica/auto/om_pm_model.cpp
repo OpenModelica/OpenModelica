@@ -180,6 +180,21 @@ void load_simple_assign_check_local_define(Equation& current_node, const nlohman
     }
 }
 
+// An algorithm inside a system defines several variables, all local to the system.
+void load_algorithm_check_local_define(Equation& current_node, const nlohmann::json& int_eq) {
+
+    for (auto& def : int_eq["defines"]) {
+        current_node.lhs.insert(def.get<std::string>());
+    }
+
+    for (auto& use : int_eq["uses"]) {
+        auto var_s = use.get<std::string>();
+        if (current_node.lhs.find(var_s) == current_node.lhs.end()) {
+            current_node.rhs.insert(var_s);
+        }
+    }
+}
+
 void load_simple_residual(Equation& current_node, const nlohmann::json& json_eq) {
     for (auto use : json_eq["uses"]) {
         current_node.rhs.insert(use.get<std::string>());
@@ -191,6 +206,16 @@ void load_linear_system(Equation& current_node, const nlohmann::json& json_eq) {
     for (auto& def : json_eq["defines"]) {
         current_node.lhs.insert(def.get<std::string>());
         utility::indexed_dlog(current_node.index, ": added own defines: " + def.get<std::string>());
+    }
+
+    // What the matrix and the right hand side of a linear system read.
+    if (json_eq.contains("uses")) {
+        for (auto& use : json_eq["uses"]) {
+            auto var_s = use.get<std::string>();
+            if (current_node.lhs.find(var_s) == current_node.lhs.end()) {
+                current_node.rhs.insert(var_s);
+            }
+        }
     }
 
     for (auto& int_eq : json_eq["internal-equations"]) {
@@ -208,6 +233,10 @@ void load_linear_system(Equation& current_node, const nlohmann::json& json_eq) {
 
         else if (i_tag == "residual") {
             load_simple_residual(current_node, int_eq);
+        }
+
+        else if (i_tag == "algorithm") {
+            load_algorithm_check_local_define(current_node, int_eq);
         }
 
         else {

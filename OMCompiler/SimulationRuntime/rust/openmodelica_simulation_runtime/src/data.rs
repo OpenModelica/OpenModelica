@@ -10,7 +10,7 @@
 //! is 4 bytes in wasm and 8 here) the map converts, and the regions C has no
 //! home for (the driver's own scratch) fall through to a buffer this module owns.
 
-use core::ffi::{c_int, c_long, c_ulong, c_void};
+use core::ffi::{c_int, c_long, c_uint, c_ulong, c_void};
 
 use openmodelica_sim_meta::{Layout, REAL_OFF};
 
@@ -736,6 +736,7 @@ unsafe extern "C" {
     fn omc_rc_release(obj: *mut c_void);
     fn omc_array_release(a: *mut base_array_t);
     fn omc_string_array_release(a: *mut base_array_t);
+    fn freeVarInfo(info: *mut VAR_INFO);
 }
 
 #[cfg(feature = "fmi")]
@@ -764,6 +765,30 @@ fn each<T>(p: *mut T, n: c_long, mut f: impl FnMut(&mut T)) {
 }
 
 #[cfg(feature = "fmi")]
+/// C's `freeModelDataVars`: the names, comments and file names of the variables,
+/// which `omc_fmu_init.c` allocates when it reads `_init.bin`.
+pub(crate) fn free_var_infos(md: &mut MODEL_DATA) {
+    let info = |i: &mut VAR_INFO| unsafe { freeVarInfo(i) };
+    each(md.realVarsData, md.nVariablesRealArray, |v| info(&mut v.info));
+    each(md.integerVarsData, md.nVariablesIntegerArray, |v| info(&mut v.info));
+    each(md.booleanVarsData, md.nVariablesBooleanArray, |v| info(&mut v.info));
+    each(md.stringVarsData, md.nVariablesStringArray, |v| info(&mut v.info));
+    each(md.realParameterData, md.nParametersRealArray, |v| info(&mut v.info));
+    each(md.integerParameterData, md.nParametersIntegerArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.booleanParameterData, md.nParametersBooleanArray, |v| {
+        info(&mut v.info)
+    });
+    each(md.stringParameterData, md.nParametersStringArray, |v| info(&mut v.info));
+    each(md.realSensitivityData, md.nSensitivityVars, |v| info(&mut v.info));
+    each(md.realAlias, md.nAliasRealArray, |a| info(&mut a.info));
+    each(md.integerAlias, md.nAliasIntegerArray, |a| info(&mut a.info));
+    each(md.booleanAlias, md.nAliasBooleanArray, |a| info(&mut a.info));
+    each(md.stringAlias, md.nAliasStringArray, |a| info(&mut a.info));
+}
+
+#[cfg(feature = "fmi")]
 /// C's `freeModelDataVarArrays` up to the blocks themselves: the refcounted
 /// attribute arrays and unit strings that hang off them.
 fn release_var_attributes(md: &mut MODEL_DATA) {
@@ -772,7 +797,8 @@ fn release_var_attributes(md: &mut MODEL_DATA) {
         omc_array_release(&mut a.start);
         omc_array_release(&mut a.min);
         omc_array_release(&mut a.max);
-        omc_array_release(&mut a.nominal);
+        omc_array_release(&mut a.positiveNominal);
+        omc_array_release(&mut a.nominalSign);
         release_string(&mut a.unit);
         release_string(&mut a.displayUnit);
     };
@@ -810,8 +836,6 @@ fn free_jacobian(j: &mut JACOBIAN) {
     free(&mut j.tmpVars);
     free(&mut j.resultVars);
     crate::support::freeSparsePattern(core::mem::replace(&mut j.sparsePattern, core::ptr::null_mut()));
-    j.adjointJacobian = core::ptr::null_mut();
-    j.availability = JACOBIAN_UNKNOWN;
 }
 
 #[cfg(feature = "fmi")]
@@ -879,7 +903,7 @@ pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
     free_string_roots(&mut si.stringParameter, md.nParametersString);
 
     crate::systems::free_linear_systems(data);
-    crate::nls::free_nonlinear_systems(data);
+    crate::nls::free_nonlinear_systems(data, thread_data);
     crate::mixed::free_mixed_systems(data);
     free(&mut si.mixedSystemData);
     free(&mut si.linearSystemData);
@@ -1024,22 +1048,11 @@ pub fn jac_a(data: *mut DATA) -> Option<&'static JACOBIAN> {
     unsafe { jac_a_ptr(data).as_ref() }
 }
 
-/// The adjoint Jacobian: the one a bidirectionally compiled JAC_A links, else
 /// `analyticJacobians[INDEX_JAC_ADJ]` once [`init_jac_a`] initialized it.
 pub fn jac_adj_ptr(data: *mut DATA) -> *mut JACOBIAN {
-    let a = match jac_a(data) {
-        Some(j) if !j.adjointJacobian.is_null() => j.adjointJacobian,
-        _ => jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ }),
-    };
+    let a = jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ });
     match unsafe { a.as_ref() } {
-        Some(j)
-            if j.availability == JACOBIAN_AVAILABLE
-                && !j.seedVars.is_null()
-                && !j.resultVars.is_null()
-                && j.evalColumn.is_some() =>
-        {
-            a
-        }
+        Some(j) if !j.seedVarsAdj.is_null() && !j.resultVarsAdj.is_null() && j.evalRow.is_some() => a,
         _ => core::ptr::null_mut(),
     }
 }
@@ -1065,27 +1078,30 @@ fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
         Some(f) => (unsafe { f(data, thread_data, j) }) == 0,
         None => false,
     };
-    if !ok {
-        unsafe { (*j).availability = JACOBIAN_NOT_AVAILABLE };
-    }
-    // C's `initSymbolicOdeJacobian`: a model compiled bidirectionally initialized its
-    // adjoint along with A; one compiled with the adjoint alone only on request.
     let cb = unsafe { &*(*data).callback };
-    let adjoint_only = openmodelica_sim_meta::simflags::with_flags(|f| {
-        f.jacobian == Some(openmodelica_sim_meta::simflags::JacobianMethod::ColoredSymJacAdj)
+    let needs_adjoint = openmodelica_sim_meta::simflags::with_flags(|f| {
+        use openmodelica_sim_meta::simflags::JacobianMethod;
+        matches!(
+            f.jacobian,
+            Some(JacobianMethod::ColoredSymJacAdj | JacobianMethod::BicoloredSymJac)
+        )
     });
     let adj = jac_ptr(data, cb.INDEX_JAC_ADJ);
-    if adjoint_only && unsafe { (*j).adjointJacobian.is_null() } && !adj.is_null() {
+    if needs_adjoint && !adj.is_null() {
         let ok = match cb.initialAnalyticJacobianADJ {
             Some(f) => (unsafe { f(data, thread_data, adj) }) == 0,
             None => false,
         };
-        if !ok {
-            unsafe { (*adj).availability = JACOBIAN_NOT_AVAILABLE };
+        if ok {
+            let a = unsafe { &*adj };
+            // Coloring columns of J^T colors rows of J.
+            crate::support::computeColumnColoring(a.sparsePatternT, a.sizeCols as c_uint, a.sizeRows as c_uint);
+        } else {
+            unsafe { (*adj).evalRow = None };
         }
     }
     let words = match unsafe { jac_adj_ptr(data).as_ref() } {
-        Some(a) => (a.sizeCols + a.sizeRows + a.sizeTmpVars) as u32,
+        Some(a) => (a.sizeCols + a.sizeRows + a.sizeTmpVarsAdj) as u32,
         None => 0,
     };
     JAC_ADJ_WORDS.store(words, core::sync::atomic::Ordering::Relaxed);
@@ -1094,9 +1110,7 @@ fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
 /// The flat words the Jacobian window holds: its seeds then its results.
 fn jac_a_words(data: *mut DATA) -> u32 {
     match jac_a(data) {
-        Some(j) if j.availability == JACOBIAN_AVAILABLE && !j.seedVars.is_null() && !j.resultVars.is_null() => {
-            (j.sizeCols + j.sizeRows) as u32
-        }
+        Some(j) if !j.seedVars.is_null() && !j.resultVars.is_null() => (j.sizeCols + j.sizeRows) as u32,
         _ => 0,
     }
 }
@@ -1115,7 +1129,7 @@ fn layout_for(
         (0..md.nNonLinearSystems as usize).any(|i| unsafe { (*_si.nonlinearSystemData.add(i)).homotopySupport != 0 });
     let n_states = md.nStates as u32;
     let n_real_alg = (md.nVariablesReal - 2 * md.nStates).max(0) as u32;
-    let dae = unsafe { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
+    let dae = { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
     let compiled_dae_mode =
         dae.is_some_and(|d| d.evaluateDAEResiduals.is_some()) && unsafe { crate::support::compiledInDAEMode } != 0;
     let (n_dae_res, n_dae_aux, n_dae_alg) = match dae {
@@ -1242,7 +1256,7 @@ pub fn build_regions(rt: &mut RtData) {
     direct(l.relations_pre_off, l.n_rel * 4, si.relationsPre as *mut c_void);
     direct(l.mathevents_off, l.n_math * 8, si.mathEventsValuePre as *mut c_void);
     direct(l.zctol_off, 8, &raw mut crate::support::tolZC as *mut c_void);
-    direct(l.nls_fail_off, 4, &raw mut crate::nls::nls_fail_slot as *mut c_void);
+    direct(l.nls_fail_off, 4, &raw mut crate::nls::NLS_FAIL_SLOT as *mut c_void);
     // Past the layout: C's `currentContext`, which the driver's `setContext`
     // writes and both `solve_linear_system` (`reuseMatrixJac`) and the nonlinear
     // solver's `updateInitialGuessDB` read.
@@ -1278,7 +1292,6 @@ pub fn build_regions(rt: &mut RtData) {
         crate::sync::fire_flags(rt.data) as *mut c_void,
     );
     if let Some(j) = jac_a(rt.data)
-        && j.availability == JACOBIAN_AVAILABLE
         && !j.seedVars.is_null()
         && !j.resultVars.is_null()
     {
@@ -1291,10 +1304,14 @@ pub fn build_regions(rt: &mut RtData) {
     }
     if let Some(a) = unsafe { jac_adj_ptr(rt.data).as_ref() } {
         let (cols, rows) = ((a.sizeCols * 8) as u32, (a.sizeRows * 8) as u32);
-        direct(x.jac_adj, cols, a.seedVars.cast());
-        direct(x.jac_adj + cols, rows, a.resultVars.cast());
-        if !a.tmpVars.is_null() {
-            direct(x.jac_adj + cols + rows, (a.sizeTmpVars * 8) as u32, a.tmpVars.cast());
+        direct(x.jac_adj, rows, a.seedVarsAdj.cast());
+        direct(x.jac_adj + rows, cols, a.resultVarsAdj.cast());
+        if !a.tmpVarsAdj.is_null() {
+            direct(
+                x.jac_adj + cols + rows,
+                (a.sizeTmpVarsAdj * 8) as u32,
+                a.tmpVarsAdj.cast(),
+            );
         }
     }
     if l.n_dae_res > 0 {

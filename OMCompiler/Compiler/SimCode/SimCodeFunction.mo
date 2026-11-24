@@ -105,6 +105,7 @@ public uniontype Function
     list<Variable> inVars;
     list<Variable> outVars;
     list<Variable> biVars;
+    list<Variable> variableDeclarations "outVars and biVars in initialization order";
     list<String> includes "this one is needed so that we know if we should generate the external function prototype or not";
     list<String> libs "need this one for C#";
     String language "C or Fortran";
@@ -154,6 +155,8 @@ public uniontype Function
         tmp := tmp + "  outVars: {" + stringDelimitList(ls, ", ") + "},\n";
         ls := List.map(func.biVars, Variable.toString);
         tmp := tmp + "  biVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.variableDeclarations, Variable.toString);
+        tmp := tmp + "  variableDeclarations: {" + stringDelimitList(ls, ", ") + "},\n";
         tmp := tmp + "  includes: {" + stringDelimitList(func.includes, ", ") + "},\n";
         tmp := tmp + "  libs: {" + stringDelimitList(func.libs, ", ") + "},\n";
         tmp := tmp + "  language: " + func.language + "\n";
@@ -329,6 +332,8 @@ public uniontype Context
   record FUNCTION_CONTEXT
     String cref_prefix;
     Boolean is_parallel;
+    String assert_function "The function a failed assertion names; empty outside a function body";
+    list<DAE.Exp> assert_inputs "The inputs a failed assertion gives the values of";
   end FUNCTION_CONTEXT;
 
   record ALGLOOP_CONTEXT
@@ -360,13 +365,13 @@ end Context;
 public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false, false);
 public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true, false);
 public constant Context contextSimulationWhenBody     = SIMULATION_CONTEXT(true, true);
-public constant Context contextFunction               = FUNCTION_CONTEXT("", false);
+public constant Context contextFunction               = FUNCTION_CONTEXT("", false, "", {});
 public constant Context contextJacobian               = JACOBIAN_CONTEXT("", NONE());
 public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true,false);
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false,false);
 public constant Context contextOther                  = OTHER_CONTEXT();
-public constant Context contextParallelFunction       = FUNCTION_CONTEXT("", true);
+public constant Context contextParallelFunction       = FUNCTION_CONTEXT("", true, "", {});
 public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
 public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
 public constant Context contextFMI                    = FMI_CONTEXT();

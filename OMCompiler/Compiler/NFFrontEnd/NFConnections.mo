@@ -40,6 +40,7 @@ encapsulated uniontype NFConnections
   import ComponentRef = NFComponentRef;
   import Equation = NFEquation;
   import NFPrefixes.ConnectorType;
+  import Variable = NFVariable;
 
 protected
   import Connections = NFConnections;
@@ -104,9 +105,10 @@ public
   end addBroken;
 
   function collectConnections
-    input output FlatModel flatModel;
+    input list<Equation> equations;
     input IsDeleted isDeleted;
-          output Connections conns = new();
+    output list<Equation> nonConnections = {};
+    output Connections conns = new();
 
     partial function IsDeleted
       input ComponentRef cref;
@@ -119,8 +121,8 @@ public
     Type ty1, ty2;
   algorithm
     // Collect all connects.
-    for eq in flatModel.equations loop
-      eql := match eq
+    for eq in equations loop
+      nonConnections := match eq
         case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
@@ -128,17 +130,17 @@ public
             rhs := ComponentRef.evaluateSubscripts(rhs);
             conns.connections := makeConnections(lhs, ty1, rhs, ty2, source, isDeleted, conns.connections);
           then
-            eql;
+            nonConnections;
 
-        else eq :: eql;
+        else eq :: nonConnections;
       end match;
     end for;
 
-    flatModel.equations := listReverseInPlace(eql);
+    nonConnections := listReverseInPlace(nonConnections);
   end collectConnections;
 
   function collectFlows
-    input FlatModel flatModel;
+    input list<Variable> variables;
     input output Connections conns;
   protected
     Component comp;
@@ -146,7 +148,7 @@ public
     DAE.ElementSource src;
   algorithm
     // Collect all flow variables.
-    for var in flatModel.variables loop
+    for var in variables loop
       comp := InstNode.component(ComponentRef.node(var.name));
 
       if Component.isFlow(comp) then
@@ -254,18 +256,21 @@ public
     input Boolean keepSingleConnectedArrays;
   protected
     UnorderedMap<Connector, Integer> connect_counts;
+    UnorderedMap<Connector, Connector> connected;
     list<Connector> flows = {};
     list<Connection> connections = {};
     Integer count;
   algorithm
     if keepSingleConnectedArrays then
-      connect_counts := analyseArrayConnections(conns);
+      (connect_counts, connected) := analyseArrayConnections(conns);
 
       for f in conns.flows loop
         count := connectCount(f, connect_counts);
 
         if count == 0 then
           flows := f :: flows;
+        elseif count == 1 then
+          flows := listAppend(unconnectedElements(f, UnorderedMap.getOrFail(f, connected)), flows);
         elseif count > 1 or count == -1 then
           flows := listAppend(Connector.scalarize(f), flows);
         end if;
@@ -291,19 +296,23 @@ public
   function analyseArrayConnections
     input Connections conns;
     output UnorderedMap<Connector, Integer> connectCounts;
+    output UnorderedMap<Connector, Connector> connected "the connected array or slice of each array connector";
   algorithm
     connectCounts := UnorderedMap.new<Integer>(Connector.hashNoSubs, Connector.isEqualNoSubs,
       listLength(conns.connections));
+    connected := UnorderedMap.new<Connector>(Connector.hashNoSubs, Connector.isEqualNoSubs,
+      listLength(conns.connections));
 
     for conn in conns.connections loop
-      analyseArrayConnector(conn.lhs, connectCounts);
-      analyseArrayConnector(conn.rhs, connectCounts);
+      analyseArrayConnector(conn.lhs, connectCounts, connected);
+      analyseArrayConnector(conn.rhs, connectCounts, connected);
     end for;
   end analyseArrayConnections;
 
   function analyseArrayConnector
     input Connector conn;
     input UnorderedMap<Connector, Integer> connectCounts;
+    input UnorderedMap<Connector, Connector> connected;
   protected
     function update
       input Option<Integer> count;
@@ -317,11 +326,29 @@ public
   algorithm
     if Connector.isArray(conn) then
       UnorderedMap.addUpdate(conn, update, connectCounts);
+      UnorderedMap.add(conn, conn, connected);
     elseif ComponentRef.hasSubscripts(conn.name) then
       // Always scalarize connector arrays that are partially connected.
       UnorderedMap.add(conn, -1, connectCounts);
     end if;
   end analyseArrayConnector;
+
+  function unconnectedElements
+    "The elements of an array flow variable that are not in the connected slice
+     of it, they get the equations of unconnected flow variables."
+    input Connector flowConn;
+    input Connector slice;
+    output list<Connector> elements = {};
+  protected
+    UnorderedSet<ComponentRef> connected_elements;
+  algorithm
+    if ComponentRef.hasSubscripts(slice.name) then
+      connected_elements := UnorderedSet.fromList(list(Connector.name(c) for c in Connector.scalarize(slice)),
+        ComponentRef.hash, ComponentRef.isEqual);
+      elements := list(e for e guard not UnorderedSet.contains(Connector.name(e), connected_elements)
+        in Connector.scalarize(flowConn));
+    end if;
+  end unconnectedElements;
 
   function toString
     input Connections conns;

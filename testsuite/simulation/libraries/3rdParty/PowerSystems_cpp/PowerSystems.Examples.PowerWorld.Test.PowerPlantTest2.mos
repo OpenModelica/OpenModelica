@@ -35,7 +35,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 600.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2', options = '', outputFormat = 'mat', variableFilter = 'time|powerPlant.P_generator|powerPlant.throttling.y|powerPlant.fuel.y|powerPlant.frequency.y', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 600.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2', options = '', outputFormat = 'mat', variableFilter = 'time|powerPlant.P_generator|powerPlant.throttling.y|powerPlant.fuel.y|powerPlant.frequency.y', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2_res.mat
 // Files Equal!
 // "true

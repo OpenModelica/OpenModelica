@@ -66,6 +66,7 @@ import HashTableCrefSimVar;
 import HpcOmSimCode;
 import SimCodeFunction;
 import SimCodeVar;
+import UnorderedSet;
 
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
@@ -203,6 +204,8 @@ uniontype SimCode
     Boolean scalarized;
     list<FmiFigure> fmiFigures "set by SimCodeUtil.addFMI3Figures for an FMI 3.0 export";
     ParamDeps paramDeps "set by ParamDeps.add for an FMI 2.0 or 3.0 export";
+    list<Integer> timeInvariantEquations "indices of the allEquations that cannot change during the simulation (see BackendDAEUtil.markTimeVaryingEquations); odeEquations, algebraicEquations and equationsForZeroCrossings leave them out";
+    Option<UnorderedSet<DAE.Exp>> checkedDivisors "divisors that a parameter equation checks, see SimCodeUtil.createDivisorChecks";
   end SIMCODE;
 end SimCode;
 
@@ -282,9 +285,17 @@ uniontype UnitDefinition "unitDefinitions for fmi modelDescription.xml"
   record UNITDEFINITION
     String name;
     BaseUnit baseUnit;
-    //TODO DisplayUnit
+    list<DisplayUnit> displayUnits "besides the other units of the same dimensions";
   end UNITDEFINITION;
 end UnitDefinition;
+
+uniontype DisplayUnit
+  record DISPLAYUNIT "value_display = factor*value_unit + offset"
+    String name;
+    Real factor;
+    Real offset;
+  end DISPLAYUNIT;
+end DisplayUnit;
 
 uniontype BaseUnit
   record BASEUNIT
@@ -295,6 +306,7 @@ uniontype BaseUnit
     Integer K   "exponent";
     Integer mol "exponent";
     Integer cd  "exponent";
+    Integer rad "exponent";
     Real factor "prefix";
     Real offset "offset";
   end BASEUNIT;
@@ -853,7 +865,7 @@ public uniontype FmiSimulationFlags
   end FMI_SIMULATION_FLAGS_FILE;
 end FmiSimulationFlags;
 
-constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("s","euler")});
+constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("s","cvode")});
 
 annotation(__OpenModelica_Interface="simcode_types");
 end SimCode;

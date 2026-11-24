@@ -69,7 +69,7 @@ pub fn free_linear_systems(data: *mut DATA) {
     }
     for i in 0..md.nLinearSystems.max(0) as usize {
         let ls = unsafe { &mut *si.linearSystemData.add(i) };
-        for p in [&mut ls.b, &mut ls.nominal, &mut ls.min, &mut ls.max, &mut ls.A] {
+        for p in [&mut ls.b, &mut ls.positiveNominal, &mut ls.min, &mut ls.max, &mut ls.A] {
             unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
         }
         let scratch = core::mem::replace(&mut ls.solverData[0], core::ptr::null_mut());
@@ -100,7 +100,7 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
         ls.failed = 0;
         ls.logActive = 1;
         ls.b = calloc(size.max(1));
-        ls.nominal = calloc(size.max(1));
+        ls.positiveNominal = calloc(size.max(1));
         ls.min = calloc(size.max(1));
         ls.max = calloc(size.max(1));
 
@@ -260,14 +260,14 @@ pub fn eval_jacobian(
     dense: bool,
 ) -> Result<(), &'static str> {
     let j = unsafe { &mut *jacobian };
-    if j.isBidirectional != 0 && !j.adjointJacobian.is_null() {
+    if j.evalRow.is_some() && j.evalColumn.is_some() {
         return Err("a bidirectionally evaluated Jacobian is not served by this runtime yet");
     }
-    if j.isRowEval != 0 {
+    if j.evalColumn.is_none() && j.evalRow.is_some() {
         return Err("a row-evaluated Jacobian is not served by this runtime yet");
     }
     let stage = crate::support::error_stage::NONLINEARSOLVER;
-    if let Some(f) = j.constantEqns
+    if let Some(f) = j.constColEqns
         && !crate::support::protected(thread_data, stage, || {
             unsafe { f(data, thread_data, jacobian, parent) };
         })
@@ -282,22 +282,23 @@ pub fn eval_jacobian(
         return Ok(());
     }
     let sp = unsafe { &*j.sparsePattern };
+    let Some(eval_column) = j.evalColumn else {
+        if !dense {
+            out[..sp.nnz as usize].fill(0.0);
+        }
+        return Ok(());
+    };
     for color in 0..sp.maxColors {
         for column in 0..j.sizeCols {
             if unsafe { *sp.colorCols.add(column) } == color + 1 {
                 unsafe { *j.seedVars.add(column) = 1.0 };
             }
         }
-        match j.evalColumn {
-            Some(f) => {
-                if !crate::support::protected(thread_data, stage, || {
-                    unsafe { f(data, thread_data, jacobian, parent) };
-                }) {
-                    return Err(MODEL_THREW);
-                }
-            }
-            None => return Err("the Jacobian has no column evaluation"),
-        };
+        if !crate::support::protected(thread_data, stage, || {
+            unsafe { eval_column(data, thread_data, jacobian, parent) };
+        }) {
+            return Err(MODEL_THREW);
+        }
         for column in 0..j.sizeCols {
             if unsafe { *sp.colorCols.add(column) } != color + 1 {
                 continue;
@@ -637,7 +638,9 @@ fn solve_total_pivot(
         );
     }
     if omclog::active(omclog::LS_V) {
-        log_vector_tp("SCALING", unsafe { core::slice::from_raw_parts(ls.nominal, size) });
+        log_vector_tp("SCALING", unsafe {
+            core::slice::from_raw_parts(ls.positiveNominal, size)
+        });
         log_vector_tp("Old VALUES", unsafe { core::slice::from_raw_parts(aux_x, size) });
     }
     let mut a = vec![0.0f64; (size * size).max(1)];

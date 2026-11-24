@@ -1,0 +1,39 @@
+// name:     fmi2LoggerInstancesCpp
+// keywords: FMI 2.0 export Cpp logger instances
+// status:   correct
+// teardown_command: rm -rf fmi2LoggerInstancesCpp.fmu fmi2LoggerInstancesCpp.so fmi2LoggerInstancesCpp.fmutmp/ fmi2LoggerInstancesCpp.log fmi2LoggerInstancesCpp_out.txt
+//
+// Two instances of one FMU in one process. The messages of an instance
+// must go to the logger of that instance, also after the other instance
+// is freed (FMI 2.0.5, section 2.1.5).
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi2LoggerInstancesCpp
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  assert(x < 0.5, \"x is above 0.5\", AssertionLevel.warning);
+end fmi2LoggerInstancesCpp;
+"); getErrorString();
+
+buildModelFMU(fmi2LoggerInstancesCpp, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2LoggerInstancesCpp.py fmi2LoggerInstancesCpp.fmu fmi2LoggerInstancesCpp_out.txt > fmi2LoggerInstancesCpp.log 2>&1"); getErrorString();
+readFile("fmi2LoggerInstancesCpp_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2LoggerInstancesCpp.fmu"
+// ""
+// 0
+// ""
+// "a: warning received for a
+// b: warning received for b
+// a after b was freed: warning received for a
+// "
+// ""
+// endResult

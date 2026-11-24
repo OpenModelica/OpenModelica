@@ -260,7 +260,7 @@ private:
   int readPLTDataset(QTextStream &textStream, QString variable, int N, double *valsOut);
   void readPLTArray(QTextStream &textStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut);
   void setInteractiveControls(bool enabled);
-  void alignYAxisZero();
+  bool alignYAxisZero();
   void updateStack(bool stack);
 signals:
   void closingDown();

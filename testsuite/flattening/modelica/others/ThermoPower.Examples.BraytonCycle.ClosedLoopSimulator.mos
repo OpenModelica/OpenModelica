@@ -2652,8 +2652,5 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 // end ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator;
 // "
 // "[flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:2081:7-2096:18:writable] Warning: Pure function 'Modelica.Utilities.Strings.isEmpty' contains a call to impure function 'Modelica.Utilities.Strings.Advanced.skipWhiteSpace'.
-// [flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:354:7-358:13:writable] Warning: In relation plant.SourceP1.R == 0.0, == on Real operands is deprecated in non-function contexts.
-// [flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:400:7-404:13:writable] Warning: In relation plant.SinkP1.R == 0.0, == on Real operands is deprecated in non-function contexts.
-// [flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:448:7-452:13:writable] Warning: In relation plant.SourceW1.G == 0.0, == on Real operands is deprecated in non-function contexts.
 // "
 // endResult

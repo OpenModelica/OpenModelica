@@ -116,9 +116,7 @@ import ZeroCrossings;
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   protected constant String DAE_OPEN      = "dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
-                                                xmlns:xlink=\"http://www.w3.org/1999/xlink\"
-                                                xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
-                                                xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\"";
+                                                xmlns:xlink=\"http://www.w3.org/1999/xlink\"";
   protected constant String DAE_CLOSE      = "dae";
 
   protected constant String LABEL          = "label";
@@ -241,6 +239,9 @@ import ZeroCrossings;
   protected constant String VARTYPE_BOOLEAN             = "Boolean";
   protected constant String VARTYPE_ENUM                = "Enum";
   protected constant String VARTYPE_ENUMERATION         = "enumeration";
+  protected constant String ENUMERATION_TYPES           = "enumerationTypes";
+  protected constant String ENUMERATION_TYPE            = "enumerationType";
+  protected constant String ENUMERATION_LITERAL         = "literal";
   protected constant String VARTYPE_EXTERNALOBJECT      = "ExternalObject";
 
   protected constant String VAR_DIRECTION         = "direction";
@@ -879,7 +880,7 @@ public function dumpBackendDAE "
   This function dumps the BackendDAE representaton to stdout as XML format.
   The output is like:
 
-<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><!DOCTYPE DAE SYSTEM \"http://home.dei.polimi.it/Projects/AutoEdit/DAE.xsd\">
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <DAE>
   <VARIABLES DIMENSION=..>
     <stringAppend(ORDERED,VARIABLES_)>
@@ -988,6 +989,7 @@ algorithm
         dumpVars(aliasvars,crefIdxLstArr_aliasVars,stringAppend(ALIAS,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
+        dumpEnumerationTypes(List.flatten({vars,knvars,extvars,aliasvars}));
         eqnsl := List.fold(systs,getEqsList,{});
         dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes, false);
         reqnsl := BackendEquation.equationList(reqns);
@@ -1031,9 +1033,10 @@ algorithm
         dumpVars(aliasvars,crefIdxLstArr_aliasVars,stringAppend(ALIAS,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
+        dumpEnumerationTypes(List.flatten({vars,knvars,extvars,aliasvars}));
         eqnsVarsinOrderLst := List.fold(systs,getOrderedEqsandVars,{});
 
-        dumpStrOpenTagAttr(EQUATIONS, DIMENSION, intString(listLength(eqnsVarsinOrderLst)));
+        dumpStrOpenTagAttr(EQUATIONS, DIMENSION, intString(sum(listLength(Util.tuple21(ev)) for ev in eqnsVarsinOrderLst)));
         dumpSolvedEqns(eqnsVarsinOrderLst,1,EQUATIONS,addMML,dumpRes, true);
         dumpStrCloseTag(EQUATIONS);
 
@@ -1042,7 +1045,7 @@ algorithm
         ieqnsl := BackendEquation.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes, false);
 
-        dumpEventInfo(eventInfo, addMML);
+        dumpEventInfo(eventInfo, addMML, SOME(sortedEquationIds(systs)));
 
         dumpConstraints(constrs);
         functionsElems := DAEUtil.getFunctionList(funcs);
@@ -1061,6 +1064,7 @@ end dumpBackendDAE;
 protected function dumpEventInfo
   input BackendDAE.EventInfo inEventInfo;
   input Boolean addMML;
+  input Option<array<Integer>> eqIds = NONE() "see dumpZcLst";
 algorithm
   () := match inEventInfo
     local
@@ -1071,12 +1075,36 @@ algorithm
                                 zeroCrossings=zc)
       algorithm
         dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
-        dumpZeroCrossing(ZeroCrossings.toList(zc), stringAppend(ZERO_CROSSING, LIST_), addMML);
+        dumpZeroCrossing(ZeroCrossings.toList(zc), stringAppend(ZERO_CROSSING, LIST_), addMML, eqIds);
       then
         ();
 
   end match;
 end dumpEventInfo;
+
+protected function sortedEquationIds
+  "Maps the equation indices of the zero crossings to the ids written by
+   dumpSolvedEqns."
+  input list<BackendDAE.EqSystem> systs;
+  output array<Integer> ids;
+protected
+  Integer offset = 0, id = 0;
+  list<Integer> eqIdxs;
+  BackendDAE.StrongComponents comps;
+algorithm
+  ids := arrayCreate(sum(BackendEquation.getNumberOfEquations(syst.orderedEqs) for syst in systs), 0);
+  for syst in systs loop
+    BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := syst;
+    for comp in comps loop
+      (eqIdxs, _) := BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+      for e in eqIdxs loop
+        id := id + 1;
+        arrayUpdate(ids, offset + e, id);
+      end for;
+    end for;
+    offset := offset + BackendEquation.getNumberOfEquations(syst.orderedEqs);
+  end for;
+end sortedEquationIds;
 
 
 protected function getOrderedVars
@@ -1369,7 +1397,7 @@ algorithm
     case ((eqnsLst,varLst)::rest, addMMLCode)
       algorithm
         dumpEqns2(eqnsLst, varLst, inCount, addMMLCode,dumpResiduals,dumpSolved);
-        dumpSolvedEqns(rest, inCount+1, inContent, addMathMLCode,dumpResiduals,dumpSolved);
+        dumpSolvedEqns(rest, inCount+listLength(eqnsLst), inContent, addMathMLCode,dumpResiduals,dumpSolved);
       then ();
   end match;
 end dumpSolvedEqns;
@@ -2055,6 +2083,43 @@ algorithm
       then ();
   end matchcontinue;
 end dumpExp2;
+
+protected function dumpEnumerationTypes
+  "Declares the enumeration types of the variables, with the index of each literal."
+  input list<BackendDAE.Var> vars;
+protected
+  list<String> names = {};
+  list<DAE.Type> types = {};
+  Absyn.Path path;
+  list<String> literals;
+  Integer index;
+algorithm
+  for v in vars loop
+    _ := match v.varType
+      case DAE.T_ENUMERATION(path = path) guard not listMember(AbsynUtil.pathString(path), names)
+        algorithm
+          names := AbsynUtil.pathString(path) :: names;
+          types := v.varType :: types;
+        then ();
+      else ();
+    end match;
+  end for;
+  if listEmpty(types) then
+    return;
+  end if;
+  dumpStrOpenTagAttr(ENUMERATION_TYPES, DIMENSION, intString(listLength(types)));
+  for ty in listReverse(types) loop
+    DAE.T_ENUMERATION(path = path, names = literals) := ty;
+    dumpStrOpenTagAttr(ENUMERATION_TYPE, VAR_NAME, Util.xmlEscape(AbsynUtil.pathString(path)));
+    index := 0;
+    for literal in literals loop
+      index := index + 1;
+      Print.printBuf("\n<" + ENUMERATION_LITERAL + " " + VAR_NAME + "=\"" + Util.xmlEscape(literal) + "\" " + INDEX + "=\"" + intString(index) + "\" />");
+    end for;
+    dumpStrCloseTag(ENUMERATION_TYPE);
+  end for;
+  dumpStrCloseTag(ENUMERATION_TYPES);
+end dumpEnumerationTypes;
 
 protected function dumpExtObjCls "
 Dump classes of external objects within the 'classes' attribute
@@ -3538,6 +3603,7 @@ protected function dumpZeroCrossing "
   input list<BackendDAE.ZeroCrossing> zeroCross;
   input String inContent;
   input Boolean addMathMLCode;
+  input Option<array<Integer>> eqIds;
 algorithm
   ():=
   match zeroCross
@@ -3548,7 +3614,7 @@ algorithm
       algorithm
         len := listLength(zeroCross);
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpZcLst(zeroCross,addMathMLCode);
+        dumpZcLst(zeroCross,addMathMLCode,eqIds);
         dumpStrCloseTag(inContent);
       then ();
   end match;
@@ -3578,6 +3644,7 @@ of the zero crossing elements in XML format. The output is:
  "
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
   input Boolean addMathMLCode;
+  input Option<array<Integer>> eqIds "the id of each equation index, if they differ";
 algorithm
   ():=
   match (inZeroCrossingLst,addMathMLCode)
@@ -3586,16 +3653,21 @@ algorithm
       Boolean addMMLCode;
       list<Integer> eq;
       list<BackendDAE.ZeroCrossing> zcLst;
+      array<Integer> ids;
 
     case ({},_) then ();
 
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq) :: zcLst,addMMLCode)
       algorithm
+        if isSome(eqIds) then
+          SOME(ids) := eqIds;
+          eq := list(ids[i] for i in eq);
+        end if;
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,printExpStr(e));
         dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
         dumpStrCloseTag(stringAppend(ZERO_CROSSING,ELEMENT_));
-        dumpZcLst(zcLst,addMMLCode);
+        dumpZcLst(zcLst,addMMLCode,eqIds);
       then ();
 
   end match;

@@ -31,12 +31,23 @@ extern "C" {
 
 #include "FMICommon.h"
 
+#include <string.h>
+
 /*
  * Used for logging import messages.
  */
 void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
   printf("module = %s, log level = %s: %s\n", module, jm_log_level_to_string(log_level), message);fflush(NULL);
+}
+
+/* In an FMI 2.0 import, FMI Library's FMI 3.0 reader only reads the unused terminalsAndIcons.xml,
+ * and rejects its fmiVersion="3.0", which FMI 3.0, 2.4.9 prescribes. */
+void fmi2importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
+{
+  if (!module || strcmp(module, "FMI3XML") != 0) {
+    importlogger(c, module, log_level, message);
+  }
 }
 
 #ifdef __cplusplus

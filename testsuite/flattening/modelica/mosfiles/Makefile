@@ -33,12 +33,15 @@ Model2.mos \
 ModifierVariabilityError.mos \
 NotbasicType.mos NotbasicType2.mos \
 OverloadingFunc.mos \
+PackageOrderBOM.mos \
 QuotedFunction.mos \
 QuotedIdentifier.mos \
 QuotedIdentifierCSV.mos \
 Return.mos \
+ScriptAssignFirstOutput.mos \
 StringArrayReturn.mos \
 StringSignificantDigits.mos \
+TestInstallMissingPackages.mos \
 TestLoadModel.mos \
 TestLoadModelMetadata.mos \
 TestLoadModelSolver.mos \
@@ -63,6 +66,8 @@ Makefile \
 TestLibrary \
 PackageMetadataLibs \
 PackageResolverLibs \
+OrderBOM \
+OnlyBOM \
 ext_ExternalFunctionResultOrder.c \
 ISO-8859-1.mox
 

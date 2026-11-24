@@ -1,6 +1,6 @@
 /* ModelicaIO.h - Array I/O functions header
 
-   Copyright (C) 2016-2020, Modelica Association and contributors
+   Copyright (C) 2016-2025, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -112,7 +112,7 @@ MODELICA_EXPORT void ModelicaIO_readRealMatrix(_In_z_ const char* fileName,
 
 MODELICA_EXPORT int ModelicaIO_writeRealMatrix(_In_z_ const char* fileName,
                                _In_z_ const char* matrixName,
-                               _In_ double* matrix, size_t m, size_t n,
+                               _In_ const double* matrix, size_t m, size_t n,
                                int append,
                                _In_z_ const char* version) MODELICA_NONNULLATTR;
   /* Write matrix to file

@@ -1,5 +1,5 @@
 model BuiltinMath
-   Real x[13];
+   Real x[14];
 equation
    x[1] = sin(time) "sine";
    x[2] = cos(time) "cosine";
@@ -14,6 +14,7 @@ equation
    x[11] = exp(time) "exponential, base e";
    x[12] = log(if time<=0.1 then 0.1 else time) "natural (base e) logarithm (x > 0)";
    x[13] = log10(if time <=0.1 then 0.1 else time);
+   x[14] = atan2(0, -1 - time);
 end BuiltinMath;
 
 

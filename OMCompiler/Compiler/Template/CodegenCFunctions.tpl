@@ -1514,6 +1514,11 @@ template extFunDefArg(SimExtArg extArg)
     <<
     <%typeStr%>*
     >>
+  case SIMEXTARG(cref=c, outputIndex=0, type_=T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))) then
+    let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
+    <<
+    void * /*<%name%>*/
+    >>
   case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
     let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
     let typeStr = extType(t,ii,ia,false)
@@ -1630,7 +1635,7 @@ case FUNCTION(__) then
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInitLocal(var, fn, &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
-  let bodyPart = funStatement(body, &varDecls, &varFrees, &auxFunction)
+  let bodyPart = funStatement(body, SimCodeFunctionUtil.functionBodyContext(name, functionArguments), &varDecls, &varFrees, &auxFunction)
   // Captured before the frees run: they null the local it is read from.
   let &varDecls += (match outVars case v::_ then '<%retVarType(v)%> omc_ret_;<%\n%>')
   let outVarAssign = (List.restOrEmpty(outVars) |> var => varOutput(var))
@@ -2007,8 +2012,8 @@ case efn as EXTERNAL_FUNCTION(__) then
   let &varFrees = buffer ""
   let &outputAlloc = buffer ""
   let &auxFunction = buffer ""
-  let callPart = extFunCall(fn, &preExp, &varDecls, &varFrees, &outputAlloc, &auxFunction)
-  let _ = ( outVars |> var =>
+  let callPart = extFunCall(fn, &preExp, &varDecls, &varFrees, &auxFunction)
+  let _ = ( variableDeclarations |> var =>
             varInit(var, "", &varDecls, &outputAlloc, &varFrees, &auxFunction)
             ; empty /* increase the counter! */ )
 
@@ -2065,6 +2070,16 @@ case efn as EXTERNAL_FUNCTION(__) then
     <%match outVars
        case v::_ then 'omc_ret_ = <%funArgName(v)%>;<%\n%>'
     %><%match outVars case v::_ then rcRetainOut(v)%><%varFrees%>
+    <%match outVars
+       case {VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(path=extObjPath)))} then
+         // MLS 3.7, 12.9.8: a constructor returns a null pointer to indicate failure.
+         <<
+         if (!omc_ret_) {
+           FILE_INFO info = {<%infoArgs(info)%>};
+           omc_assert(threadData, info, "The constructor of external object %s failed.", "<%Util.escapeModelicaStringToCString(dotPath(extObjPath))%>");
+         }
+         >>
+    %>
     <%match outVars
        case v::_ then 'return omc_ret_;'
        else 'return;'
@@ -2749,7 +2764,7 @@ template extVarName(ComponentRef cr)
 ::= '_<%crefToMStr(appendStringFirstIdent("_ext", cr))%>'
 end extVarName;
 
-template extFunCall(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &varInit, Text &auxFunction)
+template extFunCall(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates the call to an external function."
 ::=
 match fun
@@ -2757,7 +2772,7 @@ case EXTERNAL_FUNCTION(__) then
   match language
   case "BUILTIN"
   case "C" then extFunCallC(fun, &preExp, &varDecls, &varFrees, &auxFunction)
-  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &varFrees, &varInit, &auxFunction)
+  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &varFrees, &auxFunction)
   else error(sourceInfo(), 'Unsupported external language: <%language%>')
 end extFunCall;
 
@@ -2768,7 +2783,6 @@ match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> extArgs as there might be some sets in there! */
   let &preExp += (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &varFrees, &auxFunction, false) ;separator="\n") + "\n"
-  let _ = (biVars |> bivar => extFunCallBiVar(bivar, &preExp, &varDecls, &varFrees, &auxFunction) ;separator="\n")
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then
       <<
@@ -2791,7 +2805,7 @@ case EXTERNAL_FUNCTION(__) then
     case "ModelicaError" then
       <<
       FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert(threadData, info, <%args%>);
+      omc_assert(threadData, info, "%s", <%args%>);
       >> else ""
 
   <<
@@ -2819,7 +2833,7 @@ template extFunCallFree(SimExtArg arg, Text &auxFunction)
   else ""
 end extFunCallFree;
 
-template extFunCallF77(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &varInit, Text &auxFunction)
+template extFunCallF77(SimCodeFunction.Function fun, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates the call to an external Fortran 77 function."
 ::=
 match fun
@@ -2829,7 +2843,7 @@ case EXTERNAL_FUNCTION(__) then
   let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardeclF77(arg, &varDecls, &varFrees, &auxFunction) ;separator="\n")
   let &varDecls += '/* extFunCallF77: biVarDecs */<%\n%>'
   let &preExp += '/* extFunCallF77: biVarDecs */<%\n%>'
-  let biVarDecs = (biVars |> arg => extFunCallBiVarF77(arg, &varInit, &varDecls, &varFrees, &auxFunction) ;separator="\n")
+  let biVarDecs = (biVars |> arg => extFunCallBiVarF77(arg, &preExp, &varDecls, &varFrees, &auxFunction) ;separator="\n")
   let &varDecls += '/* extFunCallF77: args */<%\n%>'
   let &preExp += '/* extFunCallF77: args */<%\n%>'
   let args = (extArgs |> arg => extArgF77(arg, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=", ")
@@ -2963,50 +2977,16 @@ template typeDefaultValue(DAE.Type ty)
   else ""
 end typeDefaultValue;
 
-template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
-::=
-  match var
-  case var as VARIABLE(__) then
-    let var_name = contextCrefNoPrevExp(name, contextFunction, &auxFunction)
-    let zeroInit = if instDims then rcZeroInit(varType(var))
-    let &varDecls += '<%varType(var)%> <%var_name%><%zeroInit%>;<%\n%>'
-    let defaultValue = match value
-      case SOME(v) then
-        '<%daeExp(v, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>'
-      else ""
-    let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
-    if instDims then
-      let type = expTypeArray(var.ty)
-      let &varFrees += rcRelease(type, var_name)
-      let &preExp += if defaultValue then 'copy_<%type%>(<%defaultValue%>, &<%var_name%>);<%\n%>' else 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-      ""
-    else
-      let &preExp += if defaultValue then '<%var_name%> = <%defaultValue%>;<%\n%>' else ''
-      ""
-end extFunCallBiVar;
-
 template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Copies a protected array into the Fortran layout."
 ::=
   match var
   case var as VARIABLE(__) then
-    let var_name = contextCrefNoPrevExp(name,contextFunction,&auxFunction)
-    let zeroInit = if instDims then rcZeroInit(varType(var))
-    let &varDecls += '<%varType(var)%> <%var_name%><%zeroInit%>;<%\n%>'
-    let &varDecls += '<%varType(var)%> <%extVarName(name)%><%zeroInit%>;<%\n%>'
-    let defaultValue = match value
-      case SOME(v) then
-        '<%daeExp(v, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>'
-      else ""
-    let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
     if instDims then
       let type = expTypeArray(var.ty)
-      let &varFrees += rcRelease(type, var_name)
+      let &varDecls += '<%varType(var)%> <%extVarName(name)%><%rcZeroInit(varType(var))%>;<%\n%>'
       let &varFrees += rcRelease(type, extVarName(name))
-      let &preExp += if defaultValue then 'copy_<%type%>(<%defaultValue%>, &<%var_name%>);<%\n%>' else 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-      let &preExp += 'convert_alloc_<%type%>_to_f77(&<%var_name%>, &<%extVarName(name)%>);<%\n%>'
-      ""
-    else
-      let &preExp += if defaultValue then '<%var_name%> = <%defaultValue%>;<%\n%>' else ''
+      let &preExp += 'convert_alloc_<%type%>_to_f77(&<%contextCrefNoPrevExp(name,contextFunction,&auxFunction)%>, &<%extVarName(name)%>);<%\n%>'
       ""
 end extFunCallBiVarF77;
 
@@ -3086,6 +3066,23 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &varFrees, 
     let &preExp += '<%cVarName%>_c89 = data_of_<%shortTypeStr%>_c89_array(<%packedArgName%>);<%\n%>'
     '<%cVarName%>_c89'
 
+  // Protected variable: by pointer, as an output (MLS 3.7, section 12.9.1);
+  // a String or external object by value
+  case SIMEXTARG(cref=c, isInput=false, outputIndex=0, type_=t) then
+    let cr = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
+    match t
+    case T_STRING(__) then 'omc_string_data(<%cr%>)'
+    case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then cr
+    case T_COMPLEX(complexClassType=RECORD(__)) then
+      let &varDecls += '<%expTypeShort(t)%>_external <%extVarName(c)%>;<%\n%>'
+      let &preExp += '<%expTypeShort(t)%>_copy_to_external(<%cr%>, <%extVarName(c)%>);<%\n%>'
+      '&<%extVarName(c)%>'
+    else
+      let cType = extType(t, true, false, false)
+      let &varDecls += '<%cType%> <%extVarName(c)%>;<%\n%>'
+      let &preExp += '<%extVarName(c)%> = (<%cType%>) <%cr%>;<%\n%>'
+      '&<%extVarName(c)%>'
+
   // Scalar argument, no output
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     match t
@@ -3153,10 +3150,10 @@ template tempSizeVarName(ComponentRef c, DAE.Exp indices, Text &auxFunction)
   else error(sourceInfo(), 'tempSizeVarName:UNHANDLED_EXPRESSION')
 end tempSizeVarName;
 
-template funStatement(list<DAE.Statement> statementLst, Text &varDecls, Text &varFrees, Text &auxFunction)
+template funStatement(list<DAE.Statement> statementLst, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates function statements."
 ::=
-  statementLst |> stmt => algStatement(stmt, contextFunction, &varDecls, &varFrees, &auxFunction) ; separator="\n"
+  statementLst |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction) ; separator="\n"
 end funStatement;
 
 template parModelicafunStatement(list<DAE.Statement> statementLst, Text &varDecls, Text &varFrees, Text &auxFunction)
@@ -4039,7 +4036,7 @@ case STMT_TERMINATE(__) then
   <%preExp%>
   {
     FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
-    omc_terminate(info, omc_string_data(<%msgVar%>));
+    omc_terminate(info, "%s", omc_string_data(<%msgVar%>));
   }
   >>
 end algStmtTerminate;
@@ -4750,6 +4747,18 @@ template dimension(Dimension d, Context context, Text &preExp, Text &varDecls, T
   else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
 
+template checkedDivisor(Text divisor, String type, String desc, Context context, Text &preExp, Text &varDecls, Text &varFrees)
+ "The divisor in a temporary that is checked for zero, desc describes the division in the error."
+::=
+  let tvar = tempDecl(type, &varDecls, &varFrees)
+  let &preExp += '<%tvar%> = <%divisor%>;<%\n%><%errorCheck(context)%>'
+  let &preExp +=
+    if metaModelicaRuntime()
+      then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+      else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(desc)%>"); <%errorCheck(context)%>}<%\n%>'
+  tvar
+end checkedDivisor;
+
 template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates an assigment algorithm statement."
 ::=
@@ -4913,9 +4922,13 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
             else '_withEquationIndexes'
   let assertExpStr = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))
   let &preExpValues = buffer ""
-  let valueFmt = match context case FUNCTION_CONTEXT(__) then "" else
+  // assert(false, msg) in a function without inputs to give, such as Modelica.Utilities.Streams.error.
+  let messageOnly = match context
+    case FUNCTION_CONTEXT(assert_function = "") then "1"
+    case FUNCTION_CONTEXT(assert_inputs = {}) then (match condition case BCONST(bool = false) then "1")
+  let valueFmt = if messageOnly then "" else
     (Expression.assertConditionValues(condition) |> e => ', <%assertValueFormat(e)%>')
-  let valueArgs = match context case FUNCTION_CONTEXT(__) then "" else
+  let valueArgs = if messageOnly then "" else
     (Expression.assertConditionValues(condition) |> e => ', <%assertValueArg(e, context, &preExpValues, &varDecls, &varFrees, &auxFunction)%>')
   /* Note that our error/log functions split the message on new lines and indent it. So it is better to have one long string
      and send it to them instead of calling them repeatedlly (avoids the 'assert', 'warning' labels printed for each call.) */
@@ -4926,10 +4939,22 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let assertCheck = match level case ENUM_LITERAL(index=1) then '' else errorCheck(context)
   // A when-body runs only at its event, which would excuse a held error.
   let neverHeld = match context case SIMULATION_CONTEXT(whenBody=true) then (match level case ENUM_LITERAL(index=1) then '' else '1')
-  let assertCode = match context case FUNCTION_CONTEXT(__) then
+  let assertCode = match context
+    case FUNCTION_CONTEXT(__) then
+    if messageOnly then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
-    <%omcAssertFunc%>info, <%msgVar%>);
+    <%omcAssertFunc%>info, "%s", <%msgVar%>);
+    <%assertCheck%>
+    >>
+    else
+    let fnFmt = System.stringReplace(Util.escapeModelicaStringToCString(assert_function), "%", "%%")
+    let inputFmt = (assert_inputs |> e => assertValueFormat(e) ; separator=", ")
+    let inputArgs = (assert_inputs |> e => ', <%assertValueArg(e, context, &preExpValues, &varDecls, &varFrees, &auxFunction)%>')
+    <<
+    const char* assert_cond = "(<%assertExpStr%>)";
+    FILE_INFO info = {<%infoArgs(info)%>};
+    <%omcAssertFunc%>info, "The following assertion has been violated in function <%fnFmt%>(<%inputFmt%>)\n(%s<%valueFmt%>) --> \"%s\""<%inputArgs%>, assert_cond<%valueArgs%>, <%msgVar%>);
     <%assertCheck%>
     >>
     else if neverHeld then
@@ -5267,7 +5292,11 @@ template jacobianOffsetDecl(list<SimVar> vars, String kind)
     modelica_integer* _jac_off_<%kind%> = (modelica_integer*) malloc(<%jacobianOffsetSize(vars)%> * sizeof(modelica_integer));
     {
       modelica_integer _jac_acc = 0;
+      <%varDecls%>
+      <%auxFunction%>
+      <%preExp%>
       <%assigns%>
+      <%varFrees%>
     }
     >>
 end jacobianOffsetDecl;
@@ -5291,16 +5320,19 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
 ::=
  match context
    case JACOBIAN_CONTEXT(name=jacName, jacHT=SOME(jacHT)) then
+     let resultField = if stringEq(jacName, "ADJ") then "resultVarsAdj" else "resultVars"
+     let tmpField = if stringEq(jacName, "ADJ") then "tmpVarsAdj" else "tmpVars"
+     let seedField = if stringEq(jacName, "ADJ") then "seedVarsAdj" else "seedVars"
      match simVarFromHT(cr, jacHT)
      case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then
-       if stringEq(sub, "") then 'jacobian->resultVars[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian->resultVars[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%resultField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%resultField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then
-       if stringEq(sub, "") then 'jacobian->tmpVars[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian->tmpVars[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%tmpField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%tmpField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-       if stringEq(sub, "") then 'jacobian->seedVars[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian->seedVars[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case SIMVAR(index=-2) then
        if boolAnd(stringEq(sub, ""), isJacobianColumnCref(cr)) then '0.0' else
        // Subscripted seed cref not in jac_map (e.g. a cross-Jacobian seed
@@ -5311,14 +5343,14 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
        // Otherwise fall through to crefOld for actual values / loop iterators.
        match simVarFromHT(crefStripSubs(cr), jacHT)
        case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-         if stringEq(sub, "") then 'jacobian->seedVars[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
-         else '(&(jacobian->seedVars[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+         if stringEq(sub, "") then 'jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+         else '(&(jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
        else
          // Still not found: seed cached under a different Jacobian's name. Retry with the root renamed to this Jacobian.
          match simVarFromHT(crefRenameSeedRoot(crefStripSubs(cr), jacName), jacHT)
          case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-           if stringEq(sub, "") then 'jacobian->seedVars[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
-           else '(&(jacobian->seedVars[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+           if stringEq(sub, "") then 'jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+           else '(&(jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
          else crefOldSub(cr, ix, &sub)
 end jacCrefs;
 
@@ -5445,9 +5477,15 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind = JAC_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = SEED_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_VAR()) then
+      let field = match v.matrixName case SOME("ADJ") then "resultVarsAdj" else "resultVars"
+      '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian-><%field%>[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_TMP_VAR()) then
+      let field = match v.matrixName case SOME("ADJ") then "tmpVarsAdj" else "tmpVars"
+      '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian-><%field%>[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = SEED_VAR()) then
+      let field = match v.matrixName case SOME("ADJ") then "seedVarsAdj" else "seedVars"
+      '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian-><%field%>[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case SIMVAR(index = -2) then
@@ -6554,6 +6592,16 @@ template daeExpOperand(Exp exp, Text expText, Type ty, Text &preExp, Text &varDe
   else '(<%expText%>)'
 end daeExpOperand;
 
+template daeExpUncheckedDivision(Exp exp1, Text e1, Exp exp2, Text e2, Type ty, Text &preExp, Text &varDecls, Text &varFrees)
+ "A Real division by a divisor that the parameter equations check, see SimCodeCodegenUtil.isCheckedDivisor."
+::=
+  let num = daeExpOperand(exp1, e1, ty, &preExp, &varDecls, &varFrees)
+  let den = daeExpOperand(exp2, e2, ty, &preExp, &varDecls, &varFrees)
+  match typeof(exp2)
+    case T_REAL(__) then '(<%num%> / <%den%>)'
+    else '(<%num%> / (modelica_real)<%den%>)'
+end daeExpUncheckedDivision;
+
 template daeExpBinary(Exp exp, Context context, Text &preExp,
                       Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a binary expression."
@@ -6580,14 +6628,18 @@ case BINARY(__) then
   case DIV(ty = ty) then
     (match context
       case FUNCTION_CONTEXT(__) then
-        let tvar = tempDecl(expTypeModelica(ty),&varDecls, &varFrees)
-        let &preExp += '<%tvar%> = <%e2%>;<%\n%><%errorCheck(context)%>'
-        let &preExp += if metaModelicaRuntime() then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-                        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s in function context", "<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>"); <%errorCheck(context)%>}<%\n%>'
+        let tvar = checkedDivisor(e2, expTypeModelica(ty), '<%ExpressionDumpTpl.dumpExp(exp,"\"")%> in function context', context, &preExp, &varDecls, &varFrees)
         '(<%e1%>) / <%tvar%>'
       case SIMULATION_CONTEXT() then
-        let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
-        'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+        if isCheckedDivisor(ty, exp2) then daeExpUncheckedDivision(exp1, e1, exp2, e2, ty, &preExp, &varDecls, &varFrees)
+        else
+          let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+          'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+      case JACOBIAN_CONTEXT(__) then
+        if isCheckedDivisor(ty, exp2) then daeExpUncheckedDivision(exp1, e1, exp2, e2, ty, &preExp, &varDecls, &varFrees)
+        else
+          let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+          'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
       else
         let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
         'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
@@ -6629,60 +6681,11 @@ case BINARY(__) then
         let tmp1 = tempDecl("modelica_real", &varDecls, &varFrees)
         let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
         let tmp3 = tempDecl("modelica_real", &varDecls, &varFrees)
-        let tmp4 = tempDecl("modelica_real", &varDecls, &varFrees) //fractpart
-        let tmp5 = tempDecl("modelica_real", &varDecls, &varFrees) //intpart
-        let tmp6 = tempDecl("modelica_real", &varDecls, &varFrees) //intpart
-        let tmp7 = tempDecl("modelica_real", &varDecls, &varFrees) //fractpart
         let &preExp +=
           <<
           <%tmp1%> = <%e1%>;
           <%tmp2%> = <%e2%>;
-          if(<%tmp1%> < 0.0 && <%tmp2%> != 0.0)
-          {
-            <%tmp4%> = modf(<%tmp2%>, &<%tmp5%>);
-
-            if(<%tmp4%> > 0.5)
-            {
-              <%tmp4%> -= 1.0;
-              <%tmp5%> += 1.0;
-            }
-            else if(<%tmp4%> < -0.5)
-            {
-              <%tmp4%> += 1.0;
-              <%tmp5%> -= 1.0;
-            }
-
-            if(fabs(<%tmp4%>) < 1e-10)
-              <%tmp3%> = pow(<%tmp1%>, <%tmp5%>);
-            else
-            {
-              <%tmp7%> = modf(1.0/<%tmp2%>, &<%tmp6%>);
-              if(<%tmp7%> > 0.5)
-              {
-                <%tmp7%> -= 1.0;
-                <%tmp6%> += 1.0;
-              }
-              else if(<%tmp7%> < -0.5)
-              {
-                <%tmp7%> += 1.0;
-                <%tmp6%> -= 1.0;
-              }
-              if(fabs(<%tmp7%>) < 1e-10 && ((unsigned long)<%tmp6%> & 1))
-              {
-                <%tmp3%> = -pow(-<%tmp1%>, <%tmp4%>)*pow(<%tmp1%>, <%tmp5%>);
-              }
-              else
-              {
-                <%if metaModelicaRuntime()
-                  then '<%generateThrow()%>;<%\n%>'
-                  else 'raiseStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
-              }
-            }
-          }
-          else
-          {
-            <%tmp3%> = pow(<%tmp1%>, <%tmp2%>);
-          }
+          <%tmp3%> = real_real_pow(<%tmp1%>, <%tmp2%>);
           if(isnan(<%tmp3%>) || isinf(<%tmp3%>))
           {
             <%if metaModelicaRuntime()
@@ -6855,7 +6858,7 @@ template daeExpRelation(Exp exp, Context context, Text &preExp,
                         Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a relation expression."
 ::=
-match exp
+match timeEventRelation(exp)
 case rel as RELATION(__) then
   let &varDecls2 = buffer ""
   let &varFrees2 = buffer ""
@@ -7461,37 +7464,20 @@ let &sub = buffer ""
     let tp_str = expTypeModelica(ty)
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let tvar = if metaModelicaRuntime() then '<%var2%>' else tempDecl(tp_str, &varDecls, &varFrees)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let &preExp += if metaModelicaRuntime() then "" else '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then ""
-        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let tvar = if metaModelicaRuntime() then var2 else checkedDivisor(var2, tp_str, ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
     '<%tp_str%>_mod(<%var1%>, <%tvar%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let tvar = checkedDivisor(var2, "modelica_real", ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
     '((<%var1%>) - floor((<%var1%>) / (<%tvar%>)) * (<%tvar%>))'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let tvar = tempDecl("modelica_integer", &varDecls, &varFrees)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let literal = match e2 case ICONST(__) then (if intNe(integer, 0) then var2)
+    let tvar = if literal then literal else checkedDivisor(var2, "modelica_integer", ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
       /* ldiv not available in opencl c*/
     if isParallelFunctionContext(context) then '(modelica_integer)((<%var1%>) / <%tvar%>)'
     else 'modelica_div_integer(<%var1%>,<%tvar%>).quot'
@@ -7499,13 +7485,7 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-    let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0.0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let tvar = checkedDivisor(var2, "modelica_real", ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
     'trunc((<%var1%>) / (<%tvar%>))'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
@@ -9181,8 +9161,8 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
  one of the parameters."
 ::=
   let len = listLength(simVarIndexRuns(vars))
-  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind) =>
-    match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then
+  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind, firstVar) =>
+    match firstVar case var as SIMVAR() then
       '{<%pos%>, <%idx%>, <%n%>, <%kind%>} /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> */'
     ;separator=",\n")
   <<
@@ -9197,11 +9177,11 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       for (int k = 0; k < runs[r][2]; ++k) {
         const int i = runs[r][0] + k;
         if (runs[r][3] == 0) {
-          linearSystemData->nominal[i] = 1.0;
+          linearSystemData->positiveNominal[i] = 1.0;
           linearSystemData->min[i]     = -DBL_MAX;
           linearSystemData->max[i]     = DBL_MAX;
         } else {
-          linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
+          linearSystemData->positiveNominal[i] = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
           linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
           linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
         }

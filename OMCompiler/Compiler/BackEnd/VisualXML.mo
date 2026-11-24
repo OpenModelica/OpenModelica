@@ -599,11 +599,8 @@ function getFullCADFilePath
   input String sIn;
   input Absyn.Program program;
   output String sOut = sIn;
-protected
-  list<String> chars;
 algorithm
-  chars := stringListStringChar(sIn);
-  if listLength(chars) > 11 and stringEqual(stringDelimitList(List.firstN(chars,11),""),"modelica://") then
+  if System.stringFind(System.tolower(sIn), "modelica:/") == 0 then
     sOut := "file://"+ProgramUtil.getFullPathFromUri(program,sIn,true);
   end if;
 end getFullCADFilePath;

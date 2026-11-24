@@ -3296,6 +3296,11 @@ algorithm
     (ty, dims) := TypesDump.flattenArrayType(ComponentReference.crefLastType(cr));
     // latest added first, as expanding cr and looking its elements up gave
     for i in listReverse(indices) loop
+      if i >= inVariables.varArr.numberOfElements then
+        // added by a Variables that shares the arrays with this one
+        live := i :: live;
+        continue;
+      end if;
       var_opt := arrayGet(inVariables.varArr.varOptArr, i + 1);
       if isSome(var_opt) then
         // walking oldest first, so consing restores the stored order
@@ -3332,6 +3337,18 @@ algorithm
     (outVarLst as _::_, outIntegerLst) := getVarLst(crlst, inVariables);
   end try;
 end getVarExpanded;
+
+public function expandVariableSubscripts
+  "The elements an array element with variable indices, e.g. x[i], can refer to,
+  as getVar finds them. Fails if cr has no variable indices."
+  input DAE.ComponentRef cr;
+  output list<DAE.ComponentRef> crs;
+protected
+  DAE.ComponentRef cr1;
+algorithm
+  (cr1, true) := replaceVarWithWholeDim(cr, false);
+  crs := ComponentReference.expandCref(cr1, true);
+end expandVariableSubscripts;
 
 protected function queryShape
   "prefix: getVar can answer cr from the prefix index (an array or record with
@@ -3799,14 +3816,14 @@ algorithm
     case {} then (inSubscript,iPerformed);
     case DAE.WHOLEDIM()::rest
       algorithm
-        (_,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
-      then (DAE.WHOLEDIM()::rest, b);
+        (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
+      then (DAE.WHOLEDIM()::res, b);
 
     case (sub as DAE.SLICE(exp = sub_exp))::rest
       algorithm
         (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
         const := Expression.isConst(sub_exp);
-        res := if const then sub::rest else (DAE.WHOLEDIM()::rest);
+        res := if const then sub::res else (DAE.WHOLEDIM()::res);
       then
         (res, b or not const);
 
@@ -3815,14 +3832,14 @@ algorithm
         (sub_exp_,calcRange) := computeRangeExps(sub_exp); // the fact that if it can be calculated, we can take the wholedim is a bit weird, anyway, the whole function is weird
         (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
         const := Expression.isConst(sub_exp_);
-        res := (if const then if referenceEq(sub_exp,sub_exp_) then sub else DAE.INDEX(sub_exp_) else DAE.WHOLEDIM())::rest;
+        res := (if const then if referenceEq(sub_exp,sub_exp_) then sub else DAE.INDEX(sub_exp_) else DAE.WHOLEDIM())::res;
       then
         (res, b or not const or calcRange);
     case (sub as DAE.WHOLE_NONEXP(exp = sub_exp))::rest
       algorithm
         (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
         const := Expression.isConst(sub_exp);
-        res := if const then sub::rest else (DAE.WHOLEDIM()::rest);
+        res := if const then sub::res else (DAE.WHOLEDIM()::res);
       then
         (res, b or not const);
   end match;

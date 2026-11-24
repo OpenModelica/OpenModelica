@@ -1192,6 +1192,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setCflags(mpCflagsTextBox->text());
   simulationOptions.setNumberOfProcessors(mpNumberOfProcessorsSpinBox->value());
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
+  simulationOptions.setTargetLanguage(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText());
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
 #if !defined(WITHOUT_ANIMATION)
@@ -1256,6 +1257,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
 
   simulationOptions.setLinearizationDumpLanguage(mpLinearizationDumpLanguageComboBox->currentText());
+  OptionsDialog::instance()->getGeneralSettingsPage()->warnIfWorkingDirectoryUnusable();
   // create a folder with model name to dump the files in it.
   QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
   if (!QDir().exists(modelDirectoryPath)) {
@@ -2172,8 +2174,7 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
     bound = pValue->realValue();
     return std::isfinite(bound);
   };
-  auto applyAxis = [getAxisBound](OMPlot::PlotWindow *pPlotWindow, const ModelInstance::Axis *pAxis, bool isXAxis) {
-    const int axis = isXAxis ? QwtPlot::xBottom : QwtPlot::yLeft;
+  auto applyAxis = [getAxisBound](OMPlot::PlotWindow *pPlotWindow, const ModelInstance::Axis *pAxis, int axis) {
     QwtPlot *pPlot = pPlotWindow->getPlot();
     pPlot->setAxisAutoScale(axis, pPlotWindow->getAutoScaleButton()->isChecked());
     double min = 0.0;
@@ -2197,10 +2198,12 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
       return;
     }
     pPlot->setAxisAutoScale(axis, false);
-    if (isXAxis) {
+    if (axis == QwtPlot::xBottom) {
       pPlotWindow->setXRange(min, max);
-    } else {
+    } else if (axis == QwtPlot::yLeft) {
       pPlotWindow->setYRange(min, max);
+    } else {
+      pPlotWindow->setYRightRange(min, max);
     }
   };
 
@@ -2214,7 +2217,7 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
       const auto &plot = figure->getPlots().at(plotIndex);
       QMap<QString, QVector<QPair<const ModelInstance::Curve*, VariablesTreeItem*>>> curvesByXVariable;
       for (const auto &curve : plot->getCurves()) {
-        const QString xVariable = curve->getX().isEmpty() ? QStringLiteral("time") : curve->getX();
+        const QString xVariable = curve->getX().toQString();
         const QString yVariable = curve->getY().toQString();
         VariablesTreeItem *pYVariable = findResultVariable(yVariable);
         if (yVariable.isEmpty() || !pYVariable) {
@@ -2268,6 +2271,10 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
         if (pYAxis && !pYAxis->getLabel().isEmpty()) {
           pPlotWindow->setYCustomLabel(pYAxis->getLabel());
         }
+        const ModelInstance::Axis *pYRightAxis = plot->getYRightAxis();
+        if (pYRightAxis && !pYRightAxis->getLabel().isEmpty()) {
+          pPlotWindow->setYRightCustomLabel(pYRightAxis->getLabel());
+        }
 
         for (const auto &curve : group.value()) {
           VariablesTreeItem *pXVariable = parametric ? findResultVariable(group.key()) : nullptr;
@@ -2291,15 +2298,19 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
                                           pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern(),
                                           Qt::NoModifier, nullptr, pPlotWindow);
           const auto &plotCurves = pPlotWindow->getPlot()->getPlotCurvesList();
-          if (plotCurves.size() > previousCurveCount && !curve.first->getLegend().isEmpty()) {
+          if (plotCurves.size() > previousCurveCount) {
             OMPlot::PlotCurve *pPlotCurve = plotCurves.last();
-            pPlotCurve->setCustomTitle(curve.first->getLegend());
-            pPlotCurve->setTitleLocal();
+            if (!curve.first->getLegend().isEmpty()) {
+              pPlotCurve->setCustomTitle(curve.first->getLegend());
+              pPlotCurve->setTitleLocal();
+            }
+            pPlotWindow->setYAxisRight(pPlotCurve, curve.first->getYAxis() == ModelInstance::Curve::YAxis::Right);
             pPlotWindow->updatePlot();
           }
         }
-        applyAxis(pPlotWindow, pXAxis, true);
-        applyAxis(pPlotWindow, pYAxis, false);
+        applyAxis(pPlotWindow, pXAxis, QwtPlot::xBottom);
+        applyAxis(pPlotWindow, pYAxis, QwtPlot::yLeft);
+        applyAxis(pPlotWindow, pYRightAxis, QwtPlot::yRight);
         pPlotWindow->getPlot()->replot();
       }
     }
@@ -2351,7 +2362,7 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
 void SimulationDialog::enableDisableOptions(int index)
 {
   const QString method = mpMethodComboBox->itemText(index);
-  if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
+  if (method.compare(QStringLiteral("auto")) == 0 || method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
     mpOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
     // gbode doesn't handle following options yet
@@ -2425,7 +2436,7 @@ void SimulationDialog::browseModelSetupFile()
  */
 void SimulationDialog::browseEquationSystemInitializationFile()
 {
-  mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::matFileTypes, NULL));
+  mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::omResultFileTypes, NULL));
 }
 
 /*!

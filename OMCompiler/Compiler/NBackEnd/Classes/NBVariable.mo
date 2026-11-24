@@ -59,6 +59,7 @@ public
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import Operator = NFOperator;
   import NFFunction.Function;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
@@ -1334,6 +1335,18 @@ function isJacobianResultVar
     end match;
   end makeDerVar;
 
+  function makeDerCref
+    "The name makeDerVar gives the derivative of cref, without a variable for it."
+    input ComponentRef cref;
+    output ComponentRef der_cref;
+  protected
+    ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+    PointerWeak<Variable> dummy_ptr = PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE));
+  algorithm
+    der_cref := ComponentRef.append(stripped, ComponentRef.fromNode(InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr), ComponentRef.scalarType(stripped)));
+    der_cref := ComponentRef.copySubscripts(cref, der_cref);
+  end makeDerCref;
+
   function hasDerVar
     input Pointer<Variable> state_var;
     output Boolean b;
@@ -2225,6 +2238,76 @@ function isJacobianResultVar
     (_, b) := Expression.mapFold(exp, function checkExpTraverse(func=func,info=info), false);
   end checkExpMap;
 
+  function isVarCref
+    input ComponentRef cref;
+    output Boolean b = ComponentRef.isCref(cref) and InstNode.isVar(ComponentRef.node(cref));
+  end isVarCref;
+
+  function flatIndex
+    "zero based flat index of a cref with literal subscripts in its variable"
+    input ComponentRef cref;
+    output Option<Integer> index = NONE();
+  protected
+    list<Subscript> subs;
+    list<Integer> sizes;
+    Integer idx = 0;
+  algorithm
+    subs := ComponentRef.subscriptsAllFlat(cref);
+    sizes := list(Dimension.size(dim) for dim in Type.arrayDims(Variable.typeOf(Pointer.access(getVarPointer(cref, sourceInfo())))));
+    if listLength(subs) <> listLength(sizes) then return; end if;
+    for tpl in List.zip(subs, sizes) loop
+      () := match tpl
+        case (Subscript.INDEX(index = Expression.INTEGER()), _) algorithm
+          idx := idx * Util.tuple22(tpl) + Expression.integerValue(Subscript.toExp(Util.tuple21(tpl))) - 1;
+        then ();
+        else algorithm return; then ();
+      end match;
+    end for;
+    index := SOME(idx);
+  end flatIndex;
+
+  function elementIndices
+    "Returns the zero based flat indices of all elements that the subscripts address.
+    NONE() if a subscript or dimension is not literal."
+    input list<Subscript> subs;
+    input list<Dimension> dims;
+    output Option<UnorderedSet<Integer>> indices = NONE();
+  protected
+    UnorderedSet<Integer> set;
+  algorithm
+    if listLength(subs) == listLength(dims) and List.all(subs, Subscript.isLiteral) and List.all(dims, isLiteralDim) then
+      set := UnorderedSet.new(Util.id, intEq);
+      addFlatIndices(list(Subscript.toIndexList(sub, Dimension.size(dim)) threaded for sub in subs, dim in dims), dims, set);
+      indices := SOME(set);
+    end if;
+  end elementIndices;
+
+  function isLiteralDim
+    input Dimension dim;
+    output Boolean b = Dimension.isKnown(dim) and not Dimension.isResizable(dim) and Type.isInteger(Dimension.subscriptType(dim));
+  end isLiteralDim;
+
+  function addFlatIndices
+    "Adds the flat indices of all combinations of the subscript values."
+    input list<list<Integer>> values;
+    input list<Dimension> dims;
+    input UnorderedSet<Integer> indices;
+    input Integer offset = 0;
+  protected
+    Integer size;
+  algorithm
+    if listEmpty(values) then
+      UnorderedSet.add(offset, indices);
+    else
+      size := Dimension.size(listHead(dims));
+      for v in listHead(values) loop
+        if v >= 1 and v <= size then
+          addFlatIndices(listRest(values), listRest(dims), indices, offset * size + v - 1);
+        end if;
+      end for;
+    end if;
+  end addFlatIndices;
+
   function checkCref
     input ComponentRef cref;
     input checkVar func;
@@ -2753,6 +2836,105 @@ function isJacobianResultVar
     end createSortHashTpl;
   end VariablePointers;
 
+  uniontype StateOrder
+    "x = k*der(y) + c for a state y. k and c are constants, parameters or literals."
+    record STATE_ORDER
+      ComponentRef partner                               "x without subscripts";
+      Option<tuple<Expression, Expression>> coefficients "(k, c), NONE() for x = der(y)";
+      Option<UnorderedSet<Integer>> elements             "flat indices of the covered elements, NONE() for all";
+    end STATE_ORDER;
+
+    function covers
+      "true if the order holds for all elements the cref can address. Iterator subscripts
+      of iters stand for their ranges, other subscripts of partial orders must be literal."
+      input StateOrder order;
+      input ComponentRef cref;
+      input list<Iterator> iters;
+      output Boolean b;
+    protected
+      UnorderedSet<Integer> elements, indices;
+      list<Subscript> subs;
+    algorithm
+      b := match order.elements
+        case NONE() then true;
+        case SOME(elements) algorithm
+          subs := Iterator.sliceSubscripts(ComponentRef.subscriptsAllWithWholeFlat(cref), iters);
+        then match elementIndices(subs, Type.arrayDims(Variable.typeOf(Pointer.access(getVarPointer(cref, sourceInfo())))))
+          case SOME(indices) then not UnorderedSet.isEmpty(indices) and List.all(UnorderedSet.toList(indices), function UnorderedSet.contains(set = elements));
+          else false;
+        end match;
+      end match;
+    end covers;
+
+    function rank
+      "Prefers orders for all elements, then x = der(y)."
+      input StateOrder order;
+      output Integer r = 0;
+    algorithm
+      if isNone(order.elements) then
+        r := 2;
+      end if;
+      if isNone(order.coefficients) then
+        r := r + 1;
+      end if;
+    end rank;
+
+    function derivative
+      "Returns der(y) = (x - c)/k with the subscripts of the state cref y."
+      input StateOrder order;
+      input ComponentRef state;
+      output Expression exp;
+    protected
+      Expression k, c;
+      Type ty;
+    algorithm
+      exp := Expression.fromCref(ComponentRef.copySubscripts(state, order.partner));
+      exp := match order.coefficients
+        case SOME((k, c)) algorithm
+          ty := Expression.typeOf(exp);
+          if Type.isArray(ty) then
+            if not Expression.isZero(c) then
+              exp := Expression.BINARY(exp, Operator.makeArrayScalar(ty, NFOperator.Op.SUB, false), c);
+            end if;
+            exp := Expression.BINARY(exp, Operator.makeArrayScalar(ty, NFOperator.Op.DIV, false), k);
+          else
+            if not Expression.isZero(c) then
+              exp := Expression.BINARY(exp, Operator.makeSub(ty), c);
+            end if;
+            exp := Expression.BINARY(exp, Operator.makeDiv(ty), k);
+          end if;
+        then SimplifyExp.simplify(exp);
+        else exp;
+      end match;
+    end derivative;
+
+    function isEqual
+      input StateOrder order1;
+      input StateOrder order2;
+      output Boolean b;
+    protected
+      Expression k1, c1, k2, c2;
+    algorithm
+      b := ComponentRef.isEqual(order1.partner, order2.partner) and (match (order1.coefficients, order2.coefficients)
+        case (NONE(), NONE()) then true;
+        case (SOME((k1, c1)), SOME((k2, c2))) then Expression.isEqual(k1, k2) and Expression.isEqual(c1, c2);
+        else false;
+      end match);
+    end isEqual;
+
+    function toString
+      input StateOrder order;
+      output String str = Expression.toString(derivative(order, order.partner));
+    protected
+      UnorderedSet<Integer> elements;
+    algorithm
+      str := match order.elements
+        case SOME(elements) then str + " (flat elements " + stringDelimitList(list(intString(i) for i in List.sort(list(i + 1 for i in UnorderedSet.toList(elements)), intGt)), ", ") + ")";
+        else str;
+      end match;
+    end toString;
+  end StateOrder;
+
   // ==========================================================================
   //                        Variable Data
   //    All variable arrays are pointer arrays to avoid duplicates
@@ -2795,7 +2977,7 @@ function isJacobianResultVar
       VariablePointers artificials        "artificial variables to have pointers on crefs";
 
       /* state order for differentiation and index reduction */
-      UnorderedMap<ComponentRef, ComponentRef> state_order;
+      UnorderedMap<ComponentRef, StateOrder> state_order;
       Boolean resizable                   "true if the model has resizable parameters, set by Resizable.resize";
     end VAR_DATA_SIM;
 
@@ -3012,7 +3194,7 @@ function isJacobianResultVar
 
     function getStateOrder
       input VarData varData;
-      output UnorderedMap<ComponentRef, ComponentRef> state_order;
+      output UnorderedMap<ComponentRef, StateOrder> state_order;
     algorithm
       state_order := match varData
         case VAR_DATA_SIM() then varData.state_order;

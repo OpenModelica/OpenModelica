@@ -9,7 +9,12 @@ DiscreteTupleOutput.mos \
 TupleConstraintEquation.mos \
 TupleConstraintStateSet.mos \
 TupleAssignInIf.mos \
-StateSetArrayEq.mos
+ForLoopAlgorithm.mos \
+StateSetArrayEq.mos \
+StateSetDerivativeCandidate.mos \
+UnusedFunctionInput.mos \
+StateSetInitialSelection.mos \
+SqrtDistanceConstraint.mos
 
 
 # test that currently fail. Move up when fixed. 

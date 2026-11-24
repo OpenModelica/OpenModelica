@@ -1,0 +1,70 @@
+// name: testDAEModeStateSetAndDummyStates
+// keywords: daeMode, dummyDerivatives, index reduction, #8618
+// status: correct
+// teardown_command: rm -rf StateSetAndDummyStates* output.log
+//
+// One level of the state selection gives a static dummy state (b) and a state
+// set ({vx, vy}). With --indexReductionMethod=dummyDerivatives, which
+// --daeMode uses, both must become dummy states, else the system is
+// over-determined.
+
+loadString("
+model StateSetAndDummyStates
+  parameter Real L = 1, g = 9.81;
+  Real x(start = 0.6, fixed = true), y(start = -0.8), vx(start = 0, fixed = true), vy, F;
+  Real a(start = 1, fixed = true), b, w;
+equation
+  der(x) = vx;
+  der(y) = vy;
+  der(vx) = -F*x + 0.1*b;
+  der(vy) = -F*y - g;
+  x^2 + y^2 = L^2;
+  der(a) = -a;
+  b = sin(a);
+  w = der(b);
+end StateSetAndDummyStates;
+"); getErrorString();
+
+setCommandLineOptions("--daeMode"); getErrorString();
+simulate(StateSetAndDummyStates, stopTime = 1); getErrorString();
+val(x, 1.0);
+val(y, 1.0);
+val(w, 1.0);
+
+setCommandLineOptions("--daeMode=false --indexReductionMethod=dummyDerivatives"); getErrorString();
+simulate(StateSetAndDummyStates, stopTime = 1); getErrorString();
+val(x, 1.0);
+val(y, 1.0);
+val(w, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StateSetAndDummyStates_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'StateSetAndDummyStates', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.5884854816917489
+// -0.8085077846489976
+// -0.3432653579232869
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StateSetAndDummyStates_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'StateSetAndDummyStates', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.5884832191217387
+// -0.8085094314923702
+// -0.3432653954025381
+// endResult

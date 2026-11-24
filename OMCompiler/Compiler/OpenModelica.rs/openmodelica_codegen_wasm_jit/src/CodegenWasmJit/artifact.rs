@@ -552,7 +552,7 @@ pub fn run(path: &Path, face: Face, result_file: &str, simflags: &str) -> (std::
 fn master_solver(s: openmodelica_sim_meta::simflags::Solver) -> Option<Solver> {
     use openmodelica_sim_meta::simflags::Solver as S;
     Some(match s {
-        S::Dassl => Solver::Dassl,
+        S::Auto | S::Dassl => Solver::Dassl,
         S::Ida => Solver::Ida,
         S::Cvode => Solver::Cvode,
         S::Gbode => Solver::Gbode,

@@ -20,7 +20,11 @@ pub struct ResultTarget {
 
 impl ResultTarget {
     pub fn precision(&self) -> Precision {
-        if self.single { Precision::Single } else { Precision::Double }
+        if self.single {
+            Precision::Single
+        } else {
+            Precision::Double
+        }
     }
 }
 
@@ -54,9 +58,13 @@ thread_local! {
 }
 
 fn open(e: &mut dyn driver::SimEngine, model: &SimMeta, sim_data: u32) -> driver::Result<()> {
-    let Some(t) = TARGET.with(|c| c.borrow_mut().take()) else { return Ok(()) };
+    let Some(t) = TARGET.with(|c| c.borrow_mut().take()) else {
+        return Ok(());
+    };
     let st = openmodelica_sim_meta::result::open_stream(e, model, sim_data, &t.format, &t.keep, t.precision(), || {
-        fs::Writer::create(&t.path).ok().map(|w| Box::new(FileOut(w)) as Box<dyn ResultOut>)
+        fs::Writer::create(&t.path)
+            .ok()
+            .map(|w| Box::new(FileOut(w)) as Box<dyn ResultOut>)
     })?;
     STREAM.with(|c| *c.borrow_mut() = Some(st));
     Ok(())
@@ -97,7 +105,10 @@ pub fn take() -> Written {
     match STREAM.with(|c| c.borrow_mut().take()) {
         Some(mut st) => {
             st.finish();
-            Written { n_rows: st.n_rows(), first_row: st.first_row().to_vec() }
+            Written {
+                n_rows: st.n_rows(),
+                first_row: st.first_row().to_vec(),
+            }
         }
         None => Written::default(),
     }

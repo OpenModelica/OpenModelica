@@ -1,7 +1,7 @@
 // name: BatchReactorEqualConstarints
 // status: correct
 
-setCommandLineOptions("+g=Optimica");
+setCommandLineOptions("-g=Optimica --allowNonStandardModelica=realEquality");
 getErrorString();
 
 loadFile("BatchReactor.mo");
@@ -58,8 +58,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:2:1-10:26:writable] Warning: In relation u == path_u, == on Real operands is deprecated in non-function contexts.
-// "
+// ""
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
 // "

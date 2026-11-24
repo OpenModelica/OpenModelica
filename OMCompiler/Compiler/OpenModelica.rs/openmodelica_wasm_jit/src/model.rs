@@ -449,15 +449,18 @@ fn ext_prototype(sig: &ExtCallSig) -> Option<String> {
     ))
 }
 
-/// Fortran passes everything by reference, and so does an `_Out_` scalar; an array
-/// or record is a pointer either way.
+/// Fortran passes everything by reference, and so does an `_Out_` or protected C
+/// scalar; an array or record is a pointer either way.
 fn ext_param_types(sig: &ExtCallSig) -> Option<Vec<String>> {
     let byref = sig.lang == crate::sig::ExtLang::Fortran77;
     sig.args
         .iter()
-        .map(|(ty, is_out)| {
-            let ptr =
-                *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
+        .enumerate()
+        .map(|(j, (ty, is_out))| {
+            let ptr = *is_out
+                || byref
+                || sig.passes_by_ref(j, ty)
+                || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
             Some(format!("{}{}", ext_c_arg_type(ty)?, if ptr { "*" } else { "" }))
         })
         .collect()
@@ -793,6 +796,10 @@ pub fn encode_overrides() -> Vec<u8> {
             b.extend_from_slice(&idx.to_le_bytes());
             b.extend_from_slice(&val.to_le_bytes());
         }
+        let (flag, (start, stop)) = i.out_of_range.map_or((0u32, (0.0, 0.0)), |r| (1, r));
+        b.extend_from_slice(&flag.to_le_bytes());
+        b.extend_from_slice(&start.to_le_bytes());
+        b.extend_from_slice(&stop.to_le_bytes());
     }
     b
 }

@@ -69,6 +69,8 @@ public:
   static QString readOnlyEditorStyleSheet();
   static QColor infoBarBackgroundColor();
   static QColor infoBarTextColor();
+  static QColor warningBackgroundColor();
+  static QColor warningTextColor();
   // messages
   static QColor messagesCommandColor();
   // graphics views

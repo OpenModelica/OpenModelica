@@ -58,7 +58,9 @@ pub(crate) fn reset_declined_externals() {
 }
 
 pub(crate) fn note_declined_external(f: &SimCodeFunction::Function::Function, why: String) {
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, .. } = f else { return };
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, .. } = f else {
+        return;
+    };
     let ident = AbsynUtil::pathLastIdent(&name);
     DECLINED_EXTERNALS.with(|d| d.borrow_mut().insert(ident.to_string(), why));
 }
@@ -84,7 +86,16 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
     if external_known(f) {
         return Err("lowered as a known math/string builtin".to_string());
     }
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { funArgs, outVars, biVars, extReturn, extArgs, language, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION {
+        funArgs,
+        outVars,
+        biVars,
+        extReturn,
+        extArgs,
+        language,
+        ..
+    } = f
+    else {
         return Err("not an external function".to_string());
     };
     if ext_lang(language).is_none() {
@@ -94,18 +105,22 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
     fn record_ok(s: &SigTy) -> bool {
         match s {
             SigTy::Record { fields, .. } => fields.iter().all(|(_, t)| {
-                matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Array { .. }) || record_ok(t)
+                matches!(
+                    t,
+                    SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Array { .. }
+                ) || record_ok(t)
             }),
             _ => false,
         }
     }
     let arg_ok = |s: &SigTy| {
-        matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. })
-            || record_ok(s)
+        matches!(
+            s,
+            SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. }
+        ) || record_ok(s)
     };
-    let ret_ok = |s: &SigTy| {
-        matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr) || record_ok(s)
-    };
+    let ret_ok =
+        |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr) || record_ok(s);
     let n_out = (&**outVars).into_iter().count();
     // Each declared output is written by at most one `extArgs` entry (or the
     // return value); one left unwritten keeps its binding, as in the C target.
@@ -135,7 +150,12 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
     }
     match &**extReturn {
         A::SIMNOEXTARG => {}
-        A::SIMEXTARG { type_, outputIndex, cref, .. } => {
+        A::SIMEXTARG {
+            type_,
+            outputIndex,
+            cref,
+            ..
+        } => {
             let t = sig_ty_quiet(type_).map_err(|e| e.to_string())?;
             if !ret_ok(&t) || !claim((*outputIndex).max(0) as usize, cref_field(cref).is_some()) {
                 return Err(format!("return type {t:?} cannot be marshalled"));
@@ -157,13 +177,20 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
 /// wrapper's own signature).
 pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Result<ExtCallSig> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, language, includes, .. } =
-        f
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION {
+        extName,
+        extArgs,
+        extReturn,
+        language,
+        includes,
+        ..
+    } = f
     else {
         return Err("CodegenWasmJit: external_import_sig on a non-external function");
     };
     let lang = ext_lang(language).ok_or("CodegenWasmJit: unsupported external language")?;
     let mut args: Vec<(SigTy, bool)> = Vec::new();
+    let mut by_ref: Vec<bool> = Vec::new();
     for a in &**extArgs {
         let ty = match &**a {
             // A `size(array, dim)` argument is a C `int` dimension (input).
@@ -171,6 +198,15 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
             A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => sig_ty(type_)?,
             other => return Err("CodegenWasmJit: unsupported external-call argument"),
         };
+        // A protected variable: MLS 3.7, section 12.9.1 passes it as an output.
+        by_ref.push(matches!(
+            &**a,
+            A::SIMEXTARG {
+                isInput: false,
+                outputIndex: 0,
+                ..
+            }
+        ));
         args.push((ty, ext_arg_output_index(a) != 0));
     }
     let ret = match &**extReturn {
@@ -183,15 +219,28 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
         ExtLang::C => extName.to_string(),
         ExtLang::Fortran77 => format!("{extName}_"),
     };
-    Ok(ExtCallSig { name, lang, args, ret, declare: includes.is_empty() })
+    Ok(ExtCallSig {
+        name,
+        lang,
+        args,
+        by_ref,
+        ret,
+        declare: includes.is_empty(),
+    })
 }
 
 /// The input/output scalar `SigTy`s of the main function, for the sidecar.
 pub(super) fn main_sig_types(f: &SimCodeFunction::Function::Function) -> Result<(Vec<SigTy>, Vec<SigTy>)> {
     use SimCodeFunction::Function::Function as F;
     match f {
-        F::FUNCTION { outVars, functionArguments, .. } => Ok((var_sigtys(functionArguments)?, var_sigtys(outVars)?)),
-        F::EXTERNAL_FUNCTION { outVars, funArgs, .. } if external_known(f) || external_general(f) => Ok((var_sigtys(funArgs)?, var_sigtys(outVars)?)),
+        F::FUNCTION {
+            outVars,
+            functionArguments,
+            ..
+        } => Ok((var_sigtys(functionArguments)?, var_sigtys(outVars)?)),
+        F::EXTERNAL_FUNCTION { outVars, funArgs, .. } if external_known(f) || external_general(f) => {
+            Ok((var_sigtys(funArgs)?, var_sigtys(outVars)?))
+        }
         _ => return Err("CodegenWasmJit: only plain FUNCTIONs and known scalar-math external functions are supported"),
     }
 }

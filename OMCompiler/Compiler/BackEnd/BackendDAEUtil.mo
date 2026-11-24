@@ -1377,6 +1377,125 @@ algorithm
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markZeroCrossingEquations;
 
+public function markTimeVaryingEquations
+  "Marks the equations of the blocks whose values can change during the
+   simulation. An unmarked block uses only parameters, constants and the
+   variables of other unmarked blocks, so the values the initialization gives
+   it hold for the whole simulation."
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.StrongComponents comps;
+  input list<BackendDAE.Variables> allVars "the orderedVars of all systems";
+  input output array<Integer> marks;
+protected
+  array<Boolean> varying = arrayCreate(BackendVariable.varsSize(syst.orderedVars), false);
+  list<BackendDAE.Var> vars;
+  list<Integer> varIdxs, eqIdxs;
+  list<BackendDAE.Equation> eqs;
+  Boolean b;
+algorithm
+  for comp in comps loop
+    (vars, varIdxs, eqs, eqIdxs) := getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
+    b := List.any(vars, isTimeVaryingVar);
+    for eq in eqs loop
+      if b then
+        break;
+      end if;
+      (_, (_, b)) := BackendEquation.traverseExpsOfEquation(eq, Expression.traverseSubexpressionsTopDownHelper,
+        (function isTimeVaryingExp(vars = syst.orderedVars, varying = varying, shared = shared, allVars = allVars), false));
+    end for;
+    if b then
+      for i in varIdxs loop
+        arrayUpdate(varying, i, true);
+      end for;
+      for i in eqIdxs loop
+        arrayUpdate(marks, i, 1);
+      end for;
+    end if;
+  end for;
+end markTimeVaryingEquations;
+
+protected function isTimeVaryingVar
+  input BackendDAE.Var var;
+  output Boolean b = BackendVariable.isStateVar(var) or BackendVariable.isVarDiscrete(var) or
+                     BackendVariable.isVarOnTopLevelAndInput(var);
+end isTimeVaryingVar;
+
+protected function isTimeVaryingExp
+  input DAE.Exp exp;
+  input Boolean inVarying;
+  input BackendDAE.Variables vars;
+  input array<Boolean> varying;
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.Variables> allVars;
+  output DAE.Exp outExp = exp;
+  output Boolean cont;
+  output Boolean outVarying = inVarying;
+algorithm
+  if not outVarying then
+    outVarying := match exp
+      local
+        DAE.ComponentRef cr;
+        String name;
+      case DAE.CREF(componentRef = cr) then isTimeVaryingCref(cr, vars, varying, shared, allVars);
+      case DAE.CALL(attr = DAE.CALL_ATTR(isImpure = true)) then true;
+      case DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true)) then true;
+      case DAE.CALL(path = Absyn.IDENT(name = name)) then listMember(name, {"pre", "previous", "edge", "change",
+        "sample", "initial", "terminal", "der", "delay", "spatialDistribution", "$delayZeroCrossing",
+        "$spatialDistributionZeroCrossing", "hold", "noClock", "interval", "firstTick", "subSample",
+        "superSample", "shiftSample", "backSample", "Clock", "$_clkfire"});
+      case DAE.CLKCONST() then true;
+      else false;
+    end match;
+  end if;
+  cont := not outVarying;
+end isTimeVaryingExp;
+
+protected function isTimeVaryingCref
+  "Parameters, constants, external objects and the variables of unmarked
+   blocks are not time-varying; nor are crefs that are no variable, e.g. for
+   iterators. States come after the blocks that use them, so they are checked
+   by kind. The systems share only states, so a variable of another system is
+   time-varying."
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  input array<Boolean> varying;
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.Variables> allVars;
+  output Boolean b = false;
+protected
+  list<BackendDAE.Var> varLst;
+  list<Integer> idxs;
+algorithm
+  if ComponentReferenceBasics.crefEqual(cr, DAE.crefTime) or (match cr
+      local
+        String id;
+      case DAE.CREF_QUAL(ident = id) then listMember(id, {DAE.derivativeNamePrefix, DAE.preNamePrefix, DAE.previousNamePrefix});
+      else false;
+    end match) then
+    b := true;
+  else
+    try
+      (varLst, idxs as _ :: _) := BackendVariable.getVar(cr, vars);
+      b := List.any(varLst, isTimeVaryingVar);
+      for i in idxs loop
+        if varying[i] then
+          b := true;
+          break;
+        end if;
+      end for;
+    else
+      try
+        (varLst as _ :: _, _) := BackendVariable.getVar(cr, shared.globalKnownVars);
+        b := List.any(varLst, BackendVariable.isVarOnTopLevelAndInput);
+      else
+        b := BackendVariable.containsCref(cr, shared.localKnownVars) or BackendVariable.containsCref(cr, shared.aliasVars) or
+             List.any(allVars, function BackendVariable.containsCref(cr = cr));
+      end try;
+    end try;
+  end if;
+end isTimeVaryingCref;
+
 protected function markStateEquationsWork
   "Helper function to mark_state_equation
   Does the job by looking at variable indexes and adjacency matrix.
@@ -5102,7 +5221,7 @@ algorithm
     // WHEN_EQUATION
     case (vars, BackendDAE.WHEN_EQUATION(size=size,whenEquation = elsewe))
       algorithm
-        (row,varsSolvedInWhenEqns) := adjacencyRowWhenEnhanced(elsewe, mark, rowmark, vars, globalKnownVars, {}, {},shared);
+        (row,varsSolvedInWhenEqns) := adjacencyRowWhenEnhanced(elsewe, mark, rowmark, vars, shared);
         varsSolvedInWhenEqnsTuple := {(mark,varsSolvedInWhenEqns)};
       then
         (row,size);
@@ -5346,68 +5465,53 @@ end adjacencyRowAlgorithmInputs1;
 protected function adjacencyRowWhenEnhanced
 "author: Frenkel TUD
   Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
-  in the matrix for one equation."
+  in the matrix for one equation. The equation can only be solved for the
+  assigned variables, not for the variables in the conditions or right-hand
+  sides of any branch."
   input BackendDAE.WhenEquation inEquation;
   input Integer mark;
   input array<Integer> rowmark;
   input BackendDAE.Variables vars;
-  input BackendDAE.Variables globalKnownVars;
-  input list<Integer> iLst;
-  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   input BackendDAE.Shared shared;
-  output BackendDAE.AdjacencyMatrixElementEnhanced outRow = iRow;
-  output list<Integer> varsSolvedInWhenEqns={};
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+  output list<Integer> varsSolvedInWhenEqns = {};
 protected
+  Boolean isInitial = isInitializationDAE(shared);
+  Option<BackendDAE.WhenEquation> owe = SOME(inEquation);
   DAE.Exp condition;
   list<BackendDAE.WhenOperator> whenStmtLst;
-  Option<BackendDAE.WhenEquation> oelsepart;
-  list<Integer> lst;
-  BackendDAE.WhenEquation elsepart;
-  Boolean isInitial;
+  list<DAE.Exp> lhsLst = {};
+  list<Integer> lst = {}, varIdcs;
 algorithm
-  isInitial := isInitializationDAE(shared);
-  BackendDAE.WHEN_STMTS(condition = condition, whenStmtLst = whenStmtLst, elsewhenPart = oelsepart) := inEquation;
-  lst := adjacencyRowExpEnhanced(condition, vars, mark, rowmark, isInitial, iLst);
-  for rs in whenStmtLst loop
-    () := match rs
-      local
-        Integer varIndx;
-        list<Integer> varIdcs;
-        DAE.ComponentRef left;
-        list<DAE.ComponentRef> crefs;
-        DAE.Exp right, leftexp;
+  while isSome(owe) loop
+    SOME(BackendDAE.WHEN_STMTS(condition = condition, whenStmtLst = whenStmtLst, elsewhenPart = owe)) := owe;
+    lst := adjacencyRowExpEnhanced(condition, vars, mark, rowmark, isInitial, lst);
+    for rs in whenStmtLst loop
+      () := match rs
+        case BackendDAE.ASSIGN()
+          algorithm
+            lst := adjacencyRowExpEnhanced(rs.right, vars, mark, rowmark, isInitial, lst);
+            lhsLst := rs.left :: lhsLst;
+          then ();
+        else ();
+      end match;
+    end for;
+  end while;
 
-      case BackendDAE.ASSIGN(left = leftexp as DAE.CREF(componentRef = left), right=right)
-        algorithm
-        (_,{varIndx}) := BackendVariable.getVar(left, vars);
-        varsSolvedInWhenEqns := varIndx :: varsSolvedInWhenEqns;
-        lst := adjacencyRowExpEnhanced(right, vars, mark, rowmark, isInitial, lst);
-        // mark all negative because the when condition cannot used to solve a variable
-        List.fold1(lst,markNegativ,rowmark,mark);
-        //leftexp = Expression.crefExp(left);
-        lst := adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, isInitial, lst);
-        outRow := adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false,1,shared);
-      then ();
-
-      case BackendDAE.ASSIGN(leftexp, right) algorithm
-        crefs := Expression.getAllCrefs(leftexp);
-        (_,varIdcs) := BackendVariable.getVarLst(crefs, vars);
-        varsSolvedInWhenEqns := listAppend(varIdcs, varsSolvedInWhenEqns);
-        lst := adjacencyRowExpEnhanced(right, vars, mark, rowmark, isInitial, lst);
-        // mark all negative because the when condition cannot used to solve a variable
-        List.fold1(lst,markNegativ,rowmark,mark);
-        lst := adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, isInitial, lst);
-        outRow := adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false,1,shared);
-      then ();
-
-      else ();
-    end match;
-
+  for i in lst loop
+    if i > 0 then
+      arrayUpdate(rowmark, i, -mark);
+    end if;
   end for;
-  if isSome(oelsepart) then
-    SOME(elsepart) := oelsepart;
-    outRow := adjacencyRowWhenEnhanced(elsepart, mark, rowmark, vars, globalKnownVars, lst, outRow, shared);
-  end if;
+
+  for lhs in lhsLst loop
+    (_, varIdcs) := BackendVariable.getVarLst(Expression.getAllCrefs(lhs), vars);
+    varsSolvedInWhenEqns := listAppend(varIdcs, varsSolvedInWhenEqns);
+    lst := adjacencyRowExpEnhanced(lhs, vars, mark, rowmark, isInitial, lst);
+  end for;
+  varsSolvedInWhenEqns := List.unique(varsSolvedInWhenEqns);
+
+  outRow := list((i, if i > 0 and rowmark[i] == mark then BackendDAE.SOLVABILITY_SOLVED() else BackendDAE.SOLVABILITY_UNSOLVABLE(), {}) for i in listReverse(lst));
 end adjacencyRowWhenEnhanced;
 
 protected function markNegativ
@@ -5698,12 +5802,12 @@ algorithm
         if not solved then
           (de,_) := ExpressionSimplify.simplify(de);
           (_,crlst) := Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
-          solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars);
+          solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars,shared.functionTree);
         else
           if derived then
             (de,_) := ExpressionSimplify.simplify(de);
             (_,crlst) := Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
-            solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars);
+            solvab := adjacencyRowEnhanced2(cr1,de,crlst,vars,globalKnownVars,shared.functionTree);
             solvab := transformSolvabilityForCasualTearingSet(solvab);
           else
             solvab := BackendDAE.SOLVABILITY_SOLVABLE();
@@ -5730,12 +5834,12 @@ algorithm
           if not solved then
             (de,_) := ExpressionSimplify.simplify(de);
             (_,crlst) := Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
-            solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+            solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars,shared.functionTree);
           else
             if derived then
               (de,_) := ExpressionSimplify.simplify(de);
               (_,crlst) := Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
-              solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+              solvab := adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars,shared.functionTree);
               solvab := transformSolvabilityForCasualTearingSet(solvab);
             else
               solvab := BackendDAE.SOLVABILITY_SOLVABLE();
@@ -6064,6 +6168,7 @@ protected function adjacencyRowEnhanced2
   input list<DAE.ComponentRef> crlst;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables globalKnownVars;
+  input AvlTreePathFunction.Tree functions;
   output BackendDAE.Solvability oSolvab;
 algorithm
   oSolvab := match crlst
@@ -6083,7 +6188,7 @@ algorithm
         b1 := containAnyVar(crlst,globalKnownVars);
         b2 := containAnyVar(crlst,vars);
       then
-        adjacencyRowEnhanced3(b1,b2,cr,e,crlst,vars,globalKnownVars);
+        adjacencyRowEnhanced3(b1,b2,cr,e,crlst,vars,globalKnownVars,functions);
   end match;
 end adjacencyRowEnhanced2;
 
@@ -6098,6 +6203,7 @@ protected function adjacencyRowEnhanced3
   input list<DAE.ComponentRef> crlst;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables globalKnownVars;
+  input AvlTreePathFunction.Tree functions;
   output BackendDAE.Solvability oSolvab;
 algorithm
   oSolvab := match(b1, b2)
@@ -6122,6 +6228,9 @@ algorithm
         (nominal,_) := ExpressionSimplify.simplify(nominal);
         (e1,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
         (e1,_) := Expression.traverseExpBottomUp(e1, replaceParamWithoutFixedValueWithStart, globalKnownVars);
+        (e1,_) := ExpressionSimplify.simplify(e1);
+        e1 := Expression.traverseExpDummy(e1, function EvaluateFunctions.evaluateConstantFunctionCallExp(
+          funcsIn = functions, evalConstArgsOnly = true, recursionLimit = Flags.getConfigInt(Flags.EVAL_RECURSION_LIMIT)));
         (e1,_) := ExpressionSimplify.simplify(e1);
         b := not Expression.isZeroOrAlmostZero(e1, nominal);
         // A parameter with fixed = false and no start value is computed during
@@ -8006,6 +8115,7 @@ algorithm
   if Flags.isSet(Flags.WARN_NO_NOMINAL) then
     warnAboutIterationVariablesWithNoNominal(simDAE);
   end if;
+  outInitDAE := Initialization.addStateSetJacobianInputs(outInitDAE, simDAE);
 
   // sort the globalKnownVars
   simDAE := sortGlobalKnownVarsInDAE(simDAE);
@@ -8335,22 +8445,32 @@ public function postOptimizeDAE
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
   BackendDAEFunc.optimizationModule optModule;
-  String moduleStr;
+  String moduleName, moduleStr;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
+  Boolean tearingDone = false, rematch;
+  Integer tornBefore = 0, notTornBefore = 0;
   constant Boolean debug = false;
 algorithm
   execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
     Error.checkCancel();
-    (optModule, moduleStr) := postOptModule;
-    moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
+    (optModule, moduleName) := postOptModule;
+    moduleStr := moduleName + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
+      if tearingDone then
+        (tornBefore, notTornBefore) := numberOfAlgebraicLoops(outDAE.eqs);
+      end if;
       BackendDAE.DAE(systs, shared) := optModule(outDAE);
       (systs, shared) := filterEmptySystems(systs, shared);
+      rematch := tearingDone and List.any(systs, hasNoMatching);
       outDAE := BackendDAE.DAE(systs, shared);
       if debug then execStat("postOpt " + moduleStr); end if;
       outDAE := causalizeDAE(outDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), inMatchingAlgorithm, inDAEHandler, false);
+      if rematch then
+        warnDiscardedTearing(outDAE.eqs, tornBefore, notTornBefore, moduleName);
+      end if;
+      tearingDone := tearingDone or moduleName == "tearingSystem";
       execStat("postOpt " + (if debug then "causalize " else "") + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         BackendDump.dumpBackendDAE(outDAE, "post-optimization module " + moduleStr);
@@ -8366,6 +8486,58 @@ algorithm
     print("post-optimization done.\n");
   end if;
 end postOptimizeDAE;
+
+protected function hasNoMatching
+  input BackendDAE.EqSystem syst;
+  output Boolean b;
+algorithm
+  b := match syst.matching
+    case BackendDAE.NO_MATCHING() then true;
+    else false;
+  end match;
+end hasNoMatching;
+
+protected function numberOfAlgebraicLoops
+  input BackendDAE.EqSystems systs;
+  output Integer torn = 0;
+  output Integer notTorn = 0;
+algorithm
+  for syst in systs loop
+    () := match syst.matching
+      local
+        BackendDAE.StrongComponents comps;
+      case BackendDAE.MATCHING(comps = comps)
+        algorithm
+          for comp in comps loop
+            () := match comp
+              case BackendDAE.TORNSYSTEM() algorithm torn := torn + 1; then ();
+              case BackendDAE.EQUATIONSYSTEM() algorithm notTorn := notTorn + 1; then ();
+              else ();
+            end match;
+          end for;
+        then ();
+      else ();
+    end match;
+  end for;
+end numberOfAlgebraicLoops;
+
+protected function warnDiscardedTearing
+  "Causalizing a system again after tearingSystem gives algebraic loops
+   without tearing. A module can also remove a torn loop, e.g.
+   extendDynamicOptimization, which discards no tearing."
+  input BackendDAE.EqSystems systs;
+  input Integer tornBefore;
+  input Integer notTornBefore;
+  input String moduleName;
+protected
+  Integer torn, notTorn, lost;
+algorithm
+  (torn, notTorn) := numberOfAlgebraicLoops(systs);
+  lost := intMin(tornBefore - torn, notTorn - notTornBefore);
+  if lost > 0 then
+    Error.addMessage(Error.POST_OPT_MODULE_DISCARDED_TEARING, {moduleName, intString(lost)});
+  end if;
+end warnDiscardedTearing;
 
 public function getSolvedSystemforJacobians "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
@@ -8751,6 +8923,7 @@ public function allPostOptimizationModules
     (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (ResolveLoops.reshuffling_post, "reshufflePost"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
+    (BackendDAEOptimize.removeConstants, "removeConstants"),
     (Tearing.tearingSystem, "tearingSystem"),
     (BackendDAEOptimize.simplifyLoops, "simplifyLoops"),
     (Tearing.recursiveTearing, "recursiveTearing"),
@@ -8764,7 +8937,6 @@ public function allPostOptimizationModules
     (SymbolicJacobian.symbolicJacobian, "symbolicJacobian"),
     (SymbolicJacobian.generateSymbolicSensitivities, "generateSymbolicSensitivities"),
     (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization"),
-    (BackendDAEOptimize.removeConstants, "removeConstants"),
     (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     (BackendDAEOptimize.hets, "hets"),
@@ -10675,6 +10847,251 @@ algorithm
     var := BackendVariable.setVarInitNonlinear(var, true);
   end if;
 end markNonlinearIterationVariable;
+
+public function traverseExpWithIterators<T>
+  "Traverses an expression top-down like Expression.traverseExpTopDown, and
+   passes the iterators of the enclosing reductions to func, innermost first."
+  input output DAE.Exp exp;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+algorithm
+  (exp, arg) := Expression.traverseExpTopDown(exp, function traverseExpWithIteratorsHelper(iters = iters, func = func), arg);
+end traverseExpWithIterators;
+
+protected function traverseExpWithIteratorsHelper<T>
+  input output DAE.Exp exp;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  output Boolean cont;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  DAE.Exp e;
+  list<DAE.ReductionIterator> new_iters = {};
+algorithm
+  if not Expression.isReduction(exp) then
+    (exp, cont, arg) := func(exp, iters, arg);
+    return;
+  end if;
+
+  () := match exp
+    case DAE.REDUCTION()
+      algorithm
+        for it in exp.iterators loop
+          (e, arg) := traverseExpWithIterators(it.exp, iters, func, arg);
+          it.exp := e;
+          new_iters := it :: new_iters;
+        end for;
+        (e, arg) := traverseExpWithIterators(exp.expr, listAppend(new_iters, iters), func, arg);
+        exp.expr := e;
+        exp.iterators := listReverse(new_iters);
+      then ();
+  end match;
+  cont := false;
+end traverseExpWithIteratorsHelper;
+
+public function traverseStmtsWithIterators<T>
+  "Traverses the expressions of statements like traverseExpWithIterators, and
+   also passes the iterators of the enclosing for-loops to func."
+  input output list<DAE.Statement> stmts;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+algorithm
+  (stmts, arg) := List.mapFold(stmts, function traverseStmtWithIterators(iters = iters, func = func), arg);
+end traverseStmtsWithIterators;
+
+protected function traverseStmtWithIterators<T>
+  input output DAE.Statement stmt;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  DAE.Statement s;
+  DAE.Exp e;
+  list<DAE.Statement> stmts;
+  DAE.Else else_;
+algorithm
+  () := match stmt
+    case DAE.STMT_FOR()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.range, iters, func, arg);
+        stmt.range := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst,
+          DAE.REDUCTIONITER(stmt.iter, stmt.range, NONE(), stmt.type_) :: iters, func, arg);
+        stmt.statementLst := stmts;
+      then ();
+
+    case DAE.STMT_PARFOR()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.range, iters, func, arg);
+        stmt.range := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst,
+          DAE.REDUCTIONITER(stmt.iter, stmt.range, NONE(), stmt.type_) :: iters, func, arg);
+        stmt.statementLst := stmts;
+      then ();
+
+    case DAE.STMT_IF()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.exp, iters, func, arg);
+        stmt.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst, iters, func, arg);
+        stmt.statementLst := stmts;
+        (else_, arg) := traverseElseWithIterators(stmt.else_, iters, func, arg);
+        stmt.else_ := else_;
+      then ();
+
+    case DAE.STMT_WHILE()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.exp, iters, func, arg);
+        stmt.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst, iters, func, arg);
+        stmt.statementLst := stmts;
+      then ();
+
+    case DAE.STMT_WHEN()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.exp, iters, func, arg);
+        stmt.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst, iters, func, arg);
+        stmt.statementLst := stmts;
+        if isSome(stmt.elseWhen) then
+          (s, arg) := traverseStmtWithIterators(Util.getOption(stmt.elseWhen), iters, func, arg);
+          stmt.elseWhen := SOME(s);
+        end if;
+      then ();
+
+    case DAE.STMT_FAILURE()
+      algorithm
+        (stmts, arg) := traverseStmtsWithIterators(stmt.body, iters, func, arg);
+        stmt.body := stmts;
+      then ();
+
+    else
+      algorithm
+        ({stmt}, arg) := DAEUtil.traverseDAEEquationsStmts({stmt}, function traverseExpWithIterators(iters = iters, func = func), arg);
+      then ();
+  end match;
+end traverseStmtWithIterators;
+
+protected function traverseElseWithIterators<T>
+  input output DAE.Else else_;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  DAE.Exp e;
+  list<DAE.Statement> stmts;
+  DAE.Else el;
+algorithm
+  () := match else_
+    case DAE.ELSEIF()
+      algorithm
+        (e, arg) := traverseExpWithIterators(else_.exp, iters, func, arg);
+        else_.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(else_.statementLst, iters, func, arg);
+        else_.statementLst := stmts;
+        (el, arg) := traverseElseWithIterators(else_.else_, iters, func, arg);
+        else_.else_ := el;
+      then ();
+
+    case DAE.ELSE()
+      algorithm
+        (stmts, arg) := traverseStmtsWithIterators(else_.statementLst, iters, func, arg);
+        else_.statementLst := stmts;
+      then ();
+
+    else ();
+  end match;
+end traverseElseWithIterators;
+
+public function traverseBackendDAEExpsWithIterators<T>
+  "Like traverseBackendDAEExps, but passes the iterators of the enclosing
+   reductions and for-loops to func."
+  input BackendDAE.BackendDAE dae;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+algorithm
+  for syst in dae.eqs loop
+    arg := traverseBackendDAEExpsVars(syst.orderedVars, function traverseExpWithIterators(iters = {}, func = func), arg);
+    arg := traverseEquationsWithIterators(syst.orderedEqs, func, arg);
+    arg := traverseEquationsWithIterators(syst.removedEqs, func, arg);
+  end for;
+  arg := traverseBackendDAEExpsVars(dae.shared.globalKnownVars, function traverseExpWithIterators(iters = {}, func = func), arg);
+  arg := traverseEquationsWithIterators(dae.shared.initialEqs, func, arg);
+  arg := traverseEquationsWithIterators(dae.shared.removedEqs, func, arg);
+end traverseBackendDAEExpsWithIterators;
+
+protected function traverseEquationsWithIterators<T>
+  input BackendDAE.EquationArray eqns;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  list<DAE.Statement> stmts;
+algorithm
+  for eqn in BackendEquation.equationList(eqns) loop
+    arg := match eqn
+      case BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(stmts))
+        algorithm
+          (_, arg) := traverseStmtsWithIterators(stmts, {}, func, arg);
+        then arg;
+
+      else
+        algorithm
+          (_, arg) := BackendEquation.traverseExpsOfEquation(eqn, function traverseExpWithIterators(iters = {}, func = func), arg);
+        then arg;
+    end match;
+  end for;
+end traverseEquationsWithIterators;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

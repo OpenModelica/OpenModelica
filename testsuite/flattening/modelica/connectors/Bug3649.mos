@@ -9,7 +9,7 @@ checkModel(Transformer.SC1); getErrorString();
 // true
 // ""
 // "Check of Transformer.SC1 completed successfully.
-// Class Transformer.SC1 has 393 equation(s) and 393 variable(s).
+// The model is globally balanced with 393 equation(s) and variable(s).
 // 183 of these are trivial equation(s)."
 // ""
 // endResult

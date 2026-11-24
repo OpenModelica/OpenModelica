@@ -48,12 +48,15 @@ initStartValueCycle.mos \
 initStartValueCycle2.mos \
 OpenIPSL_AC8B_total.mos \
 initial_equation.mos \
+InitialArrayEquationRows.mos \
+InitialBindingPriority.mos \
 parameters.mos \
 parameterWithoutBinding.mos \
 pre1.mos \
 pre2.mos \
 pre3.mos \
 RecursiveTearingLambda0.mos \
+TearingTieStartValue.mos \
 setNumberOfInitLambda.mos \
 scaling1.mos \
 scaling2.mos \
@@ -98,7 +101,11 @@ conflictingStartValues.mos \
 startAttributePriority.mos \
 Ticket5340.mos \
 Issue17162.mos \
+Issue18209.mos \
+StartFromEquation.mos \
 redundantTupleEquation.mos \
+UnfixedParameterStart.mos \
+DiscreteStartUnfixedParameter.mos \
 
 
 # test that currently fail. Move up when fixed.

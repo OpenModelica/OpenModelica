@@ -1,0 +1,41 @@
+// name:     fmi2LogFormatCpp
+// keywords: FMI 2.0 export Cpp logger format assert
+// status:   correct
+// teardown_command: rm -rf fmi2LogFormatCpp.fmu fmi2LogFormatCpp.so fmi2LogFormatCpp.fmutmp/ fmi2LogFormatCpp.log fmi2LogFormatCpp_out.txt
+//
+// The message argument of the FMI 2.0 logger is a printf format
+// (FMI 2.0.5, section 2.1.5). Model texts that contain "%" must come
+// through a logger that formats the message without change.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi2LogFormatCpp
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  assert(x < 0.5, \"x exceeded 50%s of the %s limit\", AssertionLevel.warning);
+  assert(x < 0.8, \"x exceeded 80%s of the %s limit\");
+end fmi2LogFormatCpp;
+"); getErrorString();
+
+buildModelFMU(fmi2LogFormatCpp, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2LogFormatCpp.py fmi2LogFormatCpp.fmu fmi2LogFormatCpp_out.txt > fmi2LogFormatCpp.log 2>&1"); getErrorString();
+readFile("fmi2LogFormatCpp_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2LogFormatCpp.fmu"
+// ""
+// 0
+// ""
+// "x = 0.6: fmi2GetDerivatives status 0
+// status 1: x exceeded 50%s of the %s limit
+// x = 0.9: fmi2GetDerivatives status 3
+// status 3: x exceeded 80%s of the %s limit
+// "
+// ""
+// endResult

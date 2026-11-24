@@ -51,21 +51,26 @@ pub fn to_words(data: *mut DATA, out: &mut Vec<f64>) {
 }
 
 #[cfg(feature = "fmi")]
-/// [`to_words`]' inverse; `false` for words it did not write.
-pub fn set_from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> bool {
-    let state = match w.next() {
-        Some(0.0) => None,
-        Some(_) => match SpatialState::from_words(w) {
-            Some(s) => Some(s),
-            None => return false,
-        },
-        None => return false,
-    };
+/// [`to_words`]' inverse, not applied yet: `None` for words it did not write or
+/// that do not fit this model.
+pub fn from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> Option<Option<SpatialState>> {
+    if w.next()? == 0.0 {
+        return Some(None);
+    }
+    let s = SpatialState::from_words(w)?;
+    (s.count() == unsafe { (*(*data).modelData).nSpatialDistributions } as usize).then_some(Some(s))
+}
+
+#[cfg(feature = "fmi")]
+/// Puts in place what [`from_words`] read.
+pub fn restore(data: *mut DATA, state: Option<SpatialState>) {
     free(data);
     if let Some(s) = state {
-        unsafe { (*(*data).simulationInfo).spatialDistributionData = Box::into_raw(Box::new(s)) as *mut SPATIAL_DISTRIBUTION_DATA };
+        unsafe {
+            (*(*data).simulationInfo).spatialDistributionData =
+                Box::into_raw(Box::new(s)) as *mut SPATIAL_DISTRIBUTION_DATA
+        };
     }
-    true
 }
 
 /// The operators' `throwStreamPrint`, on the `threadData` the entry point below
@@ -133,8 +138,7 @@ pub extern "C" fn spatialDistribution(
     let si = unsafe { &*(*data).simulationInfo };
     let time = unsafe { (*(*(*data).localData)).timeValue };
     let mode = (si.discreteCall != 0) as u32;
-    let (o0, o1) =
-        state(data, threadData).eval(index, time, in0, in1, posX, isPositiveVelocity != 0, mode);
+    let (o0, o1) = state(data, threadData).eval(index, time, in0, in1, posX, isPositiveVelocity != 0, mode);
     if !out1.is_null() {
         unsafe { *out1 = o1 };
     }

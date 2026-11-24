@@ -60,7 +60,10 @@ pub struct Visualization {
 }
 
 fn openmodelica_xml(annotations: &[ToolAnnotation]) -> Option<&str> {
-    annotations.iter().find(|t| t.name == TYPE || t.name == TOOL).map(|t| t.xml.as_str())
+    annotations
+        .iter()
+        .find(|t| t.name == TYPE || t.name == TOOL)
+        .map(|t| t.xml.as_str())
 }
 
 /// True when the element's `version` is absent or the one we read.
@@ -77,7 +80,8 @@ fn num_attr(n: Node, name: &str) -> Option<f64> {
 }
 
 fn children<'a>(n: Node<'a, 'a>, tag: &'a str) -> impl Iterator<Item = Node<'a, 'a>> {
-    n.children().filter(move |c| c.is_element() && c.tag_name().name() == tag)
+    n.children()
+        .filter(move |c| c.is_element() && c.tag_name().name() == tag)
 }
 
 fn axis(plot: Node, role: &str) -> Option<Axis> {
@@ -110,7 +114,10 @@ fn plot(p: Node) -> Option<Plot> {
     Some(Plot {
         title: text_attr(p, "title"),
         preferred: p.attribute("preferred") == Some("true"),
-        terminal: children(p, "TerminalRef").next().and_then(|t| t.attribute("terminal")).map(str::to_string),
+        terminal: children(p, "TerminalRef")
+            .next()
+            .and_then(|t| t.attribute("terminal"))
+            .map(str::to_string),
         curves,
         x: axis(p, "x"),
         y: axis(p, "y"),
@@ -120,9 +127,15 @@ fn plot(p: Node) -> Option<Plot> {
 
 /// The figures the OpenModelica annotation declares, in the order it wrote them.
 pub fn figures(annotations: &[ToolAnnotation]) -> Vec<Figure> {
-    let Some(xml) = openmodelica_xml(annotations) else { return Vec::new() };
-    let Ok(doc) = Document::parse(xml) else { return Vec::new() };
-    let Some(root) = children(doc.root_element(), "Figures").next() else { return Vec::new() };
+    let Some(xml) = openmodelica_xml(annotations) else {
+        return Vec::new();
+    };
+    let Ok(doc) = Document::parse(xml) else {
+        return Vec::new();
+    };
+    let Some(root) = children(doc.root_element(), "Figures").next() else {
+        return Vec::new();
+    };
     if !known_version(root) {
         return Vec::new();
     }
@@ -172,12 +185,17 @@ mod tests {
 
     /// What FMUs exported before FMI 3.0's spelling carry.
     fn tool_annotations(inner: &str) -> Vec<ToolAnnotation> {
-        vec![ToolAnnotation { name: TOOL.to_string(), xml: format!("<Tool name=\"OpenModelica\">{inner}</Tool>") }]
+        vec![ToolAnnotation {
+            name: TOOL.to_string(),
+            xml: format!("<Tool name=\"OpenModelica\">{inner}</Tool>"),
+        }]
     }
 
     #[test]
     fn reads_a_figure_from_the_old_tool_element() {
-        let a = tool_annotations(r#"<Figures version="1"><Figure title="F"><Plot><Curve y="a"/></Plot></Figure></Figures>"#);
+        let a = tool_annotations(
+            r#"<Figures version="1"><Figure title="F"><Plot><Curve y="a"/></Plot></Figure></Figures>"#,
+        );
         assert_eq!(figures(&a).len(), 1);
     }
 
@@ -193,7 +211,14 @@ mod tests {
         assert_eq!(f.len(), 1);
         assert!(f[0].preferred);
         assert_eq!(f[0].caption, "why");
-        assert_eq!(f[0].plots[0].curves[0], Curve { x: String::new(), y: "a.b.c".into(), legend: "one".into() });
+        assert_eq!(
+            f[0].plots[0].curves[0],
+            Curve {
+                x: String::new(),
+                y: "a.b.c".into(),
+                legend: "one".into()
+            }
+        );
         assert_eq!(f[0].plots[0].curves[1].x, "e");
         let y = f[0].plots[0].y.as_ref().unwrap();
         assert!(y.log && y.min == Some(0.0) && y.unit == "rad");
@@ -202,23 +227,41 @@ mod tests {
 
     #[test]
     fn skips_a_plot_with_no_curves_and_an_unknown_version() {
-        assert!(figures(&annotations(r#"<Figures version="1"><Figure><Plot title="P"/></Figure></Figures>"#)).is_empty());
-        assert!(figures(&annotations(r#"<Figures version="2"><Figure><Plot><Curve y="a"/></Plot></Figure></Figures>"#)).is_empty());
+        assert!(
+            figures(&annotations(
+                r#"<Figures version="1"><Figure><Plot title="P"/></Figure></Figures>"#
+            ))
+            .is_empty()
+        );
+        assert!(
+            figures(&annotations(
+                r#"<Figures version="2"><Figure><Plot><Curve y="a"/></Plot></Figure></Figures>"#
+            ))
+            .is_empty()
+        );
     }
 
     #[test]
     fn reads_the_visualization() {
         assert_eq!(
             visualization(&annotations(r#"<Visualization version="1" file="M_visual.xml"/>"#)),
-            Some(Visualization { file: "M_visual.xml".into() })
+            Some(Visualization {
+                file: "M_visual.xml".into()
+            })
         );
-        assert_eq!(visualization(&annotations(r#"<Visualization version="9" file="x.xml"/>"#)), None);
+        assert_eq!(
+            visualization(&annotations(r#"<Visualization version="9" file="x.xml"/>"#)),
+            None
+        );
         assert_eq!(visualization(&annotations("")), None);
     }
 
     #[test]
     fn no_openmodelica_annotation_is_not_an_error() {
-        let other = vec![ToolAnnotation { name: "Other".into(), xml: "<Tool name=\"Other\"/>".into() }];
+        let other = vec![ToolAnnotation {
+            name: "Other".into(),
+            xml: "<Tool name=\"Other\"/>".into(),
+        }];
         assert!(figures(&other).is_empty());
         assert!(visualization(&other).is_none());
     }

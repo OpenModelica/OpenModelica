@@ -28,7 +28,6 @@
 
 extern crate openmodelica_lapack;
 
-
 use arcstr::ArcStr;
 use core::ffi::c_char;
 use metamodelica::{List, OrderedFloat, Real, nil};
@@ -39,76 +38,202 @@ type IVec = List<i32>;
 
 unsafe extern "C" {
     fn dgeev_(
-        jobvl: *const c_char, jobvr: *const c_char, n: *const i32, a: *mut f64, lda: *const i32,
-        wr: *mut f64, wi: *mut f64, vl: *mut f64, ldvl: *const i32, vr: *mut f64, ldvr: *const i32,
-        work: *mut f64, lwork: *const i32, info: *mut i32,
+        jobvl: *const c_char,
+        jobvr: *const c_char,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        wr: *mut f64,
+        wi: *mut f64,
+        vl: *mut f64,
+        ldvl: *const i32,
+        vr: *mut f64,
+        ldvr: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
     );
     fn dgegv_(
-        jobvl: *const c_char, jobvr: *const c_char, n: *const i32, a: *mut f64, lda: *const i32,
-        b: *mut f64, ldb: *const i32, alphar: *mut f64, alphai: *mut f64, beta: *mut f64,
-        vl: *mut f64, ldvl: *const i32, vr: *mut f64, ldvr: *const i32, work: *mut f64,
-        lwork: *const i32, info: *mut i32,
+        jobvl: *const c_char,
+        jobvr: *const c_char,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        alphar: *mut f64,
+        alphai: *mut f64,
+        beta: *mut f64,
+        vl: *mut f64,
+        ldvl: *const i32,
+        vr: *mut f64,
+        ldvr: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
     );
     fn dgels_(
-        trans: *const c_char, m: *const i32, n: *const i32, nrhs: *const i32, a: *mut f64,
-        lda: *const i32, b: *mut f64, ldb: *const i32, work: *mut f64, lwork: *const i32,
+        trans: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
         info: *mut i32,
     );
     fn dgelsx_(
-        m: *const i32, n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32, b: *mut f64,
-        ldb: *const i32, jpvt: *mut i32, rcond: *const f64, rank: *mut i32, work: *mut f64,
+        m: *const i32,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        jpvt: *mut i32,
+        rcond: *const f64,
+        rank: *mut i32,
+        work: *mut f64,
         info: *mut i32,
     );
     fn dgelsy_(
-        m: *const i32, n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32, b: *mut f64,
-        ldb: *const i32, jpvt: *mut i32, rcond: *const f64, rank: *mut i32, work: *mut f64,
-        lwork: *const i32, info: *mut i32,
+        m: *const i32,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        jpvt: *mut i32,
+        rcond: *const f64,
+        rank: *mut i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
     );
     fn dgesv_(
-        n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32, b: *mut f64,
-        ldb: *const i32, info: *mut i32,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        ipiv: *mut i32,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
     );
     fn dgglse_(
-        m: *const i32, n: *const i32, p: *const i32, a: *mut f64, lda: *const i32, b: *mut f64,
-        ldb: *const i32, c: *mut f64, d: *mut f64, x: *mut f64, work: *mut f64, lwork: *const i32,
+        m: *const i32,
+        n: *const i32,
+        p: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        c: *mut f64,
+        d: *mut f64,
+        x: *mut f64,
+        work: *mut f64,
+        lwork: *const i32,
         info: *mut i32,
     );
     fn dgtsv_(
-        n: *const i32, nrhs: *const i32, dl: *mut f64, d: *mut f64, du: *mut f64, b: *mut f64,
-        ldb: *const i32, info: *mut i32,
+        n: *const i32,
+        nrhs: *const i32,
+        dl: *mut f64,
+        d: *mut f64,
+        du: *mut f64,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
     );
     fn dgbsv_(
-        n: *const i32, kl: *const i32, ku: *const i32, nrhs: *const i32, ab: *mut f64,
-        ldab: *const i32, ipiv: *mut i32, b: *mut f64, ldb: *const i32, info: *mut i32,
+        n: *const i32,
+        kl: *const i32,
+        ku: *const i32,
+        nrhs: *const i32,
+        ab: *mut f64,
+        ldab: *const i32,
+        ipiv: *mut i32,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
     );
     fn dgesvd_(
-        jobu: *const c_char, jobvt: *const c_char, m: *const i32, n: *const i32, a: *mut f64,
-        lda: *const i32, s: *mut f64, u: *mut f64, ldu: *const i32, vt: *mut f64, ldvt: *const i32,
-        work: *mut f64, lwork: *const i32, info: *mut i32,
+        jobu: *const c_char,
+        jobvt: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        s: *mut f64,
+        u: *mut f64,
+        ldu: *const i32,
+        vt: *mut f64,
+        ldvt: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
     );
-    fn dgetrf_(
-        m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32, info: *mut i32,
-    );
+    fn dgetrf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32, info: *mut i32);
     fn dgetrs_(
-        trans: *const c_char, n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32,
-        ipiv: *mut i32, b: *mut f64, ldb: *const i32, info: *mut i32,
+        trans: *const c_char,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        ipiv: *mut i32,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
     );
     fn dgetri_(
-        n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32, work: *mut f64,
-        lwork: *const i32, info: *mut i32,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        ipiv: *mut i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
     );
     fn dgeqpf_(
-        m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, jpvt: *mut i32, tau: *mut f64,
-        work: *mut f64, info: *mut i32,
+        m: *const i32,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        jpvt: *mut i32,
+        tau: *mut f64,
+        work: *mut f64,
+        info: *mut i32,
     );
     fn dorgqr_(
-        m: *const i32, n: *const i32, k: *const i32, a: *mut f64, lda: *const i32, tau: *mut f64,
-        work: *mut f64, lwork: *const i32, info: *mut i32,
+        m: *const i32,
+        n: *const i32,
+        k: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        tau: *mut f64,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
     );
     fn dhseqr_(
-        job: *const c_char, compz: *const c_char, n: *const i32, ilo: *const i32, ihi: *const i32,
-        h: *mut f64, ldh: *const i32, wr: *mut f64, wi: *mut f64, z: *mut f64, ldz: *const i32,
-        work: *mut f64, lwork: *const i32, info: *mut i32,
+        job: *const c_char,
+        compz: *const c_char,
+        n: *const i32,
+        ilo: *const i32,
+        ihi: *const i32,
+        h: *mut f64,
+        ldh: *const i32,
+        wr: *mut f64,
+        wi: *mut f64,
+        z: *mut f64,
+        ldz: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
     );
 }
 
@@ -134,9 +259,7 @@ fn mat_in(rows: i32, cols: i32, data: &Mat) -> Vec<f64> {
 /// Build a `list<list<Real>>` of `rows`×`cols` from a column-major buffer.
 fn mat_out(rows: i32, cols: i32, m: &[f64]) -> Mat {
     let (r, c) = (rows.max(0) as usize, cols.max(0) as usize);
-    List::from_iter((0..r).map(|i| {
-        List::from_iter((0..c).map(|j| OrderedFloat(m[j * r + i])))
-    }))
+    List::from_iter((0..r).map(|i| List::from_iter((0..c).map(|j| OrderedFloat(m[j * r + i])))))
 }
 
 fn vec_in(n: i32, data: &Vec64) -> Vec<f64> {
@@ -199,8 +322,19 @@ pub fn dgeev(
     let mut info = 0;
     unsafe {
         dgeev_(
-            &jobvl, &jobvr, &inN, a.as_mut_ptr(), &inLDA, wr.as_mut_ptr(), wi.as_mut_ptr(),
-            vl.as_mut_ptr(), &inLDVL, vr.as_mut_ptr(), &inLDVR, work.as_mut_ptr(), &inLWORK,
+            &jobvl,
+            &jobvr,
+            &inN,
+            a.as_mut_ptr(),
+            &inLDA,
+            wr.as_mut_ptr(),
+            wi.as_mut_ptr(),
+            vl.as_mut_ptr(),
+            &inLDVL,
+            vr.as_mut_ptr(),
+            &inLDVR,
+            work.as_mut_ptr(),
+            &inLWORK,
             &mut info,
         );
     }
@@ -242,9 +376,23 @@ pub fn dgegv(
     let mut info = 0;
     unsafe {
         dgegv_(
-            &jobvl, &jobvr, &inN, a.as_mut_ptr(), &inLDA, b.as_mut_ptr(), &inLDB,
-            alphar.as_mut_ptr(), alphai.as_mut_ptr(), beta.as_mut_ptr(), vl.as_mut_ptr(), &inLDVL,
-            vr.as_mut_ptr(), &inLDVR, work.as_mut_ptr(), &inLWORK, &mut info,
+            &jobvl,
+            &jobvr,
+            &inN,
+            a.as_mut_ptr(),
+            &inLDA,
+            b.as_mut_ptr(),
+            &inLDB,
+            alphar.as_mut_ptr(),
+            alphai.as_mut_ptr(),
+            beta.as_mut_ptr(),
+            vl.as_mut_ptr(),
+            &inLDVL,
+            vr.as_mut_ptr(),
+            &inLDVR,
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
         );
     }
     (
@@ -277,11 +425,25 @@ pub fn dgels(
     let mut info = 0;
     unsafe {
         dgels_(
-            &trans, &inM, &inN, &inNRHS, a.as_mut_ptr(), &inLDA, b.as_mut_ptr(), &inLDB,
-            work.as_mut_ptr(), &inLWORK, &mut info,
+            &trans,
+            &inM,
+            &inN,
+            &inNRHS,
+            a.as_mut_ptr(),
+            &inLDA,
+            b.as_mut_ptr(),
+            &inLDB,
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
         );
     }
-    (mat_out(inLDA, inN, &a), mat_out(inLDA, inNRHS, &b), vec_out(inLWORK, &work), info)
+    (
+        mat_out(inLDA, inN, &a),
+        mat_out(inLDA, inNRHS, &b),
+        vec_out(inLWORK, &work),
+        info,
+    )
 }
 
 pub fn dgelsx(
@@ -308,11 +470,27 @@ pub fn dgelsx(
     let mut info = 0;
     unsafe {
         dgelsx_(
-            &inM, &inN, &inNRHS, a.as_mut_ptr(), &inLDA, b.as_mut_ptr(), &inLDB, jpvt.as_mut_ptr(),
-            &rcond, &mut rank, work.as_mut_ptr(), &mut info,
+            &inM,
+            &inN,
+            &inNRHS,
+            a.as_mut_ptr(),
+            &inLDA,
+            b.as_mut_ptr(),
+            &inLDB,
+            jpvt.as_mut_ptr(),
+            &rcond,
+            &mut rank,
+            work.as_mut_ptr(),
+            &mut info,
         );
     }
-    (mat_out(inLDA, inN, &a), mat_out(inLDA, inNRHS, &b), ivec_out(inN, &jpvt), rank, info)
+    (
+        mat_out(inLDA, inN, &a),
+        mat_out(inLDA, inNRHS, &b),
+        ivec_out(inN, &jpvt),
+        rank,
+        info,
+    )
 }
 
 pub fn dgelsy(
@@ -337,8 +515,19 @@ pub fn dgelsy(
     let mut info = 0;
     unsafe {
         dgelsy_(
-            &inM, &inN, &inNRHS, a.as_mut_ptr(), &inLDA, b.as_mut_ptr(), &inLDB, jpvt.as_mut_ptr(),
-            &rcond, &mut rank, work.as_mut_ptr(), &inLWORK, &mut info,
+            &inM,
+            &inN,
+            &inNRHS,
+            a.as_mut_ptr(),
+            &inLDA,
+            b.as_mut_ptr(),
+            &inLDB,
+            jpvt.as_mut_ptr(),
+            &rcond,
+            &mut rank,
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
         );
     }
     (
@@ -357,9 +546,23 @@ pub fn dgesv(inN: i32, inNRHS: i32, inA: Mat, inLDA: i32, inB: Mat, inLDB: i32) 
     let mut ipiv = vec![0i32; inN.max(0) as usize];
     let mut info = 0;
     unsafe {
-        dgesv_(&inN, &inNRHS, a.as_mut_ptr(), &inLDA, ipiv.as_mut_ptr(), b.as_mut_ptr(), &inLDB, &mut info);
+        dgesv_(
+            &inN,
+            &inNRHS,
+            a.as_mut_ptr(),
+            &inLDA,
+            ipiv.as_mut_ptr(),
+            b.as_mut_ptr(),
+            &inLDB,
+            &mut info,
+        );
     }
-    (mat_out(inLDA, inN, &a), ivec_out(inN, &ipiv), mat_out(inLDB, inNRHS, &b), info)
+    (
+        mat_out(inLDA, inN, &a),
+        ivec_out(inN, &ipiv),
+        mat_out(inLDB, inNRHS, &b),
+        info,
+    )
 }
 
 pub fn dgglse(
@@ -384,8 +587,19 @@ pub fn dgglse(
     let mut info = 0;
     unsafe {
         dgglse_(
-            &inM, &inN, &inP, a.as_mut_ptr(), &inLDA, b.as_mut_ptr(), &inLDB, c.as_mut_ptr(),
-            d.as_mut_ptr(), x.as_mut_ptr(), work.as_mut_ptr(), &inLWORK, &mut info,
+            &inM,
+            &inN,
+            &inP,
+            a.as_mut_ptr(),
+            &inLDA,
+            b.as_mut_ptr(),
+            &inLDB,
+            c.as_mut_ptr(),
+            d.as_mut_ptr(),
+            x.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
         );
     }
     (
@@ -414,9 +628,24 @@ pub fn dgtsv(
     let mut b = mat_in(inLDB, inNRHS, &inB);
     let mut info = 0;
     unsafe {
-        dgtsv_(&inN, &inNRHS, dl.as_mut_ptr(), d.as_mut_ptr(), du.as_mut_ptr(), b.as_mut_ptr(), &inLDB, &mut info);
+        dgtsv_(
+            &inN,
+            &inNRHS,
+            dl.as_mut_ptr(),
+            d.as_mut_ptr(),
+            du.as_mut_ptr(),
+            b.as_mut_ptr(),
+            &inLDB,
+            &mut info,
+        );
     }
-    (vec_out(inN - 1, &dl), vec_out(inN, &d), vec_out(inN - 1, &du), mat_out(inLDB, inNRHS, &b), info)
+    (
+        vec_out(inN - 1, &dl),
+        vec_out(inN, &d),
+        vec_out(inN - 1, &du),
+        mat_out(inLDB, inNRHS, &b),
+        info,
+    )
 }
 
 pub fn dgbsv(
@@ -435,11 +664,24 @@ pub fn dgbsv(
     let mut info = 0;
     unsafe {
         dgbsv_(
-            &inN, &inKL, &inKU, &inNRHS, ab.as_mut_ptr(), &inLDAB, ipiv.as_mut_ptr(),
-            b.as_mut_ptr(), &inLDB, &mut info,
+            &inN,
+            &inKL,
+            &inKU,
+            &inNRHS,
+            ab.as_mut_ptr(),
+            &inLDAB,
+            ipiv.as_mut_ptr(),
+            b.as_mut_ptr(),
+            &inLDB,
+            &mut info,
         );
     }
-    (mat_out(inLDAB, inN, &ab), ivec_out(inN, &ipiv), mat_out(inLDB, inNRHS, &b), info)
+    (
+        mat_out(inLDAB, inN, &ab),
+        ivec_out(inN, &ipiv),
+        mat_out(inLDB, inNRHS, &b),
+        info,
+    )
 }
 
 pub fn dgesvd(
@@ -471,12 +713,31 @@ pub fn dgesvd(
     let mut info = 0;
     unsafe {
         dgesvd_(
-            &jobu, &jobvt, &inM, &inN, a.as_mut_ptr(), &inLDA, s.as_mut_ptr(), u.as_mut_ptr(),
-            &inLDU, vt.as_mut_ptr(), &inLDVT, work.as_mut_ptr(), &inLWORK, &mut info,
+            &jobu,
+            &jobvt,
+            &inM,
+            &inN,
+            a.as_mut_ptr(),
+            &inLDA,
+            s.as_mut_ptr(),
+            u.as_mut_ptr(),
+            &inLDU,
+            vt.as_mut_ptr(),
+            &inLDVT,
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
         );
     }
     let out_u = if ucol > 0 { mat_out(inLDU, ucol, &u) } else { nil() };
-    (mat_out(inLDA, inN, &a), vec_out(lds, &s), out_u, mat_out(inLDVT, inN, &vt), vec_out(inLWORK, &work), info)
+    (
+        mat_out(inLDA, inN, &a),
+        vec_out(lds, &s),
+        out_u,
+        mat_out(inLDVT, inN, &vt),
+        vec_out(inLWORK, &work),
+        info,
+    )
 }
 
 pub fn dgetrf(inM: i32, inN: i32, inA: Mat, inLDA: i32) -> (Mat, IVec, i32) {
@@ -507,8 +768,15 @@ pub fn dgetrs(
     let mut info = 0;
     unsafe {
         dgetrs_(
-            &trans, &inN, &inNRHS, a.as_mut_ptr(), &inLDA, ipiv.as_mut_ptr(), b.as_mut_ptr(),
-            &inLDB, &mut info,
+            &trans,
+            &inN,
+            &inNRHS,
+            a.as_mut_ptr(),
+            &inLDA,
+            ipiv.as_mut_ptr(),
+            b.as_mut_ptr(),
+            &inLDB,
+            &mut info,
         );
     }
     (mat_out(inLDB, inNRHS, &b), info)
@@ -520,19 +788,20 @@ pub fn dgetri(inN: i32, inA: Mat, inLDA: i32, inIPIV: IVec, inWORK: Vec64, inLWO
     let mut ipiv = ivec_in(inN, &inIPIV);
     let mut info = 0;
     unsafe {
-        dgetri_(&inN, a.as_mut_ptr(), &inLDA, ipiv.as_mut_ptr(), work.as_mut_ptr(), &inLWORK, &mut info);
+        dgetri_(
+            &inN,
+            a.as_mut_ptr(),
+            &inLDA,
+            ipiv.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
+        );
     }
     (mat_out(inLDA, inN, &a), vec_out(inLWORK, &work), info)
 }
 
-pub fn dgeqpf(
-    inM: i32,
-    inN: i32,
-    inA: Mat,
-    inLDA: i32,
-    inJPVT: IVec,
-    inWORK: Vec64,
-) -> (Mat, IVec, Vec64, i32) {
+pub fn dgeqpf(inM: i32, inN: i32, inA: Mat, inLDA: i32, inJPVT: IVec, inWORK: Vec64) -> (Mat, IVec, Vec64, i32) {
     let ldtau = inM.min(inN);
     let lwork = 3 * inN;
     let mut a = mat_in(inLDA, inN, &inA);
@@ -542,11 +811,22 @@ pub fn dgeqpf(
     let mut info = 0;
     unsafe {
         dgeqpf_(
-            &inM, &inN, a.as_mut_ptr(), &inLDA, jpvt.as_mut_ptr(), tau.as_mut_ptr(),
-            work.as_mut_ptr(), &mut info,
+            &inM,
+            &inN,
+            a.as_mut_ptr(),
+            &inLDA,
+            jpvt.as_mut_ptr(),
+            tau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &mut info,
         );
     }
-    (mat_out(inLDA, inN, &a), ivec_out(inN, &jpvt), vec_out(ldtau, &tau), info)
+    (
+        mat_out(inLDA, inN, &a),
+        ivec_out(inN, &jpvt),
+        vec_out(ldtau, &tau),
+        info,
+    )
 }
 
 pub fn dorgqr(
@@ -565,8 +845,15 @@ pub fn dorgqr(
     let mut info = 0;
     unsafe {
         dorgqr_(
-            &inM, &inN, &inK, a.as_mut_ptr(), &inLDA, tau.as_mut_ptr(), work.as_mut_ptr(),
-            &inLWORK, &mut info,
+            &inM,
+            &inN,
+            &inK,
+            a.as_mut_ptr(),
+            &inLDA,
+            tau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
         );
     }
     (mat_out(inLDA, inN, &a), vec_out(inLWORK, &work), info)
@@ -594,8 +881,20 @@ pub fn dhseqr(
     let mut info = 0;
     unsafe {
         dhseqr_(
-            &job, &compz, &inN, &inILO, &inIHI, h.as_mut_ptr(), &inLDH, wr.as_mut_ptr(),
-            wi.as_mut_ptr(), z.as_mut_ptr(), &inLDZ, work.as_mut_ptr(), &inLWORK, &mut info,
+            &job,
+            &compz,
+            &inN,
+            &inILO,
+            &inIHI,
+            h.as_mut_ptr(),
+            &inLDH,
+            wr.as_mut_ptr(),
+            wi.as_mut_ptr(),
+            z.as_mut_ptr(),
+            &inLDZ,
+            work.as_mut_ptr(),
+            &inLWORK,
+            &mut info,
         );
     }
     (

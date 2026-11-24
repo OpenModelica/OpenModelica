@@ -213,7 +213,9 @@ public
       input Call_Id id2;
       output Boolean b;
     algorithm
-      b := Expression.isEqual(id1.call, id2.call) and Iterator.isEqual(id1.iter, id2.iter);
+      // the type is compared as well, e.g. identity(2) can be Integer or Real
+      b := Expression.isEqual(id1.call, id2.call) and Type.isEqual(Expression.typeOf(id1.call), Expression.typeOf(id2.call))
+        and Iterator.isEqual(id1.iter, id2.iter);
     end isEqual;
   end Call_Id;
 
@@ -322,7 +324,7 @@ protected
 
         // add parameter function alias
         varData.parameters := VariablePointers.mapPtr(varData.parameters,
-          function BVariable.mapExp(funcExp = function introduceFunctionAlias(map = map, aux_index = aux_index, iter = Iterator.EMPTY(), init = true, noEvent = false),
+          function BVariable.mapExp(funcExp = function introduceFunctionAlias(map = map, aux_index = aux_index, iter = Iterator.EMPTY(), init = true, noEvent = false, branch = false),
           mapFunc = Expression.fakeMap));
 
         // create new initialization variables and corresponding equations for the function alias
@@ -705,9 +707,9 @@ protected
 
     // do the function alias replacement
     if depth == Depth.FULL then
-      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init, noEvent = false), NONE(), Expression.fakeMap);
+      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init, noEvent = false, branch = false), NONE(), Expression.fakeMap);
     elseif depth == Depth.CONDITION then
-      eqn := Equation.mapCondition(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init, noEvent = false), NONE(), Expression.fakeMap);
+      eqn := Equation.mapCondition(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init, noEvent = false, branch = false), NONE(), Expression.fakeMap);
     end if;
   end introduceFunctionAliasEquation;
 
@@ -721,6 +723,7 @@ protected
     input Iterator iter;
     input Boolean init;
     input Boolean noEvent = false "inside of noEvent(): the alias equations get it too";
+    input Boolean branch = false "inside an if-expression branch: the alias equations would be evaluated unconditionally";
   protected
     Iterator deep_iter;
     Boolean deep_noEvent = noEvent or Expression.isCallNamed(exp, "noEvent");
@@ -730,7 +733,14 @@ protected
       case Expression.CALL() then Iterator.expand(iter, exp.call);
       else iter;
     end match;
-    exp := Expression.mapShallow(exp, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = deep_iter, init = init, noEvent = deep_noEvent));
+    exp := match exp
+      case Expression.IF() guard(not branch) algorithm
+        exp.condition   := introduceFunctionAlias(exp.condition, map, aux_index, deep_iter, init, deep_noEvent);
+        exp.trueBranch  := introduceFunctionAlias(exp.trueBranch, map, aux_index, deep_iter, init, deep_noEvent, true);
+        exp.falseBranch := introduceFunctionAlias(exp.falseBranch, map, aux_index, deep_iter, init, deep_noEvent, true);
+      then exp;
+      else Expression.mapShallow(exp, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = deep_iter, init = init, noEvent = deep_noEvent, branch = branch));
+    end match;
 
     // use the original iterator for local analysis
     exp := match exp
@@ -738,7 +748,8 @@ protected
         Call call;
         Expression new_exp, sub_exp;
 
-      case Expression.CALL() guard(checkCallReplacement(exp.call)) then introduceAlias(wrapNoEvent(exp, noEvent), map, aux_index, NBVariable.FUNCTION_STR, iter, init);
+      case Expression.CALL() guard(checkCallReplacement(exp.call) and (not branch or forceReplacement(Call.typedFunction(exp.call))))
+        then introduceAlias(wrapNoEvent(exp, noEvent), map, aux_index, NBVariable.FUNCTION_STR, iter, init);
 
       // create alias for array constructors as arguments to functions
       case new_exp as Expression.CALL(call = call as Call.TYPED_CALL()) algorithm

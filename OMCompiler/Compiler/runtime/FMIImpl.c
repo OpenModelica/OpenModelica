@@ -97,6 +97,15 @@ static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t l
   }
 }
 
+/* In an FMI 2.0 import, FMI Library's FMI 3.0 reader only reads the unused terminalsAndIcons.xml,
+ * and rejects its fmiVersion="3.0", which FMI 3.0, 2.4.9 prescribes. */
+static void fmi2importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
+{
+  if (!module || strcmp(module, "FMI3XML") != 0) {
+    importlogger(c, module, log_level, message);
+  }
+}
+
 /* Logger function used by the FMU 1.0 internally */
 static void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
@@ -200,6 +209,8 @@ const char* getFMI2ModelVariableCausality(fmi2_import_variable_t* variable)
       return "output";
     case fmi2_causality_enu_parameter:
       return "parameter";
+    case fmi2_causality_enu_independent:
+      return "independent";
     case fmi2_causality_enu_local:
     case fmi2_causality_enu_unknown:
     default:
@@ -1279,7 +1290,9 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
       fmi2_callback_functions.freeMemory = free;
     }
     // parse the xml file
+    callbacks.logger = fmi2importlogger;
     fmi = fmi2_import_parse_xml(context, working_directory, NULL);
+    callbacks.logger = importlogger;
     if(!fmi) {
       fmi_import_free_context(context);
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);

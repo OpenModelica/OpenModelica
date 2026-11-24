@@ -999,10 +999,39 @@ public
       case Equation.ARRAY_EQUATION(rhs = Expression.CREF(cref = side)) guard(ComponentRef.isEqual(side, name))
       then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Expression.applySubscripts(subs, eqn.lhs, true), Expression.fromCref(cref), eqn.source, eqn.attr);
       // expanding the equation for every element is quadratic, only do it for small arrays
-      case Equation.ARRAY_EQUATION() guard(Type.sizeOf(eqn.ty) <= 64) then scalarElementEquation(eqn, cref);
+      case Equation.ARRAY_EQUATION() guard(Type.sizeOf(eqn.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION)) then scalarElementEquation(eqn, cref);
+      case Equation.ARRAY_EQUATION() then subscriptedElementEquation(eqn, cref);
       else eqn;
     end match;
   end arrayElementEquation;
+
+  function subscriptedElementEquation
+    "the element equation lhs[k] = rhs[k] of an array equation, with k the trailing
+    subscripts of the cref, if the cref is the only part of its array in it. Unchanged otherwise."
+    input Equation eqn;
+    input ComponentRef cref;
+    output Equation result = eqn;
+  protected
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    Integer n = Type.dimensionCount(Equation.getType(eqn));
+    Equation elem;
+    list<ComponentRef> occurrences;
+  algorithm
+    if listLength(subs) < n then
+      return;
+    end if;
+    subs := List.lastN(subs, n);
+    elem := match eqn
+      case Equation.ARRAY_EQUATION() then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty),
+        SimplifyExp.simplify(Expression.applySubscripts(subs, eqn.lhs, true)),
+        SimplifyExp.simplify(Expression.applySubscripts(subs, eqn.rhs, true)), eqn.source, eqn.attr);
+      else eqn;
+    end match;
+    occurrences := Equation.collectCrefs(elem, function Slice.getSliceCandidates(name = ComponentRef.stripSubscriptsAll(cref)));
+    if not listEmpty(occurrences) and List.all(occurrences, function ComponentRef.isEqual(cref2 = cref)) then
+      result := elem;
+    end if;
+  end subscriptedElementEquation;
 
   function solveIfBranches
     "solves every branch of an if-equation with a single equation per branch for the cref"
@@ -2166,9 +2195,34 @@ protected
         elements  := expandArraySumExpDim(sizes, arrayCref, elemTy);
         new_exp   := Expression.MULTARY(listReverse(elements), {}, Operator.makeAdd(elemTy));
       then new_exp;
+
+      // a*x and x*a with vectors a and x -> a[1]*x[1] + ... + a[n]*x[n]
+      case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.SCALAR_PRODUCT))
+      guard(isCrefExp(exp.exp1, arrayCref) or isCrefExp(exp.exp2, arrayCref)) algorithm
+        elemTy    := Operator.typeOf(exp.operator);
+        elements  := {};
+        for i in 1:Dimension.size(listHead(Type.arrayDims(Expression.typeOf(exp.exp1)))) loop
+          elements := Expression.BINARY(
+            SimplifyExp.simplify(Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, exp.exp1)),
+            Operator.makeMul(elemTy),
+            SimplifyExp.simplify(Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, exp.exp2))) :: elements;
+        end for;
+      then Expression.MULTARY(listReverse(elements), {}, Operator.makeAdd(elemTy));
+
       else exp;
     end match;
   end expandArraySumExp;
+
+  function isCrefExp
+    input Expression exp;
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then ComponentRef.isEqual(exp.cref, cref);
+      else false;
+    end match;
+  end isCrefExp;
 
   function expandArraySumExpDim
     input list<Integer> sizes;

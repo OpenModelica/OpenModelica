@@ -1,6 +1,6 @@
 /* ModelicaStrings.c - External functions for Modelica.Utilities.Strings
 
-   Copyright (C) 2002-2020, Modelica Association and contributors
+   Copyright (C) 2002-2025, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,10 @@
 */
 
 /* Changelog:
+      Jan. 15, 2024: by Thomas Beutlich
+                     Utilized ModelicaDuplicateString and
+                     ModelicaDuplicateStringWithErrorReturn (ticket #3686)
+
       Mar. 15, 2020: by Thomas Beutlich
                      Improved fault-tolerance of ModelicaStrings_substring w.r.t.
                      index arguments (ticket #3503)
@@ -186,21 +190,6 @@ int ModelicaStrings_skipWhiteSpace(_In_z_ const char* string, int i) {
 
 /* ----------------- utility functions used in scanXXX functions ----------- */
 
-static int InSet(const char* string, int i, const char* separators) {
-    /* Return true if string[i] is one of the characters in separators. */
-    return strchr(separators, string[i-1]) != NULL;
-}
-
-static int SkipNonWhiteSpaceSeparator(const char* string, int i, const char* separators) {
-    /* Return index in string of first character which is ws or character in separators,
-       or position of terminating nul.
-     */
-    while (string[i-1] != '\0' && (isspace((unsigned char)string[i-1]) || InSet(string, i, separators))) {
-        ++i;
-    }
-    return i;
-}
-
 static int MatchUnsignedInteger(const char* string, int start) {
     /* Starts matching character which make an unsigned integer. The matching
        begins at the start index (first char has index 1). Returns the number
@@ -246,9 +235,7 @@ void ModelicaStrings_scanIdentifier(_In_z_ const char* string,
     /* Token missing or not identifier. */
     *nextIndex  = startIndex;
     {
-        char* s = ModelicaAllocateString(0);
-        s[0] = '\0';
-        *identifier = s;
+        *identifier = ModelicaDuplicateString("");
     }
     return;
 }
@@ -473,9 +460,7 @@ void ModelicaStrings_scanString(_In_z_ const char* string, int startIndex,
 
 Modelica_ERROR:
     {
-        char* s = ModelicaAllocateString(0);
-        s[0] = '\0';
-        *result = s;
+        *result = ModelicaDuplicateString("");
     }
     *nextIndex = startIndex;
     return;

@@ -84,7 +84,7 @@ pub fn free_library(lib: i32, _debug: bool) -> Result<()> {
 /// A side module's function is an engine handle, not an address in this process.
 /// `FFI_wasm::callFunction` calls it through the backend instead.
 pub fn function_addr(_func: i32) -> Result<usize> {
-    return Err("dynload::function_addr: a wasm side module's function has no process address")
+    return Err("dynload::function_addr: a wasm side module's function has no process address");
 }
 
 pub fn runtime_symbol(_name: &str) -> Option<usize> {
@@ -92,5 +92,5 @@ pub fn runtime_symbol(_name: &str) -> Option<usize> {
 }
 
 pub fn thread_data() -> Result<usize> {
-    return Err("dynload::thread_data: the dlopen'd MMC runtime is unavailable on wasm")
+    return Err("dynload::thread_data: the dlopen'd MMC runtime is unavailable on wasm");
 }

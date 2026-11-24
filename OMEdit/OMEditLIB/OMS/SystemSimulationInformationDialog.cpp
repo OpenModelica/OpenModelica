@@ -67,7 +67,7 @@
 SolverSettingsDialog::SolverSettingsDialog(const QString &solverName, const QString &method, const QJsonObject &solverSettings, QWidget *pParent)
   : QDialog(pParent), mMethod(method)
 {
-  setWindowTitle(tr("SolverSettings - %1 (%2)").arg(solverName, method));
+  setWindowTitle(tr("Solver Settings - %1 (%2)").arg(solverName, method));
 
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
 

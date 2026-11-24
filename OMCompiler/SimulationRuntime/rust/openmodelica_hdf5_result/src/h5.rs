@@ -9,29 +9,28 @@
 use std::ffi::{CStr, CString, c_void};
 use std::sync::Once;
 
+use hdf5_metno_sys::h5::H5_index_t::H5_INDEX_NAME;
 use hdf5_metno_sys::h5::{H5open, herr_t, hsize_t};
 use hdf5_metno_sys::h5a::{H5Aclose, H5Acreate2, H5Aopen, H5Aread, H5Awrite};
-use hdf5_metno_sys::h5d::{H5Dclose, H5Dcreate2, H5Dget_space, H5Dget_type, H5Dopen2, H5Dread, H5Dset_extent, H5Dwrite};
+use hdf5_metno_sys::h5d::{
+    H5Dclose, H5Dcreate2, H5Dget_space, H5Dget_type, H5Dopen2, H5Dread, H5Dset_extent, H5Dwrite,
+};
 use hdf5_metno_sys::h5e::{H5E_DEFAULT, H5Eset_auto2};
 use hdf5_metno_sys::h5f::{H5F_ACC_RDONLY, H5F_ACC_TRUNC, H5Fclose, H5Fcreate, H5Fopen};
-use hdf5_metno_sys::h5g::{H5Gclose, H5Gcreate2, H5Gget_info, H5Gopen2, H5G_info_t};
+use hdf5_metno_sys::h5g::{H5G_info_t, H5Gclose, H5Gcreate2, H5Gget_info, H5Gopen2};
 use hdf5_metno_sys::h5i::hid_t;
-use hdf5_metno_sys::h5::H5_index_t::H5_INDEX_NAME;
 use hdf5_metno_sys::h5l::{H5Lexists, H5Lget_name_by_idx};
 use hdf5_metno_sys::h5o::{H5O_TYPE_DATASET, H5O_TYPE_GROUP};
-use hdf5_metno_sys::h5p::{
-    H5P_DEFAULT, H5Pclose, H5Pcreate, H5Pset_chunk, H5Pset_deflate, H5Pset_shuffle,
-};
+use hdf5_metno_sys::h5p::{H5P_DEFAULT, H5Pclose, H5Pcreate, H5Pset_chunk, H5Pset_deflate, H5Pset_shuffle};
 use hdf5_metno_sys::h5r::hobj_ref_t;
 use hdf5_metno_sys::h5s::{
-    H5S_ALL, H5S_SELECT_SET, H5S_UNLIMITED, H5Sclose, H5Screate, H5Screate_simple,
-    H5Sget_simple_extent_dims, H5Sget_simple_extent_ndims, H5Sselect_hyperslab, H5S_class_t,
+    H5S_ALL, H5S_SELECT_SET, H5S_UNLIMITED, H5S_class_t, H5Sclose, H5Screate, H5Screate_simple,
+    H5Sget_simple_extent_dims, H5Sget_simple_extent_ndims, H5Sselect_hyperslab,
 };
 use hdf5_metno_sys::h5t::{
-    H5T_CSET_UTF8, H5T_C_S1, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, H5T_NATIVE_INT32,
-    H5T_NATIVE_INT8, H5T_NATIVE_UINT32, H5T_NATIVE_UINT8, H5T_STD_REF_OBJ, H5T_VARIABLE, H5Tclose,
-    H5Tcopy, H5Tcreate, H5Tenum_create, H5Tenum_insert, H5Tinsert, H5Tset_cset, H5Tset_size,
-    H5T_class_t,
+    H5T_C_S1, H5T_CSET_UTF8, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, H5T_NATIVE_INT8, H5T_NATIVE_INT32, H5T_NATIVE_UINT8,
+    H5T_NATIVE_UINT32, H5T_STD_REF_OBJ, H5T_VARIABLE, H5T_class_t, H5Tclose, H5Tcopy, H5Tcreate, H5Tenum_create,
+    H5Tenum_insert, H5Tinsert, H5Tset_cset, H5Tset_size,
 };
 
 /// `H5Rcreate` is the 1.8-era object-reference call. hdf5-metno-sys declares it,
@@ -77,11 +76,19 @@ pub fn is_threadsafe() -> bool {
 }
 
 fn check(id: hid_t, what: &str) -> Result<hid_t, String> {
-    if id < 0 { Err(format!("HDF5: {what} failed")) } else { Ok(id) }
+    if id < 0 {
+        Err(format!("HDF5: {what} failed"))
+    } else {
+        Ok(id)
+    }
 }
 
 fn ok(status: herr_t, what: &str) -> Result<(), String> {
-    if status < 0 { Err(format!("HDF5: {what} failed")) } else { Ok(()) }
+    if status < 0 {
+        Err(format!("HDF5: {what} failed"))
+    } else {
+        Ok(())
+    }
 }
 
 fn cstr(s: &str) -> CString {
@@ -201,7 +208,7 @@ impl Group {
     }
 
     fn link_kind(&self, name: &str) -> Result<LinkKind, String> {
-        use hdf5_metno_sys::h5o::{H5O_info2_t, H5Oget_info_by_name3, H5O_INFO_BASIC};
+        use hdf5_metno_sys::h5o::{H5O_INFO_BASIC, H5O_info2_t, H5Oget_info_by_name3};
         let n = cstr(name);
         let mut info: H5O_info2_t = unsafe { std::mem::zeroed() };
         ok(
@@ -239,11 +246,20 @@ pub struct Layout {
 }
 
 impl Layout {
-    pub const CONTIGUOUS: Layout = Layout { chunk: None, deflate: None, shuffle: false };
+    pub const CONTIGUOUS: Layout = Layout {
+        chunk: None,
+        deflate: None,
+        shuffle: false,
+    };
 
     fn plist(&self, rank: usize) -> Result<Plist, String> {
-        let Some(chunk) = self.chunk else { return Ok(Plist(H5P_DEFAULT)) };
-        let id = check(unsafe { H5Pcreate(*hdf5_metno_sys::h5p::H5P_CLS_DATASET_CREATE) }, "H5Pcreate")?;
+        let Some(chunk) = self.chunk else {
+            return Ok(Plist(H5P_DEFAULT));
+        };
+        let id = check(
+            unsafe { H5Pcreate(*hdf5_metno_sys::h5p::H5P_CLS_DATASET_CREATE) },
+            "H5Pcreate",
+        )?;
         let plist = Plist(id);
         let dims: Vec<hsize_t> = chunk[..rank].iter().map(|d| *d as hsize_t).collect();
         ok(unsafe { H5Pset_chunk(id, rank as i32, dims.as_ptr()) }, "H5Pset_chunk")?;
@@ -261,10 +277,16 @@ impl Space {
     pub fn simple(dims: &[u64], max: Option<&[u64]>) -> Result<Space, String> {
         let d: Vec<hsize_t> = dims.iter().map(|x| *x as hsize_t).collect();
         let m: Option<Vec<hsize_t>> = max.map(|m| {
-            m.iter().map(|x| if *x == u64::MAX { H5S_UNLIMITED } else { *x as hsize_t }).collect()
+            m.iter()
+                .map(|x| if *x == u64::MAX { H5S_UNLIMITED } else { *x as hsize_t })
+                .collect()
         });
         let id = unsafe {
-            H5Screate_simple(d.len() as i32, d.as_ptr(), m.as_ref().map_or(std::ptr::null(), |v| v.as_ptr()))
+            H5Screate_simple(
+                d.len() as i32,
+                d.as_ptr(),
+                m.as_ref().map_or(std::ptr::null(), |v| v.as_ptr()),
+            )
         };
         check(id, "H5Screate_simple").map(Space)
     }
@@ -281,8 +303,7 @@ impl Space {
         let mut dims = vec![0 as hsize_t; rank as usize];
         if rank > 0 {
             ok(
-                unsafe { H5Sget_simple_extent_dims(self.0, dims.as_mut_ptr(), std::ptr::null_mut()) }
-                    .min(0),
+                unsafe { H5Sget_simple_extent_dims(self.0, dims.as_mut_ptr(), std::ptr::null_mut()) }.min(0),
                 "H5Sget_simple_extent_dims",
             )?;
         }
@@ -394,7 +415,15 @@ impl Dataset {
         let plist = layout.plist(dims.len())?;
         let n = cstr(name);
         let id = unsafe {
-            H5Dcreate2(loc.loc(), n.as_ptr(), ty.0, space.id(), H5P_DEFAULT, plist.id(), H5P_DEFAULT)
+            H5Dcreate2(
+                loc.loc(),
+                n.as_ptr(),
+                ty.0,
+                space.id(),
+                H5P_DEFAULT,
+                plist.id(),
+                H5P_DEFAULT,
+            )
         };
         check(id, "H5Dcreate2").map(Dataset)
     }
@@ -417,7 +446,14 @@ impl Dataset {
     pub fn write_all<T>(&self, mem_ty: &Type, buf: &[T]) -> Result<(), String> {
         ok(
             unsafe {
-                H5Dwrite(self.0, mem_ty.0, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf.as_ptr().cast::<c_void>())
+                H5Dwrite(
+                    self.0,
+                    mem_ty.0,
+                    H5S_ALL,
+                    H5S_ALL,
+                    H5P_DEFAULT,
+                    buf.as_ptr().cast::<c_void>(),
+                )
             },
             "H5Dwrite",
         )
@@ -483,13 +519,7 @@ impl Dataset {
         let mut r: hobj_ref_t = 0;
         ok(
             unsafe {
-                hdf5_metno_sys::h5r::H5Rcreate(
-                    (&raw mut r).cast::<c_void>(),
-                    file.id(),
-                    p.as_ptr(),
-                    H5R_OBJECT,
-                    -1,
-                )
+                hdf5_metno_sys::h5r::H5Rcreate((&raw mut r).cast::<c_void>(), file.id(), p.as_ptr(), H5R_OBJECT, -1)
             },
             "H5Rcreate",
         )?;
@@ -515,7 +545,10 @@ pub trait Attrs {
         )?;
         let attr = Attr(id);
         let buf = if bytes.is_empty() { &[0u8][..] } else { bytes };
-        ok(unsafe { H5Awrite(attr.0, ty.id(), buf.as_ptr().cast::<c_void>()) }, "H5Awrite")
+        ok(
+            unsafe { H5Awrite(attr.0, ty.id(), buf.as_ptr().cast::<c_void>()) },
+            "H5Awrite",
+        )
     }
 
     fn attr_f64(&self, name: &str, value: f64) -> Result<(), String> {
@@ -527,7 +560,10 @@ pub trait Attrs {
             "H5Acreate2",
         )?;
         let attr = Attr(id);
-        ok(unsafe { H5Awrite(attr.0, ty.id(), (&raw const value).cast::<c_void>()) }, "H5Awrite")
+        ok(
+            unsafe { H5Awrite(attr.0, ty.id(), (&raw const value).cast::<c_void>()) },
+            "H5Awrite",
+        )
     }
 
     fn attr_i32(&self, name: &str, value: i32) -> Result<(), String> {
@@ -539,7 +575,10 @@ pub trait Attrs {
             "H5Acreate2",
         )?;
         let attr = Attr(id);
-        ok(unsafe { H5Awrite(attr.0, ty.id(), (&raw const value).cast::<c_void>()) }, "H5Awrite")
+        ok(
+            unsafe { H5Awrite(attr.0, ty.id(), (&raw const value).cast::<c_void>()) },
+            "H5Awrite",
+        )
     }
 
     fn attr_array<T>(&self, name: &str, ty: &Type, values: &[T]) -> Result<(), String> {
@@ -550,7 +589,10 @@ pub trait Attrs {
             "H5Acreate2",
         )?;
         let attr = Attr(id);
-        ok(unsafe { H5Awrite(attr.0, ty.id(), values.as_ptr().cast::<c_void>()) }, "H5Awrite")
+        ok(
+            unsafe { H5Awrite(attr.0, ty.id(), values.as_ptr().cast::<c_void>()) },
+            "H5Awrite",
+        )
     }
 
     /// Opening an attribute an object does not have is the normal case here -
@@ -627,24 +669,12 @@ impl Attrs for File {
 
 pub fn deref(file: &File, r: hobj_ref_t) -> Result<Dataset, String> {
     let id = unsafe {
-        hdf5_metno_sys::h5r::H5Rdereference2(
-            file.id(),
-            H5P_DEFAULT,
-            H5R_OBJECT,
-            (&raw const r).cast::<c_void>(),
-        )
+        hdf5_metno_sys::h5r::H5Rdereference2(file.id(), H5P_DEFAULT, H5R_OBJECT, (&raw const r).cast::<c_void>())
     };
     check(id, "H5Rdereference2").map(Dataset::from_raw)
 }
 
 /// Free what HDF5 allocated for the vlen fields of `ty`.
 pub fn reclaim_vlen<T>(ty: &Type, space: &Space, buf: &mut [T]) {
-    unsafe {
-        hdf5_metno_sys::h5t::H5Treclaim(
-            ty.id(),
-            space.id(),
-            H5P_DEFAULT,
-            buf.as_mut_ptr().cast::<c_void>(),
-        )
-    };
+    unsafe { hdf5_metno_sys::h5t::H5Treclaim(ty.id(), space.id(), H5P_DEFAULT, buf.as_mut_ptr().cast::<c_void>()) };
 }

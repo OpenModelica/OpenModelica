@@ -1,0 +1,216 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FMI settings guide model",
+  "description": "Questions (inputs), the settings they decide, and the rules between them. See README.md.",
+  "type": "object",
+  "required": ["formatVersion", "inputs", "settings", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "formatVersion": { "const": 1 },
+    "title": { "type": "string" },
+    "tool": { "type": "string", "description": "Name of the exporting tool, used in texts such as 'Not in <tool> yet'." },
+    "description": { "type": "string" },
+    "headline": {
+      "description": "Ids of the settings that a user interface shows as the one-line summary.",
+      "type": "array", "items": { "type": "string" }
+    },
+    "supportLevels": {
+      "description": "The values that 'support' can have. 'available' says if the tool can produce the option today.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "available"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "available": { "type": "boolean" }
+        }
+      }
+    },
+    "inputGroups": { "$ref": "#/definitions/groups" },
+    "settingGroups": { "$ref": "#/definitions/groups" },
+    "inputs": { "type": "array", "items": { "$ref": "#/definitions/input" } },
+    "presets": { "type": "array", "items": { "$ref": "#/definitions/preset" } },
+    "settings": { "type": "array", "items": { "$ref": "#/definitions/setting" } },
+    "rules": { "type": "array", "items": { "$ref": "#/definitions/rule" } }
+  },
+
+  "definitions": {
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "label": { "type": "string" } }
+      }
+    },
+
+    "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]*$", "not": { "enum": ["any", "all", "not"] } },
+
+    "condition": {
+      "description": "Every entry must hold. A key is the id of an input or setting, or one of any / all / not.",
+      "type": "object",
+      "properties": {
+        "any": { "description": "At least one of these conditions holds.", "type": "array", "items": { "$ref": "#/definitions/condition" } },
+        "all": { "description": "Every one of these conditions holds.", "type": "array", "items": { "$ref": "#/definitions/condition" } },
+        "not": { "description": "This condition does not hold.", "$ref": "#/definitions/condition" }
+      },
+      "additionalProperties": { "$ref": "#/definitions/test" }
+    },
+
+    "test": {
+      "description": "A value (equal to it, or for a multi input: selected), a list of values (any of them), or { lacks }, { unknown }, { not }. A test on a disabled input or a setting that is not relevant is false.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } },
+        {
+          "type": "object", "required": ["lacks"], "additionalProperties": false,
+          "properties": { "lacks": { "type": "string", "description": "Known, and not this value. For a multi input: something is selected, but not this." } }
+        },
+        {
+          "type": "object", "required": ["unknown"], "additionalProperties": false,
+          "properties": { "unknown": { "type": "boolean", "description": "A multi input with nothing selected, or a choice whose value is \"unknown\"." } }
+        },
+        {
+          "type": "object", "required": ["not"], "additionalProperties": false,
+          "properties": { "not": { "$ref": "#/definitions/test" } }
+        }
+      ]
+    },
+
+    "input": {
+      "type": "object",
+      "required": ["id", "type", "label", "default", "options"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "group": { "type": "string" },
+        "type": { "enum": ["choice", "multi"], "description": "choice: exactly one answer. multi: any number of answers; none means unknown." },
+        "label": { "type": "string", "description": "The question." },
+        "help": { "type": "string" },
+        "default": { "description": "A value for choice, a list of values for multi.", "type": ["string", "array"], "items": { "type": "string" } },
+        "enabledWhen": { "$ref": "#/definitions/condition", "description": "The question is asked only when this holds. It can test earlier inputs only." },
+        "disabledNote": { "type": "string", "description": "Why the question is off." },
+        "options": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "value": { "type": "string" },
+              "label": { "type": "string" },
+              "help": { "type": "string" },
+              "enabledWhen": { "$ref": "#/definitions/condition" },
+              "disabledNote": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "preset": {
+      "description": "Answers that a user interface can fill in with one action.",
+      "type": "object",
+      "required": ["id", "label", "set"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "set": { "type": "object", "description": "Input id to answer.", "additionalProperties": { "type": ["string", "array"], "items": { "type": "string" } } }
+      }
+    },
+
+    "setting": {
+      "type": "object",
+      "required": ["id", "label", "options"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "group": { "type": "string" },
+        "label": { "type": "string" },
+        "help": { "type": "string" },
+        "explicit": { "type": "boolean", "description": "Write this setting into the export script also when it has its default." },
+        "relevantWhen": { "$ref": "#/definitions/condition", "description": "The setting exists only when this holds. It can test inputs and earlier settings." },
+        "options": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "value": { "type": "string" },
+              "label": { "type": "string" },
+              "help": { "type": "string" },
+              "default": { "type": "boolean", "description": "Wins a tie. Normally what the tool does when nothing is set." },
+              "requires": { "$ref": "#/definitions/condition", "description": "The option is possible only when this holds, whatever the tool supports." },
+              "requiresNote": { "type": "string" },
+              "support": {
+                "description": "A support level, or a list of { when, level, note } of which the first that holds counts. Without it the option is supported.",
+                "oneOf": [
+                  { "type": "string" },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["level"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "when": { "$ref": "#/definitions/condition" },
+                        "level": { "type": "string" },
+                        "note": { "type": "string" }
+                      }
+                    }
+                  }
+                ]
+              },
+              "supportNote": { "type": "string" },
+              "how": { "type": "string", "description": "What the user must do, when it is not a flag or an argument." },
+              "omc": {
+                "description": "How to select the option in an OpenModelica script.",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "args": { "type": "object", "description": "Arguments of buildModelFMU, as Modelica text.", "additionalProperties": { "type": "string" } },
+                  "flags": { "type": "array", "description": "Flags for setCommandLineOptions.", "items": { "type": "string" } },
+                  "fmiFlags": { "type": "array", "description": "Entries of --fmiFlags, joined with commas.", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "optionList": { "type": "array", "items": { "type": "string" } },
+
+    "rule": {
+      "type": "object",
+      "required": ["id", "when"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "when": { "$ref": "#/definitions/condition", "description": "{} means always. It can test inputs, and settings that come before the ones this rule changes." },
+        "because": { "type": "string", "description": "The reason shown to the user. Needed with exclude and score." },
+        "exclude": {
+          "description": "Setting id to the options that are ruled out.",
+          "type": "object", "additionalProperties": { "$ref": "#/definitions/optionList" }
+        },
+        "score": {
+          "description": "Setting id to { option: points }. 1 is a slight preference, 2 a clear one, 3 a strong one. Negative points speak against an option.",
+          "type": "object",
+          "additionalProperties": { "type": "object", "additionalProperties": { "type": "integer" } }
+        },
+        "enables": {
+          "description": "Setting id to the one option this rule exists to make possible. The rule is skipped for 'what works today' when the tool does not have that option.",
+          "type": "object", "additionalProperties": { "type": "string" }
+        },
+        "warn": { "type": "string", "description": "A warning shown when the rule holds." },
+        "advice": { "type": "string", "description": "A tip shown when the rule holds." }
+      }
+    }
+  }
+}

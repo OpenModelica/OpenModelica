@@ -83,6 +83,7 @@ userDefinedTearing2.mos \
 testTearingStrictness.mos \
 testParamDivision.mos \
 testParamFixedFalseDivision.mos \
+testTimeIndepFuncDivision.mos \
 minimalTearing.mos \
 Algorithm1-minimal.mos \
 Algorithm2-minimal.mos \
@@ -109,6 +110,8 @@ Tearing18-minimal.mos \
 Tearing18-omc.mos \
 Tearing18-cel.mos \
 Tearing18-celMC3.mos \
+RemoveConstantsTearing.mos \
+WhenElsewhenLoop.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

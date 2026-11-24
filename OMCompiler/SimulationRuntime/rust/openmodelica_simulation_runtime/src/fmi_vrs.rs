@@ -17,7 +17,11 @@ use openmodelica_sim_meta::{FmiVr, Layout, Neg, REAL_OFF, WTy};
 use crate::abi::*;
 
 fn cstr(p: *const core::ffi::c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned()
+    }
 }
 
 /// One base type's block of value references.
@@ -110,11 +114,19 @@ fn elem_lens((index, n_array): (*const usize, u32), n_scalar: u32) -> Vec<u32> {
 /// scalar Real variable: C's `mapOutputReference2RealOutputDerivatives`.
 fn output_derivatives(md: &MODEL_DATA, si: &SIMULATION_INFO) -> Vec<Option<u32>> {
     let n = md.nVariablesRealArray.max(0) as usize;
-    let vars = if md.realVarsData.is_null() { &[][..] } else { unsafe { core::slice::from_raw_parts(md.realVarsData, n) } };
+    let vars = if md.realVarsData.is_null() {
+        &[][..]
+    } else {
+        unsafe { core::slice::from_raw_parts(md.realVarsData, n) }
+    };
     let name = |v: &STATIC_REAL_DATA| cstr(v.info.name);
     let scalar = |a: usize| unsafe { *si.realVarsIndex.add(a) } as u32;
-    let by_name: std::collections::HashMap<String, u32> =
-        vars.iter().enumerate().filter(|(_, v)| v.dimension.scalar_length == 1).map(|(a, v)| (name(v), scalar(a))).collect();
+    let by_name: std::collections::HashMap<String, u32> = vars
+        .iter()
+        .enumerate()
+        .filter(|(_, v)| v.dimension.scalar_length == 1)
+        .map(|(a, v)| (name(v), scalar(a)))
+        .collect();
     let mut out = vec![None; md.nVariablesReal.max(0) as usize];
     for (a, v) in vars.iter().enumerate() {
         if v.dimension.scalar_length == 1
@@ -217,7 +229,11 @@ pub(crate) fn build(data: *mut DATA, layout: &Layout) -> (Vec<FmiVr>, u32) {
                 off: blk.slot(i),
                 wty: blk.wty,
                 negate: if negate { blk.neg } else { Neg::None },
-                start_off: if b == 0 && i < blk.n_var { layout.real_start_off(i) } else { 0 },
+                start_off: if b == 0 && i < blk.n_var {
+                    layout.real_start_off(i)
+                } else {
+                    0
+                },
                 is_string: b == 3,
                 der_off: match (b, ders.get(i as usize)) {
                     (0, Some(Some(d))) if i < blk.n_var => blk.slot(*d),

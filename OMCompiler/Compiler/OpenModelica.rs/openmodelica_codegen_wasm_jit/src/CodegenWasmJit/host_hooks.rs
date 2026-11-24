@@ -42,10 +42,7 @@ pub fn set_cancel_poll(f: fn() -> bool) {
 /// cannot link wasmtime in. `preload` is called as soon as an export is known to
 /// need one, `compile` once the component is built.
 #[cfg(any(not(feature = "fmu-native"), target_arch = "wasm32"))]
-pub fn set_fmu_aot(
-    compile: fn(&[u8], &str) -> core::result::Result<Vec<u8>, String>,
-    preload: fn(),
-) {
+pub fn set_fmu_aot(compile: fn(&[u8], &str) -> core::result::Result<Vec<u8>, String>, preload: fn()) {
     native_fmu::set_aot_compiler(compile, preload);
 }
 
@@ -64,12 +61,12 @@ pub fn set_wasm_blob_source(fetch: fn(&str) -> Option<Vec<u8>>) {
 
 #[cfg(not(feature = "jit"))]
 pub fn sim_start(_prefix: &str, _result_file: &str, _simflags: &str) -> Result<()> {
-    return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
+    return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)");
 }
 
 #[cfg(not(feature = "jit"))]
 pub fn sim_advance(_budget_ms: f64) -> Result<SimStatus> {
-    return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
+    return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)");
 }
 
 #[cfg(not(feature = "jit"))]

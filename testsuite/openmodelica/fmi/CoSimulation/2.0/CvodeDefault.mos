@@ -1,0 +1,66 @@
+// name:     CvodeDefault
+// keywords: fmu export cvode co-simulation
+// suite: fmuCSources
+// status: correct
+// teardown_command: rm -rf CvodeDefault.fmu CvodeDefault_* CvodeDefault-tmp CvodeDefaultNls.fmu CvodeDefaultNls_* CvodeDefaultNls-tmp reCompile.log
+//
+// A Co-Simulation FMU integrates with CVODE without an s flag: without
+// --fmiFlags, also when it is re-compiled from its sources, and with flags
+// that do not give s. Euler diverges for x at this step size.
+
+loadString("
+model CvodeDefault
+  Real x(start = 1, fixed = true);
+  Real y(start = 0, fixed = true);
+equation
+  der(x) = -1000*(x - y);
+  der(y) = 1 - y;
+end CvodeDefault;
+"); getErrorString();
+
+setCommandLineOptions("--fmiSources=true"); getErrorString();
+buildModelFMU(CvodeDefault, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
+
+system("rm -rf CvodeDefault_FMU && unzip -qq CvodeDefault.fmu -d CvodeDefault_FMU", outputFile="reCompile.log"); getErrorString();
+system("cmake -S CvodeDefault_FMU/sources -B CvodeDefault_FMU/sources/build_cmake", outputFile="reCompile.log"); getErrorString();
+system("cmake --build CvodeDefault_FMU/sources/build_cmake --target create_fmu", outputFile="reCompile.log"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator CvodeDefault.fmu --mode=cs --stopTime=1 --stepSize=0.01 --resultFile=CvodeDefault_res.mat --stripRoot --suppressPath --tempDir=CvodeDefault-tmp", "CvodeDefault_systemCall.log"); getErrorString();
+val(x, 1.0, "CvodeDefault_res.mat"); getErrorString();
+
+setCommandLineOptions("--fmiFlags=nls:homotopy"); getErrorString();
+buildModelFMU(CvodeDefault, version="2.0", fmuType="cs", fileNamePrefix="CvodeDefaultNls", platforms={"static"}); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator CvodeDefaultNls.fmu --mode=cs --stopTime=1 --stepSize=0.01 --resultFile=CvodeDefaultNls_res.mat --stripRoot --suppressPath --tempDir=CvodeDefaultNls-tmp", "CvodeDefaultNls_systemCall.log"); getErrorString();
+val(x, 1.0, "CvodeDefaultNls_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "CvodeDefault.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0.6317529903485245
+// ""
+// true
+// ""
+// "CvodeDefaultNls.fmu"
+// "Warning: Adding unknown FMU simulation flag \"nls\" .
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0.6317529903485245
+// ""
+// endResult

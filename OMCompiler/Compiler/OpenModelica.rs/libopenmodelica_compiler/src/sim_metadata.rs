@@ -223,7 +223,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Enable scaling of the IDA solver.".as_ptr(),
     c"  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.".as_ptr(),
     c"  Emits also variables with HideResult=true annotation.".as_ptr(),
-    c"  Value specifies an external file for the initialization of the model.".as_ptr(),
+    c"  Value specifies an external file for the initialization of the model.\x0a  It can be a result file in any format the simulation writes (.mat, .csv, .plt or .arrow), selected by its suffix.".as_ptr(),
     c"  Value specifies the initialization method.\x0a  Following options are available: 'symbolic' (default) and 'none'.".as_ptr(),
     c"  Value [Real] specifies a time for the initialization of the model.".as_ptr(),
     c"  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\x0a  The value is an Integer with default value 3.".as_ptr(),
@@ -289,8 +289,8 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Output the variables a, b and c at the end of the simulation to the standard\x0a  output: time = value, a = value, b = value, c = value".as_ptr(),
     c"  Sets file format of the result file.".as_ptr(),
     c"  Value specifies a path for writing the output files i.e., model_res.mat, model_prof.intdata, model_prof.realdata etc.".as_ptr(),
-    c"  Override the variables in the XML setup file\x0a  For example: var1=start1,var2=start2,par3=start3".as_ptr(),
-    c"  Will override the variables in the XML setup file\x0a  with the values from the file.\x0a  Note that: -overrideFile CANNOT be used with -override.\x0a  Use when variables for -override are too many.\x0a  overrideFileName contains lines of the form: var=start".as_ptr(),
+    c"  Override the variables in the XML setup file\x0a  For example: var1=start1,var2=start2,par3=start3\x0a  A value in double quotes is a Modelica string literal: str=\"a,b\"".as_ptr(),
+    c"  Will override the variables in the XML setup file\x0a  with the values from the file.\x0a  Note that: -overrideFile CANNOT be used with -override.\x0a  Use when variables for -override are too many.\x0a  overrideFileName contains lines of the form: var=start\x0a  with start as for -override.".as_ptr(),
     c"  Value specifies the port for simulation status (default disabled).".as_ptr(),
     c"  Value specifies the name of the output result file.\x0a  The default file-name is based on the model name and output format.\x0a  For example: Model_res.mat.".as_ptr(),
     c"  Run the Data Reconciliation numerical computation algorithm for constrained equations".as_ptr(),
@@ -333,7 +333,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Shows all warnings even if a related log-stream is inactive.".as_ptr(),
     c"  Value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto".as_ptr(),
     c"  Selects the parmodauto scheduler: 'flow' (default) or 'level'. Switchable at run time without recompiling the simulator.".as_ptr(),
-    c"  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', or 'none'.".as_ptr(),
+    c"  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', 'merge_across_levels', or 'none'.".as_ptr(),
     c"  Sets the maximum number of clusters per level used by the default clustering.".as_ptr(),
     c"  Exports the parmodauto task graph (tasks, dependencies) and the resulting clustering to the given json file, keyed by equation index.".as_ptr(),
     c"  Imports a clustering (groups of equation indices) from the given json file instead of computing one. The simulation aborts if the clustering is invalid (forms a cycle or references unknown equations).".as_ptr(),
@@ -342,8 +342,9 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_NAME: CStrTable<14> = CStrTable([
+pub static SOLVER_METHOD_NAME: CStrTable<15> = CStrTable([
     c"unknown".as_ptr(),
+    c"auto".as_ptr(),
     c"dassl".as_ptr(),
     c"ida".as_ptr(),
     c"cvode".as_ptr(),
@@ -360,18 +361,19 @@ pub static SOLVER_METHOD_NAME: CStrTable<14> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_DESC: CStrTable<14> = CStrTable([
+pub static SOLVER_METHOD_DESC: CStrTable<15> = CStrTable([
     c"unknown".as_ptr(),
-    c"dassl (default) - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location".as_ptr(),
+    c"auto (default) - chooses the method from the model: euler for a model without states, ida for a model compiled with --daeMode, otherwise dassl".as_ptr(),
+    c"dassl - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location".as_ptr(),
     c"ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity".as_ptr(),
     c"cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration".as_ptr(),
     c"gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls".as_ptr(),
     c"euler - explicit Euler, fixed step size, order 1".as_ptr(),
-    c"rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta -gbctrl=const - explicit, fixed step, order 4".as_ptr(),
-    c"heun - shorthand for gbode with -gbm=heun -gbctrl=const".as_ptr(),
-    c"impeuler - shorthand for gbode with -gbm=impl_euler -gbctrl=const".as_ptr(),
-    c"trapezoid - shorthand for gbode with -gbm=trapezoid -gbctrl=const".as_ptr(),
-    c"imprungekutta - shorthand for gbode with -gbm=radauIA2 -gbctrl=const".as_ptr(),
+    c"rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta - explicit, order 4".as_ptr(),
+    c"heun - shorthand for gbode with -gbm=heun".as_ptr(),
+    c"impeuler - shorthand for gbode with -gbm=impl_euler".as_ptr(),
+    c"trapezoid - shorthand for gbode with -gbm=trapezoid".as_ptr(),
+    c"imprungekutta - shorthand for gbode with -gbm=radauIA2".as_ptr(),
     c"irksco - shorthand for gbode with -gbm=trapezoid".as_ptr(),
     c"rungekuttassc - shorthand for gbode with -gbm=rungekuttaSsc".as_ptr(),
     c"optimization - Special solver for dynamic optimization".as_ptr(),

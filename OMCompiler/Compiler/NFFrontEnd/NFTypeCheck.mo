@@ -1515,11 +1515,15 @@ algorithm
     case Type.INTEGER() then valid;
     case Type.REAL()
       algorithm
-        // Print a warning for == or <> with Real operands in a model.
+        // == or <> is not allowed for Real operands outside of functions.
         o := operator.op;
-        if not InstContext.inFunction(context) and (o == Op.EQUAL or o == Op.NEQUAL) then
-          Error.addStrictMessage(Error.WARNING_RELATION_ON_REAL,
-            {Expression.toString(outExp), Operator.symbol(operator, "")}, info);
+        if not InstContext.inFunction(context) and (o == Op.EQUAL or o == Op.NEQUAL) and
+           not InstContext.inScripting(context) then
+          if not Error.addNonStandardMessage("realEquality", Error.REAL_EQUALITY_RELATION_ERROR,
+                   {Expression.toString(outExp), Operator.symbol(operator, "")}, info) and
+             not InstContext.inInstanceAPI(context) then
+            fail();
+          end if;
         end if;
       then
         valid;
@@ -1769,19 +1773,29 @@ algorithm
         (type2, MatchKind.CAST);
 
     // Integer can be cast to Enum on certain occasions
-    case (Type.ENUMERATION(), Type.INTEGER()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+    case (Type.ENUMERATION(), Type.INTEGER()) guard Error.nonStandardAccepted("nonStdEnumerationAsIntegers")
       algorithm
         exp1 := Expression.typeCast(exp1, type2);
-        Error.addCompilerWarning("Allowing casting of enumeration expression: " + Expression.toString(before) + " to Integer: "+ Expression.toString(exp1) +". This is non-standard Modelica, use Integer(" +  Expression.toString(before) + ") instead!");
+        Error.addNonStandardWarning("nonStdEnumerationAsIntegers", Error.COMPILER_WARNING,
+          {"Allowing casting of enumeration expression: " + Expression.toString(before) + " to Integer: "+ Expression.toString(exp1) +". This is non-standard Modelica, use Integer(" +  Expression.toString(before) + ") instead!"}, Absyn.dummyInfo);
       then
         (type2, MatchKind.CAST);
 
-    case (Type.INTEGER(), Type.ENUMERATION()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration")
+    case (Type.INTEGER(), Type.ENUMERATION()) guard Error.nonStandardAccepted("nonStdIntegersAsEnumeration")
       algorithm
-        exp1 := Expression.typeCast(exp1, type2);
-        Error.addCompilerWarning("Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!");
+        try
+          // Fails for an Integer literal that is not the index of an enumeration literal.
+          exp1 := Expression.typeCast(exp1, type2);
+          Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
+            {"Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
+          compatibleType := type2;
+          matchKind := MatchKind.CAST;
+        else
+          compatibleType := Type.UNKNOWN();
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        end try;
       then
-        (type2, MatchKind.CAST);
+        (compatibleType, matchKind);
 
     case (Type.REAL(), Type.INTEGER())
       algorithm
@@ -2632,20 +2646,30 @@ algorithm
         (expectedType, MatchKind.CAST);
 
     // Allow using enumeration as Integer without the explicit cast
-    case (Type.ENUMERATION(), Type.INTEGER()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+    case (Type.ENUMERATION(), Type.INTEGER()) guard Error.nonStandardAccepted("nonStdEnumerationAsIntegers")
       algorithm
         expression := Expression.typeCast(expression, expectedType);
-        Error.addCompilerWarning("Allowing usage of enumeration expression: " + Expression.toString(before) + " as Integer: "+ Expression.toString(expression) +". This is non-standard Modelica, use Integer(" + Expression.toString(before) + ") instead!");
+        Error.addNonStandardWarning("nonStdEnumerationAsIntegers", Error.COMPILER_WARNING,
+          {"Allowing usage of enumeration expression: " + Expression.toString(before) + " as Integer: "+ Expression.toString(expression) +". This is non-standard Modelica, use Integer(" + Expression.toString(before) + ") instead!"}, Absyn.dummyInfo);
       then
         (expectedType, MatchKind.CAST);
 
     // Allow using enumeration as Integer without the explicit cast
-    case (Type.INTEGER(), Type.ENUMERATION()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration")
+    case (Type.INTEGER(), Type.ENUMERATION()) guard Error.nonStandardAccepted("nonStdIntegersAsEnumeration")
       algorithm
-        expression := Expression.typeCast(expression, expectedType);
-        Error.addCompilerWarning("Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!");
+        try
+          // Fails for an Integer literal that is not the index of an enumeration literal.
+          expression := Expression.typeCast(expression, expectedType);
+          Error.addNonStandardWarning("nonStdIntegersAsEnumeration", Error.COMPILER_WARNING,
+            {"Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!"}, Absyn.dummyInfo);
+          compatibleType := expectedType;
+          matchKind := MatchKind.CAST;
+        else
+          compatibleType := Type.UNKNOWN();
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        end try;
       then
-        (expectedType, MatchKind.CAST);
+        (compatibleType, matchKind);
 
     // If the actual type is a tuple but the expected type isn't,
     // try to use the first type in the tuple.
@@ -2665,6 +2689,20 @@ algorithm
         end if;
       then
         (compatibleType, matchKind);
+
+    case (_, Type.POLYMORPHIC())
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchPolymorphic(expectedType.name, actualType, expectedType, expression);
+      then
+        (compatibleType, matchKind);
+
+    case (Type.POLYMORPHIC(), _)
+      algorithm
+        // expression := Expression.unbox(expression);
+        // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
+      then
+        (expectedType, MatchKind.GENERIC);
 
     // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
     case (Type.UNKNOWN(), _)
@@ -2692,20 +2730,6 @@ algorithm
       then
         (compatibleType, if isCompatibleMatch(matchKind) then MatchKind.CAST else matchKind);
 
-    case (_, Type.POLYMORPHIC())
-      algorithm
-        (expression, compatibleType, matchKind) :=
-          matchPolymorphic(expectedType.name, actualType, expression);
-      then
-        (compatibleType, matchKind);
-
-    case (Type.POLYMORPHIC(), _)
-      algorithm
-        // expression := Expression.unbox(expression);
-        // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
-      then
-        (expectedType, MatchKind.GENERIC);
-
     // Expected type is any, any actual type matches.
     case (_, Type.ANY()) then (expectedType, MatchKind.EXACT);
 
@@ -2724,6 +2748,7 @@ end matchTypes_cast;
 function matchPolymorphic
   input String polymorphicName;
   input Type actualType;
+  input Type expectedType;
   input output Expression exp;
         output Type compatibleType;
         output MatchKind matchKind;
@@ -2765,6 +2790,14 @@ algorithm
         matchKind := if Type.isComplex(actualType) then MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
       then
         (actualType, matchKind);
+
+    // cref or der(), used by Curve annotation record.
+    case "__ResultReference"
+      algorithm
+        matchKind := if Expression.isCref(exp) or Expression.isCallNamed(exp, "der") then
+          MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+      then
+        (expectedType, matchKind);
 
     else
       algorithm
@@ -3181,12 +3214,19 @@ algorithm
     Error.addMultiSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_ERROR,
       {Binding.toString(binding), name}, {binding_info, comp_info});
   else
-    (_, _, mk) := matchTypes(Type.arrayElementType(bindingType),
-                             Type.arrayElementType(componentType),
-                             Expression.EMPTY(bindingType), ALLOW_UNKNOWN);
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      (_, _, mk) := matchTypes(Type.arrayElementType(bindingType),
+                               Type.arrayElementType(componentType),
+                               Expression.EMPTY(bindingType), ALLOW_UNKNOWN);
+    else
+      mk := MatchKind.NOT_COMPATIBLE;
+    end try;
+    ErrorExt.rollBack(getInstanceName());
 
     if not InstContext.inAnnotation(context) then // forget errors when handling annotations
-      if isValidAssignmentMatch(mk) then
+      if isValidAssignmentMatch(mk) and
+         not List.isEqualOnTrue(Type.arrayDims(componentType), Type.arrayDims(bindingType), Dimension.isEqualKnown) then
         Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
           {name, Binding.toString(binding),
            Dimension.toStringList(Type.arrayDims(componentType)),

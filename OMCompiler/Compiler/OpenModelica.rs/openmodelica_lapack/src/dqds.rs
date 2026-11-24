@@ -6,7 +6,7 @@
 //! here.
 
 use crate::hqr::dlascl;
-use crate::{abs, opt, sqrt, PREC, SAFMIN};
+use crate::{PREC, SAFMIN, abs, opt, sqrt};
 
 use crate::bdsqr::dlas2;
 
@@ -274,9 +274,7 @@ fn dlasq2(n: usize, z: &mut [f64]) -> i32 {
                 z[i4 - 2 * s.pp - 2] = d;
                 z[i4 - 2 * s.pp] = 0.0;
                 d = z[i4 + 1];
-            } else if SAFMIN * z[i4 + 1] < z[i4 - 2 * s.pp - 2]
-                && SAFMIN * z[i4 - 2 * s.pp - 2] < z[i4 + 1]
-            {
+            } else if SAFMIN * z[i4 + 1] < z[i4 - 2 * s.pp - 2] && SAFMIN * z[i4 - 2 * s.pp - 2] < z[i4 + 1] {
                 let temp = z[i4 + 1] / z[i4 - 2 * s.pp - 2];
                 z[i4 - 2 * s.pp] = z[i4 - 1] * temp;
                 d *= temp;
@@ -362,9 +360,7 @@ fn dlasq2(n: usize, z: &mut [f64]) -> i32 {
                 }
                 i4 += 4;
             }
-            if (kmin as i64 - s.i0 as i64) * 2 < s.n0 as i64 - kmin as i64
-                && deemin <= 0.5 * z[4 * s.n0 - 3]
-            {
+            if (kmin as i64 - s.i0 as i64) * 2 < s.n0 as i64 - kmin as i64 && deemin <= 0.5 * z[4 * s.n0 - 3] {
                 let ipn4 = 4 * (s.i0 + s.n0);
                 s.pp = 2;
                 let mut i4 = 4 * s.i0;
@@ -391,10 +387,7 @@ fn dlasq2(n: usize, z: &mut [f64]) -> i32 {
             s.pp = 1 - s.pp;
 
             // A new split inside the block: mark it and restart from there.
-            if s.pp == 0
-                && s.n0 >= s.i0 + 3
-                && (z[4 * s.n0] <= tol2 * s.qmax || z[4 * s.n0 - 1] <= tol2 * s.sigma)
-            {
+            if s.pp == 0 && s.n0 >= s.i0 + 3 && (z[4 * s.n0] <= tol2 * s.qmax || z[4 * s.n0 - 1] <= tol2 * s.sigma) {
                 let mut splt = s.i0 - 1;
                 s.qmax = z[4 * s.i0 - 3];
                 emin = z[4 * s.i0 - 1];
@@ -485,9 +478,7 @@ fn dlasq3(s: &mut Dqds, z: &mut Z<'_>) {
         }
         let nn = 4 * s.n0 + s.pp;
         if s.n0 > s.i0 + 1 {
-            if !(z[nn - 5] > tol2 * (s.sigma + z[nn - 3])
-                && z[nn - 2 * s.pp - 4] > tol2 * z[nn - 7])
-            {
+            if !(z[nn - 5] > tol2 * (s.sigma + z[nn - 3]) && z[nn - 2 * s.pp - 4] > tol2 * z[nn - 7]) {
                 deflate1(s, z);
                 continue;
             }
@@ -543,9 +534,7 @@ fn dlasq3(s: &mut Dqds, z: &mut Z<'_>) {
             z[4 * s.n0 + s.pp - 1] = z[4 * s.n0 + s.pp - 1]
                 .min(z[4 * s.i0 + s.pp - 1])
                 .min(z[4 * s.i0 + s.pp + 3]);
-            z[4 * s.n0 - s.pp] = z[4 * s.n0 - s.pp]
-                .min(z[4 * s.i0 - s.pp])
-                .min(z[4 * s.i0 - s.pp + 4]);
+            z[4 * s.n0 - s.pp] = z[4 * s.n0 - s.pp].min(z[4 * s.i0 - s.pp]).min(z[4 * s.i0 - s.pp + 4]);
             s.qmax = s.qmax.max(z[4 * s.i0 + s.pp - 3]).max(z[4 * s.i0 + s.pp + 1]);
             s.dmin = -0.0;
         }
@@ -793,7 +782,11 @@ fn dlasq4(s: &mut Dqds, z: &Z<'_>, n0in: usize) {
                 sv = v;
             }
         } else {
-            sv = if s.dmin1 == s.dn1 { 0.5 * s.dmin1 } else { 0.25 * s.dmin1 };
+            sv = if s.dmin1 == s.dn1 {
+                0.5 * s.dmin1
+            } else {
+                0.25 * s.dmin1
+            };
             s.ttype = -9;
         }
     } else if n0in == s.n0 + 2 {

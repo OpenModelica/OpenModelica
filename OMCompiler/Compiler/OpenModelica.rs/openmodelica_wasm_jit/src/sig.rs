@@ -44,11 +44,17 @@ pub enum SigTy {
     Str,
     /// An N-dimensional array of `elem` with `rank` dimensions: an `i32` handle
     /// to a runtime array object (flat row-major storage).
-    Array { elem: Arc<SigTy>, rank: u32 },
+    Array {
+        elem: Arc<SigTy>,
+        rank: u32,
+    },
     /// A record: an `i32` handle to a runtime record object. `path` is the
     /// record's class name (for `Values.RECORD`); `fields` are its components in
     /// declaration order (name + type), which fix the field layout.
-    Record { path: ArcStr, fields: Arc<Vec<(ArcStr, SigTy)>> },
+    Record {
+        path: ArcStr,
+        fields: Arc<Vec<(ArcStr, SigTy)>>,
+    },
     /// An external object: a native `void*` (e.g. a table `tableID`). Held in
     /// wasm as an opaque `i32` handle into the host's pointer registry; not a
     /// wasm heap value (no ARC — freed by the object's `destructor`).
@@ -56,7 +62,10 @@ pub enum SigTy {
     /// A function reference (`function f(w=3)`): an `i32` handle to a runtime
     /// closure (see the codegen's `closures` module). The signature is what the
     /// holder may call, fixing the `call_indirect` type at every call site.
-    Func { params: Arc<Vec<SigTy>>, results: Arc<Vec<SigTy>> },
+    Func {
+        params: Arc<Vec<SigTy>>,
+        results: Arc<Vec<SigTy>>,
+    },
 }
 
 impl SigTy {
@@ -176,6 +185,9 @@ pub struct ExtCallSig {
     pub name: String,
     pub lang: ExtLang,
     pub args: Vec<(SigTy, bool)>,
+    /// Per argument: a C input scalar passed by pointer, as a protected variable
+    /// is (MLS 3.7, section 12.9.1). Empty when there is none.
+    pub by_ref: Vec<bool>,
     pub ret: Option<SigTy>,
     /// The function carried no `Include`, so a unit calling it must declare it
     /// itself (C's `extFunDef`).
@@ -183,6 +195,12 @@ pub struct ExtCallSig {
 }
 
 impl ExtCallSig {
+    /// Whether input argument `j` of type `ty` goes as a pointer to a cell that
+    /// holds its value: every FORTRAN 77 scalar, and a `by_ref` C scalar.
+    pub fn passes_by_ref(&self, j: usize, ty: &SigTy) -> bool {
+        matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool)
+            && (self.lang == ExtLang::Fortran77 || self.by_ref.get(j) == Some(&true))
+    }
     /// Array args are always passed by pointer (the buffer is pre-allocated on the
     /// wasm side), so both input and output arrays are wasm *parameters*; only
     /// scalar/string `_Out_` args come back as results.
@@ -191,17 +209,29 @@ impl ExtCallSig {
     }
     /// The wasm import parameters: input args + output arrays, in `extArgs` order.
     pub fn wasm_params(&self) -> Vec<SigTy> {
-        self.args.iter().filter(|(t, is_out)| !Self::as_result(t, *is_out)).map(|(t, _)| t.clone()).collect()
+        self.args
+            .iter()
+            .filter(|(t, is_out)| !Self::as_result(t, *is_out))
+            .map(|(t, _)| t.clone())
+            .collect()
     }
     /// The wasm import results: the C return value (if any) then each scalar/string
     /// `_Out_` arg, in `extArgs` order — matching those output variables' order.
     pub fn wasm_results(&self) -> Vec<SigTy> {
         let mut r: Vec<SigTy> = self.ret.iter().cloned().collect();
-        r.extend(self.args.iter().filter(|(t, is_out)| Self::as_result(t, *is_out)).map(|(t, _)| t.clone()));
+        r.extend(
+            self.args
+                .iter()
+                .filter(|(t, is_out)| Self::as_result(t, *is_out))
+                .map(|(t, _)| t.clone()),
+        );
         r
     }
     pub fn wasm_sig(&self) -> FnSig {
-        FnSig { params: self.wasm_params(), results: self.wasm_results() }
+        FnSig {
+            params: self.wasm_params(),
+            results: self.wasm_results(),
+        }
     }
     /// The signature of a [`ExtLang::Fortran77`] import in a *shared-memory*
     /// module (a wasm FMU): Fortran passes every argument by reference, and with
@@ -218,13 +248,21 @@ impl ExtCallSig {
     /// The signature of a C import in a *shared-memory* module: the C prototype
     /// itself, which is what a library beside the model exports. An `_Out_`
     /// scalar or String is a pointer to a cell the generated code allocates and
-    /// reads back; only the C return value comes back as a result.
+    /// reads back, a `by_ref` scalar one it fills; only the C return value comes
+    /// back as a result.
     pub fn wasm_sig_c_shared(&self) -> FnSig {
         FnSig {
             params: self
                 .args
                 .iter()
-                .map(|(t, is_out)| if Self::as_result(t, *is_out) { SigTy::Ptr } else { t.clone() })
+                .enumerate()
+                .map(|(j, (t, is_out))| {
+                    if Self::as_result(t, *is_out) || self.passes_by_ref(j, t) {
+                        SigTy::Ptr
+                    } else {
+                        t.clone()
+                    }
+                })
                 .collect(),
             results: self.ret.iter().cloned().collect(),
         }
@@ -269,7 +307,12 @@ pub fn record_layout(fields: &[(ArcStr, SigTy)]) -> RecordLayout {
         }
         off += sz;
     }
-    RecordLayout { data_off, size: data_off + align_up(off, 8), field_off, heap }
+    RecordLayout {
+        data_off,
+        size: data_off + align_up(off, 8),
+        field_off,
+        heap,
+    }
 }
 
 /// The layout of C's `<record>_external`: `double`, `int`, a `ptr`-wide pointer
@@ -303,9 +346,12 @@ pub fn c_record_layout(fields: &[(ArcStr, SigTy)], ptr: u32) -> CRecordLayout {
         off += sz;
         align = align.max(a);
     }
-    CRecordLayout { size: align_up(off, align), align, offsets }
+    CRecordLayout {
+        size: align_up(off, align),
+        align,
+        offsets,
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -315,11 +361,15 @@ mod tests {
     /// kernel must import the C prototype, not the host-trampoline shape.
     #[test]
     fn shared_c_import_is_the_c_prototype() {
-        let ints = SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 };
+        let ints = SigTy::Array {
+            elem: Arc::new(SigTy::Int),
+            rank: 1,
+        };
         let sig = ExtCallSig {
             name: "ModelicaRandom_xorshift64star".into(),
             lang: ExtLang::C,
             args: vec![(ints.clone(), false), (ints.clone(), true), (SigTy::Real, true)],
+            by_ref: Vec::new(),
             ret: None,
             declare: false,
         };
@@ -334,10 +384,32 @@ mod tests {
             name: "ModelicaStrings_substring".into(),
             lang: ExtLang::C,
             args: vec![(SigTy::Str, false), (SigTy::Int, false), (SigTy::Int, false)],
+            by_ref: Vec::new(),
             ret: Some(SigTy::Str),
             declare: false,
         };
         assert_eq!(ret.wasm_sig_c_shared().params, vec![SigTy::Str, SigTy::Int, SigTy::Int]);
         assert_eq!(ret.wasm_sig_c_shared().results, vec![SigTy::Str]);
+    }
+
+    /// `void f(double *y, int *n)` with `n` protected: a value in, not a result.
+    #[test]
+    fn by_ref_scalar_is_an_input_pointer() {
+        let reals = SigTy::Array {
+            elem: Arc::new(SigTy::Real),
+            rank: 1,
+        };
+        let sig = ExtCallSig {
+            name: "f".into(),
+            lang: ExtLang::C,
+            args: vec![(reals.clone(), true), (SigTy::Int, false)],
+            by_ref: vec![false, true],
+            ret: None,
+            declare: false,
+        };
+        assert!(sig.passes_by_ref(1, &SigTy::Int) && !sig.passes_by_ref(0, &reals));
+        assert_eq!(sig.wasm_sig().params, vec![reals.clone(), SigTy::Int]);
+        assert!(sig.wasm_sig().results.is_empty());
+        assert_eq!(sig.wasm_sig_c_shared().params, vec![reals, SigTy::Ptr]);
     }
 }

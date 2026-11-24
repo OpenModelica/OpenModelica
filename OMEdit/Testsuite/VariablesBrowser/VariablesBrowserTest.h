@@ -65,6 +65,12 @@ private slots:
    * without a model_init.xml. See issue #14952.
    */
   void resultFileUnits();
+  /*!
+   * \brief overrideFile
+   * Checks that the changed values go to model_override.txt and not to model_init.xml,
+   * and that the Variables Browser shows them. See issue #3962.
+   */
+  void overrideFile();
   void cleanupTestCase();
 };
 

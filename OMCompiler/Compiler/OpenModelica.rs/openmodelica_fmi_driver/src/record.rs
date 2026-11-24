@@ -14,11 +14,9 @@
 
 use crate::api::Fmi3;
 use crate::{Error, Result};
-use openmodelica_fmi::{
-    Alias, Causality, Dimension, ModelDescription, VarType, Variability, Variable,
-};
 use openmodelica_arrow_writer as arrow;
 use openmodelica_fmi::description as fmi_unit;
+use openmodelica_fmi::{Alias, Causality, Dimension, ModelDescription, VarType, Variability, Variable};
 use openmodelica_mat_writer as mat;
 use std::collections::HashMap;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
@@ -195,7 +193,13 @@ fn names_kept<'a>(
             .into_iter()
             .flatten()
             .filter(|a| a.ty == v.ty && keep(&a.name))
-            .map(|a| (a.name.as_str(), a.description.as_deref().unwrap_or_default(), a.alias == Alias::NegatedAlias)),
+            .map(|a| {
+                (
+                    a.name.as_str(),
+                    a.description.as_deref().unwrap_or_default(),
+                    a.alias == Alias::NegatedAlias,
+                )
+            }),
     );
     // A negated alias cannot name the column: it would carry the wrong sign.
     let column = names.iter().position(|(_, _, negated)| !negated)?;
@@ -253,7 +257,11 @@ fn element_names(name: &str, dimensions: &[usize]) -> Vec<String> {
             .iter()
             .flat_map(|prefix| {
                 (1..=*extent).map(move |i| {
-                    if prefix.is_empty() { i.to_string() } else { format!("{prefix},{i}") }
+                    if prefix.is_empty() {
+                        i.to_string()
+                    } else {
+                        format!("{prefix},{i}")
+                    }
                 })
             })
             .collect();
@@ -286,7 +294,9 @@ impl Recorder {
         let mut aliases = Vec::new();
         let fmi1 = fmi1_aliases(md);
         for v in md.variables.iter().filter(|v| is_recorded(v)) {
-            let Some(names) = names_kept(v, &fmi1, &keep) else { continue };
+            let Some(names) = names_kept(v, &fmi1, &keep) else {
+                continue;
+            };
             let (name, description, _) = names[0];
             let extents = extents(md, v);
             let first = columns.len() + 1; // column 0 is time
@@ -314,16 +324,16 @@ impl Recorder {
         let mut param_aliases = Vec::new();
         let mut params = Vec::new();
         for v in md.variables.iter().filter(|v| is_parameter(v)) {
-            let Some(names) = names_kept(v, &fmi1, &keep) else { continue };
+            let Some(names) = names_kept(v, &fmi1, &keep) else {
+                continue;
+            };
             let (name, description, _) = names[0];
             let extents = extents(md, v);
             let first = parameters.len();
             let starts = match &v.start {
                 Some(openmodelica_fmi::Start::Reals(r)) => r.clone(),
                 Some(openmodelica_fmi::Start::Ints(i)) => i.iter().map(|v| *v as f64).collect(),
-                Some(openmodelica_fmi::Start::Bools(b)) => {
-                    b.iter().map(|v| *v as u8 as f64).collect()
-                }
+                Some(openmodelica_fmi::Start::Bools(b)) => b.iter().map(|v| *v as u8 as f64).collect(),
                 _ => Vec::new(),
             };
             for (k, element) in element_names(name, &extents).into_iter().enumerate() {
@@ -359,7 +369,10 @@ impl Recorder {
         let file = std::fs::File::create(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
         let arrow = path.extension().and_then(|e| e.to_str()) == Some("arrow");
         self.stream = Some(Stream {
-            out: FileOut { file: BufWriter::new(file), error: None },
+            out: FileOut {
+                file: BufWriter::new(file),
+                error: None,
+            },
             start_time,
             stop_time,
             units: units.to_vec(),
@@ -370,7 +383,9 @@ impl Recorder {
 
     /// Complete a streamed file; a no-op otherwise.
     pub fn finish(&mut self) -> Result<()> {
-        let Some(stream) = self.stream.as_mut() else { return Ok(()) };
+        let Some(stream) = self.stream.as_mut() else {
+            return Ok(());
+        };
         match std::mem::replace(&mut stream.kind, StreamKind::Done) {
             StreamKind::Unbegun { arrow } => {
                 // No row was sampled: the file still gets its header.
@@ -394,7 +409,8 @@ impl Recorder {
         let stream = self.stream.as_mut().expect("a stream is open");
         let (start, stop) = (stream.start_time, stream.stop_time);
         if arrow {
-            let (vars, params, col_types) = arrow_vars(&self.columns, &self.aliases, &self.parameters, &self.param_aliases);
+            let (vars, params, col_types) =
+                arrow_vars(&self.columns, &self.aliases, &self.parameters, &self.param_aliases);
             let defs = arrow::units::declared(stream.units.iter().map(unit_def));
             let s = arrow::ArrowStream::begin(
                 &mut stream.out,
@@ -405,12 +421,25 @@ impl Recorder {
                 &col_types,
                 arrow::block_rows(0),
                 arrow::no_strings(),
-                &arrow::FileMeta { span: Some((start, stop)), units: &defs, zstd: None },
+                &arrow::FileMeta {
+                    span: Some((start, stop)),
+                    units: &defs,
+                    zstd: None,
+                },
             );
             StreamKind::Arrow(s)
         } else {
             let (signals, params) = mat_signals(&self.columns, &self.aliases, &self.parameters, &self.param_aliases);
-            let s = mat::Mat4Stream::begin(&mut stream.out, &signals, start, stop, first_row, n_reals, &params, mat::Precision::Double);
+            let s = mat::Mat4Stream::begin(
+                &mut stream.out,
+                &signals,
+                start,
+                stop,
+                first_row,
+                n_reals,
+                &params,
+                mat::Precision::Double,
+            );
             StreamKind::Mat(s)
         }
     }
@@ -531,13 +560,23 @@ impl Recorder {
             &params,
             &col_types,
             arrow::no_strings(),
-            &arrow::FileMeta { span: Some((start_time, stop_time)), units: &defs, zstd: None },
+            &arrow::FileMeta {
+                span: Some((start_time, stop_time)),
+                units: &defs,
+                zstd: None,
+            },
         )
     }
 
     /// Write the buffered rows as the result file the suffix asks for (`.arrow` or
     /// `.mat`).
-    pub fn write(&self, path: &std::path::Path, start_time: f64, stop_time: f64, units: &[fmi_unit::Unit]) -> Result<()> {
+    pub fn write(
+        &self,
+        path: &std::path::Path,
+        start_time: f64,
+        stop_time: f64,
+        units: &[fmi_unit::Unit],
+    ) -> Result<()> {
         let bytes = match path.extension().and_then(|e| e.to_str()) {
             Some("arrow") => self.to_arrow(start_time, stop_time, units),
             _ => self.to_mat(start_time, stop_time),
@@ -570,7 +609,10 @@ fn mat_signals<'a>(
         signals.push(mat::MatVar {
             name: &c.name,
             comment: &c.description,
-            kind: mat::MatKind::Column { col: i as u32 + 1, negate: mat::Neg::None },
+            kind: mat::MatKind::Column {
+                col: i as u32 + 1,
+                negate: mat::Neg::None,
+            },
             unvarying: false,
         });
     }
@@ -599,7 +641,9 @@ fn mat_signals<'a>(
         signals.push(mat::MatVar {
             name: &a.name,
             comment: &a.description,
-            kind: mat::MatKind::Param { negate: if a.negated { mat::Neg::Arith } else { mat::Neg::None } },
+            kind: mat::MatKind::Param {
+                negate: if a.negated { mat::Neg::Arith } else { mat::Neg::None },
+            },
             unvarying: false,
         });
         params.push(parameters[a.target].value);
@@ -636,7 +680,10 @@ fn arrow_vars<'a>(
             relative_quantity: c.relative_quantity,
             ty: arrow_ty(c.ty),
             discrete: c.discrete,
-            kind: arrow::ArrowKind::Column { col: i as u32 + 1, affine: arrow::Affine::IDENTITY },
+            kind: arrow::ArrowKind::Column {
+                col: i as u32 + 1,
+                affine: arrow::Affine::IDENTITY,
+            },
             unvarying: false,
             enumeration: None,
         });
@@ -651,11 +698,22 @@ fn arrow_vars<'a>(
         }
     };
     for a in aliases {
-        vars.push(entry_var(a, arrow::ArrowKind::Column { col: a.target as u32, affine: affine(a) }));
+        vars.push(entry_var(
+            a,
+            arrow::ArrowKind::Column {
+                col: a.target as u32,
+                affine: affine(a),
+            },
+        ));
     }
     let mut params: Vec<f64> = Vec::with_capacity(parameters.len() + param_aliases.len());
     for p in parameters {
-        vars.push(entry_var(p, arrow::ArrowKind::Param { affine: arrow::Affine::IDENTITY }));
+        vars.push(entry_var(
+            p,
+            arrow::ArrowKind::Param {
+                affine: arrow::Affine::IDENTITY,
+            },
+        ));
         params.push(p.value);
     }
     for a in param_aliases {

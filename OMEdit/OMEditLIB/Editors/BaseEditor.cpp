@@ -737,6 +737,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   setRedoAvailable(false);
   connect(this, SIGNAL(undoAvailable(bool)), SLOT(setUndoAvailable(bool)));
   connect(this, SIGNAL(redoAvailable(bool)), SLOT(setRedoAvailable(bool)));
+  mDefaultCursor = viewport()->cursor();
 }
 
 /*!
@@ -1915,7 +1916,8 @@ void PlainTextEdit::insertFromMimeData(const QMimeData *source)
     textCursor().insertFragment(QTextDocumentFragment::fromPlainText(className));
     ensureCursorVisible();
     setFocus(Qt::ActiveWindowFocusReason);
-  } else if (source->hasFormat(Helper::modelicaFileFormat)) {
+  } else if (source->hasFormat(Helper::modelicaFileFormat) && !source->urls().isEmpty()) {
+    // Qt for WebAssembly adds an empty text/uri-list to all pasted text.
     MainWindow::instance()->openDroppedFile(source);
   } else {
     QPlainTextEdit::insertFromMimeData(source);
@@ -2083,7 +2085,7 @@ void PlainTextEdit::mousePressEvent(QMouseEvent *event)
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (controlModifier) {
     mpBaseEditor->symbolAtPosition(event->pos());
-    viewport()->unsetCursor();
+    viewport()->setCursor(mDefaultCursor);
   }
   QPlainTextEdit::mousePressEvent(event);
   if (event->button() == Qt::LeftButton) {
@@ -2102,7 +2104,7 @@ void PlainTextEdit::mouseMoveEvent(QMouseEvent *event)
   if (controlModifier) {
     viewport()->setCursor(Qt::PointingHandCursor);
   } else {
-    viewport()->unsetCursor();
+    viewport()->setCursor(mDefaultCursor);
   }
 
   QPlainTextEdit::mouseMoveEvent(event);

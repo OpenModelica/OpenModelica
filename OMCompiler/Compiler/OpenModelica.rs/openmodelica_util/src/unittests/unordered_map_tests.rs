@@ -8,11 +8,11 @@
 //
 // We use ArcStr keys and i32 values throughout.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::UnorderedMap as UM;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── hash / eq helpers ────────────────────────────────────────────────────────
 
@@ -47,8 +47,10 @@ fn to_sorted_pairs(m: metamodelica::Ref<UM::UnorderedMap<ArcStr, i32>>) -> Vec<(
     let mut vi = vals.as_ref();
     loop {
         match (ki, vi) {
-            (metamodelica::ListNode::Cons { head: k, tail: kt },
-             metamodelica::ListNode::Cons { head: v, tail: vt }) => {
+            (
+                metamodelica::ListNode::Cons { head: k, tail: kt },
+                metamodelica::ListNode::Cons { head: v, tail: vt },
+            ) => {
                 pairs.push((k.to_string(), *v));
                 ki = kt.as_ref();
                 vi = vt.as_ref();
@@ -75,7 +77,7 @@ fn test_new_is_empty() {
 fn test_add_and_get() -> Result<()> {
     let m = map_of(&[("alpha", 10), ("beta", 20), ("gamma", 30)])?;
     assert_eq!(UM::get(literal!("alpha"), m.clone())?, Some(10));
-    assert_eq!(UM::get(literal!("beta"),  m.clone())?, Some(20));
+    assert_eq!(UM::get(literal!("beta"), m.clone())?, Some(20));
     assert_eq!(UM::get(literal!("gamma"), m.clone())?, Some(30));
     Ok(())
 }
@@ -296,11 +298,10 @@ fn test_clear_then_add_works() -> Result<()> {
 fn test_keylist_and_valuelist() -> Result<()> {
     let m = map_of(&[("b", 2), ("a", 1), ("c", 3)])?;
     let pairs = to_sorted_pairs(m);
-    assert_eq!(pairs, vec![
-        ("a".to_string(), 1),
-        ("b".to_string(), 2),
-        ("c".to_string(), 3),
-    ]);
+    assert_eq!(
+        pairs,
+        vec![("a".to_string(), 1), ("b".to_string(), 2), ("c".to_string(), 3),]
+    );
     Ok(())
 }
 
@@ -316,7 +317,9 @@ fn test_tolist_contains_all_pairs() -> Result<()> {
     let m = map_of(&[("k", 7)])?;
     let lst = UM::toList(m);
     let mut pairs: Vec<(String, i32)> = vec![];
-    for (k, v) in &*lst { pairs.push((k.to_string(), *v)); }
+    for (k, v) in &*lst {
+        pairs.push((k.to_string(), *v));
+    }
     assert!(pairs.contains(&("k".to_string(), 7)));
     Ok(())
 }
@@ -337,7 +340,7 @@ fn test_from_lists_basic() -> Result<()> {
 #[test]
 fn test_from_lists_empty() -> Result<()> {
     let keys: metamodelica::List<ArcStr> = metamodelica::nil();
-    let vals: metamodelica::List<i32>    = metamodelica::nil();
+    let vals: metamodelica::List<i32> = metamodelica::nil();
     let m = UM::fromLists(&keys, vals, Arc::new(hash_str), Arc::new(eq_str))?;
     assert!(UM::isEmpty(m));
     Ok(())

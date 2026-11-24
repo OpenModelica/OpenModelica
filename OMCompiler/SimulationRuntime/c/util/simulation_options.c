@@ -346,7 +346,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
   /* FLAG_PARMODNUMTHREADS */             "[int default: 0] value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
   /* FLAG_PARMOD_SCHEDULER */             "value selects the parmodauto scheduler: flow (default) or level",
-  /* FLAG_PARMOD_CLUSTERING */            "value selects the parmodauto clustering strategy: default, fixed_width_min_height or none",
+  /* FLAG_PARMOD_CLUSTERING */            "value selects the parmodauto clustering strategy: default, fixed_width_min_height, merge_across_levels or none",
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    "[int] value sets the maximum number of clusters per level for the default clustering",
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */        "value specifies a json file to which the parmodauto task graph and clustering are exported",
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     "value specifies a json file from which a parmodauto clustering is imported instead of computing one",
@@ -466,7 +466,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IGNORE_HIDERESULT */
   "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
-  "  Value specifies an external file for the initialization of the model.",
+  "  Value specifies an external file for the initialization of the model.\n  It can be a result file in any format the simulation writes (.mat, .csv, .plt or .arrow), selected by its suffix.",
   /* FLAG_IIM */
   "  Value specifies the initialization method.\n  Following options are available: 'symbolic' (default) and 'none'.",
   /* FLAG_IIT */
@@ -656,13 +656,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies a path for writing the output files i.e., model_res.mat, model_prof.intdata, model_prof.realdata etc.",
   /* FLAG_OVERRIDE */
   "  Override the variables in the XML setup file\n"
-  "  For example: var1=start1,var2=start2,par3=start3",
+  "  For example: var1=start1,var2=start2,par3=start3\n"
+  "  A value in double quotes is a Modelica string literal: str=\"a,b\"",
   /* FLAG_OVERRIDE_FILE */
   "  Will override the variables in the XML setup file\n"
   "  with the values from the file.\n"
   "  Note that: -overrideFile CANNOT be used with -override.\n"
   "  Use when variables for -override are too many.\n"
-  "  overrideFileName contains lines of the form: var=start",
+  "  overrideFileName contains lines of the form: var=start\n"
+  "  with start as for -override.",
   /* FLAG_PORT */
   "  Value specifies the port for simulation status (default disabled).",
   /* FLAG_R */
@@ -770,7 +772,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_PARMOD_SCHEDULER */
   "  Selects the parmodauto scheduler: 'flow' (default) or 'level'. Switchable at run time without recompiling the simulator.",
   /* FLAG_PARMOD_CLUSTERING */
-  "  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', or 'none'.",
+  "  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', 'merge_across_levels', or 'none'.",
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */
   "  Sets the maximum number of clusters per level used by the default clustering.",
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */
@@ -1350,6 +1352,7 @@ const char *GB_ERROR_METHOD_DESC[GB_ERROR_MAX] = {
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
+  /* S_AUTO */          "auto",
   /* S_DASSL */         "dassl",
   /* S_IDA */           "ida",
   /* S_CVODE */         "cvode",
@@ -1367,7 +1370,8 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
-  /* S_DASSL */         "dassl (default) - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location",
+  /* S_AUTO */          "auto (default) - chooses the method from the model: euler for a model without states, ida for a model compiled with --daeMode, otherwise dassl",
+  /* S_DASSL */         "dassl - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location",
   /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity",
   /* S_CVODE */         "cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration",
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",

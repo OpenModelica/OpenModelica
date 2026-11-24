@@ -405,7 +405,10 @@ static void clear_rt_step(DATA* data)
  *  non-linear system that could not be solved: It restores the last accepted
  *  point and settles the discrete system over it, so performSimulation can take
  *  the step again with a smaller step size. The integrator restarts on it like
- *  after an event. Only the first retry of a step is reported with a warning.
+ *  after an event, so the zero crossings are saved as after an event, too:
+ *  updateDiscreteSystem evaluates every relation, also one in an if-branch that
+ *  was not taken since its last event. Only the first retry of a step is
+ *  reported with a warning.
  */
 static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int retry)
 {
@@ -417,10 +420,20 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   solverInfo->currentTime = data->localData[0]->timeValue;
   overwriteOldSimulationData(data);
   updateDiscreteSystem(data, threadData);
+  saveZeroCrossingsAfterEvent(data, threadData);
   if (0 == retry) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
   }
   solverInfo->didEventStep = 1;
+}
+
+/* The last output point is stopTime, which the grid formula can round below. */
+static double outputPointTime(SIMULATION_INFO* simInfo, unsigned int stepNo)
+{
+  if (simInfo->useStopTime && (modelica_integer) stepNo >= simInfo->numSteps) {
+    return simInfo->stopTime;
+  }
+  return (double)(stepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime;
 }
 
 static void saveIntegratorStats(SOLVER_INFO* solverInfo)
@@ -483,7 +496,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     }
   }
 
-  if (!compiledInDAEMode)
+  if (!compiledInDAEMode && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER))
   {
     JACOBIAN* odeJacobian = getSymbolicOdeJacobian(data);
     printSparseStructure(getJacobianCscPattern(odeJacobian),
@@ -491,7 +504,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         odeJacobian->sizeCols,
         OMC_LOG_SOLVER, "ODE sparse pattern");
   }
-  else
+  else if (compiledInDAEMode)
   {
     printSparseStructure(data->simulationInfo->daeModeData->sparsePattern,
         data->simulationInfo->daeModeData->nResidualVars,
@@ -537,7 +550,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           double currDer;
           for(i=data->modelData->nStates; i<2*data->modelData->nStates; ++i)
           {
-            modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
+            modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
             currDer = fabs(data->localData[0]->realVars[i] / nominal);
             if(maxDer < currDer)
               maxDer = currDer;
@@ -583,7 +596,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
             {
               do {
                 __currStepNo++;
-                solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+                solverInfo->currentStepSize = outputPointTime(simInfo, __currStepNo) - solverInfo->currentTime;
               } while(solverInfo->currentStepSize <= 0);
             }
           } else {
@@ -604,7 +617,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
             break;
           }
         } else {
-          solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+          solverInfo->currentStepSize = outputPointTime(simInfo, __currStepNo) - solverInfo->currentTime;
         }
 
         solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -629,6 +642,11 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
           continueSimulationData(data);
+          if (simInfo->useStopTime && (modelica_integer) __currStepNo > simInfo->numSteps) {
+            /* the event was at stopTime up to rounding */
+            solverInfo->currentTime = simInfo->stopTime;
+            data->localData[0]->timeValue = simInfo->stopTime;
+          }
           continue;
         }
 

@@ -40,6 +40,7 @@ import Absyn;
 import Dump;
 import Error;
 import List;
+import StringUtil;
 import System;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -743,10 +744,10 @@ algorithm
       then
         Absyn.EQ_PDE(e1, e2,cref1);
 
-    case Absyn.EQ_CONNECT(connector1 = cref1, connector2 = cref2)
+    case Absyn.EQ_CONNECT()
       algorithm
-        (cref1, arg) := traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
-        (cref2, arg) := traverseExpBidirCref(cref2, enterFunc, exitFunc, arg);
+        (Absyn.CREF(componentRef = cref1), arg) := traverseExpBidir(Absyn.CREF(eq.connector1), enterFunc, exitFunc, arg);
+        (Absyn.CREF(componentRef = cref2), arg) := traverseExpBidir(Absyn.CREF(eq.connector2), enterFunc, exitFunc, arg);
       then
         Absyn.EQ_CONNECT(cref1, cref2);
 
@@ -765,10 +766,10 @@ algorithm
       then
         Absyn.EQ_WHEN_E(e1, eqil1, else_branch);
 
-    case Absyn.EQ_NORETCALL(functionName = cref1, functionArgs = func_args)
+    case Absyn.EQ_NORETCALL()
       algorithm
-        (cref1, arg) := traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
-        (func_args, arg) := traverseExpBidirFunctionArgs(func_args, enterFunc, exitFunc, arg);
+        (Absyn.CALL(function_ = cref1, functionArgs = func_args), arg) :=
+          traverseExpBidir(Absyn.CALL(eq.functionName, eq.functionArgs, {}), enterFunc, exitFunc, arg);
       then
         Absyn.EQ_NORETCALL(cref1, func_args);
 
@@ -890,10 +891,10 @@ algorithm
       then
         Absyn.ALG_WHEN_A(e1, algs1, else_branch);
 
-    case Absyn.ALG_NORETCALL(cref1, func_args)
+    case Absyn.ALG_NORETCALL()
       algorithm
-        (cref1, arg) := traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
-        (func_args, arg) := traverseExpBidirFunctionArgs(func_args, enterFunc, exitFunc, arg);
+        (Absyn.CALL(function_ = cref1, functionArgs = func_args), arg) :=
+          traverseExpBidir(Absyn.CALL(alg.functionCall, alg.functionArgs, {}), enterFunc, exitFunc, arg);
       then
         Absyn.ALG_NORETCALL(cref1, func_args);
 
@@ -1965,6 +1966,22 @@ algorithm
       then p2;
   end match;
 end removePrefix;
+
+public function removeSelfReference
+"@author adrpo
+ Removes self reference from a path if it exists.
+ Examples:
+   removeSelfReference('Icons', 'Icons.BaseLibrary') => 'BaseLibrary'
+   removeSelfReference('Icons', 'BlaBla.BaseLibrary') => 'BlaBla.BaseLibrary'"
+  input  String     className;
+  input  Absyn.Path path;
+  output Absyn.Path outPath;
+algorithm
+  outPath := if stringEq(className, pathFirstIdent(path)) then
+      removePrefix(Absyn.IDENT(className), path)
+    else
+      path;
+end removeSelfReference;
 
 public function removePrefixOpt
   "Removes prefixPath from path and returns the rest of the path, or returns
@@ -3618,6 +3635,35 @@ algorithm
       then Absyn.IFEXP(cond,tb,e,{});
   end match;
 end canonIfExp;
+
+public function createFuncargsFromElementargs
+  "Transforms the modifications in a list of element arguments to named
+   function arguments, e.g. to make a record constructor call from a
+   graphical annotation. Vendor-specific elements (__Vendor_name) are not
+   fields of the record and are skipped."
+  input list<Absyn.ElementArg> args;
+  output Absyn.FunctionArgs fargs;
+protected
+  list<Absyn.NamedArg> named_args = {};
+  String id;
+  Absyn.Exp exp;
+algorithm
+  for arg in args loop
+    () := match arg
+      case Absyn.MODIFICATION(path = Absyn.IDENT(name = id),
+          modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp))))
+        guard not StringUtil.startsWith(id, "__")
+        algorithm
+          named_args := Absyn.NAMEDARG(id, exp) :: named_args;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  fargs := Absyn.FUNCTIONARGS({}, listReverse(named_args));
+end createFuncargsFromElementargs;
 
 public function onlyLiteralsInAnnotationMod
 "@author: adrpo

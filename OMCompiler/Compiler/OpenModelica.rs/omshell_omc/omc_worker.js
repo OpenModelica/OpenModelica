@@ -45,6 +45,7 @@ import * as OmcModule from "./omc/OpenModelicaCompiler.js";
 import { installWasmBlobs } from "./wasm-blobs.js";
 import { installFmuAot } from "./fmu-aot.js";
 import { describeError } from "./wasm-stack.js";
+import { openStore } from "./omc-store.js";
 
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
@@ -98,6 +99,12 @@ const ready = (async () => {
   await init();
   omc_set_env("OPENMODELICAHOME", "/usr");
 })();
+
+// <home>/.openmodelica in browser storage (omc-store.js), saved after each command
+// that can change it. The next command waits for the save.
+let store = null;
+let saving = Promise.resolve();
+const SAVES = new Set(["init", "eval", "abi", "abiBatch", "vfsPut", "vfsPutMany", "vfsLoadZip", "vfsRemove", "vfsRename"]);
 
 const trim = (s) => (s ?? "").trim();
 const unquote = (s) => s.replace(/^"+|"+$/g, "");
@@ -186,6 +193,7 @@ async function abiWithDownloads(request) {
 }
 
 async function doInit(installMsl) {
+  store = await openStore(OmcModule);
   if (!omc_init()) {
     return { kind: "ready", ok: false, error: "omc_init() failed" };
   }
@@ -239,6 +247,12 @@ function collectPlots() {
   return { plots, transfer };
 }
 
+// Top-level classes omc loaded on its own during the call (OMEdit adds them to
+// its library tree, as the native loadModel callback does).
+function takeLoadedModels() {
+  return typeof OmcModule.omc_take_loaded_models === "function" ? OmcModule.omc_take_loaded_models() : [];
+}
+
 // `keepErrors` (OMEdit): leave omc's Error buffer intact instead of draining it
 // into `error`. OMEdit reads diagnostics itself via the typed
 // getMessagesStringInternal ABI (OMCProxy::printMessagesStringInternal), exactly
@@ -249,7 +263,7 @@ async function doEval(src, keepErrors) {
   const error = keepErrors ? "" : cleanError(omc_eval("getErrorString()"));
   const { plots, transfer } = collectPlots();
   return {
-    msg: { kind: "done", result, error, plots, keep: src.trim() !== "quit()" },
+    msg: { kind: "done", result, error, plots, loaded: takeLoadedModels(), keep: src.trim() !== "quit()" },
     transfer,
   };
 }
@@ -269,6 +283,7 @@ self.onmessage = async (e) => {
     return;
   }
   await ready;
+  await saving;
   try {
     if (msg.cmd === "init") {
       self.postMessage(await doInit(msg.installMsl !== false));
@@ -285,7 +300,22 @@ self.onmessage = async (e) => {
           ? await abiWithDownloads(msg.request)
           : JSON.stringify({ error: "omc_abi unavailable (omc built without the scripting_api feature)" });
       resetControl();
-      self.postMessage({ kind: "abiResult", id: msg.id, response });
+      self.postMessage({ kind: "abiResult", id: msg.id, response, loaded: takeLoadedModels() });
+    } else if (msg.cmd === "abiBatch") {
+      // Many typed calls in one round trip: `requests` is one "abi" request per
+      // line. A request or response is compact JSON, so it has no raw newline.
+      const responses = [];
+      if (typeof OmcModule.omc_abi === "function") {
+        for (const request of msg.requests.split("\n")) {
+          responses.push(await abiWithDownloads(request));
+        }
+      }
+      resetControl();
+      self.postMessage({ kind: "abiBatchResult", responses, loaded: takeLoadedModels() });
+    } else if (msg.cmd === "fmiGuide") {
+      // The FMI settings guide: JSON in, JSON out. The reply goes the way of an
+      // "abi" reply, so the page collects it by `id`.
+      self.postMessage({ kind: "abiResult", id: msg.id, response: OmcModule.omc_fmi_guide(msg.request) });
     } else if (msg.cmd === "vfsGet") {
       // OMEdit reads some files (library index, install manifests, visual.xml)
       // on the main thread; omc wrote them into this worker's store, so read them
@@ -337,16 +367,25 @@ self.onmessage = async (e) => {
       let size;
       try { size = wasi_path_filestat_get(msg.path); } catch (e) { size = -1; }
       self.postMessage({ kind: "vfsStatResult", id: msg.id, size });
+    } else if (msg.cmd === "vfsStatMany") {
+      // vfsStat for many paths in one round trip.
+      const sizes = msg.paths.map((path) => {
+        try { return wasi_path_filestat_get(path); } catch (e) { return -1; }
+      });
+      self.postMessage({ kind: "vfsStatManyResult", sizes });
     }
   } catch (err) {
     // A trap inside omc must not silently wedge the shell: report it on the
     // channel the GUI is waiting on so it clears `busy`.
     if (msg.cmd === "init") {
       self.postMessage({ kind: "ready", ok: false, error: describeError(err) });
-    } else if (msg.cmd === "abi") {
+    } else if (msg.cmd === "abi" || msg.cmd === "fmiGuide") {
       self.postMessage({ kind: "abiResult", id: msg.id, response: JSON.stringify({ error: describeError(err) }) });
+    } else if (msg.cmd === "abiBatch") {
+      self.postMessage({ kind: "abiBatchResult", responses: [] });
     } else {
       self.postMessage({ kind: "done", result: "", error: describeError(err), keep: true });
     }
   }
+  if (store && SAVES.has(msg.cmd)) saving = saving.then(() => store.flush());
 };

@@ -375,17 +375,20 @@ record AxisScale
 end AxisScale;
 
 record Axis
-  Real[:] min = fill(0.0, 0) "Axis lower bound, in 'unit'";
-  Real[:] max = fill(0.0, 0) "Axis upper bound, in 'unit'";
+  Real min = 0.0 "Axis lower bound, in 'unit'";
+  Real max = 0.0 "Axis upper bound, in 'unit'";
   String unit = "" "Unit of axis tick labels";
   String label = "" "Axis label";
   AxisScale scale = AxisScale() "Mapping between axis values and position on axis";
 end Axis;
 
-record Curve
-  String x = "time" "X coordinate values";
-  Real y "Y coordinate values";
+type YAxisSelection = enumeration(Left, Right);
+
+record Curve<__ResultReference>
+  __ResultReference x = time "X coordinate values";
+  __ResultReference y "Y coordinate values";
   String legend = "" "Legend";
+  YAxisSelection yAxis = YAxisSelection.Left "Associated y axis";
   Integer zOrder = 0 "Drawing order control";
 end Curve;
 
@@ -395,6 +398,7 @@ record Plot
   Curve[:] curves "Plot curves";
   Axis x = Axis() "X axis properties";
   Axis y = Axis() "Y axis properties";
+  Axis yRight = Axis() "Right y axis properties";
 end Plot;
 
 record Figure
@@ -411,7 +415,7 @@ record Documentation
   String revisions = "" "Class revision history";
   String __OpenModelica_infoHeader = "";
   String[:] styleSheets "Style sheets for documentation";
-  Figure[:] figures = fill(Figure(plots = fill(Plot(curves = fill(Curve(y = 0), 0)), 0)), 0) "Simulation result figures";
+  Figure[:] figures = fill(Figure(plots = fill(Plot(curves = fill(Curve(y = time), 0)), 0)), 0) "Simulation result figures";
 end Documentation;
 
 type TearingSelect = enumeration(never, avoid, default, prefer, always);

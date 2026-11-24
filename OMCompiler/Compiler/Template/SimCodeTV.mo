@@ -358,6 +358,7 @@ package SimCodeVar
       Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref)";
       Boolean relativeQuantity           "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
       Boolean isConnectorFlow            "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
+      Boolean startFromEquation          "initialValue is the value a removed initial equation gave the variable";
     end SIMVAR;
   end SimVar;
 
@@ -879,9 +880,17 @@ end SparsityRow;
     record UNITDEFINITION
       String name;
       BaseUnit baseUnit;
-      //TODO DisplayUnit
+      list<DisplayUnit> displayUnits "besides the other units of the same dimensions";
     end UNITDEFINITION;
   end UnitDefinition;
+
+  uniontype DisplayUnit
+    record DISPLAYUNIT "value_display = factor*value_unit + offset"
+      String name;
+      Real factor;
+      Real offset;
+    end DISPLAYUNIT;
+  end DisplayUnit;
 
   uniontype BaseUnit
     record BASEUNIT
@@ -892,6 +901,7 @@ end SparsityRow;
       Integer K   "exponent";
       Integer mol "exponent";
       Integer cd  "exponent";
+      Integer rad "exponent";
       Real factor "prefix";
       Real offset "offset";
     end BASEUNIT;
@@ -1229,6 +1239,7 @@ package SimCodeFunction
       list<Variable> inVars;
       list<Variable> outVars;
       list<Variable> biVars;
+      list<Variable> variableDeclarations;
       list<String> includes;
       list<String> libs;
       String language;
@@ -1298,6 +1309,8 @@ package SimCodeFunction
     record FUNCTION_CONTEXT
       String cref_prefix;
       Boolean is_parallel;
+      String assert_function;
+      list<DAE.Exp> assert_inputs;
     end FUNCTION_CONTEXT;
     record JACOBIAN_CONTEXT
       String name;
@@ -1339,6 +1352,11 @@ package SimCodeFunction
 end SimCodeFunction;
 
 package SimCodeCodegenUtil
+
+  function discreteChangeRanges
+    input SimCodeVar.SimVars vars;
+    output list<Integer> ranges;
+  end discreteChangeRanges;
 
   function linearSystemMatrixFormat
     input SimCode.LinearSystem ls;
@@ -1525,6 +1543,11 @@ package SimCodeCodegenUtil
     output Boolean b;
   end isDimensionParameter;
 
+  function isStructuralParameter
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isStructuralParameter;
+
   function isWholeArrayCref
     input DAE.ComponentRef cref;
     output Boolean b;
@@ -1566,6 +1589,11 @@ package SimCodeCodegenUtil
     input list<SimCodeVar.SimVar> vars;
     output Boolean b;
   end hasSymbolicDims;
+
+  function numericInputVars
+    input list<SimCodeVar.SimVar> inputVars;
+    output list<SimCodeVar.SimVar> vars;
+  end numericInputVars;
 
   function isSymbolicArrayVar
     input SimCodeVar.SimVar var;
@@ -1643,6 +1671,16 @@ package SimCodeCodegenUtil
     output String out;
   end getFMI3ArrayStart;
 
+  function getFMI3StateInitialStr
+    input SimCodeVar.SimVar var;
+    output String str;
+  end getFMI3StateInitialStr;
+
+  function getFMI3StateStart
+    input SimCodeVar.SimVar var;
+    output String out;
+  end getFMI3StateStart;
+
   function fmuExternalLibraries
     input list<String> libs;
     output list<String> names;
@@ -1650,6 +1688,7 @@ package SimCodeCodegenUtil
 
   function getFMI3Terminals
     input SimCode.SimCode simCode;
+    input Boolean scalarize;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
 
@@ -1783,12 +1822,18 @@ package SimCodeCodegenUtil
 
   function simVarIndexRuns
     input list<SimCodeVar.SimVar> vars;
-    output list<tuple<Integer, Integer, Integer, Integer>> runs;
+    output list<tuple<Integer, Integer, Integer, Integer, SimCodeVar.SimVar>> runs;
   end simVarIndexRuns;
 
   function getSimCode
     output SimCode.SimCode code;
   end getSimCode;
+
+  function isCheckedDivisor
+    input DAE.Type ty;
+    input DAE.Exp exp;
+    output Boolean checked;
+  end isCheckedDivisor;
 
   function isSimulationCodegen
     output Boolean simulation;
@@ -1796,13 +1841,18 @@ package SimCodeCodegenUtil
 
   function timeEventTrigger
     input DAE.Exp rel;
-    output Option<DAE.Exp> trigger;
+    output Option<tuple<DAE.Exp, Boolean>> trigger;
   end timeEventTrigger;
 
   function isTimeEventRelation
     input DAE.Exp rel;
     output Boolean b;
   end isTimeEventRelation;
+
+  function timeEventRelation
+    input DAE.Exp rel;
+    output DAE.Exp outRel;
+  end timeEventRelation;
 
   function cref2simvar
     input DAE.ComponentRef cref;
@@ -2134,6 +2184,12 @@ package SimCodeFunctionUtil
     input String cref_pref;
     output SimCodeFunction.Context out_context;
   end appendCurrentCrefPrefix;
+
+  function functionBodyContext
+    input Absyn.Path name;
+    input list<SimCodeFunction.Variable> args;
+    output SimCodeFunction.Context context;
+  end functionBodyContext;
 
 end SimCodeFunctionUtil;
 

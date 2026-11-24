@@ -12,6 +12,8 @@ pub struct App {
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        follow_launcher_theme(&cc.egui_ctx);
         let ctx = cc.egui_ctx.clone();
         let shell = Shell::with_backend(omshell_omc::backend(), move || ctx.request_repaint());
         // Build the shared WebGPU demo into the egui_wgpu renderer's resource map
@@ -37,12 +39,8 @@ impl App {
                 // Native file picker; on web there is no local filesystem dialog.
                 #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Open…").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("Modelica files", &["mo"])
-                        .pick_file()
-                    {
-                        self.shell
-                            .run(&format!("loadFile(\"{}\")", path.display()));
+                    if let Some(path) = rfd::FileDialog::new().add_filter("Modelica files", &["mo"]).pick_file() {
+                        self.shell.run(&format!("loadFile(\"{}\")", path.display()));
                     }
                 }
                 if ui.button("Load Modelica Library").clicked() {
@@ -166,10 +164,8 @@ impl eframe::App for App {
         }
 
         ctx.global_style_mut(|s| {
-            s.text_styles.insert(
-                TextStyle::Monospace,
-                FontId::new(self.font_size, FontFamily::Monospace),
-            );
+            s.text_styles
+                .insert(TextStyle::Monospace, FontId::new(self.font_size, FontFamily::Monospace));
         });
 
         if self.about_open {
@@ -190,9 +186,9 @@ impl eframe::App for App {
             self.webgpu_window(&ctx);
         }
 
-        egui::Panel::top("menu_bar").show_inside(ui, |ui| self.menu_bar(ui));
-        egui::Panel::bottom("input").show_inside(ui, |ui| self.input_line(ui));
-        egui::CentralPanel::default().show_inside(ui, |ui| self.scrollback_view(ui));
+        egui::Panel::top("menu_bar").show(ui, |ui| self.menu_bar(ui));
+        egui::Panel::bottom("input").show(ui, |ui| self.input_line(ui));
+        egui::CentralPanel::default().show(ui, |ui| self.scrollback_view(ui));
 
         if self.shell.busy {
             ctx.request_repaint();
@@ -208,18 +204,13 @@ impl App {
             .default_size([460.0, 360.0])
             .show(ctx, |ui| {
                 ui.label(
-                    RichText::new(
-                        "A wgpu scene composited inside egui — the same renderer on native and web.",
-                    )
-                    .weak(),
+                    RichText::new("A wgpu scene composited inside egui — the same renderer on native and web.").weak(),
                 );
                 let time = ui.input(|i| i.time) as f32;
                 let ppp = ctx.pixels_per_point();
                 egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                    let (rect, _) = ui.allocate_exact_size(
-                        egui::vec2(ui.available_width(), 280.0),
-                        egui::Sense::hover(),
-                    );
+                    let (rect, _) =
+                        ui.allocate_exact_size(egui::vec2(ui.available_width(), 280.0), egui::Sense::hover());
                     let px = rect.size() * ppp;
                     ui.painter().add(egui_wgpu::Callback::new_paint_callback(
                         rect,
@@ -270,4 +261,34 @@ impl egui_wgpu::CallbackTrait for DemoCallback {
             demo.draw(render_pass);
         }
     }
+}
+
+/// The colour scheme selected in the launcher of the web clients (`om-theme` in
+/// localStorage), also when it changes while the page is open.
+#[cfg(target_arch = "wasm32")]
+fn follow_launcher_theme(ctx: &egui::Context) {
+    use eframe::wasm_bindgen::{JsCast as _, closure::Closure};
+
+    fn stored() -> egui::ThemePreference {
+        let theme = web_sys::window()
+            .and_then(|window| window.local_storage().ok().flatten())
+            .and_then(|storage| storage.get_item("om-theme").ok().flatten());
+        match theme.as_deref() {
+            Some("light") => egui::ThemePreference::Light,
+            Some("dark") => egui::ThemePreference::Dark,
+            _ => egui::ThemePreference::System,
+        }
+    }
+
+    ctx.set_theme(stored());
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let ctx = ctx.clone();
+    let on_storage = Closure::<dyn Fn()>::new(move || {
+        ctx.set_theme(stored());
+        ctx.request_repaint();
+    });
+    let _ = window.add_event_listener_with_callback("storage", on_storage.as_ref().unchecked_ref());
+    on_storage.forget();
 }

@@ -11,6 +11,7 @@ symbolicJacobianEvaluation.mos \
 allTheBuildins.mos \
 diff_subs.mos \
 arrayDiff.mos \
+powerArrayJacobian.mos \
 arrayScalar.mos \
 algebraicLoop.mos \
 AlgLinearSystem.mos \
@@ -18,12 +19,14 @@ ArrayLinearSystem.mos \
 numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
 tornAdjointJacobian.mos \
+symbolicJacobianEntries.mos \
 derSeedJacobian.mos \
 tupleAssignmentDerivative.mos \
 functionInputDerivative.mos \
 iteratorElementDerivative.mos \
 recordArgumentDerivative.mos \
 loopJacobianIterators.mos \
+integerEnumDerivative.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

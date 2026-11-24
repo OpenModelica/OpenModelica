@@ -24,7 +24,7 @@ equation
 end static_index_3;
 
 model static_index_3_alt
-  \"alternate, almost equivalent model where state order cannot solve the problem\"
+  \"alternate model with the affine state order der(phi1) = factor*omega1\"
   extends static_index_3(factor = 0.999999);
 end static_index_3_alt;
 "); getErrorString();
@@ -41,7 +41,7 @@ diffSimulationResults("static_index_3_alt_res.mat", "ReferenceFiles/static_index
 // ""
 // record SimulationResult
 //     resultFile = "static_index_3_alt_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_index_3_alt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'static_index_3_alt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

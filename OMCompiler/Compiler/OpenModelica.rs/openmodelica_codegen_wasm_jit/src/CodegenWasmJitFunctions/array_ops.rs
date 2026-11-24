@@ -611,12 +611,20 @@ pub(super) fn compile_array_builtin(
                 Ok(Some((*elem).clone()))
             }
         },
-        // identity(n): n×n Integer identity matrix.
+        // identity(n): n×n identity matrix, Real if the frontend cast the call to Real.
         "identity" if argv.len() == 1 => {
             let w = compile_exp(ctx, argv[0])?;
             coerce(ctx, w, WTy::I32);
             ctx.emit(we::Instruction::Call(rt_index("rt_array_identity")?));
-            Ok(Some(sig_ty(&attr.ty)?))
+            let ty = sig_ty(&attr.ty)?;
+            if matches!(&ty, SigTy::Array { elem, .. } if elem.wty() == WTy::F64) {
+                let at = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(at));
+                ctx.emit(we::Instruction::LocalGet(at));
+                ctx.emit(we::Instruction::Call(rt_index("rt_array_int_to_real")?));
+                release_temp_array(ctx, at)?;
+            }
+            Ok(Some(ty))
         }
         // diagonal(v): n×n matrix with the vector v on the diagonal.
         "diagonal" if argv.len() == 1 => {

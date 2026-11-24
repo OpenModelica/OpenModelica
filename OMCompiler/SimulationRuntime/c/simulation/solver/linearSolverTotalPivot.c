@@ -386,7 +386,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
     "Start solving Linear System %d (size %d) at time %g with Total Pivot Solver",
     eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
-  debugVectorDoubleLS(OMC_LOG_LS_V,"SCALING",systemData->nominal,n);
+  debugVectorDoubleLS(OMC_LOG_LS_V,"SCALING",systemData->positiveNominal,n);
   debugVectorDoubleLS(OMC_LOG_LS_V,"Old VALUES",aux_x,n);
 
   rt_ext_tp_tick(&(solverData->timeClock));

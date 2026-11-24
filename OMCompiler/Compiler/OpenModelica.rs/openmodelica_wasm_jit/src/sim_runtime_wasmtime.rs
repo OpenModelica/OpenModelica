@@ -1012,16 +1012,16 @@ unsafe impl Sync for PreparedCif {}
 fn ffi_arg_types(sig: &crate::sig::ExtCallSig) -> Vec<libffi::middle::Type> {
     use crate::sig::SigTy;
     use libffi::middle::Type;
-    let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
     sig.args
         .iter()
-        .map(|(ty, is_out)| match ty {
+        .enumerate()
+        .map(|(j, (ty, is_out))| match ty {
             // An `_Out_` scalar/string/record gets a scratch cell passed by pointer;
             // an output array is filled in place, like an input one.
             _ if *is_out && !matches!(ty, SigTy::Array { .. }) => Type::pointer(),
-            // FORTRAN 77 takes every argument by reference.
-            SigTy::Real if !fortran => Type::f64(),
-            SigTy::Int | SigTy::Bool if !fortran => Type::i64(),
+            _ if sig.passes_by_ref(j, ty) => Type::pointer(),
+            SigTy::Real => Type::f64(),
+            SigTy::Int | SigTy::Bool => Type::i64(),
             _ => Type::pointer(),
         })
         .collect()
@@ -1195,7 +1195,7 @@ unsafe fn call_external(
     // the borrow ends with this block (only owned copies / raw addresses escape).
     {
         let mem = memory.data(&*caller);
-        for (ty, is_out) in &sig.args {
+        for (j, (ty, is_out)) in sig.args.iter().enumerate() {
             // Scalar/string outputs get an `_Out_` scratch cell; array outputs are
             // pre-allocated on the wasm side and passed by pointer (filled in place,
             // like an input array — handled by the `Array` arm below).
@@ -1211,8 +1211,8 @@ unsafe fn call_external(
             }
             let v = &args[in_i];
             in_i += 1;
-            // Fortran passes scalars by reference; give each one a native cell.
-            if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+            // Fortran passes scalars by reference, C a protected one; give each a native cell.
+            if sig.passes_by_ref(j, ty) {
                 let mut cell = Cell::new(8);
                 match ty {
                     SigTy::Real => cell.bytes_mut()[..8].copy_from_slice(&v.unwrap_f64().to_le_bytes()),

@@ -113,6 +113,8 @@ static inline modelica_real modelica_real_max(modelica_real x,modelica_real y)
 
 /* pow(), but for integer exponents (faster implementation) */
 extern modelica_real real_int_pow(threadData_t *threadData, modelica_real base,modelica_integer n);
+/* pow(), but an odd root of a negative base is real: (-8)^(1/3) = -2 */
+extern modelica_real real_real_pow(modelica_real base, modelica_real exponent);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 /* Returns 0 on failure. The first element in nmatches contains the error-message. */

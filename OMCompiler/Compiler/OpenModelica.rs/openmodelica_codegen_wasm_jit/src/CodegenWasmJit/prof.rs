@@ -5,7 +5,10 @@ use super::*;
 /// Visit `e` and every equation nested inside it, along the paths
 /// [`lower_equation`] descends — the casual tearing set of a dynamically torn
 /// system included.
-pub(super) fn visit_nested_eqs(e: &metamodelica::Ref<SimCode::SimEqSystem>, f: &mut dyn FnMut(&metamodelica::Ref<SimCode::SimEqSystem>)) {
+pub(super) fn visit_nested_eqs(
+    e: &metamodelica::Ref<SimCode::SimEqSystem>,
+    f: &mut dyn FnMut(&metamodelica::Ref<SimCode::SimEqSystem>),
+) {
     use SimCode::SimEqSystem as E;
     fn visit_list(
         eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>,
@@ -17,7 +20,9 @@ pub(super) fn visit_nested_eqs(e: &metamodelica::Ref<SimCode::SimEqSystem>, f: &
     }
     f(e);
     match &**e {
-        E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
+        E::SES_IFEQUATION {
+            ifbranches, elsebranch, ..
+        } => {
             for (_, branch) in lst(ifbranches) {
                 visit_list(branch, f);
             }
@@ -30,7 +35,11 @@ pub(super) fn visit_nested_eqs(e: &metamodelica::Ref<SimCode::SimEqSystem>, f: &
         }
         E::SES_WHEN { elseWhen: Some(w), .. } => visit_nested_eqs(w, f),
         E::SES_FOR_EQUATION { body, .. } => visit_list(body, f),
-        E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+        E::SES_LINEAR {
+            lSystem,
+            alternativeTearing,
+            ..
+        } => {
             for s in std::iter::once(lSystem).chain(alternativeTearing.iter()) {
                 visit_list(&s.residual, f);
                 for (_, _, inner) in lst(&s.simJac) {
@@ -38,7 +47,11 @@ pub(super) fn visit_nested_eqs(e: &metamodelica::Ref<SimCode::SimEqSystem>, f: &
                 }
             }
         }
-        E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
+        E::SES_NONLINEAR {
+            nlSystem,
+            alternativeTearing,
+            ..
+        } => {
             for s in std::iter::once(nlSystem).chain(alternativeTearing.iter()) {
                 visit_list(&s.eqs, f);
             }

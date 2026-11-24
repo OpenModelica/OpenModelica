@@ -134,14 +134,6 @@ typedef enum
   IMPROPER_INPUT
 } EQUATION_SYSTEM_ERROR;
 
-typedef enum
-{
-  JACOBIAN_UNKNOWN = 0,       /* availability of jacobian unknown (not initialized) */
-  JACOBIAN_NOT_AVAILABLE,     /* no symbolic jacobian and no sparsity pattern available */
-  JACOBIAN_ONLY_SPARSITY,     /* only sparsity pattern available */
-  JACOBIAN_AVAILABLE          /* symbolic jacobian and sparsity pattern available */
-} JACOBIAN_AVAILABILITY;
-
 /**
  * @brief Sparse pattern for Jacobian matrix.
  *
@@ -204,32 +196,35 @@ typedef struct NONLINEAR_PATTERN
  */
 typedef struct JACOBIAN
 {
-  JACOBIAN_AVAILABILITY availability;   /* Availability status */
   size_t sizeCols;                      /* Number of columns of Jacobian */
   size_t sizeRows;                      /* Number of rows of Jacobian */
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC/CSR format including column/row coloring */
-  modelica_real* seedVars;              /* Seed vector for specifying which columns/rows to evaluate */
+  size_t sizeTmpVarsAdj;                /* Length of vector tmpVarsAdj, can contain lambda variables */
+
+  SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC format including column coloring */
+  SPARSE_PATTERN* sparsePatternT;       /* Contains sparse pattern in CSR format including row coloring */
+
+  modelica_real* seedVars;              /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
-  modelica_real* resultVars;            /* Result column/row for given seed vector */
+  modelica_real* resultVars;            /* Result column for given seed vector */
+
+  // Maybe we don't need these separately, can we re-use the above for row evaluation?
+  modelica_real* seedVarsAdj;           /* Seed vector for specifying which rows to evaluate */
+  modelica_real* tmpVarsAdj;            /* Partial derivatives used to compute resultVarsAdj */
+  modelica_real* resultVarsAdj;         /* Result row for given seed vector */
+
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+
   EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
-  EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
-  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
-  jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
-  modelica_boolean isRowEval;           /* Flag indicating that evalColumn evaluates rows of the represented
-                                           Jacobian J instead of columns (adjoint / reverse mode).
-                                           In that case the struct describes the transpose J^T, i.e.
-                                           sizeCols == number of rows of J    (number of seeds),
-                                           sizeRows == number of columns of J (number of results) and
-                                           sparsePattern is CSC of J^T (== CSR of J) with row coloring. */
-  SPARSE_PATTERN* cscPattern;           /* Column oriented (CSC of J) view of a row evaluated Jacobian.
-                                           Lazily created by getJacobianCscPattern(), owned. NULL otherwise.
-                                           TODO: Is this needed? */
-  /* Bidirectional (star bicoloring) support */
-  modelica_boolean isBidirectional;     /* Runtime switch: evaluate this Jacobian bidirectionally (column + row phase).
-                                           Only allowed if adjointJacobian is set. */
-  struct JACOBIAN* adjointJacobian;     /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  EVAL_SELECTION* evalSelectionCol;     /* selection for evalColumn (don't allocate, only set to other pointer) */
+  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
+  jacobianColumn_func_ptr constColEqns; /* Constant column equations independent of seed vector */
+
+  EVAL_DAG* dagT;                       /* dependency of columns and inner partial derivatives, transpose of dag? */
+  EVAL_SELECTION* evalSelectionRow;     /* selection for evalRow (don't allocate, only set to other pointer) */
+  jacobianColumn_func_ptr evalRow;      /* symbolic jacobian row based on seed vector */
+  jacobianColumn_func_ptr constRowEqns; /* Constant row equations independent of seed vector */
+
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
   unsigned int* csrToCscMap;            /* Maps CSR (row oriented) nz positions of an adjoint Jacobian to the
                                            corresponding CSC (column oriented) nz positions of J. Size nnz. */
@@ -303,7 +298,8 @@ typedef struct REAL_ATTRIBUTE
   real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
-  real_array nominal;                  /* = {1.0} */
+  real_array positiveNominal;          /* = {1.0}; |nominal|, or 1.0 if that is 0, inf or NaN */
+  real_array nominalSign;              /* = {1.0}; -1.0 for a negative nominal */
   real_array start;                    /* = {0.0} */
 } REAL_ATTRIBUTE;
 
@@ -357,6 +353,7 @@ typedef struct STATIC_REAL_DATA
   REAL_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
 } STATIC_REAL_DATA;
 
 /* An enumeration type: value k is literals[k-1]. */
@@ -374,6 +371,7 @@ typedef struct STATIC_INTEGER_DATA
   INTEGER_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
   const ENUMERATION_TYPE *enumeration; /* the declared type of an enumeration variable, NULL otherwise */
 } STATIC_INTEGER_DATA;
 
@@ -384,6 +382,7 @@ typedef struct STATIC_BOOLEAN_DATA
   BOOLEAN_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
 } STATIC_BOOLEAN_DATA;
 
 typedef struct STATIC_STRING_DATA
@@ -393,6 +392,7 @@ typedef struct STATIC_STRING_DATA
   STRING_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  modelica_boolean startFromEquation;  /* true if an initial equation gives the start value; -iif keeps it */
 } STATIC_STRING_DATA;
 
 /**
@@ -429,7 +429,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   /* attributes of iteration variables */
   modelica_real *min;
   modelica_real *max;
-  modelica_real *nominal;
+  modelica_real *positiveNominal;
+  modelica_real *nominalSign;
 
   /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
    * can be produced with the help of analyticalJacobianColumnn function pointer
@@ -513,7 +514,7 @@ typedef struct LINEAR_SYSTEM_DATA
   /* attributes of iteration variables */
   modelica_real *min;
   modelica_real *max;
-  modelica_real *nominal;
+  modelica_real *positiveNominal;
 
   modelica_integer nnz;                /* number of nonzero entries */
   modelica_integer size;
@@ -737,6 +738,7 @@ typedef struct MODEL_DATA
 
   size_t nEnumerationTypes;
   ENUMERATION_TYPE *enumerationTypes;  /* of the enumeration variables, from the init XML */
+  const long *discreteChangeRanges;    /* what checkForDiscreteChanges compares, see SimCodeCodegenUtil.discreteChangeRanges */
 } MODEL_DATA;
 
 /**

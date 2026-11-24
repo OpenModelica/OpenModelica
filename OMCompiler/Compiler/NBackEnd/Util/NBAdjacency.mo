@@ -1334,7 +1334,7 @@ public
         crefs := {cref};
         if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
           ty := ComponentRef.getSubscriptedType(cref);
-          if Type.isArray(ty) and Type.hasKnownSize(ty) and Type.sizeOf(ty) <= 256 then
+          if Type.isArray(ty) and Type.hasKnownSize(ty) and Type.sizeOf(ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarizeAll(cref, false));
             if listEmpty(crefs) then
               crefs := {cref};
@@ -1580,6 +1580,11 @@ public
                   sparsityAddInner(cref, inner_deps, inner_map, inner_keys);
                   sparsityAddTemplate(sparsityTemplateKey(cref, template_crefs), inner_deps, template_map);
                 end for;
+
+                if StrongComponent.isAlgebraicLoop(comp) then
+                  pder_crefs := sparsityLoopRows(comp, pder_crefs);
+                  eqn_iter := Iterator.EMPTY();
+                end if;
 
                 if isAdjoint then
                   // The adjoint evaluates rows of the primal Jacobian. Map each
@@ -2422,6 +2427,43 @@ public
         for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)), Util.id);
     end sparsityCrefHasIterator;
 
+    function sparsityLoopRows
+      "The rows of an algebraic loop are the elements it solves, e.g. der(x)[1] and
+      der(x)[N]. Elements selected by the iterators of an equation give the whole array."
+      input StrongComponent comp;
+      input list<ComponentRef> pder_crefs;
+      output list<ComponentRef> rows;
+    protected
+      ComponentRef base;
+      list<ComponentRef> whole = {};
+    algorithm
+      rows := {};
+      for cref in StrongComponent.getSolvedCrefs(comp) loop
+        base := ComponentRef.stripSubscriptsAll(cref);
+        if List.contains(pder_crefs, base, ComponentRef.isEqual) then
+          if sparsityCrefHasIterator(cref) or not ComponentRef.hasSubscripts(cref) then
+            whole := base :: whole;
+          else
+            rows := cref :: rows;
+          end if;
+        end if;
+      end for;
+      // variables without a solved element keep all rows
+      for cref in pder_crefs loop
+        if not List.any(rows, function sparsityHasBase(base = cref)) then
+          whole := cref :: whole;
+        end if;
+      end for;
+      rows := list(c for c guard not List.contains(whole, ComponentRef.stripSubscriptsAll(c), ComponentRef.isEqual) in rows);
+      rows := UnorderedSet.unique_list(listAppend(whole, rows), ComponentRef.hash, ComponentRef.isEqual);
+    end sparsityLoopRows;
+
+    function sparsityHasBase
+      input ComponentRef cref;
+      input ComponentRef base;
+      output Boolean b = ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(cref), base);
+    end sparsityHasBase;
+
     function sparsitySimplify
       "with the sums combined, so that equal subscripts (e.g. 1 + i - 1 and i) are equal crefs"
       input output Expression exp;
@@ -2549,7 +2591,8 @@ public
                   Expression e;
                   Dimension d;
                 case (Subscript.INDEX(index = e), d) guard(Expression.isInteger(e) and Dimension.isKnown(d)) algorithm
-                  if Expression.integerValue(e) < 1 or Expression.integerValue(e) > Dimension.size(d) then
+                  // the size of a resizable dimension is only known at runtime
+                  if Expression.integerValue(e) < 1 or (not Dimension.isResizable(d) and Expression.integerValue(e) > Dimension.size(d)) then
                     b := false;
                   end if;
                 then ();
@@ -2742,7 +2785,8 @@ public
           crefs := UnorderedMap.getSafe(base, seed_elements, sourceInfo());
         else
           ty := ComponentRef.getSubscriptedType(base);
-          crefs := if Type.isArray(ty) and Type.sizeOf(ty) <= 1024 then ComponentRef.scalarizeAll(base, false) else {base};
+          // the elements of a resizable array are only known at runtime
+          crefs := if Type.isArray(ty) and not Type.isResizable(ty) and Type.sizeOf(ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then ComponentRef.scalarizeAll(base, false) else {base};
         end if;
       end if;
     end sparsityExpandForeignIterators;
@@ -4329,7 +4373,7 @@ public
     input UnorderedSet<ComponentRef> rep_set;
     output UnorderedSet<ComponentRef> occurrences;
   protected
-    list<ComponentRef> inputs, outputs;
+    list<ComponentRef> inputs, outputs, conditions;
   algorithm
     occurrences := match eqn
       local
@@ -4355,16 +4399,23 @@ public
       case Equation.ALGORITHM() algorithm
         // filter inputs for solvable (not occuring only in conditions)
         inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
+        // inputs in conditions are unsolvable
+        occ1 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        collectAlgorithmConditionCrefs(eqn.alg.statements, occ1);
+        (conditions, inputs) := List.splitOnTrue(inputs, function UnorderedSet.contains(set = occ1));
         // collect all crefs expanding potential records
         inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in inputs));
+        conditions := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in conditions));
         outputs := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
+        Dependency.addListFull(conditions, 0, dep_map, rep_set);
         Dependency.addListFull(outputs, 0, dep_map, rep_set);
         // make inputs unsolvable and outputs solvable (maybe check if algorithm can be reversed)
         Solvability.updateList(inputs, Solvability.IMPLICIT(), sol_map);
+        Solvability.updateList(conditions, Solvability.UNSOLVABLE(), sol_map);
         Solvability.updateList(outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
-      then UnorderedSet.fromList(listAppend(inputs, outputs), ComponentRef.hash, ComponentRef.isEqual);
+      then UnorderedSet.fromList(List.flatten({inputs, outputs, conditions}), ComponentRef.hash, ComponentRef.isEqual);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
         // gather solvables from body
@@ -4676,7 +4727,7 @@ public
     end if;
 
     // a slice (e.g. i[1:2]) of variables whose elements are the unknowns is resolved via its elements as well
-    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.hasKnownSize(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
+    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.hasKnownSize(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
       hasSetSub := true;
     end if;
 
@@ -4944,6 +4995,53 @@ public
       else ();
     end match;
   end collectDependenciesAlgorithmStatement;
+
+  function collectAlgorithmConditionCrefs
+    "collects the variables of if, when and while conditions in algorithm statements"
+    input list<Statement> stmts;
+    input UnorderedSet<ComponentRef> crefs;
+  algorithm
+    for stmt in stmts loop
+      () := match stmt
+        case Statement.IF() algorithm
+          for branch in stmt.branches loop
+            Expression.apply(Util.tuple21(branch), function collectConditionCref(crefs = crefs));
+            collectAlgorithmConditionCrefs(Util.tuple22(branch), crefs);
+          end for;
+        then ();
+
+        case Statement.WHEN() algorithm
+          for branch in stmt.branches loop
+            Expression.apply(Util.tuple21(branch), function collectConditionCref(crefs = crefs));
+            collectAlgorithmConditionCrefs(Util.tuple22(branch), crefs);
+          end for;
+        then ();
+
+        case Statement.WHILE() algorithm
+          Expression.apply(stmt.condition, function collectConditionCref(crefs = crefs));
+          collectAlgorithmConditionCrefs(stmt.body, crefs);
+        then ();
+
+        case Statement.FOR() algorithm
+          collectAlgorithmConditionCrefs(stmt.body, crefs);
+        then ();
+
+        else ();
+      end match;
+    end for;
+  end collectAlgorithmConditionCrefs;
+
+  function collectConditionCref
+    input Expression exp;
+    input UnorderedSet<ComponentRef> crefs;
+  algorithm
+    () := match exp
+      case Expression.CREF() guard(not (ComponentRef.isTime(exp.cref) or ComponentRef.isIterator(exp.cref))) algorithm
+        UnorderedSet.add(ComponentRef.stripSubscriptsAll(exp.cref), crefs);
+      then ();
+      else ();
+    end match;
+  end collectConditionCref;
 
   function updateConditionCrefs
     "variables in conditions are unsolvable, reduced and get their skips removed"

@@ -50,12 +50,14 @@ protected
   // New Frontend Imports
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import Function = NFFunction;
   import InstNode = NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
   import Algorithm = NFAlgorithm;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -66,13 +68,16 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, IfEquationBody};
   import FunctionAlias = NBFunctionAlias;
   import BPartition = NBPartition;
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{StateOrder, VariablePointers, VarData};
 
   // Util
   import StringUtil;
+  import UnorderedSet;
+
+  type ElementOrder = tuple<Option<StateOrder>, UnorderedSet<Integer>, Integer> "order (NONE() if ambiguous), covered flat indices, size";
 
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -145,6 +150,7 @@ protected
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
     list<Pointer<Equation>> aux_eqns;
     EqData newEqData;
+    UnorderedMap<ComponentRef, ElementOrder> element_order;
   algorithm
     // introduce sliced state alias before resolving the der() calls
     (varData, eqData) := FunctionAlias.introduceSlicedStateAlias(varData, eqData, NBPartition.Kind.ODE);
@@ -193,10 +199,12 @@ protected
         newEqData := EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false);
 
         // detect state order
-        EquationPointers.map(EqData.getEquations(newEqData), function stateOrder(state_order = varData.state_order));
+        element_order := UnorderedMap.new<ElementOrder>(ComponentRef.hash, ComponentRef.isEqual);
+        EquationPointers.map(eqData.continuous, function stateOrder(state_order = varData.state_order, element_order = element_order, iters = {}));
+        addElementOrders(varData.state_order, element_order);
         if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not UnorderedMap.isEmpty(varData.state_order) then
           print(StringUtil.headline_4("[stateselection] State Order:"));
-          print("\t" + UnorderedMap.toString(varData.state_order, ComponentRef.toString, ComponentRef.toString, "\n\t", " --d/dt--> ") + "\n\n");
+          print("\t" + UnorderedMap.toString(varData.state_order, ComponentRef.toString, StateOrder.toString, "\n\t", " --d/dt--> ") + "\n\n");
         end if;
       then (varData, newEqData);
       else (varData, eqData);
@@ -606,24 +614,16 @@ protected
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
     input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
+  protected
+    Pointer<Variable> state_var;
   algorithm
-    for body_stmt in body.when_stmts loop
-      () := match body_stmt
-        local
-          ComponentRef state_cref;
-          Pointer<Variable> state_var;
-
-        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
-          // the function getPreVar() does all necessary collecting of information
-          // but we don't need the actual pre cref it returns
-          state_var := BVariable.getVarPointer(state_cref, sourceInfo());
-          BVariable.makeDiscreteStateVar(state_var);
-          getPreVar(state_cref, state_var, acc_previous, scalarized);
-          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
-        then ();
-
-        else ();
-      end match;
+    for state_cref in WhenEquationBody.getAllAssigned(body) loop
+      // the function getPreVar() does all necessary collecting of information
+      // but we don't need the actual pre cref it returns
+      state_var := BVariable.getVarPointer(state_cref, sourceInfo());
+      BVariable.makeDiscreteStateVar(state_var);
+      getPreVar(state_cref, state_var, acc_previous, scalarized);
+      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
     end for;
   end collectDiscreteStatesFromWhenBody;
 
@@ -672,53 +672,76 @@ protected
     input WhenEquationBody body;
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
     input Pointer<list<Pointer<Variable>>> acc_previous;
+  protected
+    Pointer<Variable> state_var, pre_var;
   algorithm
-    for body_stmt in body.when_stmts loop
-      () := match body_stmt
-        local
-          ComponentRef state_cref;
-          Pointer<Variable> state_var, pre_var;
-
-        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
-          state_var := BVariable.getVarPointer(state_cref, sourceInfo());
-          () := match BVariable.getVarPre(state_var)
-            case SOME(pre_var) algorithm
-              Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
-            then ();
-            else ();
-          end match;
-          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+    for state_cref in WhenEquationBody.getAllAssigned(body) loop
+      state_var := BVariable.getVarPointer(state_cref, sourceInfo());
+      () := match BVariable.getVarPre(state_var)
+        case SOME(pre_var) algorithm
+          Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
         then ();
         else ();
       end match;
+      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
     end for;
   end findDiscreteStatesFromWhenBody;
 
   function stateOrder
+    "Collects state orders x = k*der(y) + c of y or of elements of y."
     input output Equation eqn;
-    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+    input UnorderedMap<ComponentRef, StateOrder> state_order;
+    input UnorderedMap<ComponentRef, ElementOrder> element_order;
+    input list<Iterator> iters "the surrounding for-loops";
   protected
-    Expression lhs, rhs;
+    list<Option<Iterator>> maps;
   algorithm
     () := match eqn
-      case Equation.SCALAR_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
-        updateStateOrder(lhs.cref, rhs.cref, state_order);
+      case Equation.SCALAR_EQUATION() algorithm
+        updateStateOrder(stateRelation(eqn.lhs, eqn.rhs), iters, state_order, element_order);
       then ();
 
-      // ToDo: sliced array/for-loops
-      case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
-        updateStateOrder(lhs.cref, rhs.cref, state_order);
+      case Equation.ARRAY_EQUATION() algorithm
+        updateStateOrder(stateRelation(eqn.lhs, eqn.rhs), iters, state_order, element_order);
       then ();
 
       case Equation.FOR_EQUATION() algorithm
-        for b in eqn.body loop
-          stateOrder(b, state_order);
-        end for;
+        (_, _, maps) := Iterator.getFrames(eqn.iter);
+        if List.all(maps, isNone) then
+          for b in eqn.body loop
+            stateOrder(b, state_order, element_order, eqn.iter :: iters);
+          end for;
+        end if;
       then ();
 
       else ();
     end match;
   end stateOrder;
+
+  function addElementOrders
+    "Adds the state orders that are given element by element."
+    input UnorderedMap<ComponentRef, StateOrder> state_order;
+    input UnorderedMap<ComponentRef, ElementOrder> element_order;
+  protected
+    ComponentRef state;
+    StateOrder order;
+    UnorderedSet<Integer> covered;
+    Integer total;
+  algorithm
+    for entry in UnorderedMap.toList(element_order) loop
+      () := match entry
+        case (state, (SOME(order), covered, total)) algorithm
+          if UnorderedSet.size(covered) == total then
+            addStateOrder(state, order, state_order);
+          elseif not UnorderedSet.isEmpty(covered) then
+            order.elements := SOME(covered);
+            addStateOrder(state, order, state_order);
+          end if;
+        then ();
+        else ();
+      end match;
+    end for;
+  end addElementOrders;
 
   function promotePreferStates
     "Promotes StateSelect.prefer variables to states if the model has ANY der() calls.
@@ -771,25 +794,220 @@ protected
     end if;
   end promotePreferStates;
 
-  function updateStateOrder
-    input ComponentRef lhs;
-    input ComponentRef rhs;
-    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+  function stateRelation
+    "Returns ($DER.y, x, (k, c)) if lhs = rhs is x = k*der(y) + c with constant or
+    parameter coefficients. The crefs keep their subscripts. (k, c) is NONE() for x = der(y)."
+    input Expression lhs;
+    input Expression rhs;
+    output Option<tuple<ComponentRef, ComponentRef, Option<tuple<Expression, Expression>>>> relation = NONE();
   protected
-    PointerWeak<Variable> state;
+    list<ComponentRef> crefs;
+    ComponentRef der_cref, alias;
+    Expression residual, a, b, d;
+    Type ty;
+    Operator mul;
+    Boolean found;
   algorithm
-    () := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
-      // a = der(b)
-      case (_, VariableKind.STATE_DER(state = state)) algorithm
-        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(lhs), state_order);
-      then ();
-      // der(b) = a
-      case (VariableKind.STATE_DER(state = state), _) algorithm
-        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(rhs), state_order);
-      then ();
-      else ();
+    crefs := Expression.fold(rhs, collectUnknown, Expression.fold(lhs, collectUnknown, {}));
+    (der_cref, alias, found) := match crefs
+      case {der_cref, alias} guard(isDerivativeCref(der_cref) and not isDerivativeCref(alias) and BVariable.isVarCref(alias)) then (der_cref, alias, true);
+      case {alias, der_cref} guard(isDerivativeCref(der_cref) and not isDerivativeCref(alias) and BVariable.isVarCref(alias)) then (der_cref, alias, true);
+      else (ComponentRef.EMPTY(), ComponentRef.EMPTY(), false);
     end match;
+    // a discrete variable is not k*der(y) + c
+    if not found or not BVariable.checkCref(alias, function BVariable.isContinuous(staticAsContinuous = false), sourceInfo()) then
+      return;
+    end if;
+
+    if Expression.isCref(lhs) and Expression.isCref(rhs) then
+      relation := SOME((der_cref, alias, NONE()));
+      return;
+    end if;
+
+    // a*der(y) + b*x + d = 0
+    ty := Expression.typeOf(lhs);
+    residual := Expression.MULTARY({lhs}, {rhs}, Operator.makeAdd(ty));
+    try
+      a := SimplifyExp.simplify(Differentiate.differentiateExpression(residual, Differentiate.DifferentiationArguments.simpleCref(der_cref)));
+      b := SimplifyExp.simplify(Differentiate.differentiateExpression(residual, Differentiate.DifferentiationArguments.simpleCref(alias)));
+    else
+      return;
+    end try;
+    d := SimplifyExp.simplify(Expression.map(residual, function replaceByZero(crefs = crefs)));
+    if Type.isArray(Expression.typeOf(d)) and Expression.isZero(d) then
+      d := Expression.makeZero(Type.arrayElementType(ty));
+    end if;
+    if not (isCoefficient(a) and isCoefficient(b) and isCoefficient(d)) or Expression.isZero(a) or Expression.isZero(b) then
+      return;
+    end if;
+
+    // k = -a/b, c = -d/b
+    ty := Expression.typeOf(a);
+    mul := Operator.makeMul(ty);
+    a := SimplifyExp.simplify(Expression.negate(Expression.MULTARY({a}, {b}, mul)));
+    d := SimplifyExp.simplify(Expression.negate(Expression.MULTARY({d}, {b}, mul)));
+    relation := SOME((der_cref, alias, if Expression.isOne(a) and Expression.isZero(d) then NONE() else SOME((a, d))));
+  end stateRelation;
+
+  function collectUnknown
+    "Collects the crefs that are not parameters, constants or iterators."
+    input Expression exp;
+    input output list<ComponentRef> crefs;
+  algorithm
+    crefs := match exp
+      case Expression.CREF() guard(not ComponentRef.isIterator(exp.cref) and not (BVariable.isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo())))
+      then List.unionEltOnTrue(exp.cref, crefs, ComponentRef.isEqual);
+      else crefs;
+    end match;
+  end collectUnknown;
+
+  function replaceByZero
+    input output Expression exp;
+    input list<ComponentRef> crefs;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(List.isMemberOnTrue(exp.cref, crefs, ComponentRef.isEqual)) then Expression.makeZero(exp.ty);
+      else exp;
+    end match;
+  end replaceByZero;
+
+  function isCoefficient
+    "true for scalar, pure expressions of constants, parameters and literals."
+    input Expression exp;
+    output Boolean b = not Type.isArray(Expression.typeOf(exp)) and Expression.fold(exp, isCoefficientNode, true);
+  end isCoefficient;
+
+  function isCoefficientNode
+    input Expression exp;
+    input output Boolean b;
+  algorithm
+    b := b and (match exp
+      case Expression.CREF() then BVariable.isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo());
+      case Expression.CALL() then Expression.isPure(exp);
+      else true;
+    end match);
+  end isCoefficientNode;
+
+  function isDerivativeCref
+    input ComponentRef cref;
+    output Boolean b = BVariable.isVarCref(cref) and BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo());
+  end isDerivativeCref;
+
+  function updateStateOrder
+    "Adds x = k*der(y) + c if the subscripts of x and der(y) are equal and cover all elements.
+    Relations that cover only some elements are collected in element_order."
+    input Option<tuple<ComponentRef, ComponentRef, Option<tuple<Expression, Expression>>>> relation;
+    input list<Iterator> iters;
+    input UnorderedMap<ComponentRef, StateOrder> state_order;
+    input UnorderedMap<ComponentRef, ElementOrder> element_order;
+  protected
+    Pointer<Variable> alias_var, der_var;
+    ComponentRef alias, der_cref, state_cref;
+    Option<tuple<Expression, Expression>> coefficients;
+    StateOrder order;
+    list<Subscript> subs;
+    list<Dimension> dims;
+    Option<UnorderedSet<Integer>> indices;
+  algorithm
+    if isNone(relation) then
+      return;
+    end if;
+    SOME((der_cref, alias, coefficients)) := relation;
+
+    alias_var := BVariable.getVarPointer(alias, sourceInfo());
+    der_var := BVariable.getVarPointer(der_cref, sourceInfo());
+    if not BVariable.isContinuous(alias_var, false) or BVariable.isTime(alias_var) then
+      return;
+    end if;
+
+    subs := ComponentRef.subscriptsAllWithWholeFlat(der_cref);
+    dims := Type.arrayDims(Variable.typeOf(Pointer.access(der_var)));
+    if not (List.isEqualOnTrue(subs, ComponentRef.subscriptsAllWithWholeFlat(alias), Subscript.isEqual)
+      and List.isEqualOnTrue(dims, Type.arrayDims(Variable.typeOf(Pointer.access(alias_var))), Dimension.isEqualKnown)
+      and listLength(subs) == listLength(dims) and distinctIterators(subs)) then
+      return;
+    end if;
+
+    state_cref := BVariable.getVarName(Util.getOption(BVariable.getVarState(der_var)));
+    order := StateOrder.STATE_ORDER(ComponentRef.stripSubscriptsAll(alias), coefficients, NONE());
+    if ComponentRef.isEqual(state_cref, order.partner) then
+      return;
+    end if;
+    subs := Iterator.sliceSubscripts(subs, iters);
+    if List.all(List.zip(subs, dims), coversDim) then
+      addStateOrder(state_cref, order, state_order);
+      return;
+    end if;
+
+    indices := BVariable.elementIndices(subs, dims);
+    if isSome(indices) then
+      () := match UnorderedMap.get(state_cref, element_order)
+        local
+          StateOrder old_order;
+        case NONE() algorithm
+          UnorderedMap.add(state_cref, (SOME(order), UnorderedSet.new(Util.id, intEq), product(Dimension.size(d) for d in dims)), element_order);
+        then ();
+        case SOME((SOME(old_order), _, _)) guard(StateOrder.isEqual(order, old_order)) then ();
+        else algorithm
+          UnorderedMap.add(state_cref, (NONE(), UnorderedSet.new(Util.id, intEq), 0), element_order);
+        then ();
+      end match;
+      UnorderedSet.merge(Util.tuple32(UnorderedMap.getOrFail(state_cref, element_order)), Util.getOption(indices));
+    end if;
   end updateStateOrder;
+
+  function addStateOrder
+    "Adds the order if the state has none yet or if it replaces a worse one, see StateOrder.rank."
+    input ComponentRef state;
+    input StateOrder order;
+    input UnorderedMap<ComponentRef, StateOrder> state_order;
+  protected
+    StateOrder old_order;
+  algorithm
+    () := match UnorderedMap.get(state, state_order)
+      case SOME(old_order) guard(StateOrder.rank(old_order) >= StateOrder.rank(order)) then ();
+      else algorithm
+        UnorderedMap.add(state, order, state_order);
+      then ();
+    end match;
+  end addStateOrder;
+
+  function coversDim
+    input tuple<Subscript, Dimension> sub_dim;
+    output Boolean b;
+  protected
+    Expression slice;
+    Dimension dim;
+  algorithm
+    b := match sub_dim
+      case (Subscript.WHOLE(), _) then true;
+      case (Subscript.SLICE(slice = slice), dim) then Expression.isFullRange(slice, dim);
+      else false;
+    end match;
+  end coversDim;
+
+  function distinctIterators
+    "false if an iterator is used for more than one dimension, e.g. x[i, i]."
+    input list<Subscript> subs;
+    output Boolean b = true;
+  protected
+    UnorderedSet<ComponentRef> used = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for sub in subs loop
+      () := match sub
+        local
+          ComponentRef iter;
+        case Subscript.INDEX(index = Expression.CREF(cref = iter)) guard(ComponentRef.isIterator(iter)) algorithm
+          if UnorderedSet.contains(iter, used) then
+            b := false;
+            return;
+          end if;
+          UnorderedSet.add(iter, used);
+        then ();
+        else ();
+      end match;
+    end for;
+  end distinctIterators;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBDetectStates;

@@ -1,0 +1,53 @@
+// name: SchmittTriggerStepRetry.mos - zero crossings after a retried step (ticket #18182)
+// keywords: maxStepRetries, algebraic, nonlinear, zero crossing
+// status: correct
+// teardown_command: rm -rf SchmittTriggerStepRetry SchmittTriggerStepRetry.c SchmittTriggerStepRetry.o SchmittTriggerStepRetry.h SchmittTriggerStepRetry.libs SchmittTriggerStepRetry.log SchmittTriggerStepRetry.makefile SchmittTriggerStepRetry_*
+//
+// The Schmitt trigger of the MSL 4.2.0 OpAmps examples. At each switch, the
+// nonlinear system starts on the branch that just disappeared and fails, and
+// the step is retried. The retry must not leave the zero crossings of the
+// relations `time < T_start + T_width` and `time < T_start + T_falling` of the
+// Trapezoid stale: since the period event at t=0.065 they are in if-branches
+// that were not taken.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model SchmittTriggerStepRetry
+  parameter Real V0 = 15000 \"No-load amplification\";
+  parameter Real Vps = 15;
+  parameter Real Vns = -15;
+  parameter Real R1 = 1000;
+  parameter Real R2 = 15000;
+  Modelica.Blocks.Sources.Trapezoid vIn(amplitude = 10, offset = -5, rising = 0.02, width = 0.03,
+    falling = 0.02, period = 0.1, nperiod = -1, startTime = -0.035);
+  Real v_in(start = 0) \"Input voltage difference\";
+  Real v_int \"Intermediate voltage\";
+  Real v_out \"Output voltage\";
+  Boolean satPos = v_int >= Vps;
+  Boolean satNeg = v_int <= Vns;
+equation
+  v_in = (R2*vIn.y + R1*v_out)/(R1 + R2);
+  v_int = V0*v_in;
+  v_out = smooth(0, min(Vps, max(Vns, v_int)));
+  annotation(experiment(StopTime = 1, Interval = 0.001, Tolerance = 1e-6));
+end SchmittTriggerStepRetry;
+"); getErrorString();
+
+echo(false); res := simulate(SchmittTriggerStepRetry); resultFile := res.resultFile; echo(true); getErrorString();
+resultFile <> "";
+val(v_out, 0.05); val(v_out, 0.1); val(v_out, 0.95); val(v_out, 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// -15.0
+// 15.0
+// -15.0
+// 15.0
+// ""
+// endResult

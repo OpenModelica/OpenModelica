@@ -386,6 +386,7 @@ enum SOLVER_METHOD
 {
   S_UNKNOWN = 0,
 
+  S_AUTO,
   S_DASSL,
   S_IDA,
   S_CVODE,

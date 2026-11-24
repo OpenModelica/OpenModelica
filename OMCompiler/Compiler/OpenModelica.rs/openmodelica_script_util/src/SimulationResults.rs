@@ -30,6 +30,7 @@ use arcstr::ArcStr;
 use metamodelica::{List, OrderedFloat, Result};
 use openmodelica_error::ErrorTypes;
 use openmodelica_frontend_types::Values;
+use openmodelica_result_files::cmp::Algorithm;
 use openmodelica_result_files::scripting::{self, Messages, Severity};
 use openmodelica_util::Error;
 
@@ -169,6 +170,7 @@ pub fn diffSimulationResults(
     mut refTol: metamodelica::Real,
     mut relTolDiffMaxMin: metamodelica::Real,
     mut rangeDelta: metamodelica::Real,
+    mut tube: i32,
     mut vars: metamodelica::List<ArcStr>,
     mut keepEqualResults: bool,
 ) -> Result<(bool, metamodelica::List<ArcStr>)> {
@@ -182,6 +184,7 @@ pub fn diffSimulationResults(
             refTol.into_inner(),
             relTolDiffMaxMin.into_inner(),
             rangeDelta.into_inner(),
+            Algorithm::from_index(tube),
             &strings(&vars),
             keepEqualResults,
         )

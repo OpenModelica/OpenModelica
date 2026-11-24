@@ -195,7 +195,7 @@ LogCommitDialog::LogCommitDialog(RevertCommitsDialog *pRevertCommitsDialog)
   mpRevertCommitsDialog = pRevertCommitsDialog;
   mpLogModel = new QStandardItemModel(0, ColumnCount, this);
   QStringList headers;
-  headers << tr("Sha1")<< tr("Subject");
+  headers << tr("SHA-1")<< tr("Subject");
   mpLogModel->setHorizontalHeaderLabels(headers);
   // Log commit tree view
   mpLogTreeView = new QTreeView;

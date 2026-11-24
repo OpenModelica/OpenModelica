@@ -68,8 +68,18 @@ public function inlineArrayEqn "
   This module expands all array equations to scalar equations."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Shared shared;
+  list<BackendDAE.Equation> eqnLst;
+  Boolean found;
 algorithm
   (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, inlineArrayEqn1, false);
+  shared := outDAE.shared;
+  (eqnLst, found) := getScalarArrayEqns(BackendEquation.equationList(shared.initialEqs));
+  if found then
+    shared.initialEqs := BackendEquation.listEquation(eqnLst);
+    outDAE.shared := shared;
+  end if;
 end inlineArrayEqn;
 
 protected function inlineArrayEqn1
@@ -144,14 +154,8 @@ algorithm
       BackendDAE.EquationAttributes attr;
 
     case BackendDAE.ARRAY_EQUATION(left = lhs, right = rhs, source = source, attr = attr)
-      algorithm
-        ea1 := scalarizeArrayExp(lhs);
-        ea2 := scalarizeArrayExp(rhs);
-
-        (_, eqns) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
-          source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
       then
-        (eqns, true);
+        (scalarArrayEqns(lhs, rhs, source, attr, inAccEqnLst), true);
 
     case BackendDAE.COMPLEX_EQUATION(left = lhs, right = rhs, source = source, attr = attr)
       algorithm
@@ -166,11 +170,38 @@ algorithm
   end matchcontinue;
 end getScalarArrayEqns1;
 
-protected function scalarizeArrayExp
+public function scalarArrayEqns
+  "Adds the scalar equations of lhs = rhs in reverse order, fails if the array
+   expressions can't be expanded. Array valued elements that can't be expanded
+   give array equations."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes attr;
+  input output list<BackendDAE.Equation> eqns;
+protected
+  list<DAE.Exp> ea1, ea2;
+algorithm
+  (ea1, ea2) := pairArrayElements(expandArrayExp(lhs), expandArrayExp(rhs), {}, {});
+  (_, eqns) := List.threadFold3(listReverse(ea1), listReverse(ea2), generateScalarArrayEqns2,
+    source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, eqns));
+end scalarArrayEqns;
+
+public function scalarizeArrayExp
   "Returns the scalar elements of an array expression, fails if the expression
-   can't be expanded. Array valued if-expressions and smooth/noEvent calls are
-   expanded element-wise, e.g. `if c then {a, b} else {d, e}` becomes
-   `{if c then a else d, if c then b else e}`."
+   can't be expanded."
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExps;
+algorithm
+  outExps := List.flatten(list(if Expression.isArrayType(Expression.typeof(e)) then scalarizeArrayExp(e) else {e}
+                               for e in expandArrayExp(inExp)));
+end scalarizeArrayExp;
+
+protected function expandArrayExp
+  "Returns the elements of the first dimension of an array expression, fails if
+   the expression can't be expanded. Array valued if-expressions and
+   smooth/noEvent calls are expanded element-wise, e.g.
+   `if c then {a, b} else {d, e}` becomes `{if c then a else d, if c then b else e}`."
   input DAE.Exp inExp;
   output list<DAE.Exp> outExps;
 algorithm
@@ -178,31 +209,69 @@ algorithm
     local
       DAE.Exp cond, e, e1, e2, p;
       list<DAE.Exp> ea1, ea2;
+      DAE.Type ty;
 
-    case _ guard Expression.isArray(inExp) or Expression.isMatrix(inExp)
-    then Expression.flattenArrayExpToList(inExp);
+    case DAE.ARRAY() then inExp.array;
+
+    case DAE.MATRIX()
+      algorithm
+        ty := Expression.unliftArray(inExp.ty);
+      then list(DAE.ARRAY(ty, true, row) for row in inExp.matrix);
 
     case DAE.IFEXP(expCond = cond)
       algorithm
-        ea1 := scalarizeArrayExp(inExp.expThen);
-        ea2 := scalarizeArrayExp(inExp.expElse);
+        ea1 := expandArrayExp(inExp.expThen);
+        ea2 := expandArrayExp(inExp.expElse);
         true := listLength(ea1) == listLength(ea2);
       then list(DAE.IFEXP(cond, e1, e2) threaded for e1 in ea1, e2 in ea2);
 
     case DAE.CALL(path = Absyn.IDENT("smooth"), expLst = {p, e})
-    then list(Expression.makePureBuiltinCall("smooth", {p, e1}, Expression.typeof(e1)) for e1 in scalarizeArrayExp(e));
+    then list(Expression.makePureBuiltinCall("smooth", {p, e1}, Expression.typeof(e1)) for e1 in expandArrayExp(e));
 
     case DAE.CALL(path = Absyn.IDENT("noEvent"), expLst = {e})
-    then list(Expression.makePureBuiltinCall("noEvent", {e1}, Expression.typeof(e1)) for e1 in scalarizeArrayExp(e));
+    then list(Expression.makePureBuiltinCall("noEvent", {e1}, Expression.typeof(e1)) for e1 in expandArrayExp(e));
 
     else
       algorithm
         e := Expression.extendArrExp(inExp);
         e := ExpressionSimplify.simplify(e);
         true := Expression.isArray(e) or Expression.isMatrix(e);
-      then Expression.flattenArrayExpToList(e);
+      then expandArrayExp(e);
   end match;
-end scalarizeArrayExp;
+end expandArrayExp;
+
+protected function pairArrayElements
+  "Pairs the elements of two expanded array expressions. A pair of array valued
+   elements is expanded further if both elements can be expanded."
+  input list<DAE.Exp> lhs;
+  input list<DAE.Exp> rhs;
+  input output list<DAE.Exp> lhsElements "in reverse order";
+  input output list<DAE.Exp> rhsElements "in reverse order";
+protected
+  DAE.Exp e2;
+  list<DAE.Exp> r = rhs, l1 = {}, r1 = {};
+  Boolean expand;
+algorithm
+  true := listLength(lhs) == listLength(rhs);
+  for e1 in lhs loop
+    e2 :: r := r;
+    expand := Expression.isArrayType(Expression.typeof(e1)) or Expression.isArrayType(Expression.typeof(e2));
+    if expand then
+      try
+        l1 := expandArrayExp(e1);
+        r1 := expandArrayExp(e2);
+      else
+        expand := false;
+      end try;
+    end if;
+    if expand then
+      (lhsElements, rhsElements) := pairArrayElements(l1, r1, lhsElements, rhsElements);
+    else
+      lhsElements := e1 :: lhsElements;
+      rhsElements := e2 :: rhsElements;
+    end if;
+  end for;
+end pairArrayElements;
 
 protected function generateScalarArrayEqns2
   input DAE.Exp inExp1;

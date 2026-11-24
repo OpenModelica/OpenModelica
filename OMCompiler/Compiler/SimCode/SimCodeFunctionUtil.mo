@@ -900,6 +900,8 @@ algorithm
         outVars := List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         inVars := List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars := List.map(DAEUtil.getBidirElements(daeElts), daeInOutSimVar);
+        varDecls := List.map(sortVarDecls(list(e for e guard DAEUtil.isOutputElement(e) or
+          DAEUtil.isBidirElement(e) in daeElts)), daeInOutSimVar);
         collectRecDeclsFromElems(daeElts, recDeclsMap);
         info := ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) := generateExtFunctionIncludes(program, fpath, ann, info);
@@ -907,14 +909,14 @@ algorithm
         includeDirs := List.union(fn_includeDirs, includeDirs);
         libs := List.union(fn_libs, libs);
         libPaths := List.union(fn_paths, libPaths);
-        simextargs := List.map(extargs, extArgsToSimExtArgs);
+        simextargs := list(extArgsToSimExtArgs(constantExtArg(a, daeElts)) for a in extargs);
         extReturn := extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) := fixOutputIndex(outVars, simextargs, extReturn);
         // make lang to-upper as we have FORTRAN 77 and Fortran 77 in the Modelica Library!
         lang := System.toupper(lang);
       then
         (SimCodeFunction.EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-          inVars, outVars, biVars, fn_includes, fn_libs, lang, visibility, info, dynamicLoad), includes, includeDirs, libs,libPaths);
+          inVars, outVars, biVars, varDecls, fn_includes, fn_libs, lang, visibility, info, dynamicLoad), includes, includeDirs, libs,libPaths);
 
     // Record constructor
     case (DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), includes, includeDirs, libs, libPaths)
@@ -1026,6 +1028,32 @@ algorithm
         fail();
   end matchcontinue;
 end daeInOutSimVar;
+
+protected function constantExtArg
+  "A reference to a constant is passed as an input (MLS 3.7, section 12.9.1)."
+  input DAE.ExtArg extArg;
+  input list<DAE.Element> elements;
+  output DAE.ExtArg outArg = extArg;
+algorithm
+  outArg := match extArg
+    case DAE.EXTARG()
+      guard Types.isSimpleType(extArg.type_) and
+            List.any(elements, function isConstantVar(cref = extArg.componentRef))
+      then DAE.EXTARGEXP(DAE.CREF(extArg.componentRef, extArg.type_), extArg.type_);
+    else extArg;
+  end match;
+end constantExtArg;
+
+protected function isConstantVar
+  input DAE.Element element;
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match element
+    case DAE.VAR(kind = DAE.CONST()) then ComponentReferenceBasics.crefEqual(element.componentRef, cref);
+    else false;
+  end match;
+end isConstantVar;
 
 protected function extArgsToSimExtArgs
   input DAE.ExtArg extArg;
@@ -2391,15 +2419,14 @@ algorithm
     then ();
   case(, _,_)
     algorithm
-      libPaths := {uri,
-                   uri + "/" + System.modelicaPlatform(),
-                   uri + "/" + System.openModelicaPlatform(),
+      libPaths := listAppend(uri :: uri + "/" + System.modelicaPlatform() :: msvcLibraryDirectoryPaths(uri + "/" + System.modelicaPlatform()),
+                  {uri + "/" + System.openModelicaPlatform(),
                    uri + "/" + System.openModelicaPlatformAlternative(),
                    (Settings.getHomeDir(false) + "/.openmodelica/binaries/" + AbsynUtil.pathFirstIdent(path)),
                    // Where an MSL-shaped build project forces its CMAKE_INSTALL_LIBDIR.
                    (userCompiledBinariesDirectory(path) + "/Library/" + System.modelicaPlatform()),
                    (installationDir + "/lib/"),
-                   (installationDir + "/lib/" + Autoconf.triple + "/omc")};
+                   (installationDir + "/lib/" + Autoconf.triple + "/omc")});
 
       // A build project run for a wasm target installs beside, not over, the host build.
       if isWasmSimCodeTarget() then
@@ -2481,6 +2508,17 @@ protected function getGerneralTarget
 algorithm
   generalTarget := if (System.stringFind(target, "msvc") == 0) then "msvc" else target;
 end getGerneralTarget;
+
+protected function msvcLibraryDirectoryPaths
+  "The existing compiler directories of platformDir for an MSVC target, least
+   preferred first."
+  input String platformDir;
+  output list<String> dirs = {};
+algorithm
+  if getGerneralTarget(Flags.getConfigString(Flags.TARGET)) == "msvc" then
+    dirs := list(platformDir + "/" + d for d guard System.directoryExists(platformDir + "/" + d) in listReverse(Util.msvcLibraryDirectories()));
+  end if;
+end msvcLibraryDirectoryPaths;
 
 
 protected function userCompiledBinariesDirectory
@@ -2589,6 +2627,9 @@ algorithm
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs := generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
+        for dir in msvcLibraryDirectoryPaths(str + "/" + platform3) loop
+          libs := generateExtFunctionLibraryDirectoryPaths2(true, dir, isLinux, libs);
+        end for;
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(isWasmSimCodeTarget(), str + "/wasm32-wasip1", isLinux, libs);
@@ -2604,6 +2645,9 @@ algorithm
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs := generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
+        for dir in msvcLibraryDirectoryPaths(str + "/" + platform3) loop
+          libs := generateExtFunctionLibraryDirectoryPaths2(true, dir, isLinux, libs);
+        end for;
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(isWasmSimCodeTarget(), str + "/wasm32-wasip1", isLinux, libs);
@@ -3326,7 +3370,7 @@ public function getCurrentCrefPrefix
   output String cref_pref;
 algorithm
   cref_pref := match context
-    case SimCodeFunction.FUNCTION_CONTEXT(cref_pref, _) then cref_pref;
+    case SimCodeFunction.FUNCTION_CONTEXT(cref_prefix = cref_pref) then cref_pref;
     else algorithm Error.addInternalError("Tried to get cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
   end match;
 end getCurrentCrefPrefix;
@@ -3335,15 +3379,33 @@ public function appendCurrentCrefPrefix
   input SimCodeFunction.Context context;
   input String in_cref_pref;
   output SimCodeFunction.Context out_context;
-protected
-  String cref_pref;
-  Boolean prl;
 algorithm
   out_context := match context
-    case SimCodeFunction.FUNCTION_CONTEXT(cref_pref, prl) then SimCodeFunction.FUNCTION_CONTEXT(cref_pref + in_cref_pref, prl);
+    case SimCodeFunction.FUNCTION_CONTEXT()
+      then SimCodeFunction.FUNCTION_CONTEXT(context.cref_prefix + in_cref_pref, context.is_parallel,
+        context.assert_function, context.assert_inputs);
     else algorithm Error.addInternalError("Tried to append cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
   end match;
 end appendCurrentCrefPrefix;
+
+public function functionBodyContext
+  "The context of the statements of a function body."
+  input Absyn.Path name;
+  input list<SimCodeFunction.Variable> args;
+  output SimCodeFunction.Context context;
+protected
+  list<DAE.Exp> inputs = {};
+algorithm
+  for v in args loop
+    inputs := match v
+      case SimCodeFunction.VARIABLE(ty = DAE.T_REAL()) then DAE.CREF(v.name, v.ty) :: inputs;
+      case SimCodeFunction.VARIABLE(ty = DAE.T_INTEGER()) then DAE.CREF(v.name, v.ty) :: inputs;
+      case SimCodeFunction.VARIABLE(ty = DAE.T_BOOL()) then DAE.CREF(v.name, v.ty) :: inputs;
+      else inputs;
+    end match;
+  end for;
+  context := SimCodeFunction.FUNCTION_CONTEXT("", false, AbsynUtil.pathString(name), listReverse(inputs));
+end functionBodyContext;
 
 annotation(__OpenModelica_Interface="simcode_util");
 end SimCodeFunctionUtil;

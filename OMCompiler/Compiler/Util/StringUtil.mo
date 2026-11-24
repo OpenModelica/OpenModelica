@@ -427,7 +427,7 @@ algorithm
     stringGet(s,2) == 187 and
     stringGet(s,3) == 191 then
     bom := substring(s, 1, 3);
-    s := substring(s, 4, stringLength(s));
+    s := if stringLength(s) > 3 then substring(s, 4, stringLength(s)) else "";
   end if;
 end stripBOM;
 

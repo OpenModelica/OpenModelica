@@ -14,11 +14,11 @@
 //   intersection() always fails (return Err("fail")), faithfully reproducing the
 //   MetaModelica source which has `redeclare function intersection; algorithm fail();`.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::AvlTreeString as T;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,9 @@ use crate::AvlTreeString as T;
 fn tree_of(pairs: &[(&str, i32)], cf: T::ConflictFunc) -> Result<metamodelica::Ref<T::Tree>> {
     let mut t = T::new();
     for (k, v) in pairs {
-        t = T::add(t, &arcstr::format!("{}", k), *v, &|a0, a1, a2| (cf)(a0, a1, ::std::clone::Clone::clone(a2)))?;
+        t = T::add(t, &arcstr::format!("{}", k), *v, &|a0, a1, a2| {
+            (cf)(a0, a1, ::std::clone::Clone::clone(a2))
+        })?;
     }
     Ok(t)
 }
@@ -39,7 +41,9 @@ fn tree_of(pairs: &[(&str, i32)], cf: T::ConflictFunc) -> Result<metamodelica::R
 fn keys_vec(t: metamodelica::Ref<T::Tree>) -> Vec<String> {
     let list = T::listKeys(&t, metamodelica::nil());
     let mut v = vec![];
-    for k in &*list { v.push(k.to_string()); }
+    for k in &*list {
+        v.push(k.to_string());
+    }
     v
 }
 
@@ -47,7 +51,9 @@ fn keys_vec(t: metamodelica::Ref<T::Tree>) -> Vec<String> {
 fn vals_vec(t: metamodelica::Ref<T::Tree>) -> Vec<i32> {
     let list = T::listValues(&t, metamodelica::nil());
     let mut v = vec![];
-    for val in &*list { v.push(*val); }
+    for val in &*list {
+        v.push(*val);
+    }
     v
 }
 
@@ -93,8 +99,8 @@ fn test_non_empty_is_not_empty() -> Result<()> {
 fn test_add_and_get() -> Result<()> {
     let t = tree_of(&[("alpha", 10), ("beta", 20), ("gamma", 30)], conflict_fail())?;
     assert_eq!(T::get(&t, literal!("alpha"))?, 10);
-    assert_eq!(T::get(&t, literal!("beta"))?,  20);
-    assert_eq!(T::get(&t,         literal!("gamma"))?, 30);
+    assert_eq!(T::get(&t, literal!("beta"))?, 20);
+    assert_eq!(T::get(&t, literal!("gamma"))?, 30);
     Ok(())
 }
 
@@ -152,18 +158,27 @@ fn test_haskey_empty_tree() -> Result<()> {
 fn test_conflict_fail_on_duplicate() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_fail())?;
     // Inserting the same key again should fail.
-    let result = T::add(t, &literal!("k"), 2, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)));
-    assert!(result.is_err(),
-        "addConflictFail should return an error when inserting a duplicate key");
+    let result = T::add(t, &literal!("k"), 2, &|a0, a1, a2| {
+        (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2))
+    });
+    assert!(
+        result.is_err(),
+        "addConflictFail should return an error when inserting a duplicate key"
+    );
     Ok(())
 }
 
 #[test]
 fn test_conflict_keep_preserves_old_value() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_keep())?;
-    let t = T::add(t, &literal!("k"), 999, &|a0, a1, a2| (conflict_keep())(a0, a1, ::std::clone::Clone::clone(a2)))?;
-    assert_eq!(T::get(&t, literal!("k"))?, 1,
-        "addConflictKeep should keep the OLD value when there is a conflict");
+    let t = T::add(t, &literal!("k"), 999, &|a0, a1, a2| {
+        (conflict_keep())(a0, a1, ::std::clone::Clone::clone(a2))
+    })?;
+    assert_eq!(
+        T::get(&t, literal!("k"))?,
+        1,
+        "addConflictKeep should keep the OLD value when there is a conflict"
+    );
     Ok(())
 }
 
@@ -178,10 +193,15 @@ fn test_conflict_keep_preserves_old_value() -> Result<()> {
 #[test]
 fn test_conflict_replace_uses_new_value() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_replace())?;
-    let t = T::add(t, &literal!("k"), 999, &|a0, a1, a2| (conflict_replace())(a0, a1, ::std::clone::Clone::clone(a2)))?;
-    assert_eq!(T::get(&t, literal!("k"))?, 999,
+    let t = T::add(t, &literal!("k"), 999, &|a0, a1, a2| {
+        (conflict_replace())(a0, a1, ::std::clone::Clone::clone(a2))
+    })?;
+    assert_eq!(
+        T::get(&t, literal!("k"))?,
+        999,
         "addConflictReplace should use the NEW value when there is a conflict; \
-         assign_variant_field! shadowing causes the update to be silently skipped");
+         assign_variant_field! shadowing causes the update to be silently skipped"
+    );
     Ok(())
 }
 
@@ -191,7 +211,9 @@ fn test_conflict_replace_uses_new_value() -> Result<()> {
 #[test]
 fn test_conflict_default_is_fail() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_default())?;
-    let result = T::add(t, &literal!("k"), 2, &|a0, a1, a2| (conflict_default())(a0, a1, ::std::clone::Clone::clone(a2)));
+    let result = T::add(t, &literal!("k"), 2, &|a0, a1, a2| {
+        (conflict_default())(a0, a1, ::std::clone::Clone::clone(a2))
+    });
     assert!(result.is_err());
     Ok(())
 }
@@ -200,8 +222,10 @@ fn test_conflict_default_is_fail() -> Result<()> {
 
 #[test]
 fn test_listkeys_ascending_order() -> Result<()> {
-    let t = tree_of(&[("banana", 2), ("apple", 1), ("cherry", 3), ("date", 4)],
-                    conflict_fail())?;
+    let t = tree_of(
+        &[("banana", 2), ("apple", 1), ("cherry", 3), ("date", 4)],
+        conflict_fail(),
+    )?;
     assert_eq!(keys_vec(t), vec!["apple", "banana", "cherry", "date"]);
     Ok(())
 }
@@ -225,12 +249,10 @@ fn test_listvalues_in_key_ascending_order() -> Result<()> {
 
 #[test]
 fn test_addlist() -> Result<()> {
-    let pairs = list![
-        (literal!("c"), 3i32),
-        (literal!("a"), 1i32),
-        (literal!("b"), 2i32)
-    ];
-    let t = T::addList(T::new(), &pairs, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)))?;
+    let pairs = list![(literal!("c"), 3i32), (literal!("a"), 1i32), (literal!("b"), 2i32)];
+    let t = T::addList(T::new(), &pairs, &|a0, a1, a2| {
+        (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2))
+    })?;
     assert_eq!(keys_vec(t.clone()), vec!["a", "b", "c"]);
     assert_eq!(vals_vec(t), vec![1, 2, 3]);
     Ok(())
@@ -240,13 +262,12 @@ fn test_addlist() -> Result<()> {
 
 #[test]
 fn test_fromlist() -> Result<()> {
-    let pairs = list![
-        (literal!("x"), 10i32),
-        (literal!("y"), 20i32)
-    ];
-    let t = T::fromList(&pairs, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)))?;
+    let pairs = list![(literal!("x"), 10i32), (literal!("y"), 20i32)];
+    let t = T::fromList(&pairs, &|a0, a1, a2| {
+        (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2))
+    })?;
     assert_eq!(T::get(&t, literal!("x"))?, 10);
-    assert_eq!(T::get(&t,         literal!("y"))?, 20);
+    assert_eq!(T::get(&t, literal!("y"))?, 20);
     Ok(())
 }
 
@@ -298,7 +319,14 @@ fn test_fold_collects_keys_in_order() -> Result<()> {
     // fold visits in in-order (key-ascending).
     let collected = T::fold(
         &t,
-        &|__b0: &_, _v, __b2: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); let mut acc: Vec<String> = ::std::clone::Clone::clone(__b2); { acc.push(k.to_string()); Ok(acc) } },
+        &|__b0: &_, _v, __b2: &_| {
+            let k: ArcStr = ::std::clone::Clone::clone(__b0);
+            let mut acc: Vec<String> = ::std::clone::Clone::clone(__b2);
+            {
+                acc.push(k.to_string());
+                Ok(acc)
+            }
+        },
         vec![],
     )?;
     assert_eq!(collected, vec!["a", "b", "c"]);
@@ -365,7 +393,9 @@ fn test_map_empty_tree() -> Result<()> {
 fn test_join_disjoint() -> Result<()> {
     let t1 = tree_of(&[("a", 1), ("b", 2)], conflict_fail())?;
     let t2 = tree_of(&[("c", 3), ("d", 4)], conflict_fail())?;
-    let joined = T::join(t1, &t2, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)))?;
+    let joined = T::join(t1, &t2, &|a0, a1, a2| {
+        (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2))
+    })?;
     assert_eq!(keys_vec(joined.clone()), vec!["a", "b", "c", "d"]);
     assert_eq!(vals_vec(joined), vec![1, 2, 3, 4]);
     Ok(())
@@ -375,9 +405,14 @@ fn test_join_disjoint() -> Result<()> {
 fn test_join_with_conflict_keep() -> Result<()> {
     let t1 = tree_of(&[("shared", 1)], conflict_keep())?;
     let t2 = tree_of(&[("shared", 999)], conflict_keep())?;
-    let joined = T::join(t1, &t2, &|a0, a1, a2| (conflict_keep())(a0, a1, ::std::clone::Clone::clone(a2)))?;
-    assert_eq!(T::get(&joined, literal!("shared"))?, 1,
-        "join with conflict_keep should preserve the original value");
+    let joined = T::join(t1, &t2, &|a0, a1, a2| {
+        (conflict_keep())(a0, a1, ::std::clone::Clone::clone(a2))
+    })?;
+    assert_eq!(
+        T::get(&joined, literal!("shared"))?,
+        1,
+        "join with conflict_keep should preserve the original value"
+    );
     Ok(())
 }
 
@@ -386,10 +421,15 @@ fn test_join_with_conflict_keep() -> Result<()> {
 fn test_join_with_conflict_replace() -> Result<()> {
     let t1 = tree_of(&[("shared", 1)], conflict_replace())?;
     let t2 = tree_of(&[("shared", 999)], conflict_replace())?;
-    let joined = T::join(t1, &t2, &|a0, a1, a2| (conflict_replace())(a0, a1, ::std::clone::Clone::clone(a2)))?;
-    assert_eq!(T::get(&joined, literal!("shared"))?, 999,
+    let joined = T::join(t1, &t2, &|a0, a1, a2| {
+        (conflict_replace())(a0, a1, ::std::clone::Clone::clone(a2))
+    })?;
+    assert_eq!(
+        T::get(&joined, literal!("shared"))?,
+        999,
         "join with conflict_replace should overwrite with the new value; \
-         assign_variant_field! shadowing prevents the update");
+         assign_variant_field! shadowing prevents the update"
+    );
     Ok(())
 }
 
@@ -410,8 +450,10 @@ fn test_join_with_conflict_replace() -> Result<()> {
 fn test_intersection_always_fails() -> Result<()> {
     // Even empty-tree intersection must fail.
     let result = T::intersection();
-    assert!(result.is_err(),
-        "AvlTreeString::intersection is not implemented and always returns an error");
+    assert!(
+        result.is_err(),
+        "AvlTreeString::intersection is not implemented and always returns an error"
+    );
     Ok(())
 }
 
@@ -459,5 +501,5 @@ fn test_keystr_roundtrip() {
 fn test_valuestr() {
     assert_eq!(T::valueStr(42), literal!("42"));
     assert_eq!(T::valueStr(-1), literal!("-1"));
-    assert_eq!(T::valueStr(0),  literal!("0"));
+    assert_eq!(T::valueStr(0), literal!("0"));
 }

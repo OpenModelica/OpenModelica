@@ -40,8 +40,11 @@
 //! the box.  This module adds typed helper combinators on top.
 
 use super::lexer::{Token as LexToken, TokenKind as TK, keyword_as_str};
-use winnow::{ModalResult, error::{ContextError, ErrMode}};
 use arcstr::{ArcStr, literal};
+use winnow::{
+    ModalResult,
+    error::{ContextError, ErrMode},
+};
 
 /// The parser input type: a slice of already-lexed tokens.
 pub type TokenInput<'a> = &'a [LexToken];
@@ -54,11 +57,12 @@ pub type TokenInput<'a> = &'a [LexToken];
 /// payload; otherwise backtrack.
 #[inline]
 pub fn t(kind: TK) -> impl Fn(&mut &[LexToken]) -> ModalResult<TK> {
-    move |input: &mut &[LexToken]| {
-        match input.first() {
-            Some(tok) if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&kind) => { *input = &input[1..]; Ok(kind.clone()) }
-            _ => Err(ErrMode::Backtrack(ContextError::default())),
+    move |input: &mut &[LexToken]| match input.first() {
+        Some(tok) if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&kind) => {
+            *input = &input[1..];
+            Ok(kind.clone())
         }
+        _ => Err(ErrMode::Backtrack(ContextError::default())),
     }
 }
 
@@ -67,7 +71,11 @@ pub fn t(kind: TK) -> impl Fn(&mut &[LexToken]) -> ModalResult<TK> {
 #[inline]
 pub fn next_tok(input: &mut &[LexToken]) -> ModalResult<TK> {
     match input.first() {
-        Some(tok) => { let k = tok.kind.clone(); *input = &input[1..]; Ok(k) }
+        Some(tok) => {
+            let k = tok.kind.clone();
+            *input = &input[1..];
+            Ok(k)
+        }
         None => Err(ErrMode::Backtrack(ContextError::default())),
     }
 }
@@ -77,7 +85,10 @@ pub fn next_tok(input: &mut &[LexToken]) -> ModalResult<TK> {
 #[inline]
 pub fn eat(input: &mut &[LexToken], kind: TK) -> bool {
     match input.split_first() {
-        Some((tok, rest)) if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&kind) => { *input = rest; true }
+        Some((tok, rest)) if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&kind) => {
+            *input = rest;
+            true
+        }
         _ => false,
     }
 }
@@ -86,7 +97,10 @@ pub fn eat(input: &mut &[LexToken], kind: TK) -> bool {
 #[inline]
 pub fn skip_tok(input: &mut &[LexToken]) -> ModalResult<()> {
     match input.split_first() {
-        Some((_, rest)) => { *input = rest; Ok(()) }
+        Some((_, rest)) => {
+            *input = rest;
+            Ok(())
+        }
         None => Err(ErrMode::Backtrack(ContextError::default())),
     }
 }
@@ -106,7 +120,10 @@ where
 {
     match input.first() {
         Some(tok) => match f(&tok.kind) {
-            Some(v) => { *input = &input[1..]; Some(v) }
+            Some(v) => {
+                *input = &input[1..];
+                Some(v)
+            }
             None => None,
         },
         None => None,
@@ -127,8 +144,7 @@ pub fn t_ident(input: &mut &[LexToken]) -> ModalResult<ArcStr> {
         Some(LexToken { kind: TK::Initial, .. }) => literal!("initial"),
         Some(LexToken { kind: TK::Code, .. }) => literal!("$Code"),
         Some(LexToken { kind: TK::Equality, .. }) => literal!("equality"),
-        Some(LexToken { kind: TK::Ident(s), .. })
-        => s.clone(),
+        Some(LexToken { kind: TK::Ident(s), .. }) => s.clone(),
         _ => return Err(ErrMode::Backtrack(ContextError::default())),
     };
     *input = &input[1..];
@@ -143,10 +159,13 @@ pub fn t_ident(input: &mut &[LexToken]) -> ModalResult<ArcStr> {
 pub fn t_path_ident(input: &mut &[LexToken]) -> ModalResult<ArcStr> {
     match input.first() {
         Some(LexToken { kind: TK::Ident(s), .. }) => {
-            let s = s.clone(); *input = &input[1..]; Ok(s)
+            let s = s.clone();
+            *input = &input[1..];
+            Ok(s)
         }
         Some(LexToken { kind: TK::Code, .. }) => {
-            *input = &input[1..]; Ok(literal!("$Code"))
+            *input = &input[1..];
+            Ok(literal!("$Code"))
         }
         _ => Err(ErrMode::Backtrack(ContextError::default())),
     }
@@ -158,7 +177,9 @@ pub fn t_path_ident(input: &mut &[LexToken]) -> ModalResult<ArcStr> {
 pub fn t_any_ident(input: &mut &[LexToken]) -> ModalResult<ArcStr> {
     match input.first() {
         Some(LexToken { kind: TK::Ident(s), .. }) => {
-            let s = s.clone(); *input = &input[1..]; Ok(s)
+            let s = s.clone();
+            *input = &input[1..];
+            Ok(s)
         }
         Some(LexToken { kind, .. }) => {
             if let Some(spelling) = keyword_as_str(kind) {
@@ -177,7 +198,9 @@ pub fn t_any_ident(input: &mut &[LexToken]) -> ModalResult<ArcStr> {
 pub fn t_str_token(input: &mut &[LexToken]) -> ModalResult<ArcStr> {
     match input.first() {
         Some(LexToken { kind: TK::Str(s), .. }) => {
-            let s = s.clone(); *input = &input[1..]; Ok(s)
+            let s = s.clone();
+            *input = &input[1..];
+            Ok(s)
         }
         _ => Err(ErrMode::Backtrack(ContextError::default())),
     }

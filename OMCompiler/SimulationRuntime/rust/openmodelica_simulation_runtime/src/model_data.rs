@@ -335,6 +335,7 @@ macro_rules! read_group {
             read_dimension(v, &mut slot.dimension);
             slot.filterOutput = should_filter(v);
             slot.time_unvarying = 0;
+            slot.startFromEquation = (v.get("startFromEquation") == "true") as c_int;
             $attr(v, slot);
             $alias_map.insert(v.get("name").to_string(), ($start + i) as i64);
         }
@@ -360,6 +361,8 @@ unsafe extern "C" {
     pub(crate) fn real_array_ensure_size(a: *mut base_array_t, n: c_int);
     pub(crate) fn integer_array_ensure_size(a: *mut base_array_t, n: c_int);
     pub(crate) fn boolean_array_ensure_size(a: *mut base_array_t, n: c_int);
+    /// `util/varinfo.h`: `positiveNominal` to its magnitude, the sign to `nominalSign`.
+    fn normalizeNominal(attribute: *mut REAL_ATTRIBUTE, name: *const c_char);
 }
 
 unsafe extern "C" {
@@ -659,7 +662,8 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
         read_array_real(&mut slot.attribute.start, v.get("start"), 0.0);
         slot.attribute.fixed = read_bool(v.get("fixed"));
         slot.attribute.useNominal = read_bool(v.get("useNominal"));
-        read_array_real(&mut slot.attribute.nominal, v.get("nominal"), 1.0);
+        read_array_real(&mut slot.attribute.positiveNominal, v.get("nominal"), 1.0);
+        unsafe { normalizeNominal(&mut slot.attribute, slot.info.name) };
         read_array_real(&mut slot.attribute.min, v.get("min"), REAL_MIN);
         read_array_real(&mut slot.attribute.max, v.get("max"), REAL_MAX);
         slot.attribute.unit = mk_scon_persist(v.get("unit"));

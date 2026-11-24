@@ -108,6 +108,7 @@ typedef void* iconv_t;
 /* includes/defines specific for Windows*/
 #include <assert.h>
 #include <direct.h>
+#include <io.h>
 #include <process.h>
 
 #define MAXPATHLEN MAX_PATH
@@ -184,6 +185,7 @@ static int hasInnerOuterDefinitions = 0;
 static int hasStreamConnectors = 0;
 static int isPartialInstantiation = 0;
 static int usesCardinality = 1;
+static int hasPartialInstances = 0;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
 
@@ -576,6 +578,15 @@ const char* SystemImpl__basename(const char *str)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+/* The handle C's stream writes to. An embedder such as OMEdit freopens stdout
+ * and stderr; in a GUI application that does not change GetStdHandle. */
+static HANDLE crtStreamHandle(FILE *stream, DWORD stdHandle)
+{
+  int fd = _fileno(stream);
+  intptr_t h = fd < 0 ? -1 : _get_osfhandle(fd);
+  return (h == -1 || h == -2) ? GetStdHandle(stdHandle) : (HANDLE) h;
+}
+
 /**
  * @brief Create new process and run command.
  *
@@ -631,8 +642,8 @@ int runProcess(const char* cmd, const char* outFile)
    * NULL handle does not mean "inherit", it hands the child an invalid stdout:
    * anything that checks its writes then fails, e.g. system("... | grep ...")
    * returns grep's write-error status 2 and prints nothing. */
-  startupInfo.hStdError  = logFileHandle ? logFileHandle : GetStdHandle(STD_ERROR_HANDLE);
-  startupInfo.hStdOutput = logFileHandle ? logFileHandle : GetStdHandle(STD_OUTPUT_HANDLE);
+  startupInfo.hStdError  = logFileHandle ? logFileHandle : crtStreamHandle(stderr, STD_ERROR_HANDLE);
+  startupInfo.hStdOutput = logFileHandle ? logFileHandle : crtStreamHandle(stdout, STD_OUTPUT_HANDLE);
 
   BOOL bSuccess = CreateProcessW(NULL,
     unicodeCommand,
@@ -1997,31 +2008,18 @@ static void popTimerStack(void)
   }
 }
 
+/* RFC 3986: decodes %XX only. A '+' is a '+'. */
 static void decodeUri2(const char *src, char *dest, int breakCh)
 {
   char *tmp = dest;
-  while (*src) {
-    if (*src == '+') *(tmp++) = ' ';
-    else if (*src == '%' && src[1]) {
-      char buf[3];
-      int i;
-      buf[0] = src[1];
-      buf[1] = src[2];
-      buf[2] = '\0';
-      errno = 0;
-      i = strtol(buf,NULL,16);
-      if (errno) {
-        *(tmp++) = *src;
-        errno = 0;
-      } else {
-        *(tmp++) = i;
-        *tmp = 0;
-        src += 2;
-      }
-    } else if (*src == breakCh) {
-      break;
-    } else *(tmp++) = *src;
-    src++;
+  while (*src && *src != breakCh) {
+    if (*src == '%' && isxdigit((unsigned char) src[1]) && isxdigit((unsigned char) src[2])) {
+      char buf[3] = {src[1], src[2], '\0'};
+      *(tmp++) = (char) strtol(buf, NULL, 16);
+      src += 3;
+    } else {
+      *(tmp++) = *(src++);
+    }
   }
   *tmp = '\0';
 }
@@ -2050,18 +2048,47 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
   *scheme = NULL;
   *name = NULL;
   *path = NULL;
-  if (0 == strncasecmp(uri, modelicaUri, strlen(modelicaUri))) {
+  if (0 == strncasecmp(uri, "modelica:", 9)) {
+    const char *rest = uri + 9;
+    int slashes = 0;
+    /* modelica:/A.B/x, modelica:///A.B/x and the deprecated modelica://A.B/x */
+    for (; *rest == '/' && slashes < 3; rest++) {
+      slashes++;
+    }
     *scheme = modelicaUri;
-    decodeUri(uri+strlen(modelicaUri),name,path);
-    if (!**name) {
+    decodeUri(rest,name,path);
+    if (!slashes || !**name) {
       msg[0] = uri;
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Modelica URI lacks classname: %s"),msg,1);
       return 1;
     }
     return 0;
-  } else if (0 == strncasecmp(uri, fileUri, strlen(fileUri))) {
+  } else if (0 == strncasecmp(uri, "file:", 5)) {
+    /* RFC 8089: file:/p, file:///p and file://localhost/p name /p, and file://C:/p names C:/p */
+    const char *rest = uri + 5;
     *scheme = fileUri;
-    decodeUri(uri+strlen(fileUri),name,path);
+    if (rest[0] == '/' && rest[1] == '/') {
+      decodeUri(rest+2,name,path);
+      if (isalpha((unsigned char) (*name)[0]) && (*name)[1] == ':' && !(*name)[2]) {
+        char *drivePath = (char*) omc_alloc_interface.malloc_atomic(strlen(*name) + strlen(*path) + 1);
+        strcpy(drivePath, *name);
+        strcat(drivePath, *path);
+        *path = drivePath;
+        **name = '\0';
+      } else if (0 == strncasecmp(*name, "localhost", 10)) {
+        **name = '\0';
+      }
+    } else {
+      *name = (char*) omc_alloc_interface.malloc_atomic(1);
+      **name = '\0';
+      *path = (char*) omc_alloc_interface.malloc_atomic(strlen(rest) + 1);
+      decodeUri2(rest,*path,-1);
+    }
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    if ((*path)[0] == '/' && isalpha((unsigned char) (*path)[1]) && (*path)[2] == ':') {
+      (*path)++;
+    }
+#endif
     if (!**path) {
       msg[0] = uri;
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("File URI has no path: %s"),msg,1);

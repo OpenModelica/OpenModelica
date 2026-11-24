@@ -1,0 +1,83 @@
+// name:     IfEquationAlgebraicLoop
+// keywords: equation, if-equation, algebraic loop
+// status:   correct
+// teardown_command: rm -rf IfEquationLoop* output.log
+//
+// An algebraic loop in an if-equation branch gets its own nonlinear system,
+// also when the if-equation is part of an outer torn system (#14332).
+
+loadString("
+function f
+  input Real t;
+  output Real x[2];
+algorithm
+  x := {sin(t), cos(t)};
+end f;
+
+model IfEquationLoop
+  parameter Boolean on = true;
+  Boolean b = on;
+  Real x[2], y, z;
+equation
+  if b then
+    x = f(time);
+    y = x[1] + 0.1*sin(z);
+    z = y + 0.1*cos(y);
+  else
+    x = zeros(2);
+    y = 0;
+    z = 0;
+  end if;
+end IfEquationLoop;
+
+model IfEquationLoopInLoop
+  parameter Boolean on = true;
+  Boolean b = on;
+  Real w, x[2], y, z;
+equation
+  w = time + 0.1*sin(z);
+  if b then
+    x = f(w);
+    y = x[1] + 0.1*sin(z);
+    z = y + 0.1*cos(y);
+  else
+    x = zeros(2);
+    y = 0;
+    z = 0;
+  end if;
+end IfEquationLoopInLoop;
+"); getErrorString();
+
+simulate(IfEquationLoop, stopTime = 1); getErrorString();
+val(y, 1.0); val(z, 1.0); getErrorString();
+
+simulate(IfEquationLoopInLoop, stopTime = 1); getErrorString();
+val(w, 1.0); val(y, 1.0); val(z, 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IfEquationLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'IfEquationLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.9247980638675481
+// 0.9849976489173847
+// ""
+// record SimulationResult
+//     resultFile = "IfEquationLoopInLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'IfEquationLoopInLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0855564147300907
+// 0.9701194893695757
+// 1.0266395855746895
+// ""
+// endResult

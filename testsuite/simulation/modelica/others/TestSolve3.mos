@@ -6,13 +6,14 @@
 
 loadString("
 model ModelTestSolve3
-  Real x,y,z,w,v;
+  Real x,y,z,w,v,u;
 equation
   sin(x) = sqrt(-cos(x)^2 + x);
   sinh(y)/cosh(y) = min(time+0.5,10/11);
   exp(log(sqrt(z))) = exp(log(sqrt(3*z+time)));
   y*sinh(w) = z*cosh(w);
   cosh(v*(w+1) + time*10) = sinh(v*(w+1)+time*10);
+  2*exp(u) = 2*exp(3*u - 1 - time);
 end ModelTestSolve3;
 "); getErrorString();
 setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
@@ -22,11 +23,13 @@ val(y,0.0);
 val(z,0.0);
 val(w,0.0);
 val(v,0.0);
+val(u,0.0);
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
 val(w,0.5);
 val(v,0.5);
+val(u,0.5);
 
 // Result:
 // true
@@ -35,7 +38,7 @@ val(v,0.5);
 // ""
 // record SimulationResult
 //     resultFile = "ModelTestSolve3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelTestSolve3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS_V'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'ModelTestSolve3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS_V'",
 //     messages = "LOG_NLS           | info    | initialize non-linear system solvers
 // |                 | |       | | 0 non-linear systems
 // LOG_NLS           | info    | update static data of non-linear system solvers
@@ -50,9 +53,11 @@ val(v,0.5);
 // -0.0
 // 0.0
 // -0.0
+// 0.5
 // 1.0
 // 1.522261218861711
 // -0.25
 // -0.1657302257256409
 // -5.993265193323057
+// 0.75
 // endResult

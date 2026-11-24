@@ -37,11 +37,7 @@ diffSimulationResults("AliasCyclic1_res.mat", "ReferenceFiles/AliasCyclic1_res.m
 // ***********************************
 // 	c	 ==> 	-0.6666666666666666
 // 	b	 ==> 	0.6666666666666666
-// 	a	 ==> 	-0.33333333333333326
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
+// 	a	 ==> 	-0.3333333333333333
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
@@ -49,16 +45,10 @@ diffSimulationResults("AliasCyclic1_res.mat", "ReferenceFiles/AliasCyclic1_res.m
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "AliasCyclic1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AliasCyclic1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

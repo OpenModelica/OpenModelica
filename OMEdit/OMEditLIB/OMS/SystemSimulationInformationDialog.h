@@ -55,6 +55,7 @@ class Label;
 class LibraryTreeItem;
 class SolverSettingsDialog : public QDialog
 {
+  Q_OBJECT
 public:
   SolverSettingsDialog(const QString &solverName, const QString &method, const QJsonObject &solveSettings, QWidget *pParent = nullptr);
   QJsonObject getSolverSettings() const;

@@ -83,7 +83,7 @@ my $osname = $^O;
 # it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
 # part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow nativeSharedLib realTime smoke gbode ofScripting nfScripting disabled);
+my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm rustOmc hdf5 arrow nativeSharedLib realTime smoke gbode ofScripting nfScripting disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -94,7 +94,8 @@ my %suite_enabled = (
   '63bit'      => 1,  # Needs a 63/64-bit Modelica Integer.
   antlr        => 1,  # Expects ANTLR's syntax error positions and wording.
   cSources     => 1,  # Inspects the generated C files and the init XML beside them,
-                      # which only the C target writes.
+                      # which only the C target writes, or exports an FMI 1.0 FMU,
+                      # which is a C FMU for every target.
   fmuCSources  => 1,  # Inspects sources/ inside an FMU, which only the C export has.
   stackoverflow => 1, # Recurses until the stack runs out; needs MMC's SEGV-handler
                       # recovery, which the Rust port has no equivalent of.
@@ -102,6 +103,8 @@ my %suite_enabled = (
                       # where that target exists: the Rust omc, which JIT-compiles
                       # the model in-process. The C omc's CodegenWasmJit is a stub
                       # that fails, so the suite is opt-in rather than off-by-build.
+  rustOmc      => 0,  # Needs a feature only the Rust omc has, e.g. the text and
+                      # images of the FMU icon PNG.
   hdf5         => 0,  # Needs ModelicaMatIO built with HAVE_HDF5, i.e. MAT v7.3.
                       # Only the CMake build provides HDF5 (OM_ENABLE_HDF5, Linux
                       # for now); the autotools one never defines it, so this is

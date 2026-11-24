@@ -6,7 +6,6 @@
 //! worker threads evaluates the sequential `functionODE` instead, the natural
 //! order being a valid schedule.
 
-use openmodelica_solvers::fmath;
 use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -14,6 +13,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 use core::sync::atomic::{AtomicUsize, Ordering};
+use openmodelica_solvers::fmath;
 
 use openmodelica_solvers::log_line;
 
@@ -55,7 +55,11 @@ impl Config {
     fn from_flags() -> Config {
         crate::simflags::with_flags(|f| {
             let hw = HW_THREADS.load(Ordering::Relaxed);
-            let default_threads = if hw == 0 { DEFAULT_THREAD_CAP } else { hw.min(DEFAULT_THREAD_CAP) };
+            let default_threads = if hw == 0 {
+                DEFAULT_THREAD_CAP
+            } else {
+                hw.min(DEFAULT_THREAD_CAP)
+            };
             Config {
                 scheduler: f.parmod_scheduler.clone().unwrap_or_else(|| "flow".to_string()),
                 clustering: f.parmod_clustering.clone().unwrap_or_else(|| "default".to_string()),
@@ -123,7 +127,16 @@ struct TaskSystem {
 
 impl TaskSystem {
     fn new(name: &str, max_num_threads: usize, info: &ParmodInfo) -> TaskSystem {
-        let root = Cluster { tasks: vec![Task { task_id: u32::MAX, index: -1, cost: 0.0 }], cost: 0.0, level: 0, lane: -1 };
+        let root = Cluster {
+            tasks: vec![Task {
+                task_id: u32::MAX,
+                index: -1,
+                cost: 0.0,
+            }],
+            cost: 0.0,
+            level: 0,
+            lane: -1,
+        };
         let mut s = TaskSystem {
             name: name.to_string(),
             max_num_threads,
@@ -137,7 +150,11 @@ impl TaskSystem {
         for (k, t) in info.tasks.iter().enumerate() {
             let v = s.nodes.len();
             s.nodes.push(Some(Cluster {
-                tasks: vec![Task { task_id: k as u32, index: t.eq_index, cost: 0.0 }],
+                tasks: vec![Task {
+                    task_id: k as u32,
+                    index: t.eq_index,
+                    cost: 0.0,
+                }],
                 cost: 0.0,
                 level: 0,
                 lane: -1,
@@ -204,7 +221,11 @@ impl TaskSystem {
     fn update_node_levels(&mut self) {
         let mut critical = 0i64;
         for v in self.topological_order() {
-            let lvl = self.parents[v].iter().map(|&p| self.cluster(p).level).max().map_or(0, |m| m + 1);
+            let lvl = self.parents[v]
+                .iter()
+                .map(|&p| self.cluster(p).level)
+                .max()
+                .map_or(0, |m| m + 1);
             self.cluster_mut(v).level = lvl;
             critical = critical.max(lvl);
         }
@@ -223,8 +244,9 @@ impl TaskSystem {
     /// Kahn's order over the live vertices, lowest id first among the ready ones.
     fn topological_order(&self) -> Vec<usize> {
         let mut indeg: Vec<usize> = (0..self.nodes.len()).map(|v| self.parents[v].len()).collect();
-        let mut ready: BTreeSet<usize> =
-            (0..self.nodes.len()).filter(|&v| self.nodes[v].is_some() && indeg[v] == 0).collect();
+        let mut ready: BTreeSet<usize> = (0..self.nodes.len())
+            .filter(|&v| self.nodes[v].is_some() && indeg[v] == 0)
+            .collect();
         let mut out = Vec::with_capacity(self.nodes.len());
         while let Some(&v) = ready.iter().next() {
             ready.remove(&v);
@@ -259,7 +281,9 @@ impl TaskSystem {
         ids.sort_by(|&a, &b| {
             let (ca, da) = self.cost_key(a);
             let (cb, db) = self.cost_key(b);
-            cb.partial_cmp(&ca).unwrap_or(core::cmp::Ordering::Equal).then(db.cmp(&da))
+            cb.partial_cmp(&ca)
+                .unwrap_or(core::cmp::Ordering::Equal)
+                .then(db.cmp(&da))
         });
     }
     fn min_element(&self, ids: &[usize]) -> usize {
@@ -318,16 +342,33 @@ impl TaskSystem {
         for (i, &v) in order.iter().enumerate() {
             index[v] = i as u32;
         }
-        let clusters = order.iter().map(|&v| self.cluster(v).tasks.iter().map(|t| t.task_id).collect()).collect();
+        let clusters = order
+            .iter()
+            .map(|&v| self.cluster(v).tasks.iter().map(|t| t.task_id).collect())
+            .collect();
         let parents = order
             .iter()
-            .map(|&v| self.parents[v].iter().filter(|&&p| p != ROOT).map(|&p| index[p]).collect())
+            .map(|&v| {
+                self.parents[v]
+                    .iter()
+                    .filter(|&&p| p != ROOT)
+                    .map(|&p| index[p])
+                    .collect()
+            })
             .collect();
         let levels = match with_levels {
-            true => self.levels[1..].iter().map(|l| l.iter().map(|&v| index[v]).collect()).collect(),
+            true => self.levels[1..]
+                .iter()
+                .map(|l| l.iter().map(|&v| index[v]).collect())
+                .collect(),
             false => Vec::new(),
         };
-        Plan { id: PLAN_IDS.fetch_add(1, Ordering::Relaxed) as u64, clusters, parents, levels }
+        Plan {
+            id: PLAN_IDS.fetch_add(1, Ordering::Relaxed) as u64,
+            clusters,
+            parents,
+            levels,
+        }
     }
 
     fn profile_all(&mut self, call: Call) -> Result<()> {
@@ -345,11 +386,16 @@ impl TaskSystem {
 const CLUSTER_MERGE_COMMON: &str = "cluster_merge_common";
 const CLUSTER_MERGE_LEVEL_FOR_BINS: &str = "cluster_merge_level_for_bins";
 const CLUSTER_FIXED_WIDTH_MIN_HEIGHT: &str = "cluster_fixed_width_min_height";
+const CLUSTER_MERGE_ACROSS_LEVELS: &str = "cluster_merge_across_levels";
 
 /// `cluster_merge_common::concat_children_recursive`.
 fn merge_common_recursive(s: &mut TaskSystem, curr: usize) -> usize {
     let target_cost = 20.0;
-    let mut child_ids: Vec<usize> = s.children[curr].iter().copied().filter(|&c| s.in_degree(c) == 1).collect();
+    let mut child_ids: Vec<usize> = s.children[curr]
+        .iter()
+        .copied()
+        .filter(|&c| s.in_degree(c) == 1)
+        .collect();
     s.sort_decreasing(&mut child_ids);
     let mut i = 0;
     while i < child_ids.len() {
@@ -433,7 +479,12 @@ fn cluster_fixed_width_min_height(s: &mut TaskSystem) {
     let cost: Vec<f64> = vid.iter().map(|&v| s.out_degree(v) as f64).collect();
     let children: Vec<Vec<usize>> = vid
         .iter()
-        .map(|&v| s.children[v].iter().filter_map(|&c| (id_to_idx[c] != usize::MAX).then_some(id_to_idx[c])).collect())
+        .map(|&v| {
+            s.children[v]
+                .iter()
+                .filter_map(|&c| (id_to_idx[c] != usize::MAX).then_some(id_to_idx[c]))
+                .collect()
+        })
         .collect();
     let max_level = level.iter().copied().max().unwrap_or(0) as usize;
     let mut nodes_by_level: Vec<Vec<usize>> = vec![Vec::new(); max_level + 1];
@@ -453,7 +504,9 @@ fn cluster_fixed_width_min_height(s: &mut TaskSystem) {
         }
     }
     let k = s.max_num_threads.max(1);
-    let by_cost_desc = |ids: &mut Vec<usize>| ids.sort_by(|&a, &b| cost[b].partial_cmp(&cost[a]).unwrap_or(core::cmp::Ordering::Equal));
+    let by_cost_desc = |ids: &mut Vec<usize>| {
+        ids.sort_by(|&a, &b| cost[b].partial_cmp(&cost[a]).unwrap_or(core::cmp::Ordering::Equal))
+    };
     let mut lane = vec![0usize; n];
     for l in 1..=max_level {
         let level_nodes = &mut nodes_by_level[l];
@@ -551,7 +604,11 @@ fn cluster_fixed_width_min_height(s: &mut TaskSystem) {
             }
         }
         let Some(target) = target else { break };
-        let mut hot_nodes: Vec<usize> = level_nodes.iter().copied().filter(|&t| lane[t] as i64 == hot_lane).collect();
+        let mut hot_nodes: Vec<usize> = level_nodes
+            .iter()
+            .copied()
+            .filter(|&t| lane[t] as i64 == hot_lane)
+            .collect();
         by_cost_desc(&mut hot_nodes);
         let mut improved = false;
         for &nn in &hot_nodes {
@@ -591,6 +648,315 @@ fn cluster_fixed_width_min_height(s: &mut TaskSystem) {
             }
         }
     }
+    s.levels_valid = false;
+}
+
+/// `cluster_merge_across_levels::partition`: the cluster of every task and the
+/// number of merges not done because of a cycle. Clusters that depend on each
+/// other are merged, whatever their levels, until each exchanges values with
+/// fewer clusters than it has equations.
+///
+/// Of the merges that are possible, the next one is the one that keeps the
+/// longest path of cluster costs shortest (a path below `total cost / threads`
+/// or below the longest one counts the same), then the one that removes the
+/// most dependencies between clusters, then the one that leaves the least
+/// communication, then the cheapest.
+fn merge_across_levels_partition(children: &[Vec<usize>], cost: &[f64], threads: usize) -> (Vec<usize>, usize) {
+    let n = children.len();
+    let mut rejected = 0;
+    let mut cluster_of: Vec<usize> = (0..n).collect();
+    let mut members: Vec<Vec<usize>> = (0..n).map(|i| vec![i]).collect();
+    let mut succ: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); n];
+    let mut pred: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); n];
+    // A topological numbering of the clusters: label[a] < label[b] for every edge a -> b.
+    let mut label: Vec<usize> = (0..n).collect();
+    // Changes with the neighbours of a cluster; a candidate of another version is out of date.
+    let mut version = vec![0u32; n];
+    let mut cc: Vec<f64> = cost.to_vec();
+    // The longest path of cluster costs before and after a cluster, without the cluster itself.
+    let mut before = vec![0.0f64; n];
+    let mut after = vec![0.0f64; n];
+    let mut total = 0.0;
+    for (i, cs) in children.iter().enumerate() {
+        total += cc[i];
+        for &c in cs {
+            succ[i].insert(c);
+            pred[c].insert(i);
+            before[c] = before[c].max(before[i] + cc[i]);
+        }
+    }
+    let mut longest = total / threads.max(1) as f64;
+    for i in (0..n).rev() {
+        for &c in &children[i] {
+            after[i] = after[i].max(after[c] + cc[c]);
+        }
+        longest = longest.max(before[i] + cc[i] + after[i]);
+    }
+    let mut seen = vec![0usize; n];
+    let mut stamp = 0;
+    let mut stack: Vec<usize> = Vec::new();
+    let common = |x: &BTreeSet<usize>, y: &BTreeSet<usize>| x.intersection(y).count();
+
+    // The longest path through the cluster that a and b would be, for an edge a -> b.
+    let path = |a: usize,
+                b: usize,
+                pred: &[BTreeSet<usize>],
+                succ: &[BTreeSet<usize>],
+                cc: &[f64],
+                before: &[f64],
+                after: &[f64]| {
+        let mut t = before[a];
+        for &p in &pred[b] {
+            if p != a {
+                t = t.max(before[p] + cc[p]);
+            }
+        }
+        let mut d = after[b];
+        for &x in &succ[a] {
+            if x != b {
+                d = d.max(after[x] + cc[x]);
+            }
+        }
+        t + cc[a] + cc[b] + d
+    };
+    // (dependencies kept, communication, cost, a, b, version of a, version of b): the candidates
+    // with a path that is not above the longest one. The others have their path in front. The
+    // costs are not negative, so their bits are in the order of their values.
+    type Candidate = (usize, usize, u64, usize, usize, u32, u32);
+    let mut below: BTreeSet<Candidate> = BTreeSet::new();
+    let mut above: BTreeSet<(u64, Candidate)> = BTreeSet::new();
+    macro_rules! offer {
+        ($a:expr, $b:expr) => {{
+            let (a, b) = ($a, $b);
+            let over = |c: usize| succ[c].len() + pred[c].len() >= members[c].len();
+            if over(a) || over(b) {
+                let (cs, cp) = (common(&succ[a], &succ[b]), common(&pred[a], &pred[b]));
+                let comm = succ[a].len() + succ[b].len() - cs - 1 + pred[a].len() + pred[b].len() - cp - 1;
+                let cand = (
+                    usize::MAX - (cs + cp + 1),
+                    comm,
+                    (cc[a] + cc[b]).to_bits(),
+                    a,
+                    b,
+                    version[a],
+                    version[b],
+                );
+                let p = path(a, b, &pred, &succ, &cc, &before, &after);
+                if p <= longest {
+                    below.insert(cand);
+                } else {
+                    above.insert((p.to_bits(), cand));
+                }
+            }
+        }};
+    }
+    for a in 0..n {
+        for &b in &children[a] {
+            offer!(a, b);
+        }
+    }
+
+    let mut order: BTreeSet<(usize, usize)> = BTreeSet::new();
+    loop {
+        while above.first().is_some_and(|c| f64::from_bits(c.0) <= longest) {
+            if let Some((_, cand)) = above.pop_first() {
+                below.insert(cand);
+            }
+        }
+        let (stored, cand) = match below.pop_first() {
+            Some(cand) => (longest, cand),
+            None => match above.pop_first() {
+                Some((p, cand)) => (f64::from_bits(p), cand),
+                None => break,
+            },
+        };
+        let (_, _, _, a, b, va, vb) = cand;
+        if version[a] != va || version[b] != vb {
+            continue;
+        }
+        // The paths only get longer: a candidate that is not up to date goes back.
+        let now = path(a, b, &pred, &succ, &cc, &before, &after);
+        if now > stored {
+            above.insert((now.to_bits(), cand));
+            continue;
+        }
+        // Is b reached from a by more than the edge a -> b? Then merging them closes a cycle.
+        stamp += 1;
+        stack.clear();
+        for &x in &succ[a] {
+            if x != b && label[x] < label[b] {
+                seen[x] = stamp;
+                stack.push(x);
+            }
+        }
+        let mut other_path = false;
+        'search: while let Some(x) = stack.pop() {
+            for &y in &succ[x] {
+                if y == b {
+                    other_path = true;
+                    break 'search;
+                }
+                if label[y] < label[b] && seen[y] != stamp {
+                    seen[y] = stamp;
+                    stack.push(y);
+                }
+            }
+        }
+        if other_path {
+            rejected += 1;
+            continue;
+        }
+
+        let (s, o) = (a.min(b), a.max(b));
+        let merged_label = label[b];
+        let moved = core::mem::take(&mut members[o]);
+        for &m in &moved {
+            cluster_of[m] = s;
+        }
+        members[s].extend(moved);
+        cc[s] += cc[o];
+        // The neighbours of o get s for it: their communication changes, and that of s.
+        let around: Vec<usize> = core::iter::once(s)
+            .chain(succ[o].iter().chain(pred[o].iter()).copied().filter(|&x| x != s))
+            .collect();
+        for x in core::mem::take(&mut succ[o]) {
+            pred[x].remove(&o);
+            if x != s {
+                succ[s].insert(x);
+                pred[x].insert(s);
+            }
+        }
+        for x in core::mem::take(&mut pred[o]) {
+            succ[x].remove(&o);
+            if x != s {
+                pred[s].insert(x);
+                succ[x].insert(s);
+            }
+        }
+        version[o] += 1;
+
+        // The merged cluster takes the later label; move the clusters after it up.
+        label[s] = merged_label;
+        stack.clear();
+        stack.push(s);
+        while let Some(x) = stack.pop() {
+            for &y in &succ[x] {
+                if label[y] <= label[x] {
+                    label[y] = label[x] + 1;
+                    stack.push(y);
+                }
+            }
+        }
+
+        // The paths before the clusters after s and after the clusters before s, in the order of the labels.
+        before[s] = pred[s].iter().map(|&x| before[x] + cc[x]).fold(0.0, f64::max);
+        after[s] = succ[s].iter().map(|&x| after[x] + cc[x]).fold(0.0, f64::max);
+        longest = longest.max(before[s] + cc[s] + after[s]);
+        order.insert((label[s], s));
+        while let Some((_, x)) = order.pop_first() {
+            for &y in &succ[x] {
+                if before[x] + cc[x] > before[y] {
+                    before[y] = before[x] + cc[x];
+                    order.insert((label[y], y));
+                }
+            }
+        }
+        order.insert((label[s], s));
+        while let Some((_, x)) = order.pop_last() {
+            for &y in &pred[x] {
+                if after[x] + cc[x] > after[y] {
+                    after[y] = after[x] + cc[x];
+                    order.insert((label[y], y));
+                }
+            }
+        }
+
+        // Their candidates are new.
+        for &x in &around {
+            version[x] += 1;
+        }
+        for &x in &around {
+            let (ps, ss): (Vec<usize>, Vec<usize>) =
+                (pred[x].iter().copied().collect(), succ[x].iter().copied().collect());
+            for y in ps {
+                offer!(y, x);
+            }
+            for y in ss {
+                offer!(x, y);
+            }
+        }
+    }
+    (cluster_of, rejected)
+}
+
+/// Kahn's algorithm on the cluster graph of a partition.
+fn partition_is_acyclic(children: &[Vec<usize>], cluster_of: &[usize]) -> bool {
+    let n = children.len();
+    let mut succ: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); n];
+    let mut indeg = vec![0usize; n];
+    for (i, cs) in children.iter().enumerate() {
+        for &c in cs {
+            let (a, b) = (cluster_of[i], cluster_of[c]);
+            if a != b && succ[a].insert(b) {
+                indeg[b] += 1;
+            }
+        }
+    }
+    let mut ready: Vec<usize> = (0..n).filter(|&c| indeg[c] == 0).collect();
+    let mut visited = 0;
+    while let Some(a) = ready.pop() {
+        visited += 1;
+        for &b in &succ[a] {
+            indeg[b] -= 1;
+            if indeg[b] == 0 {
+                ready.push(b);
+            }
+        }
+    }
+    visited == n
+}
+
+fn cluster_merge_across_levels(s: &mut TaskSystem) {
+    let vid: Vec<usize> = s.vertices().collect();
+    let n = vid.len();
+    let mut id_to_idx = vec![usize::MAX; s.nodes.len()];
+    for (i, &v) in vid.iter().enumerate() {
+        id_to_idx[v] = i;
+    }
+    let children: Vec<Vec<usize>> = vid
+        .iter()
+        .map(|&v| s.children[v].iter().map(|&c| id_to_idx[c]).collect())
+        .collect();
+    if children.iter().enumerate().any(|(i, cs)| cs.iter().any(|&c| c <= i)) {
+        stdout("cluster_merge_across_levels: a task depends on a later task; skipping clustering.\n");
+        return;
+    }
+    let cost: Vec<f64> = vid.iter().map(|&v| s.cluster(v).cost).collect();
+    let (cluster_of, rejected) = merge_across_levels_partition(&children, &cost, s.max_num_threads);
+    if !partition_is_acyclic(&children, &cluster_of) {
+        stdout("cluster_merge_across_levels: the clusters form a cycle; skipping clustering.\n");
+        return;
+    }
+    // A cluster evaluates its tasks in the order they have in the task graph.
+    let mut num_clusters = 0;
+    for i in 0..n {
+        if cluster_of[i] == i {
+            num_clusters += 1;
+        } else {
+            s.concat(vid[cluster_of[i]], vid[i]);
+        }
+    }
+    // The root is the parent of the clusters without one only.
+    let top: Vec<usize> = s.children[ROOT].iter().copied().collect();
+    for c in top {
+        if s.in_degree(c) > 1 {
+            s.children[ROOT].remove(&c);
+            s.parents[c].remove(&ROOT);
+        }
+    }
+    stdout(&format!(
+        "cluster_merge_across_levels: {n} tasks in {num_clusters} clusters, {rejected} merges not done because of a cycle\n"
+    ));
     s.levels_valid = false;
 }
 
@@ -729,7 +1095,9 @@ fn skip_ws(b: &[u8], p: &mut usize) {
 
 fn parse_value(b: &[u8], p: &mut usize) -> core::result::Result<Json, String> {
     skip_ws(b, p);
-    let Some(&c) = b.get(*p) else { return Err("unexpected end of input".to_string()) };
+    let Some(&c) = b.get(*p) else {
+        return Err("unexpected end of input".to_string());
+    };
     match c {
         b'{' => {
             *p += 1;
@@ -741,7 +1109,9 @@ fn parse_value(b: &[u8], p: &mut usize) -> core::result::Result<Json, String> {
             }
             loop {
                 skip_ws(b, p);
-                let Json::Str(k) = parse_value(b, p)? else { return Err(format!("object key expected at offset {p}")) };
+                let Json::Str(k) = parse_value(b, p)? else {
+                    return Err(format!("object key expected at offset {p}"));
+                };
                 skip_ws(b, p);
                 if b.get(*p) != Some(&b':') {
                     return Err(format!("':' expected at offset {p}"));
@@ -785,12 +1155,16 @@ fn parse_value(b: &[u8], p: &mut usize) -> core::result::Result<Json, String> {
             *p += 1;
             let mut s = String::new();
             loop {
-                let Some(&c) = b.get(*p) else { return Err("unterminated string".to_string()) };
+                let Some(&c) = b.get(*p) else {
+                    return Err("unterminated string".to_string());
+                };
                 *p += 1;
                 match c {
                     b'"' => break,
                     b'\\' => {
-                        let Some(&e) = b.get(*p) else { return Err("unterminated string".to_string()) };
+                        let Some(&e) = b.get(*p) else {
+                            return Err("unterminated string".to_string());
+                        };
                         *p += 1;
                         match e {
                             b'"' => s.push('"'),
@@ -803,8 +1177,9 @@ fn parse_value(b: &[u8], p: &mut usize) -> core::result::Result<Json, String> {
                             b'f' => s.push('\u{c}'),
                             b'u' => {
                                 let hex = b.get(*p..*p + 4).ok_or("bad \\u escape")?;
-                                let code = u32::from_str_radix(core::str::from_utf8(hex).map_err(|_| "bad \\u escape")?, 16)
-                                    .map_err(|_| "bad \\u escape")?;
+                                let code =
+                                    u32::from_str_radix(core::str::from_utf8(hex).map_err(|_| "bad \\u escape")?, 16)
+                                        .map_err(|_| "bad \\u escape")?;
                                 *p += 4;
                                 s.push(char::from_u32(code).unwrap_or('\u{fffd}'));
                             }
@@ -846,7 +1221,9 @@ fn parse_value(b: &[u8], p: &mut usize) -> core::result::Result<Json, String> {
             if let Ok(i) = s.parse::<i64>() {
                 return Ok(Json::Int(i));
             }
-            s.parse::<f64>().map(Json::Float).map_err(|_| format!("bad number '{s}'"))
+            s.parse::<f64>()
+                .map(Json::Float)
+                .map_err(|_| format!("bad number '{s}'"))
         }
         _ => Err(format!("unexpected character '{}' at offset {p}", c as char)),
     }
@@ -869,7 +1246,10 @@ fn collect_task_graph_json(s: &mut TaskSystem, out: &mut Json) {
         t.set("out_degree", Json::Int(s.out_degree(v) as i64));
         tasks.push(t);
         for &ch in &s.children[v] {
-            deps.push(Json::Arr(vec![Json::Int(eq), Json::Int(s.cluster(ch).tasks[0].index as i64)]));
+            deps.push(Json::Arr(vec![
+                Json::Int(eq),
+                Json::Int(s.cluster(ch).tasks[0].index as i64),
+            ]));
         }
     }
     out.set("tasks", Json::Arr(tasks));
@@ -881,7 +1261,10 @@ fn collect_clusters_json(s: &TaskSystem, out: &mut Json) {
     for v in s.vertices() {
         let c = s.cluster(v);
         let mut cl = Json::obj();
-        cl.set("eqs", Json::Arr(c.tasks.iter().map(|t| Json::Int(t.index as i64)).collect()));
+        cl.set(
+            "eqs",
+            Json::Arr(c.tasks.iter().map(|t| Json::Int(t.index as i64)).collect()),
+        );
         cl.set("lane", Json::Int(c.lane as i64));
         clusters.push(cl);
     }
@@ -892,7 +1275,9 @@ fn write_json_file(path: &str, j: &Json, what: &str) -> Result<()> {
     let mut text = j.dump();
     text.push('\n');
     if !crate::files::write(path, text.as_bytes()) {
-        return Err(leak_error(format!("Fatal : Could not open '{path}' for writing the parmodauto {what}.")));
+        return Err(leak_error(format!(
+            "Fatal : Could not open '{path}' for writing the parmodauto {what}."
+        )));
     }
     stdout(&format!("Exported parmodauto {what} to {path}\n"));
     Ok(())
@@ -917,7 +1302,11 @@ impl StageDumper {
         if prefix.is_some() {
             collect_task_graph_json(s, &mut base_graph);
         }
-        StageDumper { prefix, base_graph, stage: 0 }
+        StageDumper {
+            prefix,
+            base_graph,
+            stage: 0,
+        }
     }
     fn snapshot(&mut self, s: &TaskSystem, stage_name: &str) -> Result<()> {
         let Some(prefix) = &self.prefix else { return Ok(()) };
@@ -925,7 +1314,11 @@ impl StageDumper {
         snap.set("stage", Json::Int(self.stage as i64));
         snap.set("stage_name", Json::Str(stage_name.to_string()));
         collect_clusters_json(s, &mut snap);
-        write_json_file(&stage_snapshot_path(prefix, self.stage, stage_name), &snap, &format!("stage '{stage_name}'"))?;
+        write_json_file(
+            &stage_snapshot_path(prefix, self.stage, stage_name),
+            &snap,
+            &format!("stage '{stage_name}'"),
+        )?;
         self.stage += 1;
         Ok(())
     }
@@ -960,7 +1353,12 @@ fn import_clustering_json(s: &mut TaskSystem, path: &str) -> Result<()> {
     s.ensure_levels();
     let mut eq_to_vid: Vec<(i64, usize)> = s.vertices().map(|v| (s.cluster(v).tasks[0].index as i64, v)).collect();
     eq_to_vid.sort();
-    let vid_of = |eq: i64| eq_to_vid.binary_search_by_key(&eq, |(e, _)| *e).ok().map(|i| eq_to_vid[i].1);
+    let vid_of = |eq: i64| {
+        eq_to_vid
+            .binary_search_by_key(&eq, |(e, _)| *e)
+            .ok()
+            .map(|i| eq_to_vid[i].1)
+    };
     let mut eq_to_cluster: Vec<Option<usize>> = vec![None; s.nodes.len()];
     let mut cluster_eqs: Vec<Vec<usize>> = Vec::new();
     for c in clusters {
@@ -971,7 +1369,9 @@ fn import_clustering_json(s: &mut TaskSystem, path: &str) -> Result<()> {
                 return Err(fatal(format!("Imported clustering references unknown equation {eq}.")));
             };
             if eq_to_cluster[v].is_some() {
-                return Err(fatal(format!("Imported clustering assigns equation {eq} to more than one cluster.")));
+                return Err(fatal(format!(
+                    "Imported clustering assigns equation {eq} to more than one cluster."
+                )));
             }
             eq_to_cluster[v] = Some(cluster_eqs.len());
             eqs.push(v);
@@ -1015,7 +1415,9 @@ fn import_clustering_json(s: &mut TaskSystem, path: &str) -> Result<()> {
         }
     }
     if visited != num_clusters {
-        return Err(fatal("Imported clustering forms a cycle in the cluster graph; aborting.".to_string()));
+        return Err(fatal(
+            "Imported clustering forms a cycle in the cluster graph; aborting.".to_string(),
+        ));
     }
     for eqs in &cluster_eqs {
         if eqs.len() <= 1 {
@@ -1034,7 +1436,9 @@ fn import_clustering_json(s: &mut TaskSystem, path: &str) -> Result<()> {
         }
     }
     s.levels_valid = false;
-    stdout(&format!("Imported parmodauto clustering ({num_clusters} clusters) from {path}\n"));
+    stdout(&format!(
+        "Imported parmodauto clustering ({num_clusters} clusters) from {path}\n"
+    ));
     Ok(())
 }
 
@@ -1052,7 +1456,11 @@ fn eq_fatal(index: i32, what: &str) -> &'static str {
 }
 
 fn strings<'a>(eq: &'a Json, key: &str) -> impl Iterator<Item = &'a str> {
-    eq.get(key).and_then(Json::as_array).unwrap_or(&[]).iter().filter_map(Json::as_str)
+    eq.get(key)
+        .and_then(Json::as_array)
+        .unwrap_or(&[])
+        .iter()
+        .filter_map(Json::as_str)
 }
 
 /// `load_simple_assign`.
@@ -1079,6 +1487,17 @@ fn load_assign_local(n: &mut Node, eq: &Json) {
     }
 }
 
+/// `load_algorithm_check_local_define`: an algorithm section inside a system
+/// defines several variables at once, all local to the node from here on.
+fn load_algorithm_local(n: &mut Node, eq: &Json) {
+    n.lhs.extend(strings(eq, "defines").map(String::from));
+    for u in strings(eq, "uses") {
+        if !n.lhs.contains(u) {
+            n.rhs.insert(u.to_string());
+        }
+    }
+}
+
 /// `load_linear_system`, which serves the non-linear containers too: the system's
 /// own unknowns plus whatever its inner equations read from outside.
 fn load_system(n: &mut Node, eq: &Json) -> Result<()> {
@@ -1087,16 +1506,31 @@ fn load_system(n: &mut Node, eq: &Json) -> Result<()> {
         other => {
             let d = other.unwrap_or("");
             let tag = eq.get("tag").and_then(Json::as_str).unwrap_or("");
-            return Err(eq_fatal(n.index, &format!("System ({tag}) Equation display not yet handled: {d}")));
+            return Err(eq_fatal(
+                n.index,
+                &format!("System ({tag}) Equation display not yet handled: {d}"),
+            ));
         }
     }
     n.lhs.extend(strings(eq, "defines").map(String::from));
+    // What the matrix and the right hand side of a linear system read.
+    for u in strings(eq, "uses") {
+        if !n.lhs.contains(u) {
+            n.rhs.insert(u.to_string());
+        }
+    }
     for int_eq in eq.get("internal-equations").and_then(Json::as_array).unwrap_or(&[]) {
         let i_index = int_eq.get("eqIndex").and_then(Json::as_i64).unwrap_or(-1) as i32;
         match int_eq.get("tag").and_then(Json::as_str).unwrap_or("") {
             "assign" | "torn" => load_assign_local(n, int_eq),
             "residual" => n.rhs.extend(strings(int_eq, "uses").map(String::from)),
-            t => return Err(eq_fatal(i_index, &format!("Internal Equation type not yet handled: {t}"))),
+            "algorithm" => load_algorithm_local(n, int_eq),
+            t => {
+                return Err(eq_fatal(
+                    i_index,
+                    &format!("Internal Equation type not yet handled: {t}"),
+                ));
+            }
         }
     }
     Ok(())
@@ -1144,7 +1578,11 @@ pub fn load_ode_json(path: &str) -> Result<ParmodInfo> {
             Some("regular") => {}
             other => return Err(eq_fatal(index, &format!("Unkown section!{}", other.unwrap_or("")))),
         }
-        let mut n = Node { index, lhs: BTreeSet::new(), rhs: BTreeSet::new() };
+        let mut n = Node {
+            index,
+            lhs: BTreeSet::new(),
+            rhs: BTreeSet::new(),
+        };
         load_equation(&mut n, eq)?;
         nodes.push(n);
     }
@@ -1299,7 +1737,11 @@ impl ParTrial {
                 " : Evaluating the task graph on {threads} threads takes {} ms, {what} the {} ms it takes sequentially; {}\n",
                 g(p),
                 g(s),
-                if keep { "keeping the threads" } else { "continuing sequentially" },
+                if keep {
+                    "keeping the threads"
+                } else {
+                    "continuing sequentially"
+                },
             ));
         }
     }
@@ -1507,6 +1949,9 @@ impl FlowScheduler {
         } else if cfg.clustering == CLUSTER_FIXED_WIDTH_MIN_HEIGHT || cfg.clustering == "fixed_width_min_height" {
             cluster_fixed_width_min_height(&mut self.sys);
             stages.snapshot(&self.sys, CLUSTER_FIXED_WIDTH_MIN_HEIGHT)?;
+        } else if cfg.clustering == CLUSTER_MERGE_ACROSS_LEVELS || cfg.clustering == "merge_across_levels" {
+            cluster_merge_across_levels(&mut self.sys);
+            stages.snapshot(&self.sys, CLUSTER_MERGE_ACROSS_LEVELS)?;
         } else if cfg.clustering == "none" {
         } else {
             cluster_merge_common(&mut self.sys);
@@ -1576,7 +2021,9 @@ pub fn active() -> bool {
 
 /// `PM_evaluate_ODE_system`.
 pub fn evaluate_ode(call: Call) -> Result<()> {
-    let Some(st) = state().as_mut() else { return Err("parmodauto: no task system loaded") };
+    let Some(st) = state().as_mut() else {
+        return Err("parmodauto: no task system loaded");
+    };
     match &mut st.sched {
         Scheduler::Level(s) => s.execute(&st.cfg, call),
         Scheduler::Flow(s) => s.execute(&st.cfg, call),
@@ -1587,8 +2034,20 @@ pub fn evaluate_ode(call: Call) -> Result<()> {
 pub fn finish() {
     let Some(st) = state().take() else { return };
     let (total, seq, par, exec, clust) = match &st.sched {
-        Scheduler::Level(s) => (s.total_evaluations, s.sequential_evaluations, s.parallel_evaluations, s.execution_time, s.clustering_time),
-        Scheduler::Flow(s) => (s.total_evaluations, s.sequential_evaluations, s.parallel_evaluations, s.execution_time, s.clustering_time),
+        Scheduler::Level(s) => (
+            s.total_evaluations,
+            s.sequential_evaluations,
+            s.parallel_evaluations,
+            s.execution_time,
+            s.clustering_time,
+        ),
+        Scheduler::Flow(s) => (
+            s.total_evaluations,
+            s.sequential_evaluations,
+            s.parallel_evaluations,
+            s.execution_time,
+            s.clustering_time,
+        ),
     };
     let avg = if par > 0 { exec / par as f64 } else { 0.0 };
     let mut out = String::new();
@@ -1612,10 +2071,22 @@ mod tests {
         // 1 -> 2 -> 3, 4 alone
         ParmodInfo {
             tasks: vec![
-                ParmodTask { eq_index: 1, parents: vec![] },
-                ParmodTask { eq_index: 2, parents: vec![0] },
-                ParmodTask { eq_index: 3, parents: vec![1] },
-                ParmodTask { eq_index: 4, parents: vec![] },
+                ParmodTask {
+                    eq_index: 1,
+                    parents: vec![],
+                },
+                ParmodTask {
+                    eq_index: 2,
+                    parents: vec![0],
+                },
+                ParmodTask {
+                    eq_index: 3,
+                    parents: vec![1],
+                },
+                ParmodTask {
+                    eq_index: 4,
+                    parents: vec![],
+                },
             ],
         }
     }
@@ -1640,11 +2111,68 @@ mod tests {
         assert_eq!(s.topological_order(), vec![0, 1, 4]);
     }
 
+    fn graph(n: usize, edges: &[(usize, usize)]) -> Vec<Vec<usize>> {
+        let mut children = vec![Vec::new(); n];
+        for &(a, b) in edges {
+            children[a].push(b);
+        }
+        children
+    }
+
+    #[test]
+    fn merge_across_levels_keeps_independent_chains_apart() {
+        // 0 -> 1 -> 2 and 3 -> 4 -> 5
+        let children = graph(6, &[(0, 1), (1, 2), (3, 4), (4, 5)]);
+        let (cluster_of, rejected) = merge_across_levels_partition(&children, &vec![1.0; children.len()], 2);
+        assert_eq!(cluster_of, vec![0, 0, 0, 3, 3, 3]);
+        assert_eq!(rejected, 0);
+    }
+
+    #[test]
+    fn merge_across_levels_does_not_close_a_cycle() {
+        // 1 -> 3 is also 1 -> 2 -> 3: merging 1 and 3 alone leaves 2 before and after
+        // them. It is tried first: 1 and 3 share a parent and a child, and the long
+        // task 5 makes all the paths count the same.
+        let children = graph(6, &[(0, 1), (0, 3), (1, 2), (1, 3), (2, 3), (1, 4), (3, 4)]);
+        let (cluster_of, rejected) = merge_across_levels_partition(&children, &[1.0, 1.0, 1.0, 1.0, 1.0, 100.0], 2);
+        assert!(rejected > 0);
+        assert!(partition_is_acyclic(&children, &cluster_of));
+        assert!(!partition_is_acyclic(&children, &[0, 1, 2, 1, 4, 5]));
+    }
+
+    #[test]
+    fn merge_across_levels_keeps_the_longest_path_short() {
+        // 0 -> 1 -> 3 and 0 -> 2 -> 4: task 0 goes to the branch with the lower cost.
+        let children = graph(5, &[(0, 1), (0, 2), (1, 3), (2, 4)]);
+        let (cluster_of, _) = merge_across_levels_partition(&children, &[1.0, 5.0, 1.0, 5.0, 1.0], 2);
+        assert_eq!(cluster_of, vec![0, 1, 0, 1, 0]);
+        let (cluster_of, _) = merge_across_levels_partition(&children, &[1.0, 1.0, 5.0, 1.0, 5.0], 2);
+        assert_eq!(cluster_of, vec![0, 0, 2, 0, 2]);
+    }
+
+    #[test]
+    fn merge_across_levels_on_the_task_system() {
+        let mut s = TaskSystem::new("m", 2, &chain_info());
+        cluster_merge_across_levels(&mut s);
+        let live: Vec<usize> = s.vertices().collect();
+        assert_eq!(live, vec![1, 4]);
+        assert_eq!(s.cluster(1).index_list(), "$,1,2,3");
+        assert_eq!(s.topological_order(), vec![0, 1, 4]);
+    }
+
     #[test]
     fn json_round_trips() {
         let text = "{\"clusters\": [{\"eqs\": [1, 2], \"lane\": -1}], \"name\": \"m\\n\", \"x\": 1.5}";
         let j = Json::parse(text).unwrap();
-        assert_eq!(j.get("clusters").unwrap().as_array().unwrap()[0].get("eqs").unwrap().as_array().unwrap()[1].as_i64(), Some(2));
+        assert_eq!(
+            j.get("clusters").unwrap().as_array().unwrap()[0]
+                .get("eqs")
+                .unwrap()
+                .as_array()
+                .unwrap()[1]
+                .as_i64(),
+            Some(2)
+        );
         let dumped = j.dump();
         assert!(dumped.starts_with("{\n  \"clusters\": [\n    {\n      \"eqs\": [\n        1,\n        2\n      ],\n      \"lane\": -1\n    }\n  ],\n  \"name\": \"m\\n\",\n  \"x\": 1.5\n}"));
         assert_eq!(Json::parse(&dumped).unwrap().dump(), dumped);

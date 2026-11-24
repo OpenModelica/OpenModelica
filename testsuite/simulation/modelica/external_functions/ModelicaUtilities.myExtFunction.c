@@ -8,6 +8,7 @@ extern "C" {
 const char* myExtFunction(const char* str, double t) {
   ModelicaMessage(str);
   ModelicaFormatMessage(" was normal - this is formatted %s\n",str);
+  ModelicaFormatMessage("duplicated %s and %s\n", ModelicaDuplicateString(str), ModelicaDuplicateStringWithErrorReturn(str));
   char* buf = ModelicaAllocateString(3);
   buf[0] = 'O';
   buf[1] = 'K';

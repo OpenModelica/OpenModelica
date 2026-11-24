@@ -1,0 +1,44 @@
+// name: resizableReverseRange
+// keywords: NewBackend resizable for-equation reverse range
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableReverseRange resizableReverseRange_* resizableReverseRange.log
+//
+// For-equations over N:-1:1 in nonlinear systems: the residual loops run
+// backwards and the Jacobian sizes of the reverse ranges compile.
+
+loadString("
+model resizableReverseRange
+  parameter Integer N = 4;
+  Real x[N], y[N], z[N];
+equation
+  for i in N:-1:1 loop
+    x[i] = i*(1 + time);
+  end for;
+  for i in N:-1:1 loop
+    y[i]^3 + y[i] = x[i];
+  end for;
+  for i in N:-1:1 loop
+    z[i] + sin(z[i]) + 0.1*sum(z) = y[i];
+  end for;
+end resizableReverseRange;
+"); getErrorString();
+
+buildModel(resizableReverseRange, stopTime = 1, numberOfIntervals = 2); getErrorString();
+system("./resizableReverseRange -override=N=3", "resizableReverseRange.log");
+val(y[1], 1, "resizableReverseRange_res.mat");
+val(y[3], 1, "resizableReverseRange_res.mat");
+val(z[1], 1, "resizableReverseRange_res.mat");
+val(z[3], 1, "resizableReverseRange_res.mat");
+// Result:
+// true
+// ""
+// {"resizableReverseRange", "resizableReverseRange_init.xml"}
+// ""
+// 0
+// 1.0
+// 1.6343652930135433
+// 0.41604071884172
+// 0.7632642708996654
+// endResult

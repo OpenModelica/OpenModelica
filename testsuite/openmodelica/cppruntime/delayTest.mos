@@ -1,0 +1,49 @@
+// name: delayTest
+// keywords: delay, ticket:7996, ticket:17969
+// status: correct
+// teardown_command: rm -f *DelayTest*
+//
+// Equal delay() calls share one buffer, and a delay() in a for-loop has one
+// buffer per iteration.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model DelayTest
+  parameter Integer n = 3;
+  parameter Real d[n] = {0.1, 0.2, 0.3};
+  Real x[n] = {i*time for i in 1:n};
+  Real y1[n], y2[n];
+  Real a, b, c;
+equation
+  y1 = delay(x, d);
+  a = delay(x[1], 0.1);
+  b = delay(x[1], 0.1);
+  c = delay(x[3], 0.2);
+algorithm
+  for i in 1:n loop
+    y2[i] := delay(x[i], d[i], 0.5);
+  end for;
+end DelayTest;
+"); getErrorString();
+
+simulate(DelayTest, stopTime = 1); getErrorString();
+{val(y1[1], 0.5), val(y1[2], 0.5), val(y1[3], 0.5)};
+{val(y2[1], 0.5), val(y2[2], 0.5), val(y2[3], 0.5)};
+{val(a, 0.5), val(b, 0.5), val(c, 0.5)};
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DelayTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'DelayTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.398, 0.596, 0.5940000000000001}
+// {0.398, 0.596, 0.5940000000000001}
+// {0.398, 0.398, 0.8939999999999999}
+// endResult

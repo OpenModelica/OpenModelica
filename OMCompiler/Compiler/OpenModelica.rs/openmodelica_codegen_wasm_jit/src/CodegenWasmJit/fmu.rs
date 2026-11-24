@@ -17,6 +17,7 @@ pub fn emitCsFmu(
     ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
+    model_icon: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
     emit_fmu(
@@ -26,6 +27,7 @@ pub fn emitCsFmu(
         ls_dae_manifest,
         documentation_dir,
         terminals_dir,
+        model_icon,
         simulation_flags_json,
         FMI3_MECS_ADAPTER(),
         "CS",
@@ -42,6 +44,7 @@ pub fn emitMeCsFmu(
     ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
+    model_icon: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
     emit_fmu(
@@ -51,6 +54,7 @@ pub fn emitMeCsFmu(
         ls_dae_manifest,
         documentation_dir,
         terminals_dir,
+        model_icon,
         simulation_flags_json,
         FMI3_MECS_ADAPTER(),
         "me_cs",
@@ -358,7 +362,7 @@ pub(super) fn cs_method_from(simulation_flags_json: &str, kind: &str, dae_mode: 
     if let Some(s) = fmi_flag(simulation_flags_json, "s") {
         return s;
     }
-    let own = if own.is_empty() {
+    let own = if own.is_empty() || own == "auto" {
         "dassl".to_string()
     } else {
         own.to_string()
@@ -555,6 +559,22 @@ fn fmu_kind(fmu_type: &str) -> &'static str {
 /// `openmodelica_fmi::lsdae::MANIFEST_PATH`, which the web build does not link.
 const LS_DAE_MANIFEST: &str = "extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml";
 
+/// `openmodelica_fmi::lswasm::{MANIFEST_PATH, LS_VERSION}`, for the same reason.
+const LS_WASM_MANIFEST: &str = "extra/org.modelica.fmi-ls-wasm/manifest.xml";
+const LS_WASM_VERSION: &str = "0.1.0-draft+1804e6c";
+
+fn ls_wasm_manifest() -> String {
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<fmiLayeredStandardManifest
+  xmlns:fmi-ls=\"http://fmi-standard.org/fmi-ls-manifest\"
+  fmi-ls:fmi-ls-name=\"org.modelica.fmi-ls-wasm\"
+  fmi-ls:fmi-ls-version=\"{LS_WASM_VERSION}\"
+  fmi-ls:fmi-ls-description=\"FMI Layered Standard for WebAssembly\"/>
+"
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(super) fn emit_fmu(
     sim_code: metamodelica::Ref<SimCode::SimCode>,
@@ -563,6 +583,7 @@ pub(super) fn emit_fmu(
     ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
+    model_icon: ArcStr,
     simulation_flags_json: ArcStr,
     adapter: &[u8],
     kind: &str,
@@ -628,6 +649,11 @@ pub(super) fn emit_fmu(
         if !bare {
             add_directory(&mut entries, &documentation_dir, "documentation");
             add_directory(&mut entries, &terminals_dir, "terminalsAndIcons");
+            if !model_icon.is_empty()
+                && let Ok(bytes) = openmodelica_wasi::fs::read(&model_icon)
+            {
+                entries.push(("model.png".to_string(), bytes));
+            }
         }
         // What the FMU was built with, where C's carries what its runtime reads.
         if !simulation_flags_json.is_empty() {
@@ -698,6 +724,7 @@ pub(super) fn emit_fmu(
             entries.push((format!("resources/{model_id}.wasm"), component));
         } else {
             entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
+            entries.push((LS_WASM_MANIFEST.to_string(), ls_wasm_manifest().into_bytes()));
         }
         if let Some(n) = &natives {
             entries.push((NATIVE_TABLE.to_string(), n.table.clone().into_bytes()));

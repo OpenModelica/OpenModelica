@@ -4,7 +4,7 @@
 //! `ModelicaError` here.
 
 use std::cell::RefCell;
-use std::ffi::{c_char, c_void, CStr, VaList};
+use std::ffi::{CStr, VaList, c_char, c_void};
 
 thread_local! {
     /// What `ModelicaAllocateString` handed out during the current call.
@@ -48,7 +48,11 @@ impl Drop for ReleaseStrings {
 }
 
 fn cstr(p: *const c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
+    }
 }
 
 unsafe extern "C" {

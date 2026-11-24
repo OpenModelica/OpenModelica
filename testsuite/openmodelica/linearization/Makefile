@@ -26,9 +26,11 @@ test_06.mos \
 test_07.mos \
 test_dump_languages.mos \
 testArrayAlg.mos \
+testArrayFuncArg.mos \
 testDrumBoiler.mos \
 testknownvar.mos \
 testMathFuncs.mos \
+testNoEventDiff.mos \
 testRecordDiff.mos \
 testSortFunction.mos \
 testSteamPipe.mos \

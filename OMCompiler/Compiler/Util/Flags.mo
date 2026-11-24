@@ -589,6 +589,10 @@ constant DebugFlag NF_SCRIPTING = DEBUG_FLAG(203, "nfScripting", EXTERNAL(), tru
   "Evaluates scripts with the new frontend.");
 constant DebugFlag HOMOTOPY_IN_RESIDUALS = DEBUG_FLAG(204, "homotopyInResiduals", EXTERNAL(), false,
   "Keeps homotopy() in the DAE residuals, the generated code evaluates the branches that lambda selects.");
+constant DebugFlag TIME_INVARIANT_BLOCKS = DEBUG_FLAG(205, "timeInvariantBlocks", EXTERNAL(), true,
+  "Solves the blocks whose values cannot change during the simulation in the initialization and at events, not at every step.");
+constant DebugFlag PARAMETER_DIVISORS = DEBUG_FLAG(206, "parameterDivisors", EXTERNAL(), true,
+  "Checks the divisors that only depend on parameters once after the parameter equations, not at each division.");
 
 public
 // CONFIGURATION FLAGS
@@ -732,12 +736,12 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeSimpleEquations",
     "simplifyComplexFunction",
     "solveSimpleEquations",
+    "removeConstants",
     "tearingSystem",
     "inputDerivativesUsed",
     "calculateStrongComponentJacobians",
     "calculateStateSetsJacobians",
     "symbolicJacobian",
-    "removeConstants",
     "simplifyTimeIndepFuncCalls",
     "simplifyAllExpressions",
     "findZeroCrossings",
@@ -775,8 +779,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("reshufflePost", "Reshuffles algebraic loops."),
     ("simplifyAllExpressions", "Does simplifications on all expressions."),
     ("simplifyComplexFunction", "Some simplifications on complex functions (complex refers to the internal data structure)"),
-    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt."),
-    ("simplifyLoops", "Simplifies algebraic loops. This modules requires +simplifyLoops."),
+    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires --gDynOpt."),
+    ("simplifyLoops", "Simplifies algebraic loops. This module requires --simplifyLoops=1 or --simplifyLoops=2."),
     ("simplifyTimeIndepFuncCalls", "Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false."),
     ("simplifysemiLinear", "Simplifies calls to semiLinear."),
     ("solveLinearSystem", "solve linear system with newton step"),
@@ -944,7 +948,7 @@ constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(55, "maxSize
   "Max size for solveLinearSystem.");
 constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(56, "cppFlags",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
-  "Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)");
+  "Sets extra flags for compilation with the C++ compiler (e.g. --cppFlags=-O3,-Wall)");
 constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(57, "removeSimpleEquations",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
@@ -1027,8 +1031,8 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(67, "initOptModules",
     ("replaceHomotopyWithSimplified", "Replaces the homotopy expression homotopy(actual, simplified) with the simplified part."),
     ("simplifyAllExpressions", "Does simplifications on all expressions."),
     ("simplifyComplexFunction", "Some simplifications on complex functions (complex refers to the internal data structure)"),
-    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt."),
-    ("simplifyLoops", "Simplifies algebraic loops. This modules requires +simplifyLoops."),
+    ("simplifyConstraints", "Rewrites nonlinear constraints into box constraints if possible. This module requires --gDynOpt."),
+    ("simplifyLoops", "Simplifies algebraic loops. This module requires --simplifyLoops=1 or --simplifyLoops=2."),
     ("solveSimpleEquations", "Solves simple equations"),
     ("tearingSystem", "For method selection use flag tearingMethod."),
     ("wrapFunctionCalls", "This module introduces variables for each function call and substitutes all these calls with the newly introduced variables.")
@@ -1203,8 +1207,8 @@ constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(114, "postOptModulesDAE",
     //"replaceDerCalls",
     "simplifysemiLinear",
     "simplifyComplexFunction",
-    "inputDerivativesUsed",
     "removeConstants",
+    "inputDerivativesUsed",
     "simplifyTimeIndepFuncCalls",
     "simplifyAllExpressions",
     "findZeroCrossings",
@@ -1309,7 +1313,7 @@ constant ConfigFlag PARMODAUTO = CONFIG_FLAG(139, "parmodauto",
   "Experimental: Enable parallelization of independent systems of equations in the translated model. Only works on Linux systems.");
 constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(140, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the port used by the interactive server.");
+  "Sets the port used by the interactive server. 0 lets the operating system choose a free port.");
 constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(141, "allowNonStandardModelica",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     }),
@@ -1324,7 +1328,8 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(141, "allowNonStan
     ("unbalancedModel", "Allow models to be locally unbalanced and to have unbalanced connectors"),
     ("implicitParameterStartAttribute", "Allow fixed parameters with no binding or start attribute"),
     ("initialSimplified", "Allow use of experimental operator `initialSimplified()`"),
-    ("illegalConditionalContext", "Allow use of components with false conditions in illegal contexts")
+    ("illegalConditionalContext", "Allow use of components with false conditions in illegal contexts"),
+    ("realEquality", "Allow == and <> with Real operands")
     })),
   "Flags to allow non-standard Modelica.");
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(142, "exportClocksInModelDescription",
@@ -1486,6 +1491,15 @@ constant ConfigFlag TUNABLE_PARAMETERS = CONFIG_FLAG(173, "tunableParameters",
 constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "buildModelFMU(version=\"2.0+3.0\"): the FMI 3.0 FMU also serves FMI 2.0, for OpenModelicaLibraryTesting only.");
+constant ConfigFlag INSTALL_MISSING_PACKAGES = CONFIG_FLAG(175, "installMissingPackages",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Installs the libraries to load that are not installed, using the package manager.");
+constant ConfigFlag WARN_NON_STANDARD_MODELICA = CONFIG_FLAG(176, "warnNonStandardModelica",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Reports the non-standard Modelica that --allowNonStandardModelica allows as warnings instead of errors.");
+constant ConfigFlag MAX_ARRAY_EXPANSION = CONFIG_FLAG(177, "maxArrayExpansion",
+  NONE(), EXTERNAL(), INT_FLAG(256), NONE(),
+  "Sets the maximum array size that the new backend expands into elements (default 256).");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

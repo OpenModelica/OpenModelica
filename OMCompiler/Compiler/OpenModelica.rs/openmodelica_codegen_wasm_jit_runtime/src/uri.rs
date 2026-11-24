@@ -55,18 +55,59 @@ fn resolve(uri: &str, fmu: bool) -> Result<String, String> {
         return Err("Malformed URI (got an empty string)".to_string());
     }
     let resources = if fmu { resources_dir() } else { None };
-    if starts_ci(uri, "modelica://") {
+    if starts_ci(uri, "modelica:") {
         return Err(format!(
             "Failed to lookup URI (this module carries no class directories) {uri}"
         ));
     }
-    if starts_ci(uri, "file://") {
-        return Ok(regular_paths(&uri[7..], uri, resources));
+    if starts_ci(uri, "file:") {
+        return Ok(regular_paths(&file_uri_path(uri)?, uri, resources));
     }
     if uri.contains("://") {
         return Err(format!("Unknown URI schema: {uri}"));
     }
     Ok(regular_paths(uri, uri, resources))
+}
+
+/// C's `fileUriPath`: RFC 8089, file:/p, file:///p and file://localhost/p name
+/// /p, and file://C:/p names C:/p.
+fn file_uri_path(uri: &str) -> Result<String, String> {
+    let mut rest = &uri[5..];
+    if let Some(r) = rest.strip_prefix("//") {
+        let n = r.find('/').unwrap_or(r.len());
+        let b = r.as_bytes();
+        if n == 2 && b[0].is_ascii_alphabetic() && b[1] == b':' {
+            rest = r;
+        } else if n == 0 || r[..n].eq_ignore_ascii_case("localhost") {
+            rest = &r[n..];
+        } else {
+            return Err(format!("File URI using hostnames is not supported: {uri}"));
+        }
+    }
+    let mut bytes = alloc::vec::Vec::with_capacity(rest.len());
+    let src = rest.as_bytes();
+    let mut i = 0;
+    while i < src.len() {
+        let hex = |c: u8| (c as char).to_digit(16);
+        match (
+            src[i],
+            src.get(i + 1).copied().and_then(hex),
+            src.get(i + 2).copied().and_then(hex),
+        ) {
+            (b'%', Some(hi), Some(lo)) => {
+                bytes.push((hi * 16 + lo) as u8);
+                i += 3;
+            }
+            (c, _, _) => {
+                bytes.push(c);
+                i += 1;
+            }
+        }
+    }
+    if bytes.is_empty() {
+        return Err(format!("File URI has no path: {uri}"));
+    }
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 /// C's `uriToFilenameRegularPaths`, minus the `PATH_MAX` bookkeeping (no fixed

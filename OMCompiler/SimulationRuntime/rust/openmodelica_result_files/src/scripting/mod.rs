@@ -105,9 +105,16 @@ pub fn val(msgs: &mut dyn Messages, filename: &str, var: &str, time: f64) -> f64
                 f64::NAN
             }
         },
-        ResultReader::Csv(_) => {
-            msgs.error("val() not implemented for plot format: %s\n", &["CSV"]);
-            f64::NAN
+        ResultReader::Csv(r) => {
+            let Some(values) = r.dataset(var) else {
+                msgs.error("%s not found in %s\n", &[var, filename]);
+                return f64::NAN;
+            };
+            r.val(values, time).unwrap_or_else(|| {
+                let times = r.time();
+                let at = |t: Option<&f64>| t.copied().unwrap_or(f64::NAN);
+                not_defined(msgs, var, time, at(times.first()), at(times.last()))
+            })
         }
         r => {
             let table = r.table_mut().unwrap();
@@ -115,17 +122,20 @@ pub fn val(msgs: &mut dyn Messages, filename: &str, var: &str, time: f64) -> f64
                 msgs.error("%s not found in %s\n", &[var, filename]);
                 return f64::NAN;
             };
-            table.val(i, time).unwrap_or_else(|| {
-                let (start, stop) = (table.start_time(), table.stop_time());
-                msgs.error(
-                    "%s not defined at time %s (startTime=%s, stopTime=%s).",
-                    &[var, &format_g(time), &format_g(start), &format_g(stop)],
-                );
-                f64::NAN
-            })
+            table
+                .val(i, time)
+                .unwrap_or_else(|| not_defined(msgs, var, time, table.start_time(), table.stop_time()))
         }
     })
     .unwrap_or(f64::NAN)
+}
+
+fn not_defined(msgs: &mut dyn Messages, var: &str, time: f64, start: f64, stop: f64) -> f64 {
+    msgs.error(
+        "%s not defined at time %s (startTime=%s, stopTime=%s).",
+        &[var, &format_g(time), &format_g(start), &format_g(stop)],
+    );
+    f64::NAN
 }
 
 /// `readSimulationResultVars`; `omc_style` turns `der(a.b)` into `a.der(b)`.

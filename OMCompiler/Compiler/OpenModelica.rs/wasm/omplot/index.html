@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — OMPlot</title>
+<script src="../theme.js"></script>
 <link rel="stylesheet" href="../theme.css" />
 <style>
   main { flex:1 1 auto; display:grid; grid-template-columns:minmax(280px,30%) 1fr; min-height:0; }
@@ -12,8 +13,8 @@
 
   .files { flex:0 0 auto; max-height:34%; overflow-y:auto; }
   .file { display:flex; align-items:center; gap:8px; padding:5px 12px; cursor:pointer; font-size:14px; }
-  .file:hover { background:#2d2d30; }
-  .file.active { background:#37373d; }
+  .file:hover { background:var(--hover); }
+  .file.active { background:var(--active); }
   .file .nm { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .file .meta { color:var(--muted); font-size:12px; white-space:nowrap; }
   .file .role { font-size:11px; padding:1px 6px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
@@ -27,8 +28,8 @@
   .vars { flex:1 1 auto; overflow-y:auto; padding:0 4px 8px; }
   .var { display:flex; align-items:center; gap:7px; padding:3px 8px; cursor:pointer; font-size:13.5px;
     border-radius:4px; user-select:none; }
-  .var:hover { background:#2d2d30; }
-  .var.current { background:#37373d; }
+  .var:hover { background:var(--hover); }
+  .var.current { background:var(--active); }
   .var input { width:auto; margin:0; }
   .var .nm { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .var .p { color:var(--muted); font-size:11px; }
@@ -50,7 +51,7 @@
   input[type=number] { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:14px; }
 
   body.drop::after { content:"Drop result files"; position:fixed; inset:12px; border:2px dashed var(--accent);
-    border-radius:12px; display:grid; place-items:center; font-size:20px; color:var(--accent); background:#1e1e1ecc; z-index:40; }
+    border-radius:12px; display:grid; place-items:center; font-size:20px; color:var(--accent); background:color-mix(in srgb, var(--bg) 80%, transparent); z-index:40; }
 </style>
 </head>
 <body>
@@ -147,7 +148,7 @@ const cmpSummary = $('cmpSummary');
 const charts = createCharts(chartsEl);
 
 // The scripting API's diffSimulationResults defaults.
-const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002, algorithm: 'ellipse2014', nominalValue: 0.001 };
+const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002, algorithm: 'rectangle', nominalValue: 0.001 };
 
 // --- state -----------------------------------------------------------------
 const files = [];       // { id, name, rf, vars, params:Set, units, nrows, selected:Set }

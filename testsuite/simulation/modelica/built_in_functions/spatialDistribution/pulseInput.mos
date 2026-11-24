@@ -43,7 +43,7 @@ simulate(pulseInputSpatialDistribution, stopTime=1.02, simflags="-lv=LOG_EVENTS"
 // ""
 // record SimulationResult
 //     resultFile = "pulseInputSpatialDistribution_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.02, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'pulseInputSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.02, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'pulseInputSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = time < pulseIn.startTime
 // |                 | |       | | [2] (pre:  true)  true = time < pulseIn.T_start + pulseIn.T_width

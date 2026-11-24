@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — Home</title>
+<script src="../theme.js"></script>
 <link rel="stylesheet" href="../theme.css" />
 <style>
   /* A centred card rather than the header/content column theme.css assumes. */
@@ -18,16 +19,16 @@
     padding: 14px 20px; font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
   .version .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: 0 0 auto; }
-  .version.ready .dot { background: #4ec9b0; }
-  .version.error .dot { background: #f48771; }
+  .version.ready .dot { background: var(--teal); }
+  .version.error .dot { background: var(--err); }
   .version .val { color: var(--fg); }
-  .version.error .val { color: #f48771; }
+  .version.error .val { color: var(--err); }
   .hint { margin-top: 24px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
   <div class="card">
-    <img class="wordmark" src="../icons/openmodelica-logo.svg" alt="OpenModelica" />
+    <svg class="wordmark" viewBox="0 0 983.287 131.968" role="img" aria-label="OpenModelica"><use href="../icons/openmodelica-logo.svg#layer1"/></svg>
     <h1>OpenModelica on the Web</h1>
     <p class="sub">The compiler and its clients, running entirely in your browser via WebAssembly.</p>
     <div class="version" id="version">

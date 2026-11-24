@@ -193,32 +193,37 @@ pub type initialAnalyticalJacobian_func_ptr =
 
 #[repr(C)]
 pub struct JACOBIAN {
-    pub availability: c_int,
     pub sizeCols: usize,
     pub sizeRows: usize,
     pub sizeTmpVars: usize,
+    pub sizeTmpVarsAdj: usize,
+
     pub sparsePattern: *mut SPARSE_PATTERN,
+    pub sparsePatternT: *mut SPARSE_PATTERN,
+
     pub seedVars: *mut modelica_real,
     pub tmpVars: *mut modelica_real,
     pub resultVars: *mut modelica_real,
+
+    pub seedVarsAdj: *mut modelica_real,
+    pub tmpVarsAdj: *mut modelica_real,
+    pub resultVarsAdj: *mut modelica_real,
+
     pub dae_cj: modelica_real,
+
     pub dag: *mut c_void,
-    pub evalSelection: *mut c_void,
+    pub evalSelectionCol: *mut c_void,
     pub evalColumn: jacobianColumn_func_ptr,
-    pub constantEqns: jacobianColumn_func_ptr,
-    pub isRowEval: modelica_boolean,
-    pub cscPattern: *mut SPARSE_PATTERN,
-    pub isBidirectional: modelica_boolean,
-    pub adjointJacobian: *mut JACOBIAN,
+    pub constColEqns: jacobianColumn_func_ptr,
+
+    pub dagT: *mut c_void,
+    pub evalSelectionRow: *mut c_void,
+    pub evalRow: jacobianColumn_func_ptr,
+    pub constRowEqns: jacobianColumn_func_ptr,
+
     pub recoverMask: *mut u8,
     pub csrToCscMap: *mut c_uint,
 }
-
-/// `JACOBIAN_AVAILABILITY`
-pub const JACOBIAN_UNKNOWN: c_int = 0;
-pub const JACOBIAN_NOT_AVAILABLE: c_int = 1;
-pub const JACOBIAN_ONLY_SPARSITY: c_int = 2;
-pub const JACOBIAN_AVAILABLE: c_int = 3;
 
 #[repr(C)]
 pub struct EXTERNAL_INPUT {
@@ -257,7 +262,8 @@ pub struct REAL_ATTRIBUTE {
     pub max: real_array,
     pub fixed: modelica_boolean,
     pub useNominal: modelica_boolean,
-    pub nominal: real_array,
+    pub positiveNominal: real_array,
+    pub nominalSign: real_array,
     pub start: real_array,
 }
 
@@ -301,6 +307,7 @@ pub struct STATIC_REAL_DATA {
     pub attribute: REAL_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
 }
 
 #[repr(C)]
@@ -317,6 +324,7 @@ pub struct STATIC_INTEGER_DATA {
     pub attribute: INTEGER_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
     pub enumeration: *const ENUMERATION_TYPE,
 }
 
@@ -327,6 +335,7 @@ pub struct STATIC_BOOLEAN_DATA {
     pub attribute: BOOLEAN_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
 }
 
 #[repr(C)]
@@ -336,6 +345,7 @@ pub struct STATIC_STRING_DATA {
     pub attribute: STRING_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub startFromEquation: modelica_boolean,
 }
 
 #[repr(C)]
@@ -356,7 +366,8 @@ pub struct NONLINEAR_SYSTEM_DATA {
     pub mixedSystem: modelica_boolean,
     pub min: *mut modelica_real,
     pub max: *mut modelica_real,
-    pub nominal: *mut modelica_real,
+    pub positiveNominal: *mut modelica_real,
+    pub nominalSign: *mut modelica_real,
     pub analyticalJacobianColumn: jacobianColumn_func_ptr,
     pub initialAnalyticalJacobian: initialAnalyticalJacobian_func_ptr,
     pub jacobianIndex: modelica_integer,
@@ -422,7 +433,7 @@ pub struct LINEAR_SYSTEM_DATA {
     pub checkConstraints: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
     pub min: *mut modelica_real,
     pub max: *mut modelica_real,
-    pub nominal: *mut modelica_real,
+    pub positiveNominal: *mut modelica_real,
     pub nnz: modelica_integer,
     pub size: modelica_integer,
     pub equationIndex: modelica_integer,
@@ -629,6 +640,7 @@ pub struct MODEL_DATA {
 
     pub nEnumerationTypes: usize,
     pub enumerationTypes: *mut ENUMERATION_TYPE,
+    pub discreteChangeRanges: *const c_long,
 }
 
 #[repr(C)]
@@ -1036,7 +1048,7 @@ pub const LSS_KLU: c_int = 3;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 /// The `*_MAX` sizes of the name/description tables `-help` prints.
-pub const S_MAX: c_int = 14;
+pub const S_MAX: c_int = 15;
 pub const IIM_MAX: c_int = 3;
 pub const LS_MAX: c_int = 6;
 pub const LSS_MAX: c_int = 4;

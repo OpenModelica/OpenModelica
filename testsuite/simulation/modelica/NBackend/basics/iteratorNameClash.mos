@@ -1,0 +1,35 @@
+// name: iteratorNameClash
+// keywords: NewBackend
+// status: correct
+// An array constructor iterator with the name of a parameter.
+
+loadString("
+model IteratorNameClash
+  parameter Real k = 10;
+  parameter Real p[3] = {sin(-k*0.1) for k in 1:3};
+  Real y[3] = {sin(time + k) for k in 1:3};
+  Real z = k*time;
+end IteratorNameClash;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(IteratorNameClash); getErrorString();
+val(p[2], 0.0);
+val(y[2], 1.0);
+val(z, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IteratorNameClash_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'IteratorNameClash', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.19866933079506122
+// 0.1411200080598672
+// 10.0
+// endResult

@@ -1278,7 +1278,10 @@ protected
         then ();
 
         case VariableKind.EXTOBJ() algorithm
-          lowVar_ptr := BVariable.setFixed(lowVar_ptr);
+          // objects without binding are defined by equations in the initialization
+          if BVariable.isBound(lowVar_ptr) then
+            lowVar_ptr := BVariable.setFixed(lowVar_ptr);
+          end if;
           external_objects_lst := lowVar_ptr :: external_objects_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
@@ -1321,6 +1324,7 @@ protected
     artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
+    variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function Equation.renameCallIterators(prefix = "$i_")));
     variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, set = binding_iter_set));
     binding_iter_lst:= UnorderedSet.toList(binding_iter_set);
     variables       := VariablePointers.addList(binding_iter_lst, variables);
@@ -1338,7 +1342,7 @@ protected
     variableData := BVariable.VAR_DATA_SIM(Pointer.create(0), variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
                       derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
                       states, inputs, resizables, parameters, constants, records, external_objects, artificials,
-                      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual), false);
+                      UnorderedMap.new<BVariable.StateOrder>(ComponentRef.hash, ComponentRef.isEqual), false);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(forced_states)) + ") Forced states by StateSelect.ALWAYS:"));
@@ -1538,6 +1542,13 @@ protected
     varData   := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, VarData.getVariables(varData));
+
+    // external objects are known during the simulation, the equations between them are solved in the initialization
+    for eqn_ptr in EquationPointers.toList(equations) loop
+      if Equation.isExternalObject(eqn_ptr) then
+        Pointer.update(eqn_ptr, Equation.setInitial(Pointer.access(eqn_ptr)));
+      end if;
+    end for;
 
     (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 

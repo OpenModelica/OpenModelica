@@ -1,0 +1,40 @@
+// name: CsvParameterAlias
+// keywords: csv, alias, variableFilter, #7624
+// status: correct
+// teardown_command: rm -f CsvParameterAlias_* CsvParameterAlias CsvParameterAlias.exe CsvParameterAlias.c CsvParameterAlias.libs CsvParameterAlias.makefile CsvParameterAlias.log output.log
+//
+// A variable that is an alias of a parameter is a column of the .csv file.
+// The parameters are not.
+
+loadString("
+model CsvParameterAlias
+  parameter Real p = 2;
+  parameter Integer n = 3;
+  parameter Boolean b = true;
+  Real x = time;
+  Real y = p;
+  Real z = -p;
+  Integer m = n;
+  Boolean c = not b;
+end CsvParameterAlias;
+"); getErrorString();
+simulate(CsvParameterAlias, numberOfIntervals=1, outputFormat="csv", variableFilter="x|y|z|m|c"); getErrorString();
+readFile("CsvParameterAlias_res.csv");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CsvParameterAlias_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'CsvParameterAlias', options = '', outputFormat = 'csv', variableFilter = 'x|y|z|m|c', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "\"time\",\"x\",\"y\",\"z\",\"m\",\"c\"
+// 0,0,2,-2,3,0
+// 1,1,2,-2,3,0
+// 1,1,2,-2,3,0
+// "
+// endResult

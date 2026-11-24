@@ -36,7 +36,7 @@
 #include <QtGlobal>
 #include "MCPServer.h"
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0) && __has_include(<QtHttpServer>)
+#ifdef OMEDIT_MCP
 
 #include "MCPServerPrivate.h"
 #include "MainWindow.h"
@@ -152,7 +152,7 @@ static QString annotation(const QString &viewName, const QStringList &coordinate
 * \param shapeStr  Modelica shape annotation string (e.g. \c "Rectangle(...)").
 * \return MCP tool success response, or an error response on failure.
 */
-QHttpServerResponse MCPServer::applyShapeAnnotation(QJsonValue id, const QString &className, const QString &view, const QString &shapeStr) {
+QJsonObject MCPServer::applyShapeAnnotation(QJsonValue id, const QString &className, const QString &view, const QString &shapeStr) {
   if (view != "icon" && view != "diagram")
   return makeMCPError(id, QString("Invalid view: %1. Must be \"icon\" or \"diagram\".").arg(view));
   MainWindow *mainWindow = MainWindow::instance();
@@ -213,9 +213,9 @@ QHttpServerResponse MCPServer::applyShapeAnnotation(QJsonValue id, const QString
 * \param toolName  Name of the MCP tool to execute.
 * \param id        JSON-RPC request id echoed back in the response.
 * \param arguments Tool arguments as a JSON object.
-* \return A QHttpServerResponse containing the MCP tool result or error.
+* \return The MCP tool result or error.
 */
-QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonValue id, QJsonObject arguments)
+QJsonObject MCPServer::handleDiagramTool(const QString &toolName, QJsonValue id, QJsonObject arguments)
 {
   if (toolName == "classDiagram" || toolName == "iconDiagram") {
     bool isIcon = (toolName == "iconDiagram");

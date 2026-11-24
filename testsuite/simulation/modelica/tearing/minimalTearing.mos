@@ -22,7 +22,7 @@ diffPrefix = "diff", vars = {"Capacitor1.v", "Capacitor2.v", "Inductor2.i", "Ind
 // ""
 // record SimulationResult
 //     resultFile = "Modelica.Electrical.Analog.Examples.Rectifier_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

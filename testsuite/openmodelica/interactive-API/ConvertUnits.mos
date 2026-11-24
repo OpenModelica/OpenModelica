@@ -14,11 +14,22 @@ convertUnits("eV","J");getErrorString();
 convertUnits("J","keV");getErrorString();
 convertUnits("keV","J");getErrorString();
 convertUnits("eV","keV");getErrorString();
+convertUnits("rad/s","Hz");getErrorString();
+convertUnits("Hz","rad/s");getErrorString();
+convertUnits("Hz","rpm");getErrorString();
+convertUnits("rpm","kHz");getErrorString();
+convertUnits("rev/s","Hz");getErrorString();
+convertUnits("deg/s","Hz");getErrorString();
+convertUnits("rad/s2","Hz/s");getErrorString();
+convertUnits("Hz","1/s");getErrorString();
+convertUnits("rad/s","1/s");getErrorString();
 
 getDerivedUnits("K");getErrorString();
 getDerivedUnits("W");getErrorString();
 getDerivedUnits("Pa");getErrorString();
 getDerivedUnits("n");getErrorString();
+getDerivedUnits("rad/s");getErrorString();
+getDerivedUnits("Hz");getErrorString();
 
 // Result:
 // (false, 1e-6, 0.0)
@@ -50,6 +61,24 @@ getDerivedUnits("n");getErrorString();
 // ""
 // (true, 1000.0, 0.0)
 // ""
+// (true, 6.283185307179586, 0.0)
+// ""
+// (true, 0.15915494309189535, 0.0)
+// ""
+// (true, 0.01666666666666667, 0.0)
+// ""
+// (true, 59999.99999999999, 0.0)
+// ""
+// (true, 1.0, 0.0)
+// ""
+// (true, 360.0, 0.0)
+// ""
+// (true, 6.283185307179586, 0.0)
+// ""
+// (true, 1.0, 0.0)
+// ""
+// (false, 1.0, 0.0)
+// ""
 // {"degC", "degF", "degRk"}
 // ""
 // {"VA", "var"}
@@ -59,4 +88,8 @@ getDerivedUnits("n");getErrorString();
 // {}
 // "Error: Error parsing unit n: Unit not found
 // "
+// {"Hz", "rpm"}
+// ""
+// {"Bq", "rpm"}
+// ""
 // endResult

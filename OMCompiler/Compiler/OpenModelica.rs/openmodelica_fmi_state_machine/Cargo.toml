@@ -1,0 +1,8 @@
+# The FMI 2.0 and 3.0 call sequences an exported FMU accepts, shared by the C API
+# of a C+Rust FMU (openmodelica_simulation_runtime) and the native loader of a
+# wasm FMU (openmodelica_fmi_ls_wasm_to_native). No dependencies, so the loader
+# stays model-agnostic.
+[package]
+name = "openmodelica_fmi_state_machine"
+version = "0.1.0"
+edition = "2024"

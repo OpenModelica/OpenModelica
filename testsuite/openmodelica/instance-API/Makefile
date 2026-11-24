@@ -19,6 +19,8 @@ GetModelInstanceAnnotation14.mos \
 GetModelInstanceAnnotation15.mos \
 GetModelInstanceFigures1.mos \
 GetModelInstanceFigures2.mos \
+GetModelInstanceFigures3.mos \
+GetModelInstanceFigures4.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \

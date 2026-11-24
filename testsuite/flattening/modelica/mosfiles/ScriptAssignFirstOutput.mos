@@ -1,0 +1,78 @@
+// name: ScriptAssignFirstOutput
+// keywords: scripting, function, multiple outputs
+// status: correct
+// suite: nfScripting
+//
+// An assignment to one variable uses the first output of a call with several
+// outputs, as in an algorithm.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+function f2
+  input Real x;
+  output Real y1;
+  output Real y2;
+algorithm
+  y1 := x;
+  y2 := 2*x;
+end f2;
+
+function emptyFirst
+  output Real y1[0];
+  output Real y2 = 1.0;
+algorithm
+  y1 := fill(0.0, 0);
+end emptyFirst;
+
+model M
+  annotation(experiment(StopTime = 2));
+end M;
+"); getErrorString();
+
+a := f2(3.0); getErrorString();
+a; getErrorString();
+(b, c) := f2(3.0); getErrorString();
+b; c;
+f2(3.0); getErrorString();
+x := {0.0, 0.0}; x[2] := f2(4.0); getErrorString();
+x; getErrorString();
+e := emptyFirst(); getErrorString();
+size(e, 1); getErrorString();
+t := getSimulationOptions(M); getErrorString();
+n := Modelica.Utilities.Strings.scanInteger("42"); getErrorString();
+n + 1; getErrorString();
+r := Modelica.Utilities.Strings.scanReal("3.25"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 3.0
+// ""
+// 3.0
+// ""
+//
+// ""
+// 3.0
+// 6.0
+// (3.0, 6.0)
+// ""
+// {0.0, 0.0}
+// 4.0
+// ""
+// {0.0, 4.0}
+// ""
+// {}
+// ""
+// 0
+// ""
+// 0.0
+// ""
+// 42
+// ""
+// 43
+// ""
+// 3.25
+// ""
+// endResult

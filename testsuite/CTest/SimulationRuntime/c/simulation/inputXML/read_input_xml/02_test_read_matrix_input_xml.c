@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 
   test_success = test_success && validateDimensionA(&modelData.realVarsData[0].dimension);
   test_success = test_success && validateStartA(&modelData.realVarsData[0].attribute.start);
-  test_success = test_success && validateNominalA(&modelData.realVarsData[0].attribute.nominal);
+  test_success = test_success && validateNominalA(&modelData.realVarsData[0].attribute.positiveNominal);
   test_success = test_success && validateMinA(&modelData.realVarsData[0].attribute.min);
   test_success = test_success && validateMaxA(&modelData.realVarsData[0].attribute.max);
 

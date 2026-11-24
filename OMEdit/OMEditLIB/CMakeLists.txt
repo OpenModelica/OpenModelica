@@ -22,6 +22,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       LSP/ModelicaLSPClient.cpp
                       Util/Helper.cpp
                       Util/Utilities.cpp
+                      Util/RecursiveFileWatcher.cpp
                       Util/Style.cpp
                       Util/PersistentStorage.cpp
                       Cloud/CloudTypes.cpp
@@ -50,6 +51,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Modeling/MessagesWidget.cpp
                       Modeling/ItemDelegate.cpp
                       Modeling/LibraryTreeWidget.cpp
+                      Modeling/LibraryFileWatcher.cpp
                       Modeling/ElementTreeWidget.cpp
                       Modeling/Commands.cpp
                       Modeling/ModelWidgetContainer.cpp
@@ -105,6 +107,10 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Simulation/SimulationOutputHandler.cpp
                       Simulation/OpcUaClient.cpp
                       Simulation/ArchivedSimulationsWidget.cpp
+                      FMI/FMIGuide.cpp
+                      FMI/FMIGuideDialog.cpp
+                      FMI/FMIGuideTexts.cpp
+                      FMI/FMUExportDialog.cpp
                       FMI/ImportFMUDialog.cpp
                       FMI/ImportFMUModelDescriptionDialog.cpp
                       FMI/FMUExportOutputWidget.cpp
@@ -197,6 +203,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Cloud/OAuth2Client.h
                       Cloud/OAuth2Redirect.h
                       Util/Utilities.h
+                      Util/RecursiveFileWatcher.h
                       Util/Style.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
@@ -210,6 +217,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Modeling/MessagesWidget.h
                       Modeling/ItemDelegate.h
                       Modeling/LibraryTreeWidget.h
+                      Modeling/LibraryFileWatcher.h
                       Modeling/ElementTreeWidget.h
                       Modeling/Commands.h
                       Modeling/ModelWidgetContainer.h
@@ -268,6 +276,9 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Simulation/SimulationOutputHandler.h
                       Simulation/OpcUaClient.h
                       Simulation/ArchivedSimulationsWidget.h
+                      FMI/FMIGuide.h
+                      FMI/FMIGuideDialog.h
+                      FMI/FMUExportDialog.h
                       FMI/ImportFMUDialog.h
                       FMI/ImportFMUModelDescriptionDialog.h
                       FMI/FMUExportOutputWidget.h
@@ -390,7 +401,8 @@ set(OMEDITLIB_LUPDATE_TS_FILES ${TS_FILES})
 list(TRANSFORM OMEDITLIB_LUPDATE_TS_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 omc_add_qt_lupdate(OMEditLib
                    TS_FILES ${OMEDITLIB_LUPDATE_TS_FILES}
-                   SOURCES ${OMEDITLIB_LUPDATE_SOURCES} ${OMEDITGUI_WASM_LUPDATE_SOURCES})
+                   SOURCES ${OMEDITLIB_LUPDATE_SOURCES} ${OMEDITGUI_WASM_LUPDATE_SOURCES}
+                   INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Wait for the generated Qt API (rust_codegen); AUTOGEN_TARGET_DEPENDS so AUTOMOC waits too.
 # In the prebuilt GUI-only build (RUST_OMC_PREBUILT_CDYLIB) there is no codegen target —

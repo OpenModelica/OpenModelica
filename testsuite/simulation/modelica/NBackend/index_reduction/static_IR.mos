@@ -41,6 +41,10 @@ simulate(static_IR_2); getErrorString();
 // 	[STAT] (1) Real z (StateSelect = never)
 // 	[STAT] (1) Real y (StateSelect = prefer)
 //
+// [stateselection] State Order:
+// *******************************
+// 	(x --d/dt--> z/0.5)
+//
 // [stateselection] (2) State Derivatives Created by Differentiation
 // *******************************************************************
 // 	[DDER] (1) Real $DER.$FUN_1 (StateSelect = avoid)
@@ -55,7 +59,7 @@ simulate(static_IR_2); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "static_IR_1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_IR_1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'static_IR_1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -69,6 +73,10 @@ simulate(static_IR_2); getErrorString();
 // *************************************************************
 // 	[STAT] (1) Real z (StateSelect = prefer)
 // 	[STAT] (1) Real y (StateSelect = prefer)
+//
+// [stateselection] State Order:
+// *******************************
+// 	(x --d/dt--> z/0.5)
 //
 // [stateselection] (2) State Derivatives Created by Differentiation
 // *******************************************************************
@@ -84,7 +92,7 @@ simulate(static_IR_2); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "static_IR_2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_IR_2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'static_IR_2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

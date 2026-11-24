@@ -110,7 +110,7 @@ set(host_short ${OM_LIBRARY_ARCH})
 # clients (the OM_ENABLE_GUI_CLIENTS subdirs below) are guarded with NOT
 # OM_OMC_WASM rather than forcing the flag off, so OM_ENABLE_GUI_CLIENTS still
 # carries the user's intent into the wasm build — where it selects the OMShell
-# *web* pages (omshell_egui + omshell_dioxus; see omc_rust_setup_wasm). Mode/
+# *web* page (omshell_egui; see omc_rust_setup_wasm). Mode/
 # profile is chosen with RUST_OMC_WASM_MODE.
 omc_option(OM_OMC_WASM "Build only the WebAssembly (browser/Node) omc bundle." OFF)
 if(OM_OMC_WASM)

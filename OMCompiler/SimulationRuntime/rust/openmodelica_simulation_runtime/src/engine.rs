@@ -55,9 +55,9 @@ unsafe extern "C" {
     fn omc_clear_last_suppressed_error();
 }
 
-/// `util/rtclock.c`, which `+profiling` reports from. An FMU has none: under
-/// `OMC_MINIMAL_RUNTIME` `rtclock.h` is no-op `static inline`s and the .c does not
-/// compile, so the FMU flavour answers with an unarmed clock's zeros.
+// `util/rtclock.c`, which `+profiling` reports from. An FMU has none: under
+// `OMC_MINIMAL_RUNTIME` `rtclock.h` is no-op `static inline`s and the .c does not
+// compile, so the FMU flavour answers with an unarmed clock's zeros.
 #[cfg(not(omc_fmi_runtime))]
 unsafe extern "C" {
     fn rt_init(numTimer: c_int);
@@ -294,9 +294,7 @@ impl SimEngine for CEngine {
         let Some(jr) = (unsafe { j.as_mut() }) else {
             return Some(false);
         };
-        if jr.availability == JACOBIAN_AVAILABLE
-            && let Some(f) = cb.getDAG_JacA
-        {
+        if let Some(f) = cb.getDAG_JacA {
             unsafe { f(data, td, j) };
         }
         Some(!jr.dag.is_null())
@@ -522,17 +520,19 @@ impl SimEngine for CEngine {
             | "functionJacA_constantEqns"
             | "functionJacADJ_column"
             | "functionJacADJ_constantEqns" => {
-                let jac = match name.starts_with("functionJacADJ") {
+                let is_adjoint = name.starts_with("functionJacADJ");
+                let jac = match is_adjoint {
                     true => crate::data::jac_adj_ptr(self.rt.data),
                     false => crate::data::jac_a_ptr(self.rt.data),
                 };
                 let Some(j) = (unsafe { jac.as_ref() }) else {
                     return Ok(());
                 };
-                let f = if name.ends_with("_column") {
-                    j.evalColumn
-                } else {
-                    j.constantEqns
+                let f = match (is_adjoint, name.ends_with("_column")) {
+                    (true, true) => j.evalRow,
+                    (true, false) => j.constRowEqns,
+                    (false, true) => j.evalColumn,
+                    (false, false) => j.constColEqns,
                 };
                 let Some(f) = f else { return Ok(()) };
                 self.publish();
@@ -966,19 +966,15 @@ impl CEngine {
                     if base + k >= nominal.len() {
                         break;
                     }
-                    nominal[base + k] = v.attribute.nominal.real_at(k, 1.0);
+                    nominal[base + k] = v.attribute.positiveNominal.real_at(k, 1.0);
                 }
             }
         }
         let bytes: Vec<u8> = nominal.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let _ = self.rt.write(l.real_nom_off, &bytes);
-        // The integrator's copies: C clamps the nominal away from zero and takes
-        // the declared `max` as the difference quotient's bound.
-        let clamped: Vec<u8> = nominal[..n_states]
-            .iter()
-            .flat_map(|v| v.abs().max(1e-32).to_ne_bytes())
-            .collect();
-        let _ = self.rt.write(l.state_nom_off, &clamped);
+        // The integrator's copies: the state nominals, and the declared `max`
+        // as the difference quotient's bound.
+        let _ = self.rt.write(l.state_nom_off, &bytes[..n_states * 8]);
         let mut maxs = vec![f64::MAX; n_states];
         let mut mins = vec![-f64::MAX; n_states];
         unsafe {
@@ -1032,7 +1028,7 @@ impl CEngine {
             let alg: Vec<u8> = (0..l.n_dae_alg as usize)
                 .flat_map(|i| {
                     let k = unsafe { *ix.add(i) } as usize;
-                    nominal.get(k).copied().unwrap_or(1.0).abs().max(1e-32).to_ne_bytes()
+                    nominal.get(k).copied().unwrap_or(1.0).to_ne_bytes()
                 })
                 .collect();
             let _ = self.rt.write(l.dae_alg_nom_off, &alg);

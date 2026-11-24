@@ -21,9 +21,7 @@ readFile("stateSpace-MSD.xml");
 // (true, "stateSpace-MSD.xml")
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
-//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
-//                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
-//                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
+//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\">
 // <variables dimension=\"44\">
 // <orderedVariables dimension=\"17\">
 // <variablesList>
@@ -484,6 +482,15 @@ readFile("stateSpace-MSD.xml");
 // </variablesList>
 // </aliasVariables>
 // </variables>
+// <enumerationTypes dimension=\"1\">
+// <enumerationType name=\"StateSelect\">
+// <literal name=\"never\" index=\"1\" />
+// <literal name=\"avoid\" index=\"2\" />
+// <literal name=\"default\" index=\"3\" />
+// <literal name=\"prefer\" index=\"4\" />
+// <literal name=\"always\" index=\"5\" />
+// </enumerationType>
+// </enumerationTypes>
 // <equations dimension=\"17\">
 // <equation id=\"1\">$DER.mass1.flange_b.s = mass1.v
 // </equation>

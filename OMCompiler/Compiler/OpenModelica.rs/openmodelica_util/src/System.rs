@@ -57,6 +57,7 @@ struct SysState {
     has_stream: bool,
     uses_cardinality: bool,
     has_inner_outer: bool,
+    has_partial_instances: bool,
 
     // tmpTick / tmpTickIndex counters. Index 0 is the unindexed `tmpTick`.
     // The C runtime keeps an array `tmp_tick_no[NUM_TICKS]`; we lazily grow
@@ -594,6 +595,19 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
             }
             Err(_) => return -1,
         }
+    } else {
+        // Where C's stdout/stderr write, as a fork inherits on Unix. OMEdit
+        // freopens them; in a GUI application that does not change the Win32
+        // std handles that Stdio::inherit passes on.
+        #[cfg(windows)]
+        {
+            if let Some(h) = c_stream_stdio(1) {
+                cmd.stdout(h);
+            }
+            if let Some(h) = c_stream_stdio(2) {
+                cmd.stderr(h);
+            }
+        }
     }
     let status = match cmd.status() {
         Ok(s) => s.code().unwrap_or(-1),
@@ -601,6 +615,13 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     };
     metamodelica::host_flush();
     status
+}
+
+#[cfg(windows)]
+fn c_stream_stdio(fd: u32) -> Option<std::process::Stdio> {
+    let h = openmodelica_wasi::stdio::os_handle(fd)?;
+    let h = unsafe { std::os::windows::io::BorrowedHandle::borrow_raw(h) };
+    h.try_clone_to_owned().ok().map(Into::into)
 }
 
 pub fn popen(command: ArcStr) -> (ArcStr, i32) {
@@ -911,52 +932,16 @@ pub fn pwd() -> ArcStr {
     }
 }
 
-// The wasm build has no OS environment — `std::env::set_var` *panics* on
-// wasm32-unknown-unknown — so `setEnv`/`readEnv` keep an in-process map instead
-// (wasm is single-threaded, hence a `thread_local`). The JS host seeds it (e.g.
-// OPENMODELICAHOME) before init.
-#[cfg(target_arch = "wasm32")]
-thread_local! {
-    static WASM_ENV: std::cell::RefCell<std::collections::HashMap<String, String>> =
-        std::cell::RefCell::new(std::collections::HashMap::new());
-}
-
 pub fn readEnv(inString: ArcStr) -> Result<ArcStr> {
-    #[cfg(target_arch = "wasm32")]
-    if let Some(v) = WASM_ENV.with(|e| e.borrow().get(inString.as_str()).cloned()) {
-        return Ok(ArcStr::from(v));
-    }
-    match std::env::var(inString.as_str()) {
-        Ok(v) => Ok(ArcStr::from(v)),
-        Err(_) => return Err("System.readEnv: variable {inString} not set"),
+    match openmodelica_wasi::env::var(inString.as_str()) {
+        Some(v) => Ok(ArcStr::from(v)),
+        None => return Err("System.readEnv: variable {inString} not set"),
     }
 }
 
 pub fn setEnv(varName: ArcStr, value: ArcStr, overwrite: bool) -> i32 {
-    #[cfg(target_arch = "wasm32")]
-    {
-        WASM_ENV.with(|e| {
-            let mut m = e.borrow_mut();
-            if overwrite || !m.contains_key(varName.as_str()) {
-                m.insert(varName.to_string(), value.to_string());
-            }
-        });
-        return 0;
-    }
-    // SAFETY: std::env::set_var is `unsafe` under edition 2024 because it
-    // races with concurrent getenv calls in other threads. The C runtime
-    // accepts the same hazard; we mirror the behavior here and rely on
-    // callers using this only during startup configuration.
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        if !overwrite && std::env::var_os(varName.as_str()).is_some() {
-            return 0;
-        }
-        unsafe {
-            std::env::set_var(varName.as_str(), value.as_str());
-        }
-        0
-    }
+    openmodelica_wasi::env::set_var(varName.as_str(), value.as_str(), overwrite);
+    0
 }
 
 pub fn subDirectories(inString: ArcStr) -> List<ArcStr> {
@@ -1242,6 +1227,7 @@ flag_pair!(
     getHasInnerOuterDefinitions,
     has_inner_outer
 );
+flag_pair!(setHasPartialInstances, getHasPartialInstances, has_partial_instances);
 
 // ───────────────────────────────── tmpTick ────────────────────────────────────
 
@@ -1632,15 +1618,14 @@ pub fn realIsNaN(r: metamodelica::Real) -> bool {
 // ───────────────────────────────── URI / platform info ───────────────────────
 
 /// Percent-decode a URI component, mirroring `decodeUri2` in
-/// systemimpl.c: `+` becomes a space, `%XX` a hex-decoded byte, and a
-/// malformed escape is kept literally.
+/// systemimpl.c: `%XX` becomes a hex-decoded byte and a malformed escape is
+/// kept literally. A `+` is a `+` (RFC 3986).
 fn decode_uri_component(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
     while i < bytes.len() {
         match bytes[i] {
-            b'+' => out.push(b' '),
             b'%' if i + 2 < bytes.len() && bytes[i + 1].is_ascii_hexdigit() && bytes[i + 2].is_ascii_hexdigit() => {
                 let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap();
                 out.push(u8::from_str_radix(hex, 16).unwrap());
@@ -1685,7 +1670,7 @@ fn io_error_text(e: &std::io::Error) -> String {
     }
 }
 
-/// Split `modelica://Pkg.Sub/dir/file` / `file:///some/path` URIs into
+/// Split `modelica:/Pkg.Sub/dir/file` / `file:///some/path` URIs into
 /// `(scheme, classname, pathname)`. Port of
 /// `SystemImpl__uriToClassAndPath`; sets the error buffer and fails on
 /// malformed or unknown URIs like the C version (which MMC_THROWs).
@@ -1697,16 +1682,38 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
         }
     }
     let lower = uri.to_ascii_lowercase();
-    if let Some(rest) = lower.strip_prefix("modelica://").map(|r| &uri[uri.len() - r.len()..]) {
-        let (name, path) = split_name_path(rest);
+    if lower.starts_with("modelica:") {
+        // modelica:/A.B/x, modelica:///A.B/x and the deprecated modelica://A.B/x
+        let after = &uri[9..];
+        let rest = after
+            .strip_prefix("///")
+            .or_else(|| after.strip_prefix("//"))
+            .or_else(|| after.strip_prefix('/'));
+        let (name, path) = rest.map_or((String::new(), String::new()), split_name_path);
         if name.is_empty() {
             add_scripting_error("Modelica URI lacks classname: %s", &uri);
             return Err("Modelica URI lacks classname: {uri}");
         }
         return Ok((literal!("modelica://"), ArcStr::from(name), ArcStr::from(path)));
     }
-    if let Some(rest) = lower.strip_prefix("file://").map(|r| &uri[uri.len() - r.len()..]) {
-        let (name, path) = split_name_path(rest);
+    if lower.starts_with("file:") {
+        // RFC 8089: file:/p, file:///p and file://localhost/p name /p, and file://C:/p names C:/p
+        let rest = &uri[5..];
+        let (mut name, mut path) = match rest.strip_prefix("//") {
+            Some(r) => split_name_path(r),
+            None => (String::new(), decode_uri_component(rest)),
+        };
+        let b = name.as_bytes();
+        if b.len() == 2 && b[0].is_ascii_alphabetic() && b[1] == b':' {
+            path = std::format!("{name}{path}");
+            name.clear();
+        } else if name.eq_ignore_ascii_case("localhost") {
+            name.clear();
+        }
+        let p = path.as_bytes();
+        if Autoconf::isWindows && p.len() > 2 && p[0] == b'/' && p[1].is_ascii_alphabetic() && p[2] == b':' {
+            path.remove(0);
+        }
         if path.is_empty() {
             add_scripting_error("File URI has no path: %s", &uri);
             return Err("File URI has no path: {uri}");
@@ -1804,83 +1811,34 @@ pub fn dgesv(
     A: List<List<metamodelica::Real>>,
     B: List<metamodelica::Real>,
 ) -> Result<(List<metamodelica::Real>, i32)> {
-    // Port of SystemImpl__dgesv (systemimpl.c), which calls LAPACK `dgesv` to
-    // solve the dense linear system A*X = B for a single right-hand side.
-    // LAPACK's dgesv is an LU factorization with partial pivoting (dgetrf)
-    // followed by a triangular solve (dgetrs); we replicate that algorithm in
-    // pure Rust so no BLAS/LAPACK link is required. `info` matches LAPACK:
-    //   0  : success
-    //   <0 : the -info-th argument was illegal (here: a non-square A)
-    //   >0 : U(info,info) is exactly zero — A is singular (1-based index)
-    let a_rows: Vec<Vec<f64>> = A
-        .as_ref()
-        .into_iter()
-        .map(|row| row.as_ref().into_iter().map(|v| v.into_inner()).collect::<Vec<f64>>())
-        .collect();
+    // Port of SystemImpl__dgesv (systemimpl.c). A non-square A gives info -1.
     let mut b: Vec<f64> = B.as_ref().into_iter().map(|v| v.into_inner()).collect();
-    let n = a_rows.len();
-
-    // Argument validity: A must be square (n x n) and B must have length n,
-    // mirroring the dimensions the C wrapper passes to LAPACK.
-    if b.len() != n || a_rows.iter().any(|r| r.len() != n) {
+    let n = b.len();
+    let mut a = vec![0.0f64; n * n];
+    let mut i = 0;
+    for row in A.as_ref() {
+        let mut j = 0;
+        for v in row.as_ref() {
+            if i >= n || j >= n {
+                return Ok((B.clone(), -1));
+            }
+            a[j * n + i] = v.into_inner();
+            j += 1;
+        }
+        if j != n {
+            return Ok((B.clone(), -1));
+        }
+        i += 1;
+    }
+    if i != n {
         return Ok((B.clone(), -1));
     }
     if n == 0 {
         return Ok((metamodelica::nil(), 0));
     }
-
-    // Working copy of the matrix: a[i][j] = row i, column j (as in the C code,
-    // where A[j*sz+i] holds element (i,j)).
-    let mut a = a_rows;
-
-    // LU factorization with partial pivoting, applying the row swaps to `b` as
-    // we go (equivalent to LAPACK forming the permutation in `ipiv` and then
-    // applying it in dgetrs).
-    for k in 0..n {
-        // Pivot: row of largest magnitude in column k at or below the diagonal.
-        let mut p = k;
-        let mut maxv = a[k][k].abs();
-        for i in (k + 1)..n {
-            let v = a[i][k].abs();
-            if v > maxv {
-                maxv = v;
-                p = i;
-            }
-        }
-        if a[p][k] == 0.0 {
-            // U(k,k) == 0: singular. LAPACK records the first such index and
-            // completes the factorization; the solve below would divide by
-            // zero, so stop and report (callers check `info != 0`).
-            return Ok((B.clone(), (k + 1) as i32));
-        }
-        if p != k {
-            a.swap(p, k);
-            b.swap(p, k);
-        }
-        let akk = a[k][k];
-        for i in (k + 1)..n {
-            let f = a[i][k] / akk;
-            a[i][k] = f;
-            for j in (k + 1)..n {
-                let akj = a[k][j];
-                a[i][j] -= f * akj;
-            }
-            b[i] -= f * b[k];
-        }
-    }
-
-    // Back substitution into `b` (now holding the forward-solved RHS).
-    let mut x = vec![0.0f64; n];
-    for k in (0..n).rev() {
-        let mut s = b[k];
-        for j in (k + 1)..n {
-            s -= a[k][j] * x[j];
-        }
-        x[k] = s / a[k][k];
-    }
-
-    let out = List::from_iter(x.into_iter().map(metamodelica::OrderedFloat));
-    Ok((out, 0))
+    let mut ipiv = vec![0i32; n];
+    let info = openmodelica_lapack::dgesv(n, 1, &mut a, n, &mut ipiv, &mut b, n);
+    Ok((List::from_iter(b.into_iter().map(metamodelica::OrderedFloat)), info))
 }
 
 pub fn reopenStandardStream(_stream: i32, _filename: ArcStr) -> bool {

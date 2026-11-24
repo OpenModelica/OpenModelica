@@ -40,7 +40,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Elementary.Line', options = '', outputFormat = 'mat', variableFilter = 'time|meter.p.1.|meter.p.2.|meter.p.3.|meter.v.1.|meter.v.2.|meter.v.3.|meter.i.1.|meter.i.2.|meter.i.3.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Elementary.Line', options = '', outputFormat = 'mat', variableFilter = 'time|meter.p.1.|meter.p.2.|meter.p.3.|meter.v.1.|meter.v.2.|meter.v.3.|meter.i.1.|meter.i.2.|meter.i.3.', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Elementary.Line_res.mat
 // "true
 // "

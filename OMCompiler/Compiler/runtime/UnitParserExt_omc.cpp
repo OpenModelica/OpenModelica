@@ -111,5 +111,15 @@ void UnitParserExt_str2unit(const char *inStr, void **nums, void **denoms, void 
   }
 }
 
+void UnitParserExt_angleExponents(const char *inStr, int *rad, int *hz)
+{
+  Unit unit;
+  if (!unitParser->str2unit(string(inStr), unit).Ok() || unit.radExpo.denom != 1 || unit.hzExpo.denom != 1) {
+    MMC_THROW();
+  }
+  *rad = unit.radExpo.num;
+  *hz = unit.hzExpo.num;
+}
+
 } // extern "C"
 

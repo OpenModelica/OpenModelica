@@ -1,0 +1,64 @@
+// name: ValResultFormats
+// keywords: val, csv, plt, arrow, #2653
+// status: correct
+// suite: arrow
+// teardown_command: rm -f ValResultFormats_* ValResultFormats ValResultFormats.c ValResultFormats.exe ValResultFormats.libs ValResultFormats.log ValResultFormats.makefile ValResultFormats.o output.log
+//
+// val() on each result-file format: interpolation, the value after an event,
+// aliases and the errors.
+
+loadString("
+model ValResultFormats
+  Real x(start=1, fixed=true);
+  Real y = -x;
+  parameter Real p = 2.5;
+  Real ap = p;
+  Integer n(start=0, fixed=true);
+  Boolean b = x > 0.5;
+equation
+  der(x) = -x;
+  when sample(0.25, 0.25) then
+    n = pre(n) + 1;
+  end when;
+end ValResultFormats;
+"); getErrorString();
+echo(false);
+simulate(ValResultFormats, numberOfIntervals=4, outputFormat="mat", fileNamePrefix="ValResultFormats_m");
+simulate(ValResultFormats, numberOfIntervals=4, outputFormat="csv", fileNamePrefix="ValResultFormats_c");
+simulate(ValResultFormats, numberOfIntervals=4, outputFormat="plt", fileNamePrefix="ValResultFormats_p");
+simulate(ValResultFormats, numberOfIntervals=4, outputFormat="arrow", fileNamePrefix="ValResultFormats_a");
+echo(true);
+getErrorString();
+{val(x, 0.55, "ValResultFormats_m_res.mat"), val(x, 0.55, "ValResultFormats_c_res.csv"), val(x, 0.55, "ValResultFormats_p_res.plt"), val(x, 0.55, "ValResultFormats_a_res.arrow")};
+{val(y, 0.55, "ValResultFormats_m_res.mat"), val(y, 0.55, "ValResultFormats_c_res.csv"), val(y, 0.55, "ValResultFormats_p_res.plt"), val(y, 0.55, "ValResultFormats_a_res.arrow")};
+{val(der(x), 0.55, "ValResultFormats_m_res.mat"), val(der(x), 0.55, "ValResultFormats_c_res.csv"), val(der(x), 0.55, "ValResultFormats_p_res.plt"), val(der(x), 0.55, "ValResultFormats_a_res.arrow")};
+{val(time, 0.6, "ValResultFormats_m_res.mat"), val(time, 0.6, "ValResultFormats_c_res.csv"), val(time, 0.6, "ValResultFormats_p_res.plt"), val(time, 0.6, "ValResultFormats_a_res.arrow")};
+{val(n, 0.5, "ValResultFormats_m_res.mat"), val(n, 0.5, "ValResultFormats_c_res.csv"), val(n, 0.5, "ValResultFormats_p_res.plt"), val(n, 0.5, "ValResultFormats_a_res.arrow")};
+{val(n, 1.0, "ValResultFormats_m_res.mat"), val(n, 1.0, "ValResultFormats_c_res.csv"), val(n, 1.0, "ValResultFormats_p_res.plt"), val(n, 1.0, "ValResultFormats_a_res.arrow")};
+{val(b, 0.6, "ValResultFormats_m_res.mat"), val(b, 0.6, "ValResultFormats_c_res.csv"), val(b, 0.6, "ValResultFormats_p_res.plt"), val(b, 0.6, "ValResultFormats_a_res.arrow")};
+{val(ap, 0.3, "ValResultFormats_m_res.mat"), val(ap, 0.3, "ValResultFormats_c_res.csv"), val(ap, 0.3, "ValResultFormats_p_res.plt"), val(ap, 0.3, "ValResultFormats_a_res.arrow")};
+getErrorString();
+val(x, 1.5, "ValResultFormats_c_res.csv"); getErrorString();
+val(p, 0.5, "ValResultFormats_c_res.csv"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {0.5789544130101849, 0.5789544130101849, 0.5789544130101849, 0.5789544130101849}
+// {-0.5789544130101849, -0.5789544130101849, -0.5789544130101849, -0.5789544130101849}
+// {-0.5789544130101849, -0.5789544130101849, -0.5789544130101849, -0.5789544130101849}
+// {0.6, 0.6, 0.6, 0.6}
+// {2.0, 2.0, 2.0, 2.0}
+// {4.0, 4.0, 4.0, 4.0}
+// {1.0, 1.0, 1.0, 1.0}
+// {2.5, 2.5, 2.5, 2.5}
+// ""
+// NaN
+// "Error: x not defined at time 1.5 (startTime=0, stopTime=1).
+// "
+// NaN
+// "Error: p not found in ValResultFormats_c_res.csv
+// "
+// endResult

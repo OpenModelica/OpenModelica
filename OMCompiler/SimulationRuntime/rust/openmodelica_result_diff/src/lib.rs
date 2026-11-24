@@ -8,13 +8,16 @@
 //!
 //! | | tube | sized by | tested on |
 //! | --- | --- | --- | --- |
-//! | [`Algorithm::Rectangle`] | rectangles per reference point ([`rectangle`]) | [`tube_size`] | the curve under test |
-//! | [`Algorithm::Ellipse`] | ellipses per reference point ([`ellipse`]) | [`tube_size`] | the curve under test |
+//! | [`Algorithm::Rectangle`] | rectangles per reference point ([`rectangle`]) | [`tube_size`] | the curve under test, or the reference with [`Settings::resample`] |
+//! | [`Algorithm::Ellipse`] | ellipses per reference point ([`ellipse`]) | [`tube_size`] | the curve under test, or the reference with [`Settings::resample`] |
 //! | [`Algorithm::Ellipse2014`] | the 2014 ellipse ([`ellipse2014`]) | `tolerance * (tStop - tStart)` | the reference, plus `relTol` and event handling |
 //!
 //! `Rectangle` is what csv-compare itself uses; `Ellipse2014` is what omc's
 //! `diffSimulationResults` uses. They do disagree on real files, mostly around
 //! events and near-zero signals.
+//!
+//! A reference without a time span (startTime = stopTime) has no tube; all
+//! algorithms then check its points with `relTol` and an absolute tolerance.
 
 pub mod ellipse;
 pub mod ellipse2014;
@@ -64,6 +67,17 @@ impl Algorithm {
         }
     }
 
+    /// The numbering of C `omc_result_algorithm` and of
+    /// `OpenModelica.Scripting.TubeAlgorithm`, from 0. Anything else is
+    /// `Ellipse2014`.
+    pub fn from_index(i: i32) -> Algorithm {
+        match i {
+            0 => Algorithm::Rectangle,
+            1 => Algorithm::Ellipse,
+            _ => Algorithm::Ellipse2014,
+        }
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             Algorithm::Rectangle => "rectangle",
@@ -81,9 +95,10 @@ pub struct Settings {
     /// Tube width in x, relative to the time span: csv-compare's `--tolerance`,
     /// omc's `rangeDelta`.
     pub tolerance: f64,
-    /// `Ellipse2014` only, omc's `relTol`.
+    /// omc's `relTol`: `Ellipse2014`, and every algorithm for a reference
+    /// without a time span.
     pub reltol: f64,
-    /// `Ellipse2014` only, omc's `relTolDiffMinMax`.
+    /// omc's `relTolDiffMinMax`: as `reltol`.
     pub reltol_diff_min_max: f64,
     /// `Rectangle`/`Ellipse` only: floor on the tube height, standing in for the
     /// `nominal` attribute a result file does not carry.
@@ -91,6 +106,11 @@ pub struct Settings {
     /// `Rectangle`/`Ellipse` only: `SetFormerBaseAndRatio`, which is what
     /// csv-compare uses, rather than `SetStandardBaseAndRatio`.
     pub legacy_base: bool,
+    /// `Rectangle`/`Ellipse` only: test the curve under test on the reference
+    /// timeline, as `Ellipse2014` does, instead of on its own points, and only
+    /// up to the left limit at the stop time. csv-compare does neither, but
+    /// there both results come from the same tool and output points.
+    pub resample: bool,
 }
 
 impl Default for Settings {
@@ -102,6 +122,7 @@ impl Default for Settings {
             reltol_diff_min_max: 1e-4,
             nominal_value: DEFAULT_NOMINAL_VALUE,
             legacy_base: true,
+            resample: false,
         }
     }
 }
@@ -111,6 +132,9 @@ impl Default for Settings {
 /// the curves to plot.
 pub struct Comparison {
     pub algorithm: Algorithm,
+    /// `time` is the start of the reference timeline and `values` the curve
+    /// under test interpolated onto it.
+    pub resampled: bool,
     /// As compared: the ellipse algorithms nudge its time to stay increasing.
     pub reference: Curve,
     pub lower: Curve,
@@ -134,6 +158,77 @@ impl Comparison {
     }
 }
 
+/// A reference without a time span has no tube: check each of its points with
+/// `reltol` and an abstol of `reltol_diff_min_max²`, the floor [`cmp_data_tubes`]
+/// uses for a flat signal. Equal times are an event, so the rows of the curve
+/// under test at that time are taken in order.
+fn compare_points(
+    time: &[f64],
+    values: &[f64],
+    reftime: &[f64],
+    refvalues: &[f64],
+    settings: &Settings,
+) -> Result<Comparison, String> {
+    let rows = time
+        .iter()
+        .take_while(|t| almost_equal_default(**t, reftime[0]))
+        .count();
+    if rows == 0 {
+        return Err("the curve under test has no point at the time of the reference".to_owned());
+    }
+    let abstol = settings.reltol_diff_min_max * settings.reltol_diff_min_max;
+    let tested: Vec<f64> = (0..refvalues.len()).map(|i| values[i.min(rows - 1)]).collect();
+    let margin: Vec<f64> = refvalues
+        .iter()
+        .map(|v| (v * settings.reltol).abs().max(abstol))
+        .collect();
+    let low: Vec<f64> = refvalues.iter().zip(&margin).map(|(v, m)| v - m).collect();
+    let high: Vec<f64> = refvalues.iter().zip(&margin).map(|(v, m)| v + m).collect();
+    let error: Vec<f64> = tested
+        .iter()
+        .zip(low.iter().zip(&high))
+        .map(|(v, (l, h))| {
+            if v < l {
+                l - v
+            } else if v > h {
+                v - h
+            } else if v.is_nan() {
+                f64::INFINITY
+            } else {
+                0.0
+            }
+        })
+        .collect();
+    let error_count = error.iter().filter(|e| **e > 0.0).count();
+    let peak = tested.iter().fold(0.0f64, |m, v| m.max(v.abs()));
+    let delta_error = error.iter().sum::<f64>() / (1e-3 + peak);
+    let reftime = reftime.to_vec();
+    Ok(Comparison {
+        algorithm: settings.algorithm,
+        resampled: true,
+        reference: Curve {
+            x: reftime.clone(),
+            y: refvalues.to_vec(),
+        },
+        lower: Curve {
+            x: reftime.clone(),
+            y: low.clone(),
+        },
+        upper: Curve {
+            x: reftime.clone(),
+            y: high.clone(),
+        },
+        time: reftime,
+        values: tested,
+        low,
+        high,
+        error,
+        error_count,
+        delta_error,
+        abstol,
+    })
+}
+
 /// Compare `(time, values)` against the reference `(reftime, refvalues)`.
 pub fn compare(
     time: &[f64],
@@ -152,12 +247,18 @@ pub fn compare(
     if n == 0 {
         return Err("the curve under test is empty".to_owned());
     }
-    if settings.algorithm == Algorithm::Ellipse2014 && n < 2 {
-        // calibrateValues resamples from this curve and needs a segment; the C
-        // reads out of bounds here instead.
-        return Err("the curve under test needs at least two points".to_owned());
+    if reftime[0] == reftime[nref - 1] {
+        return compare_points(&time[..n], &values[..n], &reftime[..nref], &refvalues[..nref], settings);
     }
-    let (time, values) = (&time[..n], &values[..n]);
+    // calibrateValues needs a segment: take one row as that row twice.
+    let (one_time, one_value);
+    let (time, values) = if n == 1 && (settings.algorithm == Algorithm::Ellipse2014 || settings.resample) {
+        one_time = [time[0]; 2];
+        one_value = [values[0]; 2];
+        (&one_time[..], &one_value[..])
+    } else {
+        (&time[..n], &values[..n])
+    };
     let mut reftime = reftime[..nref].to_vec();
     let refvalues = &refvalues[..nref];
 
@@ -181,6 +282,7 @@ pub fn compare(
         let delta_error = validate::delta_error(&time, &cmp.calibrated, &error);
         return Ok(Comparison {
             algorithm: settings.algorithm,
+            resampled: true,
             reference: Curve {
                 x: reftime.clone(),
                 y: refvalues.to_vec(),
@@ -204,6 +306,14 @@ pub fn compare(
         });
     }
 
+    let refvalues = if settings.resample {
+        let k = ellipse2014::up_to_stop_time(&reftime, n);
+        reftime.truncate(k);
+        &refvalues[..k]
+    } else {
+        refvalues
+    };
+
     let mut size = if settings.legacy_base {
         TubeSize::legacy(&reftime, refvalues, settings.nominal_value)
     } else {
@@ -216,6 +326,13 @@ pub fn compare(
         _ => ellipse::ellipse_tube(&mut reftime, refvalues, &size),
     };
 
+    let resampled;
+    let (time, values) = if settings.resample {
+        resampled = ellipse2014::resample(&reftime, time, values);
+        (&reftime[..resampled.len()], &resampled[..])
+    } else {
+        (time, values)
+    };
     let v = validate::validate(time, values, &lower, &upper);
     let n = v.n;
     let time = time[..n.min(time.len())].to_vec();
@@ -223,6 +340,7 @@ pub fn compare(
     let delta_error = validate::delta_error(&time, &values, &v.error);
     Ok(Comparison {
         algorithm: settings.algorithm,
+        resampled: settings.resample,
         reference: Curve {
             x: reftime,
             y: refvalues.to_vec(),

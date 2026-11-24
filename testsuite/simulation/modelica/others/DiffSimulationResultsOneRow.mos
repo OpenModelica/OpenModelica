@@ -1,0 +1,30 @@
+// name: DiffSimulationResultsOneRow
+// keywords: diffSimulationResults startTime stopTime
+// status: correct
+// teardown_command: rm -f DiffSimulationResultsOneRow_ref.csv DiffSimulationResultsOneRow_res.csv DiffSimulationResultsOneRow_off.csv
+//
+// A run with startTime = stopTime can write one row, where the C runtime
+// writes two (start and terminal). A reference without a time span has no
+// tube, so its points are checked with relTol and an absolute tolerance.
+
+writeFile("DiffSimulationResultsOneRow_ref.csv", "time,x\n0,1\n0,1\n");
+writeFile("DiffSimulationResultsOneRow_res.csv", "time,x\n0,1.0005\n");
+writeFile("DiffSimulationResultsOneRow_off.csv", "time,x\n0,1.01\n");
+diffSimulationResults("DiffSimulationResultsOneRow_res.csv", "DiffSimulationResultsOneRow_ref.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.ellipse2014); getErrorString();
+diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.ellipse2014); getErrorString();
+diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", "", tube=OpenModelica.Scripting.TubeAlgorithm.rectangle); getErrorString();
+diffSimulationResults("DiffSimulationResultsOneRow_off.csv", "DiffSimulationResultsOneRow_ref.csv", "", relTol=0.02, tube=OpenModelica.Scripting.TubeAlgorithm.ellipse2014); getErrorString();
+
+// Result:
+// true
+// true
+// true
+// (true, {})
+// ""
+// (false, {"x"})
+// ""
+// (false, {"x"})
+// ""
+// (true, {})
+// ""
+// endResult

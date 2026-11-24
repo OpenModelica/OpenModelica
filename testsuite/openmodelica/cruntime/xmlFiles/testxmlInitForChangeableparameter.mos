@@ -79,7 +79,7 @@ readFile("testParameters_init.tmp.xml");
 //     stopTime       = \"1\"
 //     stepSize       = \"0.002\"
 //     tolerance      = \"1e-06\"
-//     solver         = \"dassl\"
+//     solver         = \"auto\"
 //     outputFormat   = \"mat\"
 //     variableFilter = \".*\" />
 //

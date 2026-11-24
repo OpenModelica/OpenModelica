@@ -1,0 +1,33 @@
+// name:     ConnectionAnnotation
+// keywords: getNthConnectionAnnotation
+// status:   correct
+//
+// Checks the evaluation of connection annotations: references to parameters,
+// vendor-specific elements and elements that are not in the record.
+//
+
+loadString("
+model M
+  connector C Real e; flow Real f; end C;
+  parameter Real x = 5;
+  C a, b, c, d;
+equation
+  connect(a, b) annotation(Line(points = {{x, 0}, {2*x, 10}}, color = {255, 0, 0}));
+  connect(b, c) annotation(Line(points = {{0, 0}, {1, 1}}, __Vendor_style = 1));
+  connect(c, d) annotation(Line(points = {{0, 0}, {1, 1}}, nosuch = 3));
+end M;
+"); getErrorString();
+getNthConnectionAnnotation(M, 1); getErrorString();
+getNthConnectionAnnotation(M, 2); getErrorString();
+getNthConnectionAnnotation(M, 3); getErrorString();
+
+// Result:
+// true
+// ""
+// {Line(true, {0.0, 0.0}, 0.0, {{5.0, 0.0}, {10.0, 10.0}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, Smooth.None)}
+// ""
+// {Line(true, {0.0, 0.0}, 0.0, {{0.0, 0.0}, {1.0, 1.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, Smooth.None)}
+// ""
+// {Line(error)}
+// ""
+// endResult

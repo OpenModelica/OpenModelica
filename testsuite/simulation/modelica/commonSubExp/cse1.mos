@@ -56,8 +56,8 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (6, 6)
 // ========================================
-// 1/1 (1): $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0 = v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 + (-v3.$pDERNLSJac0.dummyVarNLSJac0) * source - v7.SeedNLSJac0   [dynamic |0|0|0|0|]
-// 2/2 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + v2.$pDERNLSJac0.dummyVarNLSJac0 + v7.SeedNLSJac0 - v3.$pDERNLSJac0.dummyVarNLSJac0   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0 = v2.$pDERNLSJac0.dummyVarNLSJac0 + v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 - v3.$pDERNLSJac0.dummyVarNLSJac0 * source - v7.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = v7.SeedNLSJac0 + v2.$pDERNLSJac0.dummyVarNLSJac0 + 2.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) - v3.$pDERNLSJac0.dummyVarNLSJac0   [dynamic |0|0|0|0|]
 // 3/3 (1): 3.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + (-7.0) * v2.$pDERNLSJac0.dummyVarNLSJac0 + (-2.0) * v3.$pDERNLSJac0.dummyVarNLSJac0 + 3.0 * source * v7.SeedNLSJac0 = 0.0   [dynamic |0|0|0|0|]
 // 4/4 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic |0|0|0|0|]
 // 5/5 (1): $cse2 = sin(v1)   [unknown |0|0|0|0|]
@@ -95,7 +95,7 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = v5.$pDERNLSJac1.dummyVarNLSJac1 + v6 * $cse3 * v6.SeedNLSJac1 * source + v6.SeedNLSJac1 * $cse4 * source   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = v6 * $cse3 * v6.SeedNLSJac1 * source + v6.SeedNLSJac1 * $cse4 * source + v5.$pDERNLSJac1.dummyVarNLSJac1   [dynamic |0|0|0|0|]
 // 2/2 (1): 3.0 * v5.$pDERNLSJac1.dummyVarNLSJac1 + (-v6) * $cse3 * v6.SeedNLSJac1 - v6.SeedNLSJac1 * $cse4 = 0.0   [dynamic |0|0|0|0|]
 // 3/3 (1): $cse4 = sin(v6)   [unknown |0|0|0|0|]
 // 4/4 (1): $cse3 = cos(v6)   [unknown |0|0|0|0|]
@@ -232,7 +232,7 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 = v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source + v5.$pDERNLSJac4.dummyVarNLSJac4   [dynamic |0|0|0|0|]
 // 2/2 (1): 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6.SeedNLSJac4 * $cse6 = 0.0   [dynamic |0|0|0|0|]
 // 3/3 (1): $cse6.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v6.SeedNLSJac4   [unknown |0|0|0|0|]
 // 4/4 (1): $cse8 = cos(v6)   [unknown |0|0|0|0|]
@@ -251,7 +251,7 @@ simulate(Tearing15); getErrorString();
 // 1: $cse8 - cos(v6) - {}
 // record SimulationResult
 //     resultFile = "Tearing15_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Tearing15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Tearing15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -1835,10 +1835,10 @@ pub extern "C" fn rt_invalid_root(base: f64, exp: f64, loc: u32) {
 }
 
 /// Scalar `base ^ exp` for a non-integer-literal exponent, replicating the C
-/// target's inlined generic real-power semantics so the result stays
-/// byte-identical. A negative base with an (effectively) integer exponent or an
-/// odd-root fractional exponent gives a real value; any other negative-base
-/// fractional exponent is an "invalid root"; and any nan/inf result is rejected.
+/// runtime's `real_real_pow` so the result stays byte-identical. A negative
+/// base with an (effectively) integer exponent or an odd-root fractional
+/// exponent gives a real value; any other negative-base fractional exponent is
+/// an "invalid root"; and any nan/inf result is rejected.
 /// The error cases go through [`rt_invalid_root`], as C's `throwStreamPrint`
 /// does: fatal unless a nonlinear solver can back off.
 #[unsafe(no_mangle)]
@@ -2089,12 +2089,13 @@ pub extern "C" fn rt_array_extreme_i32(obj: u32, want_max: i32) -> i32 {
     acc
 }
 
-/// `min(a)`/`max(a)` over a Real array (see `rt_array_extreme_i32`).
+/// `min(a)`/`max(a)` over a Real array (see `rt_array_extreme_i32`). An empty
+/// array gives the greatest (`min`) or least (`max`) finite Real.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_extreme_f64(obj: u32, want_max: i32) -> f64 {
     let total = rt_array_total(obj);
     if total == 0 {
-        trap();
+        return if want_max != 0 { -f64::MAX } else { f64::MAX };
     }
     let data = arr_data(obj);
     let mut acc = unsafe { load_f64(data) };
@@ -2694,13 +2695,56 @@ pub extern "C" fn rt_bool_string(b: i32) -> u32 {
 /// C target (`ryu_to_hr` below is the same algorithm).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_real_string(r: f64) -> u32 {
+    new_str_from(&real_text(r))
+}
+
+fn real_text(r: f64) -> String {
     if r.is_infinite() {
-        return new_str_from(if r < 0.0 { "-inf" } else { "inf" });
+        return (if r < 0.0 { "-inf" } else { "inf" }).to_string();
     }
     if r.is_nan() {
-        return new_str_from("NaN");
+        return "NaN".to_string();
     }
-    new_str_from(&ryu_to_hr(&format!("{r:e}"), true))
+    ryu_to_hr(&format!("{r:e}"), true)
+}
+
+/// The owned String `s` with `text` inserted at byte `at`; consumes `s`.
+fn str_insert(s: u32, at: u32, text: &[u8]) -> u32 {
+    let old = unsafe { str_bytes(s) };
+    let at = (at as usize).min(old.len());
+    let obj = rt_str_new((old.len() + text.len()) as u32);
+    unsafe {
+        let dst = rt_str_data(obj) as *mut u8;
+        core::ptr::copy_nonoverlapping(old.as_ptr(), dst, at);
+        core::ptr::copy_nonoverlapping(text.as_ptr(), dst.add(at), text.len());
+        core::ptr::copy_nonoverlapping(old.as_ptr().add(at), dst.add(at + text.len()), old.len() - at);
+    }
+    rt_release(s);
+    obj
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_real(s: u32, at: u32, r: f64) -> u32 {
+    str_insert(s, at, real_text(r).as_bytes())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_int(s: u32, at: u32, i: i32) -> u32 {
+    str_insert(s, at, format!("{i}").as_bytes())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_bool(s: u32, at: u32, b: i32) -> u32 {
+    let text: &[u8] = if b != 0 { b"true" } else { b"false" };
+    str_insert(s, at, text)
+}
+
+/// Consumes both Strings.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_str(s: u32, at: u32, t: u32) -> u32 {
+    let obj = str_insert(s, at, unsafe { str_bytes(t) });
+    rt_release(t);
+    obj
 }
 
 /// `String(r, significantDigits, minimumLength, leftJustified)` for a Real.

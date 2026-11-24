@@ -125,6 +125,7 @@ getErrorString();
 // simplify(tan(x) * cos(x)) = sin(x)
 // simplify(cosh(x) ^ 2.0 + (-sinh(x) ^ 2.0)) = 1.0
 // simplify((-sinh(x) ^ 2.0) + cosh(x) ^ 2.0) = 1.0
+// simplify(cosh(x) ^ 2.0 - sinh(x) ^ 2.0) = 1.0
 // simplify(cos(x) * tan(x)) = sin(x)
 // simplify(tan(x) * cos(x)) = sin(x)
 // simplify(x + (-y)) = x - y
@@ -155,14 +156,20 @@ getErrorString();
 // simplify(log(1.0 / x)) = -log(x)
 // simplify(log(sqrt(x))) = 0.5 * log(x)
 // simplify(log(1.0 / x) - log(x) + 4.0 * log(sqrt(x))) = (-log(x)) - log(x) + 2.0 * log(x)
-// simplify(exp(log(x) * y)) = x ^ y
-// simplify(exp(z * log(x) * y)) = x ^ (y * z)
-// simplify(exp(log(x) / y)) = x ^ (1.0 / y)
-// simplify(exp(z * log(x) * y) * exp(log(x) * y)) = x ^ (y * (1.0 + z))
-// simplify(exp(z * log(x) * y / w)) = x ^ (y * z / w)
-// simplify(exp(z * log(x) * y) * exp(log(x) * y) * exp(z * log(x) * y / w)) = x ^ (y * (1.0 + z) + y * z / w)
-// simplify(exp(z * (-log(x) * y) / w)) = x ^ ((-y) * z / w)
-// simplify(exp(z * (-log(x) * y) / w) ^ exp(z * (-log(x) * y) / w)) = x ^ ((-y) * z / w * x ^ ((-y) * z / w))
+// simplify(log(exp(x))) = x
+// simplify(exp(log(x))) = exp(log(x))
+// simplify(exp(0.5 * log(x))) = x ^ 0.5
+// simplify(exp(log(sqrt(x)))) = x ^ 0.5
+// simplify(exp(0.3333333333333333 * log(x))) = exp(0.3333333333333333 * log(x))
+// simplify(exp(2.0 * log(abs(x)))) = abs(x) ^ 2.0
+// simplify(exp(log(x) * y)) = exp(log(x) * y)
+// simplify(exp(z * log(x) * y)) = exp(z * log(x) * y)
+// simplify(exp(log(x) / y)) = exp(log(x) / y)
+// simplify(exp(z * log(x) * y) * exp(log(x) * y)) = exp(log(x) * y * (1.0 + z))
+// simplify(exp(z * log(x) * y / w)) = exp(z * log(x) * y / w)
+// simplify(exp(z * log(x) * y) * exp(log(x) * y) * exp(z * log(x) * y / w)) = exp(log(x) * y * (1.0 + z) + z * log(x) * y / w)
+// simplify(exp(z * (-log(x) * y) / w)) = exp(z * (-log(x)) * y / w)
+// simplify(exp(z * (-log(x) * y) / w) ^ exp(z * (-log(x) * y) / w)) = exp(z * (-log(x)) * y / w) ^ exp(z * (-log(x)) * y / w)
 // simplify(if abs(x) <= 0.0 then x else y) = if abs(x) <= 0.0 then x else y
 // simplify(if 0.0 < abs(x) then x else y) = if 0.0 < abs(x) then x else y
 // simplify(if abs(x) >= 0.0 then x else y) = x

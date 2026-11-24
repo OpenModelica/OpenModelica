@@ -33,7 +33,7 @@ pub fn isPresent<T>(_ident: &T) -> Result<bool> {
 
 /// Fail function - unconditionally raises an error.
 pub fn fail() -> Result<()> {
-    return Err("fail() was called - unrecoverable error")
+    return Err("fail() was called - unrecoverable error");
 }
 
 #[cfg(test)]
@@ -41,9 +41,9 @@ pub fn fail() -> Result<()> {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod misc_builtin_tests {
         use super::*;
 

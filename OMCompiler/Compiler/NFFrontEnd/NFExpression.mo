@@ -1250,12 +1250,12 @@ public
       // Integer can be cast to Real.
       case INTEGER()
         then if Type.isReal(ety) then REAL(intReal(exp.value))
-             elseif Type.isEnumeration(ety) and Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration") // Integer can be cast to Enumeration with non-standard Modelica
+             elseif Type.isEnumeration(ety) and Error.nonStandardAccepted("nonStdIntegersAsEnumeration") // Integer can be cast to Enumeration with non-standard Modelica
              then ENUM_LITERAL(ety, Type.nthEnumLiteral(ety, exp.value), exp.value)
              else typeCastGeneric(exp, ety);
 
       // Enumeration can be cast to Integer with non-standard Modelica
-      case ENUM_LITERAL() guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+      case ENUM_LITERAL() guard Error.nonStandardAccepted("nonStdEnumerationAsIntegers")
         then if Type.isInteger(ety) then INTEGER(toInteger(exp)) else typeCastGeneric(exp, ety);
 
       // Boolean can be cast to Real (only if -d=nfAPI is on)
@@ -1630,6 +1630,23 @@ public
     output Boolean b = (not contains(range, isResizableCref)) and 0 >= Dimension.size(Type.nthDimension(typeOf(range), 1), false);
   end emptyRange;
 
+  function isFullRange
+    "true if the range is 1:size(dim) with step 1."
+    input Expression range;
+    input Dimension dim;
+    output Boolean b;
+  algorithm
+    b := match (range, dim)
+      case (RANGE(start = INTEGER(1)), Dimension.INTEGER())
+        then (isNone(range.step) or isOne(Util.getOption(range.step))) and isEqual(range.stop, INTEGER(dim.size));
+      case (RANGE(start = INTEGER(1)), Dimension.RESIZABLE())
+        then (isNone(range.step) or isOne(Util.getOption(range.step))) and Dimension.isEqualResizableExp(range.stop, dim.exp);
+      case (RANGE(start = INTEGER(1)), Dimension.EXP())
+        then (isNone(range.step) or isOne(Util.getOption(range.step))) and isEqual(range.stop, dim.exp);
+      else false;
+    end match;
+  end isFullRange;
+
   function rangeSize
     input Expression range "has to be RANGE()!";
     input Boolean resize = false;
@@ -1682,6 +1699,9 @@ public
 
       case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
         then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
+
+      case MULTARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
+        then applySubscriptMultary(subscript, exp, restSubscripts, applyToScope);
 
       case UNARY() guard Type.isArray(Operator.typeOf(exp.operator))
         algorithm
@@ -2123,6 +2143,39 @@ public
     end match;
   end isCheapSubscript;
 
+  function applySubscriptMultary
+    "Moves the subscripts into the arguments of an element-wise sum or product:
+     (a + b - c)[i] = a[i] + b[i] - c[i]."
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
+    output Expression outExp;
+  protected
+    import NFOperator.Op;
+    list<Expression> args, inv_args, all_args;
+    Operator op;
+  algorithm
+    MULTARY(args, inv_args, op) := exp;
+    all_args := listAppend(args, inv_args);
+
+    if not (Type.isArray(op.ty) and (op.op == Op.ADD or op.op == Op.ADD_EW or op.op == Op.MUL_EW))
+       or listEmpty(all_args) or List.any(all_args, isScalar) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
+    args := list(applySubscript(subscript, e, restSubscripts, applyToScope) for e in args);
+    inv_args := list(applySubscript(subscript, e, restSubscripts, applyToScope) for e in inv_args);
+    op.ty := typeOf(listHead(if listEmpty(args) then inv_args else args));
+
+    if Type.isScalar(op.ty) then
+      op.op := if op.op == Op.MUL_EW then Op.MUL else Op.ADD;
+    end if;
+
+    outExp := MULTARY(args, inv_args, op);
+  end applySubscriptMultary;
+
   function applySubscriptBinary
     "Moves the subscripts into the operands of an element-wise operator:
      (a .* b)[i] = a[i] * b[i], (a * s)[i] = a[i] * s."
@@ -2291,6 +2344,31 @@ public
   algorithm
     res := contains(exp, function containsIterator2(iterator = iterator));
   end containsIterator;
+
+  function uniformArrayElement
+    "The value of all elements of an array expression if they are all the same."
+    input Expression exp;
+    output Option<Expression> elem;
+  protected
+    function iteratorOccursIn
+      input tuple<InstNode, Expression> iter;
+      input Expression exp;
+      output Boolean b = containsIterator(exp, Util.tuple21(iter));
+    end iteratorOccursIn;
+  algorithm
+    elem := match exp
+      local
+        Expression body;
+        list<tuple<InstNode, Expression>> iters;
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = iters))
+        guard not List.any(iters, function iteratorOccursIn(exp = body))
+        then uniformArrayElement(body);
+      case CALL() guard Call.isNamed(exp.call, "fill")
+        then uniformArrayElement(listHead(Call.arguments(exp.call)));
+      case _ guard not Type.isArray(typeOf(exp)) then SOME(exp);
+      else NONE();
+    end match;
+  end uniformArrayElement;
 
   function isIteratorNamed
     input Expression exp;

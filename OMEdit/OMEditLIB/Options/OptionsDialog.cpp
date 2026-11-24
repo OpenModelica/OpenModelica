@@ -250,10 +250,8 @@ void OptionsDialog::readGeneralSettings()
   }
   // read the working directory
   if (mpSettings->contains("workingDirectory")) {
-    const QString workingDirectory = mpSettings->value("workingDirectory").toString();
-    if (!workingDirectory.isEmpty() && !MainWindow::instance()->getOMCProxy()->changeDirectory(workingDirectory).isEmpty()) {
-      mpGeneralSettingsPage->setWorkingDirectory(workingDirectory);
-    }
+    mpGeneralSettingsPage->setWorkingDirectory(mpSettings->value("workingDirectory").toString());
+    MainWindow::instance()->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
   } else {
     mpGeneralSettingsPage->setWorkingDirectory("");
   }
@@ -365,6 +363,12 @@ void OptionsDialog::readGeneralSettings()
     mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->setChecked(mpSettings->value("synchronizeWithModelWidget").toBool());
   } else {
     mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->setChecked(OptionsDefaults::GeneralSettings::synchronizeWithModelWidget);
+  }
+  // read reload library on file change
+  if (mpSettings->contains("reloadLibraryOnFileChange")) {
+    mpGeneralSettingsPage->getReloadLibraryOnFileChangeCheckBox()->setChecked(mpSettings->value("reloadLibraryOnFileChange").toBool());
+  } else {
+    mpGeneralSettingsPage->getReloadLibraryOnFileChangeCheckBox()->setChecked(OptionsDefaults::GeneralSettings::reloadLibraryOnFileChange);
   }
   // read auto save
   if (mpSettings->contains("autoSave/enable")) {
@@ -1627,13 +1631,13 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("language", mpGeneralSettingsPage->getLanguageComboBox()->itemData(mpGeneralSettingsPage->getLanguageComboBox()->currentIndex()).toLocale().name());
   }
   // save working directory
-  const QString workingDirectory = mpGeneralSettingsPage->getWorkingDirectory();
+  const QString workingDirectory = mpGeneralSettingsPage->mpWorkingDirectoryTextBox->text();
   if (workingDirectory.isEmpty() || workingDirectory.compare(OptionsDefaults::GeneralSettings::workingDirectory) == 0) {
     mpSettings->remove("workingDirectory");
-    MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDefaults::GeneralSettings::workingDirectory);
-  } else if (!MainWindow::instance()->getOMCProxy()->changeDirectory(workingDirectory).isEmpty()) {
+  } else {
     mpSettings->setValue("workingDirectory", workingDirectory);
   }
+  MainWindow::instance()->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
   // save toolbar icon size
   int toolBarIconSize = mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->value();
   if (toolBarIconSize == OptionsDefaults::GeneralSettings::toolBarIconSize) {
@@ -1744,6 +1748,13 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("synchronizeWithModelWidget", synchronizeWithModelWidget);
   }
   MainWindow::instance()->getLibraryWidget()->getTreeSearchFilters()->getScrollToActiveButton()->setVisible(!synchronizeWithModelWidget);
+  // save reload library on file change
+  bool reloadLibraryOnFileChange = mpGeneralSettingsPage->getReloadLibraryOnFileChangeCheckBox()->isChecked();
+  if (reloadLibraryOnFileChange == OptionsDefaults::GeneralSettings::reloadLibraryOnFileChange) {
+    mpSettings->remove("reloadLibraryOnFileChange");
+  } else {
+    mpSettings->setValue("reloadLibraryOnFileChange", reloadLibraryOnFileChange);
+  }
   // save auto save
   bool enableAutoSave = mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked();
   if (enableAutoSave == OptionsDefaults::GeneralSettings::enableAutoSave) {
@@ -3698,6 +3709,17 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpWorkingDirectoryBrowseButton->setAutoDefault(false);
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
+  mpWorkingDirectoryWarningLabel = new Label;
+  mpWorkingDirectoryWarningLabel->setTextFormat(Qt::PlainText);
+  mpWorkingDirectoryWarningLabel->setWordWrap(true);
+  mpWorkingDirectoryWarningLabel->setMargin(4);
+  mpWorkingDirectoryWarningLabel->setAutoFillBackground(true);
+  QPalette warningPalette = mpWorkingDirectoryWarningLabel->palette();
+  warningPalette.setColor(QPalette::Window, Style::warningBackgroundColor());
+  warningPalette.setColor(QPalette::WindowText, Style::warningTextColor());
+  mpWorkingDirectoryWarningLabel->setPalette(warningPalette);
+  mpWorkingDirectoryWarningLabel->hide();
+  connect(mpWorkingDirectoryTextBox, SIGNAL(textChanged(QString)), SLOT(updateWorkingDirectoryWarning()));
   // toolbar icon size
   mpToolbarIconSizeLabel = new Label(tr("Toolbar Icon Size: *"));
   mpToolbarIconSizeSpinBox = new SpinBox;
@@ -3759,23 +3781,24 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pGeneralSettingsLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
   pGeneralSettingsLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
   pGeneralSettingsLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
-  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeLabel, 2, 0);
-  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 2, 1, 1, 2);
-  pGeneralSettingsLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpTerminalCommandLabel, 4, 0);
-  pGeneralSettingsLayout->addWidget(mpTerminalCommandTextBox, 4, 1);
-  pGeneralSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 4, 2);
-  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
-  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
-  pGeneralSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsLabel, 7, 0);
-  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
-  pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpEnableInstanceApiNoJsonCheckBox, 10, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 11, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpColorSchemeLabel, 12, 0);
-  pGeneralSettingsLayout->addWidget(mpColorSchemeComboBox, 12, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpWorkingDirectoryWarningLabel, 2, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeLabel, 3, 0);
+  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 3, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpPreserveUserCustomizations, 4, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandLabel, 5, 0);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandTextBox, 5, 1);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 5, 2);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 6, 0);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 6, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 7, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsLabel, 8, 0);
+  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 8, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 9, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 10, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpEnableInstanceApiNoJsonCheckBox, 11, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 12, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpColorSchemeLabel, 13, 0);
+  pGeneralSettingsLayout->addWidget(mpColorSchemeComboBox, 13, 1, 1, 2);
   mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Library Browser group box
   mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));
@@ -3796,6 +3819,11 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // synchronize library browser with ModelWidget
   mpSynchronizeWithModelWidgetCheckBox = new QCheckBox(tr("Synchronize with Model Widget"));
   mpSynchronizeWithModelWidgetCheckBox->setChecked(OptionsDefaults::GeneralSettings::synchronizeWithModelWidget);
+  // reload libraries when files change on disk
+  mpReloadLibraryOnFileChangeCheckBox = new QCheckBox(tr("Reload libraries when files change on disk"));
+  mpReloadLibraryOnFileChangeCheckBox->setToolTip(tr("Reload a loaded library when its files are changed outside OMEdit. "
+                                                     "When unchecked, OMEdit asks before reloading."));
+  mpReloadLibraryOnFileChangeCheckBox->setChecked(OptionsDefaults::GeneralSettings::reloadLibraryOnFileChange);
   // Library browser group box layout
   QGridLayout *pLibraryBrowserLayout = new QGridLayout;
   pLibraryBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3807,6 +3835,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibraryBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
   pLibraryBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
   pLibraryBrowserLayout->addWidget(mpSynchronizeWithModelWidgetCheckBox, 4, 0, 1, 2);
+  pLibraryBrowserLayout->addWidget(mpReloadLibraryOnFileChangeCheckBox, 5, 0, 1, 2);
   mpLibraryBrowserGroupBox->setLayout(pLibraryBrowserLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
@@ -3870,16 +3899,64 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
 
 /*!
  * \brief GeneralSettingsPage::getWorkingDirectory
- * Returns the working directory.
+ * Returns the working directory, or the default one if the given directory cannot be used.
  * \return
  */
 QString GeneralSettingsPage::getWorkingDirectory()
 {
-  if (mpWorkingDirectoryTextBox->text().isEmpty()) {
+  if (mpWorkingDirectoryTextBox->text().isEmpty() || !workingDirectoryWarning().isEmpty()) {
     return mpWorkingDirectoryTextBox->placeholderText();
   } else {
     return mpWorkingDirectoryTextBox->text();
   }
+}
+
+/*!
+ * \brief GeneralSettingsPage::warnIfWorkingDirectoryUnusable
+ * Adds a warning to the Messages Browser if the given working directory cannot be used.
+ */
+void GeneralSettingsPage::warnIfWorkingDirectoryUnusable()
+{
+  const QString warning = workingDirectoryWarning();
+  if (!warning.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("%1 Change it in <b>%2->General->Working Directory</b>.")
+                                                          .arg(warning, Helper::toolsOptionsPath), Helper::scriptingKind, Helper::warningLevel));
+  }
+}
+
+/*!
+ * \brief GeneralSettingsPage::workingDirectoryWarning
+ * Returns why the given working directory cannot be used, or an empty string.
+ * \return
+ */
+QString GeneralSettingsPage::workingDirectoryWarning() const
+{
+  const QString directory = mpWorkingDirectoryTextBox->text();
+  if (directory.isEmpty()) {
+    return QString();
+  }
+  const QString defaultDirectory = mpWorkingDirectoryTextBox->placeholderText();
+  if (QDir::isRelativePath(directory)) {
+    return tr("The working directory %1 is not an absolute path. OMEdit uses %2 instead.").arg(directory, defaultDirectory);
+  }
+#if !defined(__EMSCRIPTEN__)
+  // The web file system creates a directory when a file is written to it.
+  if (!QFileInfo(directory).isDir()) {
+    return tr("The working directory %1 does not exist. OMEdit uses %2 instead.").arg(directory, defaultDirectory);
+  }
+#endif
+  return QString();
+}
+
+/*!
+ * \brief GeneralSettingsPage::updateWorkingDirectoryWarning
+ * Shows or hides the warning below the working directory.
+ */
+void GeneralSettingsPage::updateWorkingDirectoryWarning()
+{
+  const QString warning = workingDirectoryWarning();
+  mpWorkingDirectoryWarningLabel->setText(warning);
+  mpWorkingDirectoryWarningLabel->setVisible(!warning.isEmpty());
 }
 
 /*!
@@ -5261,7 +5338,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   pModelingViewModeGroupBox->setLayout(modelingViewModeLayout);
   // Default View
   QGroupBox *pDefaultViewGroupBox = new QGroupBox(tr("Default View"));
-  pDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
+  pDefaultViewGroupBox->setToolTip(tr("This setting is used when no preferredView annotation is defined."));
   mpIconViewRadioButton = new QRadioButton(Helper::iconView);
   mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
   mpDiagramViewRadioButton->setChecked(true);
@@ -5451,7 +5528,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpIgnoreSimulationFlagsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_simulationFlags annotation"));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
-  mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
+  mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will affect the debugger functionality."));
   mpSaveClassBeforeSimulationCheckBox->setChecked(OptionsDefaults::Simulation::saveClassBeforeSimulation);
   /* switch to plotting perspective after simulation checkbox */
   mpSwitchToPlottingPerspectiveCheckBox = new QCheckBox(tr("Switch to plotting perspective after simulation"));
@@ -6948,7 +7025,7 @@ TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
   mpBrowseGitRepositoryButton->setAutoDefault(false);
   connect(mpBrowseGitRepositoryButton, SIGNAL(clicked()), SLOT(browseGitRepository()));
   // Traceability Daemon Ip Adress
-  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Adress:"));
+  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Address:"));
   mpTraceabilityDaemonIpAdressTextBox = new QLineEdit;
   // Traceability Daemon Port
   mpTraceabilityDaemonPortLabel = new Label(tr("Traceability Daemon Port:"));
@@ -7158,13 +7235,13 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   mpCompilerCommandLineOptionsLabel = new Label(tr("Compiler Arguments:"));
   mpCompilerCommandLineOptionsTextBox = new QLineEdit;
   // CRML Process
-  mpCompilerProcessLabel = new Label(tr("Processor:"));
+  mpCompilerProcessLabel = new Label(tr("Java Executable:"));
   mpCompilerProcessTextBox = new QLineEdit(OptionsDefaults::CRML::process);
   mpBrowseCompilerProcessButton = new QPushButton(Helper::browse);
   mpBrowseCompilerProcessButton->setAutoDefault(false);
   connect(mpBrowseCompilerProcessButton, SIGNAL(clicked()), SLOT(browseCompilerProcessFile()));
   mpResetCompilerProcessButton = new QPushButton(Helper::reset);
-  mpResetCompilerProcessButton->setToolTip(tr("Resets to default Processor path"));
+  mpResetCompilerProcessButton->setToolTip(tr("Resets to the default Java executable"));
   mpResetCompilerProcessButton->setAutoDefault(false);
   connect(mpResetCompilerProcessButton, SIGNAL(clicked()), SLOT(resetCompilerProcessPath()));
   mpModelicaLibraries = new DirectoryOrFileSelector(false, tr("Modelica Library Paths:"), pOptionsDialog);

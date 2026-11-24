@@ -2,22 +2,22 @@
    settings widgets, and the plot area that plot.js renders into. Pages add
    their own layout on top; anything only one page needs stays in that page. */
 
+/* theme.js sets data-theme. */
 :root {
   color-scheme: dark;
   --bg:#1e1e1e; --panel:#252526; --border:#333; --fg:#d4d4d4; --muted:#8a8a8a;
   --accent:#23afe5; --accent-2:#0e639c; --teal:#4ec9b0; --err:#f48771;
-  --field:#1b1b1b; --hover:#2d2d30; --off:#3a3a3a; --off-fg:#777;
+  --field:#1b1b1b; --hover:#2d2d30; --active:#37373d; --strong:#555; --off:#3a3a3a; --off-fg:#777;
   --scrim:#0008; --veil:#000c; --shadow:#000a;
+  --code:#ce9178; --logo-fg:#d7d7d7; --grid:#333; --grid-x:#2a2a2a;
 }
-
-/* A host that themes its own page -- the generated library documentation
-   embeds the simulator -- sets data-theme to say which way. */
 :root[data-theme="light"] {
   color-scheme: light;
   --bg:#ffffff; --panel:#f3f4f6; --border:#d7dae0; --fg:#1d2126; --muted:#5f6672;
   --accent:#0b6fa4; --accent-2:#0e639c; --teal:#0f7a63; --err:#b3261e;
-  --field:#ffffff; --hover:#e6e9ee; --off:#e2e4e9; --off-fg:#9aa0aa;
+  --field:#ffffff; --hover:#e6e9ee; --active:#d9dee6; --strong:#a3a9b3; --off:#e2e4e9; --off-fg:#9aa0aa;
   --scrim:#0f172a40; --veil:#ffffffd9; --shadow:#0f172a2e;
+  --code:#a1460f; --logo-fg:#4d4d4d; --grid:#e1e4e9; --grid-x:#eceef1;
 }
 * { box-sizing: border-box; }
 html, body { margin:0; height:100%; }
@@ -118,6 +118,11 @@ input, select {
 .plot-head { color:var(--fg); font-size:13px; margin:1px 2px 4px; }
 .plot-wrap { position:relative; height:230px; }
 .plot-wrap svg.plot { width:100%; height:100%; display:block; }
+svg.plot .grid-y { stroke:var(--grid); }
+svg.plot .grid-x { stroke:var(--grid-x); }
+svg.plot .axis { stroke:var(--strong); }
+svg.plot .tick { fill:var(--muted); }
+svg.plot .dot { stroke:var(--bg); }
 .plot-note { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:13px; text-align:center; padding:16px; }
 .tooltip { position:absolute; pointer-events:none; display:none; z-index:5;
   background:var(--veil); border:1px solid var(--border); border-radius:5px; padding:6px 8px;

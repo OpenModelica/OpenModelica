@@ -25,6 +25,7 @@ ArrayConnect4.mo \
 ArrayConnect5.mo \
 ArrayConnect6.mo \
 ArrayConnect7.mo \
+ArrayConnectSliceUnconnected.mo \
 ArrayConstructorComplex1.mo \
 ArrayConstructorRecord1.mo \
 ArrayConstructorRecord2.mo \
@@ -142,6 +143,8 @@ CevalBinding7.mo \
 CevalBinding8.mo \
 CevalBinding9.mo \
 CevalBinding10.mo \
+CevalBinding11.mo \
+CevalBinding12.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -224,6 +227,7 @@ CevalRecordArray8.mo \
 CevalRecordArray9.mo \
 CevalRecordArray10.mo \
 CevalRecordArray11.mo \
+CevalRecordReduction1.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -397,6 +401,7 @@ DimUnknown16.mo \
 DimUnknown17.mo \
 DimUnknown18.mo \
 DimUnknown19.mo \
+DimUnknown20.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -989,6 +994,8 @@ OperationPow2.mo \
 OperationPow3.mo \
 OperationPowEW1.mo \
 OperationRelational1.mo \
+OperationRelational2.mo \
+OperationRelational3.mo \
 OperationSub1.mo \
 OperationSubEW1.mo \
 OperationSubEW2.mo \
@@ -1078,6 +1085,7 @@ RecordBinding16.mo \
 RecordBinding17.mo \
 RecordBinding18.mo \
 RecordBinding19.mo \
+RecordBinding20.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \
@@ -1096,6 +1104,8 @@ RecursiveExtends4.mo \
 RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
+RecursiveInst4.mo \
+RecursiveInst5.mo \
 RedeclareClass1.mo \
 RedeclareClass2.mo \
 RedeclareClassComponent.mo \

@@ -40,6 +40,8 @@ wasmtime = { version = "50", default-features = false, features = [
 wasmtime-wasi = { version = "50", default-features = false, features = ["p2"] }
 # `external "C"` functions the FMU ships as platform libraries (`om:ext/native`).
 openmodelica_ext_native = { path = "../openmodelica_ext_native", features = ["utilities"] }
+# The FMI call sequences, shared with the C API of a C+Rust FMU.
+openmodelica_fmi_state_machine = { path = "../openmodelica_fmi_state_machine" }
 
 [profile.release]
 opt-level = "s"

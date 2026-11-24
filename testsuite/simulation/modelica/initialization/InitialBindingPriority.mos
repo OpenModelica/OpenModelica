@@ -1,0 +1,141 @@
+// name:     InitialBindingPriority
+// keywords: initialization, redundant equation, binding
+// status:   correct
+//
+// Balancing removes redundant initial equations before bindings.
+//
+// The binding of the parameter p with fixed = false is kept, and the initial
+// equation 2*p = 2 is removed.
+//
+// The frontend moves the binding of r to the initial equations, because it
+// cannot split it. The rows of the initial equation r = f(1) are removed, not
+// the rows of the binding.
+//
+// With use_Q_flow_nominal = false, WetCoilUARated has dummy initial equations
+// for parameters that also have bindings. If a row of the binding of the
+// record staWat is removed instead, staWat.T is solved from
+// cpWat = cp(staWat), and cp of water is a constant.
+
+loadString("
+model UnfixedBindingPriority
+  parameter Real p(fixed = false) = 1;
+initial equation
+  2*p = 2;
+end UnfixedBindingPriority;
+"); getErrorString();
+loadString("
+model RecordBindingPriority
+  record R
+    Real a;
+    Real b;
+  end R;
+  function f
+    input Real x;
+    output R r;
+  algorithm
+    r := R(x, 2*x);
+  end f;
+  parameter Real p(fixed = false, start = 1);
+  parameter R r = f(p);
+initial equation
+  p = 1;
+  r = f(1);
+end RecordBindingPriority;
+"); getErrorString();
+setCommandLineOptions("-d=initialization"); getErrorString();
+
+simulate(UnfixedBindingPriority, stopTime = 0); getErrorString();
+val(p, 0.0);
+
+simulate(RecordBindingPriority, stopTime = 0); getErrorString();
+val(r.b, 0.0);
+
+loadModel(Buildings, {"12.1.1"}); getErrorString();
+loadString("
+model WetCoilUARatedInit
+  parameter Real Q_flow_nominal(fixed = false);
+  parameter Real T_a1_nominal(fixed = false);
+  parameter Real T_a2_nominal(fixed = false);
+  parameter Real w_a2_nominal(start = 0.01, fixed = false);
+  Buildings.Fluid.HeatExchangers.BaseClasses.WetCoilUARated UAFroRated(
+    use_Q_flow_nominal = false,
+    QTot_flow = Q_flow_nominal,
+    UA = 300,
+    r_nominal = 2/3,
+    TAirIn = T_a2_nominal,
+    X_wAirIn = w_a2_nominal/(1 + w_a2_nominal),
+    TWatIn = T_a1_nominal,
+    mAir_flow = 1,
+    mWat_flow = 1);
+end WetCoilUARatedInit;
+"); getErrorString();
+
+simulate(WetCoilUARatedInit, stopTime = 0, simflags = "-emit_protected"); getErrorString();
+val(UAFroRated.UAAir, 0.0);
+val(UAFroRated.UAWat, 0.0);
+val(UAFroRated.cpWat, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "UnfixedBindingPriority_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'UnfixedBindingPriority', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:3:3-3:38:writable] Warning: The parameter p has fixed = false and a binding equation p = 1.0, which is probably redundant.
+// Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
+//          2.0 * p = 2.0.
+// "
+// 1.0
+// record SimulationResult
+//     resultFile = "RecordBindingPriority_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'RecordBindingPriority', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization system:
+//          r.b = 2.0
+//          r.a = 1.0.
+// "
+// 2.0
+// true
+// ""
+// true
+// ""
+//
+// Nonlinear iteration variables with predefined start attribute in NLSJac1. (1)
+// ========================================
+// 1: UAFroRated.UAAir:VARIABLE(min = 0.0 start = 10.0 unit = "W/K" fixed = false protected = true )  "Air side convective heat transfer coefficient, including fin resistance" type: Real
+//
+//
+// Linear iteration variables with predefined start attributes that are unrelevant in NLSJac1. (1)
+// ========================================
+// 1: UAFroRated.UAWat:VARIABLE(min = 0.0 start = 20.0 unit = "W/K" fixed = false protected = true )  "Water side convective heat transfer coefficient" type: Real
+//
+// Info: Only non-linear iteration variables in non-linear eqation systems require start values. All other start values have no influence on convergence and are ignored. Use "-d=dumpLoops" to show all loops. In OMEdit Tools->Options->Simulation->Additional Translation Flags, in OMNotebook call setCommandLineOptions("-d=dumpLoops")
+//
+// record SimulationResult
+//     resultFile = "WetCoilUARatedInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'WetCoilUARatedInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization system:
+//          UAFroRated.TAirIn = 293.15
+//          UAFroRated.TWatIn = 293.15.
+// "
+// 499.99999999999994
+// 750.0
+// 4184.0
+// endResult

@@ -196,6 +196,17 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
       memcpy(N_VGetArrayPointer(ydot), cvodeData->fStart, cvodeData->N * sizeof(double));
       retVal = 0;
     }
+    /* Failing again at the same time: a shorter step no longer moves the
+     * point, as with DASKR's minimum step size */
+    else if (fabs(time - cvodeData->rhsFailTime) <= 4.0 * DBL_EPSILON * fabs(time))
+    {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER");
+      retVal = -1;
+    }
+    else
+    {
+      cvodeData->rhsFailTime = time;
+    }
   }
 
   threadData->currentErrorStage = saveJumpState;
@@ -415,7 +426,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
   if (measure_time_flag)
     rt_tick(SIM_TIMER_SOLVER);
 
-  return 0;
+  return OMC_ERROR_RAISED() ? -1 : 0;
 }
 
 /**
@@ -605,8 +616,8 @@ int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER 
 
   for (i = 0; i < cvodeData->N; ++i)
   {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    abstol[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
+    const modelica_real nominal = getPositiveNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    abstol[i] = nominal * data->simulationInfo->tolerance;
   }
   flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");
@@ -640,6 +651,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   cvodeData->simData->threadData = threadData;
 
   cvodeData->isInitialized = FALSE;
+  cvodeData->rhsFailTime = NAN;
 
   /* Get CVODE settings from user flags */
   cvodeGetConfig(&(cvodeData->config), threadData);
@@ -1015,6 +1027,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   int flag;
   int retVal = 0;
   int finished = FALSE;
+  int rootFailed = FALSE;
   int workRetries = 0;
   double tout = 0;
   long int i;
@@ -1133,6 +1146,12 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## root found at time = %.15g", solverInfo->currentTime);
       finished = TRUE;
     }
+    else if (flag == CV_RTFUNC_FAIL)
+    {
+      /* the root function raised an error, which fails the step */
+      rootFailed = TRUE;
+      finished = TRUE;
+    }
     else if (flag == CV_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
       warningStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
@@ -1152,7 +1171,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   } while (!finished && !OMC_ERROR_RAISED());
 
   /* Catch */
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !rootFailed) { OMC_ERROR_CLEAR(); }
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;
 

@@ -82,7 +82,7 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
   assertStreamPrint(threadData, gbData != NULL && gbData->nominals != NULL && gbData->mins != NULL && gbData->maxs != NULL,
                     "initializeStaticNLSData_SR: GBODE scalar metadata cache is not available.");
 
-  memcpy(nonlinsys->nominal, gbData->nominals, nonlinsys->size * sizeof(double));
+  memcpy(nonlinsys->positiveNominal, gbData->nominals, nonlinsys->size * sizeof(double));
   memcpy(nonlinsys->min, gbData->mins, nonlinsys->size * sizeof(double));
   memcpy(nonlinsys->max, gbData->maxs, nonlinsys->size * sizeof(double));
 
@@ -108,7 +108,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
                     "initializeStaticNLSData_MR: GBODE scalar metadata cache is not available.");
 
   // Initial full-state ordering; fast-state updates remap the arrays in gbodef_main.
-  memcpy(nonlinsys->nominal, gbData->nominals, nonlinsys->size * sizeof(double));
+  memcpy(nonlinsys->positiveNominal, gbData->nominals, nonlinsys->size * sizeof(double));
   memcpy(nonlinsys->min, gbData->mins, nonlinsys->size * sizeof(double));
   memcpy(nonlinsys->max, gbData->maxs, nonlinsys->size * sizeof(double));
 
@@ -136,7 +136,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
   for (int i = 0; i < nonlinsys->size; i++) {
     // non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
-    nonlinsys->nominal[i] = gbData->nominals[ii];
+    nonlinsys->positiveNominal[i] = gbData->nominals[ii];
     nonlinsys->min[i]     = gbData->mins[ii];
     nonlinsys->max[i]     = gbData->maxs[ii];
   }
@@ -168,7 +168,11 @@ NONLINEAR_SYSTEM_DATA* allocNlsDataGB(threadData_t* threadData, const int size)
   nlsData->nlsxOld           = (double*) malloc(nlsData->size*sizeof(double));
   nlsData->resValues         = (double*) malloc(nlsData->size*sizeof(double));
 
-  nlsData->nominal = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->positiveNominal = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->nominalSign = (double*) malloc(nlsData->size*sizeof(double));
+  for (int i = 0; i < nlsData->size; i++) {
+    nlsData->nominalSign[i] = 1.0;
+  }
   nlsData->min     = (double*) malloc(nlsData->size*sizeof(double));
   nlsData->max     = (double*) malloc(nlsData->size*sizeof(double));
   return nlsData;
@@ -185,7 +189,8 @@ void freeNlsDataGB(NONLINEAR_SYSTEM_DATA* nlsData)
   free(nlsData->nlsxExtrapolation);
   free(nlsData->nlsxOld);
   free(nlsData->resValues);
-  free(nlsData->nominal);
+  free(nlsData->positiveNominal);
+  free(nlsData->nominalSign);
   free(nlsData->min);
   free(nlsData->max);
   /* sparsePattern is a view of DATA_GBODE / DATA_GBODEF. */
@@ -259,7 +264,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   if (!useInternal)
   {
     gbData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
-    initJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
+    initJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern, FALSE);
   }
   else
   {
@@ -378,8 +383,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
-  initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, jacobian_ODE->dag, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
-  gbfData->jacobian->evalSelection = allocEvalSelection(gbfData->jacobian->dag);
+  initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, jacobian_ODE->dag, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern, FALSE);
+  gbfData->jacobian->evalSelectionCol = allocEvalSelection(gbfData->jacobian->dag);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -943,9 +948,9 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
 
   // call jacobian_ODE with the mapped seedVars
   // activate fast state evalSelection here!
-  jacobian_ODE->evalSelection = jacobian->evalSelection;
+  jacobian_ODE->evalSelectionCol = jacobian->evalSelectionCol;
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
-  jacobian_ODE->evalSelection = NULL;
+  jacobian_ODE->evalSelectionCol = NULL;
 
   /* Update resultVars array */
   if (gbfData->type == MS_TYPE_IMPLICIT) {

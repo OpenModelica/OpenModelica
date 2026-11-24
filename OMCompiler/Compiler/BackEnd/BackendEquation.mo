@@ -1405,7 +1405,7 @@ algorithm
 
   outEquations := match inEquation
     local
-      DAE.Exp e, e1, e2, exp, cond;
+      DAE.Exp e1, e2, exp, cond;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       BackendDAE.Equation backendEq;
@@ -1421,16 +1421,6 @@ algorithm
 
     case BackendDAE.EQUATION(exp=DAE.TUPLE(explst), scalar=e2, source=source, attr=attr) algorithm
       (_, eqns) := List.fold3(explst,equationTupleToScalarResidualForm, e2, source, attr, (1, {}));
-    then eqns;
-
-    case BackendDAE.EQUATION(exp= DAE.RCONST(real= 0.0), scalar=e2, source=source, attr=attr) algorithm
-      (e, _) := ExpressionSimplify.simplify(e2);
-      eqns :={BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
-    then eqns;
-
-    case BackendDAE.EQUATION(exp=e1, scalar= DAE.RCONST(real=0.0), source=source, attr=attr) algorithm
-      (e, _) := ExpressionSimplify.simplify(e1);
-      eqns :={BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
     then eqns;
 
     case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr) algorithm
@@ -3297,10 +3287,14 @@ algorithm
       list<DAE.Exp> explst, explst2;
       list<BackendDAE.Equation> eqns;
       BackendDAE.EquationAttributes attr;
+      list<Boolean> keep;
 
     case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(explst), right=DAE.TUPLE(explst2), source=source, attr=attr)
     algorithm
       true := listLength(explst) == listLength(explst2);
+      keep := list(not Expression.isWild(e) for e in explst);
+      (explst, _) := List.splitOnBoolList(explst, keep);
+      (explst2, _) := List.splitOnBoolList(explst2, keep);
       eqns := List.threadMap2(explst, explst2, generateEquation, source, attr);
     then eqns;
 
