@@ -103,6 +103,151 @@ mod unix {
     /// One 8-aligned native cell: a scalar, a pointer, or a `char*` written by the callee.
     struct Cell(u64);
 
+    const PTR: u32 = size_of::<usize>() as u32;
+
+    /// The next String of a record's wire form (see [`Value`]).
+    fn next_string<'a>(strings: &mut &'a [u8]) -> Result<&'a [u8], String> {
+        let len = strings
+            .get(..4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize)
+            .ok_or("native externals: a record lacks a String member")?;
+        let s = strings
+            .get(4..4 + len)
+            .ok_or("native externals: a record String is cut short")?;
+        *strings = &strings[4 + len..];
+        Ok(s)
+    }
+
+    /// The native C struct `dst` of the wasm32 one `wire`, its Strings taken from
+    /// `strings` and kept alive in `cstrings`.
+    fn struct_to_native(
+        members: &[Ty],
+        wire: &[u8],
+        strings: &mut &[u8],
+        dst: &mut [u8],
+        cstrings: &mut Vec<CString>,
+    ) -> Result<(), String> {
+        let (w, _, _) = marshal::layout(members, 4);
+        let (n, _, _) = marshal::layout(members, PTR);
+        for (k, m) in members.iter().enumerate() {
+            let (a, b) = (w[k] as usize, n[k] as usize);
+            match m {
+                Ty::Scalar(Scalar::Real) => dst[b..b + 8].copy_from_slice(&wire[a..a + 8]),
+                Ty::Scalar(_) => dst[b..b + 4].copy_from_slice(&wire[a..a + 4]),
+                Ty::Str => {
+                    let c = CString::new(next_string(strings)?).map_err(|_| "a record String has an interior NUL")?;
+                    dst[b..b + PTR as usize].copy_from_slice(&(c.as_ptr() as usize).to_le_bytes());
+                    cstrings.push(c);
+                }
+                Ty::Record(inner) => {
+                    let (_, ws, _) = marshal::layout(inner, 4);
+                    let (_, ns, _) = marshal::layout(inner, PTR);
+                    struct_to_native(
+                        inner,
+                        &wire[a..a + ws as usize],
+                        strings,
+                        &mut dst[b..b + ns as usize],
+                        cstrings,
+                    )?;
+                }
+                _ => return Err("native externals: record member not passed to C".into()),
+            }
+        }
+        Ok(())
+    }
+
+    /// The inverse of [`struct_to_native`]: the wasm32 struct `wire` of the native
+    /// `src`, each String appended to `strings`.
+    fn struct_to_wire(members: &[Ty], src: &[u8], wire: &mut [u8], strings: &mut Vec<u8>) {
+        let (w, _, _) = marshal::layout(members, 4);
+        let (n, _, _) = marshal::layout(members, PTR);
+        for (k, m) in members.iter().enumerate() {
+            let (a, b) = (w[k] as usize, n[k] as usize);
+            match m {
+                Ty::Scalar(Scalar::Real) => wire[a..a + 8].copy_from_slice(&src[b..b + 8]),
+                Ty::Scalar(_) => wire[a..a + 4].copy_from_slice(&src[b..b + 4]),
+                Ty::Str => {
+                    let p = usize::from_le_bytes(src[b..b + PTR as usize].try_into().unwrap()) as *const libc::c_char;
+                    let bytes = if p.is_null() {
+                        &[][..]
+                    } else {
+                        unsafe { CStr::from_ptr(p) }.to_bytes()
+                    };
+                    strings.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
+                    strings.extend_from_slice(bytes);
+                    wire[a..a + 4].fill(0);
+                }
+                Ty::Record(inner) => {
+                    let (_, ws, _) = marshal::layout(inner, 4);
+                    let (_, ns, _) = marshal::layout(inner, PTR);
+                    struct_to_wire(inner, &src[b..b + ns as usize], &mut wire[a..a + ws as usize], strings);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// `n` native structs, after an 8-byte count when `counted`, from their wire
+    /// form; 8-aligned.
+    fn records_to_native(
+        members: &[Ty],
+        n: usize,
+        wire: &[u8],
+        counted: bool,
+        cstrings: &mut Vec<CString>,
+    ) -> Result<Vec<u64>, String> {
+        let (_, ws, _) = marshal::layout(members, 4);
+        let (_, ns, _) = marshal::layout(members, PTR);
+        let (ws, ns, head) = (ws as usize, ns as usize, if counted { 8 } else { 0 });
+        let raw = wire.get(..n * ws).ok_or("native externals: a record is cut short")?;
+        let mut strings = &wire[raw.len()..];
+        let mut buf = vec![0u64; (head + n * ns).div_ceil(8).max(1)];
+        // Safety: an initialized `Vec<u64>` is `len * 8` initialized bytes.
+        let bytes = unsafe { std::slice::from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), buf.len() * 8) };
+        if counted {
+            bytes[..8].copy_from_slice(&(n as u64).to_le_bytes());
+        }
+        for k in 0..n {
+            struct_to_native(
+                members,
+                &raw[k * ws..(k + 1) * ws],
+                &mut strings,
+                &mut bytes[head + k * ns..head + (k + 1) * ns],
+                cstrings,
+            )?;
+        }
+        Ok(buf)
+    }
+
+    /// The wire form of `n` native structs at `src`.
+    fn records_to_wire(members: &[Ty], n: usize, src: &[u8]) -> Vec<u8> {
+        let (_, ws, _) = marshal::layout(members, 4);
+        let (_, ns, _) = marshal::layout(members, PTR);
+        let (ws, ns) = (ws as usize, ns as usize);
+        let mut raw = vec![0u8; n * ws];
+        let mut strings = Vec::new();
+        for k in 0..n {
+            struct_to_wire(
+                members,
+                &src[k * ns..(k + 1) * ns],
+                &mut raw[k * ws..(k + 1) * ws],
+                &mut strings,
+            );
+        }
+        raw.extend(strings);
+        raw
+    }
+
+    fn ffi_struct(members: &[Ty]) -> libffi::middle::Type {
+        use libffi::middle::Type;
+        Type::structure(members.iter().map(|m| match m {
+            Ty::Scalar(Scalar::Real) => Type::f64(),
+            Ty::Scalar(_) => Type::i32(),
+            Ty::Record(inner) => ffi_struct(inner),
+            _ => Type::pointer(),
+        }))
+    }
+
     struct Resolved {
         sig: Sig,
         addr: usize,
@@ -136,7 +281,7 @@ mod unix {
             Ty::Scalar(Scalar::Real) => Type::f64(),
             // Every integer argument fills a 64-bit slot, correct for `int` and `long` alike.
             Ty::Scalar(_) => Type::i64(),
-            Ty::Str | Ty::Ptr | Ty::Array(_) | Ty::Record(_) => Type::pointer(),
+            Ty::Str | Ty::Ptr | Ty::Array(_) | Ty::Record(_) | Ty::RecordArray(_) => Type::pointer(),
         }
     }
 
@@ -200,8 +345,10 @@ mod unix {
                     Some(Ty::Scalar(Scalar::Real)) => (libffi::middle::Type::f64(), 8),
                     Some(Ty::Scalar(_)) => (libffi::middle::Type::i32(), 8),
                     Some(Ty::Str | Ty::Ptr) => (libffi::middle::Type::pointer(), 8),
-                    Some(Ty::Array(_) | Ty::Record(_)) => {
-                        return Err(format!("`{}` returns an array or record, which C cannot", sig.name));
+                    Some(Ty::Record(m)) if m.is_empty() => (libffi::middle::Type::void(), 8),
+                    Some(Ty::Record(m)) => (ffi_struct(m), marshal::layout(m, PTR).1 as usize),
+                    Some(Ty::Array(_) | Ty::RecordArray(_)) => {
+                        return Err(format!("`{}` returns an array, which C cannot", sig.name));
                     }
                 };
                 fns.push(Resolved {
@@ -237,6 +384,9 @@ mod unix {
             let mut buffers: Vec<Vec<u8>> = Vec::new();
             // (argument index, slot index, buffer index) of each output array.
             let mut out_arrays: Vec<(usize, usize)> = Vec::new();
+            // Native structs, and the output ones: (argument index, index into `records`, count).
+            let mut records: Vec<Vec<u64>> = Vec::new();
+            let mut out_records: Vec<(usize, usize, usize)> = Vec::new();
             let mut cells: Vec<(usize, Box<Cell>)> = Vec::new();
             let mut next = args.iter();
             for (j, a) in sig.args.iter().enumerate() {
@@ -270,8 +420,29 @@ mod unix {
                         cstrings.push(c);
                         Cell(p)
                     }
-                    // A record crosses the same way, as a pointer to the bytes.
-                    (Ty::Array(_) | Ty::Record(_), Value::Bytes(b)) => {
+                    (Ty::Record(m), Value::Bytes(b)) => {
+                        let mut buf = records_to_native(m, 1, b, false, &mut cstrings)?;
+                        let p = buf.as_mut_ptr() as u64;
+                        if a.out {
+                            out_records.push((j, records.len(), 1));
+                        }
+                        records.push(buf);
+                        Cell(p)
+                    }
+                    (Ty::RecordArray(m), Value::Bytes(b)) => {
+                        let n = b
+                            .get(..4)
+                            .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]) as usize)
+                            .ok_or("native externals: an array of records lacks its count")?;
+                        let mut buf = records_to_native(m, n, &b[4..], true, &mut cstrings)?;
+                        let p = buf.as_mut_ptr() as u64 + 8;
+                        if a.out {
+                            out_records.push((j, records.len(), n));
+                        }
+                        records.push(buf);
+                        Cell(p)
+                    }
+                    (Ty::Array(_), Value::Bytes(b)) => {
                         let mut buf = b.clone();
                         // An empty array still needs an address.
                         buf.reserve(8);
@@ -325,27 +496,54 @@ mod unix {
                             unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
                         })
                     }
-                    Ty::Array(_) => return Err("an array cannot be a C result".into()),
-                    Ty::Record(_) => return Err("a record cannot be a C result".into()),
+                    _ => return Err("an array cannot be a C result".into()),
                 })
             };
-            if let Some(ret) = &sig.ret {
-                results.push(read(ret, rvalue[0], &mut self.registry)?);
+            let words = |w: &[u64]| -> Vec<u8> { w.iter().flat_map(|x| x.to_le_bytes()).collect() };
+            match &sig.ret {
+                Some(Ty::Record(m)) => results.push(Value::Bytes(records_to_wire(m, 1, &words(&rvalue)))),
+                Some(ret) => results.push(read(ret, rvalue[0], &mut self.registry)?),
+                None => {}
             }
             for (j, cell) in &cells {
                 results.push(read(&sig.args[*j].ty, cell.0, &mut self.registry)?);
             }
-            for (_, b) in &out_arrays {
-                results.push(Value::Bytes(buffers[*b].clone()));
+            // In argument order, records among the arrays.
+            let mut outs: Vec<(usize, Value)> = Vec::new();
+            for (j, b) in &out_arrays {
+                outs.push((*j, Value::Bytes(buffers[*b].clone())));
             }
+            for (j, r, n) in &out_records {
+                let m = match &sig.args[*j].ty {
+                    Ty::Record(m) | Ty::RecordArray(m) => m,
+                    _ => continue,
+                };
+                let all = words(&records[*r]);
+                let v = match &sig.args[*j].ty {
+                    Ty::RecordArray(_) => {
+                        let mut v = (*n as u32).to_le_bytes().to_vec();
+                        v.extend(records_to_wire(m, *n, &all[8..]));
+                        v
+                    }
+                    _ => records_to_wire(m, 1, &all),
+                };
+                outs.push((*j, Value::Bytes(v)));
+            }
+            outs.sort_by_key(|(j, _)| *j);
+            results.extend(outs.into_iter().map(|(_, v)| v));
             Ok(results)
         }
     }
 
-    /// The `omc_ext_call_<name>` wrapper an `Include` build carries (it adapts the
-    /// declared C prototype to this call shape), else the symbol itself.
+    /// The `omc_ext_rec_<name>` wrapper an `Include` build carries for records in
+    /// another struct layout, the `omc_ext_call_<name>` one (it adapts the declared
+    /// C prototype to this call shape), else the symbol itself.
     fn resolve(handles: &[*mut c_void], name: &str) -> Option<usize> {
-        for candidate in [format!("omc_ext_call_{name}"), name.to_string()] {
+        for candidate in [
+            format!("omc_ext_rec_{name}"),
+            format!("omc_ext_call_{name}"),
+            name.to_string(),
+        ] {
             let c = CString::new(candidate).ok()?;
             for h in handles {
                 let p = unsafe { libc::dlsym(*h, c.as_ptr()) };

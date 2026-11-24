@@ -245,6 +245,9 @@ pub struct ExtIncludes {
     pub dllext: String,
     /// Names the object after the model, as the C target does.
     pub prefix: String,
+    /// The externals the sources wrap ([`EXT_REC_PREFIX`]): the unit is built for
+    /// them even where a library defines the symbol.
+    pub record_wrapped: Vec<String>,
 }
 
 /// A built `Include` unit: the library to load, and why its wrappers did not
@@ -401,6 +404,12 @@ pub const EXT_ADDR_PREFIX: &str = "omc_ext_addr_";
 /// (`ExternalMedia`'s `setState_ph` declares a `double` for a Modelica `Integer`).
 pub const EXT_CALL_PREFIX: &str = "omc_ext_call_";
 
+/// A struct an `Include` defines may order its members differently from the
+/// record (MLS 3.7, section 12.9.1.3). This wrapper takes the declaration-order
+/// structs the hosts marshal and converts them by member name, so it is called
+/// in place of the symbol.
+pub const EXT_REC_PREFIX: &str = "omc_ext_rec_";
+
 /// Prologue of a translation unit built from `Include` C sources. `size_t` is the
 /// specification's array-dimension type (CodegenC's `SIMEXTARGSIZE`), so the
 /// sources cannot spell their own prototypes without it. Nothing else belongs
@@ -451,7 +460,7 @@ fn ext_prototype(sig: &ExtCallSig) -> Option<String> {
 
 /// Fortran passes everything by reference, and so does an `_Out_` or protected C
 /// scalar; an array or record is a pointer either way.
-fn ext_param_types(sig: &ExtCallSig) -> Option<Vec<String>> {
+pub fn ext_param_types(sig: &ExtCallSig) -> Option<Vec<String>> {
     let byref = sig.lang == crate::sig::ExtLang::Fortran77;
     sig.args
         .iter()
@@ -500,7 +509,7 @@ fn ext_c_arg_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
 
 /// The C type the language specification maps a Modelica type to; an array is its
 /// element type, passed by pointer.
-fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
+pub fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
     use crate::sig::SigTy;
     Some(match ty {
         SigTy::Int | SigTy::Bool => "int",
@@ -537,6 +546,9 @@ fn external_symbol_or_wrapper_impl(handles: &[usize], name: &str, shippable: boo
             external_symbol_in(handles, n)
         }
     };
+    if let Some(addr) = find(&format!("{EXT_REC_PREFIX}{name}")) {
+        return Some(addr);
+    }
     if let Some(addr) = find(&format!("{EXT_CALL_PREFIX}{name}")) {
         return Some(addr);
     }

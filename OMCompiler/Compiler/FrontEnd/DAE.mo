@@ -637,8 +637,20 @@ public uniontype ExternalDecl
     ExtArg returnArg;
     String language;
     Option<SCode.Annotation> ann;
+    list<ExternalStruct> structs "The C mapping of the records the call passes";
   end EXTERNALDECL;
 end ExternalDecl;
+
+public uniontype ExternalStruct
+  "The C struct of a record, MLS 3.7, section 12.9.1.3."
+  record EXTERNAL_STRUCT
+    Absyn.Path path "The path of the record type";
+    String tag "The CStructTag, else the name of the record class; empty if the record has neither an Include nor a CStructTag annotation";
+    list<tuple<String, String>> cNames "Components with a CName annotation";
+    Option<SCode.Annotation> ann "The record's annotation, for Include and IncludeDirectory";
+    SourceInfo info;
+  end EXTERNAL_STRUCT;
+end ExternalStruct;
 
 public uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functions,
   algorithms, etc. are all found in this list.

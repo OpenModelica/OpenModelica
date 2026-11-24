@@ -50,6 +50,18 @@ pub(super) fn emit_shared_external_call(
         Owned { handle: u32 },
         /// A `String[…]` output: the callee wrote `char*`s over its elements.
         StrArray { handle: u32 },
+        /// An owned heap argument, released with `func` once the call is done.
+        Release { handle: u32, func: &'static str },
+        /// A C struct an input record was copied into.
+        Scratch { ptr: u32 },
+        /// An array of records as C structs, after the element count: read back
+        /// into the array if it is an output, then freed.
+        RecArray {
+            arr: u32,
+            ptr: u32,
+            fields: Arc<Vec<(ArcStr, SigTy)>>,
+            is_out: bool,
+        },
     }
     let fortran = sig.lang == ExtLang::Fortran77;
     let native = is_native_external(&sig.name);
@@ -83,6 +95,22 @@ pub(super) fn emit_shared_external_call(
     let temps: Vec<u32> = match catch {
         Some(_) => results.iter().map(|r| ctx.alloc_temp(r.wty())).collect(),
         None => Vec::new(),
+    };
+
+    // A struct returned by value comes back through an `sret` pointer ahead of
+    // every declared argument.
+    let sret = match &sig.ret {
+        Some(ret @ SigTy::Record { fields, .. })
+            if matches!(
+                openmodelica_wasm_jit::dylink::abi_of(ret),
+                openmodelica_wasm_jit::dylink::Abi::Indirect
+            ) =>
+        {
+            let ptr = emit_c_scratch(ctx, openmodelica_wasm_jit::sig::c_record_layout(fields, 4).size)?;
+            ctx.emit(we::Instruction::LocalGet(ptr));
+            Some(ptr)
+        }
+        _ => None,
     };
 
     for (j, a) in (&**extArgs).into_iter().enumerate() {
@@ -144,6 +172,25 @@ pub(super) fn emit_shared_external_call(
                 ctx.emit(we::Instruction::LocalGet(ptr));
                 cleanups.push(Cleanup::F77Array { handle, ptr, is_out });
             }
+            // An array of C structs, after an 8-byte element count.
+            SigTy::Array { elem, .. } if matches!(**elem, SigTy::Record { .. }) => {
+                let SigTy::Record { fields, .. } = &**elem else {
+                    return Err("CodegenWasmJit: array of records without a record type");
+                };
+                push_value(ctx, "an array", WTy::I32)?;
+                let arr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(arr));
+                let ptr = emit_rec_array_to_c(ctx, arr, fields, is_out)?;
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                ctx.emit(we::Instruction::I32Const(8));
+                ctx.emit(we::Instruction::I32Add);
+                cleanups.push(Cleanup::RecArray {
+                    arr,
+                    ptr,
+                    fields: fields.clone(),
+                    is_out,
+                });
+            }
             SigTy::Array { elem, .. } => {
                 // C reads and writes the row-major elements in place.
                 push_value(ctx, "an array", WTy::I32)?;
@@ -201,8 +248,19 @@ pub(super) fn emit_shared_external_call(
                 });
             }
             SigTy::Ptr => push_value(ctx, "an external-object", WTy::I32)?,
-            // A record still crosses as the runtime object, not C's `<record>_external`.
-            SigTy::Record { .. } if !is_out && !fortran => push_value(ctx, "a record", WTy::I32)?,
+            SigTy::Record { fields, .. } if !is_out && !fortran => {
+                push_value(ctx, "a record", WTy::I32)?;
+                let handle = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(handle));
+                let ptr = emit_c_scratch(ctx, openmodelica_wasm_jit::sig::c_record_layout(fields, 4).size)?;
+                emit_record_to_c(ctx, fields, handle, ptr, 0)?;
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                cleanups.push(Cleanup::Scratch { ptr });
+                cleanups.push(Cleanup::Release {
+                    handle,
+                    func: "rt_record_release",
+                });
+            }
             // C writes a `<record>_external` (the fields' C types, no runtime
             // header), so it gets a scratch one and the fields are copied back.
             SigTy::Record { fields, .. } if !fortran => {
@@ -262,9 +320,19 @@ pub(super) fn emit_shared_external_call(
                         ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
                     }
                     // The call did not return, so nothing is copied back out of it.
-                    Cleanup::CRecord { ptr, .. } => {
+                    Cleanup::CRecord { ptr, .. } | Cleanup::Scratch { ptr } => {
                         ctx.emit(we::Instruction::LocalGet(*ptr));
                         ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                    }
+                    Cleanup::RecArray { arr, ptr, .. } => {
+                        ctx.emit(we::Instruction::LocalGet(*ptr));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                        ctx.emit(we::Instruction::LocalGet(*arr));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+                    }
+                    Cleanup::Release { handle, func } => {
+                        ctx.emit(we::Instruction::LocalGet(*handle));
+                        ctx.emit(we::Instruction::Call(rt_index(func)?));
                     }
                     Cleanup::Owned { handle } => {
                         ctx.emit(we::Instruction::LocalGet(*handle));
@@ -309,8 +377,40 @@ pub(super) fn emit_shared_external_call(
         Ok(())
     };
 
-    // The C return value is the only thing on the stack.
-    if results.len() == 1 {
+    // A struct returned by value: from the `sret` scratch, or a single member's
+    // scalar on the stack.
+    if let Some(SigTy::Record { fields, .. }) = &sig.ret {
+        let A::SIMEXTARG { outputIndex, cref, .. } = &**extReturn else {
+            return Err("CodegenWasmJit: an external return value with no declared output");
+        };
+        let target = output_target(ctx, *outputIndex as usize, Some(cref))?;
+        let ptr = match sret {
+            Some(ptr) => ptr,
+            None => {
+                let size = openmodelica_wasm_jit::sig::c_record_layout(fields, 4).size;
+                let leaf = results.first().map(|r| r.wty());
+                let v = leaf.map(|w| {
+                    let v = ctx.alloc_temp(w);
+                    ctx.emit(we::Instruction::LocalSet(v));
+                    (v, w)
+                });
+                let ptr = emit_c_scratch(ctx, size)?;
+                if let Some((v, w)) = v {
+                    ctx.emit(we::Instruction::LocalGet(ptr));
+                    ctx.emit(we::Instruction::LocalGet(v));
+                    field_store(ctx, w, 0);
+                }
+                ptr
+            }
+        };
+        let obj = emit_record_from_c(ctx, fields, ptr, 0)?;
+        ctx.emit(we::Instruction::LocalGet(ptr));
+        ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+        ctx.emit(we::Instruction::LocalGet(target.out_idx));
+        ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::LocalSet(target.out_idx));
+    } else if results.len() == 1 {
         let A::SIMEXTARG { outputIndex, cref, .. } = &**extReturn else {
             return Err("CodegenWasmJit: an external return value with no declared output");
         };
@@ -351,24 +451,58 @@ pub(super) fn emit_shared_external_call(
                     _ => "the output record",
                 };
                 for (i, (name, fty)) in fields.iter().enumerate() {
-                    if !matches!(fty, SigTy::Real | SigTy::Int | SigTy::Bool) {
-                        // As C's `recordMemberCopyToFromExternal` refuses a String.
-                        openmodelica_wasm_jit::set_engine_error_detail(format!(
-                            "  {}, external `{}`: cannot read output field `{name}` of `{rec}` back \
-                             from C - only Real, Integer and Boolean record members are copied",
-                            fn_path(),
-                            sig.name,
-                        ));
-                        return Err("CodegenWasmJit: unsupported external output record field");
-                    }
-                    ctx.emit(we::Instruction::LocalGet(*ptr));
-                    field_load(ctx, fty.wty(), c.offsets[i]);
-                    let vt = ctx.alloc_temp(fty.wty());
-                    ctx.emit(we::Instruction::LocalSet(vt));
+                    let vt = match fty {
+                        SigTy::Real | SigTy::Int | SigTy::Bool => {
+                            ctx.emit(we::Instruction::LocalGet(*ptr));
+                            field_load(ctx, fty.wty(), c.offsets[i]);
+                            let vt = ctx.alloc_temp(fty.wty());
+                            ctx.emit(we::Instruction::LocalSet(vt));
+                            vt
+                        }
+                        SigTy::Str => {
+                            ctx.emit(we::Instruction::LocalGet(*ptr));
+                            field_load(ctx, WTy::I32, c.offsets[i]);
+                            ctx.emit(we::Instruction::Call(rt_index("rt_str_from_cstr")?));
+                            let vt = ctx.alloc_temp(WTy::I32);
+                            ctx.emit(we::Instruction::LocalSet(vt));
+                            vt
+                        }
+                        SigTy::Record { fields: inner, .. } => emit_record_from_c(ctx, inner, *ptr, c.offsets[i])?,
+                        _ => {
+                            openmodelica_wasm_jit::set_engine_error_detail(format!(
+                                "  {}, external `{}`: cannot read output field `{name}` of `{rec}` back from C",
+                                fn_path(),
+                                sig.name,
+                            ));
+                            return Err("CodegenWasmJit: unsupported external output record field");
+                        }
+                    };
                     store_fresh_into_field(ctx, out.out_idx, fields, name, vt)?;
                 }
                 ctx.emit(we::Instruction::LocalGet(*ptr));
                 ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+            }
+            Cleanup::Scratch { ptr } => {
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+            }
+            Cleanup::Release { handle, func } => {
+                ctx.emit(we::Instruction::LocalGet(*handle));
+                ctx.emit(we::Instruction::Call(rt_index(func)?));
+            }
+            Cleanup::RecArray {
+                arr,
+                ptr,
+                fields,
+                is_out,
+            } => {
+                if *is_out {
+                    emit_rec_array_from_c(ctx, *arr, *ptr, fields)?;
+                }
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                ctx.emit(we::Instruction::LocalGet(*arr));
+                ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
             }
             Cleanup::Owned { handle } => {
                 ctx.emit(we::Instruction::LocalGet(*handle));
@@ -482,6 +616,232 @@ thread_local! {
 
 pub(crate) fn set_native_externals(names: impl IntoIterator<Item = String>) {
     NATIVE_EXTERNALS.with(|c| *c.borrow_mut() = names.into_iter().collect());
+}
+
+/// A zeroed scratch of `size` bytes from `rt_alloc` (which reuses freed blocks),
+/// its address in a new temp.
+fn emit_c_scratch(ctx: &mut FnCtx, size: u32) -> Result<u32> {
+    let size = size.max(1) as i32;
+    ctx.emit(we::Instruction::I32Const(size));
+    ctx.emit(we::Instruction::Call(rt_index("rt_alloc")?));
+    let ptr = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(ptr));
+    ctx.emit(we::Instruction::LocalGet(ptr));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32Const(size));
+    ctx.emit(we::Instruction::MemoryFill(0));
+    Ok(ptr)
+}
+
+/// Write the record object in `obj` into the C struct at `dst + base`, as the
+/// hosts' `record_to_c` does. A String member points at the object's own
+/// NUL-terminated bytes.
+fn emit_record_to_c(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], obj: u32, dst: u32, base: u32) -> Result<()> {
+    let layout = record_layout(fields);
+    let c = openmodelica_wasm_jit::sig::c_record_layout(fields, 4);
+    for (i, (_, ty)) in fields.iter().enumerate() {
+        let src = layout.data_off + layout.field_off[i];
+        let at = base + c.offsets[i];
+        match ty {
+            SigTy::Real | SigTy::Int | SigTy::Bool => {
+                ctx.emit(we::Instruction::LocalGet(dst));
+                ctx.emit(we::Instruction::LocalGet(obj));
+                field_load(ctx, ty.wty(), src);
+                field_store(ctx, ty.wty(), at);
+            }
+            SigTy::Str => {
+                let h = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalGet(obj));
+                field_load(ctx, WTy::I32, src);
+                ctx.emit(we::Instruction::LocalSet(h));
+                ctx.emit(we::Instruction::LocalGet(dst));
+                ctx.emit(we::Instruction::LocalGet(h));
+                ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
+                ctx.emit(we::Instruction::LocalGet(h));
+                ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
+                ctx.emit(we::Instruction::Else);
+                ctx.emit(we::Instruction::I32Const(0));
+                ctx.emit(we::Instruction::End);
+                field_store(ctx, WTy::I32, at);
+            }
+            SigTy::Record { fields: inner, .. } => {
+                let h = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalGet(obj));
+                field_load(ctx, WTy::I32, src);
+                ctx.emit(we::Instruction::LocalTee(h));
+                ctx.emit(we::Instruction::If(we::BlockType::Empty));
+                emit_record_to_c(ctx, inner, h, dst, at)?;
+                ctx.emit(we::Instruction::End);
+            }
+            _ => return Err("CodegenWasmJit: record member type not passed to external C"),
+        }
+    }
+    Ok(())
+}
+
+/// A fresh record object (+1) holding the C struct at `src + base`, as the hosts'
+/// `record_from_c` builds it; returns the temp holding it.
+fn emit_record_from_c(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], src: u32, base: u32) -> Result<u32> {
+    let layout = record_layout(fields);
+    let c = openmodelica_wasm_jit::sig::c_record_layout(fields, 4);
+    let obj = emit_record_alloc(ctx, &layout)?;
+    for (i, (_, ty)) in fields.iter().enumerate() {
+        let at = base + c.offsets[i];
+        let dst = layout.data_off + layout.field_off[i];
+        match ty {
+            SigTy::Real | SigTy::Int | SigTy::Bool => {
+                ctx.emit(we::Instruction::LocalGet(obj));
+                ctx.emit(we::Instruction::LocalGet(src));
+                field_load(ctx, ty.wty(), at);
+                field_store(ctx, ty.wty(), dst);
+            }
+            SigTy::Str => {
+                ctx.emit(we::Instruction::LocalGet(obj));
+                ctx.emit(we::Instruction::LocalGet(src));
+                field_load(ctx, WTy::I32, at);
+                ctx.emit(we::Instruction::Call(rt_index("rt_str_from_cstr")?));
+                field_store(ctx, WTy::I32, dst);
+            }
+            SigTy::Record { fields: inner, .. } => {
+                let h = emit_record_from_c(ctx, inner, src, at)?;
+                ctx.emit(we::Instruction::LocalGet(obj));
+                ctx.emit(we::Instruction::LocalGet(h));
+                field_store(ctx, WTy::I32, dst);
+            }
+            _ => return Err("CodegenWasmJit: record member type not read back from external C"),
+        }
+    }
+    Ok(obj)
+}
+
+/// The array of records in `arr` as C structs after an 8-byte element count, in a
+/// zeroed `rt_alloc` block whose address the returned temp holds. An output one
+/// is left zeroed.
+fn emit_rec_array_to_c(ctx: &mut FnCtx, arr: u32, fields: &[(ArcStr, SigTy)], is_out: bool) -> Result<u32> {
+    let size = openmodelica_wasm_jit::sig::c_record_layout(fields, 4).size as i32;
+    let n = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_total")?));
+    ctx.emit(we::Instruction::LocalSet(n));
+    let bytes = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(n));
+    ctx.emit(we::Instruction::I32Const(size));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Const(8));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalTee(bytes));
+    ctx.emit(we::Instruction::Call(rt_index("rt_alloc")?));
+    let ptr = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(ptr));
+    ctx.emit(we::Instruction::LocalGet(ptr));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalGet(bytes));
+    ctx.emit(we::Instruction::MemoryFill(0));
+    ctx.emit(we::Instruction::LocalGet(ptr));
+    ctx.emit(we::Instruction::LocalGet(n));
+    ctx.emit(we::Instruction::I64ExtendI32U);
+    ctx.emit(we::Instruction::I64Store(mem_arg(0, 3)));
+    if !is_out {
+        emit_rec_array_loop(
+            ctx,
+            arr,
+            ptr,
+            n,
+            size,
+            |ctx, h, elem| {
+                ctx.emit(we::Instruction::LocalGet(h));
+                ctx.emit(we::Instruction::If(we::BlockType::Empty));
+                emit_record_to_c(ctx, fields, h, elem, 0)?;
+                ctx.emit(we::Instruction::End);
+                Ok(())
+            },
+            None,
+        )?;
+    }
+    Ok(ptr)
+}
+
+/// Read each C struct after the count at `ptr` back into a fresh record object,
+/// replacing the element of `arr`.
+fn emit_rec_array_from_c(ctx: &mut FnCtx, arr: u32, ptr: u32, fields: &[(ArcStr, SigTy)]) -> Result<()> {
+    let size = openmodelica_wasm_jit::sig::c_record_layout(fields, 4).size as i32;
+    let n = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_total")?));
+    ctx.emit(we::Instruction::LocalSet(n));
+    let slot = ctx.alloc_temp(WTy::I32);
+    emit_rec_array_loop(
+        ctx,
+        arr,
+        ptr,
+        n,
+        size,
+        |ctx, h, elem| {
+            let obj = emit_record_from_c(ctx, fields, elem, 0)?;
+            ctx.emit(we::Instruction::LocalGet(h));
+            ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
+            ctx.emit(we::Instruction::LocalGet(slot));
+            ctx.emit(we::Instruction::LocalGet(obj));
+            ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+            Ok(())
+        },
+        Some(slot),
+    )
+}
+
+/// `for k in 0..n`: `body(h, elem)` with `h` the element handle of `arr` and
+/// `elem` the address of the `k`th C struct after the count at `ptr`; `slot`, if
+/// given, gets the element's address in `arr`.
+fn emit_rec_array_loop(
+    ctx: &mut FnCtx,
+    arr: u32,
+    ptr: u32,
+    n: u32,
+    size: i32,
+    mut body: impl FnMut(&mut FnCtx, u32, u32) -> Result<()>,
+    slot: Option<u32>,
+) -> Result<()> {
+    let data = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_data")?));
+    ctx.emit(we::Instruction::LocalSet(data));
+    let k = ctx.alloc_temp(WTy::I32);
+    let h = ctx.alloc_temp(WTy::I32);
+    let elem = ctx.alloc_temp(WTy::I32);
+    let at = slot.unwrap_or_else(|| ctx.alloc_temp(WTy::I32));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalSet(k));
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::LocalGet(n));
+    ctx.emit(we::Instruction::I32GeU);
+    ctx.emit(we::Instruction::BrIf(1));
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::I32Const(4));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalTee(at));
+    ctx.emit(we::Instruction::I32Load(mem_arg(0, 2)));
+    ctx.emit(we::Instruction::LocalSet(h));
+    ctx.emit(we::Instruction::LocalGet(ptr));
+    ctx.emit(we::Instruction::I32Const(8));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::I32Const(size));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(elem));
+    body(ctx, h, elem)?;
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(k));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End);
+    ctx.emit(we::Instruction::End);
+    Ok(())
 }
 
 fn is_native_external(name: &str) -> bool {

@@ -386,6 +386,7 @@ fn define_external_imports(
         alloc: wt(rt_inst.exports.get_typed_function(&*store, "rt_alloc"))?,
         free: wt(rt_inst.exports.get_typed_function(&*store, "rt_free"))?,
         record_new: wt(rt_inst.exports.get_typed_function(&*store, "rt_record_new"))?,
+        record_release: wt(rt_inst.exports.get_typed_function(&*store, "rt_record_release"))?,
         nls: Some(NlsHooks {
             recovering: wt(rt_inst.exports.get_typed_function(&*store, "rt_nls_recovering"))?,
             note: wt(rt_inst.exports.get_typed_function(&*store, "rt_nls_note_assert"))?,

@@ -52,5 +52,6 @@ getErrorString();
 // 42.0
 // 3.0
 // 42.0
-// ""
+// "[simulation/modelica/external_functions/QualifiedCrefArg.mo:2:3-5:8:writable] Warning: The C struct of record QualifiedCrefArg.R is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.
+// "
 // endResult

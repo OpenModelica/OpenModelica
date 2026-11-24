@@ -43,7 +43,8 @@ fmi3_types.mos \
 fmi3_wasm_daemode_me.mos \
 fmi3_wasm_discrete_output_init.mos \
 fmi3_wasm_native_record.mos \
-fmi3_wasm_output_record.mos
+fmi3_wasm_output_record.mos \
+fmi3_wasm_record_struct.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

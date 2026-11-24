@@ -60,6 +60,9 @@ impl Linked {
     /// `name`, else its `Include` wrapper: the call one for a macro, or what the
     /// address one points at.
     pub fn func_or_addr(&self, store: &mut impl AsStoreMut, name: &str) -> Option<Function> {
+        if let Some(f) = self.funcs.get(&format!("{}{name}", crate::model::EXT_REC_PREFIX)) {
+            return Some(f.clone());
+        }
         if let Some(f) = self.funcs.get(name) {
             return Some(f.clone());
         }
@@ -809,6 +812,7 @@ pub struct ExtRt {
     pub alloc: TypedFunction<u32, u32>,
     pub free: TypedFunction<u32, ()>,
     pub record_new: TypedFunction<(u32, u32), u32>,
+    pub record_release: TypedFunction<u32, ()>,
     /// A run's solver state; there is none outside a simulation.
     pub nls: Option<NlsHooks>,
 }
@@ -1019,6 +1023,8 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
     let mut f77_arrays: Vec<(u32, u32, Vec<usize>, usize, bool)> = Vec::new();
     // Output `String[…]`: (`char**` scratch, element area, element count).
     let mut str_out_arrays: Vec<(u32, u32, usize)> = Vec::new();
+    // Output arrays of records: (C structs, element area, element count, fields).
+    let mut rec_out_arrays: Vec<(u32, u32, u32, std::sync::Arc<Vec<(arcstr::ArcStr, SigTy)>>)> = Vec::new();
 
     // A returned struct comes back through an `sret` pointer ahead of every
     // declared argument (`struct ADD f(double)` → `(i32, f64) -> ()`).
@@ -1036,7 +1042,7 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
 
     let mut in_i = 0usize;
     for (j, (ty, is_out)) in sig.args.iter().enumerate() {
-        // A struct: by pointer, or as its member's scalar when it has one member.
+        // A struct: by pointer (MLS 3.7, section 12.9.1.3).
         if let SigTy::Record { fields, .. } = ty {
             // An output record is a wasm *result*, so it consumes no parameter.
             let v = if *is_out {
@@ -1055,18 +1061,7 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
                         out_cells.push((ty.clone(), 0));
                     }
                 }
-                Abi::Scalar(_) => {
-                    if *is_out {
-                        return Err("external \"C\": a single-member record cannot be an output".to_string());
-                    }
-                    let handle = v.and_then(|v| v.i32()).unwrap_or(0) as u32;
-                    let (off, leaf) = record_leaf(fields);
-                    call_args.push(match leaf {
-                        SigTy::Real => Value::F64(f64::from_bits(mem.u64(&store, handle + off))),
-                        _ => Value::I32(mem.u32(&store, handle + off) as i32),
-                    });
-                }
-                Abi::Indirect => {
+                Abi::Scalar(_) | Abi::Indirect => {
                     let c = c_record_layout(fields);
                     let cell = rt
                         .alloc
@@ -1134,6 +1129,31 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
                 let off = v.i32().ok_or("external \"C\": expected an array handle")? as u32;
                 let (dims, data_off) = mem.array(&store, off)?;
                 let base = off + data_off;
+                // An array of C structs, after an 8-byte element count.
+                if let SigTy::Record { fields, .. } = &**elem {
+                    let n = dims.iter().product::<usize>() as u32;
+                    let size = c_record_layout(fields).size;
+                    let cell = rt
+                        .alloc
+                        .call(&mut store, 8 + n * size)
+                        .map_err(|e| format!("rt_alloc: {e}"))?;
+                    let mut head = vec![0u8; (8 + n * size) as usize];
+                    head[..8].copy_from_slice(&u64::from(n).to_le_bytes());
+                    mem.write(&store, cell, &head)?;
+                    temps.push(cell);
+                    if !*is_out {
+                        for k in 0..n {
+                            let h = mem.u32(&store, base + k * 4);
+                            if h != 0 {
+                                record_to_c(&mut store, &mem, &rt, fields, h, cell + 8 + k * size, &mut temps)?;
+                            }
+                        }
+                    } else {
+                        rec_out_arrays.push((cell + 8, base, n, fields.clone()));
+                    }
+                    call_args.push(Value::I32((cell + 8) as i32));
+                    continue;
+                }
                 // Handles, not the `const char**` C declares: rebuilt as a vector of
                 // NUL-terminated copies (C's `data_of_string_c89_array`).
                 if let SigTy::Str = &**elem {
@@ -1221,6 +1241,21 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
                 rt.release
                     .call(&mut store, old)
                     .map_err(|e| format!("rt_release: {e}"))?;
+            }
+        }
+    }
+
+    for (structs, base, n, fields) in &rec_out_arrays {
+        let size = c_record_layout(fields).size;
+        for k in 0..*n {
+            let h = record_from_c(&mut store, &mem, &rt, fields, structs + k * size)?;
+            let slot = *base + k * 4;
+            let old = mem.u32(&store, slot);
+            mem.put_u32(&store, slot, h);
+            if old != 0 {
+                rt.record_release
+                    .call(&mut store, old)
+                    .map_err(|e| format!("rt_record_release: {e}"))?;
             }
         }
     }

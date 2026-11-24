@@ -500,7 +500,7 @@ template recordDeclaration(RecordDeclaration recDecl)
     <%recordDisownDef(r.name, r.variables)%>
     >>
     %>
-    <%if r.usedExternally then recordCopyExternalDefs(r.name, r.variables)%>
+    <%match r.externalStruct case SOME(extStruct as SimCodeFunction.EXTERNAL_STRUCT(__)) then recordCopyExternalDefs(r.name, r.variables, extStruct.memberNames)%>
     >>
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
     <<
@@ -618,26 +618,15 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       case SOME(str) then
       <<
       typedef <%str%> <%rec_name%>;
-      <% if r.usedExternally then
-        <<
-        typedef <%str%>_external <%rec_name%>_external;
-        >>
-      %>
       >>
       else
       <<
       typedef struct {
         <%r.variables |> var as VARIABLE(__) => '<%varType(var)%> _<%CodegenUtil.crefStr(var.name)%>;' ;separator="\n"%>
       } <%rec_name%>;
-      <% if r.usedExternally then
-        <<
-        typedef struct {
-          <%r.variables |> var as VARIABLE(__) => '<%extType(var.ty, true, false, false)%> _<%CodegenUtil.crefStr(var.name)%>;' ;separator="\n"%>
-        } <%rec_name%>_external;
-        >>
-      %>
       >>
       %>
+      <%match r.externalStruct case SOME(extStruct) then externalStructDeclaration(rec_name, r.variables, extStruct)%>
       extern struct record_description <%underscorePath(r.defPath)%>__desc;
 
       void <%ctor_func_name%>(threadData_t *threadData, void* v_ths <%ctor_additional_inputs%>);
@@ -645,7 +634,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%cpy_func_name%>(void* v_src, void* v_dst);
       #define <%cpy_macro_name%>(src,dst) <%cpy_func_name%>(&src, &dst)
 
-      <%if r.usedExternally then
+      <%match r.externalStruct case SOME(__) then
         <<
         void <%cpy_to_external_func_name%>(void* v_src, void* v_dst);
         #define <%cpy_to_external_macro_name%>(src,dst) <%cpy_to_external_func_name%>(&src, &dst)
@@ -751,23 +740,49 @@ template recordDisownDef(String rec_name, list<Variable> variables)
   >>
 end recordDisownDef;
 
-template recordCopyExternalDefs(String rec_name, list<Variable> variables)
- "Generates code for copying a record to/from the extrenal C counterpart.
- The external C counterpart of a record has data types set according to the
- Modelica Standard. The main difference right now is Intger tyepes. In
- OpenModelica Integer types are represented by 'long' a.k.a modelica_integer.
- In the external counter part of the record they are 'int'. These functions
- make sure the conversion is done using assigment (possiblly truncating values)
- to make sure that the data is not interpreted wrong due to the size differences.
- See #8591 for more info."
+template externalStructDeclaration(String rec_name, list<Variable> variables, SimCodeFunction.ExternalStruct extStruct)
+ "The C struct of a record that an external function takes (MLS 3.7, section
+  12.9.1.3), <rec_name>_external as its name in the generated code, and
+  <rec_name>_external_ptr as the pointer the function gets: void* for a struct
+  with no tag, which the external code may define with any name."
 ::=
-  let &varCopiesTo = buffer ""
-  let &varCopiesFrom = buffer ""
+match extStruct
+case s as SimCodeFunction.EXTERNAL_STRUCT(__) then
+  let members = (variables |> var as VARIABLE(__) hasindex i1 fromindex 1 => '<%extType(var.ty, true, false, false)%> <%listGet(s.memberNames, i1)%>;' ;separator="\n")
+  match s.tag
+  case "" then
+    <<
+    typedef struct {
+      <%members%>
+    } <%rec_name%>_external;
+    typedef void *<%rec_name%>_external_ptr;
+    >>
+  else
+    <<
+    <%if s.define then
+    <<
+    struct <%s.tag%> {
+      <%members%>
+    };
+    >>
+    %>
+    <%s.includes ;separator="\n"%>
+    typedef struct <%s.tag%> <%rec_name%>_external;
+    typedef <%rec_name%>_external *<%rec_name%>_external_ptr;
+    >>
+end externalStructDeclaration;
+
+template recordCopyExternalDefs(String rec_name, list<Variable> variables, list<String> memberNames)
+ "Generates code for copying a record to/from its C struct. The members of the
+ struct have the C types of the Modelica Standard, e.g. 'int' for an Integer,
+ which OpenModelica represents as 'long' (modelica_integer). The assignments
+ convert the values. See #8591 for more info."
+::=
   let &auxFunction = buffer ""
   let dst_pref = 'dst->'
   let src_pref = 'src->'
-  let _ = (variables |> var => recordMemberCopyToFromExternal(var, src_pref, dst_pref, true, &varCopiesTo, &auxFunction) ;separator="\n")
-  let _ = (variables |> var => recordMemberCopyToFromExternal(var, src_pref, dst_pref, false, &varCopiesFrom, &auxFunction) ;separator="\n")
+  let varCopiesTo = (variables |> var hasindex i1 fromindex 1 => recordMemberCopyToFromExternal(var, listGet(memberNames, i1), src_pref, dst_pref, true, &auxFunction) ;separator="\n")
+  let varCopiesFrom = (variables |> var hasindex i1 fromindex 1 => recordMemberCopyToFromExternal(var, listGet(memberNames, i1), src_pref, dst_pref, false, &auxFunction) ;separator="\n")
   <<
   void <%rec_name%>_copy_to_external_p(void* v_src, void* v_dst) {
     <%rec_name%>* src = (<%rec_name%>*)(v_src);
@@ -850,37 +865,32 @@ case var as VARIABLE(__) then
   end match
 end recordMemberCopy;
 
-template recordMemberCopyToFromExternal(Variable var, String src_pref, String dst_pref, Boolean copy_to, Text &varCopies, Text &auxFunction)
-  "Generates code for copying memembers of a record during a record copy  to/from the version
-   of the record created for use with external C code.
-   Right now this does not support copying of array or record record memebers. It only handles
-   simple scalar assignments"
+template recordMemberCopyToFromExternal(Variable var, String cName, String src_pref, String dst_pref, Boolean copy_to, Text &auxFunction)
+  "Generates code for copying a member of a record to/from the member cName of
+   its C struct."
 ::=
 match var
 case var as VARIABLE(__) then
-  let dstName = dst_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)
-  let srcName = src_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)
+  let memberName = contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)
+  let dstName = dst_pref + (if copy_to then cName else memberName)
+  let srcName = src_pref + (if copy_to then memberName else cName)
 
   match ty
     case ty as T_ARRAY(__) then
-      let &varCopies += 'omc_assert(NULL, omc_dummyFileInfo, "Copying of array record members to/from external functions is not yet supported.");<%\n%>'
-      ""
+      error(sourceInfo(), 'Record member <%CodegenUtil.crefStr(var.name)%> is an array, which an external function cannot take.')
     case ty as T_STRING(__) then
-      let &varCopies += if copy_to then
-                          '<%dstName%> = omc_string_data(<%srcName%>);<%\n%>'
-                        else
-                          'omc_assert(NULL, omc_dummyFileInfo, "Copying of string record members from external functions is not yet supported.");<%\n%>'
-      ""
+      if copy_to then
+        '<%dstName%> = omc_string_data(<%srcName%>);'
+      else
+        'omc_string_move(&<%dstName%>, omc_string_new(<%srcName%> ? <%srcName%> : ""));'
     case ty as T_COMPLEX(complexClassType=RECORD(__)) then
       let recType = expTypeShort(ty)
-      let &varCopies += if copy_to then
-                          '<%recType%>_copy_to_external(<%srcName%>, <%dstName%>);<%\n%>'
-                        else
-                          '<%recType%>_copy_from_external(<%srcName%>, <%dstName%>);<%\n%>'
-      ""
+      if copy_to then
+        '<%recType%>_copy_to_external(<%srcName%>, <%dstName%>);'
+      else
+        '<%recType%>_copy_from_external(<%srcName%>, <%dstName%>);'
     else
-      let &varCopies += '<%dstName%> = <%srcName%>;<%\n%>'
-      ""
+      '<%dstName%> = <%srcName%>;'
 
   end match
 end recordMemberCopyToFromExternal;
@@ -1468,7 +1478,7 @@ template extType(Type type, Boolean isInput, Boolean isArray, Boolean returnType
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then '<%underscorePath(rname)%>'
+                      then '<%underscorePath(rname)%>_external'
   case T_METATYPE(__)
   case T_METABOXED(__)
        then "modelica_metatype"
@@ -1507,7 +1517,7 @@ template extFunDefArg(SimExtArg extArg)
     let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
     let typeStr = expTypeShort(ty)
     <<
-    <%typeStr%>_external* /*<%name%>*/
+    <%if ii then "const "%><%typeStr%>_external* /*<%name%>*/
     >>
   case SIMEXTARGEXP(type_= ty as T_COMPLEX(complexClassType=RECORD(__))) then
     let typeStr = expTypeShort(ty)
@@ -2931,7 +2941,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &varFrees, Text &
       case T_COMPLEX(complexClassType=RECORD(__)) then
         let rec_typename = expTypeShort(ty)
         let &varDecls += '<%rec_typename%>_external <%extVarName(c)%>;<%\n%>'
-        ""
+        'memset(&<%extVarName(c)%>, 0, sizeof(<%extVarName(c)%>));'
       else
         let &varDecls += '<%extType(ty,true,false,true)%> <%extVarName(c)%>;<%\n%>'
         ""
@@ -2997,6 +3007,17 @@ template extFunCallVarcopy(SimExtArg arg, Text &auxFunction)
   // Not an output
   case SIMEXTARG(outputIndex=0) then ""
 
+  // Array of records output
+  case SIMEXTARG(isArray=true, cref=c, type_=ty as T_ARRAY(ty=T_COMPLEX(complexClassType=RECORD(__)))) then
+    let var_name = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
+    let cVarName = System.stringReplace(var_name, ".", "_")
+    let rec_typename = expTypeShort(ty)
+    <<
+    for (<%cVarName%>_i = 0; <%cVarName%>_i < base_array_nr_of_elements(<%var_name%>); <%cVarName%>_i++) {
+      <%rec_typename%>_copy_from_external(<%cVarName%>_c89[<%cVarName%>_i], ((<%rec_typename%>*)(<%var_name%>.data))[<%cVarName%>_i]);
+    }
+    >>
+
   // Array output
   case SIMEXTARG(outputIndex=oi, isInput=isInput, isArray=true, cref=c, type_=ty) then
     let var_name = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
@@ -3051,6 +3072,28 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &varFrees, 
  "Helper to extFunCall. Access data of external function argument."
 ::=
   match extArg
+  // Array of records: an array of C structs, MLS 3.7, section 12.9.1.3
+  case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t as T_ARRAY(ty=T_COMPLEX(complexClassType=RECORD(__)))) then
+    let argName = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
+    let cVarName = System.stringReplace(argName, ".", "_")
+    let rec_typename = expTypeShort(t)
+    let &varDecls += '<%rec_typename%>_external *<%cVarName%>_c89;<%\n%>size_t <%cVarName%>_i;<%\n%>'
+    let &preExp +=
+      <<
+      <%cVarName%>_c89 = (<%rec_typename%>_external*) omc_alloc_interface.malloc(base_array_nr_of_elements(<%argName%>) * sizeof(<%rec_typename%>_external));
+      <%match oi
+      case 0 then
+        <<
+        for (<%cVarName%>_i = 0; <%cVarName%>_i < base_array_nr_of_elements(<%argName%>); <%cVarName%>_i++) {
+          <%rec_typename%>_copy_to_external(((<%rec_typename%>*)(<%argName%>.data))[<%cVarName%>_i], <%cVarName%>_c89[<%cVarName%>_i]);
+        }
+        >>
+      else
+        'memset(<%cVarName%>_c89, 0, base_array_nr_of_elements(<%argName%>) * sizeof(<%rec_typename%>_external));'
+      %><%\n%>
+      >>
+    '(<%rec_typename%>_external_ptr)<%cVarName%>_c89'
+
   // Array argument
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t, isInput=isInput) then
     let argName = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
@@ -3076,7 +3119,7 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &varFrees, 
     case T_COMPLEX(complexClassType=RECORD(__)) then
       let &varDecls += '<%expTypeShort(t)%>_external <%extVarName(c)%>;<%\n%>'
       let &preExp += '<%expTypeShort(t)%>_copy_to_external(<%cr%>, <%extVarName(c)%>);<%\n%>'
-      '&<%extVarName(c)%>'
+      '(<%expTypeShort(t)%>_external_ptr)&<%extVarName(c)%>'
     else
       let cType = extType(t, true, false, false)
       let &varDecls += '<%cType%> <%extVarName(c)%>;<%\n%>'
@@ -3089,12 +3132,14 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &varFrees, 
     case T_STRING(__) then
       let cr = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
       'omc_string_data(<%cr%>)'
-    case T_COMPLEX(complexClassType=RECORD(__)) then '&<%extVarName(c)%>'
+    case T_COMPLEX(complexClassType=RECORD(__)) then '(<%expTypeShort(t)%>_external_ptr)&<%extVarName(c)%>'
     else extVarName(c)
 
   // Scalar output
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
-    '&<%extVarName(c)%>'
+    match t
+    case T_COMPLEX(complexClassType=RECORD(__)) then '(<%expTypeShort(t)%>_external_ptr)&<%extVarName(c)%>'
+    else '&<%extVarName(c)%>'
 
   case SIMEXTARGEXP(__) then
     daeExternalCExp(exp, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)

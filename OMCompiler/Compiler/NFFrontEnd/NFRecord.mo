@@ -59,7 +59,14 @@ import IOStream;
 
 protected
 import Absyn;
+import AbsynUtil;
+import Config;
 import DAE;
+import Error;
+import List;
+import SCode;
+import SCodeUtil;
+import Util;
 import Inst = NFInst;
 import NFInst.InstSettings;
 import Lookup = NFLookup;
@@ -71,6 +78,8 @@ import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import NFFunction.{Function, FunctionStatus};
 import NFClassTree.ClassTree;
+import NFFlatten.FunctionTree;
+import NFSections.Sections;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -409,6 +418,208 @@ algorithm
     EvalConstants.evaluateRecordDeclaration(declNode);
   end if;
 end getDeclarationNode;
+
+function collectExternalStructs
+  "Checks that the records in ty can be passed to an external function in the
+   given language, and adds their C structs, MLS 3.7, section 12.9.1.3."
+  input Type ty;
+  input String language;
+  input SourceInfo info;
+  input output list<DAE.ExternalStruct> structs;
+protected
+  Type ety = Type.arrayElementType(ty), cty;
+  String name;
+  DAE.ExternalStruct s;
+  Absyn.Path path;
+algorithm
+  if not Type.isRecord(ety) then
+    return;
+  end if;
+
+  name := Type.toString(ety);
+
+  if language <> "C" then
+    Error.addSourceMessage(Error.EXTERNAL_RECORD_LANGUAGE, {name, language}, info);
+    fail();
+  end if;
+
+  s := externalStruct(Type.complexNode(ety));
+  DAE.ExternalStruct.EXTERNAL_STRUCT(path = path) := s;
+
+  if List.any(structs, function isExternalStructFor(path = path)) then
+    return;
+  end if;
+
+  structs := s :: structs;
+
+  for c in Type.complexComponents(ety) loop
+    cty := InstNode.getType(c);
+
+    if Type.isArray(cty) then
+      Error.addSourceMessage(Error.EXTERNAL_RECORD_ARRAY_COMPONENT, {name, InstNode.name(c)}, info);
+      fail();
+    end if;
+
+    structs := collectExternalStructs(cty, language, info, structs);
+  end for;
+end collectExternalStructs;
+
+function externalStruct
+  "The C struct of a record class: the CStructTag and CName annotations, or
+   the names of the class and its components. A record with neither an
+   Include nor a CStructTag annotation gets no tag, since MLS 3.6 and earlier
+   let the external code define a struct with the name of the record."
+  input InstNode recordNode;
+  output DAE.ExternalStruct extStruct;
+protected
+  String tag, record_name;
+  Option<String> name_ann;
+  Boolean has_tag = false;
+  Option<SCode.Annotation> ann, include_ann = NONE();
+  list<tuple<String, String>> cnames = {};
+algorithm
+  tag := InstNode.name(recordNode);
+
+  for cmt in InstNode.getComments(recordNode) loop
+    ann := SCodeUtil.commentAnnotation(cmt);
+
+    if isSome(ann) then
+      if not has_tag then
+        name_ann := annotationString(Util.getOption(ann), "CStructTag", InstNode.info(recordNode));
+
+        if isSome(name_ann) then
+          SOME(tag) := name_ann;
+          has_tag := true;
+        end if;
+      end if;
+
+      if isNone(include_ann) and
+         not SCodeUtil.isEmptyMod(SCodeUtil.lookupAnnotation(Util.getOption(ann), "Include")) then
+        include_ann := ann;
+      end if;
+    end if;
+  end for;
+
+  record_name := AbsynUtil.pathString(InstNode.fullPath(recordNode));
+
+  if has_tag or isSome(include_ann) then
+    checkCName(tag, record_name, "CStructTag", InstNode.info(recordNode));
+  else
+    tag := "";
+  end if;
+
+  for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(recordNode))) loop
+    ann := SCodeUtil.commentAnnotation(Component.comment(InstNode.component(c)));
+    name_ann := if isSome(ann) then annotationString(Util.getOption(ann), "CName", InstNode.info(c)) else NONE();
+    checkCName(Util.getOptionOrDefault(name_ann, InstNode.name(c)),
+      record_name + "." + InstNode.name(c), "CName", InstNode.info(c));
+
+    if isSome(name_ann) then
+      cnames := (InstNode.name(c), Util.getOption(name_ann)) :: cnames;
+    end if;
+  end for;
+
+  extStruct := DAE.ExternalStruct.EXTERNAL_STRUCT(InstNode.fullPath(recordNode), tag,
+    listReverseInPlace(cnames), include_ann, InstNode.info(recordNode));
+end externalStruct;
+
+function warnUntaggedExternalStructs
+  "MLS 3.7, section 12.9.1.3, deprecates a record without an Include
+   annotation in an external call. A record with a CStructTag can use a struct
+   that another record or the function defines, so only records with neither
+   annotation are reported."
+  input FunctionTree funcs;
+protected
+  UnorderedSet<String> warned;
+  Sections sections;
+algorithm
+  if not Config.languageStandardAtLeast(Config.LanguageStandard._3_7) then
+    return;
+  end if;
+
+  warned := UnorderedSet.new(stringHashDjb2, stringEq);
+
+  for fn in FunctionTree.listValues(funcs) loop
+    () := match Class.getSections(InstNode.getClass(Function.instance(fn)))
+      case sections as Sections.EXTERNAL()
+        algorithm
+          for s in sections.structs loop
+            warnUntaggedExternalStruct(s, warned);
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+end warnUntaggedExternalStructs;
+
+protected
+
+function warnUntaggedExternalStruct
+  input DAE.ExternalStruct extStruct;
+  input UnorderedSet<String> warned;
+protected
+  String name;
+algorithm
+  () := match extStruct
+    case DAE.ExternalStruct.EXTERNAL_STRUCT(tag = "")
+      algorithm
+        name := AbsynUtil.pathString(extStruct.path);
+
+        if not UnorderedSet.contains(name, warned) then
+          UnorderedSet.add(name, warned);
+          Error.addSourceMessage(Error.EXTERNAL_RECORD_NO_INCLUDE, {name}, extStruct.info);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end warnUntaggedExternalStruct;
+
+function isExternalStructFor
+  input DAE.ExternalStruct extStruct;
+  input Absyn.Path path;
+  output Boolean res;
+protected
+  Absyn.Path struct_path;
+algorithm
+  DAE.ExternalStruct.EXTERNAL_STRUCT(path = struct_path) := extStruct;
+  res := AbsynUtil.pathEqual(struct_path, path);
+end isExternalStructFor;
+
+function annotationString
+  input SCode.Annotation ann;
+  input String name;
+  input SourceInfo info;
+  output Option<String> str;
+algorithm
+  str := match SCodeUtil.lookupAnnotation(ann, name)
+    local
+      String value;
+
+    case SCode.Mod.NOMOD() then NONE();
+    case SCode.Mod.MOD(binding = SOME(Absyn.Exp.STRING(value = value))) then SOME(value);
+    else
+      algorithm
+        Error.addSourceMessage(Error.ANNOTATION_NOT_STRING_LITERAL, {name}, info);
+      then
+        fail();
+  end match;
+end annotationString;
+
+function checkCName
+  input String cname;
+  input String elementName;
+  input String annotationName;
+  input SourceInfo info;
+algorithm
+  if not Util.isCIdentifier(cname) or Util.isCKeyword(cname) then
+    Error.addSourceMessage(Error.EXTERNAL_RECORD_C_NAME, {cname, elementName, annotationName}, info);
+    fail();
+  end if;
+end checkCName;
 
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFRecord;

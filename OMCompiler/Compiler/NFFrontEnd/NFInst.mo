@@ -265,6 +265,7 @@ algorithm
 
   // Collect a tree of all functions that are still used in the flat model.
   functions := Flatten.collectFunctions(flatModel);
+  Record.warnUntaggedExternalStructs(functions);
 
   // Dump the flat model to a string if dumpFlat = true and --baseModelicaOptions=scalarize is not set.
   if not Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize") then
@@ -3986,7 +3987,7 @@ algorithm
           ret_cref := ComponentRef.EMPTY();
         end if;
       then
-        Sections.EXTERNAL(name, args, ret_cref, lang, extDecl.annotation_, isSome(extDecl.funcName), info);
+        Sections.EXTERNAL(name, args, ret_cref, lang, extDecl.annotation_, isSome(extDecl.funcName), info, {});
 
   end match;
 end instExternalDecl;

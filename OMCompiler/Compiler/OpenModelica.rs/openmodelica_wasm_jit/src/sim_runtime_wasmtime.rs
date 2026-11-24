@@ -845,8 +845,14 @@ impl NativeExternals {
 
     fn resolve(&mut self, name: &str, model: &SimModel) -> Option<usize> {
         self.ensure_loaded(model);
-        if let Some(addr) = self.symbol(name) {
-            return Some(addr);
+        let wrapped = model
+            .ext_includes
+            .as_ref()
+            .is_some_and(|inc| inc.record_wrapped.iter().any(|n| n == name));
+        if !wrapped || self.built_includes {
+            if let Some(addr) = self.symbol(name) {
+                return Some(addr);
+            }
         }
         if !self.built_includes {
             self.built_includes = true;
@@ -1190,6 +1196,10 @@ unsafe fn call_external(
     let mut in_cells: Vec<Cell> = Vec::new();
     // (buffer, wasm element-area offset, dims, element size, is output).
     let mut f77_arrays: Vec<(Vec<u8>, usize, Vec<usize>, usize, bool)> = Vec::new();
+    // Arrays of records as arrays of C structs, after an 8-byte element count.
+    let mut rec_arrays: Vec<Cell> = Vec::new();
+    // Output ones: (index into `rec_arrays`, wasm element-area offset, count, fields).
+    let mut rec_out_arrays: Vec<(usize, usize, usize, std::sync::Arc<Vec<(arcstr::ArcStr, SigTy)>>)> = Vec::new();
     let mut in_i = 0usize;
     // Phase 1: build the C argument list. Reads wasm memory for Str/Array inputs;
     // the borrow ends with this block (only owned copies / raw addresses escape).
@@ -1251,6 +1261,34 @@ unsafe fn call_external(
                     let (dims, data_off) = crate::host::array_abi::dims_and_data(mem, off)
                         .ok_or("external \"C\" : malformed array argument")?;
                     let base = off + data_off;
+                    if let SigTy::Record { fields, .. } = &**elem {
+                        let n = dims.iter().product::<usize>();
+                        let size = c_record_layout(fields).size as usize;
+                        let mut cell = Cell::new(8 + n * size);
+                        cell.bytes_mut()[..8].copy_from_slice(&(n as u64).to_le_bytes());
+                        if !*is_out {
+                            for k in 0..n {
+                                let h = u32::from_le_bytes(mem[base + k * 4..base + k * 4 + 4].try_into().unwrap())
+                                    as usize;
+                                if h != 0 {
+                                    let at = 8 + k * size;
+                                    record_to_native(
+                                        mem,
+                                        fields,
+                                        h,
+                                        &mut cell.bytes_mut()[at..at + size],
+                                        &mut cstrings,
+                                    )?;
+                                }
+                            }
+                        }
+                        slots.push(Slot::P((cell.ptr() as usize + 8) as *mut c_void));
+                        if *is_out {
+                            rec_out_arrays.push((rec_arrays.len(), base, n, fields.clone()));
+                        }
+                        rec_arrays.push(cell);
+                        continue;
+                    }
                     // Only scalar elements are already a native array. A `String[:]`
                     // is in-wasm handles, not the `const char**` C declares, so it
                     // is rebuilt (C's `data_of_string_c89_array`); anything else has
@@ -1391,6 +1429,25 @@ unsafe fn call_external(
             };
             if old != 0 {
                 wt(rt.release.call(&mut *caller, old))?;
+            }
+        }
+    }
+
+    // C's copy of each element back from its `<record>_external`.
+    for (k, base, n, fields) in &rec_out_arrays {
+        let size = c_record_layout(fields).size as usize;
+        for i in 0..*n {
+            let at = 8 + i * size;
+            let h = record_from_native(caller, memory, rt, fields, &rec_arrays[*k].bytes()[at..at + size])?;
+            let slot = base + i * 4;
+            let old = {
+                let mem = memory.data_mut(&mut *caller);
+                let old = u32::from_le_bytes(mem[slot..slot + 4].try_into().unwrap());
+                mem[slot..slot + 4].copy_from_slice(&h.to_le_bytes());
+                old
+            };
+            if old != 0 {
+                wt(rt.record_release.call(&mut *caller, old))?;
             }
         }
     }
@@ -1786,6 +1843,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         alloc: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?,
         free: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
         record_new: wts(rt_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
+        record_release: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_record_release"))?,
         nls: Some(nls),
     };
     let ext_libs = crate::dylink_engine::load_ext_libraries(&mut store, engine, rt_inst, memory, model, &ext_rt)?;
@@ -2895,6 +2953,7 @@ impl DylinkFmu {
             alloc: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?,
             free: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
             record_new: wts(rt_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
+            record_release: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_record_release"))?,
             nls: Some(NlsHooks {
                 recovering: wts(rt_inst.get_typed_func::<(), i32>(&mut store, "rt_nls_recovering"))?,
                 note: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_nls_note_assert"))?,
@@ -3147,6 +3206,7 @@ impl DylinkFmu {
                 alloc: alloc.clone(),
                 free: wts(fused_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
                 record_new: wts(fused_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
+                record_release: wts(fused_inst.get_typed_func::<u32, ()>(&mut store, "rt_record_release"))?,
                 nls: Some(NlsHooks {
                     recovering: wts(fused_inst.get_typed_func::<(), i32>(&mut store, "rt_nls_recovering"))?,
                     note: wts(fused_inst.get_typed_func::<(), ()>(&mut store, "rt_nls_note_assert"))?,

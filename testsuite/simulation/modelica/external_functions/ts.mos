@@ -96,7 +96,8 @@ val(state.s, 1);
 //   state = ExternalMedia.Test.TestMedium.TestState.Medium.setState_ph(1e5, 1e5 + 1e5 * time, 0);
 // end ExternalMedia.Test.TestMedium.TestState;
 // "
-// ""
+// "[simulation/modelica/external_functions/ts.mo:27:31-43:31:writable] Warning: The C struct of record ExternalMedia.Test.TestMedium.TestState.Medium.ThermodynamicState is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.
+// "
 // record SimulationResult
 //     resultFile = "ExternalMedia.Test.TestMedium.TestState_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ExternalMedia.Test.TestMedium.TestState', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -104,7 +105,8 @@ val(state.s, 1);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[simulation/modelica/external_functions/ts.mo:27:31-43:31:writable] Warning: The C struct of record ExternalMedia.Test.TestMedium.TestState.Medium.ThermodynamicState is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.
+// "
 // "State at 0"
 // 100.5
 // 0.6

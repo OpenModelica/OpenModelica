@@ -1383,6 +1383,18 @@ public constant ErrorTypes.Message FMU_EXPORT_FMI1_DEPRECATED = ErrorTypes.MESSA
   "FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.");
 public constant ErrorTypes.Message FMU_IMPORT_FMI1_DEPRECATED = ErrorTypes.MESSAGE(7035, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   "FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.");
+public constant ErrorTypes.Message EXTERNAL_RECORD_ARRAY_COMPONENT = ErrorTypes.MESSAGE(7040, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Record %s cannot be passed to an external function, because its component %s is an array.");
+public constant ErrorTypes.Message EXTERNAL_RECORD_LANGUAGE = ErrorTypes.MESSAGE(7041, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Record %s cannot be passed to an external \"%s\" function. Only external \"C\" functions take records.");
+public constant ErrorTypes.Message EXTERNAL_RECORD_C_NAME = ErrorTypes.MESSAGE(7042, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "%s is not a valid C identifier for %s. Give a valid name with the %s annotation.");
+public constant ErrorTypes.Message ANNOTATION_NOT_STRING_LITERAL = ErrorTypes.MESSAGE(7043, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "The %s annotation must be a String literal.");
+public constant ErrorTypes.Message EXTERNAL_STRUCT_TAG_CONFLICT = ErrorTypes.MESSAGE(7044, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Records %s and %s have the same C struct tag %s, but their members are different.");
+public constant ErrorTypes.Message EXTERNAL_RECORD_NO_INCLUDE = ErrorTypes.MESSAGE(7045, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  "The C struct of record %s is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.");
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
