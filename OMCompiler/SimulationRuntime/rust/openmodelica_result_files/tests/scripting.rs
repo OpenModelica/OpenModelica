@@ -134,12 +134,49 @@ fn filter_without_descriptions_reads_back() {
     let vars = ["x", "k"].map(String::from);
     assert!(scripting::filter(&mut msgs, &input, &output, &vars, 0, true));
     assert_eq!(
-        scripting::read_variables(&mut msgs, &output, true, false),
+        scripting::read_variables(&mut msgs, &output, true, false, true),
         ["k", "time", "x"]
     );
     assert_eq!(scripting::val(&mut msgs, &output, "x", 1.0), 0.5);
     assert_eq!(scripting::val(&mut msgs, &output, "k", 1.0), 2.0);
     assert!(msgs.0.is_empty(), "{:?}", msgs.0);
+    std::fs::remove_dir_all(d).unwrap();
+}
+
+#[test]
+fn read_variables_without_derivatives() {
+    let d = dir("derivatives");
+    let mat = path(&d, "res.mat");
+    let csv = path(&d, "res.csv");
+    let column = |col| MatKind::Column { col, negate: Neg::None };
+    let var = |name, kind| MatVar {
+        name,
+        comment: "",
+        kind,
+        unvarying: false,
+    };
+    let vars = [
+        var("time", MatKind::Time),
+        var("x", column(1)),
+        var("der(x)", column(2)),
+        var("a.der(b)", column(3)),
+        var("k", MatKind::Param { negate: Neg::None }),
+    ];
+    let rows = [0.0, 1.0, -1.0, 0.0, 1.0, 0.5, -0.5, 1.0];
+    std::fs::write(&mat, write_mat4(&vars, 0.0, 1.0, &rows, 4, &[2.0], Precision::Double)).unwrap();
+    std::fs::write(&csv, "\"time\",\"x\",\"der(x)\",\"a.der(b)\"\n0,1,-1,0\n1,0.5,-0.5,1\n").unwrap();
+
+    let mut msgs = Collect::default();
+    let mut read =
+        |file: &str, omc_style, derivatives| scripting::read_variables(&mut msgs, file, true, omc_style, derivatives);
+    assert_eq!(read(&mat, false, true), ["a.der(b)", "der(x)", "k", "time", "x"]);
+    assert_eq!(read(&mat, true, true), ["der(a.b)", "der(x)", "k", "time", "x"]);
+    assert_eq!(read(&mat, false, false), ["k", "time", "x"]);
+    assert_eq!(read(&mat, true, false), ["k", "time", "x"]);
+    assert_eq!(read(&csv, false, false), ["time", "x"]);
+    assert_eq!(read(&csv, true, true), ["time", "x", "der(x)", "der(a.b)"]);
+    assert!(msgs.0.is_empty(), "{:?}", msgs.0);
+    scripting::close();
     std::fs::remove_dir_all(d).unwrap();
 }
 

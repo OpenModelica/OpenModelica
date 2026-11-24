@@ -2387,10 +2387,10 @@ algorithm
       then
         Values.INTEGER(i);
 
-    case ("readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b1),Values.BOOL(b2)})
+    case ("readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b1),Values.BOOL(b2),Values.BOOL(b3)})
       algorithm
         filename := Util.absoluteOrRelative(filename);
-        args := SimulationResults.readVariables(filename, b1, b2);
+        args := SimulationResults.readVariables(filename, b1, b2, b3);
         vals := List.map(args, ValuesMake.makeString);
       then
         ValuesMake.makeArray(vals);
