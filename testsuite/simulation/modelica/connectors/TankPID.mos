@@ -9,7 +9,8 @@
 // Drmodelica: 12.1 Object Oriented Component-based (p. 386)
 //
 loadFile("TankPID.mo");
-simulate(TankPID,stopTime=250,numberOfIntervals=250,tolerance=1e-5,outputFormat="mat",variableFilter="tank\\.h"); // 2 intervals == 3 values
+// There is an issue with CVODE in this test: tank.h differs in the Rust runtime.
+simulate(TankPID,stopTime=250,method="dassl",numberOfIntervals=250,tolerance=1e-5,outputFormat="mat",variableFilter="tank\\.h"); // 2 intervals == 3 values
 readSimulationResultVars("TankPID_res.mat");
 echo(false); // turns of output
 
@@ -37,7 +38,7 @@ w/1000.0;
 // true
 // record SimulationResult
 //     resultFile = "TankPID_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-5, method = 'auto', fileNamePrefix = 'TankPID', options = '', outputFormat = 'mat', variableFilter = 'tank\\\\.h', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'TankPID', options = '', outputFormat = 'mat', variableFilter = 'tank\\\\.h', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

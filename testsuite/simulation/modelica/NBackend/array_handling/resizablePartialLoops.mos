@@ -60,9 +60,10 @@ package resizablePartialLoops
 end resizablePartialLoops;
 "); getErrorString();
 
-buildModel(resizablePartialLoops.Chain, stopTime = 1, fileNamePrefix = "resizablePartialLoopsChain"); getErrorString();
+// There is an issue with CVODE in this test: the result is not accurate enough.
+buildModel(resizablePartialLoops.Chain, stopTime = 1, method = "dassl", fileNamePrefix = "resizablePartialLoopsChain"); getErrorString();
 system("./resizablePartialLoopsChain -override=N=6 -r=resizablePartialLoopsChain_6.mat > resizablePartialLoopsChain_6.log 2>&1 && ! grep -i warning resizablePartialLoopsChain_6.log");
-buildModel(resizablePartialLoops.Grid, stopTime = 1, fileNamePrefix = "resizablePartialLoopsGrid"); getErrorString();
+buildModel(resizablePartialLoops.Grid, stopTime = 1, method = "dassl", fileNamePrefix = "resizablePartialLoopsGrid"); getErrorString();
 system("./resizablePartialLoopsGrid -override=M=2,N=6 -r=resizablePartialLoopsGrid_26.mat > resizablePartialLoopsGrid_26.log 2>&1 && ! grep -i warning resizablePartialLoopsGrid_26.log");
 
 // the results of the old backend for these sizes

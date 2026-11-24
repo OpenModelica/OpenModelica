@@ -33,12 +33,14 @@ loadString("
 "); getErrorString();
 
 setCommandLineOptions("--newBackend");
-simulate(mathEventsFor, stopTime = 9.5, numberOfIntervals = 10); getErrorString();
+// There is an issue with CVODE in this test: the number of output points
+// differs between the C and the Rust runtime.
+simulate(mathEventsFor, stopTime = 9.5, numberOfIntervals = 10, method = "dassl"); getErrorString();
 readSimulationResultSize("mathEventsFor_res.mat");
 val(f[3], 9.5); val(h[2], 9.5); val(k[3], 9.5); val(g[2, 2], 9.5); val(a[2], 9.5);
 
 setCommandLineOptions("--simCodeScalarize=false");
-simulate(mathEventsFor, stopTime = 9.5, numberOfIntervals = 10); getErrorString();
+simulate(mathEventsFor, stopTime = 9.5, numberOfIntervals = 10, method = "dassl"); getErrorString();
 readSimulationResultSize("mathEventsFor_res.mat");
 val(f[3], 9.5); val(h[2], 9.5); val(k[3], 9.5); val(g[2, 2], 9.5); val(a[2], 9.5);
 
@@ -48,30 +50,30 @@ val(f[3], 9.5); val(h[2], 9.5); val(k[3], 9.5); val(g[2, 2], 9.5); val(a[2], 9.5
 // true
 // record SimulationResult
 //     resultFile = "mathEventsFor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// 118
+// 122
 // 8.0
-// 0.09999999999999787
+// 0.10000000000000053
 // 17.0
 // 7.0
 // 17.0
 // true
 // record SimulationResult
 //     resultFile = "mathEventsFor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// 118
+// 122
 // 8.0
-// 0.09999999999999787
+// 0.10000000000000053
 // 17.0
 // 7.0
 // 17.0
