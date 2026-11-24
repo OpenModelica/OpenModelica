@@ -554,8 +554,8 @@ algorithm
             var := BackendVariable.makeParam(var);
             var := BackendVariable.setVarFinal(var, true)   "make final so var is not changeable after compilation";
 
-            // If it is a tuple or a record (or record within tuple)
-            if intGt(listLength(varList), 1) or Expression.isTuple(cse) then
+            // If it is a tuple, a record or an array (or record within tuple)
+            if intGt(listLength(varList), 1) or Expression.isTuple(cse) or Expression.isArrayType(Expression.typeof(cse)) then
               if debug then print("\ndebug 11 - It is a tuple! Add it to tplExp\n"); end if;
               var.tplExp := SOME(cse);
             end if;
@@ -1029,6 +1029,17 @@ algorithm
 
     // a = b
     case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
+      algorithm
+        isRedundant := ExpressionBasics.expEqual(exp1, exp2);
+        if not isRedundant then
+          isGlobalKnown := allowGlobalKnown and allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
+          if isGlobalKnown then
+            globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(exp1, globalKnownVarHT);
+          end if;
+        end if;
+     then isRedundant;
+
+    case BackendDAE.ARRAY_EQUATION(left=exp1, right=exp2)
       algorithm
         isRedundant := ExpressionBasics.expEqual(exp1, exp2);
         if not isRedundant then
