@@ -160,5 +160,16 @@ public function filterSimulationResults
   external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals,removeDescription,hintReadAllVars) annotation(Library = "omcruntime");
 end filterSimulationResults;
 
+public function plotFigure
+  input String figureJSON "An OpenModelica.Scripting.Figure as JSON.";
+  input String filename "The result file of the curves without one.";
+  input String outputFile;
+  input Integer width;
+  input Integer height;
+  input String legendPosition;
+  output Boolean success;
+  external "C" success=SimulationResults_plotFigure(figureJSON,filename,outputFile,width,height,legendPosition) annotation(Library = "omcruntime");
+end plotFigure;
+
 annotation(__OpenModelica_Interface="script_util");
 end SimulationResults;

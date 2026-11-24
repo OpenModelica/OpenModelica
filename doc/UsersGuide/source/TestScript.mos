@@ -1,4 +1,4 @@
-loadModel(Modelica);
+loadModel(Modelica, {"4.1.0"});
 getErrorString();
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum);
 getErrorString();

@@ -94,6 +94,8 @@ openmodelica_result_files/src/scripting/filter.rs
 openmodelica_result_files/src/scripting/mod.rs
 openmodelica_result_files/src/threads.rs
 openmodelica_result_files/tests/hdf5.rs
+openmodelica_result_plot/Cargo.toml
+openmodelica_result_plot/src/lib.rs
 openmodelica_result_web/Cargo.toml
 openmodelica_result_web/src/lib.rs
 openmodelica_result_web_embed/Cargo.toml

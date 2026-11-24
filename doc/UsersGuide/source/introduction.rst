@@ -321,7 +321,7 @@ can be done through the File->Load Modelica Library menu item:
 
 .. omc-mos::
 
-  loadModel(Modelica, {"3.2.3"})
+  loadModel(Modelica, {"4.1.0"})
 
 We also load a file containing the dcmotor model:
 
@@ -349,13 +349,16 @@ We test code instantiation of the model to flat code:
 
   instantiateModel(dcmotor)
 
-We plot part of the simulated result:
+We plot part of the simulated result. The rotational velocity and the
+rotation have different units, so they get a plot each in one figure:
 
-.. omc-gnuplot :: dcmotor
+.. omc-plot :: dcmotor
+  :figure:
   :caption: Rotation and rotational velocity of the DC motor
 
-  load.w
-  load.phi
+  Figure(title = "DC motor", plots = {
+    Plot(title = "Rotational velocity", curves = {Curve(y = "load.w")}),
+    Plot(title = "Rotation", curves = {Curve(y = "load.phi")})})
 
 The val() function
 ~~~~~~~~~~~~~~~~~~
@@ -432,7 +435,7 @@ val(variableName, time) function:
 
 Plot itot and open:
 
-.. omc-gnuplot :: switch
+.. omc-plot :: switch
   :caption: Plot when the switch opens
 
   itot
@@ -476,7 +479,7 @@ It is simulated:
 
 It is plotted:
 
-.. omc-gnuplot :: VanDerPol
+.. omc-plot :: VanDerPol
   :caption: VanDerPol plotParametric(x,y)
   :parametric:
 
@@ -734,24 +737,24 @@ Loading Specific Library Version
 There exist many different versiosn of Modelica libraries which are not
 compatible. It is possible to keep multiple versions of the same library
 stored in the directory given by calling getModelicaPath(). By calling
-loadModel(Modelica,{"3.2"}), OpenModelica will search for a directory
-called "Modelica 3.2" or a file called "Modelica 3.2.mo". It is possible
+loadModel(Modelica,{"4.1.0"}), OpenModelica will search for a directory
+called "Modelica 4.1.0" or a file called "Modelica 4.1.0.mo". It is possible
 to give several library versions to search for, giving preference for a
 pre-release version of a library if it is installed. If the searched
 version is "default", the priority is: no version name (Modelica), main
-release version (Modelica 3.1), pre-release version (Modelica 3.1Beta 1)
+release version (Modelica 4.1.0), pre-release version (Modelica 4.1.0-beta.1)
 and unordered versions (Modelica Special Release).
 
 The loadModel command will also look at the uses annotation of the
 top-level class after it has been loaded. Given the following package,
-Complex 1.0 and ModelicaServices 1.1 will also be loaded into the AST
+Complex 4.1.0 and ModelicaServices 4.1.0 will also be loaded into the AST
 automatically.
 
 .. omc-loadstring ::
 
   package Modelica
-    annotation(uses(Complex(version="1.0"),
-    ModelicaServices(version="1.1")));
+    annotation(uses(Complex(version="4.1.0"),
+    ModelicaServices(version="4.1.0")));
   end Modelica;
 
 .. omc-mos ::
@@ -763,7 +766,7 @@ Packages will also be loaded if a model has a uses-annotation:
 .. omc-loadstring ::
 
   model M
-    annotation(uses(Modelica(version="3.2.1")));
+    annotation(uses(Modelica(version="4.1.0")));
   end M;
 
 .. omc-mos ::

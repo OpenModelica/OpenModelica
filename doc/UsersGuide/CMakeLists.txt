@@ -52,18 +52,17 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # sphinx-build renders the guide; pandoc converts the HTML documentation
 # annotations of the scripting API and the GitHub release notes to reST;
-# inkscape rasterises the icons and diagrams; gnuplot draws the simulation
-# results of the examples.
+# inkscape rasterises the icons and diagrams, and converts the plots to PDF for
+# the LaTeX build.
 find_program(SPHINX_BUILD_EXECUTABLE NAMES sphinx-build sphinx-build3)
 find_program(PANDOC_EXECUTABLE NAMES pandoc)
 find_program(INKSCAPE_EXECUTABLE NAMES inkscape)
-find_program(GNUPLOT_EXECUTABLE NAMES gnuplot)
 
 set(OM_USERSGUIDE_OMC "${OM_USERSGUIDE_OMHOME}/${CMAKE_INSTALL_BINDIR}/omc")
 set(OM_USERSGUIDE_OMSIMULATOR "${OM_USERSGUIDE_OMHOME}/${CMAKE_INSTALL_BINDIR}/OMSimulator")
 set(OM_USERSGUIDE_OMGENDOC "${OM_USERSGUIDE_OMHOME}/${CMAKE_INSTALL_BINDIR}/omgendoc")
 
-foreach(tool SPHINX_BUILD_EXECUTABLE PANDOC_EXECUTABLE INKSCAPE_EXECUTABLE GNUPLOT_EXECUTABLE)
+foreach(tool SPHINX_BUILD_EXECUTABLE PANDOC_EXECUTABLE INKSCAPE_EXECUTABLE)
   if(NOT ${tool})
     message(FATAL_ERROR
       "${tool} not found, which the User's Guide needs. Install the tools listed in "
@@ -155,6 +154,7 @@ set(UG_ENV
   "OPENMODELICAHOME=${OM_USERSGUIDE_OMHOME}"
   "OPENMODELICA_SOURCE_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/../.."
   "OPENMODELICA_PLAYGROUND=${OM_USERSGUIDE_PLAYGROUND}"
+  "INKSCAPE=${INKSCAPE_EXECUTABLE}"
   "GCOV_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/gcov-discarded")
 
 if(OM_USERSGUIDE_SCRIPTING_API)

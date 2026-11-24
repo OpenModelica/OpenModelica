@@ -239,7 +239,7 @@ Lets look at the Modelica model for the open loop controlled car:
 .. omc-loadString ::
 
   model noFeedback
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     SI.Velocity y;                              // output signal without noise, theta = 0 -> v(t) = 0
     SI.Velocity yNoise;                         // output signal with noise,    theta <> 0 -> v(t) <> 0
     parameter SI.Mass m = 1500;
@@ -264,10 +264,10 @@ undesired behavior of the system.
 .. omc-mos ::
   :erroratend:
 
-  loadModel(Modelica, {"3.2.3"})
+  loadModel(Modelica, {"4.1.0"})
   simulate(noFeedback, stopTime=100)
 
-.. omc-gnuplot :: omnotebook-open-loop
+.. omc-plot :: omnotebook-open-loop
   :caption: Open loop control example.
   :name: omnotebook-open-loop
 
@@ -282,7 +282,7 @@ The closed car model with a proportional regulator is shown below:
 .. omc-loadString ::
 
   model withFeedback
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     SI.Velocity y;                                // output signal with feedback link and without noise, theta = 0 -> v(t) = 0
     SI.Velocity yNoise;                           // output signal with feedback link and noise,    theta <> 0 -> v(t) <> 0
     parameter SI.Mass m = 1500;
@@ -313,10 +313,10 @@ mechanism in between.
 .. omc-mos ::
   :erroratend:
 
-  loadModel(Modelica, {"3.2.3"})
+  loadModel(Modelica, {"4.1.0"})
   simulate(withFeedback, stopTime=10)
 
-.. omc-gnuplot :: omnotebook-closed-loop
+.. omc-plot :: omnotebook-closed-loop
   :caption: Closed loop control example.
   :name: omnotebook-closed-loop
 
@@ -372,7 +372,7 @@ roots and thereby a stable output response, see :numref:`omnotebook-drcontrol-ne
 
   simulate(NegRoots, stopTime=10)
 
-.. omc-gnuplot :: omnotebook-drcontrol-negroots
+.. omc-plot :: omnotebook-drcontrol-negroots
   :name: omnotebook-drcontrol-negroots
   :caption: Characteristic equation with real negative roots.
 
@@ -400,7 +400,7 @@ roots resulting in oscillations.
 
   simulate(ImgPosRoots, stopTime=10)
 
-.. omc-gnuplot :: omnotebook-drcontrol-imgposroots
+.. omc-plot :: omnotebook-drcontrol-imgposroots
   :name: omnotebook-drcontrol-imgposroots
   :caption: Characteristic equation with imaginary roots with positive real part.
 

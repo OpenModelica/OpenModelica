@@ -112,6 +112,7 @@ members = [
   "../../SimulationRuntime/rust/openmodelica_result_cli",
   "../../SimulationRuntime/rust/openmodelica_result_diff",
   "../../SimulationRuntime/rust/openmodelica_result_files",
+  "../../SimulationRuntime/rust/openmodelica_result_plot",
   "../../SimulationRuntime/rust/openmodelica_result_web",
   "../../SimulationRuntime/rust/openmodelica_sim_meta",
   "../../SimulationRuntime/rust/openmodelica_simulation_runtime",
@@ -225,6 +226,7 @@ arrow-ipc = { version = "60", default-features = false }
 openmodelica_mat_reader = { path = "../../SimulationRuntime/rust/openmodelica_mat_reader", features = ["vfs"] }
 openmodelica_result_diff = { path = "../../SimulationRuntime/rust/openmodelica_result_diff" }
 openmodelica_result_files = { path = "../../SimulationRuntime/rust/openmodelica_result_files", features = ["vfs"] }
+openmodelica_result_plot = { path = "../../SimulationRuntime/rust/openmodelica_result_plot" }
 openmodelica_plt_writer = { path = "../../SimulationRuntime/rust/openmodelica_plt_writer" }
 openmodelica_sim_meta = { path = "../../SimulationRuntime/rust/openmodelica_sim_meta", features = ["vfs"] }
 openmodelica_backend = { path = "openmodelica_backend" }

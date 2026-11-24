@@ -1,0 +1,162 @@
+// name: PlotFigure
+// keywords: plotFigure plot outputFile figures
+// status: correct
+// teardown_command: rm -f PlotFigureOut* PlotFigureModel*
+//
+// plotFigure and plot(..., outputFile=...) write plots of result files into
+// SVG and PNG files.
+
+loadString("
+model PlotFigureModel
+  parameter Real k = 2;
+  Real x(start = 1, fixed = true, unit = \"m\");
+  Real v(start = 0, fixed = true, unit = \"m/s\");
+equation
+  der(x) = v;
+  der(v) = -k*k*x;
+  annotation(Documentation(figures = {
+    Figure(title = \"Oscillator\", identifier = \"osc\", plots = {
+      Plot(title = \"Position\", identifier = \"pos\", curves = {Curve(y = x, legend = \"x for k = %{k}\")}),
+      Plot(curves = {Curve(x = x, y = v)}, y = Axis(min = -5, max = 5))})}));
+end PlotFigureModel;
+"); getErrorString();
+simulate(PlotFigureModel, stopTime = 2); getErrorString();
+
+plotFigure(Figure(title = "Both", plots = {Plot(curves = {Curve(y = "x"), Curve(y = "v", color = "red", pattern = OpenModelica.Scripting.LinePattern.Dash)})}), "PlotFigureOut1.svg"); getErrorString();
+regexBool(readFile("PlotFigureOut1.svg"), "^<svg");
+regexBool(readFile("PlotFigureOut1.svg"), ">Both</text>");
+regexBool(readFile("PlotFigureOut1.svg"), ">v \\[m/s\\]</text>");
+regexBool(readFile("PlotFigureOut1.svg"), "255,0,0");
+
+figures := getModelFigures(PlotFigureModel); getErrorString();
+plotFigure(figures[1], "PlotFigureOut2.svg"); getErrorString();
+regexBool(readFile("PlotFigureOut2.svg"), ">x for k = 2</text>");
+plotFigure(figures[1], "PlotFigureOut2.png", width = 400, height = 300); getErrorString();
+regularFileExists("PlotFigureOut2.png");
+
+plot({x, v}, stack = true, outputFile = "PlotFigureOut3.svg"); getErrorString();
+plotParametric(x, v, outputFile = "PlotFigureOut4.svg"); getErrorString();
+plotAll(outputFile = "PlotFigureOut5.png"); getErrorString();
+regularFileExists("PlotFigureOut3.svg") and regularFileExists("PlotFigureOut4.svg") and regularFileExists("PlotFigureOut5.png");
+
+plotFigure(Figure(plots = {Plot(curves = {Curve(y = "x"), Curve(y = "v")})}), "PlotFigureOut8.svg", legendPosition = OpenModelica.Scripting.LegendPosition.none); getErrorString();
+regexBool(readFile("PlotFigureOut8.svg"), ">v \\[m/s\\]</text>");
+
+plotFigure(figures[1], "PlotFigureOut6.pdf"); getErrorString();
+plotFigure(Figure(plots = {Plot(curves = {Curve(y = "x"), Curve(y = "y")})}), "PlotFigureOut7.svg"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlotFigureModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'PlotFigureModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// true
+// true
+// true
+// true
+// {record OpenModelica.Scripting.Figure
+//     title = "Oscillator",
+//     identifier = "osc",
+//     group = "",
+//     preferred = false,
+//     plots = {record OpenModelica.Scripting.Plot
+//     title = "Position",
+//     identifier = "pos",
+//     curves = {record OpenModelica.Scripting.Curve
+//     x = "time",
+//     y = "x",
+//     legend = "x for k = %{k}",
+//     zOrder = 0,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Solid,
+//     thickness = 0.25,
+//     fileName = ""
+// end OpenModelica.Scripting.Curve;},
+//     x = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;,
+//     y = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;
+// end OpenModelica.Scripting.Plot;, record OpenModelica.Scripting.Plot
+//     title = "",
+//     identifier = "",
+//     curves = {record OpenModelica.Scripting.Curve
+//     x = "x",
+//     y = "v",
+//     legend = "",
+//     zOrder = 0,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Solid,
+//     thickness = 0.25,
+//     fileName = ""
+// end OpenModelica.Scripting.Curve;},
+//     x = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;,
+//     y = record OpenModelica.Scripting.Axis
+//     min = {-5.0},
+//     max = {5.0},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;
+// end OpenModelica.Scripting.Plot;},
+//     caption = ""
+// end OpenModelica.Scripting.Figure;}
+// ""
+// true
+// ""
+// true
+// true
+// ""
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// true
+// ""
+// false
+// false
+// "Error: Unknown suffix of plot file 'PlotFigureOut6.pdf'; use .svg or .png.
+// "
+// true
+// "Warning: Variable y is not in result file PlotFigureModel_res.mat.
+// "
+// endResult
