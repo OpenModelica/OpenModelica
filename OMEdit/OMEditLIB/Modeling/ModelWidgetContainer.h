@@ -676,6 +676,7 @@ public slots:
   void showDocumentationView();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
+  void updatePositionLabel();
   void updateModelIfDependsOn(const QString &modelName, bool unload);
 protected:
   virtual void closeEvent(QCloseEvent *event) override;
