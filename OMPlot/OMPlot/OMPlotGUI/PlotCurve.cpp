@@ -40,6 +40,8 @@
 #include "qwt_text.h"
 #include "qwt_scale_map.h"
 #include "qwt_math.h"
+#include "qwt_scale_engine.h"
+#include "qwt_transform.h"
 
 #include <QtMath>
 #include <QStringBuilder>
@@ -530,13 +532,95 @@ int PlotCurve::closestPoint(const QPointF &pos, double *dist) const
 }
 
 /*!
+ * \brief isPlottable
+ * A logarithmic axis can only show positive values.
+ * \param point
+ * \param logX
+ * \param logY
+ * \return
+ */
+static bool isPlottable(const QPointF &point, bool logX, bool logY)
+{
+  return (!logX || point.x() > 0.0) && (!logY || point.y() > 0.0);
+}
+
+/*!
+ * \brief PlotCurve::drawSeries
+ * Reimplementation of QwtPlotCurve::drawSeries().
+ * On a logarithmic axis the points that cannot be shown are skipped and the curve is drawn in parts.
+ * Otherwise these points are transformed to -inf or NaN and the clipping of the curve fails.
+ * \param painter
+ * \param xMap
+ * \param yMap
+ * \param canvasRect
+ * \param from
+ * \param to
+ */
+void PlotCurve::drawSeries(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const
+{
+  const bool logX = dynamic_cast<const QwtLogTransform*>(xMap.transformation()) != NULL;
+  const bool logY = dynamic_cast<const QwtLogTransform*>(yMap.transformation()) != NULL;
+  if (!logX && !logY) {
+    QwtPlotCurve::drawSeries(painter, xMap, yMap, canvasRect, from, to);
+    return;
+  }
+
+  if (to < 0) {
+    to = static_cast<int>(dataSize()) - 1;
+  }
+  int start = -1;
+  for (int i = from; i <= to; i++) {
+    if (isPlottable(sample(i), logX, logY)) {
+      if (start < 0) {
+        start = i;
+      }
+    } else if (start >= 0) {
+      QwtPlotCurve::drawSeries(painter, xMap, yMap, canvasRect, start, i - 1);
+      start = -1;
+    }
+  }
+  if (start >= 0) {
+    QwtPlotCurve::drawSeries(painter, xMap, yMap, canvasRect, start, to);
+  }
+}
+
+/*!
  * \brief PlotCurve::boundingRect
  * Reimplentation of QwtPlotCurve::boundingRect() to add a margin.
+ * On a logarithmic axis only the points that the axis can show are used.
  * \return
  */
 QRectF PlotCurve::boundingRect() const
 {
-  QRectF existingBoundingRect = QwtPlotCurve::boundingRect();
+  // negative width and height mean no data for QwtPlot::updateAxes()
+  QRectF existingBoundingRect(1.0, 1.0, -2.0, -2.0);
+  const bool logX = plot() && dynamic_cast<QwtLogScaleEngine*>(plot()->axisScaleEngine(xAxis()));
+  const bool logY = plot() && dynamic_cast<QwtLogScaleEngine*>(plot()->axisScaleEngine(yAxis()));
+  if (logX || logY) {
+    double minX = 0, maxX = 0, minY = 0, maxY = 0;
+    bool found = false;
+    for (size_t i = 0; i < dataSize(); i++) {
+      const QPointF point = sample(i);
+      if (!isPlottable(point, logX, logY)) {
+        continue;
+      }
+      if (!found) {
+        minX = maxX = point.x();
+        minY = maxY = point.y();
+        found = true;
+      } else {
+        minX = qMin(minX, point.x());
+        maxX = qMax(maxX, point.x());
+        minY = qMin(minY, point.y());
+        maxY = qMax(maxY, point.y());
+      }
+    }
+    if (found) {
+      existingBoundingRect = QRectF(minX, minY, maxX - minX, maxY - minY);
+    }
+  } else {
+    existingBoundingRect = QwtPlotCurve::boundingRect();
+  }
   if (existingBoundingRect.isValid()) {
     /* Ticket:5515 Allow for some margin at the top and bottom of plot windows in OMEdit
      * We add a margin of 10% to the curves bottom and top to better visualize them.
