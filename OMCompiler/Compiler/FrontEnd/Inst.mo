@@ -1006,7 +1006,7 @@ algorithm
       end for;
       tvars := listReverse(tvars);
 
-    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint, inType.usedExternally);
+    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
   end match;
 
 end markDerivedRecordOutsideBindings;
@@ -1076,7 +1076,7 @@ algorithm
       end for;
       tvars := listReverse(tvars);
 
-    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint, inType.usedExternally);
+    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
   end match;
 
 end markTypesVarsOutsideBindings;

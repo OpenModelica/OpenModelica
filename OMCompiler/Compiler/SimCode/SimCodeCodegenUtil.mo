@@ -3159,7 +3159,7 @@ algorithm
           DAE.T_COMPLEX(ClassInf.RECORD(exp.path),
             list(DAE.TYPES_VAR(n, DAE.dummyAttrVar, Expression.typeof(a), DAE.UNBOUND(), false, NONE())
               threaded for a in args, n in exp.fieldNames),
-            NONE(), false));
+            NONE()));
     case DAE.SHARED_LITERAL(exp = e as DAE.BOX()) then unboxArgument(e);
     case DAE.SHARED_LITERAL(exp = e as DAE.METARECORDCALL(index = -1)) then unboxArgument(e);
     else unboxFunctionReferenceCall(exp);
