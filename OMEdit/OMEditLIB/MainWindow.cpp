@@ -1666,6 +1666,11 @@ static bool isNativeFMUPlatform(const QString &platform)
 
 void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
 {
+  exportModelFMU(pLibraryTreeItem, FMUDefaultExperiment());
+}
+
+void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem, const FMUDefaultExperiment &experiment)
+{
   // check for a targetLanguage that can produce an FMU
   QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
   // The wasm targets export inside omc (component + a loader per native platform),
@@ -1763,7 +1768,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     QString fmuFileName;
     {
       OMCLongOperation longOperation;
-      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources, "<default>", experiment);
     }
     // hide progress bar
     hideProgressBar();
@@ -1799,10 +1804,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   {
     OMCLongOperation longOperation;
     if (wasmTarget) {
-      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources, "<default>", experiment);
       isTranslationSuccessful = !fmuFileName.isEmpty();
     } else {
-      isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+      isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources, "<default>", experiment);
     }
   }
   // hide progress bar

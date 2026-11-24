@@ -46,13 +46,16 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QDoubleValidator>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QSettings>
+#include <QTabWidget>
 
 /*!
  * \brief wasmFMUPlatforms
@@ -138,8 +141,9 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
   QSettings *pSettings = Utilities::getApplicationSettings();
   QStringList platforms = pSettings->contains("FMIExport/Platforms") ? pSettings->value("FMIExport/Platforms").toStringList()
                                                                        : QStringList("static");
-  QGroupBox *pPlatformsGroupBox = new QGroupBox(tr("Platforms"));
+  QWidget *pPlatformsTab = new QWidget;
   QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
+  pPlatformsLayout->setAlignment(Qt::AlignTop);
   bool wasmPlatforms = mWasmTarget;
 #if defined(__EMSCRIPTEN__)
   wasmPlatforms = false; // the options page lists them already
@@ -180,10 +184,34 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
     pPlatformsLayout->addWidget(new Label(tr("A source-code only FMU is generated if no platform is selected.")));
 #endif
   }
-  pPlatformsGroupBox->setLayout(pPlatformsLayout);
+  pPlatformsTab->setLayout(pPlatformsLayout);
+  // default experiment
+  const OMCInterface::getSimulationOptions_res experiment = MainWindow::instance()->getOMCProxy()->getSimulationOptions(pLibraryTreeItem->getNameStructure());
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  mpStartTimeTextBox = new QLineEdit(QString::number(experiment.startTime, 'g', QLocale::FloatingPointShortest));
+  mpStopTimeTextBox = new QLineEdit(QString::number(experiment.stopTime, 'g', QLocale::FloatingPointShortest));
+  mpIntervalTextBox = new QLineEdit(QString::number(experiment.interval, 'g', QLocale::FloatingPointShortest));
+  mpToleranceTextBox = new QLineEdit(QString::number(experiment.tolerance, 'g', QLocale::FloatingPointShortest));
+  QGroupBox *pExperimentGroupBox = new QGroupBox(tr("Default Experiment"));
+  QGridLayout *pExperimentLayout = new QGridLayout;
+  pExperimentLayout->setColumnStretch(1, 1);
+  int experimentRow = 0;
+  foreach (QLineEdit *pTextBox, QList<QLineEdit*>({mpStartTimeTextBox, mpStopTimeTextBox, mpIntervalTextBox, mpToleranceTextBox})) {
+    pTextBox->setValidator(pDoubleValidator);
+    const QString label = pTextBox == mpStartTimeTextBox ? Helper::startTime
+                          : pTextBox == mpStopTimeTextBox ? Helper::stopTime
+                          : pTextBox == mpIntervalTextBox ? tr("Interval") : tr("Tolerance");
+    pExperimentLayout->addWidget(new Label(QString("%1:").arg(label)), experimentRow, 0);
+    pExperimentLayout->addWidget(pTextBox, experimentRow, 1);
+    if (pTextBox != mpToleranceTextBox) {
+      pExperimentLayout->addWidget(new Label(Helper::secs), experimentRow, 2);
+    }
+    experimentRow++;
+  }
+  pExperimentGroupBox->setLayout(pExperimentLayout);
   // buttons
   mpSaveAsDefaultCheckBox = new QCheckBox(tr("Save as default"));
-  mpSaveAsDefaultCheckBox->setToolTip(tr("Keep these settings, except the DAE mode, for the next export"));
+  mpSaveAsDefaultCheckBox->setToolTip(tr("Keep these settings, except the DAE mode and the default experiment, for the next export"));
   mpExportButton = new QPushButton(Helper::exportt);
   mpExportButton->setDefault(true);
   QDialogButtonBox *pButtonBox = new QDialogButtonBox;
@@ -192,26 +220,35 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
   connect(pButtonBox, &QDialogButtonBox::accepted, this, &FMUExportDialog::exportFMU);
   connect(pButtonBox, &QDialogButtonBox::rejected, this, &FMUExportDialog::reject);
   // layout
+  QGridLayout *pGeneralLayout = new QGridLayout;
+  pGeneralLayout->setAlignment(Qt::AlignTop);
+  int row = 0;
+  pGeneralLayout->addWidget(new Label(tr("FMI Version:")), row, 0);
+  pGeneralLayout->addWidget(mpVersionComboBox, row++, 1);
+  pGeneralLayout->addWidget(new Label(tr("Interfaces:")), row, 0);
+  pGeneralLayout->addWidget(mpModelExchangeCheckBox, row++, 1);
+  pGeneralLayout->addWidget(mpCoSimulationCheckBox, row++, 1);
+  pGeneralLayout->addWidget(new Label(tr("Solver for Co-Simulation:")), row, 0);
+  pGeneralLayout->addWidget(mpSolverComboBox, row++, 1);
+  pGeneralLayout->addWidget(new Label(tr("DAE Mode:")), row, 0);
+  pGeneralLayout->addWidget(mpDaeModeCheckBox, row++, 1);
+  pGeneralLayout->addWidget(new Label(tr("Model Description Filters:")), row, 0);
+  pGeneralLayout->addWidget(mpFilterComboBox, row++, 1);
+  pGeneralLayout->addWidget(new Label(tr("Source Code:")), row, 0);
+  pGeneralLayout->addWidget(mpIncludeSourceCodeCheckBox, row++, 1);
+  pGeneralLayout->addWidget(pExperimentGroupBox, row++, 0, 1, 2);
+  QWidget *pGeneralTab = new QWidget;
+  pGeneralTab->setLayout(pGeneralLayout);
+  QTabWidget *pTabWidget = new QTabWidget;
+  pTabWidget->addTab(pGeneralTab, Helper::general);
+  pTabWidget->addTab(pPlatformsTab, tr("Platforms"));
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
-  int row = 0;
+  row = 0;
   pMainLayout->addWidget(Utilities::getHeadingLabel(heading), row++, 0, 1, 2);
   pMainLayout->addWidget(Utilities::getHeadingLine(), row++, 0, 1, 2);
   pMainLayout->addWidget(pRecommendButton, row++, 0, 1, 2, Qt::AlignLeft);
-  pMainLayout->addWidget(new Label(tr("FMI Version:")), row, 0);
-  pMainLayout->addWidget(mpVersionComboBox, row++, 1);
-  pMainLayout->addWidget(new Label(tr("Interfaces:")), row, 0);
-  pMainLayout->addWidget(mpModelExchangeCheckBox, row++, 1);
-  pMainLayout->addWidget(mpCoSimulationCheckBox, row++, 1);
-  pMainLayout->addWidget(new Label(tr("Solver for Co-Simulation:")), row, 0);
-  pMainLayout->addWidget(mpSolverComboBox, row++, 1);
-  pMainLayout->addWidget(new Label(tr("DAE Mode:")), row, 0);
-  pMainLayout->addWidget(mpDaeModeCheckBox, row++, 1);
-  pMainLayout->addWidget(new Label(tr("Model Description Filters:")), row, 0);
-  pMainLayout->addWidget(mpFilterComboBox, row++, 1);
-  pMainLayout->addWidget(new Label(tr("Source Code:")), row, 0);
-  pMainLayout->addWidget(mpIncludeSourceCodeCheckBox, row++, 1);
-  pMainLayout->addWidget(pPlatformsGroupBox, row++, 0, 1, 2);
+  pMainLayout->addWidget(pTabWidget, row++, 0, 1, 2);
   pMainLayout->addWidget(mpSaveAsDefaultCheckBox, row, 0);
   pMainLayout->addWidget(pButtonBox, row, 1, Qt::AlignRight);
   setLayout(pMainLayout);
@@ -237,6 +274,29 @@ FMUExportDialog::Choices FMUExportDialog::choices() const
     choices.platforms.append(mpCustomPlatformsTextBox->text().split(","));
   }
   return choices;
+}
+
+/*!
+ * \brief FMUExportDialog::defaultExperiment
+ * The values the user changed. The others come from the experiment annotation, as they do without this dialog.
+ * A changed start or stop time keeps the interval that is shown.
+ */
+FMUDefaultExperiment FMUExportDialog::defaultExperiment() const
+{
+  FMUDefaultExperiment experiment;
+  if (mpStartTimeTextBox->isModified()) {
+    experiment.startTime = mpStartTimeTextBox->text().toDouble();
+  }
+  if (mpStopTimeTextBox->isModified()) {
+    experiment.stopTime = mpStopTimeTextBox->text().toDouble();
+  }
+  if (mpStartTimeTextBox->isModified() || mpStopTimeTextBox->isModified() || mpIntervalTextBox->isModified()) {
+    experiment.stepSize = mpIntervalTextBox->text().toDouble();
+  }
+  if (mpToleranceTextBox->isModified()) {
+    experiment.tolerance = mpToleranceTextBox->text().toDouble();
+  }
+  return experiment;
 }
 
 /*!
@@ -365,13 +425,25 @@ void FMUExportDialog::exportFMU()
   const bool daeMode = mpDaeModeCheckBox->isChecked();
   const bool daeModeBefore = mDaeModeBefore;
   const Choices defaults = mDefaults;
+  const FMUDefaultExperiment experiment = defaultExperiment();
+
+  if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), QMessageBox::Ok);
+    return;
+  }
+  if (mpIntervalTextBox->text().toDouble() <= 0 || mpToleranceTextBox->text().toDouble() <= 0) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("The interval and the tolerance must be greater than zero."), QMessageBox::Ok);
+    return;
+  }
 
   writeToOptions(choices());
   if (daeMode != daeModeBefore) {
     pOMCProxy->setCommandLineOptions(QString("--daeMode=%1").arg(daeMode ? "true" : "false"));
   }
   accept();
-  MainWindow::instance()->exportModelFMU(pLibraryTreeItem);
+  MainWindow::instance()->exportModelFMU(pLibraryTreeItem, experiment);
   if (daeMode != daeModeBefore) {
     pOMCProxy->setCommandLineOptions(QString("--daeMode=%1").arg(daeModeBefore ? "true" : "false"));
   }

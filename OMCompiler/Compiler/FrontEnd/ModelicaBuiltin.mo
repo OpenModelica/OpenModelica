@@ -1109,14 +1109,43 @@ end Figure;
 package Internal
   "Internal definitions."
 
-partial function simulationArguments
-  "The arguments of simulate, buildModel and the other simulation calls."
+partial function classNameArgument
+  "The model of a simulation call."
   input TypeName className "The model";
+end classNameArgument;
+
+partial function experimentArguments
+  "The experiment of simulate, buildModelFMU and the other calls that simulate or export a model."
   input Real startTime = nan() "Start time";
   input Real stopTime = nan() "Stop time";
   input Integer numberOfIntervals = -1 "Number of intervals";
-  input Real stepSize = nan() "Interval of the result file";
+  input Real stepSize = nan() "Interval";
   input Real tolerance = nan() "Integration tolerance";
+annotation(Documentation(info="<html>
+<p>An argument that is not given gets its value from the <code>experiment</code> annotation of the class,
+or of a class that it extends, or else from the default below.
+The declared values <code>nan()</code> and <code>-1</code> only mark an argument that is not given.</p>
+<table>
+<tr><th>Argument</th><th>Value if not given</th></tr>
+<tr><td><code>startTime</code></td><td><code>StartTime</code> of the experiment annotation, else 0.</td></tr>
+<tr><td><code>stopTime</code></td><td><code>StopTime</code>, else 1.</td></tr>
+<tr><td><code>numberOfIntervals</code></td><td>(<code>StopTime</code> - <code>StartTime</code>) / <code>Interval</code>, rounded to the nearest integer,
+or <code>NumberOfIntervals</code>, else 500. For optimize(), 50.
+If <code>stepSize</code> is given, (stopTime - startTime) / stepSize, rounded down.</td></tr>
+<tr><td><code>stepSize</code></td><td><code>Interval</code>, else (stopTime - startTime) / 500.
+If startTime, stopTime or numberOfIntervals is given, (stopTime - startTime) / numberOfIntervals.</td></tr>
+<tr><td><code>tolerance</code></td><td><code>Tolerance</code>, else 1e-6.</td></tr>
+</table>
+<p>A simulation uses numberOfIntervals and not stepSize. An FMU export writes startTime, stopTime, stepSize and tolerance
+into the <code>DefaultExperiment</code> element of modelDescription.xml.</p>
+</html>"),
+  preferredView="text");
+end experimentArguments;
+
+partial function simulationArguments
+  "The arguments of simulate, buildModel and the other simulation calls."
+  extends classNameArgument;
+  extends experimentArguments;
   input String method = "<default>" "Integration method";
   input String fileNamePrefix = "<default>" "File name prefix";
   input String options = "<default>" "Not used";
@@ -1125,17 +1154,11 @@ partial function simulationArguments
   input String cflags = "<default>" "Flags for the C compiler";
   input String simflags = "<default>" "Flags for the simulation";
 annotation(Documentation(info="<html>
-<p>Only <code>className</code> is necessary. An argument that is not given gets its value from the
-<code>experiment</code> annotation of the class, or of a class that it extends, or else from the default below.
-The declared values <code>nan()</code>, <code>-1</code> and <code>\"&lt;default&gt;\"</code> only mark an argument that is not given.</p>
+<p>Only <code>className</code> is necessary. For startTime, stopTime, numberOfIntervals, stepSize and tolerance,
+see <code>experimentArguments</code>. An argument that is not given gets its value from the default below.
+The declared value <code>\"&lt;default&gt;\"</code> only marks an argument that is not given.</p>
 <table>
 <tr><th>Argument</th><th>Value if not given</th></tr>
-<tr><td><code>startTime</code></td><td><code>StartTime</code> of the experiment annotation, else 0.</td></tr>
-<tr><td><code>stopTime</code></td><td><code>StopTime</code>, else 1.</td></tr>
-<tr><td><code>numberOfIntervals</code></td><td>(<code>StopTime</code> - <code>StartTime</code>) / <code>Interval</code>, rounded to the nearest integer,
-or <code>NumberOfIntervals</code>, else 500. For optimize(), 50.</td></tr>
-<tr><td><code>stepSize</code></td><td>Not used. If it is given, numberOfIntervals is (stopTime - startTime) / stepSize, rounded down.</td></tr>
-<tr><td><code>tolerance</code></td><td><code>Tolerance</code>, else 1e-6.</td></tr>
 <tr><td><code>method</code></td><td>\"auto\": the simulation runtime chooses the method (see <code>-s</code>). With <code>--daeMode</code>, \"ida\". For optimize(), \"optimization\".</td></tr>
 <tr><td><code>fileNamePrefix</code></td><td>The name of the class. The result file is <code>&lt;fileNamePrefix&gt;_res.&lt;outputFormat&gt;</code>.</td></tr>
 <tr><td><code>options</code></td><td>Not used.</td></tr>
@@ -1150,6 +1173,22 @@ for example, <code>-s=euler</code> replaces <code>method</code>.</p>
 </html>"),
   preferredView="text");
 end simulationArguments;
+
+partial function fmuArguments
+  "The arguments of buildModelFMU and translateModelFMU that come before the experiment."
+  input TypeName className "the class that should translated";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
+  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
+  input String platforms[:] = {"static"} "The list of platforms to generate code for.
+                                          \"dynamic\"=current platform, dynamically link the runtime.
+                                          \"static\"=current platform, statically link everything.
+                                          \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+  input Boolean includeResources = false "Deprecated and has no effect";
+  input String method = "<default>" "Integration method of a Co-Simulation FMU. <default>: cvode, or the method of the model for a wasm FMU";
+end fmuArguments;
 
 function nan
   "Not a number; the default of an argument that is computed when it is not given."
@@ -2861,21 +2900,13 @@ end importFMUModelDescription;
 
 impure function translateModelFMU
   "Translates a model into C code for a FMU without building it."
-  input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
-  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
-  input String platforms[:] = {"static"} "The list of platforms to generate code for.
-                                          \"dynamic\"=current platform, dynamically link the runtime.
-                                          \"static\"=current platform, statically link everything.
-                                          \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
-  input Boolean includeResources = false "include Modelica based resources via loadResource or not";
+  extends Internal.fmuArguments;
+  extends Internal.experimentArguments;
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The only required argument is the className, while all others have some default values.</p>
+<p>The only required argument is the className, while all others have some default values.
+For the experiment, see <code>Internal.experimentArguments</code>.</p>
 <p>Example command:
 <pre>translateModelFMU(className, version=\"2.0\");</pre>
 </p>
@@ -2885,22 +2916,13 @@ end translateModelFMU;
 
 impure function buildModelFMU
   "Translates a Modelica model into a Functional Mockup Unit."
-  input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
-  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
-  input String platforms[:] = {"static"} "The list of platforms to generate code for.
-                                          \"dynamic\"=current platform, dynamically link the runtime.
-                                          \"static\"=current platform, statically link everything.
-                                          \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
-  input Boolean includeResources = false "Depreacted and no effect";
-  input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
+  extends Internal.fmuArguments;
+  extends Internal.experimentArguments;
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The only required argument is the className, while all others have some default values.</p>
+<p>The only required argument is the className, while all others have some default values.
+For the experiment, see <code>Internal.experimentArguments</code>.</p>
 <p>Example command:
 <pre>buildModelFMU(className, version=\"2.0\");</pre>
 </p>

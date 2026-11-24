@@ -1,0 +1,72 @@
+// name:     FmuDefaultExperiment
+// keywords: FMI 2.0 3.0 export DefaultExperiment
+// status:   correct
+// teardown_command: rm -rf FmuDefaultExperiment.fmu FmuDefaultExperiment.wasm FmuDefaultExperiment_* *.fmutmp
+//
+// The experiment arguments of buildModelFMU and translateModelFMU replace the
+// values of the experiment annotation in the DefaultExperiment of
+// modelDescription.xml (#17772).
+
+loadString("
+model FmuDefaultExperiment
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+  annotation(experiment(StartTime = 0, StopTime = 2, Interval = 0.01, Tolerance = 1e-5));
+end FmuDefaultExperiment;
+"); getErrorString();
+
+buildModelFMU(FmuDefaultExperiment, version = "2.0", platforms = fill("", 0)); getErrorString();
+system("unzip -cqq FmuDefaultExperiment.fmu modelDescription.xml | sed -n \"/<DefaultExperiment/p\" > FmuDefaultExperiment_de.xml");
+readFile("FmuDefaultExperiment_de.xml");
+
+buildModelFMU(FmuDefaultExperiment, version = "2.0", platforms = fill("", 0), startTime = 1, stopTime = 3, stepSize = 0.5, tolerance = 1e-8); getErrorString();
+system("unzip -cqq FmuDefaultExperiment.fmu modelDescription.xml | sed -n \"/<DefaultExperiment/p\" > FmuDefaultExperiment_de.xml");
+readFile("FmuDefaultExperiment_de.xml");
+
+// As for simulate, a new stop time keeps the number of intervals.
+buildModelFMU(FmuDefaultExperiment, version = "2.0", platforms = fill("", 0), stopTime = 4); getErrorString();
+system("unzip -cqq FmuDefaultExperiment.fmu modelDescription.xml | sed -n \"/<DefaultExperiment/p\" > FmuDefaultExperiment_de.xml");
+readFile("FmuDefaultExperiment_de.xml");
+
+buildModelFMU(FmuDefaultExperiment, version = "2.0", platforms = fill("", 0), numberOfIntervals = 8); getErrorString();
+system("unzip -cqq FmuDefaultExperiment.fmu modelDescription.xml | sed -n \"/<DefaultExperiment/p\" > FmuDefaultExperiment_de.xml");
+readFile("FmuDefaultExperiment_de.xml");
+
+buildModelFMU(FmuDefaultExperiment, version = "3.0", platforms = fill("", 0), tolerance = 1e-3); getErrorString();
+system("unzip -cqq FmuDefaultExperiment.fmu modelDescription.xml | sed -n \"/<DefaultExperiment/p\" > FmuDefaultExperiment_de.xml");
+readFile("FmuDefaultExperiment_de.xml");
+
+translateModelFMU(FmuDefaultExperiment, version = "2.0", stopTime = 5, stepSize = 0.1); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuDefaultExperiment.fmu"
+// ""
+// 0
+// "  <DefaultExperiment startTime=\"0.0\" stopTime=\"2.0\" tolerance=\"1e-5\" stepSize=\"0.01\"/>
+// "
+// "FmuDefaultExperiment.fmu"
+// ""
+// 0
+// "  <DefaultExperiment startTime=\"1.0\" stopTime=\"3.0\" tolerance=\"1e-8\" stepSize=\"0.5\"/>
+// "
+// "FmuDefaultExperiment.fmu"
+// ""
+// 0
+// "  <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-5\" stepSize=\"0.02\"/>
+// "
+// "FmuDefaultExperiment.fmu"
+// ""
+// 0
+// "  <DefaultExperiment startTime=\"0.0\" stopTime=\"2.0\" tolerance=\"1e-5\" stepSize=\"0.25\"/>
+// "
+// "FmuDefaultExperiment.fmu"
+// ""
+// 0
+// "  <DefaultExperiment startTime=\"0.0\" stopTime=\"2.0\" tolerance=\"0.001\" stepSize=\"0.01\"/>
+// "
+// true
+// ""
+// endResult
