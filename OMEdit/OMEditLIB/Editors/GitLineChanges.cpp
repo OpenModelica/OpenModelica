@@ -303,6 +303,7 @@ QStringList GitLineChanges::splitLines(QString text)
   return text.split(QLatin1Char('\n'));
 }
 
+#if !defined(__EMSCRIPTEN__)
 /*!
  * \brief GitLineChanges::gitProcessFinished
  * Slot activated when git finishes.
@@ -312,16 +313,11 @@ QStringList GitLineChanges::splitLines(QString text)
  */
 void GitLineChanges::gitProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-#if !defined(__EMSCRIPTEN__)
   if (exitStatus != QProcess::NormalExit || exitCode != 0) {
     setHeadLines(false, QStringList());
     return;
   }
   setHeadLines(true, splitLines(QString::fromUtf8(mGitProcess.readAllStandardOutput())));
-#else
-  Q_UNUSED(exitCode);
-  Q_UNUSED(exitStatus);
-#endif
 }
 
 /*!
@@ -335,6 +331,7 @@ void GitLineChanges::gitProcessErrorOccurred(QProcess::ProcessError error)
     setHeadLines(false, QStringList());
   }
 }
+#endif
 
 /*!
  * \brief GitLineChanges::updateChanges
