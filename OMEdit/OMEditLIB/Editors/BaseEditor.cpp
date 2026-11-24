@@ -1517,17 +1517,26 @@ void PlainTextEdit::updateHighlights()
 void PlainTextEdit::updateCursorPosition()
 {
   if (mpBaseEditor->getModelWidget() && isVisible()) {
-    const QTextBlock block = textCursor().block();
-    int line = block.blockNumber() + 1;
-    if (mpBaseEditor->isModelicaModelInPackageOneFile()) {
-      line =  block.blockNumber() + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
-    }
-    // Issue #7753. textCursor().columnNumber() doesn't work when line wrapping is on.
-    const int column = textCursor().position() - block.position();
-    Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
-    pPositionLabel->setText(QString("Ln: %1, Col: %2").arg(line).arg(column));
+    updatePositionLabel();
   }
   ensureCursorVisible();
+}
+
+/*!
+ * \brief PlainTextEdit::updatePositionLabel
+ * Shows the cursor position in the status bar.
+ */
+void PlainTextEdit::updatePositionLabel()
+{
+  const QTextBlock block = textCursor().block();
+  int line = block.blockNumber() + 1;
+  if (mpBaseEditor->isModelicaModelInPackageOneFile()) {
+    line =  block.blockNumber() + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
+  }
+  // Issue #7753. textCursor().columnNumber() doesn't work when line wrapping is on.
+  const int column = textCursor().position() - block.position();
+  Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
+  pPositionLabel->setText(QString("Ln: %1, Col: %2").arg(line).arg(column));
 }
 
 /*!

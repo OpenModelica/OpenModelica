@@ -4426,6 +4426,7 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
       switchToWelcomePerspective();
       break;
   }
+  mpModelWidgetContainer->updatePositionLabel(mpModelWidgetContainer->getCurrentModelWidget());
 }
 
 /*!
