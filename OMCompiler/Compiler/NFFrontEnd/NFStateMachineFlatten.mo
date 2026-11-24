@@ -693,6 +693,7 @@ protected
   Type lhsTy;
   NFInstNode.ScopeRef eqScope;
   DAE.ElementSource eqSource;
+  DAE.EquationOrigin eqOrigin;
   list<ComponentRef> stateVarCrefs;
   Boolean hasStateVarOnLHS, isOuterOutput;
   Expression newRhs, perStateVarExp;
@@ -700,7 +701,7 @@ protected
   Variable perStateVar;
   list<tuple<ComponentRef, ComponentRef>> prevList;
 algorithm
-  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = lhsTy, scope = eqScope, source = eqSource) := inEq;
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = lhsTy, scope = eqScope, source = eqSource, origin = eqOrigin) := inEq;
   stateVarCrefs := UnorderedMap.keyList(crToStart);
 
   try
@@ -709,7 +710,7 @@ algorithm
     // Substitute previous(x) → x_previous for state variables in RHS
     (newRhs, _) := Expression.mapFold(rhs,
       function subsPreviousCrefs(stateVarCrefs = stateVarCrefs), false);
-    eq1 := Equation.EQUALITY(lhs, newRhs, lhsTy, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE);
+    eq1 := Equation.EQUALITY(lhs, newRhs, lhsTy, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE, eqOrigin);
 
     // Check if this is an outer-output equation:
     // LHS is NOT state-prefixed but the equation's scope is the state component
@@ -726,7 +727,7 @@ algorithm
         getDefaultStart(lhsTy));
       perStateVarExp := makeCrefExp(perStateVarCref, lhsTy);
       // state1.x = if state1.active then rhs else previous(state1.x)
-      eq1 := Equation.EQUALITY(perStateVarExp, newRhs, lhsTy, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE);
+      eq1 := Equation.EQUALITY(perStateVarExp, newRhs, lhsTy, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE, eqOrigin);
       eq1 := wrapInStateActivationConditional(eq1, stateCref, false);
       accEqs := eq1 :: accEqs;
       accVars := perStateVar :: accVars;
@@ -1329,7 +1330,7 @@ algorithm
         Expression.CREF(cref = lhsRef) := eq.lhs;
         if ComponentRef.isEqual(cRef, lhsRef) then
           (newRhs, _) := subsXInState(eq.rhs, xInState, substExp);
-          outEq := Equation.EQUALITY(eq.lhs, newRhs, eq.ty, eq.scope, eq.source, ScalarizeMode.NO_PREFERENCE);
+          outEq := Equation.EQUALITY(eq.lhs, newRhs, eq.ty, eq.scope, eq.source, ScalarizeMode.NO_PREFERENCE, eq.origin);
         end if;
       then outEq;
     else eq;
@@ -1450,8 +1451,9 @@ protected
   Type ty;
   NFInstNode.ScopeRef eqScope;
   DAE.ElementSource eqSource;
+  DAE.EquationOrigin eqOrigin;
 algorithm
-  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = eqScope, source = eqSource) := inEq;
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = eqScope, source = eqSource, origin = eqOrigin) := inEq;
   Expression.CREF(ty = ty, cref = lhsCref) := lhs;
   activeRef := makeCrefExp(qCref("active", Type.BOOLEAN(), {}, stateCref), Type.BOOLEAN());
   if isResetEquation then
@@ -1463,7 +1465,7 @@ algorithm
   else
     expElse := makePreviousCall(lhs, ty);
   end if;
-  outEq := Equation.EQUALITY(lhs, makeIfExp(activeRef, rhs, expElse, ty), ty, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE);
+  outEq := Equation.EQUALITY(lhs, makeIfExp(activeRef, rhs, expElse, ty), ty, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE, eqOrigin);
 end wrapInStateActivationConditional;
 
 protected
@@ -1841,7 +1843,7 @@ algorithm
   end for;
 
   src := ElementSource.createElementSource(Absyn.dummyInfo);
-  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, NFInstNode.NO_SCOPE, src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
+  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, NFInstNode.NO_SCOPE, src, ScalarizeMode.NO_PREFERENCE, DAE.EquationOrigin.EQUATION) :: accEqs;
 end generateMergeEquation;
 
 protected
@@ -1995,7 +1997,7 @@ function makeEq
   input Type ty;
   output Equation eq;
 algorithm
-  eq := Equation.EQUALITY(lhs, rhs, ty, NFInstNode.NO_SCOPE, DAE.emptyElementSource, ScalarizeMode.NO_PREFERENCE);
+  eq := Equation.EQUALITY(lhs, rhs, ty, NFInstNode.NO_SCOPE, DAE.emptyElementSource, ScalarizeMode.NO_PREFERENCE, DAE.EquationOrigin.EQUATION);
 end makeEq;
 
 // ============================================================

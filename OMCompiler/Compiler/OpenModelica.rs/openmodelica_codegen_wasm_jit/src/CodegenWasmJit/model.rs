@@ -626,6 +626,8 @@ pub(super) fn build_sim_model(
         &assert_eqs,
         &removed_init_eqs,
         &clocked,
+        // `SimCode.timeInvariantEquations`: only `functionDAE` solves them.
+        &all_eqs,
     ]
     .iter()
     .map(|l| eqs_with_nested(l.as_slice()))
@@ -696,6 +698,13 @@ pub(super) fn build_sim_model(
             .map(|c| (generic_call_index(c), c.clone()))
             .collect(),
     );
+    if let Some(divisors) = &sim_code.checkedDivisors {
+        var_map.checked_divisors = Arc::new(
+            lst(&openmodelica_util::UnorderedSet::toList(divisors.clone()))
+                .map(|e| crate::CodegenWasmJitFunctions::dumped_exp(e))
+                .collect::<Result<_>>()?,
+        );
+    }
 
     // --- Type section: one type per import, per model function, per equation
     // function (all take one i32 `SimData` ptr, no result), then `simulate`
@@ -1305,7 +1314,8 @@ pub(super) fn build_sim_model(
     };
     // C's `inputNames` / `nInputVars`. No slot ⇒ no column to receive.
     let mut input_vars: Vec<openmodelica_sim_meta::InputVar> = Vec::new();
-    for sv in lst(&vars.inputVars) {
+    let numeric_inputs = openmodelica_codegen_util::SimCodeCodegenUtil::numericInputVars(vars.inputVars.clone());
+    for sv in lst(&numeric_inputs) {
         let key = sim_cref_key(&sv.name)?;
         let name = cref_display(&sv.name)?;
         match all_reals
@@ -2778,6 +2788,7 @@ fn nls_homotopy_support(sim_code: &SimCode::SimCode) -> bool {
         || has(flatten_eqs(&sim_code.initialEquations))
         || has(flatten_eqs_ll(&sim_code.odeEquations))
         || has(flatten_eqs_ll(&sim_code.algebraicEquations))
+        || has(flatten_eqs(&sim_code.allEquations))
 }
 
 /// C's `homotopyMethod` model-callback entry, from the same `Config` predicates.
@@ -2850,6 +2861,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         generic_calls: var_map.generic_calls.clone(),
+        checked_divisors: var_map.checked_divisors.clone(),
         n_samples: var_map.n_samples,
         sample_active_off: var_map.sample_active_off,
         relations_off: var_map.relations_off,

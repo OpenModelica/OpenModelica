@@ -232,8 +232,16 @@ algorithm
 
     case DAE.ASUB(exp = e, sub = subs)
       algorithm
-        expl := list(Expression.getSubscriptExp(sub) for sub in subs);
-        e := simplifyAsubExp(inExp,e,expl);
+        if List.any(subs, Expression.isWholeDimSubscript) then
+          try
+            e := Expression.applyExpSubscriptsFoldCheckSimplify(e, subs);
+          else
+            e := inExp;
+          end try;
+        else
+          expl := list(Expression.getSubscriptExp(sub) for sub in subs);
+          e := simplifyAsubExp(inExp,e,expl);
+        end if;
       then (e,options);
 
     case DAE.TSUB() then (simplifyTSub(inExp),options);
@@ -399,7 +407,7 @@ protected function simplifyCall
 algorithm
   outExp := matchcontinue inExp
     local
-      DAE.Exp e,e1,e2,exp,zero;
+      DAE.Exp e,e1,e2,exp,zero,one;
       list<DAE.Exp> matrix,expl;
       DAE.CallAttributes attr;
       DAE.Type tp;
@@ -493,10 +501,13 @@ algorithm
       then simplifyBuiltinCalls(inExp);
 
     // simplify identity
-    case DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)})
+    case DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)}, attr = DAE.CALL_ATTR(ty = tp))
       algorithm
-        matrix := list(DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)}),true,list(if i==j then DAE.ICONST(1) else DAE.ICONST(0) for i in 1:n)) for j in 1:n);
-      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),false,matrix);
+        tp := if Types.isRealOrSubTypeReal(Types.arrayElementType(tp)) then DAE.T_REAL_DEFAULT else DAE.T_INTEGER_DEFAULT;
+        one := Expression.makeConstOne(tp);
+        zero := Expression.makeConstZero(tp);
+        matrix := list(DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n)}),true,list(if i==j then one else zero for i in 1:n)) for j in 1:n);
+      then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),false,matrix);
 
     case DAE.CALL(path = Absyn.IDENT(name = "diagonal"), expLst = {DAE.ARRAY(array=expl,ty=tp)})
       algorithm
@@ -506,9 +517,10 @@ algorithm
         matrix := list(DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n)}),true,list(if i==j then listGet(expl,i) else zero for i in 1:n)) for j in 1:n);
       then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),false,matrix);
 
-    // arcxxx(xxx(e)) => e; xxx(arcxxx(e)) => e
+    // tan(atan(e)) => e; log(exp(e)) => e
     case DAE.CALL(path=Absyn.IDENT(idn),expLst={DAE.CALL(path=Absyn.IDENT(idn2),expLst={e})})
     guard (idn=="tan" and idn2=="atan")
+       or (idn=="log" and idn2=="exp")
 //      or (idn=="sin" and idn2=="asin")
 //      or (idn=="cos" and idn2=="acos")
       then e;
@@ -742,7 +754,12 @@ algorithm
       algorithm
         // print("simplify1 start: " + ExpressionBasics.printExpStr(exp) + "\n");
         ErrorExt.setCheckpoint("ExpressionSimplify");
-        (expAfterSimplify,options) := Expression.traverseExpBottomUp(exp,simplifyWork,options);
+        try
+          (expAfterSimplify,options) := Expression.traverseExpBottomUp(exp,simplifyWork,options);
+        else
+          ErrorExt.delCheckpoint("ExpressionSimplify");
+          fail();
+        end try;
         b := not referenceEq(expAfterSimplify, exp);
         if b then
           ErrorExt.rollBack("ExpressionSimplify");
@@ -1367,8 +1384,9 @@ algorithm
      expl := Expression.expandFactors(e1);
      ({e2},es) := List.split1OnTrue(expl, Expression.isFunCall, "log");
      DAE.CALL(expLst={e}):= e2;
-     e3 := Expression.makeProductLst(es);
-   then Expression.expPow(e, Expression.negate(e3));
+     e3 := Expression.negate(Expression.makeProductLst(es));
+     true := powKeepsLogDomain(e, e3);
+   then Expression.expPow(e, e3);
 
    // exp(...*log(x)*...)
    case DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1})
@@ -1377,6 +1395,7 @@ algorithm
      ({e2},es) := List.split1OnTrue(expl, Expression.isFunCall, "log");
      DAE.CALL(expLst={e}):= e2;
      e3 := Expression.makeProductLst(es);
+     true := powKeepsLogDomain(e, e3);
    then Expression.expPow(e,e3);
 
    // exp(e)^r = exp(e*r)
@@ -1604,6 +1623,28 @@ algorithm
 
   end matchcontinue;
 end simplifyBuiltinCalls;
+
+protected function powKeepsLogDomain
+  "True if x^c fails for all x < 0, as log(x) does: x is known to be >= 0, or
+  c is neither an integer nor 1/(odd integer), see real_real_pow."
+  input DAE.Exp x;
+  input DAE.Exp c;
+  output Boolean b;
+algorithm
+  b := Expression.isPositiveOrZero(x);
+  if not b then
+    b := match c
+      local
+        Real r, inv, n;
+      case DAE.RCONST(r) guard abs(r - floor(r + 0.5)) >= 1e-10
+        algorithm
+          inv := 1.0 / r;
+          n := floor(inv + 0.5);
+        then abs(inv - n) >= 1e-10 or not realEq(realMod(n, 2.0), 1.0);
+      else false;
+    end match;
+  end if;
+end powKeepsLogDomain;
 
 protected function simplifyScalar "Handle the scalar() operator"
   input DAE.Exp inExp;
@@ -4851,6 +4892,12 @@ algorithm
       algorithm
         true := ExpressionBasics.expEqual(e1,e2);
       then Expression.makeConstZero(ty);
+
+    // cosh(x)^2 - sinh(x)^2 = 1
+    case (DAE.SUB(), DAE.BINARY(DAE.CALL(path=Absyn.IDENT("cosh"),expLst={e1}),DAE.POW(DAE.T_REAL()),DAE.RCONST(real = 2.0)),
+                     DAE.BINARY(DAE.CALL(path=Absyn.IDENT("sinh"),expLst={e2}),DAE.POW(DAE.T_REAL()),DAE.RCONST(real = 2.0)), _, _)
+      guard ExpressionBasics.expEqual(e1,e2)
+      then DAE.RCONST(1.0);
 
     // a-(-b) = a+b
     case (DAE.SUB(ty = ty), e1, DAE.UNARY(operator = DAE.UMINUS(),exp = e2), _, _)

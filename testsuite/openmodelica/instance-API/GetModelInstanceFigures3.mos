@@ -1,0 +1,169 @@
+// name: GetModelInstanceFigures3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  expandable connector Bus
+  end Bus;
+
+  model BouncingBall
+    Bus bus;
+    annotation(Documentation(figures = {
+      Figure(plots = {Plot(curves = {Curve(y = bus.x, legend = \"bus.x\")})})}));
+  end BouncingBall;");
+getErrorString();
+
+getModelInstance(BouncingBall, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "{
+//   \"name\": \"BouncingBall\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"Documentation\": {
+//       \"figures\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Figure\",
+//           \"elements\": [
+//             \"\",
+//             \"\",
+//             \"\",
+//             false,
+//             [
+//               {
+//                 \"$kind\": \"record\",
+//                 \"name\": \"Plot\",
+//                 \"elements\": [
+//                   \"\",
+//                   \"\",
+//                   [
+//                     {
+//                       \"$kind\": \"record\",
+//                       \"name\": \"Curve\",
+//                       \"elements\": [
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"time\"
+//                             }
+//                           ]
+//                         },
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"bus\"
+//                             },
+//                             {
+//                               \"name\": \"x\"
+//                             }
+//                           ]
+//                         },
+//                         \"bus.x\",
+//                         {
+//                           \"$kind\": \"enum\",
+//                           \"name\": \"YAxisSelection.Left\",
+//                           \"index\": 1
+//                         },
+//                         0
+//                       ]
+//                     }
+//                   ],
+//                   {
+//                     \"$kind\": \"record\",
+//                     \"name\": \"Axis\",
+//                     \"elements\": [
+//                       0,
+//                       0,
+//                       \"\",
+//                       \"\",
+//                       {
+//                         \"$kind\": \"record\",
+//                         \"name\": \"AxisScale\",
+//                         \"elements\": [
+//                           \"Linear\",
+//                           10
+//                         ]
+//                       }
+//                     ]
+//                   },
+//                   {
+//                     \"$kind\": \"record\",
+//                     \"name\": \"Axis\",
+//                     \"elements\": [
+//                       0,
+//                       0,
+//                       \"\",
+//                       \"\",
+//                       {
+//                         \"$kind\": \"record\",
+//                         \"name\": \"AxisScale\",
+//                         \"elements\": [
+//                           \"Linear\",
+//                           10
+//                         ]
+//                       }
+//                     ]
+//                   },
+//                   {
+//                     \"$kind\": \"record\",
+//                     \"name\": \"Axis\",
+//                     \"elements\": [
+//                       0,
+//                       0,
+//                       \"\",
+//                       \"\",
+//                       {
+//                         \"$kind\": \"record\",
+//                         \"name\": \"AxisScale\",
+//                         \"elements\": [
+//                           \"Linear\",
+//                           10
+//                         ]
+//                       }
+//                     ]
+//                   }
+//                 ]
+//               }
+//             ],
+//             \"\"
+//           ]
+//         }
+//       ]
+//     }
+//   },
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"bus\",
+//       \"type\": {
+//         \"name\": \"Bus\",
+//         \"restriction\": \"expandable connector\",
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 3,
+//           \"columnEnd\": 10
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 5,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 19
+//   }
+// }"
+// ""
+// endResult

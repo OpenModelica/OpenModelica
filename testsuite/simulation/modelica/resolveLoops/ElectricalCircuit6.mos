@@ -53,7 +53,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 7 systems
-//    {(1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,10,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%)}
+//    {(1,10,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1

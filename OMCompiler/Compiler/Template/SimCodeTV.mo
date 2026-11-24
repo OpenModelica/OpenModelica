@@ -358,6 +358,7 @@ package SimCodeVar
       Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref)";
       Boolean relativeQuantity           "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
       Boolean isConnectorFlow            "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
+      Boolean startFromEquation          "initialValue is the value a removed initial equation gave the variable";
     end SIMVAR;
   end SimVar;
 
@@ -1589,6 +1590,11 @@ package SimCodeCodegenUtil
     output Boolean b;
   end hasSymbolicDims;
 
+  function numericInputVars
+    input list<SimCodeVar.SimVar> inputVars;
+    output list<SimCodeVar.SimVar> vars;
+  end numericInputVars;
+
   function isSymbolicArrayVar
     input SimCodeVar.SimVar var;
     output Boolean b;
@@ -1816,12 +1822,18 @@ package SimCodeCodegenUtil
 
   function simVarIndexRuns
     input list<SimCodeVar.SimVar> vars;
-    output list<tuple<Integer, Integer, Integer, Integer>> runs;
+    output list<tuple<Integer, Integer, Integer, Integer, SimCodeVar.SimVar>> runs;
   end simVarIndexRuns;
 
   function getSimCode
     output SimCode.SimCode code;
   end getSimCode;
+
+  function isCheckedDivisor
+    input DAE.Type ty;
+    input DAE.Exp exp;
+    output Boolean checked;
+  end isCheckedDivisor;
 
   function isSimulationCodegen
     output Boolean simulation;

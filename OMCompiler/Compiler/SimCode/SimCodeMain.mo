@@ -258,7 +258,8 @@ algorithm
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}),
+    aliasEquations = false);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -522,7 +523,8 @@ protected function callTargetTemplates "
   input SimCode.SimCode inSimCode;
   input String target;
 protected
-  SimCode.SimCode simCode = if target == "C" and Flags.getConfigBool(Flags.TUNABLE_PARAMETERS) then ParamDeps.add(inSimCode) else inSimCode;
+  SimCode.SimCode simCode = if target == "C" or target == "wasm-jit" or target == "wasm" then SimCodeUtil.startValuesFromInitialEquations(inSimCode, fmu=false) else inSimCode;
+  SimCode.SimCode infoSimCode "also has the initial equations that start values replace";
   partial function Func
     input Tpl.Text txt;
     input SimCode.SimCode a_simCode;
@@ -586,6 +588,12 @@ protected
 
   AvlSetString.Tree generatedObjects=AvlSetString.EMPTY();
 algorithm
+  if target == "C" and Flags.getConfigBool(Flags.TUNABLE_PARAMETERS) then
+    simCode := ParamDeps.add(simCode);
+  end if;
+  infoSimCode := simCode;
+  infoSimCode.initialEquations := inSimCode.initialEquations;
+  infoSimCode.initialEquations_lambda0 := inSimCode.initialEquations_lambda0;
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
   () := match target
@@ -658,7 +666,7 @@ algorithm
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions, a_genericCalls=simCode.generic_loop_calls), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
 
         codegenFuncs := (function runToStr(func=function SerializeSparsityPattern.serialize(code=simCode))) :: codegenFuncs;
-        codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
+        codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=infoSimCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
 
         if Flags.getConfigBool(Flags.PARMODAUTO) then
           codegenFuncs := (function runToStr(func=function SerializeTaskSystemInfo.serializeParMod(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
@@ -765,7 +773,7 @@ algorithm
         SerializeInitXML.simulationInitFile(simCode, guid);
       end if;
       if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-        SerializeModelInfo.serialize(simCode, true);
+        SerializeModelInfo.serialize(infoSimCode, true);
       elseif System.regularFileExists(simCode.fileNamePrefix + "_info.json") then
         // a previous run's, which would describe another translation
         System.removeFile(simCode.fileNamePrefix + "_info.json");
@@ -1077,13 +1085,18 @@ protected function callTargetTemplatesFMU
   input Boolean translateOnly = false "keep the translation in memory instead of writing the FMU";
 protected
   SimCode.SimCode simCode = SimCodeUtil.addFMI3Figures(inSimCode, FMUVersion);
+  SimCode.SimCode infoSimCode "also has the initial equations that start values replace";
   // "wasm" is the standalone simulation target and has no FMU export of its own;
   // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
   String fmuTarget = if target == "wasm" then "wasm-jit" else target;
 algorithm
   if (fmuTarget == "C" or fmuTarget == "wasm-jit") and (FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion)) then
+    simCode := SimCodeUtil.startValuesFromInitialEquations(simCode, fmu=true);
     simCode := ParamDeps.add(simCode);
   end if;
+  infoSimCode := simCode;
+  infoSimCode.initialEquations := inSimCode.initialEquations;
+  infoSimCode.initialEquations_lambda0 := inSimCode.initialEquations_lambda0;
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
@@ -1204,7 +1217,7 @@ algorithm
           end if;
         end for;
 
-        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+        SerializeModelInfo.serialize(infoSimCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
         str := fmutmp + "/sources/" + simCode.fileNamePrefix;
         if FMUVersion == "1.0" then
           b := System.covertTextFileToCLiteral(simCode.fileNamePrefix + "_info.json", str + "_info.c", Flags.getConfigString(Flags.TARGET));
@@ -2627,7 +2640,9 @@ algorithm
       daeModeData                 = daeModeData,
       scalarized                  = true,
       fmiFigures                  = {},
-      paramDeps                   = SimCode.emptyParamDeps
+      paramDeps                   = SimCode.emptyParamDeps,
+      timeInvariantEquations      = {},
+      checkedDivisors             = NONE()
     );
 
     (simCode, lits) := SimCodeUtil.findSimCodeLiterals(simCode, literals);

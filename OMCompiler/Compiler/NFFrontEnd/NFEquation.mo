@@ -246,6 +246,7 @@ public
       the equation.";
     DAE.ElementSource source;
     ScalarizeMode scalarizeMode;
+    DAE.EquationOrigin origin;
   end EQUALITY;
 
   record CONNECT
@@ -309,9 +310,10 @@ public
     input DAE.ElementSource src = DAE.emptyElementSource;
     input InstNode scope = InstNode.EMPTY_NODE();
     input ScalarizeMode scalarizeMode = ScalarizeMode.NO_PREFERENCE;
+    input DAE.EquationOrigin origin = DAE.EquationOrigin.EQUATION;
     output Equation eq;
   algorithm
-    eq := EQUALITY(lhs, rhs, ty, InstNode.identityCell(scope), src, scalarizeMode);
+    eq := EQUALITY(lhs, rhs, ty, InstNode.identityCell(scope), src, scalarizeMode, origin);
     annotation(__OpenModelica_EarlyInline=true);
   end makeEquality;
 
@@ -761,7 +763,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode, eq.origin);
 
       case CONNECT()
         algorithm
@@ -837,7 +839,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode, eq.origin);
 
       case CONNECT()
         algorithm
@@ -1674,7 +1676,7 @@ public
           for i in 1:Type.recordFieldCount(Type.arrayElementType(eq.ty)) loop
             lhs := Expression.nthRecordElement(i, eq.lhs);
             rhs := Expression.nthRecordElement(i, eq.rhs);
-            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source, eq.scalarizeMode) :: equations;
+            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source, eq.scalarizeMode, eq.origin) :: equations;
           end for;
         then
           equations;

@@ -964,6 +964,8 @@ struct MeState<E: FmiHost + 'static> {
     /// String parameter sets, applied after `run_initialization` so init equations
     /// don't clobber them (cf `init_overrides`).
     init_string_overrides: Vec<(u32, String)>,
+    /// The stop time of `fmi3EnterInitializationMode`: a step must not end after it.
+    stop_time: Option<f64>,
     /// The ODE Jacobian for the point the model holds, and whether it is still
     /// the point it was assembled at.
     jacobian_cache: Vec<f64>,
@@ -1247,7 +1249,14 @@ impl<E: FmiHost + 'static> MeState<E> {
             .call1_if_present("callExternalObjectDestructors", self.sim_data);
     }
 
+    /// The driver's override store is per process: load this instance's sets, which
+    /// a reset has cleared, or the previous run's overrides land in the start values.
     fn seed_start_state(&mut self) {
+        set_param_overrides(
+            self.init_overrides.clone(),
+            self.init_start_overrides.clone(),
+            Vec::new(),
+        );
         let e = &mut self.engine;
         let _ = driver::seed_start_state(&mut *e, self.sim_data, &self.meta);
     }
@@ -1765,6 +1774,7 @@ fn new_state() -> Option<MeState<Engine>> {
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
         init_string_overrides: Vec::new(),
+        stop_time: None,
         samples: None,
         sync: None,
         jacobian_cache: Vec::new(),
@@ -1930,7 +1940,20 @@ macro_rules! cs_instance_methods {
         if st.mode != Mode::Ready {
             return Err(err_status("DoStep: only allowed after Initialization Mode"));
         }
-        let target = current_communication_point + communication_step_size;
+        let mut target = current_communication_point + communication_step_size;
+        if let Some(stop) = st.stop_time.filter(|&stop| target > stop) {
+            // The sum of the two arguments can round one ulp past the stop time.
+            if target > stop.next_up() {
+                return Err(err_status(&alloc::format!(
+                    "DoStep: The step from {} with size {} ends {} after the stop time {}.",
+                    driver::format_g(current_communication_point, 16),
+                    driver::format_g(communication_step_size, 16),
+                    driver::format_g(target - stop, 16),
+                    driver::format_g(stop, 16)
+                )));
+            }
+            target = stop;
+        }
         let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
         let st = &mut *st;
         // Build the driver on first use, over the initialized state at the start
@@ -2066,12 +2089,13 @@ macro_rules! shared_instance_methods {
         &self,
         tolerance: Option<f64>,
         start_time: f64,
-        _stop_time: Option<f64>,
+        stop_time: Option<f64>,
     ) -> Status {
         let mut st = self.st.borrow_mut();
         if let Err(s) = st.refuse_failed("EnterInitializationMode") {
             return s;
         }
+        st.stop_time = stop_time;
         // The sets made while Instantiated stay: C's `setStartValues` here turns
         // the live values into the `start` attributes the initial solve reads.
         st.mode = Mode::Init;
@@ -2239,6 +2263,7 @@ macro_rules! shared_instance_methods {
         st.init_overrides.clear();
         st.init_start_overrides.clear();
         st.init_string_overrides.clear();
+        st.stop_time = None;
         st.tunable.reset();
         st.samples = None;
         st.sync = None;
@@ -2972,6 +2997,7 @@ impl<E: FmiHost + 'static> Instance<E> {
             init_overrides: Vec::new(),
             init_start_overrides: Vec::new(),
             init_string_overrides: Vec::new(),
+            stop_time: None,
             samples: None,
             sync: None,
             jacobian_cache: Vec::new(),

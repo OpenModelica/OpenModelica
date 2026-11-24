@@ -108,6 +108,7 @@ typedef void* iconv_t;
 /* includes/defines specific for Windows*/
 #include <assert.h>
 #include <direct.h>
+#include <io.h>
 #include <process.h>
 
 #define MAXPATHLEN MAX_PATH
@@ -577,6 +578,15 @@ const char* SystemImpl__basename(const char *str)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+/* The handle C's stream writes to. An embedder such as OMEdit freopens stdout
+ * and stderr; in a GUI application that does not change GetStdHandle. */
+static HANDLE crtStreamHandle(FILE *stream, DWORD stdHandle)
+{
+  int fd = _fileno(stream);
+  intptr_t h = fd < 0 ? -1 : _get_osfhandle(fd);
+  return (h == -1 || h == -2) ? GetStdHandle(stdHandle) : (HANDLE) h;
+}
+
 /**
  * @brief Create new process and run command.
  *
@@ -632,8 +642,8 @@ int runProcess(const char* cmd, const char* outFile)
    * NULL handle does not mean "inherit", it hands the child an invalid stdout:
    * anything that checks its writes then fails, e.g. system("... | grep ...")
    * returns grep's write-error status 2 and prints nothing. */
-  startupInfo.hStdError  = logFileHandle ? logFileHandle : GetStdHandle(STD_ERROR_HANDLE);
-  startupInfo.hStdOutput = logFileHandle ? logFileHandle : GetStdHandle(STD_OUTPUT_HANDLE);
+  startupInfo.hStdError  = logFileHandle ? logFileHandle : crtStreamHandle(stderr, STD_ERROR_HANDLE);
+  startupInfo.hStdOutput = logFileHandle ? logFileHandle : crtStreamHandle(stdout, STD_OUTPUT_HANDLE);
 
   BOOL bSuccess = CreateProcessW(NULL,
     unicodeCommand,

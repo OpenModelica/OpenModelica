@@ -1,0 +1,33 @@
+// name: bindingArrayOperand
+// keywords: NewBackend
+// status: correct
+// Bindings with an array constructor and another array operand stay array
+// equations, the other operand is not indexed with the iterator.
+
+loadString("
+model BindingArrayOperand
+  parameter Real p[3] = {1, 2, 3};
+  Real y[3] = p .* ones(3) * time / sum(p);
+  Real z[3] = {1.0, 2.0, 3.0} + ones(3) * time;
+end BindingArrayOperand;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(BindingArrayOperand); getErrorString();
+val(y[3], 1.0);
+val(z[2], 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BindingArrayOperand_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'BindingArrayOperand', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5
+// 3.0
+// endResult

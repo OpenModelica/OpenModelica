@@ -54,6 +54,8 @@ pub(crate) struct SimVarMap {
     pub(super) nls_jobs: Arc<HashMap<i32, NlsJob>>,
     /// `SimGenericCall` index -> the shared for-loop body (`generic_loop_calls`).
     pub(super) generic_calls: Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    /// `SimCode.checkedDivisors`, as `dumped_exp` keys.
+    pub(super) checked_divisors: Arc<HashSet<String>>,
     /// Number of `sample(...)` time events (see [`SampleInfo`]).
     pub(super) n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags (`SimLayout`).
@@ -1054,6 +1056,7 @@ pub(super) fn build_var_map(
         nls_fail_off: layout.nls_fail_off,
         nls_jobs: Arc::new(HashMap::default()),
         generic_calls: Arc::new(HashMap::default()),
+        checked_divisors: Arc::default(),
         n_samples: 0,
         sample_active_off: layout.sample_active_off,
         relations_off: layout.relations_off,
@@ -1305,6 +1308,25 @@ pub(super) fn build_var_map(
             }
             if editable_param && sv.isValueChangeable && is_result_output(sv) {
                 push_editable(sv, &cref_display(&sv.name)?, off, wty)?;
+            }
+            // A discrete or String variable's `start` is metadata; `off` is its live slot.
+            let discrete_alg = [&lz.int_off, &lz.bool_off, &lz.str_off]
+                .iter()
+                .any(|b| std::ptr::eq(*b, base_sz));
+            if discrete_alg && sv.isValueChangeable && is_result_output(sv) {
+                start_editable.push(EditableParam {
+                    name: cref_display(&sv.name)?,
+                    comment: sv.comment.to_string(),
+                    unit: sv.unit.to_string(),
+                    display_unit: sv.displayUnit.to_string(),
+                    relative_quantity: sv.relativeQuantity,
+                    off: meta_off(off)?,
+                    wty,
+                    is_start: true,
+                    is_bool: is_boolean_type(&sv.type_),
+                    is_string: heap,
+                    enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
+                });
             }
             // Not a result signal, but `_init.xml` lists it and C's `-override` reaches it.
             if heap && std::ptr::eq(base_sz, &lz.sparam_off) && sv.isValueChangeable && is_result_output(sv) {

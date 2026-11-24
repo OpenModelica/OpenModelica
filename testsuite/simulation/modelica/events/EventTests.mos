@@ -54,7 +54,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testEvents_res.mat", "Ev
 // |                 | |       | | other real variables
 // |                 | |       | | | [5] Real a(start=1, nominal=1) = 1 (pre: 1)
 // |                 | |       | | boolean variables
-// |                 | |       | | | [1] Boolean $whenCondition1(start=false) = false (pre: false)
+// |                 | |       | | | [1] Boolean $whenCondition1 = false (pre: false)
 // |                 | |       | | | [2] Boolean v1(start=false) = false (pre: false)
 // |                 | |       | | | [3] Boolean v2(start=false) = false (pre: false)
 // |                 | |       | | | [4] Boolean v3(start=true) = true (pre: true)

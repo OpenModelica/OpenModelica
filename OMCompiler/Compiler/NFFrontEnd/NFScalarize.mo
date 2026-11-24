@@ -366,7 +366,7 @@ algorithm
 
             (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
             (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-            equations := Equation.makeEquality(lhs, rhs, ty, src, InstNode.fromCell(eq.scope)) :: equations;
+            equations := Equation.makeEquality(lhs, rhs, ty, src, InstNode.fromCell(eq.scope), origin = eq.origin) :: equations;
           end while;
         else
           equations := eq :: equations;

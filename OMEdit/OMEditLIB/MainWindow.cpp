@@ -4016,20 +4016,6 @@ void MainWindow::openUsersGuidePdf()
 }
 
 /*!
- * \brief MainWindow::openSystemDocumentation
- * Slot activated when mpSystemDocumentationAction triggered signal is raised.\n
- * Opens the OpenModelica system documentation.
- */
-void MainWindow::openSystemDocumentation()
-{
-  QUrl systemDocumentationPath(QString("file:///%1/share/doc/omc/SystemDocumentation/OpenModelicaSystem.pdf").arg(Helper::OpenModelicaHome));
-  if (!QDesktopServices::openUrl(systemDocumentationPath)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
-  }
-}
-
-/*!
  * \brief MainWindow::openOpenModelicaScriptingDocumentation
  * Opens the OpenModelica scripting documentation.
  */
@@ -5157,10 +5143,6 @@ void MainWindow::createActions()
   mpUsersGuidePdfAction = new QAction(tr("OpenModelica User's Guide (PDF)"), this);
   mpUsersGuidePdfAction->setStatusTip(tr("Opens the OpenModelica User's Guide (PDF)"));
   connect(mpUsersGuidePdfAction, SIGNAL(triggered()), SLOT(openUsersGuidePdf()));
-  // system documentation action
-  mpSystemDocumentationAction = new QAction(tr("OpenModelica System Documentation"), this);
-  mpSystemDocumentationAction->setStatusTip(tr("Opens the OpenModelica System Documentation"));
-  connect(mpSystemDocumentationAction, SIGNAL(triggered()), SLOT(openSystemDocumentation()));
   // OpenModelica Scripting documentation action
   mpOpenModelicaScriptingAction = new QAction(tr("OpenModelica Scripting Documentation"), this);
   mpOpenModelicaScriptingAction->setStatusTip(tr("Opens the OpenModelica Scripting Documentation"));
@@ -5574,7 +5556,6 @@ void MainWindow::createMenus()
   // add actions to Help menu
   pHelpMenu->addAction(mpUsersGuideAction);
   pHelpMenu->addAction(mpUsersGuidePdfAction);
-  pHelpMenu->addAction(mpSystemDocumentationAction);
   pHelpMenu->addAction(mpOpenModelicaScriptingAction);
   pHelpMenu->addAction(mpModelicaDocumentationAction);
   pHelpMenu->addSeparator();

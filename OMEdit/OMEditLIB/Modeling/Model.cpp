@@ -667,13 +667,13 @@ namespace ModelInstance
    */
   /*!
    * \brief Curve::deserialize
-   * Reads the curve's positional JSON elements, preserving y as a Modelica expression.
+   * Reads the curve's positional JSON elements, preserving x and y as Modelica expressions.
    */
   void Curve::deserialize(const QJsonValue &jsonValue)
   {
     const QJsonArray elements = getRecordElements(jsonValue);
     if (elements.size() > 0) {
-      mX = elements.at(0).toString();
+      mX.deserialize(elements.at(0));
     }
     if (elements.size() > 1) {
       mY.deserialize(elements.at(1));
@@ -698,8 +698,8 @@ namespace ModelInstance
   QString Curve::toString() const
   {
     QStringList fields;
-    if (mX != QStringLiteral("time")) {
-      fields.append(QString("x=%1").arg(quoteModelicaString(mX)));
+    if (mX.toQString() != QStringLiteral("time")) {
+      fields.append(QString("x=%1").arg(mX.toQString()));
     }
     fields.append(QString("y=%1").arg(mY.toQString()));
     if (!mLegend.isEmpty()) {

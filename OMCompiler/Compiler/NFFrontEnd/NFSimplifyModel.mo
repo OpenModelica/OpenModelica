@@ -157,7 +157,7 @@ algorithm
       algorithm
         dim := Type.nthDimension(Expression.typeOf(e), 1);
 
-        if Dimension.isZero(dim) then
+        if Dimension.isAlwaysZero(dim) then
           // Discard the for-loop if the iteration range is empty.
         elseif Dimension.isOne(dim) and Flags.getConfigBool(Flags.NEW_BACKEND) then
           // Unroll the loop if the iteration range is size 1.
@@ -231,11 +231,12 @@ protected
   DAE.ElementSource src;
   NFInstNode.ScopeRef scope;
   Equation.ScalarizeMode scalarize_mode;
+  DAE.EquationOrigin origin;
 algorithm
-  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode) := eq;
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode, origin = origin) := eq;
   ty := Type.mapDims(ty, simplifyDimension);
 
-  if Type.isEmptyArray(ty) then
+  if Type.isAlwaysEmptyArray(ty) then
     return;
   end if;
 
@@ -247,9 +248,9 @@ algorithm
   equations := match (lhs, rhs)
     case (Expression.TUPLE(), Expression.TUPLE())
       then simplifyTupleElement(lhs.elements, rhs.elements, ty, src,
-        function Equation.makeEquality(scope = InstNode.fromCell(scope), scalarizeMode = scalarize_mode), equations);
+        function Equation.makeEquality(scope = InstNode.fromCell(scope), scalarizeMode = scalarize_mode, origin = origin), equations);
 
-    else Equation.EQUALITY(lhs, rhs, ty, scope, src, scalarize_mode) :: equations;
+    else Equation.EQUALITY(lhs, rhs, ty, scope, src, scalarize_mode, origin) :: equations;
   end match;
 end simplifyEqualityEquation;
 

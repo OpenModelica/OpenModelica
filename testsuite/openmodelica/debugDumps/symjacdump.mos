@@ -37,7 +37,7 @@ buildModel(testSymjacdump); getErrorString();
 // Basic equation system:
 // differentiated equations
 // ========================================
-// 1/1 (1): $res_NLSJac0_1 := 2.0 * x[2] + 0.5 * (h * (1.0 + x[2] + 2.0 * h)) ^ 2.0 - x[3]
+// 1/1 (1): $res_NLSJac0_1 := 0.5 * (h * (1.0 + x[2] + 2.0 * h)) ^ 2.0 - x[3] + 2.0 * x[2]
 // 2/2 (1): 0.0 = 2.0 * x[3] + 0.5 * (h * (1.0 + x[3] + 3.0 * h)) ^ 2.0 - x[4] - x[2]
 // 3/3 (1): 0.0 = 2.0 * x[4] + 0.5 * (h * (1.0 + x[4] + 4.0 * h)) ^ 2.0 - x[3]
 // related variables
@@ -62,7 +62,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[2] + h ^ 2.0 * (1.0 + x[2] + 2.0 * h) * x.$pDERNLSJac0.dummyVarNLSJac0[2] - x.$pDERNLSJac0.dummyVarNLSJac0[3]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = h ^ 2.0 * (1.0 + x[2] + 2.0 * h) * x.$pDERNLSJac0.dummyVarNLSJac0[2] + 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[2] - x.$pDERNLSJac0.dummyVarNLSJac0[3]   [dynamic |0|0|0|0|]
 // 2/2 (1): 0.0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[3] + h ^ 2.0 * (1.0 + x[3] + 3.0 * h) * x.$pDERNLSJac0.dummyVarNLSJac0[3] + (-x.SeedNLSJac0[4]) - x.$pDERNLSJac0.dummyVarNLSJac0[2]   [dynamic |0|0|0|0|]
 // 3/3 (1): 0.0 = 2.0 * x.SeedNLSJac0[4] + h ^ 2.0 * (1.0 + x[4] + 4.0 * h) * x.SeedNLSJac0[4] - x.$pDERNLSJac0.dummyVarNLSJac0[3]   [dynamic |0|0|0|0|]
 //
@@ -96,7 +96,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[2] + h ^ 2.0 * (1.0 + x[2] + 2.0 * h) * x.$pDERNLSJac0.dummyVarNLSJac0[2] - x.$pDERNLSJac0.dummyVarNLSJac0[3]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = h ^ 2.0 * (1.0 + x[2] + 2.0 * h) * x.$pDERNLSJac0.dummyVarNLSJac0[2] + 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[2] - x.$pDERNLSJac0.dummyVarNLSJac0[3]   [dynamic |0|0|0|0|]
 // 2/2 (1): x.$pDERNLSJac0.dummyVarNLSJac0[2] = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[3] + h ^ 2.0 * (1.0 + x[3] + 3.0 * h) * x.$pDERNLSJac0.dummyVarNLSJac0[3] - x.SeedNLSJac0[4]   [dynamic |0|0|0|0|]
 // 3/3 (1): x.$pDERNLSJac0.dummyVarNLSJac0[3] = 2.0 * x.SeedNLSJac0[4] + h ^ 2.0 * (1.0 + x[4] + 4.0 * h) * x.SeedNLSJac0[4]   [dynamic |0|0|0|0|]
 //
@@ -138,7 +138,7 @@ buildModel(testSymjacdump); getErrorString();
 // Basic equation system:
 // differentiated equations
 // ========================================
-// 1/1 (1): $res_NLSJac1_1 := 2.0 * x[4] + 0.5 * (h * (1.0 + x[4] + 4.0 * h)) ^ 2.0 - x[3]
+// 1/1 (1): $res_NLSJac1_1 := 0.5 * (h * (1.0 + x[4] + 4.0 * h)) ^ 2.0 - x[3] + 2.0 * x[4]
 // 2/2 (1): 0.0 = 2.0 * x[3] + 0.5 * (h * (1.0 + x[3] + 3.0 * h)) ^ 2.0 - x[4] - x[2]
 // 3/3 (1): 0.0 = 2.0 * x[2] + 0.5 * (h * (1.0 + x[2] + 2.0 * h)) ^ 2.0 - x[3]
 // related variables
@@ -163,7 +163,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[4] + h ^ 2.0 * (1.0 + x[4] + 4.0 * h) * x.$pDERNLSJac1.dummyVarNLSJac1[4] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = h ^ 2.0 * (1.0 + x[4] + 4.0 * h) * x.$pDERNLSJac1.dummyVarNLSJac1[4] + 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[4] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
 // 2/2 (1): 0.0 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[3] + h ^ 2.0 * (1.0 + x[3] + 3.0 * h) * x.$pDERNLSJac1.dummyVarNLSJac1[3] + (-x.$pDERNLSJac1.dummyVarNLSJac1[4]) - x.SeedNLSJac1[2]   [dynamic |0|0|0|0|]
 // 3/3 (1): 0.0 = 2.0 * x.SeedNLSJac1[2] + h ^ 2.0 * (1.0 + x[2] + 2.0 * h) * x.SeedNLSJac1[2] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
 //
@@ -197,7 +197,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[4] + h ^ 2.0 * (1.0 + x[4] + 4.0 * h) * x.$pDERNLSJac1.dummyVarNLSJac1[4] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = h ^ 2.0 * (1.0 + x[4] + 4.0 * h) * x.$pDERNLSJac1.dummyVarNLSJac1[4] + 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[4] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
 // 2/2 (1): x.$pDERNLSJac1.dummyVarNLSJac1[4] = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[3] + h ^ 2.0 * (1.0 + x[3] + 3.0 * h) * x.$pDERNLSJac1.dummyVarNLSJac1[3] - x.SeedNLSJac1[2]   [dynamic |0|0|0|0|]
 // 3/3 (1): x.$pDERNLSJac1.dummyVarNLSJac1[3] = 2.0 * x.SeedNLSJac1[2] + h ^ 2.0 * (1.0 + x[2] + 2.0 * h) * x.SeedNLSJac1[2]   [dynamic |0|0|0|0|]
 //

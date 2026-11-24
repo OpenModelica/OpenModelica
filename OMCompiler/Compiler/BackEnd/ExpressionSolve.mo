@@ -870,6 +870,11 @@ algorithm
           case(DAE.BINARY(e2, DAE.SUB(_),DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1})), DAE.RCONST(0.0))
           then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
 
+          // c*f(x) - c*g(x) = 0 -> f(x) - g(x) = 0
+          case(DAE.BINARY(DAE.BINARY(e3, DAE.MUL(), e1), DAE.SUB(tp), DAE.BINARY(e4, DAE.MUL(), e2)), DAE.RCONST(0.0))
+            guard ExpressionBasics.expEqual(e3,e4) and not expHasCref(e3,inExp3) and not Expression.isZero(e3)
+          then (DAE.BINARY(e1, DAE.SUB(tp), e2), inExp2, true);
+
           // f(x)^n - g(x)^n = 0 -> (f(x)/g(x))^n = 1
           case(DAE.BINARY(DAE.BINARY(e1, DAE.POW(), e2), DAE.SUB(tp), DAE.BINARY(e3, DAE.POW(), e4)), DAE.RCONST(0.0))
             guard ExpressionBasics.expEqual(e2,e4) and expHasCref(e1,inExp3) and expHasCref(e3,inExp3)

@@ -327,7 +327,10 @@ public
         var := Pointer.access(var_ptr);
         simVars := create(var, uniq, idx, if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS()) :: simVars;
         uniq := uniq + 1;
-        idx := idx + (if elementIndex then Variable.size(var) else 1);
+        idx := idx + (if not elementIndex then 1
+          // the runtime Jacobian offsets use the index, also an empty array needs its own
+          elseif BVariable.isResizable(var_ptr) then max(1, Variable.size(var))
+          else Variable.size(var));
       end for;
       simVars := listReverseInPlace(simVars);
       indices.uniqueIndex := uniq;
@@ -567,7 +570,8 @@ public
         initial_            = convertInitial(convertVariability(simVar.varKind), Util.applyOption(simVar.causality, convertCausality)),
         exportVar           = convertExportVar(simVar.exportVar, simVar.name, name),
         relativeQuantity    = false,
-        isConnectorFlow     = simVar.isConnectorFlow);
+        isConnectorFlow     = simVar.isConnectorFlow,
+        startFromEquation   = false);
     end convert;
 
     function convertExportVar
@@ -1148,7 +1152,7 @@ public
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {}, enumAlgVars = {};
       list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {}, enumAlgVars2 = {};
       list<SimVar> discreteAlgVars3 = {}, intAlgVars3 = {}, boolAlgVars3 = {}, stringAlgVars3 = {}, enumAlgVars3 = {};
-      list<SimVar> inputVars = {};
+      list<SimVar> inputVars = {}, intInputVars = {}, boolInputVars = {}, stringInputVars = {}, enumInputVars = {};
       list<SimVar> outputVars = {};
       list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {}, enumAliasVars = {}, derAliasVars = {};
       list<SimVar> paramVars = {}, intParamVars = {}, boolParamVars = {}, stringParamVars = {}, enumParamVars = {};
@@ -1171,7 +1175,7 @@ public
           ({stateVars}, simCodeIndices)                                                                   := createSimVarLists(varData.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({derivativeVars}, simCodeIndices)                                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({algVars}, simCodeIndices)                                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({inputVars}, simCodeIndices)                                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({inputVars, intInputVars, boolInputVars, stringInputVars, enumInputVars}, simCodeIndices)      := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({nonTrivialAlias, intNonTrivialAlias, boolNonTrivialAlias, stringNonTrivialAlias, enumNonTrivialAlias}, simCodeIndices)
                                                                                                           := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)        := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
@@ -1212,11 +1216,11 @@ public
         derivativeVars                    = derivativeVars,
         algVars                           = List.flatten({algVars, inputVars, nonTrivialAlias}),
         discreteAlgVars                   = List.flatten({discreteAlgVars, discreteAlgVars2, discreteAlgVars3}),
-        intAlgVars                        = List.flatten({intNonTrivialAlias, intAlgVars, intAlgVars2, intAlgVars3}),
-        boolAlgVars                       = List.flatten({boolNonTrivialAlias, boolAlgVars, boolAlgVars2, boolAlgVars3}),
-        stringAlgVars                     = List.flatten({stringNonTrivialAlias, stringAlgVars, stringAlgVars2, stringAlgVars3}),
-        enumAlgVars                       = List.flatten({enumNonTrivialAlias, enumAlgVars, enumAlgVars2, enumAlgVars3}),
-        inputVars                         = inputVars,
+        intAlgVars                        = List.flatten({intInputVars, intNonTrivialAlias, intAlgVars, intAlgVars2, intAlgVars3}),
+        boolAlgVars                       = List.flatten({boolInputVars, boolNonTrivialAlias, boolAlgVars, boolAlgVars2, boolAlgVars3}),
+        stringAlgVars                     = List.flatten({stringInputVars, stringNonTrivialAlias, stringAlgVars, stringAlgVars2, stringAlgVars3}),
+        enumAlgVars                       = List.flatten({enumInputVars, enumNonTrivialAlias, enumAlgVars, enumAlgVars2, enumAlgVars3}),
+        inputVars                         = List.flatten({inputVars, intInputVars, boolInputVars, stringInputVars, list(SimVar.shiftIndex(v, enum_shift) for v in enumInputVars)}),
         outputVars                        = outputVars,
         aliasVars                         = listAppend(aliasVars, derAliasVars),
         intAliasVars                      = intAliasVars,
@@ -1619,8 +1623,8 @@ public
         numIntParams                 = listScalarSize(vars.intParamVars),
         numBoolParams                = listScalarSize(vars.boolParamVars),
         numOutVars                   = listLength(vars.outputVars),
-        // one value per scalar input in simulationInfo->inputVars, also for the C target
-        numInVars                    = sum(if Type.isArray(v.type_) then product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) else 1 for v in vars.inputVars),
+        // one value per scalar non-String input in simulationInfo->inputVars, also for the C target
+        numInVars                    = sum(if Type.isArray(v.type_) then product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) else 1 for v guard not Type.isString(Type.arrayElementType(v.type_)) in vars.inputVars),
         numExternalObjects           = listLength(vars.extObjVars),
         numStringAlgVars             = listScalarSize(vars.stringAlgVars),
         numStringParamVars           = listScalarSize(vars.stringParamVars),

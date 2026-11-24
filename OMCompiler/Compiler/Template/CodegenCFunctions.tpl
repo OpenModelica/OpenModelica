@@ -4747,6 +4747,18 @@ template dimension(Dimension d, Context context, Text &preExp, Text &varDecls, T
   else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
 
+template checkedDivisor(Text divisor, String type, String desc, Context context, Text &preExp, Text &varDecls, Text &varFrees)
+ "The divisor in a temporary that is checked for zero, desc describes the division in the error."
+::=
+  let tvar = tempDecl(type, &varDecls, &varFrees)
+  let &preExp += '<%tvar%> = <%divisor%>;<%\n%><%errorCheck(context)%>'
+  let &preExp +=
+    if metaModelicaRuntime()
+      then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+      else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(desc)%>"); <%errorCheck(context)%>}<%\n%>'
+  tvar
+end checkedDivisor;
+
 template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates an assigment algorithm statement."
 ::=
@@ -5280,7 +5292,11 @@ template jacobianOffsetDecl(list<SimVar> vars, String kind)
     modelica_integer* _jac_off_<%kind%> = (modelica_integer*) malloc(<%jacobianOffsetSize(vars)%> * sizeof(modelica_integer));
     {
       modelica_integer _jac_acc = 0;
+      <%varDecls%>
+      <%auxFunction%>
+      <%preExp%>
       <%assigns%>
+      <%varFrees%>
     }
     >>
 end jacobianOffsetDecl;
@@ -6576,6 +6592,16 @@ template daeExpOperand(Exp exp, Text expText, Type ty, Text &preExp, Text &varDe
   else '(<%expText%>)'
 end daeExpOperand;
 
+template daeExpUncheckedDivision(Exp exp1, Text e1, Exp exp2, Text e2, Type ty, Text &preExp, Text &varDecls, Text &varFrees)
+ "A Real division by a divisor that the parameter equations check, see SimCodeCodegenUtil.isCheckedDivisor."
+::=
+  let num = daeExpOperand(exp1, e1, ty, &preExp, &varDecls, &varFrees)
+  let den = daeExpOperand(exp2, e2, ty, &preExp, &varDecls, &varFrees)
+  match typeof(exp2)
+    case T_REAL(__) then '(<%num%> / <%den%>)'
+    else '(<%num%> / (modelica_real)<%den%>)'
+end daeExpUncheckedDivision;
+
 template daeExpBinary(Exp exp, Context context, Text &preExp,
                       Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a binary expression."
@@ -6602,14 +6628,18 @@ case BINARY(__) then
   case DIV(ty = ty) then
     (match context
       case FUNCTION_CONTEXT(__) then
-        let tvar = tempDecl(expTypeModelica(ty),&varDecls, &varFrees)
-        let &preExp += '<%tvar%> = <%e2%>;<%\n%><%errorCheck(context)%>'
-        let &preExp += if metaModelicaRuntime() then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-                        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s in function context", "<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>"); <%errorCheck(context)%>}<%\n%>'
+        let tvar = checkedDivisor(e2, expTypeModelica(ty), '<%ExpressionDumpTpl.dumpExp(exp,"\"")%> in function context', context, &preExp, &varDecls, &varFrees)
         '(<%e1%>) / <%tvar%>'
       case SIMULATION_CONTEXT() then
-        let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
-        'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+        if isCheckedDivisor(ty, exp2) then daeExpUncheckedDivision(exp1, e1, exp2, e2, ty, &preExp, &varDecls, &varFrees)
+        else
+          let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+          'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+      case JACOBIAN_CONTEXT(__) then
+        if isCheckedDivisor(ty, exp2) then daeExpUncheckedDivision(exp1, e1, exp2, e2, ty, &preExp, &varDecls, &varFrees)
+        else
+          let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+          'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
       else
         let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
         'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
@@ -6651,60 +6681,11 @@ case BINARY(__) then
         let tmp1 = tempDecl("modelica_real", &varDecls, &varFrees)
         let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
         let tmp3 = tempDecl("modelica_real", &varDecls, &varFrees)
-        let tmp4 = tempDecl("modelica_real", &varDecls, &varFrees) //fractpart
-        let tmp5 = tempDecl("modelica_real", &varDecls, &varFrees) //intpart
-        let tmp6 = tempDecl("modelica_real", &varDecls, &varFrees) //intpart
-        let tmp7 = tempDecl("modelica_real", &varDecls, &varFrees) //fractpart
         let &preExp +=
           <<
           <%tmp1%> = <%e1%>;
           <%tmp2%> = <%e2%>;
-          if(<%tmp1%> < 0.0 && <%tmp2%> != 0.0)
-          {
-            <%tmp4%> = modf(<%tmp2%>, &<%tmp5%>);
-
-            if(<%tmp4%> > 0.5)
-            {
-              <%tmp4%> -= 1.0;
-              <%tmp5%> += 1.0;
-            }
-            else if(<%tmp4%> < -0.5)
-            {
-              <%tmp4%> += 1.0;
-              <%tmp5%> -= 1.0;
-            }
-
-            if(fabs(<%tmp4%>) < 1e-10)
-              <%tmp3%> = pow(<%tmp1%>, <%tmp5%>);
-            else
-            {
-              <%tmp7%> = modf(1.0/<%tmp2%>, &<%tmp6%>);
-              if(<%tmp7%> > 0.5)
-              {
-                <%tmp7%> -= 1.0;
-                <%tmp6%> += 1.0;
-              }
-              else if(<%tmp7%> < -0.5)
-              {
-                <%tmp7%> += 1.0;
-                <%tmp6%> -= 1.0;
-              }
-              if(fabs(<%tmp7%>) < 1e-10 && ((unsigned long)<%tmp6%> & 1))
-              {
-                <%tmp3%> = -pow(-<%tmp1%>, <%tmp4%>)*pow(<%tmp1%>, <%tmp5%>);
-              }
-              else
-              {
-                <%if metaModelicaRuntime()
-                  then '<%generateThrow()%>;<%\n%>'
-                  else 'raiseStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
-              }
-            }
-          }
-          else
-          {
-            <%tmp3%> = pow(<%tmp1%>, <%tmp2%>);
-          }
+          <%tmp3%> = real_real_pow(<%tmp1%>, <%tmp2%>);
           if(isnan(<%tmp3%>) || isinf(<%tmp3%>))
           {
             <%if metaModelicaRuntime()
@@ -7483,37 +7464,20 @@ let &sub = buffer ""
     let tp_str = expTypeModelica(ty)
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let tvar = if metaModelicaRuntime() then '<%var2%>' else tempDecl(tp_str, &varDecls, &varFrees)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let &preExp += if metaModelicaRuntime() then "" else '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then ""
-        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let tvar = if metaModelicaRuntime() then var2 else checkedDivisor(var2, tp_str, ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
     '<%tp_str%>_mod(<%var1%>, <%tvar%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let tvar = checkedDivisor(var2, "modelica_real", ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
     '((<%var1%>) - floor((<%var1%>) / (<%tvar%>)) * (<%tvar%>))'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let tvar = tempDecl("modelica_integer", &varDecls, &varFrees)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let literal = match e2 case ICONST(__) then (if intNe(integer, 0) then var2)
+    let tvar = if literal then literal else checkedDivisor(var2, "modelica_integer", ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
       /* ldiv not available in opencl c*/
     if isParallelFunctionContext(context) then '(modelica_integer)((<%var1%>) / <%tvar%>)'
     else 'modelica_div_integer(<%var1%>,<%tvar%>).quot'
@@ -7521,13 +7485,7 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
-    let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-    let &preExp += '<%tvar%> = <%var2%>;<%\n%><%errorCheck(context)%>'
-    let &preExp +=
-      if metaModelicaRuntime()
-        then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0.0) {raiseStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>"); <%errorCheck(context)%>}<%\n%>'
+    let tvar = checkedDivisor(var2, "modelica_real", ExpressionDumpTpl.dumpExp(call,"\""), context, &preExp, &varDecls, &varFrees)
     'trunc((<%var1%>) / (<%tvar%>))'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
@@ -9203,8 +9161,8 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
  one of the parameters."
 ::=
   let len = listLength(simVarIndexRuns(vars))
-  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind) =>
-    match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then
+  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind, firstVar) =>
+    match firstVar case var as SIMVAR() then
       '{<%pos%>, <%idx%>, <%n%>, <%kind%>} /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> */'
     ;separator=",\n")
   <<

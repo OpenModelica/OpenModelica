@@ -110,7 +110,7 @@ pub(super) fn resolve_overrides(
     let string_names = model
         .editable_params
         .iter()
-        .filter(|p| p.is_string)
+        .filter(|p| p.is_string && !p.is_start)
         .map(|p| p.name.as_str());
     for name in model.result_vars().iter().map(|v| v.name.as_str()).chain(string_names) {
         let Some(&(name, val)) = map.iter().find(|(n, _)| *n == name) else {

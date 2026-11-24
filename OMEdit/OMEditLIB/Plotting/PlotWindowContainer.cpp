@@ -827,8 +827,8 @@ void PlotWindowContainer::saveFigureInModel()
         }
       }
       auto pCurve = std::make_unique<ModelInstance::Curve>();
-      pCurve->setX(xVariable);
       try {
+        pCurve->setX(FlatModelica::Expression::parse(xVariable));
         pCurve->setY(FlatModelica::Expression::parse(pPlotCurve->getYVariable()));
       } catch (const std::exception &) {
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,

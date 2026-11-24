@@ -1358,7 +1358,9 @@ end constraintHandlerFunc;
 protected function balanceInitialSystem "author: kabdelhak
   New algorithm to handle under-, over-, and mixed-determined systems.
   1. split off initial equations and match the system without them
-     (ensures that the correct equations are left unmatched)
+     (ensures that the correct equations are left unmatched; bindings stay in
+     this system, because MLS 3.7, section 8.6 allows to remove initial
+     equations and start values, but not bindings)
   2. sort fixables to be matched last
      (ensures that the correct variables are left unmatched)
   3. compute adjacency matrix
@@ -2690,6 +2692,20 @@ algorithm
       preUsed := BaseHashSet.has(cr, hs);
       startValue := BackendVariable.varStartValueOption(var);
 
+      startExp := BackendVariable.varStartValue(var);
+      parameters := Expression.getAllCrefs(startExp);
+      if not min(UnorderedSet.contains(p, allPrimaryParameters) for p in parameters) then
+        startCR := ComponentReference.crefPrefixStart(cr);
+        startVar := BackendVariable.copyVarNewName(startCR, var);
+        startVar := BackendVariable.setBindExp(startVar, NONE());
+        startVar := BackendVariable.setVarDirection(startVar, DAE.BIDIR());
+        startVar := BackendVariable.setVarFixed(startVar, false);
+        startVar := BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
+        startVar := BackendVariable.setVarStartValueOption(startVar, NONE());
+        vars := BackendVariable.addVar(startVar, vars);
+        eqns := BackendEquation.add(BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+      end if;
+
       var := BackendVariable.setVarFixed(var, false);
 
       preCR := ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
@@ -2737,7 +2753,7 @@ algorithm
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
-      eqn := BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqn := BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       eqns := BackendEquation.add(eqn, eqns);
 
       vars := BackendVariable.addVar(var, vars);
@@ -3068,7 +3084,7 @@ algorithm
 
     // external object with binding
     case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varKind=BackendDAE.EXTOBJ(), source=source), (eqns, reeqns)) algorithm
-      eqn := BackendDAE.SOLVED_EQUATION(cr, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqn := BackendDAE.SOLVED_EQUATION(cr, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       eqns := BackendEquation.add(eqn, eqns);
     then (var, (eqns, reeqns));
 
@@ -3078,9 +3094,9 @@ algorithm
       if Types.isArray(ty) then
         basic_ty := Types.getBasicType(ty);
         record_size := if Types.isRecord(basic_ty) then SOME(Types.getDimensionProduct(basic_ty)) else NONE();
-        eqn := BackendDAE.ARRAY_EQUATION(Types.getDimensionSizes(ty), crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL, record_size);
+        eqn := BackendDAE.ARRAY_EQUATION(Types.getDimensionSizes(ty), crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_BINDING, record_size);
       else
-        eqn := BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+        eqn := BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       end if;
       eqns := BackendEquation.add(eqn, eqns);
     then (var, (eqns, reeqns));

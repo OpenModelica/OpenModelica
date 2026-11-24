@@ -20,6 +20,8 @@ sparse = ["dep:rsparse"]
 # Compile the CVODE/IDA bindings without linking an archive: the symbols stay
 # undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
 sundials_extern = []
+# `-overrideFile` read through openmodelica_wasi, the only filesystem of the web omc.
+vfs = ["std", "dep:openmodelica_wasi"]
 
 [dependencies]
 # LINPACK's `dgefa`/`dgesl` for gbode's Newton matrix.
@@ -29,3 +31,4 @@ daskr = { path = "../daskr", default-features = false }
 libm = "0.2"
 # Sparse LU with AMD ordering (CSparse port), for `sparse` above.
 rsparse = { version = "1.2", optional = true }
+openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi", optional = true }

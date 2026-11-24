@@ -1559,10 +1559,10 @@ algorithm
         b2 := Expression.containVectorFunctioncall(rhs);
         true := boolOr(b1, b2);
         ds := TypesDump.getDimensions(tp);
-        elt := DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source);
+        elt := DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source, DAE.EquationOrigin.EQUATION);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
-        DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
+        DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source, DAE.EquationOrigin.EQUATION)});
 
     /* Arrays with function calls => array equations */
     case (_, source, SCode.NON_INITIAL())
@@ -1612,9 +1612,9 @@ algorithm
         true := Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
         ds := TypesDump.getDimensions(tp);
         b := SCodeUtil.isInitial(initial_);
-        elt := if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
+        elt := if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source, DAE.EquationOrigin.EQUATION) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
-        elt := if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
+        elt := if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source, DAE.EquationOrigin.EQUATION) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
       then
         DAE.DAE({elt});
 
@@ -1643,10 +1643,10 @@ algorithm
         true := Flags.getConfigBool(Flags.CHECK_MODEL);
         // generate an initial array equation of dim 1
         // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
-        elt := DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source);
+        elt := DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source, DAE.EquationOrigin.EQUATION);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
-        DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
+        DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source, DAE.EquationOrigin.EQUATION)});
 
     // Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)
     case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}), source, SCode.NON_INITIAL())
@@ -1909,7 +1909,7 @@ algorithm
       then DAE.DAE({DAE.COMPLEX_EQUATION(lhs,rhs,source)});
 
     case SCode.INITIAL()
-      then DAE.DAE({DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs,source)});
+      then DAE.DAE({DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs,source,DAE.EquationOrigin.EQUATION)});
   end match;
 end makeComplexDaeEquation;
 

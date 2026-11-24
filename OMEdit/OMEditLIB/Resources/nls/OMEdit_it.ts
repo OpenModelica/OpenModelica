@@ -7184,14 +7184,6 @@ Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un
         <translation>Esegue l&apos;analisi di sensibilità e l&apos;ottimizzazione</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>Documentazione di sistema di OpenModelica</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Apre la documentazione di sistema di OpenModelica</translation>
-    </message>
-    <message>
         <source>Draws a line shape</source>
         <translation>Traccia una linea</translation>
     </message>
@@ -8339,6 +8331,10 @@ Endpoint: %2</translation>
     <message>
         <source>%1 - %2 - Live View</source>
         <translation>%1 - %2 - Vista dal vivo</translation>
+    </message>
+    <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The run is recorded in %1
@@ -10383,10 +10379,6 @@ Variabilità: %4</translation>
     <message>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>Non è possibile simulare di nuovo questa classe.&lt;br /&gt;È solo un file di risultati caricato tramite il menu &lt;b&gt;File-&gt;Apri file di risultati&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Impossibile impostare il contenuto di QDomDocument dal file %1</translation>
     </message>
     <message>
         <source>Enabled for %1</source>

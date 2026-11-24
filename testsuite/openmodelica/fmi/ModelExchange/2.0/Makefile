@@ -10,6 +10,7 @@ FmuSparseSolvers.mos \
 FmuLinkLibraries.mos \
 FmuUserCFlags.mos \
 FmuUserTab.mos \
+FmuStringInputs.mos \
 FmuValueAccess.mos \
 StateDerivativeAliases.mos \
 derivativeUnits.mos \
@@ -52,6 +53,7 @@ fmi2_model_png.mos \
 fmi2_terminals_and_icons.mos \
 fmi2_fmustate_bounds.mos \
 fmi2_fmustate_recover.mos \
+fmi2_newdiscretestates_eventinfo.mos \
 fmi2_reset_heap.mos \
 fmi2_string_variability.mos \
 fmi_export_derivative_annotation.mos \

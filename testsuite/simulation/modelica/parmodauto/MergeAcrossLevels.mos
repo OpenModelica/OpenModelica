@@ -1,0 +1,75 @@
+// name:      MergeAcrossLevels
+// keywords:  parmodauto clustering merge levels cycle
+// status:    correct
+// cflags:
+//
+// The merge_across_levels clustering merges tasks that depend on each other,
+// also when they are on different levels, and does not close a cycle in the
+// cluster graph. The merging stops when every cluster exchanges values with
+// fewer clusters than it has equations: each half of the model, five tasks on
+// five levels, ends as one or two clusters, and the halves stay apart. The
+// order of the merges follows the measured costs, so the number of clusters is
+// not the same in every run.
+// Checked with the C and the Rust simulation runtime against the values of
+// the sequential simulation.
+//
+
+loadString("
+model TwoChains
+  Real x1(start = 1, fixed = true), x2(start = 2, fixed = true);
+  Real a1, b1, c1, a2, b2, c2;
+equation
+  a1 = sin(x1);
+  b1 = a1*a1 + time;
+  c1 = cos(b1) + a1;
+  der(x1) = -c1;
+  a2 = sin(x2);
+  b2 = a2*a2 + time;
+  c2 = cos(b2) + a2;
+  der(x2) = -c2;
+end TwoChains;
+");
+getErrorString();
+
+echo(false);
+
+resSeq := simulate(TwoChains, stopTime=1);
+x1Seq := val(x1, 1.0);
+x2Seq := val(x2, 1.0);
+errSeq := getErrorString();
+
+setCommandLineOptions("--parmodauto --simCodeTarget=C");
+resC := simulate(TwoChains, stopTime=1, simflags="-parmodClustering=merge_across_levels");
+valuesC := abs(val(x1, 1.0) - x1Seq) < 1e-6 and abs(val(x2, 1.0) - x2Seq) < 1e-6;
+msgC := resC.messages;
+clustersC := regexBool(msgC, "cluster_merge_across_levels: 10 tasks in [2-4] clusters");
+errC := getErrorString();
+
+setCommandLineOptions("--simCodeTarget=C+Rust");
+resRust := simulate(TwoChains, stopTime=1, simflags="-parmodClustering=merge_across_levels");
+valuesRust := abs(val(x1, 1.0) - x1Seq) < 1e-6 and abs(val(x2, 1.0) - x2Seq) < 1e-6;
+msgRust := resRust.messages;
+clustersRust := regexBool(msgRust, "cluster_merge_across_levels: 10 tasks in [2-4] clusters");
+errRust := getErrorString();
+
+echo(true);
+
+errSeq;
+valuesC;
+clustersC;
+errC;
+valuesRust;
+clustersRust;
+errRust;
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// ""
+// true
+// true
+// ""
+// endResult

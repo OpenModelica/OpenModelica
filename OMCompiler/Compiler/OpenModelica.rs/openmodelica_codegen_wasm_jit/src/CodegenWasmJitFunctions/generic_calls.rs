@@ -478,7 +478,7 @@ fn emit_loops(
     let bound = bind_iter(ctx, name, it, SigTy::Int)?;
     ctx.emit(I::Block(we::BlockType::Empty));
     ctx.emit(I::Loop(we::BlockType::Empty));
-    emit_in_range(ctx, it, start_l, stop_l);
+    emit_in_range(ctx, it, step_l, stop_l);
     ctx.emit(I::I32Eqz);
     ctx.emit(I::BrIf(1));
     let sub_bounds = emit_sub_iters(ctx, sub_iter, it)?;
@@ -555,19 +555,19 @@ fn emit_list_loop(
     Ok(())
 }
 
-/// C's `in_range_integer`: brackets the range whichever way the step runs.
-fn emit_in_range(ctx: &mut FnCtx, it: u32, start_l: u32, stop_l: u32) {
+/// `step > 0 ? it <= stop : it >= stop`, so that a range like 2:1 is empty.
+fn emit_in_range(ctx: &mut FnCtx, it: u32, step_l: u32, stop_l: u32) {
     use we::Instruction as I;
-    for (lo, hi) in [(start_l, stop_l), (stop_l, start_l)] {
-        ctx.emit(I::LocalGet(it));
-        ctx.emit(I::LocalGet(lo));
-        ctx.emit(I::I32GeS);
-        ctx.emit(I::LocalGet(it));
-        ctx.emit(I::LocalGet(hi));
-        ctx.emit(I::I32LeS);
-        ctx.emit(I::I32And);
-    }
-    ctx.emit(I::I32Or);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(stop_l));
+    ctx.emit(I::I32LeS);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(stop_l));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::LocalGet(step_l));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::I32GtS);
+    ctx.emit(I::Select);
 }
 
 /// C's `subIterator`: `name = name_arr[parent - 1]`.

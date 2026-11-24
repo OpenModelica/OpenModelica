@@ -726,7 +726,8 @@ algorithm
        or fillVectorizedBindingFails then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
       eq := Equation.makeEquality(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
-        ElementSource.createElementSource(info), scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
+        ElementSource.createElementSource(info), scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE,
+        origin = DAE.EquationOrigin.BINDING);
       sections := Sections.prependEquation(eq, sections);
       binding := NFBinding.EMPTY_BINDING;
 
@@ -1024,7 +1025,7 @@ algorithm
       if not settings.newBackend then
         name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
         eq := Equation.makeEquality(Expression.CREF(ty, name),  binding_exp, ty,
-          ElementSource.createElementSource(info));
+          ElementSource.createElementSource(info), origin = DAE.EquationOrigin.BINDING);
         sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.NON_STRUCTURAL_PARAMETER);
       end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
@@ -1396,7 +1397,7 @@ algorithm
           ty := Type.liftArrayLeftList(eq.ty, dimensions);
           lhs := Expression.CREF(ty, lhs.cref);
           rhs := Expression.CREF(ty, rhs.cref);
-        then Equation.EQUALITY(lhs, rhs, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
+        then Equation.EQUALITY(lhs, rhs, ty, eq.scope, eq.source, eq.scalarizeMode, eq.origin) :: equations;
 
       // Pass Connections.* operators as they are and let the connection
       // handling deal with them.
@@ -1987,7 +1988,7 @@ algorithm
             bexp := Binding.getTypedExp(flattenBinding(binding, prefix));
             if isInComponentArray(exp.cref) then
               // a parameter of an array of components, e.g. s.N or s[$s1].N for s[M]
-              bexp := uniformArrayElement(bexp);
+              bexp := Util.getOptionOrDefault(Expression.uniformArrayElement(bexp), bexp);
               if not Type.isArray(Expression.typeOf(bexp)) then
                 outExp := bexp;
               end if;
@@ -2005,26 +2006,6 @@ algorithm
   end match;
 end resizableDimensionAlias;
 
-function uniformArrayElement
-  "The value of all elements of an array expression if they are all the same:
-   the body of an array constructor that does not depend on its iterators, or
-   the expression itself if it is no array. Fails otherwise."
-  input Expression exp;
-  output Expression elem;
-algorithm
-  elem := match exp
-    local
-      Expression body;
-      list<tuple<InstNode, Expression>> iters;
-    case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = iters))
-      guard not List.any(iters, function iteratorOccursIn(exp = body))
-      then uniformArrayElement(body);
-    case Expression.CALL() guard Call.isNamed(exp.call, "fill")
-      then uniformArrayElement(listHead(Call.arguments(exp.call)));
-    case _ guard not Type.isArray(Expression.typeOf(exp)) then exp;
-  end match;
-end uniformArrayElement;
-
 function isInComponentArray
   "true if a cref is a component of an array of components, e.g. s.N for s[M]"
   input ComponentRef cref;
@@ -2035,12 +2016,6 @@ algorithm
   rest := ComponentRef.rest(cref);
   b := not ComponentRef.isEmpty(rest) and Type.isArray(ComponentRef.nodeType(ComponentRef.stripSubscripts(rest)));
 end isInComponentArray;
-
-function iteratorOccursIn
-  input tuple<InstNode, Expression> iter;
-  input Expression exp;
-  output Boolean b = Expression.containsIterator(exp, Util.tuple21(iter));
-end iteratorOccursIn;
 
 function flattenSections
   input Sections sections;
@@ -2099,7 +2074,7 @@ algorithm
         ty := flattenType(eq.ty, prefix, info);
         checkEqualityEquation(e1, e2, eq.source);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode, eq.origin) :: equations;
 
     case Equation.FOR()
       algorithm

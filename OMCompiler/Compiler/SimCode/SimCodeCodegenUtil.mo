@@ -598,6 +598,7 @@ algorithm
     case SimCode.SES_MIXED(index=index) then index;
     case SimCode.SES_WHEN(index=index) then index;
     case SimCode.SES_FOR_LOOP(index=index) then index;
+    case SimCode.SES_FOR_EQUATION(index=index) then index;
     case SimCode.SES_ALIAS(index=index) then index;
     else
       algorithm
@@ -1110,6 +1111,12 @@ public function getNumScalars
 algorithm
   numScalars := List.applyAndFold(vars, intAdd, SimCodeUtilShared.getNumElems, 0);
 end getNumScalars;
+
+public function numericInputVars
+  "The inputs that simulationInfo->inputVars holds: all but the String inputs."
+  input list<SimCodeVar.SimVar> inputVars;
+  output list<SimCodeVar.SimVar> vars = list(v for v guard not Types.isString(Types.arrayElementType(v.type_)) in inputVars);
+end numericInputVars;
 
 public function numScalarElems
   "Total number of scalar elements over a list of SimVars (rolling out arrays).
@@ -2442,13 +2449,15 @@ algorithm
 end nVariablesReal;
 
 public function simVarIndexRuns
-  "The variables as runs (position in the list, first index, length, kind): kind 1 for
-   real variables with consecutive indices in realVars, else a run of one variable
-   with kind 0 for variables without index, 2 for parameters and 3 for any other."
+  "The variables as runs (position in the list, first index, length, kind, first
+   variable): kind 1 for real variables with consecutive indices in realVars, else a
+   run of one variable with kind 0 for variables without index, 2 for parameters and
+   3 for any other."
   input list<SimCodeVar.SimVar> vars;
-  output list<tuple<Integer, Integer, Integer, Integer>> runs = {};
+  output list<tuple<Integer, Integer, Integer, Integer, SimCodeVar.SimVar>> runs = {};
 protected
   Integer pos = 0, start = -1, len = 0, kind, index;
+  Option<SimCodeVar.SimVar> first = NONE();
 algorithm
   for var in vars loop
     kind := match var.varKind
@@ -2470,23 +2479,49 @@ algorithm
       len := len + 1;
     else
       if len > 0 then
-        runs := (pos - len, start, len, 1) :: runs;
+        runs := (pos - len, start, len, 1, Util.getOption(first)) :: runs;
         len := 0;
       end if;
       if kind == 1 then
         start := index;
         len := 1;
+        first := SOME(var);
       else
-        runs := (pos, index, 1, kind) :: runs;
+        runs := (pos, index, 1, kind, var) :: runs;
       end if;
     end if;
     pos := pos + 1;
   end for;
   if len > 0 then
-    runs := (pos - len, start, len, 1) :: runs;
+    runs := (pos - len, start, len, 1, Util.getOption(first)) :: runs;
   end if;
   runs := listReverse(runs);
 end simVarIndexRuns;
+
+public function isCheckedDivisor
+  "Whether the generated equations can divide by exp without a check: a Real
+   division by a literal that is not zero, or by a divisor of
+   SimCode.checkedDivisors."
+  input DAE.Type ty "of the division";
+  input DAE.Exp exp;
+  output Boolean checked;
+protected
+  Option<SimCode.SimCode> code;
+  UnorderedSet<DAE.Exp> divisors;
+algorithm
+  checked := match (ty, exp)
+    case (DAE.T_REAL(), DAE.RCONST()) then exp.real <> 0.0;
+    case (DAE.T_REAL(), DAE.ICONST()) then exp.integer <> 0;
+    case (DAE.T_REAL(), _)
+      algorithm
+        code := getGlobalRoot(Global.optionSimCode);
+      then match code
+        case SOME(SimCode.SIMCODE(checkedDivisors = SOME(divisors))) then UnorderedSet.contains(exp, divisors);
+        else false;
+      end match;
+    else false;
+  end match;
+end isCheckedDivisor;
 
 public function getSimCode
   output SimCode.SimCode code;
@@ -2970,7 +3005,7 @@ algorithm
   else
     // print("cref2simvar: " + ComponentReferenceBasics.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
+    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false, false);
   end try;
 end cref2simvar;
 
@@ -3030,7 +3065,7 @@ algorithm
   else
     //print("cref2simvar: " + ComponentReferenceBasics.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_simVarFromHT_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
+    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false, false);
   end try;
   outSimVar := sv;
 end simVarFromHT;

@@ -988,6 +988,13 @@ fn parser_info_from(first: &Token, start: &TokenInput, input: &TokenInput) -> So
     }
 }
 
+/// `class_with_info_end` in Modelica.g: a class followed by a constraining
+/// clause ends where the clause ends.
+fn set_class_info_end(cls: &mut Class, end: &SourceInfo) {
+    cls.info.lineNumberEnd = end.lineNumberEnd;
+    cls.info.columnNumberEnd = end.columnNumberEnd;
+}
+
 // ---------------------------------------------------------------------------
 // AST conversion helpers
 // ---------------------------------------------------------------------------
@@ -1966,9 +1973,13 @@ fn element_list(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
 
         let had_prefixes = redeclare_ || final_ || inner_ || outer_ || replaceable_;
 
-        if let Some(cls) = opt(class_definition).parse_next(input)? {
+        if let Some(mut cls) = opt(class_definition).parse_next(input)? {
             let constrainClass = opt_constraining_clause(input, replaceable_)?;
             let last_tok = &input[0];
+            let info = source_info(first_tok, last_tok);
+            if constrainClass.is_some() {
+                set_class_info_end(&mut cls, &info);
+            }
             cut_err(t(TK::Semi))
                 .context(StrContext::Label("';' after class definition"))
                 .parse_next(input)?;
@@ -1980,7 +1991,7 @@ fn element_list(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
                     replaceable_,
                     class_: metamodelica::Ref::new(cls),
                 }),
-                info: source_info(first_tok, last_tok),
+                info,
                 constrainClass: constrainClass.map(metamodelica::Ref::new),
             };
             items = cons(ClassBodyItem::Element(elem), items);
@@ -2087,9 +2098,13 @@ fn element(input: &mut TokenInput) -> ModalResult<Absyn::Element> {
 
     let had_prefixes = redeclare_ || final_ || inner_ || outer_ || replaceable_;
 
-    if let Some(cls) = opt(class_definition).parse_next(input)? {
+    if let Some(mut cls) = opt(class_definition).parse_next(input)? {
         let constrainClass = opt_constraining_clause(input, replaceable_)?;
         let last_tok = &input[0];
+        let info = source_info(first_tok, last_tok);
+        if constrainClass.is_some() {
+            set_class_info_end(&mut cls, &info);
+        }
         cut_err(t(TK::Semi))
             .context(StrContext::Label("';' after class definition"))
             .parse_next(input)?;
@@ -2101,7 +2116,7 @@ fn element(input: &mut TokenInput) -> ModalResult<Absyn::Element> {
                 replaceable_,
                 class_: metamodelica::Ref::new(cls),
             }),
-            info: source_info(first_tok, last_tok),
+            info,
             constrainClass: constrainClass.map(metamodelica::Ref::new),
         };
         return Ok(elem);
@@ -2451,24 +2466,29 @@ fn argument(input: &mut TokenInput) -> ModalResult<ElementArg> {
 // and the optional 'constrainedby' clause.  Called by both element_replaceable
 // and the REDECLARE_REPLACEABLE branch of element_redeclaration.
 fn parse_replaceable_spec(input: &mut TokenInput) -> ModalResult<(ElementSpec, Option<ConstrainClass>)> {
-    let elementSpec = if let Some(cls) = opt(class_definition).parse_next(input)? {
-        ElementSpec::CLASSDEF {
+    let start = *input;
+    if let Some(mut cls) = opt(class_definition).parse_next(input)? {
+        let constrainClass = opt_constraining_clause(input, true)?;
+        if constrainClass.is_some() {
+            set_class_info_end(&mut cls, &parser_info(&start, input));
+        }
+        let elementSpec = ElementSpec::CLASSDEF {
             replaceable_: true,
             class_: metamodelica::Ref::new(cls),
-        }
-    } else {
-        let typePrefix = type_prefix(input)?;
-        let typeSpec = cut_err(type_specifier_no_dims)
-            .context(StrContext::Label("type specifier in replaceable"))
-            .parse_next(input)?;
-        let comp = cut_err(component_declaration)
-            .context(StrContext::Label("component declaration in replaceable"))
-            .parse_next(input)?;
-        ElementSpec::COMPONENTS {
-            attributes: typePrefix,
-            typeSpec: metamodelica::Ref::new(typeSpec),
-            components: List::new(metamodelica::Ref::new(comp)),
-        }
+        };
+        return Ok((elementSpec, constrainClass));
+    }
+    let typePrefix = type_prefix(input)?;
+    let typeSpec = cut_err(type_specifier_no_dims)
+        .context(StrContext::Label("type specifier in replaceable"))
+        .parse_next(input)?;
+    let comp = cut_err(component_declaration)
+        .context(StrContext::Label("component declaration in replaceable"))
+        .parse_next(input)?;
+    let elementSpec = ElementSpec::COMPONENTS {
+        attributes: typePrefix,
+        typeSpec: metamodelica::Ref::new(typeSpec),
+        components: List::new(metamodelica::Ref::new(comp)),
     };
     let constrainClass = opt_constraining_clause(input, true)?;
     Ok((elementSpec, constrainClass))

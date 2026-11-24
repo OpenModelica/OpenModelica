@@ -1763,31 +1763,6 @@ protected
     b := not ComponentRef.isEmpty(rest) and Type.isArray(ComponentRef.nodeType(ComponentRef.stripSubscripts(rest)));
   end isInComponentArray;
 
-  function uniformArrayElement
-    "The value of all elements of an array expression if they are all the same."
-    input Expression exp;
-    output Option<Expression> elem;
-  algorithm
-    elem := match exp
-      local
-        Expression body;
-        list<tuple<InstNode, Expression>> iters;
-      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = iters))
-        guard not List.any(iters, function iteratorOccursIn(exp = body))
-        then uniformArrayElement(body);
-      case Expression.CALL() guard Call.isNamed(exp.call, "fill")
-        then uniformArrayElement(listHead(Call.arguments(exp.call)));
-      case _ guard not Type.isArray(Expression.typeOf(exp)) then SOME(exp);
-      else NONE();
-    end match;
-  end uniformArrayElement;
-
-  function iteratorOccursIn
-    input tuple<InstNode, Expression> iter;
-    input Expression exp;
-    output Boolean b = Expression.containsIterator(exp, Util.tuple21(iter));
-  end iteratorOccursIn;
-
   function resolveAlias
     "a parameter of an array of components with the same value for all elements
      (e.g. s[i].N for s[M](each N = K)) is that value"
@@ -1827,7 +1802,7 @@ protected
         obexp := Binding.getExpOpt(var.binding);
         if isSome(obexp) then
           SOME(bexp) := obexp;
-          alias := uniformArrayElement(bexp);
+          alias := Expression.uniformArrayElement(bexp);
         end if;
       end if;
     end if;

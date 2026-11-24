@@ -1,0 +1,40 @@
+// name:     fmi3_cs_reset
+// keywords: FMI 3.0 export Co-Simulation fmi3Reset start
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_reset.fmu fmi3_cs_reset.fmutmp/ fmi3_cs_reset_info.json fmi3_cs_reset_FMU.* fmi3_cs_reset_external_functions.json fmi3_cs_reset.log fmi3_cs_reset_out.txt
+//
+// FMI 3.0: fmi3Reset puts the FMU back into the state after fmi3Instantiate, so
+// the values set before the previous initialization are gone.
+
+loadString("
+model fmi3_cs_reset
+  parameter Real p = 2;
+  parameter Boolean q = false;
+  input Boolean b(start = false);
+  Real x(start = 1, fixed = true);
+  output Real y = p * x;
+  output Boolean qb = q or b;
+equation
+  der(x) = -x;
+end fmi3_cs_reset;
+"); getErrorString();
+buildModelFMU(fmi3_cs_reset, version = "3.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_reset.py fmi3_cs_reset.fmu fmi3_cs_reset_out.txt > fmi3_cs_reset.log 2>&1"); getErrorString();
+readFile("fmi3_cs_reset_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_cs_reset.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "instantiated: p=2 x=1 q=0 b=0
+// initialized: p=5 x=3 q=1 b=1
+// reset: p=2 x=1 q=0 b=0
+// initialized: p=2 x=1 q=0 b=0
+// "
+// ""
+// endResult

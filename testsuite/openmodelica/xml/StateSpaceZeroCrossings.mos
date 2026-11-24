@@ -1,0 +1,103 @@
+// name: StateSpaceZeroCrossings
+// keywords: xml, dump, zero crossing, #2730
+// status: correct
+// teardown_command: rm -f ZcEqIds.xml
+//
+// The equation ids of a zero crossing refer to the sorted equations, also
+// when the model has more than one system and an algebraic loop.
+
+loadString("
+model ZcEqIds
+  Real x(start = 1, fixed = true);
+  Real y, w, u, v(start = 1);
+  Boolean b;
+equation
+  w = 2*time;
+  b = time > 0.5;
+  der(x) = if x > 0.3 then -x else 0;
+  u + v = w;
+  u - sin(v) = 1;
+  y = if u > 1.2 then 1 else 0;
+end ZcEqIds;
+"); getErrorString();
+dumpXMLDAE(ZcEqIds, translationLevel = "stateSpace"); getErrorString();
+readFile("ZcEqIds.xml");
+// Result:
+// true
+// ""
+// (true, "ZcEqIds.xml")
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
+//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\">
+// <variables dimension=\"7\">
+// <orderedVariables dimension=\"7\">
+// <variablesList>
+// <variable id=\"1\" name=\"b\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// </variable>
+// <variable id=\"2\" name=\"x\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <initialValue string=\"1.0\">
+// </initialValue>
+// <fixed string=\"true\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"v\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <initialValue string=\"1.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"u\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// </variable>
+// <variable id=\"5\" name=\"w\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// </variable>
+// <variable id=\"6\" name=\"y\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// </variable>
+// <variable id=\"7\" name=\"$cse2\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// </variable>
+// </variablesList>
+// </orderedVariables>
+// </variables>
+// <equations dimension=\"7\">
+// <equation id=\"1\">b = time &gt; 0.5
+// </equation>
+// <equation id=\"2\">der(x) = if x &gt; 0.3 then -x else 0.0
+// </equation>
+// <equation id=\"3\">w = 2.0 * time
+// </equation>
+// <equation id=\"4\">$cse2 = sin(v)
+// </equation>
+// <equation id=\"5\">u = 1.0 + $cse2
+// </equation>
+// <equation id=\"6\">v = w - u
+// </equation>
+// <equation id=\"7\">y = if u &gt; 1.2 then 1.0 else 0.0
+// </equation>
+// </equations>
+// <zeroCrossingList dimension=\"3\">
+// <zeroCrossingElement string=\"time &gt; 0.5\">
+// <involvedEquations>
+// <equationId>
+// 1
+// </equationId>
+// </involvedEquations>
+// </zeroCrossingElement>
+// <zeroCrossingElement string=\"x &gt; 0.3\">
+// <involvedEquations>
+// <equationId>
+// 2
+// </equationId>
+// </involvedEquations>
+// </zeroCrossingElement>
+// <zeroCrossingElement string=\"u &gt; 1.2\">
+// <involvedEquations>
+// <equationId>
+// 7
+// </equationId>
+// </involvedEquations>
+// </zeroCrossingElement>
+// </zeroCrossingList>
+// </dae>"
+// endResult

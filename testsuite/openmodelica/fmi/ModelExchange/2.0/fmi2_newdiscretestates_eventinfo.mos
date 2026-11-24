@@ -1,0 +1,51 @@
+// name:     fmi2_newdiscretestates_eventinfo
+// keywords: FMI 2.0 export fmi2NewDiscreteStates fmi2EventInfo
+// status:   correct
+// teardown_command: rm -rf fmi2_newdiscretestates_eventinfo*.fmu fmi2_newdiscretestates_eventinfo*.fmutmp/ fmi2_newdiscretestates_eventinfo*.log fmi2_newdiscretestates_eventinfo_out.txt
+//
+// All fields of fmi2EventInfo are return values of fmi2NewDiscreteStates.
+// The FMU must not return the old values that the importer had in the struct
+// (#18333).
+
+loadString("
+model fmi2_newdiscretestates_eventinfo
+  Real x(start = 0, fixed = true);
+  output Real y = if x > 0.5 then 1 else 0;
+equation
+  der(x) = 1;
+end fmi2_newdiscretestates_eventinfo;
+
+model fmi2_newdiscretestates_eventinfo_sample
+  Real x(start = 0, fixed = true);
+  discrete output Integer n(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  when sample(0.3, 0.3) then
+    n = pre(n) + 1;
+  end when;
+end fmi2_newdiscretestates_eventinfo_sample;
+"); getErrorString();
+buildModelFMU(fmi2_newdiscretestates_eventinfo, version = "2.0", fmuType = "me"); getErrorString();
+buildModelFMU(fmi2_newdiscretestates_eventinfo_sample, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_newdiscretestates_eventinfo.py fmi2_newdiscretestates_eventinfo_out.txt fmi2_newdiscretestates_eventinfo.fmu fmi2_newdiscretestates_eventinfo_sample.fmu > fmi2_newdiscretestates_eventinfo.log 2>&1"); getErrorString();
+readFile("fmi2_newdiscretestates_eventinfo_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi2_newdiscretestates_eventinfo.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi2_newdiscretestates_eventinfo_sample.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi2_newdiscretestates_eventinfo.fmu
+//   nominalsChanged=0 valuesChanged=0 terminate=0 nextEventTimeDefined=0
+// fmi2_newdiscretestates_eventinfo_sample.fmu
+//   nominalsChanged=0 valuesChanged=0 terminate=0 nextEventTimeDefined=1 nextEventTime=0.3
+// "
+// ""
+// endResult

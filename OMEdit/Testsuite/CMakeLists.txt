@@ -124,6 +124,10 @@ set(OMEDIT_TEST_INSTALLLIBRARYFROMPATH_SOURCES InstallLibraryFromPath/InstallLib
                                                InstallLibraryFromPath/InstallLibraryFromPathTest.h)
 add_omedit_test(InstallLibraryFromPath "${OMEDIT_TEST_INSTALLLIBRARYFROMPATH_SOURCES}")
 
+set(OMEDIT_TEST_MCPSERVER_SOURCES MCPServer/MCPServerTest.cpp
+                                  MCPServer/MCPServerTest.h)
+add_omedit_test(MCPServer "${OMEDIT_TEST_MCPSERVER_SOURCES}")
+
 set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
                                               MergeExtendsModifiers/MergeExtendsModifiersTest.h)
 add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES}")

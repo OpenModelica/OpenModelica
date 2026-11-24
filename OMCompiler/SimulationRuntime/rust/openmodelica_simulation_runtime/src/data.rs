@@ -903,7 +903,7 @@ pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
     free_string_roots(&mut si.stringParameter, md.nParametersString);
 
     crate::systems::free_linear_systems(data);
-    crate::nls::free_nonlinear_systems(data);
+    crate::nls::free_nonlinear_systems(data, thread_data);
     crate::mixed::free_mixed_systems(data);
     free(&mut si.mixedSystemData);
     free(&mut si.linearSystemData);

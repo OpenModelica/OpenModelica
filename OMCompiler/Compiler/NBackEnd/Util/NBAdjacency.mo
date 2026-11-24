@@ -1334,7 +1334,7 @@ public
         crefs := {cref};
         if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
           ty := ComponentRef.getSubscriptedType(cref);
-          if Type.isArray(ty) and Type.hasKnownSize(ty) and Type.sizeOf(ty) <= 256 then
+          if Type.isArray(ty) and Type.hasKnownSize(ty) and Type.sizeOf(ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarizeAll(cref, false));
             if listEmpty(crefs) then
               crefs := {cref};
@@ -1580,6 +1580,11 @@ public
                   sparsityAddInner(cref, inner_deps, inner_map, inner_keys);
                   sparsityAddTemplate(sparsityTemplateKey(cref, template_crefs), inner_deps, template_map);
                 end for;
+
+                if StrongComponent.isAlgebraicLoop(comp) then
+                  pder_crefs := sparsityLoopRows(comp, pder_crefs);
+                  eqn_iter := Iterator.EMPTY();
+                end if;
 
                 if isAdjoint then
                   // The adjoint evaluates rows of the primal Jacobian. Map each
@@ -2422,6 +2427,43 @@ public
         for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)), Util.id);
     end sparsityCrefHasIterator;
 
+    function sparsityLoopRows
+      "The rows of an algebraic loop are the elements it solves, e.g. der(x)[1] and
+      der(x)[N]. Elements selected by the iterators of an equation give the whole array."
+      input StrongComponent comp;
+      input list<ComponentRef> pder_crefs;
+      output list<ComponentRef> rows;
+    protected
+      ComponentRef base;
+      list<ComponentRef> whole = {};
+    algorithm
+      rows := {};
+      for cref in StrongComponent.getSolvedCrefs(comp) loop
+        base := ComponentRef.stripSubscriptsAll(cref);
+        if List.contains(pder_crefs, base, ComponentRef.isEqual) then
+          if sparsityCrefHasIterator(cref) or not ComponentRef.hasSubscripts(cref) then
+            whole := base :: whole;
+          else
+            rows := cref :: rows;
+          end if;
+        end if;
+      end for;
+      // variables without a solved element keep all rows
+      for cref in pder_crefs loop
+        if not List.any(rows, function sparsityHasBase(base = cref)) then
+          whole := cref :: whole;
+        end if;
+      end for;
+      rows := list(c for c guard not List.contains(whole, ComponentRef.stripSubscriptsAll(c), ComponentRef.isEqual) in rows);
+      rows := UnorderedSet.unique_list(listAppend(whole, rows), ComponentRef.hash, ComponentRef.isEqual);
+    end sparsityLoopRows;
+
+    function sparsityHasBase
+      input ComponentRef cref;
+      input ComponentRef base;
+      output Boolean b = ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(cref), base);
+    end sparsityHasBase;
+
     function sparsitySimplify
       "with the sums combined, so that equal subscripts (e.g. 1 + i - 1 and i) are equal crefs"
       input output Expression exp;
@@ -2549,7 +2591,8 @@ public
                   Expression e;
                   Dimension d;
                 case (Subscript.INDEX(index = e), d) guard(Expression.isInteger(e) and Dimension.isKnown(d)) algorithm
-                  if Expression.integerValue(e) < 1 or Expression.integerValue(e) > Dimension.size(d) then
+                  // the size of a resizable dimension is only known at runtime
+                  if Expression.integerValue(e) < 1 or (not Dimension.isResizable(d) and Expression.integerValue(e) > Dimension.size(d)) then
                     b := false;
                   end if;
                 then ();
@@ -2742,7 +2785,8 @@ public
           crefs := UnorderedMap.getSafe(base, seed_elements, sourceInfo());
         else
           ty := ComponentRef.getSubscriptedType(base);
-          crefs := if Type.isArray(ty) and Type.sizeOf(ty) <= 1024 then ComponentRef.scalarizeAll(base, false) else {base};
+          // the elements of a resizable array are only known at runtime
+          crefs := if Type.isArray(ty) and not Type.isResizable(ty) and Type.sizeOf(ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then ComponentRef.scalarizeAll(base, false) else {base};
         end if;
       end if;
     end sparsityExpandForeignIterators;
@@ -4683,7 +4727,7 @@ public
     end if;
 
     // a slice (e.g. i[1:2]) of variables whose elements are the unknowns is resolved via its elements as well
-    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.hasKnownSize(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
+    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.hasKnownSize(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
       hasSetSub := true;
     end if;
 

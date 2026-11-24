@@ -681,7 +681,9 @@ public
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
         fmiFigures                    = {},
-        paramDeps                     = OldSimCode.PARAM_DEPS(false, {}, {}));
+        paramDeps                     = OldSimCode.PARAM_DEPS(false, {}, {}),
+        timeInvariantEquations        = {},
+        checkedDivisors               = NONE());
     end convert;
 
     function indexDelay

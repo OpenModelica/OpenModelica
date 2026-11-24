@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+identityRealCast.mos \
 sumRecordArraySlice.mos \
 arrayEquationRowLoop.mos \
 scalarProductSlice.mos \
@@ -16,6 +17,8 @@ sparsityScalarTemplates.mos \
 sparsityNegatedAlias.mos \
 raggedComponentArrays.mos \
 scalarDivArray.mos \
+retypeNestedArrayDivision.mos \
+bindingArrayOperand.mos \
 arrayRowScalar.mos \
 emptyArrayTupleArgument.mos \
 algorithmForSubscript.mos \
@@ -59,6 +62,13 @@ resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
 resizableTearStart.mos \
 resizableCalcSizeParam.mos \
+resizableEmptyRange.mos \
+resizableReverseRange.mos \
+resizableEmptyInitSlice.mos \
+resizableStateCandidates.mos \
+resizableEmptyJacobianVars.mos \
+resizableLoopSeeds.mos \
+resizableLoopRows.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \
@@ -68,6 +78,7 @@ resizableSparseLoop.mos \
 resizableInputs.mos \
 resizableJacobianOffsets.mos \
 resizableAlgebraicLoops.mos \
+resizableUnexpandedLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
 resizableEvaluate.mos \

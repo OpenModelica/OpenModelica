@@ -7149,14 +7149,6 @@ Använd Hämta... för att hämta en, eller låt Serverprogram peka på en serve
         <translation>Kör känslighetsanalysen och optimeringen</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>OpenModelicas systemdokumentation</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Öppnar OpenModelicas systemdokumentation</translation>
-    </message>
-    <message>
         <source>OpenModelica Scripting Documentation</source>
         <translation>OpenModelicas skriptdokumentation</translation>
     </message>
@@ -8340,6 +8332,10 @@ Slutpunkt: %2</translation>
     <message>
         <source>%1 - %2 - Live View</source>
         <translation>%1 - %2 - Livevy</translation>
+    </message>
+    <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
+        <translation>Livevyn är inte tillgänglig eftersom omuq har stoppats. Hela utskriften finns i fönstret Meddelanden.</translation>
     </message>
     <message>
         <source>The run is recorded in %1
@@ -10384,10 +10380,6 @@ Variabilitet: %4</translation>
     <message>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>Du kan inte simulera om den här klassen.&lt;br /&gt;Det är bara en resultatfil som har lästs in via menyn &lt;b&gt;Arkiv-&gt;Öppna resultatfil(er)&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Kunde inte sätta innehållet i QDomDocument från filen %1</translation>
     </message>
     <message>
         <source>Enabled for %1</source>

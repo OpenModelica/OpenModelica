@@ -35,6 +35,7 @@ Identity1.mo \
 Identity2.mo \
 Identity3.mo \
 Identity4.mo \
+Identity5.mo \
 Integer.mo \
 Integer2Real.mo \
 InvalidSizeIndex1.mo \

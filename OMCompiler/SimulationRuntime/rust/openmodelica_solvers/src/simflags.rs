@@ -408,7 +408,7 @@ pub struct SimFlags {
     pub parmod_num_threads: Option<i32>,
     /// `-parmodScheduler`: `flow` (default) or `level`.
     pub parmod_scheduler: Option<String>,
-    /// `-parmodClustering`: `default`, `fixed_width_min_height` or `none`.
+    /// `-parmodClustering`: `default`, `fixed_width_min_height`, `merge_across_levels` or `none`.
     pub parmod_clustering: Option<String>,
     /// `-parmodClustersPerLevel`: the default clustering's per-level cluster cap.
     pub parmod_clusters_per_level: Option<i32>,
@@ -1127,9 +1127,9 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
         f.override_raw.as_deref(),
         f.override_file.as_ref().map(|(_, j)| j.as_str()),
     ] {
-        for item in raw.into_iter().flat_map(split_top_level) {
+        for item in raw.into_iter().flat_map(split_overrides) {
             if let Some((n, v)) = item.split_once('=') {
-                f.overrides.push((n.trim().to_string(), v.trim().to_string()));
+                f.overrides.push((n.trim().to_string(), unquote_override(v.trim())?));
             }
         }
     }
@@ -1152,8 +1152,11 @@ fn push_raw_str(dst: &mut String, v: String) {
 /// dropped, joined with commas into one `-override` string.
 #[cfg(feature = "std")]
 fn read_override_file(path: &str) -> Result<String, String> {
-    let text = std::fs::read_to_string(path)
-        .map_err(|e| format!("simulation_input_xml.c: could not read overrideFile {path}: {e}"))?;
+    #[cfg(feature = "vfs")]
+    let text = openmodelica_wasi::fs::read_to_string(path);
+    #[cfg(not(feature = "vfs"))]
+    let text = std::fs::read_to_string(path);
+    let text = text.map_err(|e| format!("simulation_input_xml.c: could not read overrideFile {path}: {e}"))?;
     let mut out = Vec::new();
     for line in text.split_inclusive('\n').filter(|l| l.ends_with('\n')) {
         let line = line.trim();
@@ -1544,6 +1547,67 @@ fn split_top_level(s: &str) -> Vec<String> {
     out.push(cur);
     out.retain(|v| !v.is_empty());
     out
+}
+
+/// C's `addOverrides`: [`split_top_level`], and no split in a value in double quotes.
+fn split_overrides(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let (mut depth, mut quoted, mut escaped) = (0i32, false, false);
+    let mut cur = String::new();
+    for c in s.chars() {
+        if quoted {
+            if escaped {
+                escaped = false;
+            } else if c == '\\' {
+                escaped = true;
+            } else if c == '"' {
+                quoted = false;
+            }
+        } else {
+            match c {
+                '"' => quoted = true,
+                '[' => depth += 1,
+                ']' => depth -= 1,
+                ',' if depth == 0 => {
+                    out.push(core::mem::take(&mut cur));
+                    continue;
+                }
+                _ => {}
+            }
+        }
+        cur.push(c);
+    }
+    out.push(cur);
+    out.retain(|v| !v.is_empty());
+    out
+}
+
+/// C's `unquoteOverrideValue`: a value in double quotes is a Modelica string literal.
+fn unquote_override(v: &str) -> Result<String, String> {
+    let Some(body) = v.strip_prefix('"') else {
+        return Ok(v.to_string());
+    };
+    let mut out = String::new();
+    let mut chars = body.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' if chars.as_str().is_empty() => return Ok(out),
+            '"' => break,
+            '\\' => match chars.next() {
+                Some('a') => out.push('\x07'),
+                Some('b') => out.push('\x08'),
+                Some('f') => out.push('\x0c'),
+                Some('n') => out.push('\n'),
+                Some('r') => out.push('\r'),
+                Some('t') => out.push('\t'),
+                Some('v') => out.push('\x0b'),
+                Some(e) => out.push(e),
+                None => break,
+            },
+            c => out.push(c),
+        }
+    }
+    Err(format!("Invalid string value in override flag: {v}"))
 }
 
 fn bad(flag: &str, got: &str, accepted: &str) -> String {
@@ -2138,6 +2202,20 @@ mod tests {
                 ("c".to_string(), "false".to_string())
             ]
         );
+    }
+
+    #[test]
+    fn override_values_in_quotes_are_string_literals() {
+        let f = parse(&argv(&[r#"-override=s="a,b! \"c\" \\ d\n",t=1"#])).expect("parses");
+        assert_eq!(
+            f.overrides,
+            [
+                ("s".to_string(), "a,b! \"c\" \\ d\n".to_string()),
+                ("t".to_string(), "1".to_string())
+            ]
+        );
+        assert!(parse(&argv(&[r#"-override=s="a"#])).is_err());
+        assert!(parse(&argv(&[r#"-override=s="a"b"#])).is_err());
     }
 
     #[test]

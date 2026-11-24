@@ -1251,14 +1251,18 @@ protected
         Pointer.update(ok_ptr, ok);
       then Expression.fromCref(name);
 
-      // constant arrays subscripted by the iterators, e.g. {1.0, 0.0, -1.0}[i]
+      // constant arrays subscripted by the iterators, e.g. {1.0, 0.0, -1.0}[i] or {{1, 2}, {3, 4}}[i]
       case Expression.SUBSCRIPTED_EXP(split = false) guard(not Expression.contains(exp.exp, Expression.isCref)) algorithm
         ty   := Expression.typeOf(exp.exp);
         dims := Type.arrayDims(ty);
         subs := exp.subscripts;
-        ok   := listLength(subs) == listLength(dims)
-          and List.all(subs, Subscript.isIndex)
-          and List.all(list(isFullIteratorSubscript(sub, dim, iter_sizes) threaded for sub in subs, dim in dims), Util.id);
+        ok   := listLength(subs) <= listLength(dims) and List.all(subs, Subscript.isIndex);
+        if ok then
+          // the dimensions without subscript as in ComponentRef.subscriptsAllWithWholeFlat
+          subs := listAppend(exp.subscripts, list(Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(d)))
+            for d in List.stripN(dims, listLength(subs))));
+          ok := List.all(list(isFullIteratorSubscript(sub, dim, iter_sizes) threaded for sub in subs, dim in dims), Util.id);
+        end if;
         if ok then
           ok := match Pointer.access(subs_ptr)
             local
@@ -1267,7 +1271,7 @@ protected
             else algorithm
               Pointer.update(subs_ptr, SOME(subs));
               Pointer.update(ty_ptr, SOME(ty));
-            then listLength(List.uniqueOnTrue(subs, Subscript.isEqual)) == listLength(subs);
+            then listLength(List.uniqueOnTrue(exp.subscripts, Subscript.isEqual)) == listLength(exp.subscripts);
           end match;
         end if;
         Pointer.update(ok_ptr, ok);
@@ -2043,6 +2047,7 @@ protected
     input AliasSet set;
   protected
     list<Expression> current, lst_values = UnorderedMap.valueList(map);
+    list<Option<Expression>> uniform;
     array<ExpressionIterator> arr_iter;
     ExpressionIterator iter;
     Expression exp;
@@ -2055,6 +2060,12 @@ protected
     if not List.allEqual(list(Type.sizeOf(Expression.typeOf(e)) for e in lst_values), intEq) then
       Error.addCompilerWarning(getInstanceName() + " failed because array nominal values have different size. Use -d=dumprepl for more information.\n");
       fail();
+    end if;
+
+    uniform := list(Expression.uniformArrayElement(e) for e in lst_values);
+    if List.all(uniform, isSome) then
+      checkNominalThresholdSingle(list(Util.getOption(e) for e in uniform), map, set, index);
+      return;
     end if;
 
     // array handling: create expression iterators and loop while there is a next element
@@ -2412,6 +2423,7 @@ protected
       Option<Expression> start_opt = UnorderedMap.get(var_cref, attrcollector.start_map);
       Option<Expression> nominal_opt = UnorderedMap.get(var_cref, attrcollector.nominal_map);
       Type ty;
+      list<Subscript> subs;
     algorithm
       SOME(rhs) := Equation.getRHS(solved_eq);
       // min:
@@ -2434,18 +2446,35 @@ protected
 
       // if linear factor is negative => swap min and max. skip discontinuous and record types
       ty := Expression.typeOf(rhs);
-      if Type.isRecord(ty) or not (Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty))) then
+      if (isNone(min_val_opt) and isNone(max_val_opt)) or Type.isRecord(ty) or not (Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty))) then
         swap_min_max := false;
       else
         args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
         args.diffCref := var_cref;
-        diff_rhs := Differentiate.differentiateExpression(rhs, args);
+        diff_rhs := rhs;
+        if Type.isArray(ty) and not Type.isEmptyArray(ty) then
+          // the factor is scalar (see knownArrayFactors), the first element has its sign
+          subs := list(Subscript.INDEX(Expression.INTEGER(1)) for d in Type.arrayDims(ty));
+          diff_rhs := Expression.applySubscripts(subs, rhs);
+          if Expression.contains(diff_rhs, Expression.isSubscriptedExp) then
+            diff_rhs := rhs;
+          else
+            args.diffCref := ComponentRef.mergeSubscripts(subs, var_cref);
+          end if;
+        end if;
+        diff_rhs := Differentiate.differentiateExpression(diff_rhs, args);
         diff_rhs := SimplifyExp.simplify(diff_rhs);
         swap_min_max := Expression.isNegative(diff_rhs);
       end if;
-      if swap_min_max and isSome(min_val_opt) and isSome(max_val_opt) then
-        UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
-        UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
+      if swap_min_max then
+        UnorderedMap.remove(var_cref, attrcollector.min_val_map);
+        UnorderedMap.remove(var_cref, attrcollector.max_val_map);
+        if isSome(max_val_opt) then
+          UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
+        end if;
+        if isSome(min_val_opt) then
+          UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
+        end if;
       end if;
 
       // start:

@@ -86,8 +86,8 @@ val(x[2], 1);
 // [stateselection] (3) Natural states before index reduction:
 // *************************************************************
 // 	[STAT] (2) Real[2] v2
-// 	[STAT] (2) Real[2] v1 (fixed = {true for $f1 in 1:2}, start = {0.0 for $f2 in 1:2})
-// 	[STAT] (2) Real[2] x (fixed = {true for $f2 in 1:2}, start = {1.0 for $f3 in 1:2}, StateSelect = prefer)
+// 	[STAT] (2) Real[2] v1 (fixed = {true for $i_$f1 in 1:2}, start = {0.0 for $i_$f2 in 1:2})
+// 	[STAT] (2) Real[2] x (fixed = {true for $i_$f2 in 1:2}, start = {1.0 for $i_$f3 in 1:2}, StateSelect = prefer)
 //
 // [stateselection] State Order:
 // *******************************

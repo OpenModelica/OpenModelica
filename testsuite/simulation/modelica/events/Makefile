@@ -7,6 +7,7 @@ divisionByZeroAtEvent.mos \
 bug2667.mos \
 bug2718.mos \
 bug2752.mos \
+bug2756.mos \
 bug2808.mos \
 bug3092.mos \
 bug3358.mos \
@@ -21,6 +22,7 @@ cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
 derInWhenCondition.mos \
 discreteRelations.mos \
+DiscreteSelfLoop.mos \
 EndAtStopTime.mos \
 EventDelay.mos \
 EventIteration.mos \

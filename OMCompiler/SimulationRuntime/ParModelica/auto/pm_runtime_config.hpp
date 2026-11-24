@@ -46,7 +46,7 @@ namespace openmodelica { namespace parmodelica {
 
 struct ParmodConfig {
     std::string scheduler;         /*!< "flow" (default) or "level". */
-    std::string clustering;        /*!< "default", "fixed_width_min_height" or "none". */
+    std::string clustering;        /*!< "default", "fixed_width_min_height", "merge_across_levels" or "none". */
     int         clusters_per_level; /*!< <= 0 means "use the clustering's own default". */
     const char* export_taskgraph;    /*!< output json path, or NULL. */
     const char* import_clustering; /*!< input json path, or NULL. */

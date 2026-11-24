@@ -262,7 +262,9 @@ void OMUQOutputWidget::handleEvent(const QJsonObject &event)
     mResultsFile = event.value("results").toString();
     runFinished();
   } else if (name == "error") {
-    writeOutput(event.value("message").toString() + "\n", Qt::red);
+    const QString message = event.value("message").toString();
+    mErrors << message;
+    writeOutput(message + "\n", Qt::red);
   }
 }
 
@@ -303,6 +305,39 @@ void OMUQOutputWidget::showLiveView(const QString &url)
   }
 #endif
   QDesktopServices::openUrl(QUrl(url));
+}
+
+/*!
+ * \brief OMUQOutputWidget::showLiveViewFailure
+ * Replaces the live view's page by the reason the run failed.\n
+ * omuq serves the page, so once the process is gone the page cannot be loaded or updated anymore
+ * and the web view would show a "site can't be reached" page or a run that never ends.
+ * \param message
+ */
+void OMUQOutputWidget::showLiveViewFailure(const QString &message)
+{
+#ifdef OMUQ_LIVE_VIEW_IN_OMEDIT
+  QWebEngineView *pLiveWebView = mpLiveViewDockWidget ? qobject_cast<QWebEngineView*>(mpLiveViewDockWidget->widget()) : nullptr;
+  if (!pLiveWebView) {
+    return;
+  }
+  QString details = mErrors.join("\n");
+  if (details.isEmpty()) {
+    // omuq stopped without reporting an error, e.g., with a Python traceback: show the end of its log
+    const QStringList lines = mStandardError.trimmed().split('\n');
+    details = lines.mid(qMax(0, lines.size() - 20)).join("\n");
+  }
+  const QString html = QString("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>"
+                               "body{font-family:sans-serif;margin:2em;color:#222;background:#fff}"
+                               "h1{font-size:1.3em;color:#b00020}"
+                               "pre{white-space:pre-wrap;word-break:break-word;background:#f4f4f4;border:1px solid #ddd;padding:1em}"
+                               "</style></head><body><h1>%1</h1><pre>%2</pre><p>%3</p></body></html>")
+                       .arg(message.toHtmlEscaped(), details.toHtmlEscaped(),
+                            tr("The live view is not available because omuq stopped. The complete output is in the Messages window.").toHtmlEscaped());
+  pLiveWebView->setHtml(html);
+#else
+  Q_UNUSED(message);
+#endif
 }
 
 /*!
@@ -399,6 +434,8 @@ void OMUQOutputWidget::readStandardError()
   if (error.contains("No module named")) {
     mIsModuleMissing = true;
   }
+  // only the end of the log is of interest for showLiveViewFailure
+  mStandardError = (mStandardError + error).right(16384);
   writeOutput(error, Qt::darkGray);
 }
 
@@ -451,5 +488,6 @@ void OMUQOutputWidget::processFinished(int exitCode, QProcess::ExitStatus exitSt
   }
   writeOutput(message + "\n", Qt::red);
   setProgressText(message);
+  showLiveViewFailure(message);
 }
 #endif // QT_CONFIG(process)

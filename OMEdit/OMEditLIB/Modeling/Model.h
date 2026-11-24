@@ -461,8 +461,8 @@ private:
     enum class YAxis {Left, Right};
     void deserialize(const QJsonValue &jsonValue);
 
-    const QString &getX() const {return mX;}
-    void setX(const QString &x) {mX = x;}
+    const FlatModelica::Expression &getX() const {return mX;}
+    void setX(const FlatModelica::Expression &x) {mX = x;}
     const FlatModelica::Expression &getY() const {return mY;}
     void setY(const FlatModelica::Expression &y) {mY = y;}
     const QString &getLegend() const {return mLegend;}
@@ -473,7 +473,7 @@ private:
     void setZOrder(int zOrder) {mZOrder = zOrder;}
     QString toString() const;
   private:
-    QString mX = "time";
+    FlatModelica::Expression mX = FlatModelica::Expression::parse(QStringLiteral("time"));
     FlatModelica::Expression mY;
     QString mLegend;
     YAxis mYAxis = YAxis::Left;

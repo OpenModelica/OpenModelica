@@ -344,6 +344,23 @@ void RecursiveFileWatcher::resync()
 }
 
 /*!
+ * \brief RecursiveFileWatcher::rescan
+ * Compares all watched files with the disk now and reports the changes before
+ * returning, without waiting for QFileSystemWatcher.
+ */
+void RecursiveFileWatcher::rescan()
+{
+  mpFlushTimer->stop();
+  for (auto it = mDirectories.constBegin(); it != mDirectories.constEnd(); ++it) {
+    mDirtyDirectories.insert(it.key());
+  }
+  for (const QString &root : mFileRoots) {
+    mDirtyFileRootParents.insert(QFileInfo(root).absolutePath());
+  }
+  flush();
+}
+
+/*!
  * \brief RecursiveFileWatcher::watchFile
  * Watches one file if the per-file watch limit has not been reached. The parent
  * directory stays watched, so files added or removed by a rename are still

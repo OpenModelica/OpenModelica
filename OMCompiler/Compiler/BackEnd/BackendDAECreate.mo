@@ -78,6 +78,7 @@ import HashTableExpToExp;
 import HashTable;
 import HashTableCrToExpSourceTpl;
 import Inline;
+import InlineArrayEquations;
 import List;
 import ExecStat.execStat;
 import SCode;
@@ -1912,6 +1913,7 @@ algorithm
       DAE.Exp e1, e1_1, e2, e2_1, msg;
       DAE.ComponentRef cr1, cr2;
       DAE.ElementSource source;
+      DAE.EquationOrigin origin;
       Boolean b1;
       DAE.Dimensions dims;
       list<DAE.Exp> explst, explst1;
@@ -2003,7 +2005,7 @@ algorithm
         e1 := Expression.crefExp(cr1);
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
       then
-        (inEquations,inREquations,BackendDAE.EQUATION(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inIEquations);
+        (inEquations,inREquations,BackendDAE.EQUATION(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inIEquations);
 
     case DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source)
       algorithm
@@ -2013,11 +2015,11 @@ algorithm
       then
         (eqns,inREquations,inIEquations);
 
-    case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source)
+    case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source,origin = origin)
       algorithm
          //TODO: remove inline
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
-        eqns := lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inIEquations);
+        eqns := lowerExtendedRecordEqn(e1_1,e2_1,source,initialEquationAttributes(origin),functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
 
@@ -2039,10 +2041,10 @@ algorithm
       then
         (eqns,inREquations,inIEquations);
 
-    case DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source)
+    case DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source,origin = origin)
       algorithm
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns := lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,inIEquations);
+        eqns := lowerArrayEqn(dims,e1_1,e2_1,source,initialEquationAttributes(origin),inIEquations);
       then
         (inEquations,inREquations,eqns);
 
@@ -2146,6 +2148,15 @@ algorithm
 
   end match;
 end lowerEqn;
+
+protected function initialEquationAttributes
+  "A binding that the frontend moved to the initial equations keeps the
+   binding kind, so that balancing removes initial equations instead."
+  input DAE.EquationOrigin origin;
+  output BackendDAE.EquationAttributes attr;
+algorithm
+  attr := if origin == DAE.EquationOrigin.BINDING then BackendDAE.EQ_ATTR_DEFAULT_BINDING else BackendDAE.EQ_ATTR_DEFAULT_INITIAL;
+end initialEquationAttributes;
 
 protected
 function lowerForEquation
@@ -2535,7 +2546,6 @@ protected function lowerArrayEqn "author: Frenkel TUD 2012-06"
   output list<BackendDAE.Equation> outEqsLst;
 protected
   list<Integer> dimensions;
-  list<DAE.Exp> ea1,ea2;
   DAE.Type tp;
   Integer recordSize;
 algorithm
@@ -2546,34 +2556,16 @@ algorithm
     dimensions := Expression.dimensionsSizes(dims);
     outEqsLst := BackendDAE.ARRAY_EQUATION(dimensions, e1, e2, source, inEqAttributes,SOME(recordSize))::iAcc;
   elseif (Expression.isArray(e1) or Expression.isMatrix(e1)) and (Expression.isArray(e2) or Expression.isMatrix(e2)) then
-    // Expand array elements that aren't array expressions to get the scalar
-    // elements, e.g. the x in {x} = {{1, 2, 3}}.
-    ea1 := Expression.flattenArrayExpToList(Expression.extendArrExp(e1));
-    ea2 := Expression.flattenArrayExpToList(Expression.extendArrExp(e2));
-    outEqsLst := generateEquations(ea1, ea2, source, inEqAttributes, iAcc);
+    try
+      outEqsLst := InlineArrayEquations.scalarArrayEqns(e1, e2, source, inEqAttributes, iAcc);
+    else
+      outEqsLst := BackendDAE.ARRAY_EQUATION(Expression.dimensionsSizes(dims), e1, e2, source, inEqAttributes, NONE())::iAcc;
+    end try;
   else
     dimensions := Expression.dimensionsSizes(dims);
     outEqsLst := BackendDAE.ARRAY_EQUATION(dimensions, e1, e2, source, inEqAttributes, NONE())::iAcc;
   end if;
 end lowerArrayEqn;
-
-protected function generateEquations "author: Frenkel TUD 2012-06"
-  input list<DAE.Exp> iE1lst;
-  input list<DAE.Exp> iE2lst;
-  input DAE.ElementSource source;
-  input BackendDAE.EquationAttributes inEqAttributes;
-  input list<BackendDAE.Equation> iAcc;
-  output list<BackendDAE.Equation> oEqns;
-algorithm
-  oEqns := match(iE1lst, iE2lst)
-    local
-      DAE.Exp e1, e2;
-      list<DAE.Exp> e1lst, e2lst;
-    case ({}, {}) then iAcc;
-    case (e1::e1lst, e2::e2lst)
-      then generateEquations(e1lst, e2lst, source, inEqAttributes, BackendDAE.EQUATION(e1, e2, source, inEqAttributes)::iAcc);
-  end match;
-end generateEquations;
 
 protected function createWhenClock
   input Integer whenClkCnt;

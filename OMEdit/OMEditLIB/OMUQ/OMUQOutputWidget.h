@@ -105,11 +105,15 @@ private:
   double mStopTime = 1;
   QString mCsvFile;
   QString mResultsFile;
+  // what the live view shows when the run fails: the errors omuq reported and the end of its log
+  QStringList mErrors;
+  QString mStandardError;
 
   void writeOutput(const QString &output, const QColor &color);
   void setProgressText(const QString &text);
   void handleEvent(const QJsonObject &event);
   void showLiveView(const QString &url);
+  void showLiveViewFailure(const QString &message);
   void runFinished();
 // Qt for WebAssembly has no QProcess, omuq cannot run there.
 #if QT_CONFIG(process)

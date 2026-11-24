@@ -2107,15 +2107,17 @@ function evalBuiltinCallExp
 protected
   Function fn;
   list<Expression> args;
+  Type ty;
 algorithm
-  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := callExp;
-  result := evalBuiltinCall(fn, args, target);
+  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args, ty = ty)) := callExp;
+  result := evalBuiltinCall(fn, args, target, ty);
 end evalBuiltinCallExp;
 
 function evalBuiltinCall
   input Function fn;
   input list<Expression> args;
   input EvalTarget target;
+  input Type ty = Type.UNKNOWN() "the type of the call";
   output Expression result;
 protected
   Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
@@ -2142,7 +2144,7 @@ algorithm
     case "floor" then evalBuiltinFloor(listHead(args));
     // hold of a parameter expression is that value, MLS 3.7 section 16.5.1.
     case "hold" then listHead(args);
-    case "identity" then evalBuiltinIdentity(listHead(args));
+    case "identity" then evalBuiltinIdentity(listHead(args), ty);
     case "integer" then evalBuiltinInteger(listHead(args));
     case "Integer" then evalBuiltinIntegerEnum(listHead(args));
     case "log10" then evalBuiltinLog10(listHead(args), target);
@@ -2561,11 +2563,12 @@ end evalBuiltinFloor;
 
 function evalBuiltinIdentity
   input Expression arg;
+  input Type ty;
   output Expression result;
 algorithm
   result := match arg
     case Expression.INTEGER()
-      then Expression.makeIdentityMatrix(arg.value, Type.INTEGER());
+      then Expression.makeIdentityMatrix(arg.value, if Type.isReal(Type.arrayElementType(ty)) then Type.REAL() else Type.INTEGER());
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;

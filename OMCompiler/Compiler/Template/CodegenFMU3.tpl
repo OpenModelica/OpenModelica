@@ -840,12 +840,22 @@ template StringStartChild3(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
-case SIMVAR(initialValue = SOME(e as SCONST(__))) then
-  '<Start value="<%initValXml(e, "")%>"/>'
 case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then
-  '<Start value=""/>'
+  '<Start value="<%StringStartValue3(initialValue)%>"/>'
+case SIMVAR(initial_ = SOME(SimCodeVar.EXACT()))
+case SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then
+  match initialValue
+  case SOME(SCONST(__)) then '<Start value="<%StringStartValue3(initialValue)%>"/>'
+  else ''
 else ''
 end StringStartChild3;
+
+template StringStartValue3(Option<Exp> initialValue)
+::=
+match initialValue
+case SOME(e as SCONST(__)) then initValXml(e, "")
+else ''
+end StringStartValue3;
 
 template modelStructure3(SimCode simCode, Option<FmiModelStructure> fmiModelStructure)
  "Generates the FMI 3.0 ModelStructure. Unknowns are referenced by valueReference."

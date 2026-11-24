@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 TaskGraphDependencies.mos \
+MergeAcrossLevels.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC.mos \
 Modelica.Fluid.Examples.BranchingDynamicPipes.mos
 

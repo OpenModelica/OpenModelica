@@ -1,0 +1,387 @@
+// name: XmlExportStructure
+// keywords: xml, #2717, #3120, #4024, #4025
+// status: correct
+// teardown_command: rm -f XmlEx.xml XmlEx.part.xml
+//
+// The XML export writes record constructors, record fields of function
+// results, subscripted names, algebraic loops and when-statements as
+// well-formed XML.
+
+loadString("
+model XmlEx
+  record R
+    Real a;
+    Real b;
+  end R;
+  function f
+    input Real x;
+    output R r;
+  algorithm
+    r := R(x, 2*x);
+  end f;
+  R r, q[2];
+  Real x(start = 1, fixed = true);
+  Real y, w, z(start = 1);
+algorithm
+  when time > 0.5 then
+    r := R(1, 2);
+  elsewhen time > 0.8 then
+    r := R(3, 4);
+  end when;
+equation
+  q[1] = R(x, 2*x);
+  q[2] = R(r.a, 3*x);
+  der(x) = -x;
+  y = f(x).b;
+  w = y + q[2].b;
+  z + sin(z) = w;
+end XmlEx;
+"); getErrorString();
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
+translateModelXML(XmlEx); getErrorString();
+system("sed -n '/<equ:DynamicEquations>/,/<\\/equ:DynamicEquations>/p;/<fun:Algorithm>/,/<\\/fun:Algorithm>/p' XmlEx.xml > XmlEx.part.xml"); getErrorString();
+readFile("XmlEx.part.xml");
+// Result:
+// true
+// ""
+// true
+// ""
+// "XmlEx.xml"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// "  <equ:DynamicEquations>
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"y\"/>
+//         </exp:Identifier>
+//         <exp:RecordField name=\"b\">
+//           <exp:FunctionCall>
+//             <exp:Name>
+//               <exp:QualifiedNamePart name=\"XmlEx\"/>
+//               <exp:QualifiedNamePart name=\"f\"/>
+//             </exp:Name>
+//             <exp:Arguments>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"x\"/>
+//               </exp:Identifier>
+//             </exp:Arguments>
+//           </exp:FunctionCall>
+//         </exp:RecordField>
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Der>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"x\"/>
+//           </exp:Identifier>
+//         </exp:Der>
+//           <exp:Neg>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"x\"/>
+//             </exp:Identifier>
+//           </exp:Neg>
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"q\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>2</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
+//           <exp:QualifiedNamePart name=\"b\"/>
+//         </exp:Identifier>
+//         <exp:Mul>
+//           <exp:RealLiteral>3.0</exp:RealLiteral>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"x\"/>
+//           </exp:Identifier>
+//         </exp:Mul>
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"w\"/>
+//         </exp:Identifier>
+//         <exp:Add>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"y\"/>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"q\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>2</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//             <exp:QualifiedNamePart name=\"b\"/>
+//           </exp:Identifier>
+//         </exp:Add>
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Add>
+//           <exp:Sin>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"z\"/>
+//             </exp:Identifier>
+//           </exp:Sin>
+//           <exp:Sub>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"z\"/>
+//             </exp:Identifier>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"w\"/>
+//             </exp:Identifier>
+//           </exp:Sub>
+//         </exp:Add>
+//         <exp:RealLiteral>0.0</exp:RealLiteral>
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"q\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
+//           <exp:QualifiedNamePart name=\"b\"/>
+//         </exp:Identifier>
+//         <exp:Mul>
+//           <exp:RealLiteral>2.0</exp:RealLiteral>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"x\"/>
+//           </exp:Identifier>
+//         </exp:Mul>
+//       </exp:Sub>
+//     </equ:Equation>
+//
+//   </equ:DynamicEquations>
+//   <fun:Algorithm>
+//     <fun:Assign>
+//       <exp:Identifier>
+//         <exp:QualifiedNamePart name=\"r\"/>
+//         <exp:QualifiedNamePart name=\"b\"/>
+//       </exp:Identifier>
+//       <fun:Expression>
+//         <exp:Pre>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"r\"/>
+//             <exp:QualifiedNamePart name=\"b\"/>
+//           </exp:Identifier>
+//         </exp:Pre>
+//       </fun:Expression>
+//     </fun:Assign>
+//     <fun:Assign>
+//       <exp:Identifier>
+//         <exp:QualifiedNamePart name=\"q\">
+//           <exp:ArraySubscripts>
+//             <exp:IndexExpression>
+//               <exp:IntegerLiteral>2</exp:IntegerLiteral>
+//             </exp:IndexExpression>
+//           </exp:ArraySubscripts>
+//         </exp:QualifiedNamePart>
+//         <exp:QualifiedNamePart name=\"a\"/>
+//       </exp:Identifier>
+//       <fun:Expression>
+//         <exp:Pre>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"q\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>2</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//             <exp:QualifiedNamePart name=\"a\"/>
+//           </exp:Identifier>
+//         </exp:Pre>
+//       </fun:Expression>
+//     </fun:Assign>
+//     <fun:Assign>
+//       <exp:Identifier>
+//         <exp:QualifiedNamePart name=\"$whenCondition2\"/>
+//       </exp:Identifier>
+//       <fun:Expression>
+//         <exp:Pre>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"$whenCondition2\"/>
+//           </exp:Identifier>
+//         </exp:Pre>
+//       </fun:Expression>
+//     </fun:Assign>
+//     <fun:Assign>
+//       <exp:Identifier>
+//         <exp:QualifiedNamePart name=\"$whenCondition1\"/>
+//       </exp:Identifier>
+//       <fun:Expression>
+//         <exp:Pre>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"$whenCondition1\"/>
+//           </exp:Identifier>
+//         </exp:Pre>
+//       </fun:Expression>
+//     </fun:Assign>
+//     <fun:Assign>
+//       <exp:Identifier>
+//         <exp:QualifiedNamePart name=\"$whenCondition1\"/>
+//       </exp:Identifier>
+//       <fun:Expression>
+//         <exp:LogGt>
+//           <exp:Time>time</exp:Time>
+//           <exp:RealLiteral>0.5</exp:RealLiteral>
+//         </exp:LogGt>
+//       </fun:Expression>
+//     </fun:Assign>
+//     <fun:Assign>
+//       <exp:Identifier>
+//         <exp:QualifiedNamePart name=\"$whenCondition2\"/>
+//       </exp:Identifier>
+//       <fun:Expression>
+//         <exp:LogGt>
+//           <exp:Time>time</exp:Time>
+//           <exp:RealLiteral>0.8</exp:RealLiteral>
+//         </exp:LogGt>
+//       </fun:Expression>
+//     </fun:Assign>
+//     <fun:When>
+//       <fun:Condition>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"$whenCondition1\"/>
+//         </exp:Identifier>
+//       </fun:Condition>
+//       <fun:Statements>
+//         <fun:Assign>
+//           <exp:RecordConstructor>
+//             <exp:Name>
+//               <exp:QualifiedNamePart name=\"XmlEx\"/>
+//               <exp:QualifiedNamePart name=\"R\"/>
+//             </exp:Name>
+//             <exp:Argument>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"q\">
+//                   <exp:ArraySubscripts>
+//                     <exp:IndexExpression>
+//                       <exp:IntegerLiteral>2</exp:IntegerLiteral>
+//                     </exp:IndexExpression>
+//                   </exp:ArraySubscripts>
+//                 </exp:QualifiedNamePart>
+//                 <exp:QualifiedNamePart name=\"a\"/>
+//               </exp:Identifier>
+//             </exp:Argument>
+//             <exp:Argument>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"r\"/>
+//                 <exp:QualifiedNamePart name=\"b\"/>
+//               </exp:Identifier>
+//             </exp:Argument>
+//           </exp:RecordConstructor>
+//           <fun:Expression>
+//             <exp:RecordConstructor>
+//               <exp:Name>
+//                 <exp:QualifiedNamePart name=\"XmlEx\"/>
+//                 <exp:QualifiedNamePart name=\"R\"/>
+//               </exp:Name>
+//               <exp:Argument>
+//                 <exp:RealLiteral>1.0</exp:RealLiteral>
+//               </exp:Argument>
+//               <exp:Argument>
+//                 <exp:RealLiteral>2.0</exp:RealLiteral>
+//               </exp:Argument>
+//             </exp:RecordConstructor>
+//           </fun:Expression>
+//         </fun:Assign>
+//       </fun:Statements>
+//       <fun:Condition>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"$whenCondition2\"/>
+//         </exp:Identifier>
+//       </fun:Condition>
+//       <fun:Statements>
+//         <fun:Assign>
+//           <exp:RecordConstructor>
+//             <exp:Name>
+//               <exp:QualifiedNamePart name=\"XmlEx\"/>
+//               <exp:QualifiedNamePart name=\"R\"/>
+//             </exp:Name>
+//             <exp:Argument>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"q\">
+//                   <exp:ArraySubscripts>
+//                     <exp:IndexExpression>
+//                       <exp:IntegerLiteral>2</exp:IntegerLiteral>
+//                     </exp:IndexExpression>
+//                   </exp:ArraySubscripts>
+//                 </exp:QualifiedNamePart>
+//                 <exp:QualifiedNamePart name=\"a\"/>
+//               </exp:Identifier>
+//             </exp:Argument>
+//             <exp:Argument>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"r\"/>
+//                 <exp:QualifiedNamePart name=\"b\"/>
+//               </exp:Identifier>
+//             </exp:Argument>
+//           </exp:RecordConstructor>
+//           <fun:Expression>
+//             <exp:RecordConstructor>
+//               <exp:Name>
+//                 <exp:QualifiedNamePart name=\"XmlEx\"/>
+//                 <exp:QualifiedNamePart name=\"R\"/>
+//               </exp:Name>
+//               <exp:Argument>
+//                 <exp:RealLiteral>3.0</exp:RealLiteral>
+//               </exp:Argument>
+//               <exp:Argument>
+//                 <exp:RealLiteral>4.0</exp:RealLiteral>
+//               </exp:Argument>
+//             </exp:RecordConstructor>
+//           </fun:Expression>
+//         </fun:Assign>
+//       </fun:Statements>
+//     </fun:When>
+//   </fun:Algorithm>
+//       <fun:Algorithm>
+//         <fun:Assign>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"r\"/>
+//           </exp:Identifier>
+//           <fun:Expression>
+//             <exp:RecordConstructor>
+//               <exp:Name>
+//                 <exp:QualifiedNamePart name=\"XmlEx\"/>
+//                 <exp:QualifiedNamePart name=\"R\"/>
+//               </exp:Name>
+//               <exp:Argument>
+//                 <exp:Identifier>
+//                   <exp:QualifiedNamePart name=\"x\"/>
+//                 </exp:Identifier>
+//               </exp:Argument>
+//               <exp:Argument>
+//                 <exp:Mul>
+//                   <exp:RealLiteral>2.0</exp:RealLiteral>
+//                   <exp:Identifier>
+//                     <exp:QualifiedNamePart name=\"x\"/>
+//                   </exp:Identifier>
+//                 </exp:Mul>
+//               </exp:Argument>
+//             </exp:RecordConstructor>
+//           </fun:Expression>
+//         </fun:Assign>
+//       </fun:Algorithm>
+// "
+// endResult

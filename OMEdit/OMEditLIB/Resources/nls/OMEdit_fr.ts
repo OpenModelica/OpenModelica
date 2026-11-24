@@ -7161,14 +7161,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>Exécute l’analyse de sensibilité et l’optimisation</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>Documentation Système OpenModelica</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Ouvre la Documentation du Système OpenModelica</translation>
-    </message>
-    <message>
         <source>Draws a line shape</source>
         <translation>Dessine une ligne</translation>
     </message>
@@ -8299,6 +8291,10 @@ Endpoint: %2</source>
     </message>
     <message>
         <source>%1 - %2 - Live View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10339,10 +10335,6 @@ Variability: %4</source>
     <message>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>Vous ne pouvez pas resimuler cette classe.&lt;br /&gt;Ceci est juste un fichier résultat chargé depuis le menu &lt;b&gt;Fichier-&gt;Ouvrir un ou des fichier(s) résultat(s))&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Impossible de paramétrer le contenu de QDomDocument à partir du fichier %1</translation>
     </message>
     <message>
         <source>Enabled for %1</source>

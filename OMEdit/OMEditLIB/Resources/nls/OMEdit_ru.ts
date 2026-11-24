@@ -7082,14 +7082,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>Запускает анализ и оптимизацию чувствительности</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>Документация по системе OpenModelica</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Открывает документацию по системе OpenModelica</translation>
-    </message>
-    <message>
         <source>OpenModelica Scripting Documentation</source>
         <translation>Документация по сценариям OpenModelica</translation>
     </message>
@@ -8277,6 +8269,10 @@ Endpoint: %2</source>
     </message>
     <message>
         <source>%1 - %2 - Live View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10329,10 +10325,6 @@ Variability: %4</source>
     <message>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>Невозможно повторно моделировать данный класс. &lt;br /&gt; Это всего лишь выходной файл, загруженный с помощью меню &lt;b&gt;Файл-&gt;Открыть выходной файл(ы)&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Не удалось задать содержимое QDomDocument из файла %1</translation>
     </message>
     <message>
         <source>Enabled for %1</source>

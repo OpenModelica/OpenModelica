@@ -1274,7 +1274,7 @@ public
           // elementwise, everything else that is not in diff_map gets differentiated to zero
           hasSetSub := false;
           elem_crefs := {};
-          if Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             for c in elem_crefs loop
               if UnorderedMap.contains(c, diff_map) then
@@ -1365,7 +1365,7 @@ public
             end if;
           end for;
           // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
-          if not hasSetSub and Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if not hasSetSub and Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then
             for c in listReverse(ComponentRef.scalarizeAll(exp.cref, false)) loop
               if UnorderedMap.contains(c, diff_map) then
                 hasSetSub := true;
@@ -1615,7 +1615,7 @@ public
     end match;
     if listEmpty(subs) or List.all(subs, Subscript.isLiteral) then return; end if;
     base_ty := ComponentRef.getSubscriptedType(base, true);
-    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > 256 then return; end if;
+    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > Flags.getConfigInt(Flags.MAX_ARRAY_EXPANSION) then return; end if;
     elem_crefs := listReverse(ComponentRef.scalarizeAll(base, false));
     found := false;
     for c in elem_crefs loop
@@ -3598,16 +3598,16 @@ public
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           current_grad := diffArguments.current_grad; // upstream gradient
 
-          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2, Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, {}, makeMulFromOperator(operator));
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2, Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, {}, makePowerMul(operator));
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
 
-          diffArguments.current_grad := Expression.MULTARY({current_grad, exp, expLog(exp1)}, {}, makeMulFromOperator(operator));
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp, expLog(exp1)}, {}, makePowerMul(operator));
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
 
           diffArguments.current_grad := current_grad;
           diffExp1 := SimplifyExp.simplifyDump(diffExp1, true, getInstanceName());
           diffExp2 := SimplifyExp.simplifyDump(diffExp2, true, getInstanceName());
-          mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
+          mulOp := makePowerMul(operator);
 
           res := match (Expression.isZero(diffExp1), Expression.isZero(diffExp2))
             // Power (POW, POW_EW, ...) with constant exponent and constant base
@@ -4054,6 +4054,20 @@ protected
   algorithm
     mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, Operator.getSizeClassification(operator)), operator.ty);
   end makeMulFromOperator;
+
+  function makePowerMul
+    "The multiplication of the factors of the derivative of a power. For arrays
+     they are multiplied element-wise, e.g. (x .^ r)' = r * x .^ (r - 1) .* x'."
+    input Operator operator;
+    output Operator mulOp;
+  protected
+    NFOperator.SizeClassification sc = Operator.getSizeClassification(operator);
+  algorithm
+    if sc == NFOperator.SizeClassification.ARRAY_SCALAR or sc == NFOperator.SizeClassification.SCALAR_ARRAY then
+      sc := NFOperator.SizeClassification.ELEMENT_WISE;
+    end if;
+    mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sc), operator.ty);
+  end makePowerMul;
 
   function typeTransposeCall
     "Create a typed builtin transpose(mat) call without expanding mat.

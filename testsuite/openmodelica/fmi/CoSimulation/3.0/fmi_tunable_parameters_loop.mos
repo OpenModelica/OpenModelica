@@ -1,0 +1,57 @@
+// name:     fmi_tunable_parameters_loop
+// keywords: FMI 2.0 3.0 export tunable parameter nonlinear system
+// status:   correct
+// teardown_command: rm -rf fmi_tunable_parameters_loop_2.fmu fmi_tunable_parameters_loop_3.fmu fmi_tunable_parameters_loop*.fmutmp/ fmi_tunable_parameters_loop*_info.json fmi_tunable_parameters_loop_*.log fmi_tunable_parameters_loop_*.txt fmi_tunable_parameters_loop_*_FMU.libs fmi_tunable_parameters_loop_*_FMU.makefile fmi_tunable_parameters_loop_*_external_functions.json
+//
+// The loops for z and w depend on parameters only, so the simulation does
+// not solve them at every step (#1869). A change of the tunable k solves
+// them again.
+
+loadString("
+model fmi_tunable_parameters_loop
+  parameter Real k = 1;
+  Real z(start = 1);
+  Real w(start = 0);
+  Real T(start = 0, fixed = true);
+equation
+  z = k*cos(z);
+  w = z + 0.5*sin(w);
+  der(T) = w - T;
+end fmi_tunable_parameters_loop;
+"); getErrorString();
+buildModelFMU(fmi_tunable_parameters_loop, version="2.0", fmuType="me_cs", fileNamePrefix="fmi_tunable_parameters_loop_2"); getErrorString();
+buildModelFMU(fmi_tunable_parameters_loop, version="3.0", fmuType="me_cs", fileNamePrefix="fmi_tunable_parameters_loop_3"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_tunable_parameters_loop.py fmi_tunable_parameters_loop_2.fmu fmi_tunable_parameters_loop_2.txt", "fmi_tunable_parameters_loop_2.log"); getErrorString();
+readFile("fmi_tunable_parameters_loop_2.txt");
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_tunable_parameters_loop.py fmi_tunable_parameters_loop_3.fmu fmi_tunable_parameters_loop_3.txt", "fmi_tunable_parameters_loop_3.log"); getErrorString();
+readFile("fmi_tunable_parameters_loop_3.txt");
+// Result:
+// true
+// ""
+// "fmi_tunable_parameters_loop_2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi_tunable_parameters_loop_3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "k: parameter tunable
+// CS k=1: z=0.739085 w=1.206223
+// CS set k=2: z=1.029867 w=1.529439
+// CS end: z=1.029867 w=1.529439 T=1.5272
+// ME set k=2 in event mode: z=1.029867 w=1.529439
+// ME end: z=1.029867 w=1.529439 T=1.5273
+// "
+// 0
+// ""
+// "k: parameter tunable
+// CS k=1: z=0.739085 w=1.206223
+// CS set k=2: z=1.029867 w=1.529439
+// CS end: z=1.029867 w=1.529439 T=1.5272
+// ME set k=2 in event mode: z=1.029867 w=1.529439
+// ME end: z=1.029867 w=1.529439 T=1.5273
+// "
+// endResult

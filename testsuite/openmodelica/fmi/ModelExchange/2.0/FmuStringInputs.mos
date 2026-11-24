@@ -1,0 +1,70 @@
+// name:     FmuStringInputs
+// keywords: FMI 2.0 FMI 3.0 export input String Boolean setString
+// status:   correct
+// teardown_command: rm -rf FmuStringInputs.fmu FmuStringInputs3.fmu FmuStringInputs*.fmutmp/ FmuStringInputs.log FmuStringInputs_* FmuStringInputs3_* FmuStringInputs FmuStringInputs.c FmuStringInputs.o FmuStringInputs.makefile FmuStringInputs.libs
+//
+// String and Boolean inputs in a simulation and in FMUs (#5113).
+
+loadString("
+model FmuStringInputs
+  input String s(start = \"init\");
+  input Boolean b(start = false);
+  output String t;
+  output Boolean nb;
+  output Boolean isInit;
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+  t = s + (if b then \" on\" else \" off\");
+  nb = not b;
+  isInit = s == \"init\";
+end FmuStringInputs;
+"); getErrorString();
+simulate(FmuStringInputs, stopTime = 0.1, simflags = "-override=s=abc"); getErrorString();
+val(isInit, 0.1);
+buildModelFMU(FmuStringInputs, version = "2.0", fmuType = "me_cs", platforms = {"static"}); getErrorString();
+buildModelFMU(FmuStringInputs, version = "3.0", fmuType = "me_cs", fileNamePrefix = "FmuStringInputs3", platforms = {"static"}); getErrorString();
+system("unzip -cqq FmuStringInputs3.fmu modelDescription.xml | grep \"<String\" > FmuStringInputs_strings.txt"); getErrorString();
+readFile("FmuStringInputs_strings.txt"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuStringInputs.py FmuStringInputs.fmu FmuStringInputs3.fmu FmuStringInputs_values.txt > FmuStringInputs.log 2>&1"); getErrorString();
+readFile("FmuStringInputs_values.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FmuStringInputs_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'FmuStringInputs', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=s=abc'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// "FmuStringInputs.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "FmuStringInputs3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "    <String name=\"s\" valueReference=\"7\" causality=\"input\" ><Start value=\"init\"/></String>
+//     <String name=\"t\" valueReference=\"8\" causality=\"output\" ></String>
+// "
+// ""
+// 0
+// ""
+// "FMI 2 me init: t=hello on nb=0 isInit=0
+// FMI 2 me after: t=world off nb=1 isInit=0
+// FMI 2 cs init: t=hello on nb=0 isInit=0
+// FMI 2 cs after: t=world off nb=1 isInit=0
+// FMI 3 me init: t=hello on nb=0 isInit=0
+// FMI 3 me after: t=world off nb=1 isInit=0
+// FMI 3 cs init: t=hello on nb=0 isInit=0
+// FMI 3 cs after: t=world off nb=1 isInit=0
+// "
+// ""
+// endResult

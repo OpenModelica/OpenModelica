@@ -33,6 +33,7 @@ Model2.mos \
 ModifierVariabilityError.mos \
 NotbasicType.mos NotbasicType2.mos \
 OverloadingFunc.mos \
+PackageOrderBOM.mos \
 QuotedFunction.mos \
 QuotedIdentifier.mos \
 QuotedIdentifierCSV.mos \
@@ -65,6 +66,8 @@ Makefile \
 TestLibrary \
 PackageMetadataLibs \
 PackageResolverLibs \
+OrderBOM \
+OnlyBOM \
 ext_ExternalFunctionResultOrder.c \
 ISO-8859-1.mox
 

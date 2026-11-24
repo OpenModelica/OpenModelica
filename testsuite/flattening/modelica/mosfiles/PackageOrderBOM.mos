@@ -1,0 +1,28 @@
+// name: PackageOrderBOM
+// status: correct
+// depends: OrderBOM
+// depends: OnlyBOM
+//
+// Tests that a byte order mark in package.order is ignored with a warning.
+//
+
+loadFile("OrderBOM/package.mo"); getErrorString();
+getClassNames(OrderBOM); getErrorString();
+loadFile("OnlyBOM/package.mo"); getErrorString();
+getClassNames(OnlyBOM); getErrorString();
+
+// Result:
+// true
+// "[flattening/modelica/mosfiles/OrderBOM/package.order:0:0-0:0:readonly] Warning: Ignoring the non-standard byte order mark (BOM) at the start of the package.order file.
+// "
+// {C, A, B}
+// ""
+// true
+// "[flattening/modelica/mosfiles/OnlyBOM/package.order:0:0-0:0:readonly] Warning: Ignoring the non-standard byte order mark (BOM) at the start of the package.order file.
+// [flattening/modelica/mosfiles/OnlyBOM/package.order:0:0-0:0:readonly] Warning: The package.order file does not list all .mo files and directories (containing package.mo) present in its directory.
+// Missing names are:
+// 	A
+// "
+// {A}
+// ""
+// endResult

@@ -1306,7 +1306,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     /* dummy VARINFO and FILEINFO */
     const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
 
-    <%functionInput(simCode, modelInfo, modelNamePrefixStr)%>
+    <%functionInput(simCode, numericInputVars(vars.inputVars), modelNamePrefixStr)%>
 
     <%functionDataInput(simCode, modelInfo, modelNamePrefixStr)%>
 
@@ -1333,7 +1333,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%fmiAliasIndexTables(simCode, modelInfo, modelNamePrefixStr)%>
 
-    <%functionUpdateStructuralParameters(vars.intParamVars, vars.inputVars, modelNamePrefixStr)%>
+    <%functionUpdateStructuralParameters(vars.intParamVars, numericInputVars(vars.inputVars), modelNamePrefixStr)%>
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
@@ -1422,7 +1422,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
       <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>,
-      <%if hasStructuralUpdate(vars.intParamVars, vars.inputVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>,    /* updateStructuralParameters */
+      <%if hasStructuralUpdate(vars.intParamVars, numericInputVars(vars.inputVars)) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>,    /* updateStructuralParameters */
       <%symbolName(modelNamePrefixStr,"function_nextTimeEvent")%>
     <%\n%>
     };
@@ -2076,14 +2076,12 @@ let &sub = buffer ""
   end match
 end functionCallExternalObjectDestructors;
 
-template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
+template functionInput(SimCode simCode, list<SimVar> inputVars, String modelNamePrefix)
   "Generates function in simulation file.
   data->simulationInfo->inputVars holds one value per scalar input, the
   elements of an array input are stored consecutively."
 ::=
 let &sub = buffer ""
-  match modelInfo
-  case MODELINFO(vars=SIMVARS(inputVars=inputVars)) then
     <<
     int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data, threadData_t *threadData)
     {
@@ -2164,7 +2162,6 @@ let &sub = buffer ""
       return 0;
     }
     >>
-  end match
 end functionInput;
 
 template inputOffset(list<SimVar> inputVars, Integer i0)
@@ -3353,14 +3350,12 @@ end functionNonLinearResiduals;
 template linearSystemSetIterVars(list<SimVar> vars, Text &sub)
   "the iteration variables from xloc, runs of consecutive real variables at once"
 ::=
-  (simVarIndexRuns(vars) |> (pos, idx, len, kind) =>
-    if intEq(kind, 1) then if intGt(len, 1) then
-      (match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then
-        'memcpy(&data->localData[0]->realVars[<%idx%>], xloc + <%pos%>, <%len%> * sizeof(double)); /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> ... */')
-    else
-      (match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then '<%cref(var.name, &sub)%> = xloc[<%pos%>];')
-    else
-      (match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then '<%cref(var.name, &sub)%> = xloc[<%pos%>];')
+  (simVarIndexRuns(vars) |> (pos, idx, len, kind, firstVar) =>
+    match firstVar case var as SIMVAR() then
+      if intEq(kind, 1) then if intGt(len, 1) then
+        'memcpy(&data->localData[0]->realVars[<%idx%>], xloc + <%pos%>, <%len%> * sizeof(double)); /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> ... */'
+      else '<%cref(var.name, &sub)%> = xloc[<%pos%>];'
+      else '<%cref(var.name, &sub)%> = xloc[<%pos%>];'
   ;separator="\n")
 end linearSystemSetIterVars;
 
@@ -3383,7 +3378,7 @@ template systemResiduals(list<SimEqSystem> eqs, Text resizable,
             let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
             let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
             let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
-            <<for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
+            <<for(int <%iter_%>=<%start_%>; (<%step_%>) > 0 ? <%iter_%> <= (<%stop_%>) : <%iter_%> >= (<%stop_%>); <%iter_%>+=<%step_%>){
             <%sub_iter_%>
             >>
           ;separator="\n")
@@ -9408,7 +9403,7 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
     // Emit them inside the loop body so expressions referencing them compile correctly.
     let subIterDecls = (sub_iter |> si => subIterator(si, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
-    for(modelica_integer <%iter_%>=<%start_%>; in_range_integer(<%iter_%>, <%start_%>, <%stop_%>); <%iter_%>+=<%step_%>){
+    for(modelica_integer <%iter_%>=<%start_%>; (<%step_%>) > 0 ? <%iter_%> <= (<%stop_%>) : <%iter_%> >= (<%stop_%>); <%iter_%>+=<%step_%>){
     <%if subIterDecls then subIterDecls%>
     >>
   case SIM_ITERATOR_LIST() then

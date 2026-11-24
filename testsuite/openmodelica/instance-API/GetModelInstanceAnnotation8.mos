@@ -74,7 +74,7 @@ getErrorString();
 //               \"lineStart\": 7,
 //               \"columnStart\": 17,
 //               \"lineEnd\": 7,
-//               \"columnEnd\": 29
+//               \"columnEnd\": 74
 //             }
 //           },
 //           {
@@ -121,7 +121,7 @@ getErrorString();
 //                 \"lineStart\": 7,
 //                 \"columnStart\": 17,
 //                 \"lineEnd\": 7,
-//                 \"columnEnd\": 29
+//                 \"columnEnd\": 74
 //               }
 //             }
 //           }

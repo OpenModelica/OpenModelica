@@ -1,0 +1,2 @@
+convertModifiers({"ConversionTestLib.MainModel"},{"someEnum"},
+        {"someEnum=if %someEnum%==\"Option1\" then ConversionTestLib.SomeEnum.Option1 elseif %someEnum%==\"Option2\" then ConversionTestLib.SomeEnum.Option2 else ConversionTestLib.SomeEnum.Option1"}, true);

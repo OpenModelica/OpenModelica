@@ -7157,14 +7157,6 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
         <translation>Führt die Sensitivitätsanalyse und Optimierung aus</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>OpenModelica-Systemdokumentation</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>Öffnet die OpenModelica-Systemdokumentation</translation>
-    </message>
-    <message>
         <source>OpenModelica Scripting Documentation</source>
         <translation>OpenModelica-Skriptdokumentation</translation>
     </message>
@@ -8340,6 +8332,10 @@ Endpunkt: %2</translation>
     <message>
         <source>%1 - %2 - Live View</source>
         <translation>%1 - %2 - Live-Ansicht</translation>
+    </message>
+    <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
+        <translation>Die Live-Ansicht ist nicht verfügbar, weil omuq beendet wurde. Die vollständige Ausgabe steht im Fenster Meldungen.</translation>
     </message>
     <message>
         <source>The run is recorded in %1
@@ -10384,10 +10380,6 @@ Variabilität: %4</translation>
     <message>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>Diese Klasse kann nicht erneut simuliert werden.&lt;br /&gt;Das ist nur eine Ergebnisdatei, die über das Menü &lt;b&gt;Datei-&gt;Ergebnisdatei(en) öffnen&lt;/b&gt; geladen wurde.</translation>
-    </message>
-    <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Der Inhalt von QDomDocument kann nicht aus der Datei %1 gesetzt werden</translation>
     </message>
     <message>
         <source>Enabled for %1</source>

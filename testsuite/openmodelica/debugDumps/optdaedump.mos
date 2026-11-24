@@ -1096,7 +1096,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): u1 = uC - uL   [dynamic |0|0|0|0|]
 // 8/8 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic |0|0|0|0|]
-// 10/10 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 10/10 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // no matching
@@ -1130,7 +1130,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 1/1 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // no matching
@@ -1197,7 +1197,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 1/1 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // Matching
@@ -1297,7 +1297,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 1/1 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // Matching
@@ -1399,7 +1399,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 1/1 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // Matching
@@ -2118,7 +2118,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 1/1 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // Matching
@@ -2220,7 +2220,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 1/1 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // Matching
@@ -2322,7 +2322,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
+// 1/1 (1): v0 = 0.0   [binding |0|0|0|0|]
 //
 //
 // Matching

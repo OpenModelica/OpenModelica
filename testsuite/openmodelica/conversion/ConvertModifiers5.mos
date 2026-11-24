@@ -1,0 +1,26 @@
+// name:   ConvertModifiers5
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertModifiers5
+    ConversionTestLib.MainModel mainModel(someEnum = \"Option2\");
+  equation
+  end ConvertModifiers5;
+");
+
+runConversionScript(ConvertModifiers5, "scripts/ConvertModifiers5.mos");
+getErrorString();
+list(ConvertModifiers5);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertModifiers5
+//   ConversionTestLib.MainModel mainModel(someEnum = ConversionTestLib.SomeEnum.Option2);
+// equation
+//
+// end ConvertModifiers5;"
+// endResult

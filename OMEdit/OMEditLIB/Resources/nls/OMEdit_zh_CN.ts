@@ -7143,14 +7143,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>执行灵敏度分析和优化计算</translation>
     </message>
     <message>
-        <source>OpenModelica System Documentation</source>
-        <translation>OpenModelica系统文档</translation>
-    </message>
-    <message>
-        <source>Opens the OpenModelica System Documentation</source>
-        <translation>打开OpenModelica系统文档</translation>
-    </message>
-    <message>
         <source>Draws a line shape</source>
         <translation>绘制直线</translation>
     </message>
@@ -8276,6 +8268,10 @@ Endpoint: %2</source>
     </message>
     <message>
         <source>%1 - %2 - Live View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The live view is not available because omuq stopped. The complete output is in the Messages window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10316,10 +10312,6 @@ Variability: %4</source>
     <message>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>该类不能进行重新仿真。 &lt;br /&gt;这只是一个通过菜单&lt;b&gt;文件→打开结果文件&lt;b&gt;加载的结果文件。</translation>
-    </message>
-    <message>
-        <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>从文件%1不能设置QDomDocument内容</translation>
     </message>
     <message>
         <source>Enabled for %1</source>

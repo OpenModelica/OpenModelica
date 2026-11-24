@@ -47,7 +47,7 @@ simulate(initializationTests.solveTuple, simflags="-lv=LOG_INIT,LOG_SOTI"); getE
 // |                 | |       | | states variables
 // |                 | |       | | | [1] Real x(start=0, nominal=1) = 1.5708 (pre: 0)
 // |                 | |       | | derivatives variables
-// |                 | |       | | | [2] Real der(x) = 1 (pre: 0)
+// |                 | |       | | | [2] Real der(x) = 1 (pre: 1)
 // |                 | |       | | other real variables
 // |                 | |       | | | [3] Real $TMP_initializationTests_solveTuple_f3.y(start=0, nominal=1) = 1 (pre: 0)
 // |                 | |       | | | [4] Real y(start=0, nominal=1) = 1 (pre: 0)

@@ -120,6 +120,7 @@ algorithm
       DAE.InstDims dims;
       DAE.ConnectorType ct;
       DAE.ElementSource source "the origin of the element";
+      DAE.EquationOrigin origin;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io;
@@ -179,12 +180,12 @@ algorithm
         /* TODO: Add operation to source */
       then DAE.ARRAY_EQUATION(idims,e11,e22,source);
 
-    case DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source)
+    case DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source,origin)
       algorithm
         (e11,_) := replaceExp(e1, repl, condExpFunc);
         (e22,_) := replaceExp(e2, repl, condExpFunc);
         /* TODO: Add operation to source */
-      then DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source);
+      then DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source,origin);
 
     case DAE.WHEN_EQUATION(e1,elist,SOME(elt2),source)
       algorithm
@@ -286,12 +287,12 @@ algorithm
         /* TODO: Add operation to source */
       then DAE.COMPLEX_EQUATION(e11,e22,source);
 
-    case DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source)
+    case DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source,origin)
       algorithm
         (e11,_) := replaceExp(e1, repl, condExpFunc);
         (e22,_) := replaceExp(e2, repl, condExpFunc);
         /* TODO: Add operation to source */
-      then DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source);
+      then DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source,origin);
 
     // failtrace. adrpo: TODO! FIXME! this SHOULD NOT FAIL!
     else

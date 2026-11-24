@@ -10,6 +10,7 @@ symbolicJacobianEvaluation.mos \
 allTheBuildins.mos \
 diff_subs.mos \
 arrayDiff.mos \
+powerArrayJacobian.mos \
 arrayScalar.mos \
 algebraicLoop.mos \
 AlgLinearSystem.mos \

@@ -595,6 +595,19 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
             }
             Err(_) => return -1,
         }
+    } else {
+        // Where C's stdout/stderr write, as a fork inherits on Unix. OMEdit
+        // freopens them; in a GUI application that does not change the Win32
+        // std handles that Stdio::inherit passes on.
+        #[cfg(windows)]
+        {
+            if let Some(h) = c_stream_stdio(1) {
+                cmd.stdout(h);
+            }
+            if let Some(h) = c_stream_stdio(2) {
+                cmd.stderr(h);
+            }
+        }
     }
     let status = match cmd.status() {
         Ok(s) => s.code().unwrap_or(-1),
@@ -602,6 +615,13 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     };
     metamodelica::host_flush();
     status
+}
+
+#[cfg(windows)]
+fn c_stream_stdio(fd: u32) -> Option<std::process::Stdio> {
+    let h = openmodelica_wasi::stdio::os_handle(fd)?;
+    let h = unsafe { std::os::windows::io::BorrowedHandle::borrow_raw(h) };
+    h.try_clone_to_owned().ok().map(Into::into)
 }
 
 pub fn popen(command: ArcStr) -> (ArcStr, i32) {
@@ -1791,83 +1811,34 @@ pub fn dgesv(
     A: List<List<metamodelica::Real>>,
     B: List<metamodelica::Real>,
 ) -> Result<(List<metamodelica::Real>, i32)> {
-    // Port of SystemImpl__dgesv (systemimpl.c), which calls LAPACK `dgesv` to
-    // solve the dense linear system A*X = B for a single right-hand side.
-    // LAPACK's dgesv is an LU factorization with partial pivoting (dgetrf)
-    // followed by a triangular solve (dgetrs); we replicate that algorithm in
-    // pure Rust so no BLAS/LAPACK link is required. `info` matches LAPACK:
-    //   0  : success
-    //   <0 : the -info-th argument was illegal (here: a non-square A)
-    //   >0 : U(info,info) is exactly zero — A is singular (1-based index)
-    let a_rows: Vec<Vec<f64>> = A
-        .as_ref()
-        .into_iter()
-        .map(|row| row.as_ref().into_iter().map(|v| v.into_inner()).collect::<Vec<f64>>())
-        .collect();
+    // Port of SystemImpl__dgesv (systemimpl.c). A non-square A gives info -1.
     let mut b: Vec<f64> = B.as_ref().into_iter().map(|v| v.into_inner()).collect();
-    let n = a_rows.len();
-
-    // Argument validity: A must be square (n x n) and B must have length n,
-    // mirroring the dimensions the C wrapper passes to LAPACK.
-    if b.len() != n || a_rows.iter().any(|r| r.len() != n) {
+    let n = b.len();
+    let mut a = vec![0.0f64; n * n];
+    let mut i = 0;
+    for row in A.as_ref() {
+        let mut j = 0;
+        for v in row.as_ref() {
+            if i >= n || j >= n {
+                return Ok((B.clone(), -1));
+            }
+            a[j * n + i] = v.into_inner();
+            j += 1;
+        }
+        if j != n {
+            return Ok((B.clone(), -1));
+        }
+        i += 1;
+    }
+    if i != n {
         return Ok((B.clone(), -1));
     }
     if n == 0 {
         return Ok((metamodelica::nil(), 0));
     }
-
-    // Working copy of the matrix: a[i][j] = row i, column j (as in the C code,
-    // where A[j*sz+i] holds element (i,j)).
-    let mut a = a_rows;
-
-    // LU factorization with partial pivoting, applying the row swaps to `b` as
-    // we go (equivalent to LAPACK forming the permutation in `ipiv` and then
-    // applying it in dgetrs).
-    for k in 0..n {
-        // Pivot: row of largest magnitude in column k at or below the diagonal.
-        let mut p = k;
-        let mut maxv = a[k][k].abs();
-        for i in (k + 1)..n {
-            let v = a[i][k].abs();
-            if v > maxv {
-                maxv = v;
-                p = i;
-            }
-        }
-        if a[p][k] == 0.0 {
-            // U(k,k) == 0: singular. LAPACK records the first such index and
-            // completes the factorization; the solve below would divide by
-            // zero, so stop and report (callers check `info != 0`).
-            return Ok((B.clone(), (k + 1) as i32));
-        }
-        if p != k {
-            a.swap(p, k);
-            b.swap(p, k);
-        }
-        let akk = a[k][k];
-        for i in (k + 1)..n {
-            let f = a[i][k] / akk;
-            a[i][k] = f;
-            for j in (k + 1)..n {
-                let akj = a[k][j];
-                a[i][j] -= f * akj;
-            }
-            b[i] -= f * b[k];
-        }
-    }
-
-    // Back substitution into `b` (now holding the forward-solved RHS).
-    let mut x = vec![0.0f64; n];
-    for k in (0..n).rev() {
-        let mut s = b[k];
-        for j in (k + 1)..n {
-            s -= a[k][j] * x[j];
-        }
-        x[k] = s / a[k][k];
-    }
-
-    let out = List::from_iter(x.into_iter().map(metamodelica::OrderedFloat));
-    Ok((out, 0))
+    let mut ipiv = vec![0i32; n];
+    let info = openmodelica_lapack::dgesv(n, 1, &mut a, n, &mut ipiv, &mut b, n);
+    Ok((List::from_iter(b.into_iter().map(metamodelica::OrderedFloat)), info))
 }
 
 pub fn reopenStandardStream(_stream: i32, _filename: ArcStr) -> bool {
