@@ -175,6 +175,8 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mIsCreatingBitmapShape = false;
   mIsPanning = false;
   mLastMouseEventPos = QPoint(0, 0);
+  mLastMouseScenePosition = QPoint(0, 0);
+  mHasLastMouseScenePosition = false;
   mpClickedComponent = 0;
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
@@ -4671,9 +4673,9 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     return;
   }
   // update the position label
-  Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
-  pPositionLabel->setText(QString("X: %1, Y: %2").arg(QString::number(qRound(mapToScene(event->pos()).x())))
-                          .arg(QString::number(qRound(mapToScene(event->pos()).y()))));
+  mLastMouseScenePosition = mapToScene(event->pos()).toPoint();
+  mHasLastMouseScenePosition = true;
+  updatePositionLabel();
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if user mouse over connector show Qt::CrossCursor.
   bool setCrossCursor = false;
@@ -5281,16 +5283,17 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
 }
 
 /*!
- * \brief GraphicsView::leaveEvent
- * Reimplementation of QGraphicsView::leaveEvent.
- * Clears the position label in the status bar.
- * \param event
+ * \brief GraphicsView::updatePositionLabel
+ * Shows the last mouse position of the view in the status bar.
  */
-void GraphicsView::leaveEvent(QEvent *event)
+void GraphicsView::updatePositionLabel()
 {
-  // clear the position label
-  MainWindow::instance()->getPositionLabel()->clear();
-  QGraphicsView::leaveEvent(event);
+  Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
+  if (mHasLastMouseScenePosition) {
+    pPositionLabel->setText(QString("X: %1, Y: %2").arg(mLastMouseScenePosition.x()).arg(mLastMouseScenePosition.y()));
+  } else {
+    pPositionLabel->clear();
+  }
 }
 
 WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
@@ -7589,7 +7592,6 @@ void ModelWidget::showIconView(bool checked)
   mpIconGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -7626,7 +7628,6 @@ void ModelWidget::showDiagramView(bool checked)
   mpDiagramGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -7938,6 +7939,29 @@ ModelWidget* ModelWidgetContainer::getCurrentModelWidget()
   } else {
     return qobject_cast<ModelWidget*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
   }
+}
+
+/*!
+ * \brief ModelWidgetContainer::updatePositionLabel
+ * Shows the cursor position of the text view or the last mouse position of the icon or diagram view in the status bar.
+ * Clears the position if no model is shown.
+ * \param pModelWidget
+ */
+void ModelWidgetContainer::updatePositionLabel(ModelWidget *pModelWidget)
+{
+  if (pModelWidget && MainWindow::instance()->isModelingPerspectiveActive()) {
+    if (pModelWidget->getTextViewToolButton()->isChecked() && pModelWidget->getEditor()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->updatePositionLabel();
+      return;
+    } else if (pModelWidget->getIconViewToolButton()->isChecked() && pModelWidget->getIconGraphicsView()) {
+      pModelWidget->getIconGraphicsView()->updatePositionLabel();
+      return;
+    } else if (pModelWidget->getDiagramViewToolButton()->isChecked() && pModelWidget->getDiagramGraphicsView()) {
+      pModelWidget->getDiagramGraphicsView()->updatePositionLabel();
+      return;
+    }
+  }
+  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -8389,6 +8413,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     zoomEnabled = true;
     plottingDiagram = true;
   }
+  updatePositionLabel(pModelWidget);
   // update the actions of the menu and toolbars
   MainWindow::instance()->getSaveAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel());

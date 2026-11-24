@@ -308,6 +308,7 @@ public slots:
   void gitLineChangesUpdated(bool headTextChanged);
   void updateHighlights();
   void updateCursorPosition();
+  void updatePositionLabel();
   void textSettingsChanged();
   void setUndoAvailable(bool available) {mIsUndoAvailable = available;}
   void setRedoAvailable(bool available) {mIsRedoAvailable = available;}
