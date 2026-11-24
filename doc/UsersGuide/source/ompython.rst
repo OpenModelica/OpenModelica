@@ -464,7 +464,7 @@ The class method :code:`model()` allows several arguments:
    tuple of library name and version. The libraries are loaded before the model itself is loaded:
 
 >>> mod.model(model_name="BouncingBall", model_file=model_path + "BouncingBall.mo", libraries=["Modelica"])
->>> mod.model(model_name="BouncingBall", model_file=model_path + "BouncingBall.mo", libraries=[("Modelica","3.2.3"), "PowerSystems"])
+>>> mod.model(model_name="BouncingBall", model_file=model_path + "BouncingBall.mo", libraries=[("Modelica","4.1.0"), "PowerSystems"])
 
 -  :code:`variable_filter` - Optional string which sets a filter for the output variables. It is
    defined as a regular expression. Only variables fully matching the regexp will be stored in the

@@ -50,7 +50,7 @@ on a directory that doesn't have the right name.
 
 The top-level directory name, or the single *.mo* file containing the entire
 package, should be named exactly as the package (e.g. *Modelica*),
-possibly followed by a space and by the version number (e.g. *Modelica 3.2.3*).
+possibly followed by a space and by the version number (e.g. *Modelica 4.1.0*).
 
 Modifiers for arrays
 --------------------

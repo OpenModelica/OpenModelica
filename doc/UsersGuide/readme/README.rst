@@ -63,12 +63,15 @@ ompython-output
 
   simulate(M, stopTime=10)
 
-You can also plot the generated results using an omc-gnuplot block.
-This takes one argument (the name to use for the generated plot), and
-has a few custom options:
+You can also plot the generated results using an omc-plot block. It runs
+plot (or plotParametric, plotAll or plotFigure) with an outputFile, shows
+that call and inserts the plot as an SVG figure (converted to PDF by
+inkscape for LaTeX). This takes one argument (the
+name to use for the generated plot), and has a few custom options:
 
 filename
-  The path of the file to plot (default: last successful simulation)
+  The result file to plot (default: last successful simulation), relative
+  to the directory the omc-mos commands run in.
 caption
   Generates a caption for the plot figure.
 name
@@ -77,8 +80,11 @@ parametric
   Do a parametric plot.
 plotall
   Plot all variables.
+figure
+  The content is an OpenModelica.Scripting.Figure expression for
+  plotFigure instead of variable names.
 
-.. omc-gnuplot :: aplot
+.. omc-plot :: aplot
   :caption: A plot.
   :name: plot
 

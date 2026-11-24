@@ -262,6 +262,29 @@ pub extern "C" fn omc_result_script_filter(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn omc_result_script_plot(
+    msgs: *const omc_result_messages,
+    figure_json: *const c_char,
+    result_file: *const c_char,
+    out_file: *const c_char,
+    width: c_int,
+    height: c_int,
+    legend_position: *const c_char,
+) -> c_int {
+    guard(0, || {
+        c_int::from(openmodelica_result_plot::plot(
+            &mut Sink(msgs),
+            &cstr(figure_json),
+            &cstr(result_file),
+            &cstr(out_file),
+            width,
+            height,
+            &cstr(legend_position),
+        ))
+    })
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn omc_result_free_doubles(p: *mut c_double) {
     unsafe { libc::free(p.cast()) };
 }

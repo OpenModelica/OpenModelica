@@ -103,14 +103,10 @@ command line terminals similar to the options described below:
 
 The control and state trajectories of the optimization results:
 
-.. omc-gnuplot :: nmpc-input
-  :caption: Optimization results for Batch Reactor model - input variables.
+.. omc-plot :: nmpc
+  :caption: Optimization results for Batch Reactor model - input and state variables.
 
   u
-
-.. omc-gnuplot :: nmpc-states
-  :caption: Optimization results for Batch Reactor model - state variables.
-
   x1
   x2
 

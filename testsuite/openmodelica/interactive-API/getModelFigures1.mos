@@ -72,12 +72,20 @@ getModelFigures(N); getErrorString();
 //     x = "time",
 //     y = "integrator.y",
 //     legend = "Reference speed",
-//     zOrder = 0
+//     zOrder = 0,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Solid,
+//     thickness = 0.25,
+//     fileName = ""
 // end OpenModelica.Scripting.Curve;, record OpenModelica.Scripting.Curve
 //     x = "time",
 //     y = "inertia1.w",
 //     legend = "Actual speed",
-//     zOrder = 0
+//     zOrder = 0,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Solid,
+//     thickness = 0.25,
+//     fileName = ""
 // end OpenModelica.Scripting.Curve;},
 //     x = record OpenModelica.Scripting.Axis
 //     min = {},
@@ -106,12 +114,20 @@ getModelFigures(N); getErrorString();
 //     x = "time",
 //     y = "PI.limiter.u",
 //     legend = "Input to the anti-windup limiter",
-//     zOrder = 0
+//     zOrder = 0,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Solid,
+//     thickness = 0.25,
+//     fileName = ""
 // end OpenModelica.Scripting.Curve;, record OpenModelica.Scripting.Curve
 //     x = "time",
 //     y = "PI.y",
 //     legend = "Controller output",
-//     zOrder = 0
+//     zOrder = 0,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Solid,
+//     thickness = 0.25,
+//     fileName = ""
 // end OpenModelica.Scripting.Curve;},
 //     x = record OpenModelica.Scripting.Axis
 //     min = {},
@@ -149,7 +165,11 @@ getModelFigures(N); getErrorString();
 //     x = "x",
 //     y = "y",
 //     legend = "orbit",
-//     zOrder = 3
+//     zOrder = 3,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Solid,
+//     thickness = 0.25,
+//     fileName = ""
 // end OpenModelica.Scripting.Curve;},
 //     x = record OpenModelica.Scripting.Axis
 //     min = {-2.0},
@@ -178,9 +198,9 @@ getModelFigures(N); getErrorString();
 // {}
 // ""
 // true
-// [{"title":"Anti-windup compensation","identifier":"anti-windup","group":"","preferred":true,"plots":[{"title":"Reference tracking","identifier":"tracking","curves":[{"x":"time","y":"integrator.y","legend":"Reference speed","zOrder":0},{"x":"time","y":"inertia1.w","legend":"Actual speed","zOrder":0}],"x":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}}},{"title":"Anti-windup limiter","identifier":"limiter","curves":[{"x":"time","y":"PI.limiter.u","legend":"Input to the anti-windup limiter","zOrder":0},{"x":"time","y":"PI.y","legend":"Controller output","zOrder":0}],"x":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}}}],"caption":"%(plot:tracking) Reference speed (%(variable:integrator.y)) and the actual speed (%(variable:inertia1.w))."}]
+// [{"title":"Anti-windup compensation","identifier":"anti-windup","group":"","preferred":true,"plots":[{"title":"Reference tracking","identifier":"tracking","curves":[{"x":"time","y":"integrator.y","legend":"Reference speed","zOrder":0,"color":"","pattern":"OpenModelica.Scripting.LinePattern.Solid","thickness":0.25,"fileName":""},{"x":"time","y":"inertia1.w","legend":"Actual speed","zOrder":0,"color":"","pattern":"OpenModelica.Scripting.LinePattern.Solid","thickness":0.25,"fileName":""}],"x":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}}},{"title":"Anti-windup limiter","identifier":"limiter","curves":[{"x":"time","y":"PI.limiter.u","legend":"Input to the anti-windup limiter","zOrder":0,"color":"","pattern":"OpenModelica.Scripting.LinePattern.Solid","thickness":0.25,"fileName":""},{"x":"time","y":"PI.y","legend":"Controller output","zOrder":0,"color":"","pattern":"OpenModelica.Scripting.LinePattern.Solid","thickness":0.25,"fileName":""}],"x":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}}}],"caption":"%(plot:tracking) Reference speed (%(variable:integrator.y)) and the actual speed (%(variable:inertia1.w))."}]
 // ""
-// [{"title":"Phase plane","identifier":"","group":"","preferred":false,"plots":[{"title":"","identifier":"","curves":[{"x":"x","y":"y","legend":"orbit","zOrder":3}],"x":{"min":[-2.0],"max":[2.0],"unit":"m","label":"x","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Log","base":2}}}],"caption":""}]
+// [{"title":"Phase plane","identifier":"","group":"","preferred":false,"plots":[{"title":"","identifier":"","curves":[{"x":"x","y":"y","legend":"orbit","zOrder":3,"color":"","pattern":"OpenModelica.Scripting.LinePattern.Solid","thickness":0.25,"fileName":""}],"x":{"min":[-2.0],"max":[2.0],"unit":"m","label":"x","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Log","base":2}}}],"caption":""}]
 // ""
 // []
 // ""

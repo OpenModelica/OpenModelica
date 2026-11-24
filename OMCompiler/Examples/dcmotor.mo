@@ -4,7 +4,7 @@ model dcmotor
   Basic.Inductor inductor1(L = 0.2, i.fixed=true);
   Basic.Ground ground1;
   Modelica.Mechanics.Rotational.Components.Inertia load(J = 1, phi.fixed=true, w.fixed=true);
-  Basic.EMF emf1(k=1.0);
+  Basic.RotationalEMF emf1(k=1.0);
   Modelica.Blocks.Sources.Step step1;
   Modelica.Electrical.Analog.Sources.SignalVoltage signalVoltage1;
 equation
@@ -15,5 +15,5 @@ equation
   connect(emf1.flange, load.flange_a);
   connect(signalVoltage1.n, ground1.p);
   connect(ground1.p, emf1.n);
-  annotation(uses(Modelica(version="3.2.2")));
+  annotation(uses(Modelica(version="4.1.0")));
 end dcmotor;

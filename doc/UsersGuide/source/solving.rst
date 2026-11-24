@@ -291,7 +291,7 @@ setCommandLineOptions("-d=initialization")
 
 .. omc-mos ::
 
-  loadModel(Modelica);
+  loadModel(Modelica, {"4.1.0"});
   setCommandLineOptions("-d=initialization");
   buildModel(piston);
 
@@ -318,7 +318,7 @@ system.
   simulate(pistonInitialize, stopTime=2.0);
 
 
-.. omc-gnuplot :: piston
+.. omc-plot :: piston
   :caption: Vertical movement of mass body2.
 
   body2.frame_a.r_0[1]

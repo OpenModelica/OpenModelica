@@ -548,7 +548,7 @@ where
 
 .. code-block :: modelica
 
-   parameter Modelica.SIunits.Power maxBatPower = 30e3;
+   parameter Modelica.Units.SI.Power maxBatPower = 30e3;
 
 giving rise to the following results (with a much longer computation
 time than in the previous cases):

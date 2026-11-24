@@ -372,6 +372,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("SimulationResults_diffSimulationResults", Fallible);
         m.insert("SimulationResults_diffSimulationResultsHtml", Fallible);
         m.insert("SimulationResults_filterSimulationResults", Fallible);
+        m.insert("SimulationResults_plotFigure", Fallible);
         m.insert("SimulationResults_readDataset", Fallible);
         m.insert("SimulationResults_readSimulationResultSize", Fallible);
         m.insert("SimulationResults_readVariables", Fallible);

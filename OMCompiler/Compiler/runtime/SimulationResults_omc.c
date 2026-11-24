@@ -176,3 +176,8 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
   const char **names = to_strings(vars, &n);
   return omc_result_script_filter(&messages, inFile, outFile, names, n, numberOfIntervals, removeDescription);
 }
+
+int SimulationResults_plotFigure(const char *figureJSON, const char *filename, const char *outputFile, int width, int height, const char *legendPosition)
+{
+  return omc_result_script_plot(&messages, figureJSON, filename, outputFile, width, height, legendPosition);
+}

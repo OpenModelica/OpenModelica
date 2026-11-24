@@ -27,6 +27,7 @@ LeastSquares.mos \
 LoadResource1.mos \
 LookupBuiltin.mos \
 LookupBuiltinNF.mos \
+LookupScriptingNF.mos \
 LookupPackageFail.mos \
 Model1.mos \
 Model2.mos \

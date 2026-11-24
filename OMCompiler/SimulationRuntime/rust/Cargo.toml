@@ -52,6 +52,7 @@ exclude = [
   "openmodelica_result_cli",
   "openmodelica_result_diff",
   "openmodelica_result_files",
+  "openmodelica_result_plot",
   "openmodelica_result_web",
   "openmodelica_result_web_embed",
   "openmodelica_sim_meta",

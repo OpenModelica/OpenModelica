@@ -1049,6 +1049,12 @@ record CheckSettingsResult
 annotation(preferredView="text");
 end CheckSettingsResult;
 
+type LinePattern = enumeration(None, Solid, Dash, Dot, DashDot, DashDotDot)
+  "Line pattern of a figure curve, as in the Line annotation.";
+
+type LegendPosition = enumeration(top, bottom, left, right, none)
+  "Position of the legend of a plot.";
+
 record AxisScale
   "Scale of a figure axis, from the figures annotation."
   String scaleType = "Linear" "\"Linear\" | \"Log\" | vendor markup";
@@ -1072,6 +1078,10 @@ record Curve
   String y "result reference";
   String legend = "";
   Integer zOrder = 0;
+  String color = "" "A CSS color such as \"red\" or \"#ff0000\"; empty = automatic. Not in the figures annotation.";
+  LinePattern pattern = LinePattern.Solid "Not in the figures annotation.";
+  Real thickness = 0.25 "In mm. Not in the figures annotation.";
+  String fileName = "" "The result file; empty = the one of the figure. Not in the figures annotation.";
 annotation(preferredView="text");
 end Curve;
 
@@ -3368,6 +3378,7 @@ impure function plot
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
+  input String outputFile = "" "Writes the plot into this file (.svg or .png) instead of showing it.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -3379,6 +3390,7 @@ annotation(preferredView="text",Documentation(info="<html>
 <li><code>simulate(A); plot(x, externalWindow=true);</code></li>
 <li><code>simulate(A,fileNamePrefix=\"B\"); simulate(C); plot(z,fileName=\"B.mat\",legendPosition=none);</code></li>
 <li><code>simulate(A); plot({b,x}, stack=true);</code></li>
+<li><code>simulate(A); plot({x,y}, outputFile=\"xy.png\");</code></li>
 </ul>
 </html>"));
 end plot;
@@ -3405,6 +3417,7 @@ impure function plotAll
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
+  input String outputFile = "" "Writes the plot into this file (.svg or .png) instead of showing it.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3443,6 +3456,7 @@ impure function plotParametric
   input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input String outputFile = "" "Writes the plot into this file (.svg or .png) instead of showing it.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3451,9 +3465,32 @@ annotation(Documentation(info="<html>
 <ul>
 <li><code>simulate(A); plotParametric(x,y);</code></li>
 <li><code>simulate(A); plotParametric(x,y, externalWindow=true);</code></li>
+<li><code>simulate(A); plotParametric(x,y, outputFile=\"xy.svg\");</code></li>
 </html>"),
   preferredView="text");
 end plotParametric;
+
+impure function plotFigure
+  "Draws a figure of simulation results into a file, or shows it the way plot does."
+  input Figure figure;
+  input String outputFile = "" "The file to write, .svg or .png. Empty: show each plot of the figure with plot or plotParametric.";
+  input String fileName = "<default>" "The result file of the curves without a fileName. <default> will read the last simulation result";
+  input Integer width = 800 "The width of each plot, in pixels.";
+  input Integer height = 450 "The height of each plot, in pixels.";
+  input LegendPosition legendPosition = LegendPosition.top;
+  output Boolean success "Returns true on success";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Draws the plots of a figure (see the figures annotation of the Modelica Language Specification) one below the other.
+The fields color, pattern, thickness and fileName of a Curve are not in the figures annotation.
+A plot that is shown instead of written shows only the curves of one result file, in the style of its first curve.</p>
+<p>Example command sequences:</p>
+<ul>
+<li><code>simulate(A); plotFigure(Figure(plots={Plot(curves={Curve(y=\"x\"), Curve(y=\"y\")})}), \"xy.svg\");</code></li>
+<li><code>simulate(A); figures := getModelFigures(A); plotFigure(figures[1], \"figure.png\");</code></li>
+</ul>
+</html>"));
+end plotFigure;
 
 impure function readSimulationResult
   "Reads a result file, returning a matrix corresponding to the variables and size given."
