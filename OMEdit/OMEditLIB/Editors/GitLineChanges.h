@@ -85,8 +85,10 @@ private:
   void setHeadLines(bool hasHeadText, const QStringList &headLines);
   static QStringList splitLines(QString text);
 private slots:
+#if !defined(__EMSCRIPTEN__)
   void gitProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void gitProcessErrorOccurred(QProcess::ProcessError error);
+#endif
   void updateChanges();
 signals:
   void changesUpdated(bool headTextChanged);

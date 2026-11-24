@@ -1519,24 +1519,33 @@ def rustWasmOptCMakeFlag() {
   return isPR() ? "-DRUST_OMC_WASM_OPT=OFF" : "-DRUST_OMC_WASM_OPT=ON"
 }
 
+// True if the pull request changes a file that matches none of the patterns.
+private boolean changesOtherFiles(List skipFilesList) {
+  for (commitFile in pullRequest.files) {
+    def results = skipFilesList.findAll {element -> commitFile.filename.matches(element)}
+    if (results.size() == 0) {
+      return true
+    }
+  }
+  return false
+}
+
 private def shouldWeRunTests() {
   if (isPR()) {
-    def skipTestsFilesList = [".*[.]md",
+    return changesOtherFiles([".*[.]md",
                               "OMEdit/.*",
                               "OMNotebook/.*",
                               "OMPlot/.*",
-                              "OMShell/.*"]
-    def runTest = false
-    for (commitFile in pullRequest.files) {
-      def results = skipTestsFilesList.findAll {element -> commitFile.filename.matches(element)}
-      if (results.size() > 0) {
-        continue
-      } else {
-        runTest = true
-        break;
-      }
-    }
-    return runTest
+                              "OMShell/.*"])
+  }
+  return true
+}
+
+// The GUI clients built for the web and against the Rust omc. Also for
+// GUI-only pull requests, which skip the tests.
+private def shouldWeBuildRustGUI() {
+  if (isPR()) {
+    return changesOtherFiles([".*[.]md"])
   }
   return true
 }
@@ -1583,6 +1592,8 @@ Map evaluateBuildFlags() {
   print "shouldWeBuildWindows: ${flags.shouldWeBuildWindows}"
   flags.shouldWeRunTests = shouldWeRunTests()
   print "shouldWeRunTests: ${flags.shouldWeRunTests}"
+  flags.shouldWeBuildRustGUI = shouldWeBuildRustGUI()
+  print "shouldWeBuildRustGUI: ${flags.shouldWeBuildRustGUI}"
   flags.isPublishedBranch = isPublishedBranch()
   print "isPublishedBranch: ${flags.isPublishedBranch}"
   return flags
