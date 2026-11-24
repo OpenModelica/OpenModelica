@@ -977,6 +977,11 @@ protected
       crefTpl := EMPTY_CREF_TPL;
     end if;
 
+    // no alias between an Integer variable and a Real expression: replacing the Integer variable changes its type
+    if List.any(crefTpl.cr_lst, isIntegerCref) and Type.isReal(Type.arrayElementType(Equation.getType(eq))) then
+      crefTpl := EMPTY_CREF_TPL;
+    end if;
+
     (map, delete) := match crefTpl
       local
         SetPtr set_ptr, set1_ptr, set2_ptr;
@@ -1339,6 +1344,11 @@ protected
     input ComponentRef cref;
     output Boolean b = isSome(BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo())));
   end isRecordElement;
+
+  function isIntegerCref
+    input ComponentRef cref;
+    output Boolean b = Type.isInteger(Type.arrayElementType(ComponentRef.getSubscriptedType(cref)));
+  end isIntegerCref;
 
   function replaceAliasRecords
     "replaces records with replaced fields by the record of the replacements (updates the equation pointers)"
