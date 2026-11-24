@@ -40,11 +40,13 @@ diffSimulationResults("ExtOutputRecord_res.mat", "plain_res.mat", "diff_output_r
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[openmodelica/fmi/ModelExchange/3.0/fmi3_wasm_output_record.mo:2:3-6:12:writable] Warning: The C struct of record ExtOutputRecord.State is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.
+// "
 // true
 // ""
 // "ExtOutputRecord.fmu"
-// "Notification: Building FMU for platform 'wasm' (1/1).
+// "[openmodelica/fmi/ModelExchange/3.0/fmi3_wasm_output_record.mo:2:3-6:12:writable] Warning: The C struct of record ExtOutputRecord.State is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.
+// Notification: Building FMU for platform 'wasm' (1/1).
 // Notification: Finished FMU for platform 'wasm' (1/1).
 // "
 // record SimulationResult

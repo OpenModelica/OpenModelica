@@ -40,6 +40,7 @@ encapsulated uniontype NFSections
   import Statement = NFStatement;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import DAE;
   import SCode;
 
 protected
@@ -65,6 +66,7 @@ public
     Option<SCode.Annotation> ann;
     Boolean explicit;
     SourceInfo info;
+    list<DAE.ExternalStruct> structs "The C structs of the records in the call, set by the typing";
   end EXTERNAL;
 
   record EMPTY end EMPTY;

@@ -171,6 +171,16 @@ public uniontype Function
   end toString;
 end Function;
 
+public uniontype ExternalStruct
+  "The C struct of a record that an external function takes, MLS 3.7, section 12.9.1.3."
+  record EXTERNAL_STRUCT
+    String tag "The CStructTag, else the name of the record class; empty if the record has neither an Include nor a CStructTag annotation";
+    list<String> memberNames "The C names of the record's variables, in the same order";
+    list<String> includes "The record's Include annotation, which defines the struct";
+    Boolean define "The code generator defines the struct: no record with the tag has an Include, and this is the first record with it";
+  end EXTERNAL_STRUCT;
+end ExternalStruct;
+
 public uniontype RecordDeclaration
 
   record RECORD_DECL_FULL
@@ -178,7 +188,7 @@ public uniontype RecordDeclaration
     Option<String> aliasName "alias of struct (record) name ? encoded. Code generators can generate an aliasing typedef using this, and avoid problems when casting a record from one type to another (*(othertype*)(&var)), which only works if you have a lhs value.";
     Absyn.Path defPath "definition path";
     list<Variable> variables "only name and type";
-    Boolean usedExternally "If the record is passed to an external function at any point, we need to generate conversion functions for it (for instance to convert 'modelica_integer' to 'int')";
+    Option<ExternalStruct> externalStruct "Set if an external function takes the record; the code generators then add conversion functions (for instance to convert 'modelica_integer' to 'int')";
   end RECORD_DECL_FULL;
 
   record RECORD_DECL_ADD_CONSTRCTOR
@@ -186,7 +196,6 @@ public uniontype RecordDeclaration
     String name "The record's name";
     list<Variable> variables "The members with the ones that need outisde binding marked. e.g 1st and 3rd elements will have bind_from_outside=true ";
     Absyn.Path defPath "definition path";
-    Boolean usedExternally;
   end RECORD_DECL_ADD_CONSTRCTOR;
 
   record RECORD_DECL_DEF

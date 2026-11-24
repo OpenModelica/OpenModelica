@@ -1,0 +1,117 @@
+// name: ExternalRecordStructErrors
+// status: correct
+//
+// Records that cannot be mapped to a C struct, MLS 3.7, section 12.9.1.3.
+
+loadString("
+package ExternalRecordStructErrors
+  record RA
+    Real x;
+    Real a[2];
+  end RA;
+
+  function fa
+    input RA r;
+    output Real y;
+  external \"C\" y = fa(r);
+  end fa;
+
+  model ArrayMember
+    Real y = fa(RA(time, {1, 2}));
+  end ArrayMember;
+
+  record RF
+    Real x;
+  end RF;
+
+  function ff
+    input RF r;
+    output Real y;
+  external \"FORTRAN 77\" y = ff(r);
+  end ff;
+
+  model Fortran
+    Real y = ff(RF(time));
+  end Fortran;
+
+  record RK
+    Real int;
+  end RK;
+
+  function fk
+    input RK r;
+    output Real y;
+  external \"C\" y = fk(r);
+  end fk;
+
+  model Keyword
+    Real y = fk(RK(time));
+  end Keyword;
+
+  record RT
+    Real x;
+    annotation(CStructTag = 1);
+  end RT;
+
+  function ft
+    input RT r;
+    output Real y;
+  external \"C\" y = ft(r);
+  end ft;
+
+  model TagNotString
+    Real y = ft(RT(time));
+  end TagNotString;
+
+  record C1
+    Real x;
+    annotation(CStructTag = \"same\");
+  end C1;
+
+  record C2
+    Integer x;
+    annotation(CStructTag = \"same\");
+  end C2;
+
+  function fc1
+    input C1 r;
+    output Real y;
+  external \"C\" y = fc1(r);
+  end fc1;
+
+  function fc2
+    input C2 r;
+    output Real y;
+  external \"C\" y = fc2(r);
+  end fc2;
+
+  model TagConflict
+    Real y = fc1(C1(time)) + fc2(C2(integer(time)));
+  end TagConflict;
+end ExternalRecordStructErrors;
+"); getErrorString();
+translateModel(ExternalRecordStructErrors.ArrayMember); getErrorString();
+translateModel(ExternalRecordStructErrors.Fortran); getErrorString();
+translateModel(ExternalRecordStructErrors.Keyword); getErrorString();
+translateModel(ExternalRecordStructErrors.TagNotString); getErrorString();
+translateModel(ExternalRecordStructErrors.TagConflict); getErrorString();
+
+// Result:
+// true
+// ""
+// false
+// "[<interactive>:8:3-12:9:writable] Error: Record ExternalRecordStructErrors.RA cannot be passed to an external function, because its component a is an array.
+// "
+// false
+// "[<interactive>:22:3-26:9:writable] Error: Record ExternalRecordStructErrors.RF cannot be passed to an external \"FORTRAN 77\" function. Only external \"C\" functions take records.
+// "
+// false
+// "[<interactive>:33:5-33:13:writable] Error: int is not a valid C identifier for ExternalRecordStructErrors.RK.int. Give a valid name with the CName annotation.
+// "
+// false
+// "[<interactive>:46:3-49:9:writable] Error: The CStructTag annotation must be a String literal.
+// "
+// false
+// "Error: Records ExternalRecordStructErrors.C1 and ExternalRecordStructErrors.C2 have the same C struct tag same, but their members are different.
+// "
+// endResult

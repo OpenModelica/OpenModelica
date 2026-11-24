@@ -75,6 +75,326 @@ fn record_decl_of(ty: &DAE::Type) -> Result<Option<Arc<Vec<RecDeclField>>>> {
     Ok(record_decl_fields(&path_str))
 }
 
+/// The C a unit built from `Include` sources needs for the records its externals
+/// take (MLS 3.7, section 12.9.1.3).
+pub(crate) struct ExternalStructSources {
+    /// Ahead of the sources: the structs the code generator defines, and the
+    /// records' own `Include` annotations, which define the others.
+    pub(crate) prelude: String,
+    /// After the sources: an [`openmodelica_wasm_jit::model::EXT_REC_PREFIX`] wrapper for each external whose
+    /// records come in a struct an `Include` defines.
+    pub(crate) wrappers: String,
+    /// The externals the wrappers are for.
+    pub(crate) wrapped: Vec<String>,
+}
+
+enum CMember {
+    Scalar(&'static str),
+    Record(String),
+}
+
+struct CStruct {
+    tag: String,
+    /// The record has no tag, so the external code may define the struct under
+    /// any name and gets a `void*`.
+    untagged: bool,
+    /// C name and type, in declaration order.
+    members: Vec<(String, CMember)>,
+}
+
+fn c_member(ty: &DAE::Type) -> Result<CMember> {
+    Ok(match ty {
+        DAE::Type::T_REAL { .. } => CMember::Scalar("double"),
+        DAE::Type::T_STRING { .. } => CMember::Scalar("const char*"),
+        DAE::Type::T_COMPLEX {
+            complexClassType: ClassInf::State::RECORD { path },
+            ..
+        } => CMember::Record(AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?.to_string()),
+        _ => CMember::Scalar("int"),
+    })
+}
+
+/// The C of [`ExternalStructSources`]. The hosts marshal a record as the struct of
+/// its members in declaration order; a wrapper converts that one by member name to
+/// the struct an `Include` defines, which may order them differently.
+pub(crate) fn external_struct_sources(
+    decls: &List<SimCodeFunction::RecordDeclaration>,
+    sigs: &[ExtCallSig],
+) -> Result<ExternalStructSources> {
+    use std::fmt::Write;
+    let mut structs: HashMap<String, CStruct> = HashMap::default();
+    let mut generated: HashSet<String> = HashSet::default();
+    let mut prelude = String::new();
+    for d in decls {
+        let SimCodeFunction::RecordDeclaration::RECORD_DECL_FULL {
+            name,
+            defPath,
+            variables,
+            externalStruct: Some(ext),
+            ..
+        } = d
+        else {
+            continue;
+        };
+        let SimCodeFunction::ExternalStruct {
+            tag,
+            memberNames,
+            includes,
+            define,
+        } = ext;
+        let mut members = Vec::new();
+        for (v, cname) in variables.iter().zip(memberNames.iter()) {
+            let SimCodeFunction::Variable::Variable::VARIABLE { ty, .. } = &**v else {
+                continue;
+            };
+            members.push((cname.to_string(), c_member(&ty)?));
+        }
+        let untagged = tag.is_empty();
+        let tag = if untagged {
+            format!("omc_ext_{name}")
+        } else {
+            tag.to_string()
+        };
+        if *define {
+            let _ = writeln!(prelude, "struct {tag} {{");
+            for (cname, m) in &members {
+                match m {
+                    CMember::Scalar(t) => {
+                        let _ = writeln!(prelude, "  {t} {cname};");
+                    }
+                    CMember::Record(p) => {
+                        let inner = structs.get(p.as_str()).map(|s| s.tag.as_str()).unwrap_or(p.as_str());
+                        let _ = writeln!(prelude, "  struct {inner} {cname};");
+                    }
+                }
+            }
+            prelude.push_str("};\n");
+            generated.insert(tag.clone());
+        }
+        for i in includes.iter() {
+            prelude.push_str(i);
+            prelude.push('\n');
+        }
+        let path = AbsynUtil::pathString(defPath.clone(), arcstr::literal!("."), true, false)?;
+        structs.insert(path.to_string(), CStruct { tag, untagged, members });
+    }
+
+    fn converts(path: &str, structs: &HashMap<String, CStruct>, generated: &HashSet<String>) -> bool {
+        structs.get(path).is_some_and(|s| {
+            !generated.contains(&s.tag)
+                || s.members.iter().any(|(_, m)| match m {
+                    CMember::Record(p) => converts(p, structs, generated),
+                    CMember::Scalar(_) => false,
+                })
+        })
+    }
+    fn record_path(t: &SigTy) -> Option<&str> {
+        match t {
+            SigTy::Record { path, .. } => Some(path.as_str()),
+            SigTy::Array { elem, .. } => record_path(elem),
+            _ => None,
+        }
+    }
+
+    let prefix = openmodelica_wasm_jit::model::EXT_REC_PREFIX;
+    let mut wrappers = String::new();
+    let mut wrapped = Vec::new();
+    let mut canon: HashMap<String, usize> = HashMap::default();
+    for sig in sigs {
+        let mut records = sig
+            .args
+            .iter()
+            .map(|(t, _)| t)
+            .chain(sig.ret.iter())
+            .filter_map(record_path);
+        if sig.lang != ExtLang::C
+            || !records.clone().any(|p| converts(p, &structs, &generated))
+            || !records.all(|p| structs.contains_key(p))
+        {
+            continue;
+        }
+        let mut body = String::new();
+        let mut params = Vec::new();
+        let mut proto = Vec::new();
+        let mut call = Vec::new();
+        let mut post = String::new();
+        for (j, (ty, is_out)) in sig.args.iter().enumerate() {
+            let rec = record_path(ty).map(|p| define_canon(p, &structs, &mut canon, &mut wrappers));
+            match (ty, rec) {
+                (SigTy::Record { path, .. }, Some(i)) => {
+                    let s = &structs[path.as_str()];
+                    let tag = &s.tag;
+                    params.push(format!("void* a{j}"));
+                    proto.push(c_pointer(s, *is_out));
+                    let _ = writeln!(body, "  struct {tag} u{j};");
+                    if *is_out {
+                        let _ = writeln!(body, "  memset(&u{j}, 0, sizeof(u{j}));");
+                        let _ = writeln!(post, "  omc_ext_from_{i}((struct omc_ext_canon_{i}*) a{j}, &u{j});");
+                    } else {
+                        let _ = writeln!(body, "  omc_ext_to_{i}(&u{j}, (const struct omc_ext_canon_{i}*) a{j});");
+                    }
+                    call.push(format!("{}&u{j}", if s.untagged { "(void*) " } else { "" }));
+                }
+                (SigTy::Array { elem, .. }, Some(i)) => {
+                    let Some(path) = record_path(elem) else {
+                        return Err("CodegenWasmJit: array of records without a record type");
+                    };
+                    let s = &structs[path];
+                    let tag = &s.tag;
+                    params.push(format!("void* a{j}"));
+                    proto.push(c_pointer(s, *is_out));
+                    // The hosts put the element count ahead of the elements.
+                    let _ = writeln!(
+                        body,
+                        "  size_t n{j} = (size_t) ((const unsigned long long*) a{j})[-1], k{j};\n  struct {tag}* u{j} = (struct {tag}*) calloc(n{j} ? n{j} : 1, sizeof(struct {tag}));"
+                    );
+                    if *is_out {
+                        let _ = writeln!(
+                            post,
+                            "  for (k{j} = 0; k{j} < n{j}; k{j}++) omc_ext_from_{i}(&((struct omc_ext_canon_{i}*) a{j})[k{j}], &u{j}[k{j}]);"
+                        );
+                    } else {
+                        let _ = writeln!(
+                            body,
+                            "  for (k{j} = 0; k{j} < n{j}; k{j}++) omc_ext_to_{i}(&u{j}[k{j}], &((const struct omc_ext_canon_{i}*) a{j})[k{j}]);"
+                        );
+                    }
+                    let _ = writeln!(post, "  free(u{j});");
+                    call.push(format!("{}u{j}", if s.untagged { "(void*) " } else { "" }));
+                }
+                _ => {
+                    let ptr = *is_out || sig.passes_by_ref(j, ty) || matches!(ty, SigTy::Array { .. });
+                    let Some(t) = openmodelica_wasm_jit::model::ext_c_type(ty) else {
+                        return Err("CodegenWasmJit: external argument without a C type");
+                    };
+                    let t = format!("{t}{}", if ptr { "*" } else { "" });
+                    params.push(format!("{t} a{j}"));
+                    proto.push(t);
+                    call.push(format!("a{j}"));
+                }
+            }
+        }
+        let name = &sig.name;
+        let args = call.join(", ");
+        let (ret, proto_ret) = match &sig.ret {
+            Some(t @ SigTy::Record { path, .. }) if record_path(t).is_some() => {
+                let i = define_canon(path, &structs, &mut canon, &mut wrappers);
+                let tag = &structs[path.as_str()].tag;
+                let _ = writeln!(body, "  struct {tag} r_ = {name}({args});");
+                let _ = writeln!(
+                    post,
+                    "  struct omc_ext_canon_{i} c_;\n  omc_ext_from_{i}(&c_, &r_);\n  return c_;"
+                );
+                (format!("struct omc_ext_canon_{i}"), format!("struct {tag}"))
+            }
+            Some(t) => {
+                let Some(ct) = openmodelica_wasm_jit::model::ext_c_type(t) else {
+                    return Err("CodegenWasmJit: external result without a C type");
+                };
+                let _ = writeln!(body, "  {ct} r_ = {name}({args});");
+                post.push_str("  return r_;\n");
+                (ct.to_string(), ct.to_string())
+            }
+            None => {
+                let _ = writeln!(body, "  {name}({args});");
+                ("void".to_string(), "void".to_string())
+            }
+        };
+        if sig.declare {
+            let p = if proto.is_empty() {
+                "void".to_string()
+            } else {
+                proto.join(", ")
+            };
+            let _ = writeln!(wrappers, "extern {proto_ret} {name}({p});");
+        }
+        let p = if params.is_empty() {
+            "void".to_string()
+        } else {
+            params.join(", ")
+        };
+        let _ = write!(wrappers, "{ret} {prefix}{name}({p})\n{{\n{body}{post}}}\n");
+        wrapped.push(name.clone());
+    }
+    if !wrappers.is_empty() {
+        wrappers.insert_str(0, "#include <stdlib.h>\n#include <string.h>\n");
+    }
+    Ok(ExternalStructSources {
+        prelude,
+        wrappers,
+        wrapped,
+    })
+}
+
+fn c_pointer(s: &CStruct, is_out: bool) -> String {
+    let c = if is_out { "" } else { "const " };
+    if s.untagged {
+        format!("{c}void*")
+    } else {
+        format!("{c}struct {}*", s.tag)
+    }
+}
+
+/// The declaration-order struct of the record at `path` (as the hosts lay it out)
+/// and the conversions between it and the record's own struct, once each; returns
+/// their index.
+fn define_canon(
+    path: &str,
+    structs: &HashMap<String, CStruct>,
+    canon: &mut HashMap<String, usize>,
+    out: &mut String,
+) -> usize {
+    use std::fmt::Write;
+    if let Some(i) = canon.get(path) {
+        return *i;
+    }
+    let s = &structs[path];
+    let nested: Vec<Option<usize>> = s
+        .members
+        .iter()
+        .map(|(_, m)| match m {
+            CMember::Record(p) => Some(define_canon(p, structs, canon, out)),
+            CMember::Scalar(_) => None,
+        })
+        .collect();
+    let i = canon.len();
+    canon.insert(path.to_string(), i);
+    let tag = &s.tag;
+    let _ = writeln!(out, "struct omc_ext_canon_{i} {{");
+    for (k, (_, m)) in s.members.iter().enumerate() {
+        match (m, nested[k]) {
+            (CMember::Scalar(t), _) => {
+                let _ = writeln!(out, "  {t} m{k};");
+            }
+            (CMember::Record(_), Some(n)) => {
+                let _ = writeln!(out, "  struct omc_ext_canon_{n} m{k};");
+            }
+            (CMember::Record(_), None) => {}
+        }
+    }
+    out.push_str("};\n");
+    let mut to = String::new();
+    let mut from = String::new();
+    for (k, (cname, _)) in s.members.iter().enumerate() {
+        match nested[k] {
+            Some(n) => {
+                let _ = writeln!(to, "  omc_ext_to_{n}(&u->{cname}, &c->m{k});");
+                let _ = writeln!(from, "  omc_ext_from_{n}(&c->m{k}, &u->{cname});");
+            }
+            None => {
+                let _ = writeln!(to, "  u->{cname} = c->m{k};");
+                let _ = writeln!(from, "  c->m{k} = u->{cname};");
+            }
+        }
+    }
+    let _ = write!(
+        out,
+        "static void omc_ext_to_{i}(struct {tag}* u, const struct omc_ext_canon_{i}* c)\n{{\n{to}}}\n\
+         static void omc_ext_from_{i}(struct omc_ext_canon_{i}* c, const struct {tag}* u)\n{{\n{from}}}\n"
+    );
+    i
+}
+
 /// Array-object header offsets, matching the runtime's `ARR_*`.
 pub(super) const ARR_NDIMS_OFF: u32 = 8;
 

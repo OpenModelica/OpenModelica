@@ -383,10 +383,14 @@ pub(super) fn build_sim_model(
         // What the `Library` annotations did not provide may come from an `Include`
         // carrying the C source, though most carry only the declarations.
         let mp = &sim_code.makefileParams;
-        let sources: Vec<String> = lst(&sim_code.externalFunctionIncludes)
-            .map(|s| s.to_string())
+        let structs = crate::CodegenWasmJitFunctions::external_struct_sources(&sim_code.recordDecls, &ext_imports)?;
+        let sources: Vec<String> = std::iter::once(structs.prelude)
+            .chain(lst(&sim_code.externalFunctionIncludes).map(|s| s.to_string()))
             .chain(std::mem::take(&mut ext_libs.sources))
+            .chain(std::iter::once(structs.wrappers))
+            .filter(|s| !s.is_empty())
             .collect();
+        let record_wrapped = structs.wrapped;
         let dirs: Vec<String> = lst(&mp.includes).map(|s| s.to_string()).collect();
         let prefix = sim_code.fileNamePrefix.to_string();
         if !sources.is_empty() {
@@ -396,7 +400,7 @@ pub(super) fn build_sim_model(
             // implementation, so there the same decision is made off the exports.
             let hook = ext_builtin && include_overrides_builtin(&sources);
             let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
-            if hook || !missing.is_empty() {
+            if hook || !missing.is_empty() || !record_wrapped.is_empty() {
                 let carried = match ext_builtin {
                     true => openmodelica_wasm_jit::dylink::carried_libraries(
                         ext_imports.iter().map(|s| s.name.as_str()),
@@ -427,7 +431,7 @@ pub(super) fn build_sim_model(
                     ext_lib_notes.extend(notes);
                 } else if (hook && !used_prebuilt) || ext_host == ExtHost::Wasm {
                     let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
-                    if (hook && !used_prebuilt) || !missing.is_empty() {
+                    if (hook && !used_prebuilt) || !missing.is_empty() || !record_wrapped.is_empty() {
                         if let Some(l) =
                             compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)?
                         {
@@ -476,6 +480,7 @@ pub(super) fn build_sim_model(
                 cflags: mp.cflags.to_string(),
                 dllext: mp.dllext.to_string(),
                 prefix: prefix.clone(),
+                record_wrapped,
             });
         }
         if !ext_libs.archives.is_empty() && want_native {

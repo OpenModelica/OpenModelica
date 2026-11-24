@@ -711,7 +711,7 @@ algorithm
     (cache,fargs) := InstUtil.instExtGetFargs(cache,env,extdecl,impl,pre,info);
     (cache,rettype) := InstUtil.instExtGetRettype(cache,env,extdecl,impl,pre,info);
   end if;
-  daeextdecl := DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann);
+  daeextdecl := DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann,{});
 end instExtDecl;
 
 protected function instExtMakeDefaultExternalCall

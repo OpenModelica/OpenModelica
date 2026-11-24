@@ -3034,6 +3034,8 @@ algorithm
           else sections;
         end match;
 
+        sections := typeExternalRecords(sections);
+
         typed_cls := Class.setSections(sections, cls);
         InstNode.updateClass(typed_cls, classNode);
       then
@@ -3081,7 +3083,6 @@ algorithm
     else
       algorithm
         (outArg, ty, var) := typeExp(arg, NFInstContext.FUNCTION, info);
-        Call.updateExternalRecordArgsInType(ty);
       then
         match arg
           // All kinds of crefs are allowed.
@@ -3205,6 +3206,29 @@ algorithm
     fail();
   end if;
 end checkExternalCallResult;
+
+function typeExternalRecords
+  "Sets the C structs of the records an external function takes."
+  input output Sections extDecl;
+algorithm
+  () := match extDecl
+    case Sections.EXTERNAL() guard extDecl.language <> "builtin"
+      algorithm
+        for arg in extDecl.args loop
+          extDecl.structs := Record.collectExternalStructs(Expression.typeOf(arg),
+            extDecl.language, extDecl.info, extDecl.structs);
+        end for;
+
+        if ComponentRef.isCref(extDecl.outputRef) then
+          extDecl.structs := Record.collectExternalStructs(ComponentRef.nodeType(extDecl.outputRef),
+            extDecl.language, extDecl.info, extDecl.structs);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end typeExternalRecords;
 
 function typeComponentSections
   input InstNode component;
@@ -3504,10 +3528,6 @@ algorithm
         end if;
 
         checkAssignment(e1, e2, var, context, info);
-
-        if Expression.isExternalCall(e2) then
-          Call.updateExternalRecordArgs(Expression.tupleElements(e1));
-        end if;
       then
         Statement.ASSIGNMENT(e1, e2, ty1, st.source);
 
@@ -3704,10 +3724,6 @@ algorithm
   end if;
 
   eq := Equation.EQUALITY(e1, e2, ty, scope, source, NFEquation.ScalarizeMode.NO_PREFERENCE, DAE.EquationOrigin.EQUATION);
-
-  if Expression.isExternalCall(e2) then
-    Call.updateExternalRecordArgs(Expression.tupleElements(e1));
-  end if;
 end typeEqualityEquation;
 
 function typeCondition
