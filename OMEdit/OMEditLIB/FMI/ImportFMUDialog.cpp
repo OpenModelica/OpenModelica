@@ -45,7 +45,6 @@
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
 #include "Options/OptionsDialog.h"
-#include "Git/CommitChangesDialog.h"
 
 #include <QMessageBox>
 #include <QGridLayout>
@@ -184,14 +183,6 @@ void ImportFMUDialog::importFMU()
                                                                          mpGenerateOutputConnectors->isChecked(), mpModelNameTextBox->text());
   if (!fmuFileName.isEmpty()) {
     MainWindow::instance()->getLibraryWidget()->openFile(fmuFileName);
-  }
-  // trace import modeldescription
-  if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
-    QFileInfo file(fmuFileName);
-    // Get the name of the file without the extension
-    QString base_name = file.baseName();
-    // Push traceability information automaticaly to Daemon
-    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuImport", fmuFileName, base_name, mpFmuFileTextBox->text());
   }
   accept();
 }

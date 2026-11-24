@@ -530,26 +530,6 @@
     </message>
 </context>
 <context>
-    <name>CleanDialog</name>
-    <message>
-        <source>Clean Repository</source>
-        <translatorcomment>Laisser Repository ou utiliser référentiel ou autre?</translatorcomment>
-        <translation type="unfinished">Nettoyer Repository</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Tout sélectionner</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nom</translation>
-    </message>
-    <message>
-        <source>Clean</source>
-        <translation>Nettoyer</translation>
-    </message>
-</context>
-<context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
@@ -876,69 +856,6 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     <message>
         <source>Preview:</source>
         <translation>Prévisualisation:</translation>
-    </message>
-</context>
-<context>
-    <name>CommitChangesDialog</name>
-    <message>
-        <source>Commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Repository:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Branch:</source>
-        <translation>Branche:</translation>
-    </message>
-    <message>
-        <source>Repository Information:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit Information:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Author:</source>
-        <translation>Auteur:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Description:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Tout sélectionner</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation type="unfinished">Statut</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>Fichier</translation>
-    </message>
-    <message>
-        <source>Files:</source>
-        <translation>Fichiers:</translation>
-    </message>
-    <message>
-        <source>commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit Message </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit description:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4367,13 +4284,6 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     </message>
 </context>
 <context>
-    <name>GitCommands</name>
-    <message>
-        <source>Repository Creation Failed</source>
-        <translation>Échec de la création du repository</translation>
-    </message>
-</context>
-<context>
     <name>GoogleDriveProvider</name>
     <message>
         <source>The file changed in Google Drive since it was last synchronised.</source>
@@ -5112,10 +5022,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Committing modified files to the repository</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Report Issue</source>
         <translation>Signaler un problème</translation>
     </message>
@@ -5437,42 +5343,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Manage debug configurations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Repository</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a Git repository</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Log Current File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Logging current file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stage Current File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Staging current file for next commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unstage Current File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unstaging current file from next commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6505,25 +6375,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
 </context>
 <context>
-    <name>LogCommitDialog</name>
-    <message>
-        <source>Select Commit</source>
-        <translation type="unfinished">Selectionner Commit</translation>
-    </message>
-    <message>
-        <source>Subject</source>
-        <translation type="unfinished">Sujet</translation>
-    </message>
-    <message>
-        <source>SHA-1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
@@ -7299,14 +7150,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>SSP Toolbar</source>
         <translation type="unfinished">Barre d&apos;outils SSP</translation>
-    </message>
-    <message>
-        <source>&amp;Git</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Traceability</source>
-        <translation type="unfinished">Traçabilité</translation>
     </message>
     <message>
         <source>&amp;Tools</source>
@@ -8465,10 +8308,6 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
         <translation>Êtes-vous sûr de vouloir réinitialiser OMEdit&#xa0;? Cette opération ne peut pas être annulée. </translation>
     </message>
     <message>
-        <source>Traceability</source>
-        <translation>Traçabilité</translation>
-    </message>
-    <message>
         <source>Language Server</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9012,34 +8851,6 @@ Définissez la valeur sur 0 si vous ne souhaitez aucun délai.</translation>
     <message>
         <source>Warning</source>
         <translation type="unfinished">Avertissement</translation>
-    </message>
-</context>
-<context>
-    <name>RevertCommitsDialog</name>
-    <message>
-        <source>Revert Commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Working Directory:</source>
-        <translation>Répertoire de Travail:</translation>
-    </message>
-    <message>
-        <source>Browse Directory</source>
-        <translation>Parcourir Répertoire</translation>
-    </message>
-    <message>
-        <source>Commit:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browse Commit</source>
-        <translatorcomment>Parcourir ou Naviguer?</translatorcomment>
-        <translation>Parcourir Commit</translation>
-    </message>
-    <message>
-        <source>Revert</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10029,40 +9840,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Font</source>
         <translation type="unfinished">Police</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityGraphViewWidget</name>
-    <message>
-        <source>Traceability Graph View</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityPage</name>
-    <message>
-        <source>Traceability</source>
-        <translation type="unfinished">Traçabilité</translation>
-    </message>
-    <message>
-        <source>User Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Git Repository:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Traceability Daemon IP Address:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Traceability Daemon Port:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

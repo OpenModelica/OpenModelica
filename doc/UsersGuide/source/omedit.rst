@@ -2089,22 +2089,6 @@ Sensitivity Optimization Options
 
   -  *python* - sets the Python executable to run OMSens scripts.
 
-Traceability Options
-~~~~~~~~~~~~~~~~~~~~
-
--  Traceability - when this group is checked, OMEdit sends traceability information to the
-   traceability daemon when you save a model in a Git repository and when you export or import an FMU.
-
-  -  *User Name* - the name of the user.
-
-  -  *Email* - the email of the user.
-
-  -  *Git Repository* - the path of the Git repository.
-
-  -  *Traceability Daemon IP Address* - the IP address of the traceability daemon.
-
-  -  *Traceability Daemon Port* - the port of the traceability daemon.
-
 .. _omedit-options-language-server:
 
 Language Server Options

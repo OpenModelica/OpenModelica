@@ -8446,7 +8446,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   bool omsSystem = false;
   bool omsSubmodel = false;
   bool omsConnector = false;
-  bool gitWorkingDirectory = false;
   bool iconGraphicsView = false;
   bool diagramGraphicsView = false;
   bool textView = false;
@@ -8460,12 +8459,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     iconGraphicsView = pModelWidget->getIconViewToolButton()->isChecked();
     diagramGraphicsView = pModelWidget->getDiagramViewToolButton()->isChecked();
     textView = pModelWidget->getTextViewToolButton()->isChecked();
-    // check for git working directory
-    /* ticket:5646 Crash when importing SSP files with TLM systems
-     * Disable the Git features until we have them implemented properly.
-     * GitCommands::getGitStdout causes crash in Linux.
-     */
-    //gitWorkingDirectory = !pLibraryTreeItem->getFileName().isEmpty() && GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
     if (pLibraryTreeItem->isModelica()) {
       modelica = true;
     } else if (pLibraryTreeItem->isSSP()) {
@@ -8543,25 +8536,12 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && omsSystem);
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
-  MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getCommitFilesAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getRevertCommitAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(enabled && gitWorkingDirectory);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
     if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
       MainWindow::instance()->getSaveAction()->setEnabled(false);
       MainWindow::instance()->getSaveAsAction()->setEnabled(false);
       MainWindow::instance()->getSaveAllAction()->setEnabled(false);
-      // Disable also Git actions
-      MainWindow::instance()->getLogCurrentFileAction()->setEnabled(false);
-      MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(false);
-      MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(false);
-      MainWindow::instance()->getCommitFilesAction()->setEnabled(false);
-      MainWindow::instance()->getRevertCommitAction()->setEnabled(false);
-      MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(false);
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
