@@ -30,13 +30,13 @@ simulate(Alias); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) b = 3.0; ($RES_SIM_3)
+// 	Constant/Parameter/Input Binding: [SCAL] (1) b = 3.0; ($RES_SIM_3)
 // 	###<No Set Equations>
 //
 // [dumprepl] Constant Replacements:

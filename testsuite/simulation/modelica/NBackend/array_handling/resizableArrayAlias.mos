@@ -33,7 +33,7 @@ val(x[5], 0.1);
 //
 // Alias Set 1:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[ARRY] (3) x = y; ($RES_SIM_4)
 //

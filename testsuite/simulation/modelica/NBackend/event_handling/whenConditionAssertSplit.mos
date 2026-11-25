@@ -37,5 +37,8 @@ simulate(WhenConditionAssertSplit); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [SCAL] (1) $DER.x = 1.0; ($RES_SIM_11)
+// "
 // endResult
