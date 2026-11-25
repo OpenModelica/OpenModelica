@@ -50,10 +50,17 @@
   extern "C" {
 #endif
 
+typedef enum SPATIAL_DISTRIBUTION_STEP_STATUS {
+  SPATIAL_DISTRIBUTION_STEP_OK = 0,
+  SPATIAL_DISTRIBUTION_STEP_MISSING_HISTORY,  /* a read went past the stored history */
+  SPATIAL_DISTRIBUTION_STEP_STORE_FAILED      /* storing the accepted step failed */
+} SPATIAL_DISTRIBUTION_STEP_STATUS;
+
 SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistributions);
 modelica_boolean spatialDistributionStoresSolverSteps(DATA* data, modelica_boolean solverRootFinding);
 modelica_boolean spatialDistributionNeedsHistory(DATA* data, modelica_boolean reset);
 int storeSpatialDistributionStep(DATA* data, threadData_t* threadData);
+SPATIAL_DISTRIBUTION_STEP_STATUS spatialDistributionAfterSolverCall(DATA* data, threadData_t* threadData, modelica_boolean storeSolverSteps, modelica_boolean intermediateStep);
 void freeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributionData, unsigned int nSpatialDistributions);
 void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int index, real_array* initialPoints, real_array* initialValues, unsigned int length);
 void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int index, double in0, double in1, double posX, modelica_boolean isPositiveVelocity) ;

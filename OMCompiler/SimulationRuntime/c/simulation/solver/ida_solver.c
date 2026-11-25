@@ -943,11 +943,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
       /* rescale idaData->y and idaData->yp */
       idaReScaleData(idaData);
     }
-    if (!storeSolverSteps && spatialDistributionNeedsHistory(data, FALSE)) {
-      retVal = IDA_RES_FAIL;
-      messageClose(OMC_LOG_SOLVER);
-      break;
-    }
 
     /* set time to current time */
     sData->timeValue = solverInfo->currentTime;
@@ -956,16 +951,16 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
       setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
       memcpy(sData->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
     }
-    if (storeSolverSteps && flag == IDA_SUCCESS && solverInfo->currentTime < tout) {
+
+    const modelica_boolean intermediateStep = flag == IDA_SUCCESS && solverInfo->currentTime < tout;
 #ifdef OMC_FMI_RUNTIME
-      if (idaData->daeMode)
-        data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
+    if (storeSolverSteps && intermediateStep && idaData->daeMode)
+      data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
 #endif
-      if (storeSpatialDistributionStep(data, threadData)) {
-        retVal = IDA_RES_FAIL;
-        messageClose(OMC_LOG_SOLVER);
-        break;
-      }
+    if (spatialDistributionAfterSolverCall(data, threadData, storeSolverSteps, intermediateStep) != SPATIAL_DISTRIBUTION_STEP_OK) {
+      retVal = IDA_RES_FAIL;
+      messageClose(OMC_LOG_SOLVER);
+      break;
     }
 
     /* error handling */

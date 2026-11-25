@@ -1140,12 +1140,6 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
                  data->modelData->nSpatialDistributions > 0 ? CV_ONE_STEP : CV_NORMAL);
     memcpy(simulationData->realVars, N_VGetArrayPointer(cvodeData->y), cvodeData->N * sizeof(double));
 
-    if (!storeSolverSteps && spatialDistributionNeedsHistory(data, FALSE)) {
-      retVal = CV_RHSFUNC_FAIL;
-      messageClose(OMC_LOG_SOLVER);
-      break;
-    }
-
     /* Error handling */
     if (flag == CV_SUCCESS || flag == CV_TSTOP_RETURN)
     {
@@ -1179,7 +1173,9 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;
-    if (storeSolverSteps && flag == CV_SUCCESS && solverInfo->currentTime < tout && storeSpatialDistributionStep(data, threadData)) {
+
+    const modelica_boolean intermediateStep = flag == CV_SUCCESS && solverInfo->currentTime < tout;
+    if (spatialDistributionAfterSolverCall(data, threadData, storeSolverSteps, intermediateStep) != SPATIAL_DISTRIBUTION_STEP_OK) {
       retVal = CV_RHSFUNC_FAIL;
       break;
     }

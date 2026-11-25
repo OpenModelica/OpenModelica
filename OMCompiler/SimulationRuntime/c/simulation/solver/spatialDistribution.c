@@ -156,6 +156,31 @@ int storeSpatialDistributionStep(DATA* data, threadData_t* threadData)
 }
 
 /**
+ * @brief Keep the transport history after a solver call.
+ *
+ * With storeSolverSteps the solver finds the events, so each accepted step
+ * that ends before tout is stored. Otherwise only check that no read went
+ * past the stored history.
+ *
+ * @param storeSolverSteps  Result of spatialDistributionStoresSolverSteps.
+ * @param intermediateStep  The solver accepted a step that ends before tout.
+ * @return SPATIAL_DISTRIBUTION_STEP_OK, otherwise the solver must reject the step.
+ */
+SPATIAL_DISTRIBUTION_STEP_STATUS spatialDistributionAfterSolverCall(DATA* data, threadData_t* threadData, modelica_boolean storeSolverSteps, modelica_boolean intermediateStep)
+{
+  if (storeSolverSteps) {
+    if (intermediateStep && storeSpatialDistributionStep(data, threadData)) {
+      return SPATIAL_DISTRIBUTION_STEP_STORE_FAILED;
+    }
+    return SPATIAL_DISTRIBUTION_STEP_OK;
+  }
+  if (spatialDistributionNeedsHistory(data, FALSE)) {
+    return SPATIAL_DISTRIBUTION_STEP_MISSING_HISTORY;
+  }
+  return SPATIAL_DISTRIBUTION_STEP_OK;
+}
+
+/**
  * @brief Allocates memory for spatial distribution structs.
  *
  * Returns pointer to array with allocated spatial distribution structs.
