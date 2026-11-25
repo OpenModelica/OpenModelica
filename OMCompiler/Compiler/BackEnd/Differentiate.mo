@@ -780,9 +780,13 @@ algorithm
 
     case DAE.SIZE() then (inExp, inFunctionTree);
 
-    case DAE.REDUCTION()
+    // a linear reduction over discrete iterators, which have no derivative
+    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(s1)))
+      guard s1 == "array" or s1 == "sum"
       algorithm
-        (res1, functionTree) := differentiateExp(inExp.expr, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+        (res1, functionTree) := differentiateExp(inExp.expr, inDiffwrtCref,
+          addGlobalVars(list(reductionIteratorVar(iter) for iter in inExp.iterators), inInputData),
+          inDiffType, inFunctionTree, maxIter-1);
 
         if not referenceEq(inExp.expr, res1) then
           res := DAE.REDUCTION(inExp.reductionInfo, res1, inExp.iterators);
@@ -3655,6 +3659,19 @@ algorithm
   end if;
   outDiffData.allVars := SOME(allVars);
 end addAllVars;
+
+protected function reductionIteratorVar
+  "Returns a discrete reduction iterator as a variable. Fails for other iterators."
+  input DAE.ReductionIterator iter;
+  output BackendDAE.Var var;
+protected
+  String id;
+  DAE.Type ty;
+algorithm
+  DAE.REDUCTIONITER(id = id, ty = ty) := iter;
+  true := Types.isDiscreteType(ty);
+  var := BackendDAE.VAR(ComponentReferenceBasics.makeCrefIdent(id, ty, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
+end reductionIteratorVar;
 
 protected function addGlobalVars
   input list<BackendDAE.Var> inVarsLst;
