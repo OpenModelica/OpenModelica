@@ -234,6 +234,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         }
         // Record field access on an expression result: `f().field`.
         E::RSUB { exp, fieldName, .. } => compile_rsub(ctx, exp, fieldName),
+        E::LET { name, binding, body } => compile_let(ctx, exp, name, binding, body),
         E::REDUCTION {
             reductionInfo,
             expr,
@@ -262,6 +263,30 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         }
         other => return Err(unsupported_exp(other)),
     }
+}
+
+fn compile_let(ctx: &mut FnCtx, exp: &DAE::Exp, name: &str, binding: &DAE::Exp, body: &DAE::Exp) -> Result<WTy> {
+    let sty = exp_sigty(binding)?;
+    let is_array = matches!(sty, SigTy::Array { .. });
+    if ctx.sim().is_ok() || (sty.is_heap() && !is_array) {
+        let expanded = openmodelica_frontend_base::Expression::expandLets(metamodelica::Ref::new(exp.clone()))?;
+        return compile_exp(ctx, &expanded);
+    }
+    let w = compile_exp(ctx, binding)?;
+    coerce(ctx, w, sty.wty());
+    let local = ctx.alloc_temp(sty.wty());
+    ctx.emit(we::Instruction::LocalSet(local));
+    let prev = ctx.locals.insert(name.to_string(), (local, sty));
+    let res = compile_exp(ctx, body);
+    match prev {
+        Some(v) => ctx.locals.insert(name.to_string(), v),
+        None => ctx.locals.remove(name),
+    };
+    let wty = res?;
+    if is_array {
+        release_temp_array(ctx, local)?;
+    }
+    Ok(wty)
 }
 
 /// Name the expression we could not lower in a recorded message; the `Result`
@@ -306,6 +331,7 @@ fn exp_variant_name(exp: &DAE::Exp) -> &'static str {
         E::ASUB { .. } => "ASUB",
         E::TSUB { .. } => "TSUB",
         E::RSUB { .. } => "RSUB",
+        E::LET { .. } => "LET",
         E::SIZE { .. } => "SIZE",
         E::CODE { .. } => "CODE",
         E::EMPTY { .. } => "EMPTY",
@@ -350,6 +376,7 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             _ => sig_ty(&call_value_ty(&attr.ty))?.wty(),
         },
         E::SHARED_LITERAL { exp, .. } => exp_wty_hint(ctx, exp)?,
+        E::LET { body, .. } => exp_wty_hint(ctx, body)?,
         // Array/record handles and `size(a, d)` are `i32`; an array element's /
         // record field's wasm type comes from its element / field type.
         E::ARRAY { .. } | E::MATRIX { .. } | E::RANGE { .. } | E::SIZE { .. } | E::RECORD { .. } => WTy::I32,
@@ -499,6 +526,7 @@ pub(super) fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::RELATION { .. } => SigTy::Bool,
         E::IFEXP { expThen, .. } => exp_sigty(expThen)?,
         E::SHARED_LITERAL { exp, .. } => exp_sigty(exp)?,
+        E::LET { body, .. } => exp_sigty(body)?,
         // Array-valued expressions carry their (array) type directly.
         E::ARRAY { ty, .. } | E::MATRIX { ty, .. } | E::RANGE { ty, .. } => sig_ty_quiet(ty)?,
         // A reduction's result type is its element/fold type.

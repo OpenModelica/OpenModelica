@@ -278,6 +278,14 @@ public
     InstNode scope;
   end INSTANCE_NAME;
 
+  record LET
+    "let node = binding in body. The binding is evaluated one time, and
+     references to node in body have its value."
+    InstNode node "Made like an iterator.";
+    Expression binding;
+    Expression body;
+  end LET;
+
   function isArray
     input Expression exp;
     output Boolean isArray;
@@ -891,6 +899,16 @@ public
         then
           comp;
 
+      case LET()
+        algorithm
+          LET(binding = e1, body = e2) := exp2;
+          comp := compare(exp1.binding, e1);
+          if comp == 0 then
+            comp := compare(exp1.body, e2);
+          end if;
+        then
+          comp;
+
       case UNARY()
         algorithm
           UNARY(operator = op, exp = e1) := exp2;
@@ -1106,6 +1124,7 @@ public
       case CAST()            then exp.ty;
       case BOX()             then Type.METABOXED(typeOf(exp.exp));
       case UNBOX()           then exp.ty;
+      case LET()             then typeOf(exp.body);
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT()   then exp.ty;
       case RECORD_ELEMENT()  then exp.ty;
@@ -1174,6 +1193,7 @@ public
       case IF()              algorithm exp.ty := ty; then exp;
       case CAST()            algorithm exp.ty := ty; then exp;
       case UNBOX()           algorithm exp.ty := ty; then exp;
+      case LET() algorithm exp.body := setType(ty, exp.body); then exp;
       case SUBSCRIPTED_EXP() algorithm exp.ty := ty; then exp;
       case TUPLE_ELEMENT()   algorithm exp.ty := ty; then exp;
       case RECORD_ELEMENT()  algorithm exp.ty := ty; then exp;
@@ -2346,6 +2366,23 @@ public
     outExp := SUBSCRIPTED_EXP(e, subs, ty, split);
   end makeSubscriptedExp;
 
+  function expandLets
+    "Replaces each let expression with its body, where the references to the
+     bound variable are replaced with the binding."
+    input output Expression exp;
+  algorithm
+    exp := map(exp, expandLet);
+  end expandLets;
+
+  function expandLet
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case LET() then replaceIterator(exp.body, exp.node, exp.binding);
+      else exp;
+    end match;
+  end expandLet;
+
   function replaceIterator
     "Replaces the given iterator with the given value in an expression."
     input output Expression exp;
@@ -2365,12 +2402,13 @@ public
       local
         InstNode node;
         ComponentRef cref;
-        list<String> fields;
+        list<ComponentRef> parts;
 
       // Cref is simple identifier, i
       case CREF(cref = ComponentRef.CREF())
         guard ComponentRef.isSimple(exp.cref)
-        then if InstNode.refEqual(iterator, ComponentRef.node(exp.cref)) then iteratorValue else exp;
+        then if InstNode.refEqual(iterator, ComponentRef.node(exp.cref)) then
+          applySubscripts(ComponentRef.getSubscripts(exp.cref), iteratorValue) else exp;
 
       // Cref is qualified identifier, i.x
       case CREF(cref = ComponentRef.CREF())
@@ -2379,14 +2417,13 @@ public
           node := ComponentRef.node(ComponentRef.last(exp.cref));
 
           if InstNode.refEqual(iterator, node) then
-            // Start with the given value.
-            outExp := iteratorValue;
+            cref :: parts := ComponentRef.toListReverse(exp.cref);
+            outExp := applySubscripts(ComponentRef.getSubscripts(cref), iteratorValue);
 
             // Go down into the record fields using the rest of the cref.
-            fields := list(InstNode.name(n) for n in listRest(ComponentRef.nodes(exp.cref)));
-
-            for f in fields loop
-              outExp := recordElement(f, outExp);
+            for cr in parts loop
+              outExp := recordElement(InstNode.name(ComponentRef.node(cr)), outExp);
+              outExp := applySubscripts(ComponentRef.getSubscripts(cr), outExp);
             end for;
           else
             outExp := exp;
@@ -2652,6 +2689,7 @@ public
 
       case BOX() then "BOX(" + toString(exp.exp) + ")";
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
+      case LET() then "let " + InstNode.name(exp.node) + " = " + toString(exp.binding) + " in " + toString(exp.body);
       case SUBSCRIPTED_EXP() then "(" + toString(exp.exp) + ")" + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then "(" + toString(exp.recordExp) + ")." + exp.fieldName;
@@ -2754,6 +2792,7 @@ public
       case UNBOX() then toFlatString(exp.exp, format);
       case BOX() then toFlatString(exp.exp, format);
 
+      case LET() then toFlatString(replaceIterator(exp.body, exp.node, exp.binding), format);
       case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format, escapeQuotes = false);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
       case RECORD_ELEMENT() then "(" + toFlatString(exp.recordExp, format) + ")." + exp.fieldName;
@@ -2877,6 +2916,7 @@ public
       case RELATION() then 6;
       case RANGE() then 10;
       case IF() then 11;
+      case LET() then 11;
       case CAST() then priority(exp.exp, lhs);
       case BOX() then priority(exp.exp, lhs);
       case UNBOX() then priority(exp.exp, lhs);
@@ -3111,6 +3151,8 @@ public
       case CAST() then DAE.CAST(Type.toDAE(exp.ty), toDAE(exp.exp));
       case BOX() then DAE.BOX(toDAE(exp.exp));
       case UNBOX() then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
+
+      case LET() then DAE.LET(InstNode.name(exp.node), toDAE(exp.binding), toDAE(exp.body));
 
       case SUBSCRIPTED_EXP()
         then DAE.ASUB(toDAE(exp.exp), list(Subscript.toDAE(s) for s in exp.subscripts));
@@ -3643,6 +3685,14 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
+      case LET()
+        algorithm
+          e1 := map(exp.binding, func);
+          e2 := map(exp.body, func);
+        then
+          if referenceEq(exp.binding, e1) and referenceEq(exp.body, e2)
+            then exp else LET(exp.node, e1, e2);
+
       case SUBSCRIPTED_EXP()
         algorithm
           e1 := map(exp.exp, func);
@@ -3855,6 +3905,14 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
+      case LET()
+        algorithm
+          e1 := mapReverse(exp.binding, func);
+          e2 := mapReverse(exp.body, func);
+        then
+          if referenceEq(exp.binding, e1) and referenceEq(exp.body, e2)
+            then exp else LET(exp.node, e1, e2);
+
       case SUBSCRIPTED_EXP()
         then SUBSCRIPTED_EXP(mapReverse(exp.exp, func),
           list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty, exp.split);
@@ -4021,6 +4079,14 @@ public
           e1 := func(exp.exp);
         then
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
+
+      case LET()
+        algorithm
+          e1 := func(exp.binding);
+          e2 := func(exp.body);
+        then
+          if referenceEq(exp.binding, e1) and referenceEq(exp.body, e2)
+            then exp else LET(exp.node, e1, e2);
 
       case SUBSCRIPTED_EXP()
         then SUBSCRIPTED_EXP(func(exp.exp),
@@ -4243,6 +4309,12 @@ public
       case BOX() then fold(exp.exp, func, arg);
       case UNBOX() then fold(exp.exp, func, arg);
 
+      case LET()
+        algorithm
+          result := fold(exp.binding, func, arg);
+        then
+          fold(exp.body, func, result);
+
       case SUBSCRIPTED_EXP()
         algorithm
           result := fold(exp.exp, func, arg);
@@ -4391,6 +4463,13 @@ public
       case BOX() algorithm apply(exp.exp, func); then ();
       case UNBOX() algorithm apply(exp.exp, func); then ();
 
+      case LET()
+        algorithm
+          apply(exp.binding, func);
+          apply(exp.body, func);
+        then
+          ();
+
       case SUBSCRIPTED_EXP()
         algorithm
           apply(exp.exp, func);
@@ -4526,6 +4605,13 @@ public
       case CAST() algorithm func(exp.exp); then ();
       case BOX() algorithm func(exp.exp); then ();
       case UNBOX() algorithm func(exp.exp); then ();
+
+      case LET()
+        algorithm
+          func(exp.binding);
+          func(exp.body);
+        then
+          ();
 
       case SUBSCRIPTED_EXP()
         algorithm
@@ -4735,6 +4821,14 @@ public
           (e1, arg) := mapFold(exp.exp, func, arg);
         then
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
+
+      case LET()
+        algorithm
+          (e1, arg) := mapFold(exp.binding, func, arg);
+          (e2, arg) := mapFold(exp.body, func, arg);
+        then
+          if referenceEq(exp.binding, e1) and referenceEq(exp.body, e2)
+            then exp else LET(exp.node, e1, e2);
 
       case SUBSCRIPTED_EXP()
         algorithm
@@ -4968,6 +5062,14 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
+      case LET()
+        algorithm
+          (e1, arg) := func(exp.binding, arg);
+          (e2, arg) := func(exp.body, arg);
+        then
+          if referenceEq(exp.binding, e1) and referenceEq(exp.body, e2)
+            then exp else LET(exp.node, e1, e2);
+
       case SUBSCRIPTED_EXP()
         algorithm
           (e1, arg) := func(exp.exp, arg);
@@ -5129,6 +5231,7 @@ public
       case BOX() then contains(exp.exp, func);
       case UNBOX() then contains(exp.exp, func);
 
+      case LET() then contains(exp.binding, func) or contains(exp.body, func);
       case SUBSCRIPTED_EXP()
         then contains(exp.exp, func) or Subscript.listContainsExp(exp.subscripts, func);
 
@@ -5244,6 +5347,7 @@ public
       case BOX() then func(exp.exp);
       case UNBOX() then func(exp.exp);
 
+      case LET() then func(exp.binding) or func(exp.body);
       case SUBSCRIPTED_EXP()
         then func(exp.exp) or Subscript.listContainsExpShallow(exp.subscripts, func);
 
@@ -6354,6 +6458,7 @@ public
       case CAST() then variability(exp.exp);
       case BOX() then variability(exp.exp);
       case UNBOX() then variability(exp.exp);
+      case LET() then Prefixes.variabilityMax(variability(exp.binding), variability(exp.body));
       case SUBSCRIPTED_EXP()
         then Prefixes.variabilityMax(variability(exp.exp), Subscript.variabilityList(exp.subscripts));
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
@@ -6436,6 +6541,7 @@ public
       case CAST() then purity(exp.exp);
       case BOX() then purity(exp.exp);
       case UNBOX() then purity(exp.exp);
+      case LET() then Prefixes.purityMin(purity(exp.binding), purity(exp.body));
       case SUBSCRIPTED_EXP()
         then Prefixes.purityMin(purity(exp.exp), Subscript.purityList(exp.subscripts));
       case TUPLE_ELEMENT() then purity(exp.tupleExp);
@@ -7542,6 +7648,8 @@ public
       case CAST() then toJSON(exp.exp);
       case BOX() then toJSON(exp.exp);
       case UNBOX() then toJSON(exp.exp);
+
+      case LET() then toJSON(replaceIterator(exp.body, exp.node, exp.binding));
 
       case SUBSCRIPTED_EXP()
         algorithm

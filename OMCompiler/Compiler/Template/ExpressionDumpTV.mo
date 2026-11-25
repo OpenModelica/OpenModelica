@@ -457,6 +457,11 @@ package DAE
     record PATTERN
       Pattern pattern;
     end PATTERN;
+    record LET
+      String name;
+      Exp binding;
+      Exp body;
+    end LET;
 
     record SUM
       Type ty;

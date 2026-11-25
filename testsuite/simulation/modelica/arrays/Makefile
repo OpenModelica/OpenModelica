@@ -59,6 +59,7 @@ VariableRangeSubscript.mos \
 VectorizedCallArrayLhs.mos \
 VectorizeOneReturnValue.mos \
 VectorizedSizeCheck.mos \
+VectorizedLet.mos \
 Xpowers1.mos \
 Xpowers2.mos \
 Xpowers3.mos \

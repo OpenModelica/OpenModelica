@@ -2127,6 +2127,7 @@ template daeExpXml_dispatch(Exp exp, Context context, Text &preExp /*BUFP*/, Tex
       <%daeExpXml(exp, context, &preExp, &varDecls)%>
     </exp:RecordField>
     >>
+  case e as LET(__) then daeExpXml(expandLets(e), context, &preExp, &varDecls)
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpXml_dispatch;
 

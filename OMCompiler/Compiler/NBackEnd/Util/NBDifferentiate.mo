@@ -986,6 +986,8 @@ public
         end if;
       then (Expression.UNARY(exp.operator, elem1), diffArguments);
 
+      case Expression.LET() then differentiateExpression(Expression.expandLets(exp), diffArguments);
+
       // ((Real) x)' = (Real) x'
       case Expression.CAST() algorithm
         (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);

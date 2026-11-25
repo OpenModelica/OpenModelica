@@ -98,6 +98,8 @@ public
       case Expression.LUNARY()   then expandLogicalUnary(exp);
       case Expression.RELATION() then (exp, true);
       case Expression.CAST()     then expandCast(exp);
+      case Expression.LET()
+        then expand(Expression.replaceIterator(exp.body, exp.node, exp.binding), backend = backend, resize = resize);
       case Expression.FILENAME() then (exp, true);
       else expandGeneric(exp, resize);
     end match;

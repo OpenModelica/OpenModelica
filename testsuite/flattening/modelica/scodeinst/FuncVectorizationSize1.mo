@@ -57,10 +57,10 @@ end FuncVectorizationSize1;
 //   output Real[4] y;
 // algorithm
 //   Y := array(array(abs(v[$i0,$i1 + 1]) for $i1 in 1:max(n + 1 - 2 + 1, 0)) for $i0 in 1:size(v, 1));
-//   y[1] := max(abs(FuncVectorizationSize1.h(FuncVectorizationSize1.g(x, size(x, 1) + 1))[$i2]) for $i2 in 1:size(x, 1) + 1);
-//   y[2] := max(abs(FuncVectorizationSize1.p(x)[$i3]) for $i3 in 1:size(FuncVectorizationSize1.p(x), 1));
+//   y[1] := let $let3 = FuncVectorizationSize1.h(FuncVectorizationSize1.g(x, size(x, 1) + 1)) in max(abs($let3[$i2]) for $i2 in 1:size(x, 1) + 1);
+//   y[2] := let $let5 = FuncVectorizationSize1.p(x) in max(abs($let5[$i4]) for $i4 in 1:size($let5, 1));
 //   y[3] := /*Real*/(size(FuncVectorizationSize1.p(x), 1));
-//   y[4] := sum(abs(v[1,$i4]) for $i4 in 1:size(v, 2));
+//   y[4] := sum(abs(v[1,$i6]) for $i6 in 1:size(v, 2));
 // end FuncVectorizationSize1.f;
 //
 // function FuncVectorizationSize1.g

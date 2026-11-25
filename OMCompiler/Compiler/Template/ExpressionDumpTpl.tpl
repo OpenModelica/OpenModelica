@@ -134,6 +134,8 @@ match exp
     let rparen = if needs_paren then ")"
     let exp_str = dumpExp(exp, stringDelimiter)
     '<%lparen%><%exp_str%><%rparen%>[<%ix%>]'
+  case LET(__) then
+    'let <%name%> = <%dumpExp(binding, stringDelimiter)%> in <%dumpExp(body, stringDelimiter)%>'
   case RSUB(__) then
     let needs_paren = parenthesizeSubExp(exp)
     let lparen = if needs_paren then "("

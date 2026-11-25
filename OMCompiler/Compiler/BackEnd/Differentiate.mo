@@ -756,6 +756,9 @@ algorithm
         end if;
       then (res, functionTree);
 
+    case DAE.LET()
+      then differentiateExp(Expression.expandLets(inExp), inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+
     case e1 as DAE.RSUB()
       algorithm
         // Try simplifying first.

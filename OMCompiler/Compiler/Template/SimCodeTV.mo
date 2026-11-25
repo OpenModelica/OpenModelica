@@ -2814,6 +2814,11 @@ package DAE
     record PATTERN
       Pattern pattern;
     end PATTERN;
+    record LET
+      Ident name;
+      Exp binding;
+      Exp body;
+    end LET;
   end Exp;
 
   uniontype CallAttributes
@@ -4453,6 +4458,11 @@ package Expression
     input DAE.Exp exp2;
     output Boolean same;
   end sameArraySize;
+
+  function expandLets
+    input DAE.Exp exp;
+    output DAE.Exp outExp;
+  end expandLets;
 
   function isAtomic
     input DAE.Exp inExp;

@@ -122,6 +122,7 @@ algorithm
     case Expression.LUNARY()            then simplifyLogicUnary(exp);
     case Expression.RELATION()          then simplifyRelation(exp);
     case Expression.IF()                then simplifyIf(exp);
+    case Expression.LET()               then simplifyLet(exp);
     case Expression.CAST()              then Expression.typeCast(simplify(exp.exp), exp.ty);
     case Expression.UNBOX()             then Expression.unbox(simplify(exp.exp));
     case Expression.SUBSCRIPTED_EXP()   then simplifySubscriptedExp(exp);
@@ -523,6 +524,15 @@ algorithm
       then
         Expression.CALL(Call.makeTypedReduction(fn, ty, var, purity, arr_call.exp, arr_call.iters, Absyn.dummyInfo));
 
+    case Expression.LET()
+      algorithm
+        exp := simplifyReducedArrayConstructor(arg.body, call);
+      then
+        match exp
+          case Expression.CALL(call = Call.TYPED_REDUCTION()) then Expression.LET(arg.node, arg.binding, exp);
+          else Expression.CALL(call);
+        end match;
+
     else Expression.CALL(call);
   end match;
 end simplifyReducedArrayConstructor;
@@ -785,6 +795,24 @@ algorithm
   outExp := Expression.foldReduction(simplify(exp), listReverseInPlace(iters),
     default_exp, function simplify(includeScope = false), function simplifyBinaryOp(op = op));
 end simplifyReduction2;
+
+function simplifyLet
+  input Expression letExp;
+  output Expression exp;
+protected
+  InstNode node;
+  Expression binding, body;
+algorithm
+  Expression.LET(node, binding, body) := letExp;
+  binding := simplify(binding);
+
+  if Expression.isLiteral(binding) or Expression.isCref(binding) then
+    exp := simplify(Expression.replaceIterator(body, node, binding));
+  else
+    body := simplify(body);
+    exp := if Expression.containsIterator(body, node) then Expression.LET(node, binding, body) else body;
+  end if;
+end simplifyLet;
 
 function simplifySize
   input output Expression sizeExp;

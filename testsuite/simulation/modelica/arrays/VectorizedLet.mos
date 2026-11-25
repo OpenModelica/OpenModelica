@@ -1,0 +1,108 @@
+// name:     VectorizedLet
+// keywords: vectorization function let
+// status:   correct
+//
+// A vectorized call evaluates an argument that cannot take the subscript of the
+// iterator one time, not one time for each element, and a call in a branch of
+// an if-expression only if the branch is selected.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+package VectorizedLet
+  function g
+    input Real x[:];
+    output Real y[size(x, 1)];
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"g\", \"VectorizedLet_g.txt\"));
+    y := 2*x;
+  end g;
+
+  function f
+    input Real x[:];
+    output Real y;
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"f\", \"VectorizedLet_f.txt\"));
+    y := max(abs(g(x)));
+  end f;
+
+  function g2
+    input Real x[:];
+    output Real y[size(x, 1)];
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"g2\", \"VectorizedLet_g2.txt\"));
+    y := 2*x;
+  end g2;
+
+  function f2
+    input Real x[:];
+    output Real y;
+  algorithm
+    y := max(abs(if x[1] > 100 then g2(x) else x));
+  end f2;
+
+  function h
+    input Real x[:];
+    output Real y[size(x, 1)] = 2*x;
+  end h;
+
+  function f3
+    input Real x[3];
+    output Real y;
+  algorithm
+    y := sum(abs(h(x)));
+  end f3;
+
+  function f4
+    input Real x[:];
+    output Real y;
+  algorithm
+    y := max(abs(h(x)));
+  end f4;
+
+  model M
+    constant Real c = f4({1, -2, 3});
+    Real y = f({time, -2*time, 3});
+    Real y2 = f2({time, -2*time, 3});
+    Real y3 = f3({time, -2*time, 3});
+    Real y4 = c;
+  end M;
+end VectorizedLet;
+"); getErrorString();
+
+writeFile("VectorizedLet_f.txt", "");
+writeFile("VectorizedLet_g.txt", "");
+writeFile("VectorizedLet_g2.txt", "");
+simulate(VectorizedLet.M, stopTime = 1, numberOfIntervals = 10); getErrorString();
+val(y, 1.0);
+val(y2, 1.0);
+val(y3, 1.0);
+val(y4, 1.0);
+sum(1 for l in strtok(readFile("VectorizedLet_g.txt"), "\n")) == sum(1 for l in strtok(readFile("VectorizedLet_f.txt"), "\n"));
+sum(1 for l in strtok(readFile("VectorizedLet_f.txt"), "\n")) > 0;
+readFile("VectorizedLet_g2.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// record SimulationResult
+//     resultFile = "VectorizedLet.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'VectorizedLet.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 6.0
+// 3.0
+// 12.0
+// 6.0
+// true
+// true
+// ""
+// endResult
