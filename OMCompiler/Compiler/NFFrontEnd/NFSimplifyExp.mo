@@ -792,7 +792,6 @@ algorithm
   sizeExp := match sizeExp
     local
       Expression exp, index;
-      Dimension dim;
       list<Dimension> dims;
 
     case Expression.SIZE(exp, SOME(index))
@@ -800,13 +799,7 @@ algorithm
         index := simplify(index);
 
         if Expression.isLiteral(index) then
-          dim := listGet(Type.arrayDims(Expression.typeOf(exp)), Expression.toInteger(index));
-
-          if Dimension.isKnown(dim) then
-            exp := Expression.INTEGER(Dimension.size(dim));
-          else
-            exp := Expression.SIZE(exp, SOME(index));
-          end if;
+          exp := simplifySizeDim(exp, Expression.toInteger(index));
         else
           exp := Expression.SIZE(exp, SOME(index));
         end if;
@@ -828,6 +821,185 @@ algorithm
 
   end match;
 end simplifySize;
+
+function simplifySizeDim
+  "Returns size(exp, index). If the dimension is not known, the size is taken
+   from a part of exp when possible, so that exp is not evaluated only to get
+   its size."
+  input Expression exp;
+  input Integer index;
+  output Expression sizeExp;
+protected
+  list<Dimension> dims;
+  Dimension dim;
+algorithm
+  dims := Type.arrayDims(Expression.typeOf(exp));
+
+  if index < 1 or index > listLength(dims) then
+    sizeExp := Expression.SIZE(exp, SOME(Expression.INTEGER(index)));
+    return;
+  end if;
+
+  dim := listGet(dims, index);
+
+  if Dimension.isKnown(dim) then
+    sizeExp := Expression.INTEGER(Dimension.size(dim));
+    return;
+  end if;
+
+  sizeExp := match exp
+    case Expression.CREF() then simplifySizeCref(exp, index);
+    case Expression.SUBSCRIPTED_EXP()
+      then simplifySizeSubscripted(exp.exp, exp.subscripts, index, exp);
+    case Expression.BINARY() then simplifySizeBinary(exp, index);
+    case Expression.MULTARY() then simplifySizeMultary(exp, index);
+    case Expression.UNARY() then simplifySizeDim(exp.exp, index);
+    case Expression.CAST() then simplifySizeDim(exp.exp, index);
+    case Expression.RANGE() guard Dimension.isKnown(dim, allowExp = true)
+      then simplify(Dimension.sizeExp(dim));
+    // The dimensions of a call's type are in terms of its arguments.
+    case Expression.CALL(call = Call.TYPED_CALL()) guard Dimension.isKnown(dim, allowExp = true)
+      then simplify(Dimension.sizeExp(dim));
+    else Expression.SIZE(exp, SOME(Expression.INTEGER(index)));
+  end match;
+end simplifySizeDim;
+
+function simplifySizeCref
+  input Expression crefExp;
+  input Integer index;
+  output Expression sizeExp;
+protected
+  ComponentRef cref, stripped_cref;
+  list<Subscript> subs;
+algorithm
+  Expression.CREF(cref = cref) := crefExp;
+  (stripped_cref, subs) := ComponentRef.stripSubscripts(cref);
+
+  if not listEmpty(subs) and
+     Type.dimensionCount(Type.subscript(ComponentRef.nodeType(cref), subs)) ==
+     Type.dimensionCount(Expression.typeOf(crefExp)) then
+    sizeExp := simplifySizeSubscripted(Expression.fromCref(stripped_cref), subs, index, crefExp);
+  else
+    sizeExp := Expression.SIZE(crefExp, SOME(Expression.INTEGER(index)));
+  end if;
+end simplifySizeCref;
+
+function simplifySizeSubscripted
+  "Returns the size of dimension index of exp[subs]."
+  input Expression exp;
+  input list<Subscript> subs;
+  input Integer index;
+  input Expression subscriptedExp;
+  output Expression sizeExp;
+protected
+  Integer i = 0, dim_index = 0;
+algorithm
+  for sub in subs loop
+    dim_index := dim_index + 1;
+
+    if not (Subscript.isIndex(sub) or Subscript.isSplitIndex(sub)) then
+      i := i + 1;
+
+      if i == index then
+        sizeExp := match sub
+          case Subscript.SLICE() then simplifySizeDim(sub.slice, 1);
+          case Subscript.WHOLE() then simplifySizeDim(exp, dim_index);
+          else Expression.SIZE(subscriptedExp, SOME(Expression.INTEGER(index)));
+        end match;
+        return;
+      end if;
+    end if;
+  end for;
+
+  sizeExp := simplifySizeDim(exp, dim_index + index - i);
+end simplifySizeSubscripted;
+
+function simplifySizeBinary
+  input Expression binaryExp;
+  input Integer index;
+  output Expression sizeExp;
+protected
+  Expression e1, e2;
+  Operator op;
+  Boolean is_array1, is_array2;
+algorithm
+  Expression.BINARY(exp1 = e1, operator = op, exp2 = e2) := binaryExp;
+  is_array1 := Type.isArray(Expression.typeOf(e1));
+  is_array2 := Type.isArray(Expression.typeOf(e2));
+
+  if op.op == Op.MATRIX_PRODUCT or op.op == Op.MUL_MATRIX_VECTOR or op.op == Op.MUL_VECTOR_MATRIX then
+    if index == 1 and Type.dimensionCount(Expression.typeOf(e1)) == 2 then
+      sizeExp := simplifySizeDim(e1, 1);
+    elseif Type.dimensionCount(Expression.typeOf(e2)) == 2 then
+      sizeExp := simplifySizeDim(e2, 2);
+    else
+      sizeExp := Expression.SIZE(binaryExp, SOME(Expression.INTEGER(index)));
+    end if;
+  elseif is_array1 and is_array2 then
+    sizeExp := simplifySizeOfAny({e1, e2}, index);
+  elseif is_array1 then
+    sizeExp := simplifySizeDim(e1, index);
+  elseif is_array2 then
+    sizeExp := simplifySizeDim(e2, index);
+  else
+    sizeExp := Expression.SIZE(binaryExp, SOME(Expression.INTEGER(index)));
+  end if;
+end simplifySizeBinary;
+
+function simplifySizeMultary
+  input Expression multaryExp;
+  input Integer index;
+  output Expression sizeExp;
+protected
+  list<Expression> args, inv_args, all_args;
+  Operator op;
+algorithm
+  Expression.MULTARY(arguments = args, inv_arguments = inv_args, operator = op) := multaryExp;
+  all_args := listAppend(args, inv_args);
+
+  if (op.op == Op.ADD or op.op == Op.ADD_EW or op.op == Op.MUL_EW) and
+     not listEmpty(all_args) and not List.any(all_args, Expression.isScalar) then
+    sizeExp := simplifySizeOfAny(all_args, index);
+  else
+    sizeExp := Expression.SIZE(multaryExp, SOME(Expression.INTEGER(index)));
+  end if;
+end simplifySizeMultary;
+
+function simplifySizeOfAny
+  "Returns the size of dimension index of the first of the given expressions
+   whose size can be found without evaluating an expression. The expressions
+   are operands of an element-wise operation, so they have the same size."
+  input list<Expression> exps;
+  input Integer index;
+  output Expression sizeExp;
+protected
+  Expression size_exp;
+algorithm
+  sizeExp := simplifySizeDim(listHead(exps), index);
+
+  for e in listRest(exps) loop
+    if not Expression.contains(sizeExp, isEvaluatingSizeExp) then
+      return;
+    end if;
+
+    size_exp := simplifySizeDim(e, index);
+
+    if not Expression.contains(size_exp, isEvaluatingSizeExp) then
+      sizeExp := size_exp;
+    end if;
+  end for;
+end simplifySizeOfAny;
+
+function isEvaluatingSizeExp
+  input Expression exp;
+  output Boolean res;
+algorithm
+  res := match exp
+    case Expression.SIZE(exp = Expression.CREF()) then false;
+    case Expression.SIZE() then true;
+    else false;
+  end match;
+end isEvaluatingSizeExp;
 
 function simplifyMultary
   input output Expression exp;
