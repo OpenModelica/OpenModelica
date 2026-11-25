@@ -24,6 +24,7 @@ SampleElseWhen.mos \
 SemiLinear.mos \
 SemiLinearTest2.mos \
 Sign.mos \
+SymmetricInFunction.mos \
 Time.mos \
 TwoRateSampler.mos
 

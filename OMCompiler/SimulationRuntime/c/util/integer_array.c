@@ -1528,27 +1528,31 @@ modelica_integer product_integer_array(const integer_array a)
     return product;
 }
 
+void symmetric_alloc_integer_array(const integer_array * a,integer_array* dest)
+{
+    clone_integer_array_spec(a,dest);
+    alloc_integer_array_data(dest);
+    symmetric_integer_array(a,dest);
+}
+
 void symmetric_integer_array(const integer_array * a,integer_array* dest)
 {
     size_t i;
     size_t j;
-    size_t nr_of_elements;
-
-    nr_of_elements = base_array_nr_of_elements(*a);
+    size_t n;
 
     /* Assert that a is a two dimensional square array */
     omc_assert_macro((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
     /* Assert that dest is a two dimensional square array with the same size as a */
     omc_assert_macro((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
 
-    for(i = 0; i < nr_of_elements; ++i) {
+    n = a->dim_size[0];
+    for(i = 0; i < n; ++i) {
         for(j = 0; j < i; ++j) {
-            integer_set(dest, (i * nr_of_elements) + j,
-                        integer_get(*a, (j * nr_of_elements) + i));
+            integer_set(dest, (i * n) + j, integer_get(*a, (j * n) + i));
         }
-        for( ; j < nr_of_elements; ++j) {
-            integer_set(dest, (i * nr_of_elements) + j,
-                        integer_get(*a, (i * nr_of_elements) + j));
+        for( ; j < n; ++j) {
+            integer_set(dest, (i * n) + j, integer_get(*a, (i * n) + j));
         }
     }
 }

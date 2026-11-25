@@ -1,0 +1,52 @@
+// name: SymmetricInFunction
+// keywords: symmetric, function
+// status: correct
+//
+// symmetric in a function body, where the frontend does not expand the call.
+
+loadString("
+model SymmetricInFunction
+  function h
+    input Real A[3, 3];
+    output Real S[3, 3];
+  algorithm
+    S := symmetric(A);
+  end h;
+
+  function hi
+    input Integer A[3, 3];
+    output Integer S[3, 3];
+  algorithm
+    S := symmetric(A);
+  end hi;
+
+  Real S[3, 3] = h({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}*time);
+  Integer Si[3, 3] = hi({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}*integer(2*time));
+end SymmetricInFunction;
+"); getErrorString();
+
+simulate(SymmetricInFunction, stopTime = 1); getErrorString();
+val(S[2, 1], 1);
+val(S[3, 1], 1);
+val(S[3, 2], 1);
+val(S[2, 3], 1);
+val(Si[2, 1], 0.75);
+val(Si[3, 2], 0.75);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SymmetricInFunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SymmetricInFunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 3.0
+// 6.0
+// 6.0
+// 2.0
+// 6.0
+// endResult
