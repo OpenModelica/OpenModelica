@@ -207,6 +207,7 @@ extern modelica_integer argmax_real_array(const real_array a);
 extern modelica_real sum_real_array(const real_array a);
 extern modelica_real product_real_array(const real_array a);
 extern void symmetric_real_array(const real_array *a, real_array *dest);
+extern void symmetric_alloc_real_array(const real_array *a, real_array *dest);
 extern void cross_real_array(const real_array *x, const real_array *y, real_array *dest);
 extern void cross_alloc_real_array(const real_array *x, const real_array *y, real_array *dest);
 extern void skew_real_array(const real_array *x, real_array *dest);

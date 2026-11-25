@@ -235,6 +235,7 @@ extern modelica_integer max_integer_array(const integer_array a);
 extern modelica_integer sum_integer_array(const integer_array a);
 extern modelica_integer product_integer_array(const integer_array a);
 extern void symmetric_integer_array(const integer_array * a,integer_array* dest);
+extern void symmetric_alloc_integer_array(const integer_array * a,integer_array* dest);
 extern void cross_integer_array(const integer_array * x,const integer_array * y,integer_array* dest);
 extern void cross_alloc_integer_array(const integer_array * x,const integer_array * y,integer_array* dest);
 extern void skew_integer_array(const integer_array * x,integer_array* dest);

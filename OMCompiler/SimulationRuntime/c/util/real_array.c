@@ -2376,27 +2376,45 @@ modelica_real product_real_array(const real_array a)
     return product;
 }
 
+/**
+ * @brief Allocate `dest` and set it to `symmetric(a)`.
+ *
+ * @param a Source square matrix.
+ * @param dest Destination real array; will be allocated to the shape of `a`.
+ */
+void symmetric_alloc_real_array(const real_array *a, real_array *dest)
+{
+    clone_real_array_spec(a, dest);
+    alloc_real_array_data(dest);
+    symmetric_real_array(a, dest);
+}
+
+/**
+ * @brief Set pre-allocated `dest` to `symmetric(a)`: the diagonal and the
+ *        upper part of `a`, mirrored to the lower part.
+ *
+ * @param a Source square matrix.
+ * @param dest Destination square matrix of the same size as `a`.
+ */
 void symmetric_real_array(const real_array *a, real_array *dest)
 {
     size_t i;
     size_t j;
-    size_t nr_of_elements;
+    size_t n;
 
-    nr_of_elements = base_array_nr_of_elements(*a);
+    omc_assert_macro((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
+    omc_assert_macro((dest->ndims == 2) && (dest->dim_size[0] == a->dim_size[0]) && (dest->dim_size[1] == a->dim_size[1]));
 
-    /* Assert that a is a two dimensional square array */
-    /* Assert that dest is a two dimensional square array */
-    for (i = 0; i < nr_of_elements; ++i)
+    n = a->dim_size[0];
+    for (i = 0; i < n; ++i)
     {
         for (j = 0; j < i; ++j)
         {
-            real_set(dest, (i * nr_of_elements) + j,
-                     real_get(*a, (j * nr_of_elements) + i));
+            real_set(dest, (i * n) + j, real_get(*a, (j * n) + i));
         }
-        for (; j < nr_of_elements; ++j)
+        for (; j < n; ++j)
         {
-            real_set(dest, (i * nr_of_elements) + j,
-                     real_get(*a, (i * nr_of_elements) + j));
+            real_set(dest, (i * n) + j, real_get(*a, (i * n) + j));
         }
     }
 }

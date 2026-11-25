@@ -7654,7 +7654,7 @@ let &sub = buffer ""
     let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls, &varFrees)
-    let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>symmetric_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
+    let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>symmetric_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="skew"), expLst={A}) then
