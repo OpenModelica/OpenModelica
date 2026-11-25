@@ -10,12 +10,13 @@ simulate(BouncingBall, stopTime=3.0);
 echo(false);
 s:=readSimulationResultSize("BouncingBall_res.mat");
 res:=readSimulationResult("BouncingBall_res.mat",{flying},s);
-res2:=readSimulationResult("BouncingBall_res.mat",{n_bounce},s);
 res3:=readSimulationResult("BouncingBall_res.mat",{h},s);
 echo(true);
 res[1,1];
 res[1,s];
-res2[1,s];
+// The bounces come faster towards the Zeno point at t = 2.56, where their
+// number depends on the solver. Count them before it.
+val(n_bounce, 2.4);
 if res3[1,s] > -1e-2 then 1 else 0;
 
 // Result:
@@ -30,6 +31,6 @@ if res3[1,s] > -1e-2 then 1 else 0;
 // true
 // 1.0
 // 0.0
-// 20.0
+// 8.0
 // 1
 // endResult
