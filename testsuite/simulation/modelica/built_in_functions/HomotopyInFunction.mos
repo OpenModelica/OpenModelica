@@ -1,0 +1,50 @@
+// name: HomotopyInFunction
+// keywords: homotopy, function
+// status: correct
+//
+// homotopy in a function body has the trivial implementation, homotopy(a, s) = a.
+// h2 is differentiated.
+
+loadString("
+model HomotopyInFunction
+  function h
+    input Real x;
+    output Real y;
+  algorithm
+    y := homotopy(x*x, x);
+  end h;
+
+  function h2
+    input Real x;
+    output Real y;
+  algorithm
+    y := 0;
+    for i in 1:2 loop
+      y := y + homotopy(x*x, x);
+    end for;
+  end h2;
+
+  Real y = h(time);
+  Real y2 = h2(time);
+  Real dy2 = der(y2) \"4*time\";
+end HomotopyInFunction;
+"); getErrorString();
+
+simulate(HomotopyInFunction, stopTime = 1); getErrorString();
+val(y, 0.5);
+val(dy2, 0.5);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HomotopyInFunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'HomotopyInFunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:3:3-8:8:writable] Warning: Pure function 'HomotopyInFunction.h' contains a call to impure function 'homotopy'.
+// "
+// 0.25
+// 2.0
+// endResult

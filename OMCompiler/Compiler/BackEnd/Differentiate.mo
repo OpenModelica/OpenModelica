@@ -673,6 +673,11 @@ algorithm
     then (res, functionTree);
 
     // differentiate homotopy
+    // the code generators use the trivial implementation homotopy(a, s) = a in functions
+    case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst={actual, _})
+      guard valueEq(inDiffType, BackendDAE.DIFFERENTIATION_FUNCTION())
+      then differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+
     case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst={actual, simplified}) algorithm
       lambda := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
       (e1, functionTree) := differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);

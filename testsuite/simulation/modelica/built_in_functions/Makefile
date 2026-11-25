@@ -10,6 +10,7 @@ dertest.mos \
 DerValid.mos \
 DummyDerMatching.mos \
 Epidemics1.mos \
+HomotopyInFunction.mos \
 HydrogenIodide.mos \
 Identity.mos \
 LotkaVolterra.mos \
