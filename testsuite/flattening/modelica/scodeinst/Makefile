@@ -693,6 +693,7 @@ FuncVectorization6.mo \
 FuncVectorizationBuiltin.mo \
 FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
+FuncVectorizationReduction1.mo \
 FuncVectorizationSize1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
