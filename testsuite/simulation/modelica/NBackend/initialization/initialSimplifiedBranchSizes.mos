@@ -1,0 +1,63 @@
+// name: initialSimplifiedBranchSizes
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+//
+// The branches of initial if-equations with initialSimplified() have
+// different sizes; each initial system is balanced.
+
+loadString("
+package P
+  impure function initialSimplified
+    discrete output Boolean b;
+    external \"builtin\";
+  end initialSimplified;
+
+  model BranchSizes
+    parameter Real u0 = 1;
+    parameter Real y0 = 10;
+    parameter Real u_start(fixed = false);
+    parameter Real y_start(fixed = false);
+    Real x(start = 1);
+    Real y;
+  initial equation
+    der(x) = 0;
+    if initialSimplified() then
+      u_start = u0;
+      y_start = y;
+    else
+      y_start = y0;
+    end if;
+    if not initialSimplified() then
+      y = homotopy(y_start, u0^3 + u0);
+    end if;
+  equation
+    der(x) = u_start - x;
+    y = x^3 + x;
+  end BranchSizes;
+end P;
+"); getErrorString();
+
+setCommandLineOptions("--allowNonStandardModelica=initialSimplified"); getErrorString();
+simulate(P.BranchSizes, stopTime = 0.1, simflags = "-homotopyOnFirstTry"); getErrorString();
+val(u_start, 0);
+val(y_start, 0);
+val(x, 0.1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.BranchSizes_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'P.BranchSizes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 10.0
+// 2.0
+// endResult
