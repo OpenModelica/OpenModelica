@@ -77,6 +77,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import Inline;
 protected import List;
+protected import MetaModelica.Dangerous.listReverseInPlace;
 protected import SCode;
 protected import StringUtil;
 protected import TypesDump;
@@ -843,8 +844,9 @@ algorithm
         (derivedLHS, functions) := differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         (derivedRHS, functions) := differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         (derivedRHS,_) := ExpressionSimplify.simplify(derivedRHS);
-        derivedStatements1 := listAppend(makeDerivedAssignment(type_, derivedLHS, derivedRHS, source, false), {currStatement});
-        derivedStatements2 := listAppend(derivedStatements1, inStmtsAccum);
+        // inStmtsAccum is reversed. The derivative goes before the statement,
+        // since it needs the values from before the assignment.
+        derivedStatements2 := currStatement :: List.append_reverse(makeDerivedAssignment(type_, derivedLHS, derivedRHS, source, false), inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
       then (derivedStatements2, functions);
 
@@ -856,8 +858,8 @@ algorithm
         exptl := List.zip(dexpLst, expLstRHS);
         optDerivedStatements1 := List.map2(exptl, makeAssignmentfromTuple, source, inFunctionTree);
         derivedStatements1 := list(Util.getOption(s) for s guard isSome(s) in optDerivedStatements1);
-        derivedStatements2 := listAppend(derivedStatements1, {currStatement});
-        derivedStatements1 := listAppend(derivedStatements2, inStmtsAccum);
+        derivedStatements1 := orderSimultaneousAssignments(derivedStatements1);
+        derivedStatements1 := currStatement :: List.append_reverse(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions, maxIter);
       then (derivedStatements2, functions);
 
@@ -867,8 +869,7 @@ algorithm
         (derivedRHS as DAE.CALL(attr=DAE.CALL_ATTR(ty=type_)), functions) := differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         optDerivedStatements1 := {SOME(DAE.STMT_TUPLE_ASSIGN(type_, dexpLst, derivedRHS, source))};
         derivedStatements1 := list(Util.getOption(s) for s guard isSome(s) in optDerivedStatements1);
-        derivedStatements2 := listAppend(derivedStatements1, {currStatement});
-        derivedStatements1 := listAppend(derivedStatements2, inStmtsAccum);
+        derivedStatements1 := currStatement :: List.append_reverse(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions, maxIter);
       then (derivedStatements2, functions);
 
@@ -877,8 +878,7 @@ algorithm
         (derivedLHS, functions) := differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         (derivedRHS, functions) := differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         (derivedRHS,_) := ExpressionSimplify.simplify(derivedRHS);
-        derivedStatements1 := listAppend(makeDerivedAssignment(type_, derivedLHS, derivedRHS, source, true), {currStatement});
-        derivedStatements2 := listAppend(derivedStatements1, inStmtsAccum);
+        derivedStatements2 := currStatement :: List.append_reverse(makeDerivedAssignment(type_, derivedLHS, derivedRHS, source, true), inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
       then (derivedStatements2, functions);
 
@@ -992,6 +992,45 @@ algorithm
       then fail();
   end matchcontinue;
 end differentiateStatements;
+
+protected function orderSimultaneousAssignments
+  "Orders assignments that are simultaneous, such as the parts of a tuple
+   assignment, so that none reads a variable that an earlier one assigns.
+   Fails if there is no such order."
+  input list<DAE.Statement> inStmts;
+  output list<DAE.Statement> outStmts = {};
+protected
+  list<DAE.Statement> rest = inStmts;
+  Option<DAE.Statement> first;
+algorithm
+  while not listEmpty(rest) loop
+    (rest, first) := List.deleteMemberOnTrue(rest, rest, isUnreadAssignment);
+    outStmts := Util.getOption(first) :: outStmts;
+  end while;
+  outStmts := listReverseInPlace(outStmts);
+end orderSimultaneousAssignments;
+
+protected function isUnreadAssignment
+  "Returns true if no other statement in stmts reads what stmt assigns."
+  input list<DAE.Statement> stmts;
+  input DAE.Statement stmt;
+  output Boolean unread = true;
+protected
+  DAE.Exp lhs, rhs;
+  list<DAE.ComponentRef> crefs;
+algorithm
+  DAE.STMT_ASSIGN(exp1 = lhs) := stmt;
+  crefs := Expression.extractCrefsFromExp(lhs);
+  for other in stmts loop
+    if not referenceEq(other, stmt) then
+      DAE.STMT_ASSIGN(exp = rhs) := other;
+      if List.any(crefs, function expHasRelatedCref(exp = rhs)) then
+        unread := false;
+        return;
+      end if;
+    end if;
+  end for;
+end isUnreadAssignment;
 
 protected function isDiscreteAssignStatment
   input DAE.Statement inStmt;
