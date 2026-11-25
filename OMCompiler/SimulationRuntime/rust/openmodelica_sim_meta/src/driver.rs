@@ -5164,7 +5164,12 @@ impl Samples {
     }
 
     /// Recompute the next time a relation on `time` switches, as seen from `t`.
+    /// A switch at `t` itself, where the integrator stopped on its stop time, is
+    /// due until an event at `t` handles it, as C's `nextSampleEvent` is.
     pub fn refresh(&mut self, e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
+        if self.relation_next == t {
+            return Ok(());
+        }
         let saved = read_f64(e, sim_data + TIME_OFF)?;
         write_f64(e, sim_data + TIME_OFF, t)?;
         let called = e.call1_if_present_raw(MODEL_FN_NEXT_TIME_EVENT, sim_data);
@@ -5188,6 +5193,14 @@ impl Samples {
             .map(move |k| (k, self.start[k], self.interval[k]))
     }
 
+    /// C's `updateNextSampleEvent` at the end of `handleEvents`: the event at `t`
+    /// updated the relations, so a switch at `t` is no longer due.
+    pub fn event_handled(&mut self, t: f64) {
+        if self.relation_next <= t {
+            self.relation_next = f64::INFINITY;
+        }
+    }
+
     /// Whether the next time event comes from a relation on `time` alone.
     pub fn next_is_relation(&self) -> bool {
         self.relation_next.is_finite() && self.next.iter().all(|&n| self.relation_next < n)
@@ -5206,6 +5219,7 @@ impl Samples {
     /// the current simulation time first.
     pub fn fire(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, t: f64) -> Result<()> {
         rethrow_store::note_event();
+        self.event_handled(t);
         let mut fired = vec![false; self.next.len()];
         for k in 0..self.next.len() {
             if self.next[k] <= t + SAMPLE_EPS {
@@ -9207,16 +9221,20 @@ impl SolverCore {
     fn event_update_here(
         &mut self,
         e: &mut (dyn SimEngine + 'static),
+        samples: &mut Samples,
         sim_data: u32,
         layout: &SimLayout,
         ctx: *mut ResCtx,
         time: f64,
     ) -> Result<EventUpdate> {
-        if !self.dae {
-            return event_update(e, sim_data, layout, None, time);
-        }
-        let mut dae = |e: &mut dyn SimEngine| self.dae_restart(e, ctx);
-        event_update_dae(e, sim_data, layout, None, time, Some(&mut dae))
+        let up = if !self.dae {
+            event_update(e, sim_data, layout, None, time)?
+        } else {
+            let mut dae = |e: &mut dyn SimEngine| self.dae_restart(e, ctx);
+            event_update_dae(e, sim_data, layout, None, time, Some(&mut dae))?
+        };
+        samples.event_handled(time);
+        Ok(up)
     }
 
     /// The same for a time event, which C also ends in `updateDiscreteSystem`.
@@ -9753,6 +9771,7 @@ impl SolverCore {
         e: &mut (dyn SimEngine + 'static),
         model: &SimModel,
         ctx: &mut ResCtx,
+        samp: &mut Samples,
         sync: &mut crate::sync::Sync,
         mut rows: Option<&mut Vec<f64>>,
         flips: &[usize],
@@ -9769,7 +9788,7 @@ impl SolverCore {
         {
             capture_pre(e, r, sim_data, layout, t)?;
         }
-        self.event_update_here(e, sim_data, layout, ctx as *mut ResCtx, t)?;
+        self.event_update_here(e, samp, sim_data, layout, ctx as *mut ResCtx, t)?;
         save_zero_crossings_after_event(e, sim_data, layout)?;
         if let Some(r) = rows.as_deref_mut() {
             if emit_post_event_row(model, t) {
@@ -9977,7 +9996,7 @@ impl SolverCore {
                             log_state_event(self.t, &flips, model);
                             return Ok(Step::Event { time: self.t });
                         }
-                        if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips)? {
+                        if self.handle_zc_flips(e, model, ctx, samp, sync, rows.as_deref_mut(), &flips)? {
                             return Ok(Step::Terminated);
                         }
                     }
@@ -10051,7 +10070,7 @@ impl SolverCore {
                         write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
                     }
-                    self.event_update_here(e, sim_data, layout, ctx, troot)?;
+                    self.event_update_here(e, samp, sim_data, layout, ctx, troot)?;
                     save_zero_crossings_after_event(e, sim_data, layout)?;
                     if let Some(r) = rows.as_deref_mut() {
                         if emit_post_event_row(model, troot) {
@@ -10201,7 +10220,7 @@ impl SolverCore {
                         if defers(self.t) {
                             return Ok(Step::Event { time: self.t });
                         }
-                        if self.handle_zc_flips(e, model, ctx, sync, None, &flips)? {
+                        if self.handle_zc_flips(e, model, ctx, samp, sync, None, &flips)? {
                             return Ok(Step::Terminated);
                         }
                     }
@@ -11310,17 +11329,19 @@ impl Driver for EventsDriver {
             }
             // Row's inner loop done; the rest is bounded — next yield is a clean boundary.
             self.mid_row = false;
-            self.reached = if self.grid_covered { self.core.t } else { tout };
+            // C's `currentTime`: CVODE and IDA can stop on their stop time after `tout`.
+            let t_row = tout.max(self.core.t);
+            self.reached = if self.grid_covered { self.core.t } else { t_row };
             if !self.grid_covered {
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
                 // The solver's own event check already ran this point's
                 // `updateContinuousSystem`, stores included.
-                let accepted = ctx.accepted_at.replace(f64::NAN) == tout && self.core.t == tout;
+                let accepted = ctx.accepted_at.replace(f64::NAN) == t_row && self.core.t == t_row;
                 let emitted = if accepted {
-                    emit_row_evaluated(e, &mut self.rows, sim_data, layout, tout, model.stop_time)
+                    emit_row_evaluated(e, &mut self.rows, sim_data, layout, t_row, model.stop_time)
                 } else {
-                    emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)
+                    emit_row(e, &mut self.rows, sim_data, layout, t_row, model.stop_time)
                 };
                 close_assert_window(e, sim_data).and(emitted)?;
                 // The row's evaluation is this point's `updateContinuousSystem`.
@@ -11329,9 +11350,15 @@ impl Driver for EventsDriver {
                 }
                 let flips = save_zero_crossings(e, sim_data, layout)?;
                 if !flips.is_empty()
-                    && self
-                        .core
-                        .handle_zc_flips(e, model, &mut ctx, &mut self.sync, Some(&mut self.rows), &flips)?
+                    && self.core.handle_zc_flips(
+                        e,
+                        model,
+                        &mut ctx,
+                        &mut self.samp,
+                        &mut self.sync,
+                        Some(&mut self.rows),
+                        &flips,
+                    )?
                 {
                     break Advance::Terminated;
                 }

@@ -1,0 +1,54 @@
+// name:     TimeEventPastOutputPoint
+// keywords: EventHandling, time events, cvode, ida
+// status:   correct
+// teardown_command: rm -rf timeEventPastGrid* output.log
+//
+// The time event of `time > 150` is at nextafter(150), just after the output
+// point 150. CVODE and IDA stop on it, past the output point, and the event
+// must fire there (#18410).
+
+loadString("
+model timeEventPastGrid
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = if time > 150 then 1 else 0;
+end timeEventPastGrid;
+"); getErrorString();
+
+simulate(timeEventPastGrid, stopTime = 250, numberOfIntervals = 250, tolerance = 1e-5, method = "cvode", fileNamePrefix = "timeEventPastGrid_cvode", simflags = "-lv=LOG_EVENTS"); getErrorString();
+val(x, 250, "timeEventPastGrid_cvode_res.mat");
+simulate(timeEventPastGrid, stopTime = 250, numberOfIntervals = 250, tolerance = 1e-5, method = "ida", fileNamePrefix = "timeEventPastGrid_ida", simflags = "-lv=LOG_EVENTS"); getErrorString();
+val(x, 250, "timeEventPastGrid_ida_res.mat");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "timeEventPastGrid_cvode_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-5, method = 'cvode', fileNamePrefix = 'timeEventPastGrid_cvode', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = time > 150.0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre: false) false = time > 150.0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | time event at time=150
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 100.0
+// record SimulationResult
+//     resultFile = "timeEventPastGrid_ida_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-5, method = 'ida', fileNamePrefix = 'timeEventPastGrid_ida', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = time > 150.0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre: false) false = time > 150.0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | time event at time=150
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 99.99999999999999
+// endResult
