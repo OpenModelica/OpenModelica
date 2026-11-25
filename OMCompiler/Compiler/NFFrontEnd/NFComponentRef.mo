@@ -1253,13 +1253,14 @@ public
      appending them at the end to preserve subscript order.
      E.g. a[i] for Real[10,2] becomes a[i,:]."
     input output ComponentRef cref;
+    input Boolean includeScope = true;
   algorithm
     () := match cref
       local
         list<Dimension> dims;
         Integer dim_count, sub_count;
 
-      case CREF()
+      case CREF() guard includeScope or cref.origin == Origin.CREF
         algorithm
           dims := Type.arrayDims(cref.ty);
           dim_count := listLength(dims);
@@ -1269,7 +1270,7 @@ public
             cref.subscripts := listAppend(cref.subscripts, List.fill(Subscript.WHOLE(), dim_count - sub_count));
           end if;
 
-          cref.restCref := fillSubscripts(cref.restCref);
+          cref.restCref := fillSubscripts(cref.restCref, includeScope);
         then
           ();
 

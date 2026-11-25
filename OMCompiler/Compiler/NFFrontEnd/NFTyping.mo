@@ -2188,9 +2188,10 @@ algorithm
 
   (cref, subsVariability) := typeCref2(cref, context, info);
 
-  // Fill all implicit array subscripts with explicit `:`
+  // Fill all implicit array subscripts with explicit `:`, the scope refers to
+  // the current instance of a component array
   if ComponentRef.hasImplicitTrailingIndex(cref) then
-    cref := ComponentRef.fillSubscripts(cref);
+    cref := ComponentRef.fillSubscripts(cref, includeScope = false);
   end if;
 
   ty := ComponentRef.getSubscriptedType(cref);
