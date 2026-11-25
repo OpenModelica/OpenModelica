@@ -13,6 +13,7 @@ AssertTest6.mos \
 AssertTest7.mos \
 AssertTest8.mos \
 AssertFunction.mos \
+AssertSolverFailure.mos \
 AssertValues.mos \
 testAssertSolve.mos \
 TestAssert.mos \
