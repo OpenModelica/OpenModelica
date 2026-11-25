@@ -30,7 +30,8 @@ end SparseSystems;
 "); getErrorString();
 setCommandLineOptions("--tearingMethod=minimalTearing"); getErrorString();
 
-// There is an issue with CVODE in this test: the result is not accurate enough.
+// There is an issue with CVODE in this test: CVODE restarts after the event of
+// the FMU wrapper at t = 0+ and takes other steps, see #18401.
 simulate(SparseSystems, method="dassl"); getErrorString();
 x0 := val(x, 1.0);
 y0 := val(y1, 1.0);
