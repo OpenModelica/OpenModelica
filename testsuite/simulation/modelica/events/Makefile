@@ -37,6 +37,7 @@ noEventEmit.mos \
 noEventIfType.mos \
 noEventNotRespected.mos \
 Reinit.mos \
+RelationEqualOperands.mos \
 sample1.mos \
 sample2.mos \
 SampleTimeDrift.mos \
