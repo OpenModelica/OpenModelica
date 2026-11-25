@@ -10,30 +10,28 @@
 loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadModel(ThermoSysPro, {"4.2.0"}); getErrorString();
 
-// There is an issue with CVODE in this test: an assert in a nonlinear system
-// fails at time 500 in the Rust runtime.
-simulate(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump, stopTime=999, method="dassl");  getErrorString();
+// The pump starts from zero flow at t = 500. Depending on the sign of the noise
+// flow, the nonlinear solver can need a retry, which prints a warning.
+echo(false);
+res := simulate(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump, stopTime=999);
+messages := res.messages;
+echo(true);
+regexBool(messages, "The simulation finished successfully"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults(
-"ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump_res.mat",
-getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump.mat",
-"ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump_diff.csv",
-0.01, 0.0001,
-{"Bache1.z",
- "Bache1.h"});
+  "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump_res.mat",
+  getEnvironmentVar("REFERENCEFILES") + "/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump.mat",
+  "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump_diff.csv",
+  0.01, 0.0001,
+  {"Bache1.z", "Bache1.h"});
 
 // Result:
 // true
 // ""
 // true
 // ""
-// record SimulationResult
-//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 999.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// true
+// true
 // "[ThermoSysPro 4.2.0/WaterSteam/Machines/CentrifugalPump.mo:64:3-65:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/Machines/CentrifugalPump.mo:66:3-67:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/Machines/CentrifugalPump.mo:70:3-71:99:writable] Warning: Connector M is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
