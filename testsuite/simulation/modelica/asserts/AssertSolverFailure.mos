@@ -1,0 +1,64 @@
+// name:     AssertSolverFailure
+// keywords: assert cvode ida
+// status:   correct
+// teardown_command: rm -rf AssertSolverFailure_* AssertSolverFailure AssertSolverFailure.exe AssertSolverFailure.c AssertSolverFailure.libs AssertSolverFailure.log AssertSolverFailure.makefile AssertSolverFailure.o
+//
+// An assert makes CVODE and IDA fail. The last evaluation at the failure
+// time uses the last accepted states, which do not violate the assert
+// (#18408). The result file has a last row at the failure time.
+
+loadString("
+model AssertSolverFailure
+  function f
+    input Real x;
+    output Real y;
+  algorithm
+    assert(x >= 0.5, \"x out of limit\");
+    y := 1;
+  end f;
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -f(x);
+end AssertSolverFailure;
+"); getErrorString();
+
+simulate(AssertSolverFailure, method = "cvode"); getErrorString();
+readSimulationResultSize("AssertSolverFailure_res.mat"); getErrorString();
+val(x, 0.4999, "AssertSolverFailure_res.mat"); getErrorString();
+
+simulate(AssertSolverFailure, method = "ida"); getErrorString();
+readSimulationResultSize("AssertSolverFailure_res.mat"); getErrorString();
+val(x, 0.4999, "AssertSolverFailure_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'cvode', fileNamePrefix = 'AssertSolverFailure', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: AssertSolverFailure
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_STDOUT        | info    | ##CVODE## -4 error occurred at time = 0.499999995531194
+// LOG_STDOUT        | info    | model terminate | Integrator failed. | Simulation terminated at time 0.5
+// "
+// end SimulationResult;
+// ""
+// 251
+// ""
+// 0.5000999999999995
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'AssertSolverFailure', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: AssertSolverFailure
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_STDOUT        | info    | ##IDA## -9 error occurred at time = 0.5
+// LOG_STDOUT        | info    | model terminate | Integrator failed. | Simulation terminated at time 0.5
+// "
+// end SimulationResult;
+// ""
+// 251
+// ""
+// 0.5001000000000001
+// ""
+// endResult

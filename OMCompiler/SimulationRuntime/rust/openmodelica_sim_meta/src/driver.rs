@@ -5993,7 +5993,10 @@ pub fn drive(
                             let mut last = Vec::new();
                             open_assert_window();
                             let updated = emit_row(e, &mut last, sim_data, layout, t, stop);
-                            let _ = close_assert_window(e, sim_data).and(updated);
+                            // C's `fmtEmitStep`, which a throw in the update skips.
+                            if close_assert_window(e, sim_data).and(updated).is_ok() {
+                                commit_rows(&mut last);
+                            }
                             omclog::info!(
                                 omclog::STDOUT,
                                 false,
@@ -11886,7 +11889,14 @@ impl Driver for CvodeDriver {
                     self.retry.close(e)?;
                     continue;
                 }
-                crate::sundials::Stop::Failed(flag) => return Err(sundials_step_failed("CVODE", flag, self.t)),
+                crate::sundials::Stop::Failed(flag) => {
+                    // C integrates the model's own state array, so the last accepted
+                    // point is what `drive`'s tail evaluates.
+                    for (i, v) in cv.y().iter().enumerate() {
+                        write_f64(e, states_base + (i as u32) * 8, *v)?;
+                    }
+                    return Err(sundials_step_failed("CVODE", flag, self.t));
+                }
             }
             self.work_retries = 0;
             for (i, v) in cv.y().iter().enumerate() {
@@ -12867,7 +12877,14 @@ impl Driver for IdaDriver {
                     self.retry.close(e)?;
                     continue;
                 }
-                crate::sundials::Stop::Failed(flag) => return Err(sundials_step_failed("IDA", flag, self.t)),
+                crate::sundials::Stop::Failed(flag) => {
+                    // C integrates the model's own state array, so the last accepted
+                    // point is what `drive`'s tail evaluates.
+                    for (i, v) in ida.y().iter().enumerate() {
+                        write_f64(e, states_base + (i as u32) * 8, *v)?;
+                    }
+                    return Err(sundials_step_failed("IDA", flag, self.t));
+                }
             }
             self.work_retries = 0;
             // One-step mode: the step that just ended is an output point of its own
