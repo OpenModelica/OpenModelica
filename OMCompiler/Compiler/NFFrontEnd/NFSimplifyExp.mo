@@ -517,7 +517,7 @@ algorithm
       Purity purity;
 
     case Expression.CALL(call = arr_call as Call.TYPED_ARRAY_CONSTRUCTOR())
-      guard Type.dimensionCount(arr_call.ty) == 1
+      guard Type.dimensionCount(arr_call.ty) == listLength(arr_call.iters)
       algorithm
         Call.TYPED_CALL(fn = fn, ty = ty, var = var, purity = purity) := call;
       then
