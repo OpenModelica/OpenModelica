@@ -38,6 +38,7 @@ crefIndex.mos \
 DimConvert.mos \
 ConstantSubscriptOutOfRange.mos \
 DynamicSubscriptAliasArray.mos \
+ElementWiseSizeCheck.mos \
 FunctionArraySlices.mos \
 gc.mos \
 gc2980.mos \

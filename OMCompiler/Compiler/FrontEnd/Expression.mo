@@ -10023,6 +10023,27 @@ algorithm
   end match;
 end dimensionsKnownAndEqual;
 
+public function sameArraySize
+  "Returns true if the arrays exp1 and exp2 are known to have the same size: the
+   same component reference, or types with the same dimensions."
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  output Boolean same;
+algorithm
+  same := (isCref(exp1) and ExpressionBasics.expEqual(exp1, exp2)) or
+          List.isEqualOnTrue(allArrayDimensions(typeof(exp1)), allArrayDimensions(typeof(exp2)), dimensionsKnownAndEqual);
+end sameArraySize;
+
+protected function allArrayDimensions
+  input DAE.Type ty;
+  output DAE.Dimensions dims;
+algorithm
+  dims := match ty
+    case DAE.T_ARRAY() then listAppend(ty.dims, allArrayDimensions(ty.ty));
+    else {};
+  end match;
+end allArrayDimensions;
+
 public function dimensionKnown
   "Checks whether a dimension is known or not."
   input DAE.Dimension dim;

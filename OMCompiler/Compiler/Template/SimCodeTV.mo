@@ -4448,6 +4448,12 @@ package Expression
     output DAE.Type outType;
   end typeof;
 
+  function sameArraySize
+    input DAE.Exp exp1;
+    input DAE.Exp exp2;
+    output Boolean same;
+  end sameArraySize;
+
   function isAtomic
     input DAE.Exp inExp;
     output Boolean outBoolean;
