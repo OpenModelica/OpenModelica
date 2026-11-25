@@ -43,6 +43,7 @@ SampleTimeDrift.mos \
 ServerWithQueue.mos \
 StrictTimeEvents.mos \
 TestNoEventsFlags.mos \
+TimeEventPastOutputPoint.mos \
 whenInAlgorithm.mos \
 whenString.mos \
 whenTest1.mos \
