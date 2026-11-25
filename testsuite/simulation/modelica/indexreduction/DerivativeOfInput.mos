@@ -42,8 +42,8 @@ buildModelFMU(DerivativeOfInput.InverseWithOutput, version = "2.0", fmuType = "c
 // false
 // "Warning: IndexReduction.replaceDummyDerivativesExp failed for der(u_top, 2)!
 // Error: The model requires derivatives of some inputs as listed below:
-// der(u_top)
 // der(u_top, 2)
+// der(u_top)
 // Error: post-optimization module inputDerivativesUsed (simulation) failed.
 // "
 // false
@@ -63,7 +63,6 @@ buildModelFMU(DerivativeOfInput.InverseWithOutput, version = "2.0", fmuType = "c
 // Error: The model requires derivatives of some inputs as listed below:
 // der(u_top)
 // der(u_top, 2)
-// der(u_top)
 // Error: post-optimization module inputDerivativesUsed (simulation) failed.
 // "
 // endResult

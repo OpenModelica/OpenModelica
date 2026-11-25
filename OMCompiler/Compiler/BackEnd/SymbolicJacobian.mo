@@ -480,6 +480,7 @@ protected
 algorithm
   (_, explst) := BackendDAEUtil.traverseBackendDAEExpsEqns(isyst.orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
   if not listEmpty(explst) then
+    explst := List.uniqueOnTrue(listReverse(explst), ExpressionBasics.expEqual);
     Error.addMessage(Error.DERIVATIVE_INPUT, {stringDelimitList(List.map(explst, ExpressionBasics.printExpStr), "\n")});
     fail();
   end if;
@@ -624,13 +625,8 @@ algorithm
         (var,_) := BackendVariable.getVarSingle(cr, vars);
         true := BackendVariable.isVarOnTopLevelAndInput(var);
       then (e,false,(vars,e::explst));
-    // der(u, n) is the n-th derivative, created by repeated differentiation
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr), _}),(vars,explst))
-      algorithm
-        (var,_) := BackendVariable.getVarSingle(cr, vars);
-        true := BackendVariable.isVarOnTopLevelAndInput(var);
-      then (e,false,(vars,e::explst));
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,explst))
+    // der(u) and der(u, n), the n-th derivative from repeated differentiation
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=DAE.CREF(componentRef=cr)::_),(vars,explst))
       algorithm
         (var,_) := BackendVariable.getVarSingle(cr, vars);
         true := BackendVariable.isVarOnTopLevelAndInput(var);
