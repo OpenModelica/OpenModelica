@@ -394,12 +394,11 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
     setContext(data, time, CONTEXT_EVENTS);
   }
 
-  /* TODO: re-scale cvodeData->y to evaluate the equations */
-
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_EVENTSEARCH;
 
   data->localData[0]->timeValue = time;
+  memcpy(data->localData[0]->realVars, N_VGetArrayPointer(y), cvodeData->N * sizeof(double));
 
   /* Read input vars (exclude from timer) */
   if (measure_time_flag)
@@ -415,8 +414,6 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
     rt_tick(SIM_TIMER_SOLVER);
 
   threadData->currentErrorStage = saveJumpState;
-
-  /* TODO: scale data again */
 
   if (data->simulationInfo->currentContext == CONTEXT_EVENTS)
   {
@@ -667,8 +664,10 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
 
   /* Initialize states */
   cvodeData->N = (long int)data->modelData->nStates;
-  cvodeData->y = N_VMake_Serial(cvodeData->N, (sunrealtype *)data->localData[0]->realVars, cvodeData->sunctx);
-  assertStreamPrint(threadData, NULL != cvodeData->y, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
+  /* CVODE uses yout as work space, so it must not be realVars. */
+  cvodeData->y = N_VNew_Serial(cvodeData->N, cvodeData->sunctx);
+  assertStreamPrint(threadData, NULL != cvodeData->y, "SUNDIALS_ERROR: N_VNew_Serial failed - returned NULL pointer.");
+  memcpy(N_VGetArrayPointer(cvodeData->y), data->localData[0]->realVars, cvodeData->N * sizeof(double));
 
   /* Allocate CVODE memory block */
   cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm, cvodeData->sunctx);
@@ -851,6 +850,7 @@ int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   /* Calculate matrix for residual scaling */
   /* TODO: Add scaling */
 
+  memcpy(N_VGetArrayPointer(cvodeData->y), data->localData[0]->realVars, cvodeData->N * sizeof(double));
   flag = CVodeReInit(cvodeData->cvode_mem,
                      solverInfo->currentTime,
                      cvodeData->y);
@@ -1045,9 +1045,6 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   simulationData = data->localData[0];
   simulationInfo = data->simulationInfo;
 
-  /* Set work array */
-  N_VSetArrayPointer(data->localData[0]->realVars, cvodeData->y);
-
   /* Reinitialize after event or at first call to cvode_solver_step() */
   if (solverInfo->didEventStep || !cvodeData->isInitialized)
   {
@@ -1134,6 +1131,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
                  cvodeData->y,
                  &(solverInfo->currentTime),
                  CV_NORMAL);
+    memcpy(simulationData->realVars, N_VGetArrayPointer(cvodeData->y), cvodeData->N * sizeof(double));
 
     /* Error handling */
     if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tout)
