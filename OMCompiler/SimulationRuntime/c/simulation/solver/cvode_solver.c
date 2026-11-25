@@ -106,8 +106,6 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
 
   infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### eval cvodeRightHandSideODEFunction ###");
 
-  /* TODO: Add scaling of y and ydot */
-
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
     setContext(data, time, CONTEXT_ODE);
@@ -173,8 +171,6 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
     }
     messageClose(OMC_LOG_SOLVER_V);
   }
-
-  /* TODO: Scale result */
 
   /* catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
@@ -832,7 +828,6 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
 /**
  * @brief Reinitialize CVODE solver
  * Provide required problem specifications and reinitialize CVODE.
- * If scaling is used y will be scaled accordingly.
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
@@ -847,17 +842,11 @@ int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "Re-initialized CVODE Solver");
 
-  /* Calculate matrix for residual scaling */
-  /* TODO: Add scaling */
-
   memcpy(N_VGetArrayPointer(cvodeData->y), data->localData[0]->realVars, cvodeData->N * sizeof(double));
   flag = CVodeReInit(cvodeData->cvode_mem,
                      solverInfo->currentTime,
                      cvodeData->y);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeReInit");
-
-  /* Calculate matrix for residual scaling */
-  /* TODO: Add rescaling */
 
   return 0;
 }
@@ -1122,8 +1111,6 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 #endif
     if (measure_time_flag)
       rt_tick(SIM_TIMER_SOLVER);
-
-    /* TODO: Add scaling */
 
     /* Call CVODE integrator */
     flag = CVode(cvodeData->cvode_mem,
