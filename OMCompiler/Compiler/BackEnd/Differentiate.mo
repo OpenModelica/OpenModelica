@@ -2532,20 +2532,20 @@ algorithm
       then
         (de, functions);
 
-    case (_, _)
+    // A call that cannot be differentiated has a zero derivative only if its
+    // result is discrete or none of its arguments has a derivative.
+    case (DAE.CALL(expLst = expl), _)
       algorithm
-        /* TODO: Check replace this rule by other, since it's not correct
-                 in case of
-                 - failure(BackendDAE.DIFFERENTIATION_FUNCTION() = inDiffType);
-                 - failure(BackendDAE.GENERIC_GRADIENT() = inDiffType);
-                 but anyway fornow it catches some testsuite cases.
-        */
-        false := expHasRelatedCref(inExp, inDiffwrtCref)
-        "If the expression does not contain the variable,
-         the derivative is zero. For efficiency reasons this rule
-         is last. Otherwise expressions is always traversed twice
-         when differentiating.";
         tp := Expression.typeof(inExp);
+        if not isDiscreteValued(tp) then
+          for arg in expl loop
+            if not isDiscreteValued(Expression.typeof(arg)) then
+              (de, _) := differentiateExp(arg, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+              (de, _) := ExpressionSimplify.simplify(de);
+              true := isZeroDerivative(de);
+            end if;
+          end for;
+        end if;
         zero := Expression.createZeroExpression(tp);
       then (zero, inFunctionTree);
 
@@ -2556,6 +2556,11 @@ algorithm
       then fail();
   end matchcontinue;
 end differentiateFunctionCall;
+
+protected function isDiscreteValued
+  input DAE.Type ty;
+  output Boolean isDiscrete = Types.isDiscreteType(Types.arrayElementType(ty));
+end isDiscreteValued;
 
 protected function differentiateFunctionCallPartial"
 Author: Frenkel TUD, wbraun
@@ -2655,6 +2660,8 @@ algorithm
 
         // get algorithm of the function
         SOME(func) := AvlTreePathFunction.get(inFunctionTree,path);
+        // an external function has no algorithm to differentiate
+        false := DAEUtil.isExtFunction(func);
 
         (functions, inputVarsDer, _, outputVarsDer, _, blst) := getFunctionInOutVars(func, inFunctionTree, inDiffwrtCref, maxIter);
         (expl1, _) := List.splitOnBoolList(expl, blst);

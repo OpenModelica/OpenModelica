@@ -1759,10 +1759,11 @@ public function createFMIModelDerivatives
  partial derivatives for FMI, which are basically the jacobian matrices.
  author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
+  input AvlTreePathFunction.Tree inAllFunctions "also the functions that no equation calls, e.g. of derivative annotations";
   output BackendDAE.SymbolicJacobians outJacobianMatrices = {};
   output AvlTreePathFunction.Tree outFunctionTree;
 protected
-  BackendDAE.BackendDAE backendDAE,emptyBDAE;
+  BackendDAE.BackendDAE backendDAE,emptyBDAE,jacDAE;
   BackendDAE.EqSystem eqSyst;
   Option<BackendDAE.SymbolicJacobian> outJacobian;
 
@@ -1798,6 +1799,7 @@ algorithm
 try
   // for now perform on collapsed system
   backendDAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+  backendDAE := BackendDAEUtil.setFunctionTree(backendDAE, AvlTreePathFunction.join(inAllFunctions, inBackendDAE.shared.functionTree));
   backendDAE := BackendDAEOptimize.collapseIndependentBlocks(backendDAE);
   backendDAE := BackendDAEUtil.transformBackendDAE(backendDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
 
@@ -1852,7 +1854,8 @@ try
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
     outJacobianMatrices := (outJacobian, sparsePattern, sparseColoring, nonlinearPattern)::outJacobianMatrices;
-    outFunctionTree := AvlTreePathFunction.join(inBackendDAE.shared.functionTree, outFunctionTree);
+    SOME((jacDAE, _, _, _, _, _)) := outJacobian;
+    outFunctionTree := BackendDAEOptimize.removeUnusedFunctions(jacDAE.eqs, jacDAE.shared, {}, outFunctionTree, inBackendDAE.shared.functionTree);
   end if;
 else
   Error.addInternalError("function createFMIModelDerivatives failed", sourceInfo());

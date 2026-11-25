@@ -50,6 +50,7 @@ Issue16192.mos \
 Issue16198.mos \
 LocalVariableInit.mos \
 ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mos \
+NonexistentFunctionDerivative.mos \
 SimplePeriodicSampler.mos \
 SumSeriesWhile.mos \
 TestCrossFunction.mos \
