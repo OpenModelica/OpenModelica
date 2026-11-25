@@ -9,7 +9,8 @@
 // Drmodelica: 12.1 Object Oriented Component-based (p. 386)
 // 
 loadFile("TankPI.mo");
-// There is an issue with CVODE in this test: tank.h differs in the Rust runtime.
+// There is an issue with CVODE in this test: the Rust runtime misses the time
+// event at t = 150, see #18410.
 simulate(TankPI,stopTime=250,method="dassl",numberOfIntervals=250, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 
 
