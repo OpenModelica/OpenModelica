@@ -28,6 +28,7 @@
 /*! \file nonlinearSystem.c
  */
 
+#include <float.h>
 #include <math.h>
 #include <string.h>
 
@@ -35,6 +36,7 @@
 #include "../../util/simulation_options.h"
 #include "../../util/omc_error.h"
 #include "../../util/omc_file.h"
+#include "epsilon.h"
 #include "nonlinearSystem.h"
 #include "nonlinearValuesList.h"
 #include "kinsolSolver.h"
@@ -440,6 +442,8 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   nonlinsys->oldValueList = allocValueList(1, nonlinsys->size);
 
   nonlinsys->lastTimeSolved = 0.0;
+  nonlinsys->latestSolution = (double*) calloc(size, sizeof(double));
+  nonlinsys->latestTimeSolved = -DBL_MAX;
 
   /* Allocate nomianl, min and max */
   nonlinsys->positiveNominal = (double*) malloc(size*sizeof(double));
@@ -675,6 +679,7 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
   free(nonlinsys->nlsxExtrapolation);
   free(nonlinsys->nlsxOld);
   free(nonlinsys->resValues);
+  free(nonlinsys->latestSolution);
   free(nonlinsys->positiveNominal);
   free(nonlinsys->nominalSign);
   free(nonlinsys->min);
@@ -918,6 +923,14 @@ int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, EVAL_CON
   /* Variables */
   VALUE* tmpNode;
 
+  if ((nonlinsys->solved == NLS_SOLVED || nonlinsys->solved == NLS_SOLVED_LESS_ACCURACY)
+      && (context == CONTEXT_ODE || context == CONTEXT_ALGEBRAIC || context == CONTEXT_EVENTS)
+      && time >= nonlinsys->latestTimeSolved)
+  {
+    memcpy(nonlinsys->latestSolution, nonlinsys->nlsx, nonlinsys->size*sizeof(double));
+    nonlinsys->latestTimeSolved = time;
+  }
+
   /* write solution to oldValue list for extrapolation */
   if (nonlinsys->solved == NLS_SOLVED)
   {
@@ -946,6 +959,12 @@ int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, EVAL_CON
     }
   }
   return 0;
+}
+
+static modelica_boolean solvedLater(NONLINEAR_SYSTEM_DATA *nonlinsys, double time)
+{
+  double later = nonlinsys->latestTimeSolved;
+  return later - time > MINIMAL_STEP_SIZE * fmax(1.0, fmax(fabs(later), fabs(time)));
 }
 
 /*! \fn updateInnerEquation
@@ -1205,8 +1224,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 1, "Nonlinear system " OMC_INT_FORMAT " dump OMC_LOG_NLS_EXTRAPOLATE", nonlinsys->equationIndex);
   /* grab the initial guess */
-  /* if last solving is too long ago use just old values  */
-  if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize || casualTearingSet)
+  /* if last solving is too long ago use just old values; after a solve at a
+   * later time (a rejected step) use the stored solutions */
+  if (data->localData[0]->timeValue - nonlinsys->lastTimeSolved < 5*data->simulationInfo->stepSize || casualTearingSet)
   {
     getInitialGuess(nonlinsys, data->localData[0]->timeValue);
   }
@@ -1285,6 +1305,19 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
       /* SOLVE! */
       nonlinsys->solved = solveNLS(data, threadData, nonlinsys);
+
+      /* The branch of the solution can end at this time. Try again from the
+       * solution of a later time, e.g. of a rejected step or of the step that
+       * went past an event. */
+      if (nonlinsys->solved == NLS_FAILED && !data->simulationInfo->initial
+          && solvedLater(nonlinsys, data->localData[0]->timeValue))
+      {
+        infoStreamPrint(OMC_LOG_NLS, 0, "Try again from the solution stored for a later time.");
+        memcpy(nonlinsys->nlsx, nonlinsys->latestSolution, nonlinsys->size*(sizeof(double)));
+        memcpy(nonlinsys->nlsxOld, nonlinsys->latestSolution, nonlinsys->size*(sizeof(double)));
+        memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->latestSolution, nonlinsys->size*(sizeof(double)));
+        nonlinsys->solved = solveNLS(data, threadData, nonlinsys);
+      }
     }
   }
 

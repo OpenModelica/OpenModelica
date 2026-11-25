@@ -355,10 +355,14 @@ pub trait NlsBackend {
 /// `getInitialGuess` extrapolates from, `solveHomotopy`'s residual scaling, and
 /// `lastTimeSolved`.
 pub struct NlsPersistent<'a> {
-    pub history: &'a mut dyn History,
+    pub history: &'a mut History,
     pub res_scaling: &'a mut [f64],
     pub extrapolation: &'a mut [f64],
     pub last_solved: &'a mut f64,
+    /// C's `latestTimeSolved` and `latestSolution`: the solution of the solve at the
+    /// latest time, which a failed solve at an earlier time tries again from.
+    pub latest_time: &'a mut f64,
+    pub latest: &'a mut [f64],
     /// C's `hybrdData->useXScaling`. `solveHybrd` restores `factor` and `mode` on
     /// exit but not this, so the rung that turns scaling off leaves every later
     /// solve of the system unscaled.
@@ -2616,10 +2620,6 @@ fn hybrj_scaled(
     nls_accept(fvec)
 }
 
-/// Stored solutions per system; `nls_hist_bytes` in the codegen must agree. C's list
-/// is unbounded and reaches 40+, but the entry `getValues` picks is never past 5.
-pub const HIST_DEPTH: usize = 10;
-
 /// C's `MINIMAL_STEP_SIZE` (`epsilon.h`): times within this, relative to their
 /// size, count as the same time.
 const MINIMAL_STEP_SIZE: f64 = 1.0e-12;
@@ -2669,26 +2669,21 @@ fn log_local_homotopy_start(sys_num: u32, wanted: bool) {
     }
 }
 
-/// Storage behind C's `oldValueList`. Each host keeps it its own way: the wasm
-/// runtime in the per-system block the codegen reserved, the C one in a `Vec` beside
-/// `NONLINEAR_SYSTEM_DATA`.
-pub trait History {
-    /// Entries currently stored, newest-stored first.
-    fn len(&self) -> usize;
-    fn time(&self, k: usize) -> f64;
-    fn value(&self, k: usize, i: usize) -> f64;
-    /// Copy entry `from` onto entry `to`.
-    fn shift(&mut self, from: usize, to: usize);
-    /// Overwrite entry `k` and set the count to `len`.
-    fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]);
-    fn set_len(&mut self, len: usize);
-    /// Store `(time, x)` as entry 0, the oldest falling off at [`HIST_DEPTH`].
-    fn push_front(&mut self, time: f64, x: &[f64]) {
-        let count = self.len();
-        for k in (0..count.min(HIST_DEPTH - 1)).rev() {
-            self.shift(k, k + 1);
-        }
-        self.put(0, (count + 1).min(HIST_DEPTH), time, x);
+/// C's `oldValueList`: the stored solutions, newest-stored first.
+#[derive(Default)]
+pub struct History {
+    entries: alloc::collections::VecDeque<(f64, alloc::vec::Vec<f64>)>,
+}
+
+impl History {
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+    pub fn time(&self, k: usize) -> f64 {
+        self.entries[k].0
+    }
+    pub fn value(&self, k: usize, i: usize) -> f64 {
+        self.entries[k].1[i]
     }
 }
 
@@ -2697,7 +2692,8 @@ pub trait History {
 pub struct Pick {
     /// The first entry at or older than the requested time; `None` = empty list.
     pub old: Option<usize>,
-    /// The entry stored just before `old`, to extrapolate with.
+    /// The entry stored just before `old`, to extrapolate with, unless it is for a
+    /// later time than the requested one.
     pub old2: Option<usize>,
     /// `old`'s time is the requested time: take it verbatim, no extrapolation.
     pub exact: bool,
@@ -2706,7 +2702,9 @@ pub struct Pick {
 /// `getValues`' search: the first entry at or older than `time`, or the oldest.
 /// A hit within `MINIMAL_STEP_SIZE` is taken verbatim — `b+f*(a-b)` lands an ULP
 /// away even at `f == 1`, which costs a Newton iteration on a linear residual.
-pub fn history_pick(h: &dyn History, time: f64) -> Pick {
+/// An entry for a later time, e.g. of a rejected step, can be on another branch of
+/// a system with several solutions, so it is not extrapolated with.
+pub fn history_pick(h: &History, time: f64) -> Pick {
     for k in 0..h.len() {
         if same_time(h.time(k), time) {
             return Pick {
@@ -2718,7 +2716,7 @@ pub fn history_pick(h: &dyn History, time: f64) -> Pick {
         if h.time(k) < time {
             return Pick {
                 old: Some(k),
-                old2: (k + 1 < h.len()).then_some(k + 1),
+                old2: (k + 1 < h.len() && h.time(k + 1) <= time).then_some(k + 1),
                 exact: false,
             };
         }
@@ -2731,7 +2729,7 @@ pub fn history_pick(h: &dyn History, time: f64) -> Pick {
 }
 
 /// `getValues`' `oldOutput` (C's `nlsxOld`): the `old` entry verbatim.
-pub fn history_old(h: &dyn History, pick: &Pick, out: &mut [f64]) {
+pub fn history_old(h: &History, pick: &Pick, out: &mut [f64]) {
     if let Some(a) = pick.old {
         for (i, v) in out.iter_mut().enumerate() {
             *v = h.value(a, i);
@@ -2740,7 +2738,7 @@ pub fn history_old(h: &dyn History, pick: &Pick, out: &mut [f64]) {
 }
 
 /// `extrapolateValues`; leaves `guess` alone when the list is empty.
-pub fn history_guess(h: &dyn History, pick: &Pick, time: f64, guess: &mut [f64]) {
+pub fn history_guess(h: &History, pick: &Pick, time: f64, guess: &mut [f64]) {
     match (pick.old, pick.old2) {
         (Some(a), Some(b)) => {
             let (t_a, t_b) = (h.time(a), h.time(b));
@@ -2763,28 +2761,28 @@ pub fn history_guess(h: &dyn History, pick: &Pick, time: f64, guess: &mut [f64])
     }
 }
 
-/// `addListElement`: push to the front, or replace it when the times match. Unlike
-/// C's, the oldest entry falls off at [`HIST_DEPTH`].
-pub fn history_store(h: &mut dyn History, time: f64, x: &[f64]) {
-    let count = h.len();
-    if count > 0 && same_time(h.time(0), time) {
-        h.put(0, count, time, x);
-        return;
+/// `addListElement`: push to the front, or replace the front when the times
+/// match. A replace cuts a list of more than 10 entries to 5.
+pub fn history_store(h: &mut History, time: f64, x: &[f64]) {
+    if h.len() > 0 && same_time(h.time(0), time) {
+        h.entries[0] = (time, x.to_vec());
+        if h.len() > 10 {
+            h.entries.truncate(5);
+        }
+    } else {
+        h.entries.push_front((time, x.to_vec()));
     }
-    h.push_front(time, x);
 }
 
 /// `cleanValueListbyTime`: keep only the newest entry at or before `time`.
-pub fn history_clean(h: &mut dyn History, time: f64) {
-    for k in 0..h.len() {
-        if h.time(k) <= time {
-            if k > 0 {
-                h.shift(k, 0);
-            }
-            return h.set_len(1);
+pub fn history_clean(h: &mut History, time: f64) {
+    match h.entries.iter().position(|e| e.0 <= time) {
+        Some(k) => {
+            h.entries.drain(..k);
+            h.entries.truncate(1);
         }
+        None => h.entries.clear(),
     }
-    h.set_len(0);
 }
 
 /// The per-system rosters: C's `NONLINEAR_SYSTEM_DATA::numberOf{Iterations,FEval,
@@ -4397,13 +4395,8 @@ pub fn solve_nls(
         fj.copy_from_slice(&jacbuf[..fj.len()]);
     };
 
-    // Per-system state: count | useXScaling | lastTimeSolved | resScaling[n] | nlsxExtrapolation[n]
-    // | DEPTH × (time, x[n]).
     // `resScaling` is C's `homotopyData->resScaling`, which lives in the per-system
     // solver data and survives between calls, starting zeroed (= unscaled).
-    // The entries are C's `oldValueList`, which reaches ~20 but is searched the
-    // same way: the exact-time hit below fires on ~2.5% of calls, and C's own
-    // list gives the same count.
     let hist = &mut *mem.history;
     let use_xscaling = &mut *mem.use_xscaling;
     res_scaling.copy_from_slice(mem.res_scaling);
@@ -4412,10 +4405,11 @@ pub fn solve_nls(
     // stored solution at or before it.
     guess.copy_from_slice(&warm);
     nlsx_old.copy_from_slice(&warm);
-    // C's "if last solving is too long ago use just old values": past five output
-    // intervals neither is consulted and the current variable values stand in — a
-    // casual tearing set always consults them.
-    if casual || fmath::fabs(time - *mem.last_solved) < 5.0 * step_size() {
+    // C's "if last solving is too long ago use just old values": five output
+    // intervals after the last solve neither is consulted and the current variable
+    // values stand in. A casual tearing set, and a solve before the last one (a
+    // rejected step), always consult them.
+    if casual || time - *mem.last_solved < 5.0 * step_size() {
         let hpick = history_pick(hist, time);
         if hpick.exact {
             stat_inc(STAT_NLS_GUESS_HIT);
@@ -4582,6 +4576,7 @@ pub fn solve_nls(
     let mut strict_used = false;
     // Whether `solveWithInitHomotopy`, rather than the `solveNLS` ladder, solved it.
     let mut init_hom_solved = false;
+    let mut later_tried = false;
     let mut converged = if attempt == i32::MIN {
         false
     } else {
@@ -4919,6 +4914,25 @@ pub fn solve_nls(
                 if attempt_converged {
                     break 'attempts true;
                 }
+                // The branch of the solution can end at this time. Try again from the
+                // solution of a later time, e.g. of a rejected step or of the step that
+                // went past an event.
+                if saved_rel_fresh != 2 && !later_tried {
+                    later_tried = true;
+                    if *mem.latest_time > time && !same_time(*mem.latest_time, time) {
+                        omclog::info(
+                            omclog::NLS,
+                            false,
+                            "Try again from the solution stored for a later time.",
+                        );
+                        x.copy_from_slice(mem.latest);
+                        warm.copy_from_slice(&x);
+                        guess.copy_from_slice(&x);
+                        nlsx_old.copy_from_slice(&x);
+                        mem.extrapolation.copy_from_slice(&x);
+                        continue;
+                    }
+                }
                 if adaptive_homotopy {
                     omclog::warning!(
                         omclog::ASSERT,
@@ -5051,6 +5065,10 @@ pub fn solve_nls(
                 stat_inc(STAT_NLS_STORE_BACK);
             }
             history_store(hist, time, &x);
+            if time >= *mem.latest_time {
+                mem.latest.copy_from_slice(&x);
+                *mem.latest_time = time;
+            }
         }
         *mem.last_solved = time;
         0
@@ -5100,54 +5118,19 @@ pub fn solve_nls(
 mod tests {
     use super::*;
 
-    /// [`History`] over a plain `Vec`, so the list logic can be replayed without a
-    /// host.
-    #[derive(Default)]
-    struct VecHistory {
-        entries: alloc::vec::Vec<(f64, alloc::vec::Vec<f64>)>,
-    }
-
-    impl History for VecHistory {
-        fn len(&self) -> usize {
-            self.entries.len()
-        }
-        fn time(&self, k: usize) -> f64 {
-            self.entries[k].0
-        }
-        fn value(&self, k: usize, i: usize) -> f64 {
-            self.entries[k].1[i]
-        }
-        fn shift(&mut self, from: usize, to: usize) {
-            if to == self.entries.len() {
-                let e = self.entries[from].clone();
-                self.entries.push(e);
-            } else {
-                self.entries[to] = self.entries[from].clone();
-            }
-        }
-        fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]) {
-            if k == self.entries.len() {
-                self.entries.push((time, x.to_vec()));
-            } else {
-                self.entries[k] = (time, x.to_vec());
-            }
-            self.entries.truncate(len);
-            assert_eq!(self.entries.len(), len);
-        }
-        fn set_len(&mut self, len: usize) {
-            self.entries.truncate(len);
-        }
-    }
-
     // Replay the C runtime's own `oldValueList` trace (`nls_c_trace`): for every
-    // call, the entries `getValues` picks must be the ones C picked, and an
-    // exact-time hit must hand back the stored solution untouched.
+    // call, the list must be as long as C's, the entries `getValues` picks must be
+    // the ones C picked, and an exact-time hit must hand back the stored solution
+    // untouched.
     #[test]
     fn history_matches_c_trace() {
-        let mut h = VecHistory::default();
+        let mut h = History::default();
         let mut guess = [f64::NAN];
-        for (i, (time, picked, store)) in nls_c_trace::TRACE.iter().enumerate() {
+        let mut longest = 0;
+        for (i, (time, len, picked, store)) in nls_c_trace::TRACE.iter().enumerate() {
             if !time.is_nan() {
+                assert_eq!(h.len(), *len, "call {i}: list length differs from C");
+                longest = longest.max(*len);
                 let pick = history_pick(&h, *time);
                 let got: alloc::vec::Vec<f64> = pick.old.iter().chain(pick.old2.iter()).map(|&k| h.time(k)).collect();
                 assert_eq!(got, *picked, "call {i}: picked entries differ from C");
@@ -5159,11 +5142,29 @@ mod tests {
             if let Some((t, v)) = store {
                 history_store(&mut h, *t, &[*v]);
                 assert_eq!(h.time(0), *t, "call {i}: store did not land at the front");
-                assert!(h.len() <= HIST_DEPTH);
             }
         }
-        // The trace is long enough to fill the list and start dropping the oldest.
-        assert_eq!(h.len(), HIST_DEPTH);
+        // The trace is long enough for C to cut the list.
+        assert!(longest > 10, "longest list {longest}");
+    }
+
+    // A replace of the front cuts a list of more than 10 entries to 5, as C's
+    // `addListElement` does; a push never cuts it.
+    #[test]
+    fn history_cuts_like_c() {
+        let mut h = History::default();
+        for k in 0..12 {
+            history_store(&mut h, k as f64, &[k as f64]);
+        }
+        assert_eq!(h.len(), 12);
+        history_store(&mut h, 11.0, &[-1.0]);
+        assert_eq!((h.len(), h.value(0, 0), h.time(4)), (5, -1.0, 7.0));
+        let mut h = History::default();
+        for k in 0..10 {
+            history_store(&mut h, k as f64, &[k as f64]);
+        }
+        history_store(&mut h, 9.0, &[-1.0]);
+        assert_eq!(h.len(), 10);
     }
 
     // `addListElement` replaces the front when the times match and pushes otherwise,
@@ -5171,7 +5172,7 @@ mod tests {
     // at the front and is found again exactly (which is what skips a Newton solve).
     #[test]
     fn history_keeps_insertion_order() {
-        let mut h = VecHistory::default();
+        let mut h = History::default();
         for (t, v) in [(0.0, 1.0), (2.0, 3.0), (1.0, 2.0)] {
             history_store(&mut h, t, &[v]);
         }
@@ -5187,7 +5188,7 @@ mod tests {
     // value verbatim when the two are level.
     #[test]
     fn history_extrapolates_linearly() {
-        let mut h = VecHistory::default();
+        let mut h = History::default();
         history_store(&mut h, 1.0, &[10.0, 5.0]);
         history_store(&mut h, 2.0, &[20.0, 5.0]);
         let mut guess = [f64::NAN; 2];
@@ -5196,12 +5197,35 @@ mod tests {
         history_guess(&h, &pick, 4.0, &mut guess);
         assert_eq!(guess, [40.0, 5.0]);
     }
+
+    // A rejected step leaves its solution in the list, here on the other branch of
+    // `OpAmps.SignalGenerator`'s Schmitt trigger (#5857). The guess skips it.
+    #[test]
+    fn history_skips_later_entries() {
+        let mut h = History::default();
+        for (t, v) in [
+            (0.878, -5.08355),
+            (0.906575, 13.7737),
+            (0.87979, 6.77458),
+            (0.87845, -4.97544),
+        ] {
+            history_store(&mut h, t, &[v]);
+        }
+        let pick = history_pick(&h, 0.879343);
+        assert_eq!((pick.old, pick.old2, pick.exact), (Some(0), None, false));
+        let mut guess = [f64::NAN];
+        history_guess(&h, &pick, 0.879343, &mut guess);
+        assert!(guess[0] < 0.0, "guess {}", guess[0]);
+        let pick = history_pick(&h, 0.5);
+        assert_eq!((pick.old, pick.old2, pick.exact), (Some(3), None, false));
+    }
+
     // Solutions a few ULPs apart at a large time are one entry, so they never form
     // an extrapolation pair (#17738). Below |t| = 1 the absolute
     // `MINIMAL_STEP_SIZE` decides.
     #[test]
     fn history_same_time_is_relative() {
-        let mut h = VecHistory::default();
+        let mut h = History::default();
         let t1 = 4097.0_f64;
         let t2 = f64::from_bits(t1.to_bits() + 3);
         history_store(&mut h, 4096.75, &[1.0e6]);
@@ -5212,7 +5236,7 @@ mod tests {
         let pick = history_pick(&h, 4097.25);
         history_guess(&h, &pick, 4097.25, &mut guess);
         assert!(fmath::fabs(guess[0] - (1.0e6 + 4.0)) < 1e-3, "guess {}", guess[0]);
-        let mut h = VecHistory::default();
+        let mut h = History::default();
         for (t, v) in [(0.25, 1.0), (0.5, 2.0), (0.5 + 2e-12, 3.0)] {
             history_store(&mut h, t, &[v]);
         }
@@ -5222,7 +5246,7 @@ mod tests {
     // An event before every stored entry empties the list.
     #[test]
     fn history_clean_keeps_one_entry() {
-        let mut h = VecHistory::default();
+        let mut h = History::default();
         for (t, v) in [(1.0, 10.0), (2.0, 20.0), (3.0, 30.0)] {
             history_store(&mut h, t, &[v]);
         }

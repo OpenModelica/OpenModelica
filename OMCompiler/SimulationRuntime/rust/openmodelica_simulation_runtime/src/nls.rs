@@ -55,8 +55,7 @@ struct Scratch {
     /// The pattern is the full one KINSOL gets for a system without its own, which
     /// the model does not fill.
     full_pattern: bool,
-    /// C's `oldValueList`, as the depth the shared solver bounds it to.
-    history: VecHistory,
+    history: nls::History,
     /// `solveHomotopy`'s residual scaling, which survives between calls.
     res_scaling: Vec<f64>,
     /// C's `hybrdData->useXScaling`, which `solveHybrd` carries between calls.
@@ -140,44 +139,6 @@ fn write_iter_row(st: &nls::NewtonIterStat) {
         .map(g),
     );
     csv_line(&mut csv.iter, &row);
-}
-
-/// [`nls::History`] over a plain `Vec`: C's list is unbounded and reaches 40+, but
-/// the entry `getValues` picks is never past 5.
-#[derive(Default)]
-struct VecHistory {
-    entries: Vec<(f64, Vec<f64>)>,
-}
-
-impl nls::History for VecHistory {
-    fn len(&self) -> usize {
-        self.entries.len()
-    }
-    fn time(&self, k: usize) -> f64 {
-        self.entries[k].0
-    }
-    fn value(&self, k: usize, i: usize) -> f64 {
-        self.entries[k].1[i]
-    }
-    fn shift(&mut self, from: usize, to: usize) {
-        if to == self.entries.len() {
-            let e = self.entries[from].clone();
-            self.entries.push(e);
-        } else {
-            self.entries[to] = self.entries[from].clone();
-        }
-    }
-    fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]) {
-        if k == self.entries.len() {
-            self.entries.push((time, x.to_vec()));
-        } else {
-            self.entries[k] = (time, x.to_vec());
-        }
-        self.entries.truncate(len);
-    }
-    fn set_len(&mut self, len: usize) {
-        self.entries.truncate(len);
-    }
 }
 
 fn scratch(sys: &NONLINEAR_SYSTEM_DATA) -> *mut Scratch {
@@ -516,6 +477,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         sys.numberOfFEval = 0;
         sys.numberOfIterations = 0;
         sys.lastTimeSolved = 0.0;
+        sys.latestTimeSolved = f64::MIN;
         sys.totalTime = 0.0;
         sys.solved = NLS_SOLVED;
         sys.logActive = 1;
@@ -553,6 +515,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         sys.nlsxExtrapolation = crate::model_data::calloc(size.max(1));
         sys.nlsxOld = crate::model_data::calloc(size.max(1));
         sys.resValues = crate::model_data::calloc(size.max(1));
+        sys.latestSolution = crate::model_data::calloc(size.max(1));
         sys.positiveNominal = crate::model_data::calloc(size.max(1));
         sys.nominalSign = crate::model_data::calloc(size.max(1));
         unsafe { core::slice::from_raw_parts_mut(sys.nominalSign, size.max(1)) }.fill(1.0);
@@ -617,7 +580,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             rowidx,
             pattern,
             full_pattern: false,
-            history: VecHistory::default(),
+            history: nls::History::default(),
             res_scaling: vec![0.0; size.max(1)],
             use_xscaling: true,
             csv: nls_info.then(|| open_nls_csv(data, sys)).flatten(),
@@ -642,6 +605,7 @@ pub fn free_nonlinear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
             &mut sys.nlsxExtrapolation,
             &mut sys.nlsxOld,
             &mut sys.resValues,
+            &mut sys.latestSolution,
             &mut sys.positiveNominal,
             &mut sys.nominalSign,
             &mut sys.min,
@@ -874,11 +838,14 @@ pub extern "C" fn solve_nonlinear_system(data: *mut DATA, thread_data: *mut thre
     sd.res_scaling.resize(hist_n, 0.0);
     let ret = {
         let extrapolation = unsafe { core::slice::from_raw_parts_mut(sys.nlsxExtrapolation, hist_n) };
+        let latest = unsafe { core::slice::from_raw_parts_mut(sys.latestSolution, hist_n) };
         let mut mem = nls::NlsPersistent {
             history: &mut sd.history,
             res_scaling: &mut sd.res_scaling,
             extrapolation,
             last_solved: &mut sys.lastTimeSolved,
+            latest_time: &mut sys.latestTimeSolved,
+            latest,
             use_xscaling: &mut sd.use_xscaling,
         };
         let csv = sd.csv.as_mut().map_or(core::ptr::null_mut(), |c| c as *mut NlsCsv);

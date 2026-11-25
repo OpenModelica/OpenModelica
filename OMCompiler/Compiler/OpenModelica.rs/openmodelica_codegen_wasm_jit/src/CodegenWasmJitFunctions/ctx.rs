@@ -336,13 +336,12 @@ pub(crate) struct DynPattern {
     pub(crate) n_params: u32,
 }
 
-/// Per-system solver state for `n` unknowns: a count (padded to 8), C's
-/// `lastTimeSolved`, the residual scaling carried between calls, C's
-/// `nlsxExtrapolation`, and `HIST_DEPTH` stored solutions (time + `n`). Matches
+/// Per-system solver state for `n` unknowns: the address of the stored solutions
+/// and flags, C's `lastTimeSolved`, the residual scaling carried between calls,
+/// C's `nlsxExtrapolation`, and C's `latestTimeSolved` + `latestSolution`. Matches
 /// `rt_solve_nls`'s layout.
 pub(crate) fn nls_hist_bytes(n: u32) -> u32 {
-    const DEPTH: u32 = 10; // = the runtime's `nls::HIST_DEPTH`
-    16 + 8 * n + 8 * n + DEPTH * (8 + 8 * n)
+    24 + 24 * n
 }
 
 /// Model global holding the base address of the NLS extrapolation-history block

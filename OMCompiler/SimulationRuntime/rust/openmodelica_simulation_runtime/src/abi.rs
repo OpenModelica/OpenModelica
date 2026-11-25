@@ -402,6 +402,8 @@ pub struct NONLINEAR_SYSTEM_DATA {
     pub resValues: *mut modelica_real,
     pub solved: c_int,
     pub lastTimeSolved: modelica_real,
+    pub latestTimeSolved: modelica_real,
+    pub latestSolution: *mut modelica_real,
     pub logActive: modelica_boolean,
     pub numberOfCall: c_ulong,
     pub numberOfFEval: c_ulong,
