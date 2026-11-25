@@ -27,6 +27,8 @@ FmuStartEventError.mos \
 FmuResourcePlus.mos \
 FmuDiscreteInputEvent.mos \
 FmuThreadCalls.mos \
+FmuOutputWithoutDerivative.mos \
+FmuDirectionalDerivativeExternal.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

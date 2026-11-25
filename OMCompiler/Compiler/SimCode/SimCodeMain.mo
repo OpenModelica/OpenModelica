@@ -2013,7 +2013,7 @@ algorithm
       Option<list<String>> strPreOptModules;
       Boolean isFMI2;
       BackendDAE.SymbolicJacobians fmiDer;
-      AvlTreePathFunction.Tree funcs;
+      AvlTreePathFunction.Tree funcs, allFuncs;
 
     // old backend
     case graph algorithm
@@ -2054,14 +2054,25 @@ algorithm
       end match;
       // FMI 2.0/3.0: enable postOptModule to create alias variables for output states
       strPreOptModules := if (isFMI2) then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();
-
-      // FMI 2.0/3.0: enable postOptModule "introduceOutputRealDerivatives" to set maxOutputDerivativeOrder = 1
-      if (isFMI2 and fmuType == "cs") then
-        strPreOptModules := SOME("introduceOutputRealDerivatives":: Util.getOption(strPreOptModules));
-      end if;
+      // getSolvedSystem removes the functions that no equation calls
+      allFuncs := BackendDAEUtil.getFunctions(dlow.shared);
 
       //BackendDump.printBackendDAE(dlow);
-      (dlow, initDAE, initDAE_lambda0, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);
+      // FMI 2.0/3.0 Co-Simulation: "introduceOutputRealDerivatives" gives
+      // maxOutputDerivativeOrder = 1. Without it if an output has no derivative.
+      if isFMI2 and fmuType == "cs" then
+        ErrorExt.setCheckpoint(getInstanceName());
+        try
+          (dlow, initDAE, initDAE_lambda0, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(BackendDAEUtil.copyBackendDAE(dlow), inFileNamePrefix,
+            strPreOptModules = SOME("introduceOutputRealDerivatives" :: Util.getOption(strPreOptModules)));
+          ErrorExt.delCheckpoint(getInstanceName());
+        else
+          ErrorExt.rollBack(getInstanceName());
+          (dlow, initDAE, initDAE_lambda0, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);
+        end try;
+      else
+        (dlow, initDAE, initDAE_lambda0, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);
+      end if;
       restart := listLength(getGlobalRoot(Global.structuralParameters)) > numStructuralParameters;
 
       // generate derivatives
@@ -2069,7 +2080,7 @@ algorithm
         // activate symolic jacobains for fmi 2.0
         // to provide dependence information and partial derivatives
         System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_BACKEND);
-        (fmiDer, funcs) := SymbolicJacobian.createFMIModelDerivatives(dlow);
+        (fmiDer, funcs) := SymbolicJacobian.createFMIModelDerivatives(dlow, allFuncs);
         dlow := BackendDAEUtil.setFunctionTree(dlow, funcs);
         System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_BACKEND);
       else

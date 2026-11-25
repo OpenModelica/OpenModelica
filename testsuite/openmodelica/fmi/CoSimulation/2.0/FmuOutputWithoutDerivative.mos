@@ -1,0 +1,39 @@
+// name: FmuOutputWithoutDerivative.mos
+// keywords: FMI 2.0 export CoSimulation output derivative external
+// status: correct
+// teardown_command: rm -rf FmuOutputNoDer* P.NoDer*
+//
+// A Co-Simulation FMU gives the output derivatives only if each Real output
+// can be differentiated. f is external and has no derivative annotation.
+
+loadString("
+package P
+  function f
+    input Real x;
+    output Real y;
+    external \"C\" y = fmuOutputAddOne(x) annotation(Include = \"static double fmuOutputAddOne(double x) { return x + 1.0; }\");
+  end f;
+
+  model NoDer
+    Real x(start = 0, fixed = true);
+    output Real y;
+  equation
+    y = f(time);
+    der(x) = y;
+  end NoDer;
+end P;
+"); getErrorString();
+
+buildModelFMU(P.NoDer, version = "2.0", fmuType = "cs", fileNamePrefix = "FmuOutputNoDer", platforms = {"static"}); getErrorString();
+system("unzip -p FmuOutputNoDer.fmu modelDescription.xml | grep -o \"maxOutputDerivativeOrder=.[0-9].\""); getErrorString();
+// Result:
+// true
+// ""
+// "FmuOutputNoDer.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// maxOutputDerivativeOrder="0"
+// 0
+// ""
+// endResult

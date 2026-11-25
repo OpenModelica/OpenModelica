@@ -1,0 +1,118 @@
+// name: NonexistentFunctionDerivative
+// keywords: differentiation, function, derivative
+// status: correct
+//
+// The old backend cannot differentiate h, since it has no derivative rule for
+// diagonal, and f, since it is external and has no derivative annotation.
+// A call of h or f has a zero derivative only if its argument has no
+// derivative; else the differentiation fails.
+
+loadString("
+package P
+  function h
+    input Real x;
+    output Real y;
+  protected
+    Real D[2, 2];
+  algorithm
+    D := diagonal({x, 2*x});
+    y := 0;
+    for i in 1:2 loop
+      y := y + D[i, i];
+    end for;
+  end h;
+
+  function f
+    input Real x;
+    output Real y;
+    external \"C\" y = cbrt(x);
+  end f;
+
+  function g
+    input Real x;
+    output Real y;
+  algorithm
+    y := x;
+    for i in 1:2 loop
+      y := y + f(x);
+    end for;
+  end g;
+
+  function k
+    input Real x;
+    output Real y;
+  algorithm
+    y := x;
+    for i in 1:2 loop
+      y := y + h(x);
+    end for;
+  end k;
+
+  function kc
+    input Real x;
+    input Real c;
+    output Real y;
+  algorithm
+    y := x;
+    for i in 1:2 loop
+      y := y + h(c);
+    end for;
+  end kc;
+
+  model InFunction
+    Real y = k(time);
+    Real dy = der(y);
+  end InFunction;
+
+  model StateArgument
+    Real x(start = 0, fixed = true);
+    Real y = h(x);
+    Real dy = der(y);
+  equation
+    der(x) = 1;
+  end StateArgument;
+
+  model ExternalInFunction
+    Real y = g(time);
+    Real dy = der(y);
+  end ExternalInFunction;
+
+  model ConstantArgument
+    parameter Real p = 2;
+    Real y1 = h(p) + time;
+    Real y2 = kc(time, 2);
+    Real dy1 = der(y1) \"1\";
+    Real dy2 = der(y2) \"1\";
+  end ConstantArgument;
+end P;
+"); getErrorString();
+
+translateModel(P.InFunction);
+regexBool(getErrorString(), "Derivative of expression \"y = P.k[(]time[)]\" w.r.t. \"time\" is non-existent");
+translateModel(P.StateArgument);
+regexBool(getErrorString(), "Derivative of expression \"y = P.h[(]x[)]\" w.r.t. \"time\" is non-existent");
+translateModel(P.ExternalInFunction);
+regexBool(getErrorString(), "Derivative of expression \"y = P.g[(]time[)]\" w.r.t. \"time\" is non-existent");
+simulate(P.ConstantArgument, stopTime = 1); getErrorString();
+val(dy1, 0.5);
+val(dy2, 0.5);
+// Result:
+// true
+// ""
+// false
+// true
+// false
+// true
+// false
+// true
+// record SimulationResult
+//     resultFile = "P.ConstantArgument_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'P.ConstantArgument', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.0
+// endResult

@@ -1,0 +1,49 @@
+// name: FmuDirectionalDerivativeExternal.mos
+// keywords: FMI 2.0 export, directional derivatives, derivative annotation, external
+// status: correct
+// teardown_command: rm -rf FmuDirDerExt* P.ExtDer*
+//
+// No equation calls df, the derivative of the external function f. The
+// directional derivatives must use df.
+
+setCommandLineOptions("-d=-disableDirectionalDerivatives"); getErrorString();
+
+loadString("
+package P
+  function f
+    input Real x;
+    output Real y;
+    external \"C\" y = fmiDerAnnotF(x) annotation(Include = \"static double fmiDerAnnotF(double x) { return x*x; }\");
+    annotation(derivative = df);
+  end f;
+
+  function df
+    input Real x;
+    input Real dx;
+    output Real dy;
+    external \"C\" dy = fmiDerAnnotDF(x, dx) annotation(Include = \"static double fmiDerAnnotDF(double x, double dx) { return 2*x*dx; }\");
+  end df;
+
+  model ExtDer
+    input Real u;
+    Real x(start = 1, fixed = true);
+    output Real y;
+  equation
+    der(x) = u - f(x);
+    y = f(u);
+  end ExtDer;
+end P;
+"); getErrorString();
+
+buildModelFMU(P.ExtDer, version = "2.0", fmuType = "cs", fileNamePrefix = "FmuDirDerExt", platforms = {"static"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuDirDerExt.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// endResult
