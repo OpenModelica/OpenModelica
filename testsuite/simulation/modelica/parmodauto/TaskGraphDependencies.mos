@@ -51,26 +51,27 @@ getErrorString();
 
 echo(false);
 
+// There is an issue with CVODE in this test: it is not accurate enough for the 1e-6 checks.
 setCommandLineOptions("--parmodauto --simCodeTarget=C");
-resAlgC := simulate(AlgorithmInTornSystem, stopTime=1);
+resAlgC := simulate(AlgorithmInTornSystem, stopTime=1, method="dassl");
 algorithmC := abs(val(s1, 1.0) - 0.7132821704189992) < 1e-6 and abs(val(s2, 1.0) - 0.359969483253544) < 1e-6;
 errAlgC := getErrorString();
 
 setCommandLineOptions("--simCodeTarget=C+Rust");
-resAlgRust := simulate(AlgorithmInTornSystem, stopTime=1);
+resAlgRust := simulate(AlgorithmInTornSystem, stopTime=1, method="dassl");
 algorithmRust := abs(val(s1, 1.0) - 0.7132821704189992) < 1e-6 and abs(val(s2, 1.0) - 0.359969483253544) < 1e-6;
 errAlgRust := getErrorString();
 
 // Without tearing the linear system is given as A and b.
 setCommandLineOptions("--postOptModules-=tearingSystem --simCodeTarget=C");
-resLinC := simulate(LinearSystemUses, stopTime=1);
+resLinC := simulate(LinearSystemUses, stopTime=1, method="dassl");
 linearC := abs(val(s, 1.0) - 0.6127873760348345) < 1e-6;
 // The system reads u, which another task computes.
 linearUses := regexBool(readFile("LinearSystemUses_ode.json"), "\"tag\":\"system\"[^}]*\"uses\":[[][^]]*\"u\"");
 errLinC := getErrorString();
 
 setCommandLineOptions("--simCodeTarget=C+Rust");
-resLinRust := simulate(LinearSystemUses, stopTime=1);
+resLinRust := simulate(LinearSystemUses, stopTime=1, method="dassl");
 linearRust := abs(val(s, 1.0) - 0.6127873760348345) < 1e-6;
 errLinRust := getErrorString();
 
