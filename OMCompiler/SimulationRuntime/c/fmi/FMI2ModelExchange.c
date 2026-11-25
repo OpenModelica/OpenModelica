@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+#include <float.h>
+
 #include "FMICommon.h"
 #include "FMI2Common.h"
 
@@ -281,12 +283,15 @@ int fmi2EndEventUpdate_OMC(void* in_fmi2me)
 
 /*
  * parameter flowStates is dummy and is only used to run the equations in sequence.
- * Returns FMI EventInfo nextEventTime
+ * Returns FMI EventInfo nextEventTime, or DBL_MAX if the FMU has no time event.
  */
 double fmi2nextEventTime_OMC(void* in_fmi2me, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  return FMI2ME->FMIEventInfo->nextEventTime;
+  if (FMI2ME->FMIEventInfo->nextEventTimeDefined) {
+    return FMI2ME->FMIEventInfo->nextEventTime;
+  }
+  return DBL_MAX;
 }
 
 /*

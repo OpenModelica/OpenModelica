@@ -73,9 +73,9 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 7.389089928644395
+// 7.389089930122215
 // 2.0
-// 6.389089928644395
+// 6.389089930122215
 // ""
 // record SimulationResult
 //     resultFile = "test_ChangeParam.mat",
@@ -84,6 +84,6 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// {{1.0, 1.0, 1.0, 0.13533632118380395, 0.13533632118380395}, {-2.0, -2.0, -2.0, -2.0, -2.0}, {-11.0, -11.0, -11.0, -10.135336321183804, -10.135336321183804}}
+// {{1.0, 0.13533632115673702, 0.13533632115673702}, {-2.0, -2.0, -2.0}, {-11.0, -10.135336321156737, -10.135336321156737}}
 // ""
 // endResult

@@ -13,6 +13,7 @@ FmuUserCFlags.mos \
 FmuUserTab.mos \
 FmuStringInputs.mos \
 FmuValueAccess.mos \
+fmi2_import_initial_event.mos \
 StateDerivativeAliases.mos \
 derivativeUnits.mos \
 fmi_attributes_01.mos \

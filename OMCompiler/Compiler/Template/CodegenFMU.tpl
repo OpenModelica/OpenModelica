@@ -2141,7 +2141,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean callEventUpdate;
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
-    Real nextEventTime(fixed = true);
+    parameter Real initialNextEventTime(fixed = false);
+    Real nextEventTime(start = initialNextEventTime, fixed = true);
   initial equation
     <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
     <<
@@ -2160,6 +2161,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetBooleanParameter(fmi2me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetStringParameter(fmi2me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
     flowInitialized := fmi2Functions.fmi2ExitInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
+    fmi2Functions.fmi2EndEventUpdate(fmi2me);
+    initialNextEventTime := fmi2Functions.fmi2nextEventTime(fmi2me, flowInitialized);
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi2Functions.fmi2GetReal(fmi2me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
     <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi2Functions.fmi2GetInteger(fmi2me, {"+integerDependentParametersVRs+"}, flowInitialized);"%>
@@ -2566,7 +2569,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean callEventUpdate;
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
-    Real nextEventTime(fixed = true);
+    parameter Real initialNextEventTime(fixed = false);
+    Real nextEventTime(start = initialNextEventTime, fixed = true);
   initial equation
     <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
     <<
@@ -2585,6 +2589,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetBooleanParameter(fmi3me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetStringParameter(fmi3me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
     flowInitialized := fmi3Functions.fmi3ExitInitialization(fmi3me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
+    fmi3Functions.fmi3EndEventUpdate(fmi3me);
+    initialNextEventTime := fmi3Functions.fmi3nextEventTime(fmi3me, flowInitialized);
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi3Functions.fmi3GetReal(fmi3me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
     <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi3Functions.fmi3GetInteger(fmi3me, {"+integerDependentParametersVRs+"}, flowInitialized);"%>
