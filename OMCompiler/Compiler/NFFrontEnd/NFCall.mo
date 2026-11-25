@@ -3546,18 +3546,26 @@ protected
 
       case Expression.BINARY(exp1 = e1, operator = op, exp2 = e2)
         algorithm
-          (sub1, sub2) := Expression.subscriptedOperands(op);
+          if op.op == Op.MATRIX_PRODUCT or op.op == Op.MUL_MATRIX_VECTOR or op.op == Op.MUL_VECTOR_MATRIX then
+            if index == 1 and Type.dimensionCount(Expression.typeOf(e1)) == 2 then
+              operands := collectOperands(e1, 1, operands);
+            elseif Type.dimensionCount(Expression.typeOf(e2)) == 2 then
+              operands := collectOperands(e2, 2, operands);
+            end if;
+          else
+            (sub1, sub2) := Expression.subscriptedOperands(op);
 
-          if sub1 and sub2 then
-            operands := (e1, index) :: (e2, index) :: operands;
-          end if;
+            if sub1 and sub2 then
+              operands := (e1, index) :: (e2, index) :: operands;
+            end if;
 
-          if sub1 then
-            operands := collectOperands(e1, index, operands);
-          end if;
+            if sub1 then
+              operands := collectOperands(e1, index, operands);
+            end if;
 
-          if sub2 then
-            operands := collectOperands(e2, index, operands);
+            if sub2 then
+              operands := collectOperands(e2, index, operands);
+            end if;
           end if;
         then
           operands;

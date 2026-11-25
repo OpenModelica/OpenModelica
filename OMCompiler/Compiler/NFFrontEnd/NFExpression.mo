@@ -2185,12 +2185,18 @@ public
     input Boolean applyToScope;
     output Expression outExp;
   protected
+    import NFOperator.Op;
     Expression e1, e2;
     Operator op;
     Operator scalar_op;
     Boolean sub1, sub2;
   algorithm
     BINARY(e1, op, e2) := exp;
+
+    if op.op == Op.MATRIX_PRODUCT or op.op == Op.MUL_MATRIX_VECTOR or op.op == Op.MUL_VECTOR_MATRIX then
+      outExp := applySubscriptProduct(subscript, exp, restSubscripts, applyToScope);
+      return;
+    end if;
 
     (sub1, sub2, scalar_op) := subscriptedOperands(op);
 
@@ -2250,6 +2256,59 @@ public
 
     scalarOp.op := scalar_op;
   end subscriptedOperands;
+
+  function applySubscriptProduct
+    "Moves index subscripts into the operands of a matrix product, so that only
+     the needed elements are calculated: (A * B)[i, j] = A[i] * B[:, j],
+     (A * B)[i] = A[i] * B, (A * x)[i] = A[i] * x and (x * B)[j] = x * B[:, j]."
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
+    output Expression outExp;
+  protected
+    import NFOperator.Op;
+    Expression e1, e2;
+    Operator op;
+    Subscript sub2;
+  algorithm
+    BINARY(e1, op, e2) := exp;
+
+    if not (Subscript.isIndex(subscript) and List.all(restSubscripts, Subscript.isIndex)) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
+    outExp := match (op.op, restSubscripts)
+      case (Op.MATRIX_PRODUCT, {})
+        algorithm
+          e1 := applySubscript(subscript, e1, {}, applyToScope);
+          op := Operator.OPERATOR(Type.unliftArray(op.ty), Op.MUL_VECTOR_MATRIX, false);
+        then
+          BINARY(e1, op, e2);
+
+      case (Op.MATRIX_PRODUCT, {sub2})
+        algorithm
+          e1 := applySubscript(subscript, e1, {}, applyToScope);
+          e2 := applySubscript(Subscript.WHOLE(), e2, {sub2}, applyToScope);
+        then
+          BINARY(e1, Operator.makeScalarProduct(Type.arrayElementType(op.ty)), e2);
+
+      case (Op.MUL_MATRIX_VECTOR, {})
+        algorithm
+          e1 := applySubscript(subscript, e1, {}, applyToScope);
+        then
+          BINARY(e1, Operator.makeScalarProduct(Type.arrayElementType(op.ty)), e2);
+
+      case (Op.MUL_VECTOR_MATRIX, {})
+        algorithm
+          e2 := applySubscript(Subscript.WHOLE(), e2, {subscript}, applyToScope);
+        then
+          BINARY(e1, Operator.makeScalarProduct(Type.arrayElementType(op.ty)), e2);
+
+      else makeSubscriptedExp(subscript :: restSubscripts, exp);
+    end match;
+  end applySubscriptProduct;
 
   function makeSubscriptedExp
     input list<Subscript> subscripts;
