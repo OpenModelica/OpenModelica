@@ -694,6 +694,7 @@ FuncVectorization6.mo \
 FuncVectorizationBuiltin.mo \
 FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
+FuncVectorizationProduct1.mo \
 FuncVectorizationReduction1.mo \
 FuncVectorizationSize1.mo \
 FuncVectorizationSizeCheck1.mo \
