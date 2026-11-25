@@ -196,6 +196,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_array_ndims", &[WTy::I32], &[WTy::I32]),
     ("rt_array_total", &[WTy::I32], &[WTy::I32]),
     ("rt_array_dim", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_same_size", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_size_error", &[WTy::I32, WTy::I32, WTy::I32], &[]),
     ("rt_array_elem_ptr", &[WTy::I32, WTy::I32], &[WTy::I32]),
     // The element area itself, for an `external "C"` array argument.
     ("rt_array_data", &[WTy::I32], &[WTy::I32]),

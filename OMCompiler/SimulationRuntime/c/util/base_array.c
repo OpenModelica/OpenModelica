@@ -312,6 +312,29 @@ void check_base_array_dim_sizes_except(int k, const base_array_t *elts, int n)
 }
 
 /**
+ * @brief Stop with an error if two arrays do not have the same size.
+ *
+ * The code generators call this before an element-wise operation when a
+ * dimension of an operand is not known at compile time.
+ *
+ * @param exp  The operation, for the error message.
+ */
+void check_base_array_same_size(threadData_t *threadData, const base_array_t a, const base_array_t b, const char *exp)
+{
+    int i;
+
+    if (a.ndims != b.ndims) {
+        omc_assert(threadData, omc_dummyFileInfo, "The operands of %s have different numbers of dimensions: %d and %d.", exp, a.ndims, b.ndims);
+    }
+
+    for (i = 0; i < a.ndims; ++i) {
+        if (a.dim_size[i] != b.dim_size[i]) {
+            omc_assert(threadData, omc_dummyFileInfo, "Dimension %d of %s has different sizes: %ld and %ld.", i + 1, exp, (long) a.dim_size[i], (long) b.dim_size[i]);
+        }
+    }
+}
+
+/**
  * @brief Compare the shapes (dimensions) of two arrays for equality.
  *
  * Checks if two arrays have the same number of dimensions and all matching

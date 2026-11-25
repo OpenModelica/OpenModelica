@@ -1049,6 +1049,34 @@ pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
     unsafe { load_u32(obj + ARR_DIMS_OFF + (axis as u32 - 1) * 4) }
 }
 
+/// 1 if the arrays `a` and `b` have the same dimensions.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_array_same_size(a: u32, b: u32) -> i32 {
+    let n = rt_array_ndims(a);
+    let same = n == rt_array_ndims(b)
+        && (0..n).all(|k| unsafe { load_u32(a + ARR_DIMS_OFF + k * 4) == load_u32(b + ARR_DIMS_OFF + k * 4) });
+    same as i32
+}
+
+/// C's `check_base_array_same_size` for arrays of different sizes; `exp` is a
+/// String handle with the operation.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_array_size_error(a: u32, b: u32, exp: u32) {
+    let exp = core::str::from_utf8(unsafe { str_bytes(exp) }).unwrap_or("");
+    let (na, nb) = (rt_array_ndims(a), rt_array_ndims(b));
+    if na != nb {
+        omc_assert(&format!(
+            "The operands of {exp} have different numbers of dimensions: {na} and {nb}."
+        ));
+    }
+    for k in 1..=na as i32 {
+        let (da, db) = (rt_array_dim(a, k), rt_array_dim(b, k));
+        if da != db {
+            omc_assert(&format!("Dimension {k} of {exp} has different sizes: {da} and {db}."));
+        }
+    }
+}
+
 /// Storage handed out in place of an out-of-range element address, so the
 /// caller's load/store lands somewhere harmless.
 #[repr(align(8))]

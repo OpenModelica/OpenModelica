@@ -61,6 +61,7 @@ pub(super) fn compile_array_ew(
     e2: &DAE::Exp,
     op_code: i32,
     ty: &DAE::Type,
+    size_check: Option<&DAE::Operator>,
 ) -> Result<WTy> {
     let elem = array_op_elem(ty, [e1, e2])?;
     let rt = if elem.wty() == WTy::F64 {
@@ -74,6 +75,9 @@ pub(super) fn compile_array_ew(
     compile_exp(ctx, e2)?;
     let bt = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(bt));
+    if let Some(op) = size_check {
+        emit_size_check(ctx, e1, op, e2, at, bt)?;
+    }
     ctx.emit(we::Instruction::LocalGet(at));
     ctx.emit(we::Instruction::LocalGet(bt));
     ctx.emit(we::Instruction::I32Const(op_code));
@@ -81,6 +85,34 @@ pub(super) fn compile_array_ew(
     release_temp_array(ctx, at)?;
     release_temp_array(ctx, bt)?;
     Ok(WTy::I32)
+}
+
+/// C's `check_base_array_same_size` before an element-wise operation, when the
+/// operands are not known to have the same size at compile time.
+fn emit_size_check(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::Exp, at: u32, bt: u32) -> Result<()> {
+    if openmodelica_frontend_base::Expression::sameArraySize(
+        metamodelica::Ref::new(e1.clone()),
+        metamodelica::Ref::new(e2.clone()),
+    )? {
+        return Ok(());
+    }
+    let shown = dumped_exp(&DAE::Exp::BINARY {
+        exp1: metamodelica::Ref::new(e1.clone()),
+        operator: op.clone(),
+        exp2: metamodelica::Ref::new(e2.clone()),
+    })?;
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::LocalGet(bt));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_same_size")?));
+    ctx.emit(we::Instruction::I32Eqz);
+    emit_unlikely_if(ctx, we::BlockType::Empty);
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::LocalGet(bt));
+    emit_str_literal(ctx, shown.as_bytes())?;
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_size_error")?));
+    ctx.emit(we::Instruction::Unreachable);
+    ctx.emit(we::Instruction::End);
+    Ok(())
 }
 
 /// `v1 * v2` scalar (dot) product of two numeric vectors → a scalar. Both

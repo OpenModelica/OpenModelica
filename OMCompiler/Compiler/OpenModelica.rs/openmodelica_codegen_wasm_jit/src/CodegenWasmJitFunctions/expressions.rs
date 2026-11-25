@@ -159,7 +159,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                     DAE::Operator::OR { ty } => (OP_OR, ty),
                     other => return Err("CodegenWasmJit: unsupported logical array operator"),
                 };
-                return compile_array_ew(ctx, exp1, exp2, op_code, ty);
+                return compile_array_ew(ctx, exp1, exp2, op_code, ty, None);
             }
             compile_bool_operand(ctx, exp1)?;
             compile_bool_operand(ctx, exp2)?;
@@ -583,10 +583,10 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
     // Handled before the scalar paths because `operator_sigty` does not classify
     // the array operators.
     match op {
-        O::ADD_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_ADD, ty),
-        O::SUB_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_SUB, ty),
-        O::MUL_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_MUL, ty),
-        O::DIV_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_DIV, ty),
+        O::ADD_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_ADD, ty, Some(op)),
+        O::SUB_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_SUB, ty, Some(op)),
+        O::MUL_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_MUL, ty, Some(op)),
+        O::DIV_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_DIV, ty, Some(op)),
         // `a + s` / `a * s` (commutative — the array operand is found by type).
         O::ADD_ARRAY_SCALAR { ty } => return compile_array_scalar(ctx, e1, e2, OP_ADD, false, ty),
         O::MUL_ARRAY_SCALAR { ty } => return compile_array_scalar(ctx, e1, e2, OP_MUL, false, ty),
@@ -600,7 +600,7 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
         O::MUL_MATRIX_PRODUCT { .. } => return compile_matmul(ctx, e1, e2),
         // Element-wise power: `a .^ b` (POW_ARR2), `a .^ s` (POW_ARRAY_SCALAR)
         // and `s .^ a` (POW_SCALAR_ARRAY). The per-element `pow` runs in-wasm.
-        O::POW_ARR2 { ty, .. } => return compile_array_ew(ctx, e1, e2, OP_POW, ty),
+        O::POW_ARR2 { ty, .. } => return compile_array_ew(ctx, e1, e2, OP_POW, ty, None),
         O::POW_ARRAY_SCALAR { ty, .. } => return compile_array_scalar(ctx, e1, e2, OP_POW, false, ty),
         O::POW_SCALAR_ARRAY { ty, .. } => return compile_array_scalar(ctx, e1, e2, OP_POW, true, ty),
         _ => {}

@@ -5823,6 +5823,16 @@ template rcReleaseBefore(String ty, Text name)
   rcRelease(ty, name)
 end rcReleaseBefore;
 
+template arraySizeCheck(Exp exp, Text e1, Text e2)
+ "Checks that the operands of an element-wise operation have the same size,
+  when that is not known at compile time."
+::=
+  match exp
+  case BINARY(__) then
+    if sameArraySize(exp1, exp2) then ""
+    else 'check_base_array_same_size(threadData, <%e1%>, <%e2%>, "<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");<%\n%>'
+end arraySizeCheck;
+
 template rcSpillArray(String ty, Text call, Text &preExp, Text &varDecls, Text &varFrees)
  "An array built as an rvalue would have no owner to release it."
 ::=
@@ -6745,21 +6755,25 @@ case BINARY(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
+    let &preExp += arraySizeCheck(exp, e1, e2)
     rcSpillArray(type, 'add_alloc_<%type%>(<%e1%>, <%e2%>)', &preExp, &varDecls, &varFrees)
   case SUB_ARR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
+    let &preExp += arraySizeCheck(exp, e1, e2)
     rcSpillArray(type, 'sub_alloc_<%type%>(<%e1%>, <%e2%>)', &preExp, &varDecls, &varFrees)
   case MUL_ARR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
+    let &preExp += arraySizeCheck(exp, e1, e2)
     rcSpillArray(type, 'mul_alloc_<%type%>(<%e1%>, <%e2%>)', &preExp, &varDecls, &varFrees)
   case DIV_ARR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
+    let &preExp += arraySizeCheck(exp, e1, e2)
     rcSpillArray(type, 'div_alloc_<%type%>(<%e1%>, <%e2%>)', &preExp, &varDecls, &varFrees)
   case MUL_ARRAY_SCALAR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
