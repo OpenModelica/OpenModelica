@@ -2023,6 +2023,12 @@ algorithm
       then
         (DAE.BINARY(res2, DAE.ADD_ARR(tp), res1), funcs);
 
+    case ("promote", {e1,e2}, DAE.CALL_ATTR(ty=tp))
+      algorithm
+        (res1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+      then
+        (Expression.makePureBuiltinCall("promote", {res1, e2}, tp), funcs);
+
     case ("max", {e1,e2}, DAE.CALL_ATTR(ty=tp))
       algorithm
         (res1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
