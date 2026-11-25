@@ -441,7 +441,7 @@ public
     // using the vectorization dim. This means going through each argument
     // and subscripting it with an iterator for each dim and creating a map call.
     if MatchedFunction.isVectorized(matchedFunc) then
-      call := vectorizeCall(call, matchedFunc.mk, info);
+      call := vectorizeCall(call, matchedFunc.mk, context, info);
     end if;
   end matchTypedNormalCall;
 
@@ -1307,8 +1307,122 @@ public
     // multiple iterators so we need to convert them to nested calls with one
     // iterator each. But the frontend can handle multiple iterators more
     // efficiently so we do it only just before passing them to the backend.
-    daeCall := toDAE_work(expandReduction(call));
+    daeCall := toDAE_work(expandReduction(removeFillSubscripts(call)));
   end toDAE;
+
+  function removeFillSubscripts
+    "Replaces fill(e, n)[i] with e when the range of the iterator i is 1:n. Not
+     done earlier, since the flat output of a vectorized call needs the subscript."
+    input output NFCall call;
+  protected
+    list<tuple<InstNode, list<Expression>>> iter_sizes;
+  algorithm
+    () := match call
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          iter_sizes := list(iteratorSizes(i) for i in call.iters);
+          call.exp := Expression.map(call.exp, function removeFillSubscript(iterSizes = iter_sizes));
+        then
+          ();
+
+      case TYPED_REDUCTION()
+        algorithm
+          iter_sizes := list(iteratorSizes(i) for i in call.iters);
+          call.exp := Expression.map(call.exp, function removeFillSubscript(iterSizes = iter_sizes));
+        then
+          ();
+
+      else ();
+    end match;
+  end removeFillSubscripts;
+
+  function iteratorSizes
+    "Returns the sizes that the range 1:n of an iterator is known to have: n,
+     and the sizes that OpenModelica.Internal.checkedSize checks n against."
+    input tuple<InstNode, Expression> iter;
+    output tuple<InstNode, list<Expression>> iterSizes;
+  protected
+    InstNode node;
+    Expression range, range_end, size1, size2;
+    list<Expression> sizes = {};
+  algorithm
+    (node, range) := iter;
+
+    () := match range
+      case Expression.RANGE(start = Expression.INTEGER(1), step = NONE(), stop = range_end)
+        algorithm
+          while isCheckedSizeCall(range_end) loop
+            Expression.CALL(call = TYPED_CALL(arguments = {size1, size2, _})) := range_end;
+            sizes := range_end :: size2 :: sizes;
+            range_end := size1;
+          end while;
+
+          sizes := range_end :: sizes;
+        then
+          ();
+
+      else ();
+    end match;
+
+    iterSizes := (node, sizes);
+  end iteratorSizes;
+
+  function isCheckedSizeCall
+    input Expression exp;
+    output Boolean res;
+  protected
+    Function fn;
+  algorithm
+    res := match exp
+      case Expression.CALL(call = TYPED_CALL(fn = fn))
+        then AbsynUtil.pathString(Function.name(fn)) == "OpenModelica.Internal.checkedSize";
+      else false;
+    end match;
+  end isCheckedSizeCall;
+
+  function removeFillSubscript
+    input Expression exp;
+    input list<tuple<InstNode, list<Expression>>> iterSizes;
+    output Expression outExp;
+  protected
+    Expression fill_exp, dim;
+    list<Expression> dims;
+    Boolean in_range = true;
+  algorithm
+    outExp := match exp
+      case Expression.SUBSCRIPTED_EXP(exp = Expression.CALL(call = TYPED_CALL(arguments = fill_exp :: dims)))
+        guard Expression.isCallNamed(exp.exp, "fill") and listLength(exp.subscripts) == listLength(dims)
+        algorithm
+          for sub in exp.subscripts loop
+            dim :: dims := dims;
+            in_range := in_range and isIteratorInRange(sub, dim, iterSizes);
+          end for;
+        then
+          if in_range then fill_exp else exp;
+
+      else exp;
+    end match;
+  end removeFillSubscript;
+
+  function isIteratorInRange
+    "Returns true if sub is an iterator whose range is known to be 1:size."
+    input Subscript sub;
+    input Expression size;
+    input list<tuple<InstNode, list<Expression>>> iterSizes;
+    output Boolean res = false;
+  protected
+    InstNode iter;
+    list<Expression> sizes;
+  algorithm
+    for it in iterSizes loop
+      (iter, sizes) := it;
+
+      if Subscript.equalsIterator(sub, iter) then
+        res := List.any(sizes, function Expression.isEqual(exp2 = size));
+        return;
+      end if;
+    end for;
+  end isIteratorInRange;
 
   function toDAE_work
     input NFCall call;
@@ -3304,6 +3418,7 @@ protected
   function vectorizeCall
     input NFCall base_call;
     input FunctionMatchKind mk;
+    input InstContext.Type context;
     input SourceInfo info;
     output NFCall vectorized_call;
   protected
@@ -3312,7 +3427,7 @@ protected
     list<tuple<InstNode, Expression>> iters;
     InstNode iter;
     Integer i;
-    list<Expression> call_args;
+    list<Expression> call_args, vect_args;
     Subscript sub;
   algorithm
     vectorized_call := match (base_call, mk)
@@ -3320,6 +3435,7 @@ protected
         algorithm
           iters := {};
           i := 1;
+          vect_args := list(listGet(call_args, idx) for idx in mk.vectorizedArgs);
 
           for dim in mk.vectDims loop
             Error.assertion(Dimension.isKnown(dim, allowExp = true), getInstanceName() +
@@ -3327,7 +3443,13 @@ protected
 
             // Create the range on which we will iterate to vectorize.
             ty := Type.ARRAY(Type.INTEGER(), {dim});
-            exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
+            exp := Dimension.sizeExp(dim);
+
+            if InstContext.inFunction(context) then
+              exp := checkVectorizedSize(exp, dim, vect_args, i, base_call, context, info);
+            end if;
+
+            exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), exp);
 
             // Create the iterator.
             iter := InstNode.newUniqueIterator(info);
@@ -3360,6 +3482,124 @@ protected
 
      end match;
   end vectorizeCall;
+
+  function checkVectorizedSize
+    "Moving the iterators of a vectorized call into the operands of element-wise
+     operations removes the check that the operands have the same size, so the
+     end of the range is checked against the sizes of the operands instead."
+    input Expression rangeEnd;
+    input Dimension rangeDim;
+    input list<Expression> args;
+    input Integer index;
+    input NFCall call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression outRangeEnd = rangeEnd;
+  protected
+    list<tuple<Expression, Integer>> operands = {};
+    list<Expression> checked_sizes;
+    Expression e, size_exp;
+    Integer i;
+  algorithm
+    if listLength(args) > 1 then
+      operands := list((arg, index) for arg in args);
+    end if;
+
+    for arg in args loop
+      operands := collectOperands(arg, index, operands);
+    end for;
+
+    checked_sizes := {SimplifyExp.simplify(rangeEnd)};
+
+    for operand in listReverse(operands) loop
+      (e, i) := operand;
+
+      if not Dimension.isEqualKnown(Type.nthDimension(Expression.typeOf(e), i), rangeDim) then
+        size_exp := SimplifyExp.simplify(Expression.SIZE(e, SOME(Expression.INTEGER(i))));
+
+        if not List.any(checked_sizes, function Expression.isEqual(exp2 = size_exp)) then
+          outRangeEnd := makeCheckedSize(outRangeEnd, size_exp,
+            Error.infoStr(info) + " Dimension " + String(index) + " of " + toString(call),
+            typedFunction(call), context, info);
+          checked_sizes := size_exp :: checked_sizes;
+        end if;
+      end if;
+    end for;
+  end checkVectorizedSize;
+
+  function collectOperands
+    "Adds the operands of the element-wise operations in exp that
+     Expression.applySubscript moves subscripts into, with the index of their
+     dimension that dimension index of exp comes from."
+    input Expression exp;
+    input Integer index;
+    input output list<tuple<Expression, Integer>> operands;
+  protected
+    import NFOperator.Op;
+  algorithm
+    operands := match exp
+      local
+        Expression e1, e2;
+        Operator op;
+        Boolean sub1, sub2;
+        list<Expression> args;
+
+      case Expression.BINARY(exp1 = e1, operator = op, exp2 = e2)
+        algorithm
+          (sub1, sub2) := Expression.subscriptedOperands(op);
+
+          if sub1 and sub2 then
+            operands := (e1, index) :: (e2, index) :: operands;
+          end if;
+
+          if sub1 then
+            operands := collectOperands(e1, index, operands);
+          end if;
+
+          if sub2 then
+            operands := collectOperands(e2, index, operands);
+          end if;
+        then
+          operands;
+
+      case Expression.MULTARY()
+        guard Type.isArray(exp.operator.ty) and
+              (exp.operator.op == Op.ADD or exp.operator.op == Op.ADD_EW or exp.operator.op == Op.MUL_EW)
+        algorithm
+          args := listAppend(exp.arguments, exp.inv_arguments);
+
+          if not List.any(args, Expression.isScalar) then
+            for arg in args loop
+              operands := collectOperands(arg, index, (arg, index) :: operands);
+            end for;
+          end if;
+        then
+          operands;
+
+      case Expression.UNARY() then collectOperands(exp.exp, index, operands);
+      case Expression.CAST() then collectOperands(exp.exp, index, operands);
+      else operands;
+    end match;
+  end collectOperands;
+
+  function makeCheckedSize
+    input Expression size;
+    input Expression otherSize;
+    input String description;
+    input Function fn "The vectorized function, to find the top scope.";
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression checkedSize;
+  protected
+    ComponentRef fn_ref;
+  algorithm
+    fn_ref := Lookup.lookupFunctionNameSilent(
+      Absyn.CREF_QUAL("OpenModelica", {}, Absyn.CREF_QUAL("Internal", {}, Absyn.CREF_IDENT("checkedSize", {}))),
+      InstNode.topScope(Function.instance(fn)), context);
+    fn_ref := Function.instFunctionRef(fn_ref, context, info);
+    checkedSize := Expression.CALL(UNTYPED_CALL(fn_ref, {size, otherSize, Expression.STRING(description)}, {}));
+    checkedSize := Typing.typeExp(checkedSize, context, info);
+  end makeCheckedSize;
 
   function isVectorized
     input NFCall call;

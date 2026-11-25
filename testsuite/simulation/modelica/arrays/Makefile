@@ -58,6 +58,7 @@ ticket5114.mos \
 VariableRangeSubscript.mos \
 VectorizedCallArrayLhs.mos \
 VectorizeOneReturnValue.mos \
+VectorizedSizeCheck.mos \
 Xpowers1.mos \
 Xpowers2.mos \
 Xpowers3.mos \

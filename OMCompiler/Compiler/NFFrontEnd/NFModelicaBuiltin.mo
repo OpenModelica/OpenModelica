@@ -1046,6 +1046,15 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   type BuiltinType "Integer,Real,String,enumeration or array of some kind"
   end BuiltinType;
 
+  function checkedSize "Returns n, and stops with an error if n and m are different"
+    input Integer n;
+    input Integer m;
+    input String description;
+    output Integer s = n;
+  algorithm
+    assert(n == m, description + " has different sizes: " + String(n) + " and " + String(m) + ".");
+  end checkedSize;
+
   function ClockConstructor = $overload(OpenModelica.Internal.inferredClock, OpenModelica.Internal.rationalClock, OpenModelica.Internal.realClock, OpenModelica.Internal.booleanClock, OpenModelica.Internal.solverClock)
     "Overloaded clock constructor"
     annotation(version="Modelica 3.3", Documentation(info="<html>

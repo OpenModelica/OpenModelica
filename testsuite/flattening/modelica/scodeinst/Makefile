@@ -696,6 +696,7 @@ FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
 FuncVectorizationReduction1.mo \
 FuncVectorizationSize1.mo \
+FuncVectorizationSizeCheck1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
 FuncWrongType2.mo \

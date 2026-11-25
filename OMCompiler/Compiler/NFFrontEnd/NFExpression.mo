@@ -2185,14 +2185,48 @@ public
     input Boolean applyToScope;
     output Expression outExp;
   protected
-    import NFOperator.Op;
     Expression e1, e2;
     Operator op;
-    Op scalar_op;
+    Operator scalar_op;
     Boolean sub1, sub2;
   algorithm
     BINARY(e1, op, e2) := exp;
 
+    (sub1, sub2, scalar_op) := subscriptedOperands(op);
+
+    if not (sub1 or sub2) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
+    if sub1 then
+      e1 := applySubscript(subscript, e1, restSubscripts, applyToScope);
+    end if;
+
+    if sub2 then
+      e2 := applySubscript(subscript, e2, restSubscripts, applyToScope);
+    end if;
+
+    op.ty := typeOf(if sub1 then e1 else e2);
+
+    if Type.isScalar(op.ty) then
+      op.op := scalar_op.op;
+    end if;
+
+    outExp := BINARY(e1, op, e2);
+  end applySubscriptBinary;
+
+  function subscriptedOperands
+    "Returns which operands of an element-wise operator a subscript of the
+     operation is moved into, and the operator for the subscripted operands."
+    input Operator op;
+    output Boolean sub1;
+    output Boolean sub2;
+    output Operator scalarOp = op;
+  protected
+    import NFOperator.Op;
+    Op scalar_op;
+  algorithm
     (sub1, sub2, scalar_op) := match op.op
       case Op.ADD guard Type.isArray(op.ty) then (true, true, Op.ADD);
       case Op.SUB guard Type.isArray(op.ty) then (true, true, Op.SUB);
@@ -2214,27 +2248,8 @@ public
       else (false, false, op.op);
     end match;
 
-    if not (sub1 or sub2) then
-      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
-      return;
-    end if;
-
-    if sub1 then
-      e1 := applySubscript(subscript, e1, restSubscripts, applyToScope);
-    end if;
-
-    if sub2 then
-      e2 := applySubscript(subscript, e2, restSubscripts, applyToScope);
-    end if;
-
-    op.ty := typeOf(if sub1 then e1 else e2);
-
-    if Type.isScalar(op.ty) then
-      op.op := scalar_op;
-    end if;
-
-    outExp := BINARY(e1, op, e2);
-  end applySubscriptBinary;
+    scalarOp.op := scalar_op;
+  end subscriptedOperands;
 
   function makeSubscriptedExp
     input list<Subscript> subscripts;
