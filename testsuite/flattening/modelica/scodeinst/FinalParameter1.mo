@@ -1,7 +1,6 @@
 // name: FinalParameter1
 // keywords:
 // status: correct
-// suite: disabled
 //
 
 model FinalParameter1

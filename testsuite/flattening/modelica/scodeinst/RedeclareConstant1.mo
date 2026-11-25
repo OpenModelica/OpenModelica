@@ -1,7 +1,6 @@
 // name: RedeclareConstant1
 // keywords:
 // status: incorrect
-// suite: disabled
 //
 // Checks that constants aren't allowed to be redeclared.
 // 
@@ -15,9 +14,9 @@ model RedeclareConstant1
 end RedeclareConstant1;
 
 // Result:
-// Error processing file: RedeclareClassComponent.mo
-// [flattening/modelica/scodeinst/RedeclareClassComponent.mo:19:13-19:29:writable] Notification: From here:
-// [flattening/modelica/scodeinst/RedeclareClassComponent.mo:14:15-14:26:writable] Error: Invalid redeclaration of class M as component.
+// Error processing file: RedeclareConstant1.mo
+// [flattening/modelica/scodeinst/RedeclareConstant1.mo:9:3-9:36:writable] Notification: From here:
+// [flattening/modelica/scodeinst/RedeclareConstant1.mo:13:7-13:29:writable] Error: Redeclaration of constant component x is not allowed.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
