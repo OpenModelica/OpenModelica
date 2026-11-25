@@ -5726,7 +5726,7 @@ template zeroCrossingValue(Integer index1, Exp relation, Text &preExp, Text &var
   match relation
   case exp as RELATION(__) then
     if isContinuousZeroCrossing(exp) then
-      zeroCrossingRelationValue(exp, &preExp, &varDecls, &varFrees, &auxFunction)
+      'fabs(<%zeroCrossingRelationValue(exp, &preExp, &varDecls, &varFrees, &auxFunction)%>) * ((<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1)'
     else
       '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
