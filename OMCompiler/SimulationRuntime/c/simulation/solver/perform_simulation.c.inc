@@ -740,7 +740,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         if (solverInfo->solverMethod == S_OPTIMIZATION)
           canRetry = retry == 0;
         else if (historyFailure)
-          canRetry = triedStepSize/2 >= minRetryStepSize && simInfo->timeValueOld + triedStepSize/2 > simInfo->timeValueOld;
+          canRetry = triedStepSize/2 >= minRetryStepSize && stepMovesTime(simInfo->timeValueOld, triedStepSize/2);
         else
           canRetry = ordinaryRetries < maxStepRetries && (ordinaryRetries == 0 || triedStepSize/2 >= minRetryStepSize);
         if (canRetry) {

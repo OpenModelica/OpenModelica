@@ -1783,7 +1783,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
         if (gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL)) {
           gbData->stepSize *= 0.5;
-          if (gbData->time + gbData->stepSize <= gbData->time) return -1;
+          if (!stepMovesTime(gbData->time, gbData->stepSize)) return -1;
           gbData->stats.nConvergenceTestFailures++;
           err = INFINITY;
           continue;
