@@ -7285,12 +7285,17 @@ let &sub = buffer ""
     var2
 
   case CALL(path=IDENT(name="homotopy"), expLst={actual, simplified}, attr=CALL_ATTR(ty=T_REAL(__))) then
-    if Flags.isSet(Flags.HOMOTOPY_IN_RESIDUALS) then
+    match context
+    case FUNCTION_CONTEXT(__) then
+      // no homotopy parameter in a function: the trivial implementation
+      daeExp(actual, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    else if Flags.isSet(Flags.HOMOTOPY_IN_RESIDUALS) then
       daeExpHomotopyLambda(actual, simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
     else
       let eActual = daeExp(actual, context, &preExp, &varDecls, &varFrees, &auxFunction)
       let eSimplified = daeExp(simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
       'homotopy(<%eActual%>, <%eSimplified%>)'
+    end match
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     cref(crefPrefixDer(arg.componentRef), &sub)

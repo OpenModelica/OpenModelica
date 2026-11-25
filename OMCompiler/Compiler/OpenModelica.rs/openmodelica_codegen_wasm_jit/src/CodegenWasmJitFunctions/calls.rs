@@ -611,6 +611,13 @@ pub(super) fn compile_math_builtin(
             let w = compile_exp(ctx, argv[0])?;
             Ok(if w == WTy::F64 { SigTy::Real } else { SigTy::Int })
         }
+        // No homotopy parameter in a function: the trivial implementation.
+        "homotopy" if ctx.sim.is_none() => {
+            need_args(&argv, 2, name)?;
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::F64);
+            Ok(SigTy::Real)
+        }
         // C's macro, and not interchangeable with the algebraically equal
         // `s + lambda*(a - s)`: that rounds `a - s` to the ulp of the larger operand,
         // quantizing a residual whose simplified branch is much bigger than itself.
