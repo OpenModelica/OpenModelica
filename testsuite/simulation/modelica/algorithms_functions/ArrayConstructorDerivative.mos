@@ -1,0 +1,110 @@
+// name: ArrayConstructorDerivative
+// keywords: differentiation, function, derivative, array constructor, reduction
+// status: correct
+//
+// The iterators of an array constructor and of a sum reduction have no
+// derivative. The old backend does not differentiate a max reduction, in a
+// function or in an equation.
+
+loadString("
+package P
+  function f
+    input Real x;
+    output Real y;
+  protected
+    Real v[3];
+  algorithm
+    v := {i*x for i in 1:3};
+    y := 0;
+    for i in 1:3 loop
+      y := y + v[i];
+    end for;
+  end f;
+
+  function g
+    input Real x;
+    output Real y;
+  protected
+    Real v[2];
+  algorithm
+    v := linspace(0, x, 2);
+    y := 0;
+    for i in 1:2 loop
+      y := y + v[i];
+    end for;
+  end g;
+
+  function h
+    input Real x;
+    input Integer n;
+    output Real y;
+  algorithm
+    y := sum(i*x for i in 1:n);
+    for i in 1:1 loop
+      y := y + 0;
+    end for;
+  end h;
+
+  function m
+    input Real x;
+    input Integer n;
+    output Real y;
+  algorithm
+    y := max(i*x for i in 1:n);
+    for i in 1:1 loop
+      y := y + 0;
+    end for;
+  end m;
+
+  model Functions
+    Real y1 = f(time);
+    Real y2 = g(time);
+    Real y3 = h(time, 3);
+    Real dy1 = der(y1) \"6\";
+    Real dy2 = der(y2) \"1\";
+    Real dy3 = der(y3) \"6\";
+  end Functions;
+
+  model MaxInFunction
+    Real y = m(1 - time, 3);
+    Real dy = der(y);
+  end MaxInFunction;
+
+  model MaxReduction
+    parameter Integer n = 3 annotation(Evaluate = false);
+    Real x(start = 1, fixed = true);
+    Real y = max(i*x for i in 1:n);
+    Real dy = der(y);
+  equation
+    der(x) = -1;
+  end MaxReduction;
+end P;
+"); getErrorString();
+
+simulate(P.Functions, stopTime = 1); getErrorString();
+val(dy1, 0.5);
+val(dy2, 0.5);
+val(dy3, 0.5);
+translateModel(P.MaxInFunction);
+regexBool(getErrorString(), "Derivative of expression \"y = P.m[(].*\" w.r.t. \"time\" is non-existent");
+translateModel(P.MaxReduction);
+regexBool(getErrorString(), "Derivative of expression \"y = max[(].*\" w.r.t. \"time\" is non-existent");
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.Functions_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'P.Functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 6.0
+// 1.0
+// 6.0
+// false
+// true
+// false
+// true
+// endResult
