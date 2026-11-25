@@ -1,0 +1,87 @@
+// name: AliasIntegerToReal
+// keywords: NewBackend, alias, integer, cast
+// status: correct
+//
+// A Real variable that is equal to an Integer variable does not replace the
+// Integer variable.
+
+loadString("
+package AliasIntegerToReal
+  model Scalar
+    Integer i;
+    Real r;
+  equation
+    i = integer(3*time);
+    r = i;
+  end Scalar;
+
+  model Array
+    Integer i[2];
+    Real r[2];
+  equation
+    i = {integer(3*time), 2};
+    r = i;
+  end Array;
+
+  model When
+    Integer i(start = 0, fixed = true);
+    Real r;
+    Real x(start = 0, fixed = true);
+  equation
+    when sample(0, 0.1) then
+      i = pre(i) + 1;
+    end when;
+    r = i;
+    der(x) = r;
+  end When;
+end AliasIntegerToReal;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(AliasIntegerToReal.Scalar); getErrorString();
+val(r, 0.5); getErrorString();
+
+simulate(AliasIntegerToReal.Array); getErrorString();
+val(r[1], 0.5); val(r[2], 0.5); getErrorString();
+
+simulate(AliasIntegerToReal.When); getErrorString();
+val(x, 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasIntegerToReal.Scalar_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AliasIntegerToReal.Scalar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// ""
+// record SimulationResult
+//     resultFile = "AliasIntegerToReal.Array_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AliasIntegerToReal.Array', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// ""
+// record SimulationResult
+//     resultFile = "AliasIntegerToReal.When_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AliasIntegerToReal.When', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.5
+// ""
+// endResult

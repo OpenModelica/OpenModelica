@@ -76,9 +76,12 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
             sig.push_str(&format!("lib\t{}\n", lib.name));
         }
         // C source: an `Include`, or a `Library` naming a `.c` file.
-        let sources: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes)
-            .map(|s| s.to_string())
+        let structs = external_struct_sources(&fn_code.extraRecordDecls, &ext_imports)?;
+        let sources: Vec<String> = std::iter::once(structs.prelude)
+            .chain(crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes).map(|s| s.to_string()))
             .chain(resolved.sources)
+            .chain(std::iter::once(structs.wrappers))
+            .filter(|s| !s.is_empty())
             .collect();
         let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes)
             .map(|s| s.to_string())
@@ -121,6 +124,7 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
             &sources,
             &dirs,
             &ext_imports,
+            &structs.wrapped,
             &wasm_libs,
             &mut notes,
         ) {
@@ -157,11 +161,12 @@ fn native_fallbacks(
     sources: &[String],
     dirs: &[String],
     ext_imports: &[ExtCallSig],
+    record_wrapped: &[String],
     wasm_libs: &[openmodelica_wasm_jit::model::ExtLibrary],
     notes: &mut Vec<String>,
 ) -> Vec<String> {
     let missing = crate::CodegenWasmJit::missing_ext_symbols(ext_imports, wasm_libs);
-    if missing.is_empty() || !crate::CodegenWasmJit::native_externals_allowed() {
+    if (missing.is_empty() && record_wrapped.is_empty()) || !crate::CodegenWasmJit::native_externals_allowed() {
         return Vec::new();
     }
     let mp = &fn_code.makefileParams;
@@ -177,6 +182,7 @@ fn native_fallbacks(
             cflags: mp.cflags.to_string(),
             dllext: mp.dllext.to_string(),
             prefix: base.to_string(),
+            record_wrapped: record_wrapped.to_vec(),
         };
         match inc.compile(&missing) {
             Ok(b) => {

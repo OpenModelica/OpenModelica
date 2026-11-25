@@ -74,8 +74,7 @@ file(GLOB_RECURSE OMEDITLIB_HEADERS ${LIB}/*.h)
 # and the FMU build output run native tools.
 set(WASM_EXCLUDE_PATTERNS
   "/generatedfiles/"
-  "/Animation/" "/Debugger/" "/Git/" "/CrashReport/"
-  "/Traceability/"
+  "/Animation/" "/Debugger/" "/CrashReport/"
   "/FMI/ImportFMUDialog\\." "/FMI/ImportFMUModelDescriptionDialog\\."
   "/FMI/FMUExportOutputWidget\\.")
 foreach(pat ${WASM_EXCLUDE_PATTERNS})

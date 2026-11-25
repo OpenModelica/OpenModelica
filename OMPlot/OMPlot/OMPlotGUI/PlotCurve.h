@@ -161,6 +161,8 @@ public:
   // QwtPlotItem interface
 public:
   virtual QRectF boundingRect() const override;
+protected:
+  virtual void drawSeries(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const override;
 };
 }
 

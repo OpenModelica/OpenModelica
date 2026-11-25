@@ -2140,13 +2140,13 @@ algorithm
       then DAE.T_CODE(DAE.C_VARIABLENAME());
 
     case Absyn.C_EQUATIONSECTION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE(), false);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE());
 
     case Absyn.C_ALGORITHMSECTION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE(), false);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE());
 
     case Absyn.C_ELEMENT()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE(), false);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE());
 
     case Absyn.C_EXPRESSION()
       then DAE.T_CODE(DAE.C_EXPRESSION());
@@ -9241,7 +9241,7 @@ algorithm
   end for;
 
   vars := listReverse(vars);
-  outType := DAE.T_COMPLEX(complexClassType, vars, NONE(), false);
+  outType := DAE.T_COMPLEX(complexClassType, vars, NONE());
 end complexTypeFromSlots;
 
 protected function slotListArgs

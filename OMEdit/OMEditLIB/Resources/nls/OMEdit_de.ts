@@ -531,25 +531,6 @@
     </message>
 </context>
 <context>
-    <name>CleanDialog</name>
-    <message>
-        <source>Clean Repository</source>
-        <translation>Repository bereinigen</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Alles auswählen</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Name</translation>
-    </message>
-    <message>
-        <source>Clean</source>
-        <translation>Bereinigen</translation>
-    </message>
-</context>
-<context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
@@ -878,69 +859,6 @@ Die lokale Kopie und ihr Synchronisierungsstatus werden entfernt. In der Cloud w
     <message>
         <source>Preview:</source>
         <translation>Vorschau:</translation>
-    </message>
-</context>
-<context>
-    <name>CommitChangesDialog</name>
-    <message>
-        <source>Commit</source>
-        <translation>Commit</translation>
-    </message>
-    <message>
-        <source>Repository:</source>
-        <translation>Repository:</translation>
-    </message>
-    <message>
-        <source>Branch:</source>
-        <translation>Branch:</translation>
-    </message>
-    <message>
-        <source>Repository Information:</source>
-        <translation>Repository-Informationen:</translation>
-    </message>
-    <message>
-        <source>Commit Information:</source>
-        <translation>Commit-Informationen:</translation>
-    </message>
-    <message>
-        <source>Author:</source>
-        <translation>Autor:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>E-Mail:</translation>
-    </message>
-    <message>
-        <source>Description:</source>
-        <translation>Beschreibung:</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Alles auswählen</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation>Status</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>Datei</translation>
-    </message>
-    <message>
-        <source>Files:</source>
-        <translation>Dateien:</translation>
-    </message>
-    <message>
-        <source>commit</source>
-        <translation>Commit</translation>
-    </message>
-    <message>
-        <source>Commit Message </source>
-        <translation>Commit-Nachricht </translation>
-    </message>
-    <message>
-        <source>Commit description:</source>
-        <translation>Commit-Beschreibung:</translation>
     </message>
 </context>
 <context>
@@ -3636,11 +3554,27 @@ Ist keine Plattform ausgewählt, wird die FMU als FMI 3.0 (fmi-ls-wasm) exportie
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Default Experiment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interval</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tolerance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Save as default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Keep these settings, except the DAE mode, for the next export</source>
+        <source>Keep these settings, except the DAE mode and the default experiment, for the next export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The interval and the tolerance must be greater than zero.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4362,13 +4296,6 @@ Weiter warten oder das Debuggen abbrechen?</numerusform>
     <message>
         <source>System follows the operating system color scheme. The --DarkMode command line option overrides this setting.</source>
         <translation>„System“ folgt dem Farbschema des Betriebssystems. Die Kommandozeilenoption --DarkMode überschreibt diese Einstellung.</translation>
-    </message>
-</context>
-<context>
-    <name>GitCommands</name>
-    <message>
-        <source>Repository Creation Failed</source>
-        <translation>Erstellen des Repositorys fehlgeschlagen</translation>
     </message>
 </context>
 <context>
@@ -5104,10 +5031,6 @@ Fehlermeldungen stehen im Meldungsbrowser; eventuell die letzten Änderungen mit
         <translation>Elemente filtern</translation>
     </message>
     <message>
-        <source>Committing modified files to the repository</source>
-        <translation>Committet die geänderten Dateien in das Repository</translation>
-    </message>
-    <message>
         <source>Report Issue</source>
         <translation>Problem melden</translation>
     </message>
@@ -5406,42 +5329,6 @@ Fehlermeldungen stehen im Meldungsbrowser; eventuell die letzten Änderungen mit
     <message>
         <source>Manage debug configurations</source>
         <translation>Verwaltet die Debug-Konfigurationen</translation>
-    </message>
-    <message>
-        <source>Create Repository</source>
-        <translation>Repository erstellen</translation>
-    </message>
-    <message>
-        <source>Create a Git repository</source>
-        <translation>Erstellt ein Git-Repository</translation>
-    </message>
-    <message>
-        <source>Log Current File</source>
-        <translation>Log der aktuellen Datei</translation>
-    </message>
-    <message>
-        <source>Logging current file</source>
-        <translation>Zeigt das Log der aktuellen Datei</translation>
-    </message>
-    <message>
-        <source>Stage Current File</source>
-        <translation>Aktuelle Datei stagen</translation>
-    </message>
-    <message>
-        <source>Staging current file for next commit</source>
-        <translation>Merkt die aktuelle Datei für den nächsten Commit vor (Stage)</translation>
-    </message>
-    <message>
-        <source>Unstage Current File</source>
-        <translation>Aktuelle Datei unstagen</translation>
-    </message>
-    <message>
-        <source>Unstaging current file from next commit</source>
-        <translation>Nimmt die aktuelle Datei aus dem nächsten Commit heraus (Unstage)</translation>
-    </message>
-    <message>
-        <source>Commit</source>
-        <translation>Commit</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -6529,25 +6416,6 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
     </message>
 </context>
 <context>
-    <name>LogCommitDialog</name>
-    <message>
-        <source>Select Commit</source>
-        <translation>Commit auswählen</translation>
-    </message>
-    <message>
-        <source>Subject</source>
-        <translation>Betreff</translation>
-    </message>
-    <message>
-        <source>SHA-1</source>
-        <translation>SHA-1</translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation>OK</translation>
-    </message>
-</context>
-<context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
@@ -7319,14 +7187,6 @@ Mit „Herunterladen...“ einen holen oder als Server-Programm einen vorhandene
     <message>
         <source>&amp;Debug</source>
         <translation>Deb&amp;uggen</translation>
-    </message>
-    <message>
-        <source>&amp;Git</source>
-        <translation>&amp;Git</translation>
-    </message>
-    <message>
-        <source>Traceability</source>
-        <translation>Rückverfolgbarkeit</translation>
     </message>
     <message>
         <source>&amp;Tools</source>
@@ -8508,10 +8368,6 @@ Das Python-Programm, in dem omuq installiert ist, unter Werkzeuge &gt; Optionen 
         <translation>OMEdit wirklich zurücksetzen? Das kann nicht rückgängig gemacht werden. </translation>
     </message>
     <message>
-        <source>Traceability</source>
-        <translation>Rückverfolgbarkeit</translation>
-    </message>
-    <message>
         <source>Language Server</source>
         <translation>Language Server</translation>
     </message>
@@ -9054,33 +8910,6 @@ Der Wert 0 bedeutet keine Verzögerung.</translation>
     <message>
         <source>Warning</source>
         <translation>Warnung</translation>
-    </message>
-</context>
-<context>
-    <name>RevertCommitsDialog</name>
-    <message>
-        <source>Revert Commit</source>
-        <translation>Commit rückgängig machen</translation>
-    </message>
-    <message>
-        <source>Working Directory:</source>
-        <translation>Arbeitsverzeichnis:</translation>
-    </message>
-    <message>
-        <source>Browse Directory</source>
-        <translation>Verzeichnis durchsuchen</translation>
-    </message>
-    <message>
-        <source>Commit:</source>
-        <translation>Commit:</translation>
-    </message>
-    <message>
-        <source>Browse Commit</source>
-        <translation>Commit durchsuchen</translation>
-    </message>
-    <message>
-        <source>Revert</source>
-        <translation>Rückgängig machen</translation>
     </message>
 </context>
 <context>
@@ -10070,40 +9899,6 @@ Kann hohen Mehraufwand verursachen, aber es gehen keine Werte verloren.</transla
     <message>
         <source>Font</source>
         <translation>Schriftart</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityGraphViewWidget</name>
-    <message>
-        <source>Traceability Graph View</source>
-        <translation>Graphansicht der Rückverfolgbarkeit</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityPage</name>
-    <message>
-        <source>Traceability</source>
-        <translation>Rückverfolgbarkeit</translation>
-    </message>
-    <message>
-        <source>User Name:</source>
-        <translation>Benutzername:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>E-Mail:</translation>
-    </message>
-    <message>
-        <source>Git Repository:</source>
-        <translation>Git-Repository:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon IP Address:</source>
-        <translation>IP-Adresse des Traceability-Daemons:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon Port:</source>
-        <translation>Port des Traceability-Daemons:</translation>
     </message>
 </context>
 <context>

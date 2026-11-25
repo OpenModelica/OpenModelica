@@ -19,7 +19,6 @@ Getting all dependencies right is a nightmare. Just use the dev container
 - Inkscape > v1.0
 - [Sphinx](http://sphinx-doc.org/)
 - pandoc
-- gnuplot
 - Python3 and packages from [source/requirements.txt](./source/requirements.txt)
 
    ```bash

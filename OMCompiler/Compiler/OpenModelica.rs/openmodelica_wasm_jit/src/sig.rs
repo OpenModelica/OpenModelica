@@ -251,21 +251,30 @@ impl ExtCallSig {
     /// reads back, a `by_ref` scalar one it fills; only the C return value comes
     /// back as a result.
     pub fn wasm_sig_c_shared(&self) -> FnSig {
-        FnSig {
-            params: self
-                .args
-                .iter()
-                .enumerate()
-                .map(|(j, (t, is_out))| {
-                    if Self::as_result(t, *is_out) || self.passes_by_ref(j, t) {
-                        SigTy::Ptr
-                    } else {
-                        t.clone()
-                    }
-                })
-                .collect(),
-            results: self.ret.iter().cloned().collect(),
+        let mut params: Vec<SigTy> = self
+            .args
+            .iter()
+            .enumerate()
+            .map(|(j, (t, is_out))| {
+                if Self::as_result(t, *is_out) || self.passes_by_ref(j, t) {
+                    SigTy::Ptr
+                } else {
+                    t.clone()
+                }
+            })
+            .collect();
+        let mut results: Vec<SigTy> = self.ret.iter().cloned().collect();
+        // A struct returned by value: through an `sret` pointer ahead of the
+        // arguments, or as the scalar of its single member.
+        if let Some(ret @ SigTy::Record { .. }) = &self.ret {
+            results.clear();
+            match crate::dylink::abi_of(ret) {
+                crate::dylink::Abi::Indirect => params.insert(0, SigTy::Ptr),
+                crate::dylink::Abi::Scalar(leaf) => results.push(leaf),
+                crate::dylink::Abi::Dropped => {}
+            }
         }
+        FnSig { params, results }
     }
 }
 

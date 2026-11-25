@@ -3438,7 +3438,7 @@ int OMCProxy::readSimulationResultSize(QString fileName)
  */
 QStringList OMCProxy::readSimulationResultVars(QString fileName)
 {
-  QStringList variablesList = mpOMCInterface->readSimulationResultVars(fileName, true, false);
+  QStringList variablesList = mpOMCInterface->readSimulationResultVars(fileName, true, false, true);
   printMessagesStringInternal();
   // close the simulation result file.
   closeSimulationResultFile();
@@ -3574,12 +3574,16 @@ OMCInterface::getSimulationOptions_res OMCProxy::getSimulationOptions(QString cl
  * \param fileNamePrefix
  * \param platforms
  * \param includeResources
+ * \param method
+ * \param experiment
  * \return
  */
-QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources, QString method)
+QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources,
+                                QString method, const FMUDefaultExperiment &experiment)
 {
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources, method);
+  QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources, method, experiment.startTime,
+                                                      experiment.stopTime, experiment.numberOfIntervals, experiment.stepSize, experiment.tolerance);
   printMessagesStringInternal();
   return fmuFileName;
 }
@@ -3593,12 +3597,16 @@ QString OMCProxy::buildModelFMU(QString className, QString version, QString type
  * \param fileNamePrefix
  * \param platforms
  * \param includeResources
+ * \param method
+ * \param experiment
  * \return
  */
-bool OMCProxy::translateModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources)
+bool OMCProxy::translateModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources,
+                                 QString method, const FMUDefaultExperiment &experiment)
 {
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  bool result = mpOMCInterface->translateModelFMU(className, version, type, fileNamePrefix, platforms, includeResources);
+  bool result = mpOMCInterface->translateModelFMU(className, version, type, fileNamePrefix, platforms, includeResources, method, experiment.startTime,
+                                                  experiment.stopTime, experiment.numberOfIntervals, experiment.stepSize, experiment.tolerance);
   printMessagesStringInternal();
   return result;
 }

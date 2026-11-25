@@ -938,7 +938,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
   pid_t pid;
   int status;
   const char * argv[4] = {"/bin/sh","-c",str,NULL};
-  ret_val = (0 == posix_spawn(&pid, "/bin/sh", NULL, NULL, (char * const *) argv, environ));
+  ret_val = posix_spawn(&pid, "/bin/sh", NULL, NULL, (char * const *) argv, environ);
 #endif
   fflush(NULL); /* flush output so the testsuite is deterministic */
 

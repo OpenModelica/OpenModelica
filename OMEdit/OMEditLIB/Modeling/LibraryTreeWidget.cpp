@@ -57,8 +57,6 @@
 #include "OMS/OMSCalibrationDialog.h"
 #endif
 #include "OMUQ/OMUQDialog.h"
-#include "Git/GitCommands.h"
-#include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 #include "Search/FindUsageWidget.h"
 #include "Cloud/CloudMount.h"
@@ -4758,6 +4756,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     textStream << newContents;
     file.close();
     ignoreFileChange(fileName);
+    emit fileSaved(fileName);
     return true;
   } else {
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
@@ -5134,12 +5133,6 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       // user a download of it as well would be wrong.
       if (!isInsideCloudMount(fileName)) {
         WasmLocalFiles::download(fileName);
-      }
-#endif
-      /* Save the traceabiliy information and send to Daemon. */
-#if !defined(__EMSCRIPTEN__)
-      if(GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName()) && OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() ){
-        MainWindow::instance()->getCommitChangesDialog()->commitAndGenerateTraceabilityURI(pLibraryTreeItem->getFileName());
       }
 #endif
     } else {

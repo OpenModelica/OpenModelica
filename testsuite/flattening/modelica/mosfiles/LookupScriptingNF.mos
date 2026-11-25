@@ -1,0 +1,30 @@
+// name: LookupScriptingNF
+// status: correct
+// suite: nfScripting
+//
+// In a script, a qualified name whose first part is not found is looked up
+// in OpenModelica.Scripting.
+
+LinePattern.Dash;
+TubeAlgorithm.ellipse;
+Curve(y = "x", pattern = LinePattern.Dot);
+NoSuchPackage.x;
+getErrorString();
+
+// Result:
+// OpenModelica.Scripting.LinePattern.Dash
+// OpenModelica.Scripting.TubeAlgorithm.ellipse
+// record OpenModelica.Scripting.Curve
+//     x = "time",
+//     y = "x",
+//     legend = "",
+//     zOrder = 0,
+//     color = "",
+//     pattern = OpenModelica.Scripting.LinePattern.Dot,
+//     thickness = 0.25,
+//     fileName = ""
+// end OpenModelica.Scripting.Curve;
+//
+// "[flattening/modelica/mosfiles/LookupScriptingNF.mos:11:1-11:16:writable] Error: Variable NoSuchPackage.x not found in scope <top>.
+// "
+// endResult

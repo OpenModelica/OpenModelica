@@ -119,6 +119,8 @@ private:
   bool mIsCreatingBitmapShape;
   bool mIsPanning;
   QPoint mLastMouseEventPos;
+  QPoint mLastMouseScenePosition;
+  bool mHasLastMouseScenePosition;
   Element *mpClickedComponent;
   Element *mpClickedState;
   bool mIsMovingComponentsAndShapes;
@@ -174,6 +176,7 @@ private:
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
   ~GraphicsView();
+  void updatePositionLabel();
   ModelInstance::CoordinateSystem mCoordinateSystem;
   ModelInstance::CoordinateSystem mMergedCoordinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
@@ -470,7 +473,6 @@ protected:
   virtual void contextMenuEvent(QContextMenuEvent *event) override;
   virtual void resizeEvent(QResizeEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
-  virtual void leaveEvent(QEvent *event) override;
 };
 
 class WelcomePageWidget : public QWidget
@@ -674,6 +676,7 @@ public slots:
   void showDocumentationView();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
+  void updatePositionLabel();
   void updateModelIfDependsOn(const QString &modelName, bool unload);
 protected:
   virtual void closeEvent(QCloseEvent *event) override;
@@ -688,6 +691,7 @@ public:
   ModelWidgetContainer(QWidget *pParent = 0);
   void addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView = true);
   ModelWidget* getCurrentModelWidget();
+  void updatePositionLabel(ModelWidget *pModelWidget);
   ModelWidget* getModelWidget(const QString &className);
   QMdiSubWindow* getCurrentMdiSubWindow();
   QMdiSubWindow* getMdiSubWindow(ModelWidget *pModelWidget);

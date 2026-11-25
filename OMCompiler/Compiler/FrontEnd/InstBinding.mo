@@ -129,8 +129,7 @@ public constant DAE.Type distributionType =
                     false,
                     NONE())
                 },
-                NONE(),
-                false);
+                NONE());
 
 protected function instBinding
 "This function investigates a modification and extracts the

@@ -44,7 +44,7 @@
 //
 // Also stubbed for the MSVC (clang-cl cross) build via OM_OMEDIT_NO_WEBENGINE:
 // the aqt msvc Qt's WebEngine crashes in Chromium/ANGLE init (OMDev's patched Qt
-// is fine), so the documentation/traceability views are no-ops there too.
+// is fine), so the documentation views are no-ops there too.
 //
 // The stub bases are Q_OBJECT so moc can chain DocumentationViewer/Documentation
 // Page (which derive from them and carry Q_OBJECT). Methods are inline no-ops;

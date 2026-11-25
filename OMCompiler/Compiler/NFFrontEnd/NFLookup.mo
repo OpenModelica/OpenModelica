@@ -125,7 +125,7 @@ protected
   InstNode node;
 algorithm
   try
-    (foundCref, foundScope, state) := lookupCref(cref, scope, context);
+    (foundCref, foundScope, state) := lookupComponentCref(cref, scope, context);
     node := ComponentRef.node(foundCref);
     // Don't allow the node to be a name node, except in annotations where it's
     // needed to handle undeclared expandable connector variables.
@@ -267,6 +267,42 @@ algorithm
 
   (foundCref, foundScope, state) := lookupCref(cref, scope, context);
 end lookupFunctionCref;
+
+function lookupComponentCref
+  "In a script, a qualified name whose first part is not found is looked up in
+   OpenModelica.Scripting before a library with that name is loaded, so that
+   e.g. LinePattern.Dash needs no qualification."
+  input Absyn.ComponentRef cref;
+  input InstNode scope;
+  input InstContext.Type context;
+  output ComponentRef foundCref;
+  output InstNode foundScope;
+  output LookupState state;
+protected
+  Boolean qualified;
+algorithm
+  qualified := match cref
+    case Absyn.ComponentRef.CREF_QUAL() then true;
+    else false;
+  end match;
+
+  if qualified and InstContext.inScripting(context) then
+    try
+      (foundCref, foundScope, state) := lookupCref(cref, scope, context, loadLibraries = false);
+      return;
+    else
+    end try;
+
+    try
+      (foundCref, foundScope, state) := lookupCref(
+        Absyn.CREF_QUAL("OpenModelica", {}, Absyn.CREF_QUAL("Scripting", {}, cref)), scope, context);
+      return;
+    else
+    end try;
+  end if;
+
+  (foundCref, foundScope, state) := lookupCref(cref, scope, context);
+end lookupComponentCref;
 
 function lookupScriptingCref
   input Absyn.ComponentRef cref;

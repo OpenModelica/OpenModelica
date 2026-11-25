@@ -43,7 +43,6 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
-#include "Git/CommitChangesDialog.h"
 #include "Util/Helper.h"
 #include "Util/StringHandler.h"
 
@@ -130,14 +129,6 @@ void ImportFMUModelDescriptionDialog::importFMUModelDescription()
 
   if (!fmuFileName.isEmpty()) {
     MainWindow::instance()->getLibraryWidget()->openFile(fmuFileName);
-  }
-  //trace import modeldescription
-  if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
-    QFileInfo file(fmuFileName);
-    // Get the name of the file without the extension
-    QString base_name = file.baseName();
-    //Push traceability information automaticaly to Daemon
-    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("modelDescriptionImport", fmuFileName, base_name, mpFmuModelDescriptionTextBox->text());
   }
   accept();
 }

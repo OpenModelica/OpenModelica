@@ -98,6 +98,7 @@ public function createFunctions
 protected
   list<DAE.Function> funcelems;
   list<DAE.Exp> lits;
+  Integer num_errors = Error.getNumErrorMessages();
 algorithm
   try
     // get all the used functions from the function tree
@@ -106,7 +107,9 @@ algorithm
     (funcelems, outLiterals as (_, _, lits)) := simulationFindLiterals(funcelems);
     (outFunctions, outRecordDecls, outIncludes, outIncludeDirs, outLibs, outLibPaths) := SimCodeFunctionUtil.elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
   else
-    Error.addInternalError("Creation of Modelica functions failed.", sourceInfo());
+    if Error.getNumErrorMessages() == num_errors then
+      Error.addInternalError("Creation of Modelica functions failed.", sourceInfo());
+    end if;
     fail();
   end try;
 end createFunctions;

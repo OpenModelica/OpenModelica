@@ -6,6 +6,7 @@ def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
 def shouldWeRunTests
+def shouldWeBuildRustGUI
 def isPublishedBranch
 
 pipeline {
@@ -74,6 +75,7 @@ pipeline {
           shouldWeEnableMacOSCMakeBuild = buildFlags.shouldWeEnableMacOSCMakeBuild
           shouldWeBuildWindows = buildFlags.shouldWeBuildWindows
           shouldWeRunTests = buildFlags.shouldWeRunTests
+          shouldWeBuildRustGUI = buildFlags.shouldWeBuildRustGUI
           isPublishedBranch = buildFlags.isPublishedBranch
         }
       }
@@ -507,7 +509,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests }
+            expression { shouldWeBuildRustGUI }
           }
           steps {
             script { common.checkoutSCM() }
@@ -534,7 +536,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests }
+            expression { shouldWeBuildRustGUI }
           }
           steps {
             script { common.checkoutSCM() }

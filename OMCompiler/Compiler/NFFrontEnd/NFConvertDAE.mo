@@ -1325,7 +1325,7 @@ algorithm
       algorithm
         args := list(convertExternalDeclArg(e) for e in extDecl.args);
         ret_arg := convertExternalDeclOutput(extDecl.outputRef);
-        decl := DAE.ExternalDecl.EXTERNALDECL(extDecl.name, args, ret_arg, extDecl.language, extDecl.ann);
+        decl := DAE.ExternalDecl.EXTERNALDECL(extDecl.name, args, ret_arg, extDecl.language, extDecl.ann, extDecl.structs);
       then
         DAE.FunctionDefinition.FUNCTION_EXT(parameters, decl);
   end match;

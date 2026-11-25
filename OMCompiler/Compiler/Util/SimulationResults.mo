@@ -60,9 +60,10 @@ public function readVariables
   input String filename;
   input Boolean readParameters = true;
   input Boolean openmodelicaStyle = false;
+  input Boolean readDerivatives = true;
   output list<String> vars;
 
-  external "C" vars=SimulationResults_readVariables(filename, readParameters, openmodelicaStyle) annotation(Library = "omcruntime");
+  external "C" vars=SimulationResults_readVariables(filename, readParameters, openmodelicaStyle, readDerivatives) annotation(Library = "omcruntime");
 end readVariables;
 
 public function readDataset
@@ -159,6 +160,17 @@ public function filterSimulationResults
   output Boolean result;
   external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals,removeDescription,hintReadAllVars) annotation(Library = "omcruntime");
 end filterSimulationResults;
+
+public function plotFigure
+  input String figureJSON "An OpenModelica.Scripting.Figure as JSON.";
+  input String filename "The result file of the curves without one.";
+  input String outputFile;
+  input Integer width;
+  input Integer height;
+  input String legendPosition;
+  output Boolean success;
+  external "C" success=SimulationResults_plotFigure(figureJSON,filename,outputFile,width,height,legendPosition) annotation(Library = "omcruntime");
+end plotFigure;
 
 annotation(__OpenModelica_Interface="script_util");
 end SimulationResults;

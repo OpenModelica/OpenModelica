@@ -73,6 +73,9 @@ impl Loaded {
     /// `name`, else its `Include` wrapper: the call one for a macro, or what the
     /// address one points at.
     pub fn func_or_addr(&self, store: &mut wasmtime::Store<HostState>, name: &str) -> Option<Func> {
+        if let Some(f) = self.funcs.get(&format!("{}{name}", crate::model::EXT_REC_PREFIX)) {
+            return Some(f.clone());
+        }
         if let Some(f) = self.funcs.get(name) {
             return Some(f.clone());
         }
@@ -757,6 +760,7 @@ mod tests {
             alloc: alloc.clone(),
             free: rt_inst.get_typed_func(&mut store, "rt_free").unwrap(),
             record_new: rt_inst.get_typed_func(&mut store, "rt_record_new").unwrap(),
+            record_release: rt_inst.get_typed_func(&mut store, "rt_record_release").unwrap(),
             nls: None,
         };
         let sig = ExtCallSig {
@@ -1235,6 +1239,7 @@ pub struct ExtRt {
     pub alloc: wasmtime::TypedFunc<u32, u32>,
     pub free: wasmtime::TypedFunc<u32, ()>,
     pub record_new: wasmtime::TypedFunc<(u32, u32), u32>,
+    pub record_release: wasmtime::TypedFunc<u32, ()>,
     /// A run's solver state; the `-d=gen` function JIT has no solver.
     pub nls: Option<NlsHooks>,
 }
@@ -1488,6 +1493,8 @@ fn call_external_in_wasm(
     let mut f77_arrays: Vec<(u32, u32, Vec<usize>, usize, bool)> = Vec::new();
     // Output `String[…]`: (`char**` scratch, element area, element count).
     let mut str_out_arrays: Vec<(u32, u32, usize)> = Vec::new();
+    // Output arrays of records: (C structs, element area, element count, fields).
+    let mut rec_out_arrays: Vec<(u32, u32, u32, std::sync::Arc<Vec<(arcstr::ArcStr, SigTy)>>)> = Vec::new();
 
     let alloc = |caller: &mut wasmtime::Caller<'_, HostState>, n: u32| -> Result<u32> {
         rt.alloc.call(&mut *caller, n).map_err(|e| format!("rt_alloc: {e}"))
@@ -1508,7 +1515,7 @@ fn call_external_in_wasm(
 
     let mut in_i = 0usize;
     for (j, (ty, is_out)) in sig.args.iter().enumerate() {
-        // A struct: by pointer, or as its member's scalar when it has one member.
+        // A struct: by pointer (MLS 3.7, section 12.9.1.3).
         if let SigTy::Record { fields, .. } = ty {
             // An output record is a wasm *result*, so it consumes no parameter.
             let v = if *is_out {
@@ -1527,19 +1534,7 @@ fn call_external_in_wasm(
                         out_cells.push((ty.clone(), 0));
                     }
                 }
-                Abi::Scalar(s) => {
-                    if *is_out {
-                        return Err("external \"C\": a single-member record cannot be an output".to_string());
-                    }
-                    let handle = v.map(|v| v.unwrap_i32()).unwrap_or(0) as u32;
-                    let (off, leaf) = record_leaf(fields);
-                    call_args.push(match leaf {
-                        SigTy::Real => Val::F64(read_u64(memory, caller, handle + off)),
-                        _ => Val::I32(read_u32(memory, caller, handle + off) as i32),
-                    });
-                    let _ = s;
-                }
-                Abi::Indirect => {
+                Abi::Scalar(_) | Abi::Indirect => {
                     let c = c_record_layout(fields);
                     let cell = alloc(caller, c.size.max(1))?;
                     memory.data_mut(&mut *caller)[cell as usize..cell as usize + c.size as usize].fill(0);
@@ -1606,6 +1601,31 @@ fn call_external_in_wasm(
             }
             SigTy::Array { elem, .. } => {
                 let off = v.unwrap_i32() as u32 as usize;
+                // An array of C structs, after an 8-byte element count.
+                if let SigTy::Record { fields, .. } = &**elem {
+                    let (dims, data_off) = crate::host::array_abi::dims_and_data(memory.data(&*caller), off)
+                        .ok_or_else(|| "external \"C\": malformed array argument".to_string())?;
+                    let base = (off + data_off) as u32;
+                    let n = dims.iter().product::<usize>() as u32;
+                    let size = c_record_layout(fields).size;
+                    let cell = alloc(caller, 8 + n * size)?;
+                    let mem = memory.data_mut(&mut *caller);
+                    mem[cell as usize..(cell + 8 + n * size) as usize].fill(0);
+                    mem[cell as usize..cell as usize + 8].copy_from_slice(&u64::from(n).to_le_bytes());
+                    temps.push(cell);
+                    if !*is_out {
+                        for k in 0..n {
+                            let h = read_u32(memory, caller, base + k * 4);
+                            if h != 0 {
+                                record_to_c(caller, memory, rt, fields, h, cell + 8 + k * size, temps)?;
+                            }
+                        }
+                    } else {
+                        rec_out_arrays.push((cell + 8, base, n, fields.clone()));
+                    }
+                    call_args.push(Val::I32((cell + 8) as i32));
+                    continue;
+                }
                 if !fortran && !matches!(**elem, SigTy::Str) {
                     let data_off = crate::host::array_abi::data_offset(memory.data(&*caller), off)
                         .ok_or_else(|| "external \"C\": malformed array argument".to_string())?;
@@ -1714,6 +1734,23 @@ fn call_external_in_wasm(
             };
             if old != 0 {
                 rt.release.call(&mut *caller, old).map_err(|e| format!("{e}"))?;
+            }
+        }
+    }
+
+    for (structs, base, n, fields) in &rec_out_arrays {
+        let size = c_record_layout(fields).size;
+        for k in 0..*n {
+            let h = record_from_c(caller, memory, rt, fields, structs + k * size)?;
+            let slot = (base + k * 4) as usize;
+            let old = {
+                let mem = memory.data_mut(&mut *caller);
+                let old = u32::from_le_bytes(mem[slot..slot + 4].try_into().unwrap());
+                mem[slot..slot + 4].copy_from_slice(&h.to_le_bytes());
+                old
+            };
+            if old != 0 {
+                rt.record_release.call(&mut *caller, old).map_err(|e| format!("{e}"))?;
             }
         }
     }

@@ -8,7 +8,10 @@
 //! value in the slot after them ([`result_slot`]). A String or array argument is
 //! the runtime handle; an `_Out_` scalar or String is the address of a cell. A
 //! FORTRAN 77 or `by_ref` C scalar goes through a cell both ways, Fortran arrays
-//! column-major.
+//! column-major. A record is the address of its C struct (MLS 3.7, section
+//! 12.9.1.3) in the wasm32 layout, an array of records that of the structs after
+//! an 8-byte element count, and a struct returned by value comes back through
+//! an `sret` address ahead of the arguments ([`ret_abi`]).
 #![no_std]
 extern crate alloc;
 
@@ -30,9 +33,11 @@ pub enum Ty {
     /// An external object.
     Ptr,
     Array(Scalar),
-    /// A pointer to C's `<record>_external` (the members' C types from offset 0);
-    /// the bytes are copied whole in both directions, so only the size is needed.
-    Record(u32),
+    /// A pointer to a record's C struct; the member types in declaration order,
+    /// each a scalar, a String or a record.
+    Record(Vec<Ty>),
+    /// A pointer to an array of such structs.
+    RecordArray(Vec<Ty>),
 }
 
 impl Ty {
@@ -71,7 +76,10 @@ pub struct Table {
     pub fns: Vec<Sig>,
 }
 
-/// A value crossing to or from the host; `om:ext/native`'s `value`.
+/// A value crossing to or from the host; `om:ext/native`'s `value`. A record is
+/// `Bytes`: its struct in the wasm32 layout, a String member's pointer zero, then
+/// each String member's `u32` length and bytes in member order. An array of
+/// records is the `u32` element count, the structs, then the Strings likewise.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Int(i32),
@@ -82,45 +90,213 @@ pub enum Value {
 }
 
 fn parse_ty(code: &str) -> Result<Ty, String> {
-    let scalar = |c: &str| match c {
-        "I" => Ok(Scalar::Int),
-        "R" => Ok(Scalar::Real),
-        "B" => Ok(Scalar::Bool),
+    match parse_one(code)? {
+        (ty, "") => Ok(ty),
         _ => Err(format!("native externals: unsupported type code `{code}`")),
-    };
-    match code {
-        "S" => Ok(Ty::Str),
-        "P" => Ok(Ty::Ptr),
-        c if c.starts_with('[') => Ok(Ty::Array(scalar(c.trim_start_matches('['))?)),
-        c if c.starts_with('{') => Ok(Ty::Record(record_size(c)?)),
-        c => Ok(Ty::Scalar(scalar(c)?)),
     }
 }
 
-/// The size of C's `<record>_external` for `{path;name:code;…}`: each member at its
-/// natural alignment, the struct padded to the widest. A non-scalar member has no
-/// size both sides agree on (a pointer is 4 bytes in the kernel, 8 here).
-fn record_size(code: &str) -> Result<u32, String> {
-    let body = code.trim_start_matches('{').trim_end_matches('}');
-    let (mut off, mut align) = (0u32, 1u32);
-    for member in body.split(';').skip(1) {
-        let (name, ty) = member
-            .split_once(':')
-            .ok_or_else(|| format!("native externals: record member `{member}` has no type in `{code}`"))?;
-        let size = match ty {
-            "R" => 8,
-            "I" | "B" => 4,
-            _ => {
-                return Err(format!(
-                    "native externals: record member `{name}` of type `{ty}` cannot be copied to C \
-                     - only Real, Integer and Boolean members can"
-                ));
+/// One type code from the start of `s` and what follows it: `[`s before an element
+/// type, `{path;name:code;…}` a record.
+fn parse_one(s: &str) -> Result<(Ty, &str), String> {
+    let bad = || format!("native externals: unsupported type code `{s}`");
+    let rest = s.get(1..).unwrap_or("");
+    Ok(match s.as_bytes().first() {
+        Some(b'I') => (Ty::Scalar(Scalar::Int), rest),
+        Some(b'R') => (Ty::Scalar(Scalar::Real), rest),
+        Some(b'B') => (Ty::Scalar(Scalar::Bool), rest),
+        Some(b'S') => (Ty::Str, rest),
+        Some(b'P') => (Ty::Ptr, rest),
+        Some(b'[') => match parse_one(rest)? {
+            (Ty::Scalar(e) | Ty::Array(e), rest) => (Ty::Array(e), rest),
+            (Ty::Record(m) | Ty::RecordArray(m), rest) => (Ty::RecordArray(m), rest),
+            _ => return Err(bad()),
+        },
+        Some(b'{') => {
+            let mut rest = &rest[rest.find([';', '}']).ok_or_else(bad)?..];
+            let mut members = Vec::new();
+            while let Some(r) = rest.strip_prefix(';') {
+                let colon = r.find(':').ok_or_else(bad)?;
+                let name = &r[..colon];
+                let (ty, r) = parse_one(&r[colon + 1..])?;
+                if !matches!(ty, Ty::Scalar(_) | Ty::Str | Ty::Record(_)) {
+                    return Err(format!(
+                        "native externals: record member `{name}` cannot be copied to C - only Real, \
+                         Integer, Boolean, String and record members can"
+                    ));
+                }
+                members.push(ty);
+                rest = r;
             }
+            (Ty::Record(members), rest.strip_prefix('}').ok_or_else(bad)?)
+        }
+        _ => return Err(bad()),
+    })
+}
+
+/// The member offsets, size and alignment of a record's C struct where a pointer
+/// is `ptr` bytes: each member at its natural alignment, the struct padded to the
+/// widest.
+pub fn layout(members: &[Ty], ptr: u32) -> (Vec<u32>, u32, u32) {
+    let (mut off, mut align) = (0u32, 1u32);
+    let mut offsets = Vec::with_capacity(members.len());
+    for m in members {
+        let (size, a) = match m {
+            Ty::Scalar(Scalar::Real) => (8, 8),
+            Ty::Scalar(_) => (4, 4),
+            Ty::Record(inner) => {
+                let (_, size, a) = layout(inner, ptr);
+                (size, a)
+            }
+            _ => (ptr, ptr),
         };
-        off = off.next_multiple_of(size) + size;
-        align = align.max(size);
+        off = off.next_multiple_of(a);
+        offsets.push(off);
+        off += size;
+        align = align.max(a);
     }
-    Ok(off.next_multiple_of(align.max(1)))
+    (offsets, off.next_multiple_of(align), align)
+}
+
+/// How the wasm C ABI returns a struct: through an `sret` address ahead of the
+/// arguments, or as the scalar of its single member.
+#[derive(Clone, Debug, PartialEq)]
+pub enum RetAbi {
+    Sret,
+    Scalar(Ty),
+    Dropped,
+}
+
+pub fn ret_abi(members: &[Ty]) -> RetAbi {
+    match members {
+        [] => RetAbi::Dropped,
+        [Ty::Record(inner)] => ret_abi(inner),
+        [m] => RetAbi::Scalar(m.clone()),
+        _ => RetAbi::Sret,
+    }
+}
+
+/// Whether the frame's first slot is a returned struct's `sret` address.
+fn has_sret(sig: &Sig) -> bool {
+    matches!(&sig.ret, Some(Ty::Record(m)) if ret_abi(m) == RetAbi::Sret)
+}
+
+fn arg_slot(sig: &Sig, frame: u32, j: usize) -> u32 {
+    frame + 8 * (j as u32 + u32::from(has_sret(sig)))
+}
+
+fn read_cstr(g: &dyn Guest, mut p: u32) -> Vec<u8> {
+    let mut out = Vec::new();
+    loop {
+        let chunk = g.read(p, 64);
+        match chunk.iter().position(|b| *b == 0) {
+            Some(n) => {
+                out.extend_from_slice(&chunk[..n]);
+                return out;
+            }
+            None if chunk.is_empty() => return out,
+            None => {
+                out.extend_from_slice(&chunk);
+                p += chunk.len() as u32;
+            }
+        }
+    }
+}
+
+/// Append the String members of the struct `raw` (wasm32 layout) to `out`,
+/// zeroing their pointers in `raw`.
+fn gather_strings(g: &dyn Guest, members: &[Ty], raw: &mut [u8], out: &mut Vec<u8>) {
+    let (offsets, _, _) = layout(members, 4);
+    for (m, off) in members.iter().zip(offsets) {
+        let off = off as usize;
+        match m {
+            Ty::Str => {
+                let s = u32::from_le_bytes([raw[off], raw[off + 1], raw[off + 2], raw[off + 3]]);
+                let bytes = if s == 0 { Vec::new() } else { read_cstr(g, s) };
+                out.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
+                out.extend_from_slice(&bytes);
+                raw[off..off + 4].fill(0);
+            }
+            Ty::Record(inner) => gather_strings(g, inner, &mut raw[off..], out),
+            _ => {}
+        }
+    }
+}
+
+/// The wire form of `n` structs at `p` (see [`Value`]).
+fn gather_records(g: &dyn Guest, members: &[Ty], p: u32, n: u32) -> Vec<u8> {
+    let (_, size, _) = layout(members, 4);
+    let mut raw = if p == 0 {
+        alloc::vec![0u8; (n * size) as usize]
+    } else {
+        g.read(p, n * size)
+    };
+    let mut strings = Vec::new();
+    for k in 0..n as usize {
+        gather_strings(g, members, &mut raw[k * size as usize..], &mut strings);
+    }
+    raw.extend(strings);
+    raw
+}
+
+/// Write the String members of a struct at `p` from `strings`: each into a
+/// scratch C string, its address into the member.
+fn scatter_strings(
+    g: &mut dyn Guest,
+    members: &[Ty],
+    p: u32,
+    strings: &mut &[u8],
+    scratch: &mut Vec<u32>,
+) -> Result<(), String> {
+    let (offsets, _, _) = layout(members, 4);
+    for (m, off) in members.iter().zip(offsets) {
+        match m {
+            Ty::Str => {
+                let len = strings
+                    .get(..4)
+                    .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize)
+                    .ok_or("native externals: a record lacks a String member")?;
+                let bytes = strings
+                    .get(4..4 + len)
+                    .ok_or("native externals: a record String is cut short")?;
+                let s = g.alloc(len as u32 + 1);
+                g.write(s, bytes);
+                g.write(s + len as u32, &[0]);
+                scratch.push(s);
+                g.store_i32(p + off, s as i32);
+                *strings = &strings[4 + len..];
+            }
+            Ty::Record(inner) => scatter_strings(g, inner, p + off, strings, scratch)?,
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+/// Write the wire form of `n` structs (see [`Value`]) to `p`.
+fn scatter_records(
+    g: &mut dyn Guest,
+    members: &[Ty],
+    p: u32,
+    n: u32,
+    bytes: &[u8],
+    scratch: &mut Vec<u32>,
+) -> Result<(), String> {
+    let (_, size, _) = layout(members, 4);
+    let raw = bytes
+        .get(..(n * size) as usize)
+        .ok_or("native externals: a record is cut short")?;
+    g.write(p, raw);
+    let mut strings = &bytes[raw.len()..];
+    for k in 0..n {
+        scatter_strings(g, members, p + k * size, &mut strings, scratch)?;
+    }
+    Ok(())
+}
+
+/// The element count ahead of an array of structs at `p`.
+fn record_count(g: &dyn Guest, p: u32) -> u32 {
+    if p == 0 { 0 } else { g.load_i32(p - 8) as u32 }
 }
 
 /// The table's text form (see [`Table`]):
@@ -182,7 +358,7 @@ pub fn parse(text: &str) -> Result<Table, String> {
 
 /// The frame slot the C return value is read from: after the arguments.
 pub fn result_slot(sig: &Sig) -> u32 {
-    8 * sig.args.len() as u32
+    8 * (sig.args.len() as u32 + u32::from(has_sret(sig)))
 }
 
 /// The wasm side of the frame: the memory and the runtime primitives the
@@ -207,7 +383,7 @@ pub trait Guest {
 /// allocates, and so is neither an input value nor a wasm result. An array or
 /// record crosses as a pointer, which *is* the value.
 pub fn is_cell(sig: &Sig, a: &Arg) -> bool {
-    a.out && !matches!(a.ty, Ty::Array(_) | Ty::Record(_)) && !is_ref(sig, a)
+    a.out && !matches!(a.ty, Ty::Array(_) | Ty::Record(_) | Ty::RecordArray(_)) && !is_ref(sig, a)
 }
 
 /// A FORTRAN 77 or `by_ref` C scalar: by reference, in and out.
@@ -260,7 +436,7 @@ pub fn gather(sig: &Sig, frame: u32, g: &dyn Guest) -> Result<Vec<Value>, String
         if is_cell(sig, a) {
             continue;
         }
-        let slot = frame + 8 * j as u32;
+        let slot = arg_slot(sig, frame, j);
         // Fortran: the slot holds the cell's address.
         let at = if is_ref(sig, a) { g.load_i32(slot) as u32 } else { slot };
         out.push(match &a.ty {
@@ -278,9 +454,13 @@ pub fn gather(sig: &Sig, frame: u32, g: &dyn Guest) -> Result<Vec<Value>, String
             }
             Ty::Array(elem) => Value::Bytes(read_array(g, g.load_i32(slot) as u32, *elem, sig.fortran)),
             // The slot holds the address of the kernel's scratch struct.
-            Ty::Record(size) => {
+            Ty::Record(members) => Value::Bytes(gather_records(g, members, g.load_i32(slot) as u32, 1)),
+            Ty::RecordArray(members) => {
                 let p = g.load_i32(slot) as u32;
-                Value::Bytes(if p == 0 { Vec::new() } else { g.read(p, *size) })
+                let n = record_count(g, p);
+                let mut bytes = n.to_le_bytes().to_vec();
+                bytes.extend(gather_records(g, members, p, n));
+                Value::Bytes(bytes)
             }
         });
     }
@@ -328,13 +508,40 @@ pub fn scatter(
         }
         Ok(())
     };
-    if let Some(ret) = &sig.ret {
-        let v = next("return value")?;
-        store(g, frame + result_slot(sig), ret, v, scratch)?;
+    match &sig.ret {
+        Some(Ty::Record(members)) => {
+            let Value::Bytes(bytes) = next("return value")? else {
+                return Err(format!("native externals: `{}` returned a non-record", sig.name));
+            };
+            match ret_abi(members) {
+                RetAbi::Sret => {
+                    let p = g.load_i32(frame) as u32;
+                    scatter_records(g, members, p, 1, bytes, scratch)?;
+                }
+                // The single member at offset 0, through a scratch struct for a String.
+                RetAbi::Scalar(leaf) => {
+                    let (_, size, _) = layout(members, 4);
+                    let p = g.alloc(size.max(8));
+                    scratch.push(p);
+                    scatter_records(g, members, p, 1, bytes, scratch)?;
+                    let at = frame + result_slot(sig);
+                    match leaf {
+                        Ty::Scalar(Scalar::Real) => g.store_f64(at, g.load_f64(p)),
+                        _ => g.store_i32(at, g.load_i32(p)),
+                    }
+                }
+                RetAbi::Dropped => {}
+            }
+        }
+        Some(ret) => {
+            let v = next("return value")?;
+            store(g, frame + result_slot(sig), ret, v, scratch)?;
+        }
+        None => {}
     }
     for (j, a) in sig.args.iter().enumerate() {
         if is_cell(sig, a) || is_ref(sig, a) {
-            let cell = g.load_i32(frame + 8 * j as u32) as u32;
+            let cell = g.load_i32(arg_slot(sig, frame, j)) as u32;
             let v = next("output")?;
             store(g, cell, &a.ty, v, scratch)?;
         }
@@ -344,12 +551,33 @@ pub fn scatter(
         if !a.out {
             continue;
         }
+        let slot = arg_slot(sig, frame, j);
         let (what, len, at) = match &a.ty {
             Ty::Array(elem) => {
-                let h = g.load_i32(frame + 8 * j as u32) as u32;
+                let h = g.load_i32(slot) as u32;
                 ("array", g.array_total(h) * Ty::elem_size(*elem), g.array_data(h))
             }
-            Ty::Record(size) => ("record", *size, g.load_i32(frame + 8 * j as u32) as u32),
+            Ty::Record(members) | Ty::RecordArray(members) => {
+                let p = g.load_i32(slot) as u32;
+                let n = match &a.ty {
+                    Ty::RecordArray(_) => record_count(g, p),
+                    _ => 1,
+                };
+                let Value::Bytes(bytes) = next("output record")? else {
+                    return Err(format!(
+                        "native externals: `{}` returned a non-record for an output record",
+                        sig.name
+                    ));
+                };
+                let body = match &a.ty {
+                    Ty::RecordArray(_) => bytes.get(4..).unwrap_or(&[]),
+                    _ => &bytes[..],
+                };
+                if p != 0 {
+                    scatter_records(g, members, p, n, body, scratch)?;
+                }
+                continue;
+            }
             _ => continue,
         };
         let Value::Bytes(bytes) = next(&format!("output {what}"))? else {
@@ -367,7 +595,7 @@ pub fn scatter(
         }
         match &a.ty {
             Ty::Array(elem) if sig.fortran => {
-                let h = g.load_i32(frame + 8 * j as u32) as u32;
+                let h = g.load_i32(slot) as u32;
                 g.write(
                     at,
                     &reorder(bytes, &g.array_dims(h), Ty::elem_size(*elem) as usize, false),
@@ -463,6 +691,66 @@ mod tests {
             p
         }
         fn free(&mut self, _a: u32) {}
+    }
+
+    /// `struct R f(const struct R *a, struct R *b, const struct Inner *c)` with
+    /// `struct R {double x; const char *s; struct Inner {int i;} in1;}`.
+    #[test]
+    fn records_and_struct_return() {
+        let r = "{P.R;x:R;s:S;in1:{P.Inner;i:I}}";
+        let sig = parse(&format!("fn f C {r} {r} *{r} [{{P.Inner;i:I}}"))
+            .unwrap()
+            .fns
+            .remove(0);
+        assert_eq!(
+            ret_abi(match &sig.ret {
+                Some(Ty::Record(m)) => m,
+                _ => panic!(),
+            }),
+            RetAbi::Sret
+        );
+        let mut m = Mem::default();
+        let hi = m.alloc(8);
+        m.put(hi, b"hi\0");
+        let a = m.alloc(16);
+        m.store_f64(a, 1.5);
+        m.store_i32(a + 8, hi as i32);
+        m.store_i32(a + 12, 7);
+        let b = m.alloc(16);
+        let sret = m.alloc(16);
+        let c = m.alloc(16) + 8;
+        m.put(c - 8, &2u64.to_le_bytes());
+        m.store_i32(c, 3);
+        m.store_i32(c + 4, 4);
+        let frame = m.alloc(8 * 5);
+        m.store_i32(frame, sret as i32);
+        m.store_i32(frame + 8, a as i32);
+        m.store_i32(frame + 16, b as i32);
+        m.store_i32(frame + 24, c as i32);
+        let wire = |x: f64, i: i32, s: &str| -> Vec<u8> {
+            let mut v = x.to_le_bytes().to_vec();
+            v.extend([0, 0, 0, 0]);
+            v.extend(i.to_le_bytes());
+            v.extend((s.len() as u32).to_le_bytes());
+            v.extend(s.as_bytes());
+            v
+        };
+        let args = gather(&sig, frame, &m).unwrap();
+        assert_eq!(
+            args,
+            vec![
+                Value::Bytes(wire(1.5, 7, "hi")),
+                Value::Bytes(wire(0.0, 0, "")),
+                Value::Bytes([2u32, 3, 4].iter().flat_map(|x| x.to_le_bytes()).collect()),
+            ]
+        );
+        let mut scratch = Vec::new();
+        let results = [Value::Bytes(wire(2.5, 9, "ret")), Value::Bytes(wire(3.5, 10, "out"))];
+        scatter(&sig, frame, &results, &mut m, &mut scratch).unwrap();
+        assert_eq!((m.load_f64(sret), m.load_i32(sret + 12)), (2.5, 9));
+        assert_eq!(m.read(m.load_i32(sret + 8) as u32, 4), b"ret\0");
+        assert_eq!((m.load_f64(b), m.load_i32(b + 12)), (3.5, 10));
+        assert_eq!(m.read(m.load_i32(b + 8) as u32, 4), b"out\0");
     }
 
     #[test]

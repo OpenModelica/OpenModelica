@@ -138,27 +138,46 @@ fn not_defined(msgs: &mut dyn Messages, var: &str, time: f64, start: f64, stop: 
     f64::NAN
 }
 
-/// `readSimulationResultVars`; `omc_style` turns `der(a.b)` into `a.der(b)`.
-pub fn read_variables(msgs: &mut dyn Messages, filename: &str, read_parameters: bool, omc_style: bool) -> Vec<String> {
+/// `readSimulationResultVars`; `omc_style` turns `a.der(b)` into `der(a.b)`.
+pub fn read_variables(
+    msgs: &mut dyn Messages,
+    filename: &str,
+    read_parameters: bool,
+    omc_style: bool,
+    read_derivatives: bool,
+) -> Vec<String> {
+    let omc_name = |name: &str| -> String {
+        openmodelica_mat_reader::openmodelica_style_name(name).unwrap_or_else(|| name.to_owned())
+    };
+    let keep = |name: &str| read_derivatives || !omc_name(name).starts_with("der(");
     let style = |name: &str| -> String {
         if omc_style {
-            openmodelica_mat_reader::openmodelica_style_name(name)
-                .unwrap_or_else(|| name.to_owned())
-                .replace(' ', "")
+            omc_name(name).replace(' ', "")
         } else {
             name.to_owned()
         }
     };
     with_reader(msgs, filename, |reader, _| match reader {
         // Already in OMC style.
-        ResultReader::Plt(r) => r.variables().into_iter().rev().map(str::to_owned).collect(),
-        ResultReader::Csv(r) => r.variables.iter().filter(|v| !v.is_empty()).map(|v| style(v)).collect(),
+        ResultReader::Plt(r) => r
+            .variables()
+            .into_iter()
+            .rev()
+            .filter(|v| keep(v))
+            .map(str::to_owned)
+            .collect(),
+        ResultReader::Csv(r) => r
+            .variables
+            .iter()
+            .filter(|v| !v.is_empty() && keep(v))
+            .map(|v| style(v))
+            .collect(),
         r => r
             .table()
             .unwrap()
             .all_info()
             .iter()
-            .filter(|info| read_parameters || !info.isParam)
+            .filter(|info| (read_parameters || !info.isParam) && keep(&info.name))
             .map(|info| style(&info.name))
             .collect(),
     })

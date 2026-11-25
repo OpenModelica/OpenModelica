@@ -528,25 +528,6 @@
     </message>
 </context>
 <context>
-    <name>CleanDialog</name>
-    <message>
-        <source>Clean Repository</source>
-        <translation>清理存储库</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>选择全部</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名称</translation>
-    </message>
-    <message>
-        <source>Clean</source>
-        <translation>清理</translation>
-    </message>
-</context>
-<context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
@@ -873,69 +854,6 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     <message>
         <source>Preview:</source>
         <translation>预览：</translation>
-    </message>
-</context>
-<context>
-    <name>CommitChangesDialog</name>
-    <message>
-        <source>Commit</source>
-        <translation>提交</translation>
-    </message>
-    <message>
-        <source>Repository:</source>
-        <translation>存储库:</translation>
-    </message>
-    <message>
-        <source>Branch:</source>
-        <translation>分支:</translation>
-    </message>
-    <message>
-        <source>Repository Information:</source>
-        <translation>存储库信息:</translation>
-    </message>
-    <message>
-        <source>Commit Information:</source>
-        <translation>提交信息:</translation>
-    </message>
-    <message>
-        <source>Author:</source>
-        <translation>作者:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>Email:</translation>
-    </message>
-    <message>
-        <source>Description:</source>
-        <translation>说明:</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>选择全部</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation>状态</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>文件</translation>
-    </message>
-    <message>
-        <source>Files:</source>
-        <translation>文件:</translation>
-    </message>
-    <message>
-        <source>commit</source>
-        <translation>提交</translation>
-    </message>
-    <message>
-        <source>Commit Message </source>
-        <translation>提交信息 </translation>
-    </message>
-    <message>
-        <source>Commit description:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3628,11 +3546,27 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Default Experiment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interval</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tolerance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Save as default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Keep these settings, except the DAE mode, for the next export</source>
+        <source>Keep these settings, except the DAE mode and the default experiment, for the next export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The interval and the tolerance must be greater than zero.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4351,13 +4285,6 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <source>System follows the operating system color scheme. The --DarkMode command line option overrides this setting.</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>GitCommands</name>
-    <message>
-        <source>Repository Creation Failed</source>
-        <translation>存储库建立失败</translation>
     </message>
 </context>
 <context>
@@ -5096,10 +5023,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>过滤元件</translation>
     </message>
     <message>
-        <source>Committing modified files to the repository</source>
-        <translation>正在向存储库提交当前修改文件</translation>
-    </message>
-    <message>
         <source>Report Issue</source>
         <translation>报告问题</translation>
     </message>
@@ -5422,42 +5345,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Manage debug configurations</source>
         <translation>管理调试配置</translation>
-    </message>
-    <message>
-        <source>Create Repository</source>
-        <translation>建立存储库</translation>
-    </message>
-    <message>
-        <source>Create a Git repository</source>
-        <translation>建立 Git 存储库</translation>
-    </message>
-    <message>
-        <source>Log Current File</source>
-        <translation>日志记录当前文件</translation>
-    </message>
-    <message>
-        <source>Logging current file</source>
-        <translation>正在进行当前文件的日志记录</translation>
-    </message>
-    <message>
-        <source>Stage Current File</source>
-        <translation>暂存当前文件</translation>
-    </message>
-    <message>
-        <source>Staging current file for next commit</source>
-        <translation>正在为下次提交暂存当前文件</translation>
-    </message>
-    <message>
-        <source>Unstage Current File</source>
-        <translation>取消当前文件暂存</translation>
-    </message>
-    <message>
-        <source>Unstaging current file from next commit</source>
-        <translation>正在取消当前文件暂存</translation>
-    </message>
-    <message>
-        <source>Commit</source>
-        <translation>提交</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -6487,25 +6374,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
 </context>
 <context>
-    <name>LogCommitDialog</name>
-    <message>
-        <source>Select Commit</source>
-        <translation>选择提交</translation>
-    </message>
-    <message>
-        <source>Subject</source>
-        <translation>科目</translation>
-    </message>
-    <message>
-        <source>SHA-1</source>
-        <translation>SHA-1</translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation>确定</translation>
-    </message>
-</context>
-<context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
@@ -7281,14 +7149,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>SSP Toolbar</source>
         <translation>SSP 工具栏</translation>
-    </message>
-    <message>
-        <source>&amp;Git</source>
-        <translation>Git(&amp;G)</translation>
-    </message>
-    <message>
-        <source>Traceability</source>
-        <translation>可追溯</translation>
     </message>
     <message>
         <source>&amp;Tools</source>
@@ -8442,10 +8302,6 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
         <translation>确认要重置 OMEdit 吗？此操作不可撤销。 </translation>
     </message>
     <message>
-        <source>Traceability</source>
-        <translation>可追溯性</translation>
-    </message>
-    <message>
         <source>Language Server</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8988,33 +8844,6 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <source>Warning</source>
         <translation type="unfinished">警告</translation>
-    </message>
-</context>
-<context>
-    <name>RevertCommitsDialog</name>
-    <message>
-        <source>Revert Commit</source>
-        <translation>撤回提交</translation>
-    </message>
-    <message>
-        <source>Working Directory:</source>
-        <translation>工作目录：</translation>
-    </message>
-    <message>
-        <source>Browse Directory</source>
-        <translation>浏览目录</translation>
-    </message>
-    <message>
-        <source>Commit:</source>
-        <translation>提交：</translation>
-    </message>
-    <message>
-        <source>Browse Commit</source>
-        <translation>浏览提交</translation>
-    </message>
-    <message>
-        <source>Revert</source>
-        <translation>撤回</translation>
     </message>
 </context>
 <context>
@@ -10003,40 +9832,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Font</source>
         <translation>字体</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityGraphViewWidget</name>
-    <message>
-        <source>Traceability Graph View</source>
-        <translation>追溯图形视图</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityPage</name>
-    <message>
-        <source>Traceability</source>
-        <translation>可追溯性</translation>
-    </message>
-    <message>
-        <source>User Name:</source>
-        <translation>用户名称：</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Git Repository:</source>
-        <translation>Git 存储库：</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon IP Address:</source>
-        <translation>可追踪守护进程IP地址：</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon Port:</source>
-        <translation>可追踪守护进程端口：</translation>
     </message>
 </context>
 <context>

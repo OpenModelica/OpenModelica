@@ -637,8 +637,20 @@ public uniontype ExternalDecl
     ExtArg returnArg;
     String language;
     Option<SCode.Annotation> ann;
+    list<ExternalStruct> structs "The C mapping of the records the call passes";
   end EXTERNALDECL;
 end ExternalDecl;
+
+public uniontype ExternalStruct
+  "The C struct of a record, MLS 3.7, section 12.9.1.3."
+  record EXTERNAL_STRUCT
+    Absyn.Path path "The path of the record type";
+    String tag "The CStructTag, else the name of the record class; empty if the record has neither an Include nor a CStructTag annotation";
+    list<tuple<String, String>> cNames "Components with a CName annotation";
+    Option<SCode.Annotation> ann "The record's annotation, for Include and IncludeDirectory";
+    SourceInfo info;
+  end EXTERNAL_STRUCT;
+end ExternalStruct;
 
 public uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functions,
   algorithms, etc. are all found in this list.
@@ -899,8 +911,8 @@ constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE());
 constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN();
 constant Type T_NORETCALL_DEFAULT   = T_NORETCALL();
 constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT);
-constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false) "default complex with unknown CiState";
-constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), false) "default complex with record CiState";
+constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE()) "default complex with unknown CiState";
+constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE()) "default complex with record CiState";
 
 constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), Absyn.IDENT("SourceInfo"), {}, 1, {
     TYPES_VAR("fileName", dummyAttrVar, T_STRING_DEFAULT, UNBOUND(), false, NONE()),
@@ -969,7 +981,6 @@ public uniontype Type "models the different front-end and back-end types"
     ClassInf.State complexClassType "The type of a class";
     list<Var> varLst "The variables of a complex type";
     EqualityConstraint equalityConstraint;
-    Boolean usedExternally "If the record is passed to an external function at any point, we need to generate conversion functions for it (for instance to convert 'modelica_integer' to 'int')";
   end T_COMPLEX;
 
   record T_SUBTYPE_BASIC

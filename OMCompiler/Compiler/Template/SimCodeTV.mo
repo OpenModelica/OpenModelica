@@ -1257,20 +1257,28 @@ package SimCodeFunction
     end RECORD_CONSTRUCTOR;
   end Function;
 
+  uniontype ExternalStruct
+    record EXTERNAL_STRUCT
+      String tag;
+      list<String> memberNames;
+      list<String> includes;
+      Boolean define;
+    end EXTERNAL_STRUCT;
+  end ExternalStruct;
+
   uniontype RecordDeclaration
     record RECORD_DECL_FULL
       String name;
       Option<String> aliasName;
       Absyn.Path defPath;
       list<Variable> variables;
-      Boolean usedExternally;
+      Option<ExternalStruct> externalStruct;
     end RECORD_DECL_FULL;
     record RECORD_DECL_ADD_CONSTRCTOR
       String ctor_name;
       String name;
       list<Variable> variables;
       Absyn.Path defPath;
-      Boolean usedExternally;
     end RECORD_DECL_ADD_CONSTRCTOR;
     record RECORD_DECL_DEF
       Absyn.Path path;

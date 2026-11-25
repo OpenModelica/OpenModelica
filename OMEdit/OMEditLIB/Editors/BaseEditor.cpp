@@ -39,6 +39,7 @@
 
 #include "MainWindow.h"
 #include "Editors/BaseEditor.h"
+#include "Editors/GitLineChanges.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/DocumentationWidget.h"
@@ -896,7 +897,7 @@ int PlainTextEdit::lineNumberAreaWidth()
     ++digits;
   }
   const QFontMetrics fm(document()->defaultFont());
-  int space = fm.horizontalAdvance(QLatin1Char('9')) * digits;
+  int space = fm.horizontalAdvance(QLatin1Char('9')) * digits + gitMarkerWidth();
   if (canHaveBreakpoints()) {
     space += fm.lineSpacing();
   } else {
@@ -934,7 +935,8 @@ void PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     collapseColumnWidth = foldBoxWidth(fm);
   }
-  const int lineNumbersWidth = mpLineNumberArea->width() - collapseColumnWidth;
+  const int lineNumbersWidth = mpLineNumberArea->width() - collapseColumnWidth - gitMarkerWidth();
+  GitLineChanges *pGitLineChanges = mpBaseEditor->getGitLineChanges();
 
   while (block.isValid() && top <= event->rect().bottom()) {
     QTextDocument *pTextDocument = document();
@@ -984,6 +986,35 @@ void PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       }
       painter.setFont(document()->defaultFont());
       painter.drawText(0, top, lineNumbersWidth, fm.height(), Qt::AlignRight, number);
+      // paint the Git changes
+      const int change = pGitLineChanges ? pGitLineChanges->lineChange(blockNumber) : GitLineChanges::None;
+      if (change != GitLineChanges::None) {
+        const qreal markerX = lineNumbersWidth + 1;
+        if (change & GitLineChanges::Added) {
+          painter.fillRect(QRectF(markerX, top, 3, height), Style::gitAddedLineColor());
+        } else if (change & GitLineChanges::Modified) {
+          painter.fillRect(QRectF(markerX, top, 3, height), Style::gitModifiedLineColor());
+        }
+        if (change & (GitLineChanges::DeletedAbove | GitLineChanges::DeletedBelow)) {
+          painter.save();
+          painter.setRenderHint(QPainter::Antialiasing, true);
+          painter.setPen(Qt::NoPen);
+          painter.setBrush(Style::gitDeletedLineColor());
+          QList<qreal> positions;
+          if (change & GitLineChanges::DeletedAbove) {
+            positions.append(top);
+          }
+          if (change & GitLineChanges::DeletedBelow) {
+            positions.append(bottom);
+          }
+          for (qreal y : std::as_const(positions)) {
+            QPolygonF triangle;
+            triangle << QPointF(markerX - 1, y - 4) << QPointF(markerX + 3, y) << QPointF(markerX - 1, y + 4);
+            painter.drawPolygon(triangle);
+          }
+          painter.restore();
+        }
+      }
     }
     // paint folding markers
     TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
@@ -1421,6 +1452,32 @@ void PlainTextEdit::updateLineNumberAreaWidth(int newBlockCount)
 }
 
 /*!
+ * \brief PlainTextEdit::gitMarkerWidth
+ * Returns the width of the Git change markers. It is zero when the file is not in Git.
+ * \return
+ */
+int PlainTextEdit::gitMarkerWidth()
+{
+  GitLineChanges *pGitLineChanges = mpBaseEditor->getGitLineChanges();
+  return (pGitLineChanges && pGitLineChanges->hasHeadText()) ? 4 : 0;
+}
+
+/*!
+ * \brief PlainTextEdit::gitLineChangesUpdated
+ * Slot activated when GitLineChanges::changesUpdated signal is raised.
+ * \param headTextChanged - true if the markers are now shown or hidden.
+ */
+void PlainTextEdit::gitLineChangesUpdated(bool headTextChanged)
+{
+  if (headTextChanged) {
+    updateLineNumberAreaWidth(0);
+    QRect cr = contentsRect();
+    mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+  }
+  mpLineNumberArea->update();
+}
+
+/*!
  * \brief BaseEditor::updateLineNumberArea
  * Scrolls the LineNumberArea Widget and also updates its width if required.
  * \param rect
@@ -1460,17 +1517,26 @@ void PlainTextEdit::updateHighlights()
 void PlainTextEdit::updateCursorPosition()
 {
   if (mpBaseEditor->getModelWidget() && isVisible()) {
-    const QTextBlock block = textCursor().block();
-    int line = block.blockNumber() + 1;
-    if (mpBaseEditor->isModelicaModelInPackageOneFile()) {
-      line =  block.blockNumber() + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
-    }
-    // Issue #7753. textCursor().columnNumber() doesn't work when line wrapping is on.
-    const int column = textCursor().position() - block.position();
-    Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
-    pPositionLabel->setText(QString("Ln: %1, Col: %2").arg(line).arg(column));
+    updatePositionLabel();
   }
   ensureCursorVisible();
+}
+
+/*!
+ * \brief PlainTextEdit::updatePositionLabel
+ * Shows the cursor position in the status bar.
+ */
+void PlainTextEdit::updatePositionLabel()
+{
+  const QTextBlock block = textCursor().block();
+  int line = block.blockNumber() + 1;
+  if (mpBaseEditor->isModelicaModelInPackageOneFile()) {
+    line =  block.blockNumber() + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
+  }
+  // Issue #7753. textCursor().columnNumber() doesn't work when line wrapping is on.
+  const int column = textCursor().position() - block.position();
+  Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
+  pPositionLabel->setText(QString("Ln: %1, Col: %2").arg(line).arg(column));
 }
 
 /*!
@@ -2161,6 +2227,18 @@ bool BaseEditor::isModelicaModelInPackageOneFile()
 }
 
 /*!
+ * \brief BaseEditor::fileTextForGitDiff
+ * Returns the text of the file as it is written on save.
+ * \param lineOffset - set to the number of file lines before the first line of the editor.
+ * \return
+ */
+QString BaseEditor::fileTextForGitDiff(int &lineOffset)
+{
+  lineOffset = 0;
+  return mpPlainTextEdit->toPlainText();
+}
+
+/*!
  * \brief BaseEditor::completerItemsToStringList
  * Converts the CompleterItem list to QStringList using the CompleterItem::mValue.
  * \param items
@@ -2191,6 +2269,13 @@ void BaseEditor::initialize()
   mpPlainTextEdit = new PlainTextEdit(this);
   mpFindReplaceWidget = new FindReplaceWidget(this);
   mpFindReplaceWidget->hide();
+  mpGitLineChanges = new GitLineChanges(this);
+  connect(mpGitLineChanges, &GitLineChanges::changesUpdated, mpPlainTextEdit, &PlainTextEdit::gitLineChangesUpdated);
+  connect(mpPlainTextEdit->document(), &QTextDocument::contentsChanged, mpGitLineChanges, &GitLineChanges::scheduleUpdate);
+  if (mpModelWidget) {
+    connect(MainWindow::instance()->getLibraryWidget(), &LibraryWidget::fileSaved, mpGitLineChanges, &GitLineChanges::fileSaved);
+    mpGitLineChanges->updateHeadText();
+  }
   createActions();
   mForceSetPlainText = false;
   // set the layout

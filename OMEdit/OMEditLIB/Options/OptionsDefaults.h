@@ -345,15 +345,6 @@ namespace OptionsDefaults
   namespace SensitivityOptimization {
     QString python = "python";
   }
-
-  namespace Traceability {
-    bool traceability = false;
-    QString username = "";
-    QString email = "";
-    QString gitRepository = "";
-    QString ipAdress = "";
-    QString port = "";
-  }
 }
 
 #endif // OPTIONSDEFAULTS_H

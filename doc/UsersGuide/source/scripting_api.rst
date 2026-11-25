@@ -125,11 +125,11 @@ doing a plot:
   simulate(Test, stopTime=3.0)
   val(x , 2.0)
 
-.. omc-gnuplot :: testmodel
+.. omc-plot :: testmodel
 
   y
 
-.. omc-gnuplot :: testmodel-plotall
+.. omc-plot :: testmodel-plotall
   :plotall:
 
 Interactive Function Calls, Reading, and Writing

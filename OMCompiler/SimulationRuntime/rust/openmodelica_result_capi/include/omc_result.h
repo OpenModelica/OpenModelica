@@ -145,7 +145,7 @@ typedef struct omc_result_messages {
 void omc_result_script_close(void);
 double omc_result_script_val(const omc_result_messages *m, const char *filename, const char *var, double time);
 char **omc_result_script_variables(const omc_result_messages *m, const char *filename, int parameters,
-                                   int omc_style, size_t *n_out);
+                                   int omc_style, int derivatives, size_t *n_out);
 int omc_result_script_size(const omc_result_messages *m, const char *filename);
 /* n rows of *n_rows values, for omc_result_free_doubles; NULL on failure. */
 double *omc_result_script_dataset(const omc_result_messages *m, const char *filename, const char *const *vars,
@@ -167,6 +167,11 @@ char *omc_result_script_diff_html(const omc_result_messages *m, int running_test
                                   double reltol_diff_max_min, double range_delta);
 int omc_result_script_filter(const omc_result_messages *m, const char *in_file, const char *out_file,
                              const char *const *vars, size_t n, int intervals, int remove_description);
+/* plotFigure: figure_json, an OpenModelica.Scripting.Figure as JSON, drawn
+ * from result_file into out_file (.svg or .png); each plot width x height
+ * pixels. legend_position is top, bottom, left, right or none. */
+int omc_result_script_plot(const omc_result_messages *m, const char *figure_json, const char *result_file,
+                           const char *out_file, int width, int height, const char *legend_position);
 void omc_result_free_doubles(double *p);
 
 /* ---- Writers, for the C simulation runtime (simulation_result_rust.cpp). ---- */

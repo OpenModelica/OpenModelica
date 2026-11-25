@@ -106,12 +106,17 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
   return res;
 }
 
+/* the entry, its key and its value are one allocation */
 static inline void addHashStringString(hash_string_string **ht, const char *key, const char *val)
 {
-  hash_string_string *v = (hash_string_string*) calloc(1, sizeof(hash_string_string)); /* FIXME this isn't always freed correctly */
-  v->id=omc_strdup(key);
-  v->val=omc_strdup(val);
-  HASH_ADD_KEYPTR( hh, *ht, v->id, strlen(v->id), v );
+  size_t keyLen = strlen(key), valLen = strlen(val);
+  hash_string_string *v = (hash_string_string*) calloc(1, sizeof(hash_string_string) + keyLen + valLen + 2);
+  char *buf = (char*) (v + 1);
+  memcpy(buf, key, keyLen + 1);
+  memcpy(buf + keyLen + 1, val, valLen + 1);
+  v->id = buf;
+  v->val = buf + keyLen + 1;
+  HASH_ADD_KEYPTR( hh, *ht, v->id, keyLen, v );
 }
 
 static inline long findHashStringLongOrZero(hash_string_long *ht, const char *key)
@@ -169,8 +174,6 @@ static inline void freeHashStringString(hash_string_string *ht)
   hash_string_string *c, *tmp;
   HASH_ITER(hh, ht, c, tmp) {
     HASH_DEL(ht, c);
-    free((void*)c->id);
-    free((void*)c->val);
     free(c);
   }
 }

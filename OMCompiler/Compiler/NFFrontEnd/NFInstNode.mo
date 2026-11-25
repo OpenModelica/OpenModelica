@@ -2246,7 +2246,7 @@ uniontype InstNode
                   algorithm
                     res := Class.restriction(cls);
                     state := Restriction.toDAE(res, fullPath(clsNode));
-                    outType := DAE.Type.T_COMPLEX(state, {}, NONE(), Restriction.isExternalRecord(res));
+                    outType := DAE.Type.T_COMPLEX(state, {}, NONE());
                     CachedData.setTypeCache(clsNode.caches, CachedData.PARTIAL_DAE_TYPE(outType));
                   then
                     outType;
@@ -2294,7 +2294,7 @@ uniontype InstNode
                 res := Class.restriction(cls);
                 state := Restriction.toDAE(res, fullPath(clsNode));
                 vars := ConvertDAE.makeTypeVars(clsNode);
-                outType := DAE.Type.T_COMPLEX(state, vars, NONE(), Restriction.isExternalRecord(res));
+                outType := DAE.Type.T_COMPLEX(state, vars, NONE());
                 Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
               then
                 outType;

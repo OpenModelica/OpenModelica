@@ -33,46 +33,35 @@
  *
  */
 
-#ifndef CLEANDIALOG_H
-#define CLEANDIALOG_H
+#ifndef GITLINECHANGESTEST_H
+#define GITLINECHANGESTEST_H
 
+#include <QObject>
 
-#include <QDialog>
-#include <QLineEdit>
-#include <QCheckBox>
-#include <QTreeView>
-#include <QPushButton>
-#include <QDialogButtonBox>
-#include <QStandardItemModel>
-#include<QProcess>
-
-
-class CleanDialog : public QDialog
+/*!
+ * \brief The GitLineChangesTest class
+ */
+class GitLineChangesTest : public QObject
 {
   Q_OBJECT
-public:
-  CleanDialog(QWidget *pParent = 0);
-private:
-  QStandardItemModel *mpCleanFilesModel;
-  QTreeView * mpCleanFilesTreeView;
-  QString *mpworkingDirectory;
-  void getUntrackedFiles();
-  QStringList checkedFiles() const;
-  void addFile(const QString &workingDirectory, QString fileName, bool checked);
-  QCheckBox *mpSelectAllCheckBox;
-  QPushButton *mpCleanRepositoryButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-  QProcess *mpProcess;
-//private slots:
-//  void revertCommit();
-//  void browseCommitLog();
-//  void workingDirectoryChanged(const QString &workingDirectory);
-//  void browseWorkingDirectory();
-//  void commitTextChanged(const QString &commit);
-public slots:
-  void selectAllItems(bool checked);
-  void updateSelectAllCheckBox(void);
+
+private slots:
+  /*!
+   * \brief computeChanges
+   * Tests the GitLineChanges::computeChanges function.
+   */
+  void computeChanges();
+  void computeChanges_data();
+  /*!
+   * \brief largeDifference
+   * Tests that a range without common lines is marked as modified.
+   */
+  void largeDifference();
+  /*!
+   * \brief tooManyLines
+   * Tests files with more distinct lines than diff_match_patch can encode.
+   */
+  void tooManyLines();
 };
 
-#endif // CLEANDIALOG_H
+#endif // GITLINECHANGESTEST_H

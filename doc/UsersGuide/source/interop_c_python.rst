@@ -66,7 +66,7 @@ that is needed, provided you have gcc installed in your path:
 
 And plot the results:
 
-.. omc-gnuplot :: externallibraries
+.. omc-plot :: externallibraries
 
   x
   y

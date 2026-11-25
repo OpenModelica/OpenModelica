@@ -46,6 +46,7 @@
 #include "Util/Utilities.h"
 
 #include <QTimer>
+#include <limits>
 
 class CustomExpressionBox;
 class OutputPlainTextEdit;
@@ -54,6 +55,17 @@ class StringHandler;
 class OMCInterface;
 class LibraryTreeItem;
 class QNetworkReply;
+
+/*!
+ * \brief The DefaultExperiment of an exported FMU. NaN and -1 take the value of the experiment annotation.
+ */
+struct FMUDefaultExperiment {
+  double startTime = std::numeric_limits<double>::quiet_NaN();
+  double stopTime = std::numeric_limits<double>::quiet_NaN();
+  int numberOfIntervals = -1;
+  double stepSize = std::numeric_limits<double>::quiet_NaN();
+  double tolerance = std::numeric_limits<double>::quiet_NaN();
+};
 
 typedef struct {
   QString mFromUnit;
@@ -230,8 +242,10 @@ public:
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
   OMCInterface::getSimulationOptions_res getSimulationOptions(QString className, double defaultTolerance = 1e-6);
-  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources, QString method = "<default>");
-  bool translateModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources);
+  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources,
+                        QString method = "<default>", const FMUDefaultExperiment &experiment = FMUDefaultExperiment());
+  bool translateModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources,
+                         QString method = "<default>", const FMUDefaultExperiment &experiment = FMUDefaultExperiment());
   QString translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors, QString modelName);
   QString importFMUModelDescription(QString fmuModelDescriptionName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);

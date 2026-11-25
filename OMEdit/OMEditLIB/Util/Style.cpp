@@ -162,6 +162,33 @@ QColor Style::currentLineHighlightColor()
 }
 
 /*!
+ * \brief Style::gitAddedLineColor
+ * Marker of a line that is added since the last Git commit.
+ */
+QColor Style::gitAddedLineColor()
+{
+  return pick(QColor(45, 164, 78), QColor(63, 185, 80));
+}
+
+/*!
+ * \brief Style::gitModifiedLineColor
+ * Marker of a line that is changed since the last Git commit.
+ */
+QColor Style::gitModifiedLineColor()
+{
+  return pick(QColor(9, 105, 218), QColor(56, 139, 253));
+}
+
+/*!
+ * \brief Style::gitDeletedLineColor
+ * Marker of lines that are deleted since the last Git commit.
+ */
+QColor Style::gitDeletedLineColor()
+{
+  return pick(QColor(207, 34, 46), QColor(248, 81, 73));
+}
+
+/*!
  * \brief Style::readOnlyEditorStyleSheet
  * Gray background that makes a read-only editor look disabled.
  */

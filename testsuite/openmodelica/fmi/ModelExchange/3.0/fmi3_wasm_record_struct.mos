@@ -1,0 +1,57 @@
+// name: fmi3_wasm_record_struct.mos
+// keywords: FMI 3.0 export wasm external record struct
+// status: correct
+// suite: wasm
+// depends: fmi3_wasm_record_struct.mo
+// depends: fmi3_wasm_record_struct-f.c
+// teardown_command: rm -rf ExtRecordStruct.fmu ExtRecordStruct_res.mat plain_res.mat diff_record_struct* om-wasm-include-* ExtRecordStruct*.log plain*
+//
+// Records passed to external C functions as C structs (MLS 3.7, section
+// 12.9.1.3) in a wasm FMU, which serves the externals from inside the
+// simulation's own memory: input and output records with String and nested
+// members, a record returned by value, arrays of records, and a struct an
+// Include annotation defines with another member order.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("fmi3_wasm_record_struct.mo"); getErrorString();
+
+simulate(ExtRecordStruct.M, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="plain"); getErrorString();
+
+setCommandLineOptions("--fmuDirectory=true"); getErrorString();
+buildModelFMU(ExtRecordStruct.M, fileNamePrefix="ExtRecordStruct", fmuType="me_cs", version="3.0", platforms={"wasm"}); getErrorString();
+
+simulate(ExtRecordStruct.M, stopTime=1.0, numberOfIntervals=10, resimulateExecutable="ExtRecordStruct.fmu"); getErrorString();
+{val(yw, 0, "ExtRecordStruct_res.mat"), val(yr, 0, "ExtRecordStruct_res.mat"), val(s, 1, "ExtRecordStruct_res.mat"), val(t, 0, "ExtRecordStruct_res.mat"), val(r2.z, 0, "ExtRecordStruct_res.mat"), val(r2.w, 1, "ExtRecordStruct_res.mat")};
+
+diffSimulationResults("ExtRecordStruct_res.mat", "plain_res.mat", "diff_record_struct", 1e-9, 1e-9);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "plain_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// "ExtRecordStruct.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "ExtRecordStruct.fmu_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ExtRecordStruct.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {3.1431705e6, 2.16205025e6, 30.0, 32.0, 2.0, 2.5}
+// (true, {})
+// endResult

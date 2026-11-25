@@ -5,7 +5,7 @@ pub mod arrow;
 #[cfg(feature = "json-layout")]
 pub mod arrow_json;
 pub mod file;
-mod fs;
+pub mod fs;
 #[cfg(feature = "hdf5")]
 pub mod hdf5;
 pub mod readers;

@@ -69,7 +69,7 @@ openmodelica_frontend_types.workspace = true
 zip = { version = "9.5.0", default-features = false, features = ["deflate"] }
 # Renders `plot(...)` as an SVG chart in-browser (src/wasm_plot.rs); pure-Rust
 # SVG backend (default features), so it builds for wasm32.
-charton = "0.9"
+charton = "0.9.1"
 # DOM access to insert the rendered SVG into the page's #log element.
 web-sys = { version = "0.3.105", features = ["Window", "Document", "Element", "Node"] }
 # Building the {urls, filename} pending-download list for the JS host (omc_take_pending_downloads).

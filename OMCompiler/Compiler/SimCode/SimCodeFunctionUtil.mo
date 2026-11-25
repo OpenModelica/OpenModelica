@@ -72,6 +72,7 @@ import SCodeUtil;
 import StringUtil;
 import Testsuite;
 import UnorderedMap;
+import UnorderedSet;
 import Config;
 import System;
 
@@ -532,9 +533,11 @@ protected
   HashTableStringToPath.HashTable ht;
   list<tuple<SimCodeFunction.RecordDeclaration,list<SimCodeFunction.RecordDeclaration>>> g;
   UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
+  UnorderedMap<String, SimCodeFunction.ExternalStruct> extStructs;
 algorithm
   recDeclsMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2, stringEq);
-  (functions, outIncludes, includeDirs, libs, libpaths) := elaborateFunctions2(program, daeElements, {}, includes, {}, {}, {}, recDeclsMap);
+  extStructs := UnorderedMap.new<SimCodeFunction.ExternalStruct>(stringHashDjb2, stringEq);
+  (functions, outIncludes, includeDirs, libs, libpaths) := elaborateFunctions2(program, daeElements, {}, includes, {}, {}, {}, recDeclsMap, extStructs);
 
   collectRecDeclsFromMetaRecCallExps(literals, recDeclsMap);
   collectRecDeclsFromTypes(metarecordTypes, recDeclsMap);
@@ -548,7 +551,210 @@ algorithm
   // Topological sort since we have no guarantees in the order of generated records
   g := Graph.buildGraph(recordDecls, getRecordDependencies, recordDecls);
   (recordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
+
+  if not UnorderedMap.isEmpty(extStructs) then
+    recordDecls := setExternalStructs(recordDecls, extStructs);
+  end if;
 end elaborateFunctions;
+
+protected function simExtArgType
+  input SimCodeFunction.SimExtArg arg;
+  output DAE.Type ty;
+algorithm
+  ty := match arg
+    case SimCodeFunction.SIMEXTARG() then arg.type_;
+    case SimCodeFunction.SIMEXTARGEXP() then arg.type_;
+    else DAE.T_UNKNOWN_DEFAULT;
+  end match;
+end simExtArgType;
+
+protected function collectExternalStructs
+  "Adds the C struct of each record in ty, nested records included."
+  input DAE.Type ty;
+  input list<DAE.ExternalStruct> structs "The C mapping from the frontend";
+  input Absyn.Program program;
+  input UnorderedMap<String, SimCodeFunction.ExternalStruct> extStructs;
+  input output list<String> includeDirs;
+protected
+  DAE.Type ety = Types.arrayElementType(ty), var_ty;
+  Absyn.Path path;
+  list<DAE.Var> vars;
+  String name, tag;
+  list<tuple<String, String>> cnames;
+  Option<SCode.Annotation> ann;
+  list<String> includes = {};
+  SCode.Mod mod;
+algorithm
+  if not Types.isRecord(ety) then
+    return;
+  end if;
+
+  DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path), varLst = vars) := ety;
+  name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+
+  if UnorderedMap.contains(name, extStructs) then
+    return;
+  end if;
+
+  (tag, cnames, ann) := findExternalStruct(path, structs);
+
+  if isSome(ann) then
+    SOME(SCode.ANNOTATION(modification = mod)) := ann;
+    includes := generateExtFunctionIncludesIncludestr(mod);
+    includeDirs := List.union(generateExtFunctionIncludeDirectoryFlags(program, path, mod, includes), includeDirs);
+  end if;
+
+  UnorderedMap.add(name, SimCodeFunction.EXTERNAL_STRUCT(tag,
+    list(externalMemberName(DAEUtil.typeVarIdent(v), cnames) for v in vars), includes, true), extStructs);
+
+  for v in vars loop
+    DAE.TYPES_VAR(ty = var_ty) := v;
+    includeDirs := collectExternalStructs(var_ty, structs, program, extStructs, includeDirs);
+  end for;
+end collectExternalStructs;
+
+protected function findExternalStruct
+  "The frontend's C mapping of a record, or no tag and the names of its components."
+  input Absyn.Path path;
+  input list<DAE.ExternalStruct> structs;
+  output String tag = "";
+  output list<tuple<String, String>> cnames = {};
+  output Option<SCode.Annotation> ann = NONE();
+protected
+  Absyn.Path struct_path;
+algorithm
+  for s in structs loop
+    DAE.EXTERNAL_STRUCT(path = struct_path) := s;
+
+    if AbsynUtil.pathEqual(struct_path, path) then
+      DAE.EXTERNAL_STRUCT(tag = tag, cNames = cnames, ann = ann) := s;
+      return;
+    end if;
+  end for;
+end findExternalStruct;
+
+protected function externalMemberName
+  input String name;
+  input list<tuple<String, String>> cnames;
+  output String cname = name;
+protected
+  String n, c;
+algorithm
+  for e in cnames loop
+    (n, c) := e;
+
+    if n == name then
+      cname := c;
+      return;
+    end if;
+  end for;
+end externalMemberName;
+
+protected function setExternalStructs
+  "Sets the C struct of the records that external functions take. A struct
+   with a tag is defined once: by the Include annotations of the records with
+   the tag, else by the first of them."
+  input list<SimCodeFunction.RecordDeclaration> inDecls "In dependency order";
+  input UnorderedMap<String, SimCodeFunction.ExternalStruct> extStructs;
+  output list<SimCodeFunction.RecordDeclaration> decls = {};
+protected
+  UnorderedSet<String> included_tags, includes_done;
+  UnorderedMap<String, SimCodeFunction.RecordDeclaration> defined;
+  SimCodeFunction.ExternalStruct s, def_struct;
+  SimCodeFunction.RecordDeclaration d;
+  Absyn.Path def_path;
+  list<SimCodeFunction.Variable> def_vars;
+algorithm
+  included_tags := UnorderedSet.new(stringHashDjb2, stringEq);
+  includes_done := UnorderedSet.new(stringHashDjb2, stringEq);
+  defined := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2, stringEq);
+
+  for e in UnorderedMap.valueList(extStructs) loop
+    if not listEmpty(e.includes) then
+      UnorderedSet.add(e.tag, included_tags);
+    end if;
+  end for;
+
+  for decl in inDecls loop
+    d := decl;
+
+    () := match d
+      case SimCodeFunction.RECORD_DECL_FULL() guard UnorderedMap.contains(d.name, extStructs)
+        algorithm
+          s := UnorderedMap.getOrFail(d.name, extStructs);
+
+          if stringEmpty(s.tag) then
+            s.define := true;
+          elseif listEmpty(s.includes) then
+            s.define := not UnorderedSet.contains(s.tag, included_tags);
+
+            if s.define and UnorderedMap.contains(s.tag, defined) then
+              SimCodeFunction.RECORD_DECL_FULL(defPath = def_path, variables = def_vars,
+                externalStruct = SOME(def_struct)) := UnorderedMap.getOrFail(s.tag, defined);
+
+              if not (List.isEqualOnTrue(def_struct.memberNames, s.memberNames, stringEq) and
+                      List.isEqualOnTrue(list(externalMemberType(v, extStructs) for v in def_vars),
+                                         list(externalMemberType(v, extStructs) for v in d.variables), stringEq)) then
+                Error.addMessage(Error.EXTERNAL_STRUCT_TAG_CONFLICT,
+                  {AbsynUtil.pathString(def_path), AbsynUtil.pathString(d.defPath), s.tag});
+                fail();
+              end if;
+
+              s.define := false;
+            elseif s.define then
+              d.externalStruct := SOME(s);
+              UnorderedMap.add(s.tag, d, defined);
+            end if;
+          else
+            s.define := false;
+            s.includes := list(i for i guard not UnorderedSet.contains(i, includes_done) in s.includes);
+
+            for i in s.includes loop
+              UnorderedSet.add(i, includes_done);
+            end for;
+          end if;
+
+          d.externalStruct := SOME(s);
+        then
+          ();
+
+      else ();
+    end match;
+
+    decls := d :: decls;
+  end for;
+
+  decls := listReverse(decls);
+end setExternalStructs;
+
+protected function externalMemberType
+  "The C type of a member of a record's struct."
+  input SimCodeFunction.Variable var;
+  input UnorderedMap<String, SimCodeFunction.ExternalStruct> extStructs;
+  output String cty;
+algorithm
+  cty := match var
+    local
+      Absyn.Path path;
+
+    case SimCodeFunction.VARIABLE(ty = DAE.T_REAL()) then "double";
+    case SimCodeFunction.VARIABLE(ty = DAE.T_STRING()) then "const char*";
+    case SimCodeFunction.VARIABLE(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path)))
+      then externalStructType(AbsynUtil.pathStringUnquoteReplaceDot(path, "_"), extStructs);
+    else "int";
+  end match;
+end externalMemberType;
+
+protected function externalStructType
+  input String name;
+  input UnorderedMap<String, SimCodeFunction.ExternalStruct> extStructs;
+  output String cty;
+protected
+  String tag;
+algorithm
+  SimCodeFunction.EXTERNAL_STRUCT(tag = tag) := UnorderedMap.getOrFail(name, extStructs);
+  cty := if stringEmpty(tag) then name + "_external" else "struct " + tag;
+end externalStructType;
 
 protected function addRecordDeclsForExtraConstructors
   "An extra constructor builds a struct of its record type, which is otherwise
@@ -561,7 +767,7 @@ algorithm
       case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() guard not UnorderedMap.contains(decl.name, recDeclsMap)
         algorithm
           UnorderedMap.add(decl.name, SimCodeFunction.RECORD_DECL_FULL(decl.name, NONE(), decl.defPath,
-            list(variableWithoutBinding(v) for v in decl.variables), decl.usedExternally), recDeclsMap);
+            list(variableWithoutBinding(v) for v in decl.variables), NONE()), recDeclsMap);
         then ();
       else ();
     end match;
@@ -715,6 +921,7 @@ protected function elaborateFunctions2
   input list<String> inLibs;
   input list<String> inPaths;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
+  input UnorderedMap<String, SimCodeFunction.ExternalStruct> extStructs;
   output list<SimCodeFunction.Function> outFunctions;
   output list<String> outIncludes;
   output list<String> outIncludeDirs;
@@ -739,13 +946,13 @@ algorithm
     case ((DAE.FUNCTION( type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, includes, includeDirs, libs, libPaths)
       algorithm
         // skip over builtin functions
-        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
       then
         (fns, includes, includeDirs, libs,libPaths);
     case ((DAE.FUNCTION(partialPrefix = true) :: rest), accfns, includes, includeDirs, libs, libPaths)
       algorithm
         // skip over partial functions
-        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
       then
         (fns, includes, includeDirs, libs,libPaths);
     case ((fel as DAE.FUNCTION(path = path, functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="builtin"))::_))::rest, accfns, includes, includeDirs, libs, libPaths)
@@ -754,10 +961,10 @@ algorithm
         fname := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b := stringEq(fname, name);
         if not b then
-          (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
+          (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
           accfns := fn :: accfns;
         end if;
-        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
       then
         (fns, includes, includeDirs, libs,libPaths);
 
@@ -767,17 +974,17 @@ algorithm
         fname := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b := listMember(name, SCodeUtil.knownExternalCFunctions) and stringEq(fname, name);
         if not b then
-          (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
+          (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
           accfns := fn :: accfns;
         end if;
-        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
       then
         (fns, includes, includeDirs, libs,libPaths);
 
     case ((fel :: rest), accfns, includes, includeDirs, libs, libPaths)
       algorithm
-        (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
-        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, (fn :: accfns), includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
+        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, (fn :: accfns), includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
       then
         (fns, includes, includeDirs, libs,libPaths);
   end match;
@@ -792,6 +999,7 @@ protected function elaborateFunction
   input list<String> inLibs;
   input list<String> inLibPaths;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
+  input UnorderedMap<String, SimCodeFunction.ExternalStruct> extStructs;
   output SimCodeFunction.Function outFunction;
   output list<String> outIncludes;
   output list<String> outIncludeDirs;
@@ -814,6 +1022,7 @@ algorithm
       DAE.ExtArg extretarg;
       Option<SCode.Annotation> ann;
       DAE.ExternalDecl extdecl;
+      list<DAE.ExternalStruct> ext_structs;
       list<SimCodeFunction.Variable> outVars, inVars, biVars, funArgs, varDecls;
       list<DAE.Statement> bodyStmts;
       list<DAE.Element> daeElts;
@@ -892,7 +1101,7 @@ algorithm
       type_ = (DAE.T_FUNCTION(funcArg = args))), includes, includeDirs, libs, libPaths)
       algorithm
         DAE.EXTERNALDECL(name=extfnname, args=extargs,
-          returnArg=extretarg, language=lang, ann=ann) := extdecl;
+          returnArg=extretarg, language=lang, ann=ann, structs=ext_structs) := extdecl;
         // outvars = DAEUtil.getOutputElements(daeElts);
         // invars = DAEUtil.getInputVars(daeElts);
         // bivars = DAEUtil.getBidirVars(daeElts);
@@ -912,6 +1121,12 @@ algorithm
         simextargs := list(extArgsToSimExtArgs(constantExtArg(a, daeElts)) for a in extargs);
         extReturn := extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) := fixOutputIndex(outVars, simextargs, extReturn);
+
+        if lang == "C" then
+          for a in extReturn :: simextargs loop
+            includeDirs := collectExternalStructs(simExtArgType(a), ext_structs, program, extStructs, includeDirs);
+          end for;
+        end if;
         // make lang to-upper as we have FORTRAN 77 and Fortran 77 in the Modelica Library!
         lang := System.toupper(lang);
       then
@@ -1936,9 +2151,10 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       SimCodeFunction.RecordDeclaration recDecl;
       Option<SimCodeFunction.RecordDeclaration> optRecDecl;
-      Boolean is_default, usedExternally, bool1, changed;
+      Option<SimCodeFunction.ExternalStruct> ext_struct;
+      Boolean is_default, changed;
 
-    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, usedExternally = usedExternally)
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst)
       algorithm
         name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         (sname, is_default) := checkBindingsandGetConstructorName(name, varlst);
@@ -1948,17 +2164,17 @@ algorithm
         if is_default then
           // If it already exists check if we need to update it.
           if isSome(optRecDecl) then
-            SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
+            SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, ext_struct)) := optRecDecl;
             (vars, changed) := addMissingDefaults(vars, varlst);
 
-            if changed or (usedExternally and not bool1) then
-              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, usedExternally or bool1);
+            if changed then
+              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, ext_struct);
               UnorderedMap.add(sname, recDecl, recDeclsMap);
             end if;
           // Add it if it does not exist.
           else
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, usedExternally);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, NONE());
             UnorderedMap.add(sname, recDecl, recDeclsMap);
 
             collectRecDeclsFromTypesVars(varlst, recDeclsMap);
@@ -1969,7 +2185,7 @@ algorithm
           // Add it if does not exist. Otherwise do nothing.
           if isNone(optRecDecl) then
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars, path, usedExternally);
+            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars, path);
             UnorderedMap.add(sname, recDecl, recDeclsMap);
             collectRecDeclsFromTypesVars(varlst, recDeclsMap);
           end if;
@@ -3188,12 +3404,12 @@ algorithm
       Absyn.Path name;
       String str,sname;
       Option<String> alias;
-      Boolean extConvert;
-    case SimCodeFunction.RECORD_DECL_FULL(sname, _, name, vars, extConvert)
+      Option<SimCodeFunction.ExternalStruct> ext_struct;
+    case SimCodeFunction.RECORD_DECL_FULL(sname, _, name, vars, ext_struct)
       algorithm
         str := stringDelimitList(List.map(vars, variableString), "\n");
         (alias,ht) := aliasRecordDeclarations2(str, name, inHt);
-      then (SimCodeFunction.RECORD_DECL_FULL(sname, alias, name, vars, extConvert),ht);
+      then (SimCodeFunction.RECORD_DECL_FULL(sname, alias, name, vars, ext_struct),ht);
     else (inDecl,inHt);
   end match;
 end aliasRecordDeclarations;

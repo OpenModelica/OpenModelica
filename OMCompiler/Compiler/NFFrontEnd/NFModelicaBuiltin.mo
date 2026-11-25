@@ -1305,6 +1305,12 @@ record CheckSettingsResult
 annotation(preferredView="text");
 end CheckSettingsResult;
 
+type LinePattern = enumeration(None, Solid, Dash, Dot, DashDot, DashDotDot)
+  "Line pattern of a figure curve, as in the Line annotation.";
+
+type LegendPosition = enumeration(top, bottom, left, right, none)
+  "Position of the legend of a plot.";
+
 record AxisScale
   "Scale of a figure axis, from the figures annotation."
   String scaleType = "Linear" "\"Linear\" | \"Log\" | vendor markup";
@@ -1328,6 +1334,10 @@ record Curve
   String y "result reference";
   String legend = "";
   Integer zOrder = 0;
+  String color = "" "A CSS color such as \"red\" or \"#ff0000\"; empty = automatic. Not in the figures annotation.";
+  LinePattern pattern = LinePattern.Solid "Not in the figures annotation.";
+  Real thickness = 0.25 "In mm. Not in the figures annotation.";
+  String fileName = "" "The result file; empty = the one of the figure. Not in the figures annotation.";
 annotation(preferredView="text");
 end Curve;
 
@@ -1355,14 +1365,43 @@ end Figure;
 package Internal
   "Internal definitions."
 
-partial function simulationArguments
-  "The arguments of simulate, buildModel and the other simulation calls."
+partial function classNameArgument
+  "The model of a simulation call."
   input TypeName className "The model";
+end classNameArgument;
+
+partial function experimentArguments
+  "The experiment of simulate, buildModelFMU and the other calls that simulate or export a model."
   input Real startTime = nan() "Start time";
   input Real stopTime = nan() "Stop time";
   input Integer numberOfIntervals = -1 "Number of intervals";
-  input Real stepSize = nan() "Interval of the result file";
+  input Real stepSize = nan() "Interval";
   input Real tolerance = nan() "Integration tolerance";
+annotation(Documentation(info="<html>
+<p>An argument that is not given gets its value from the <code>experiment</code> annotation of the class,
+or of a class that it extends, or else from the default below.
+The declared values <code>nan()</code> and <code>-1</code> only mark an argument that is not given.</p>
+<table>
+<tr><th>Argument</th><th>Value if not given</th></tr>
+<tr><td><code>startTime</code></td><td><code>StartTime</code> of the experiment annotation, else 0.</td></tr>
+<tr><td><code>stopTime</code></td><td><code>StopTime</code>, else 1.</td></tr>
+<tr><td><code>numberOfIntervals</code></td><td>(<code>StopTime</code> - <code>StartTime</code>) / <code>Interval</code>, rounded to the nearest integer,
+or <code>NumberOfIntervals</code>, else 500. For optimize(), 50.
+If <code>stepSize</code> is given, (stopTime - startTime) / stepSize, rounded down.</td></tr>
+<tr><td><code>stepSize</code></td><td><code>Interval</code>, else (stopTime - startTime) / 500.
+If startTime, stopTime or numberOfIntervals is given, (stopTime - startTime) / numberOfIntervals.</td></tr>
+<tr><td><code>tolerance</code></td><td><code>Tolerance</code>, else 1e-6.</td></tr>
+</table>
+<p>A simulation uses numberOfIntervals and not stepSize. An FMU export writes startTime, stopTime, stepSize and tolerance
+into the <code>DefaultExperiment</code> element of modelDescription.xml.</p>
+</html>"),
+  preferredView="text");
+end experimentArguments;
+
+partial function simulationArguments
+  "The arguments of simulate, buildModel and the other simulation calls."
+  extends classNameArgument;
+  extends experimentArguments;
   input String method = "<default>" "Integration method";
   input String fileNamePrefix = "<default>" "File name prefix";
   input String options = "<default>" "Not used";
@@ -1371,17 +1410,11 @@ partial function simulationArguments
   input String cflags = "<default>" "Flags for the C compiler";
   input String simflags = "<default>" "Flags for the simulation";
 annotation(Documentation(info="<html>
-<p>Only <code>className</code> is necessary. An argument that is not given gets its value from the
-<code>experiment</code> annotation of the class, or of a class that it extends, or else from the default below.
-The declared values <code>nan()</code>, <code>-1</code> and <code>\"&lt;default&gt;\"</code> only mark an argument that is not given.</p>
+<p>Only <code>className</code> is necessary. For startTime, stopTime, numberOfIntervals, stepSize and tolerance,
+see <code>experimentArguments</code>. An argument that is not given gets its value from the default below.
+The declared value <code>\"&lt;default&gt;\"</code> only marks an argument that is not given.</p>
 <table>
 <tr><th>Argument</th><th>Value if not given</th></tr>
-<tr><td><code>startTime</code></td><td><code>StartTime</code> of the experiment annotation, else 0.</td></tr>
-<tr><td><code>stopTime</code></td><td><code>StopTime</code>, else 1.</td></tr>
-<tr><td><code>numberOfIntervals</code></td><td>(<code>StopTime</code> - <code>StartTime</code>) / <code>Interval</code>, rounded to the nearest integer,
-or <code>NumberOfIntervals</code>, else 500. For optimize(), 50.</td></tr>
-<tr><td><code>stepSize</code></td><td>Not used. If it is given, numberOfIntervals is (stopTime - startTime) / stepSize, rounded down.</td></tr>
-<tr><td><code>tolerance</code></td><td><code>Tolerance</code>, else 1e-6.</td></tr>
 <tr><td><code>method</code></td><td>\"auto\": the simulation runtime chooses the method (see <code>-s</code>). With <code>--daeMode</code>, \"ida\". For optimize(), \"optimization\".</td></tr>
 <tr><td><code>fileNamePrefix</code></td><td>The name of the class. The result file is <code>&lt;fileNamePrefix&gt;_res.&lt;outputFormat&gt;</code>.</td></tr>
 <tr><td><code>options</code></td><td>Not used.</td></tr>
@@ -1396,6 +1429,22 @@ for example, <code>-s=euler</code> replaces <code>method</code>.</p>
 </html>"),
   preferredView="text");
 end simulationArguments;
+
+partial function fmuArguments
+  "The arguments of buildModelFMU and translateModelFMU that come before the experiment."
+  input TypeName className "the class that should translated";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
+  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
+  input String platforms[:] = {"static"} "The list of platforms to generate code for.
+                                          \"dynamic\"=current platform, dynamically link the runtime.
+                                          \"static\"=current platform, statically link everything.
+                                          \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+  input Boolean includeResources = false "Deprecated and has no effect";
+  input String method = "<default>" "Integration method of a Co-Simulation FMU. <default>: cvode, or the method of the model for a wasm FMU";
+end fmuArguments;
 
 function nan
   "Not a number; the default of an argument that is computed when it is not given."
@@ -3105,21 +3154,13 @@ end importFMUModelDescription;
 
 impure function translateModelFMU
   "Translates a model into C code for a FMU without building it."
-  input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
-  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
-  input String platforms[:] = {"static"} "The list of platforms to generate code for.
-                                          \"dynamic\"=current platform, dynamically link the runtime.
-                                          \"static\"=current platform, statically link everything.
-                                          \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
-  input Boolean includeResources = false "include Modelica based resources via loadResource or not";
+  extends Internal.fmuArguments;
+  extends Internal.experimentArguments;
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The only required argument is the className, while all others have some default values.</p>
+<p>The only required argument is the className, while all others have some default values.
+For the experiment, see <code>Internal.experimentArguments</code>.</p>
 <p>Example command:
 <pre>translateModelFMU(className, version=\"2.0\");</pre>
 </p>
@@ -3129,22 +3170,13 @@ end translateModelFMU;
 
 impure function buildModelFMU
   "Translates a Modelica model into a Functional Mockup Unit."
-  input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
-  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
-  input String platforms[:] = {"static"} "The list of platforms to generate code for.
-                                          \"dynamic\"=current platform, dynamically link the runtime.
-                                          \"static\"=current platform, statically link everything.
-                                          \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
-  input Boolean includeResources = false "Depreacted and no effect";
-  input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
+  extends Internal.fmuArguments;
+  extends Internal.experimentArguments;
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The only required argument is the className, while all others have some default values.</p>
+<p>The only required argument is the className, while all others have some default values.
+For the experiment, see <code>Internal.experimentArguments</code>.</p>
 <p>Example command:
 <pre>buildModelFMU(className, version=\"2.0\");</pre>
 </p>
@@ -3622,6 +3654,7 @@ impure function plot
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
+  input String outputFile = "" "Writes the plot into this file (.svg or .png) instead of showing it.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -3633,6 +3666,7 @@ annotation(preferredView="text",Documentation(info="<html>
 <li><code>simulate(A); plot(x, externalWindow=true);</code></li>
 <li><code>simulate(A,fileNamePrefix=\"B\"); simulate(C); plot(z,fileName=\"B.mat\",legendPosition=none);</code></li>
 <li><code>simulate(A); plot({b,x}, stack=true);</code></li>
+<li><code>simulate(A); plot({x,y}, outputFile=\"xy.png\");</code></li>
 </ul>
 </html>"));
 end plot;
@@ -3659,6 +3693,7 @@ impure function plotAll
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
+  input String outputFile = "" "Writes the plot into this file (.svg or .png) instead of showing it.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3697,6 +3732,7 @@ impure function plotParametric
   input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input String outputFile = "" "Writes the plot into this file (.svg or .png) instead of showing it.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3705,9 +3741,32 @@ annotation(Documentation(info="<html>
 <ul>
 <li><code>simulate(A); plotParametric(x,y);</code></li>
 <li><code>simulate(A); plotParametric(x,y, externalWindow=true);</code></li>
+<li><code>simulate(A); plotParametric(x,y, outputFile=\"xy.svg\");</code></li>
 </html>"),
   preferredView="text");
 end plotParametric;
+
+impure function plotFigure
+  "Draws a figure of simulation results into a file, or shows it the way plot does."
+  input Figure figure;
+  input String outputFile = "" "The file to write, .svg or .png. Empty: show each plot of the figure with plot or plotParametric.";
+  input String fileName = "<default>" "The result file of the curves without a fileName. <default> will read the last simulation result";
+  input Integer width = 800 "The width of each plot, in pixels.";
+  input Integer height = 450 "The height of each plot, in pixels.";
+  input LegendPosition legendPosition = LegendPosition.top;
+  output Boolean success "Returns true on success";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Draws the plots of a figure (see the figures annotation of the Modelica Language Specification) one below the other.
+The fields color, pattern, thickness and fileName of a Curve are not in the figures annotation.
+A plot that is shown instead of written shows only the curves of one result file, in the style of its first curve.</p>
+<p>Example command sequences:</p>
+<ul>
+<li><code>simulate(A); plotFigure(Figure(plots={Plot(curves={Curve(y=\"x\"), Curve(y=\"y\")})}), \"xy.svg\");</code></li>
+<li><code>simulate(A); figures := getModelFigures(A); plotFigure(figures[1], \"figure.png\");</code></li>
+</ul>
+</html>"));
+end plotFigure;
 
 impure function readSimulationResult
   "Reads a result file, returning a matrix corresponding to the variables and size given."
@@ -3732,12 +3791,14 @@ impure function readSimulationResultVars
   input String fileName;
   input Boolean readParameters = true;
   input Boolean openmodelicaStyle = false;
+  input Boolean readDerivatives = true;
   output String[:] vars;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes a simulation results file and returns the variables stored in it. These names can be used with e.g. <a href=\"modelica://OpenModelica.Scripting.val\">val()</a> or <a href=\"modelica://OpenModelica.Scripting.plot\">plot()</a></p>
 <p>If readParameters is true, parameter names are also returned.</p>
 <p>If openmodelicaStyle is true, the stored variable names are converted to the canonical form used by OpenModelica variables (a.der(b) becomes der(a.b), and so on).</p>
+<p>If readDerivatives is false, derivatives (der(x)) are not returned.</p>
 </html>"),preferredView="text");
 end readSimulationResultVars;
 

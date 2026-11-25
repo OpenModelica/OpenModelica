@@ -7574,7 +7574,7 @@ algorithm
           end if;
        then ();
 
-      // record_cse = call
+      // record_cse = call or array_cse = call
       case BackendDAE.VAR(tplExp = SOME(rec))
         algorithm
           if BaseHashSet.has(rec, tplExpHT) then
@@ -7584,7 +7584,7 @@ algorithm
             tp := Expression.typeof(rec);
             SOME(call) := globalKnownVar.bindExp;
             source := BackendVariable.getVarSource(globalKnownVar);
-            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_ASSIGN(tp, rec, call, source)}, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {if Types.isArray(tp) then DAE.STMT_ASSIGN_ARR(tp, rec, call, source) else DAE.STMT_ASSIGN(tp, rec, call, source)}, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
             uniqueEqIndex := uniqueEqIndex+1;
             tplExpHT := BaseHashSet.add(rec, tplExpHT);
           end if;

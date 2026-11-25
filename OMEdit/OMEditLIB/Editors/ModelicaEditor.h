@@ -69,6 +69,7 @@ public:
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   void storeLeadingSpaces(QMap<int, int> leadingSpacesMap);
   QString getPlainText();
+  virtual QString fileTextForGitDiff(int &lineOffset) override;
   void setTextChanged(bool changed) {mTextChanged = changed;}
   bool isTextChanged() {return mTextChanged;}
   virtual void popUpCompleter() override;

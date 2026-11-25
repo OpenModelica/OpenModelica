@@ -135,6 +135,7 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
   : QGraphicsScene(pModelWidget), mViewType(viewType)
 {
   mpModelWidget = pModelWidget;
+  connect(this, SIGNAL(selectionChanged()), mpModelWidget, SLOT(updatePositionLabel()));
 }
 
 /*!
@@ -175,6 +176,8 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mIsCreatingBitmapShape = false;
   mIsPanning = false;
   mLastMouseEventPos = QPoint(0, 0);
+  mLastMouseScenePosition = QPoint(0, 0);
+  mHasLastMouseScenePosition = false;
   mpClickedComponent = 0;
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
@@ -4670,10 +4673,8 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     QGraphicsView::mouseMoveEvent(event);
     return;
   }
-  // update the position label
-  Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
-  pPositionLabel->setText(QString("X: %1, Y: %2").arg(QString::number(qRound(mapToScene(event->pos()).x())))
-                          .arg(QString::number(qRound(mapToScene(event->pos()).y()))));
+  mLastMouseScenePosition = mapToScene(event->pos()).toPoint();
+  mHasLastMouseScenePosition = true;
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if user mouse over connector show Qt::CrossCursor.
   bool setCrossCursor = false;
@@ -4724,6 +4725,8 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     }
   }
   QGraphicsView::mouseMoveEvent(event);
+  // after the base class has moved the dragged items
+  updatePositionLabel();
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
@@ -5280,17 +5283,72 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
   }
 }
 
-/*!
- * \brief GraphicsView::leaveEvent
- * Reimplementation of QGraphicsView::leaveEvent.
- * Clears the position label in the status bar.
- * \param event
- */
-void GraphicsView::leaveEvent(QEvent *event)
+static QString positionLabelNumber(qreal value)
 {
-  // clear the position label
-  MainWindow::instance()->getPositionLabel()->clear();
-  QGraphicsView::leaveEvent(event);
+  // two decimals at most; also hides rounding noise of rotations and -0
+  return QString::number(qRound(value * 100) / 100.0);
+}
+
+/*!
+ * \brief GraphicsView::updatePositionLabel
+ * Shows the last mouse position of the view in the status bar.
+ * If items are selected, also shows the origin and size of their placement and the distance they are dragged.
+ */
+void GraphicsView::updatePositionLabel()
+{
+  QStringList fields;
+  int selectedItemsCount = 0;
+  QPointF origin;
+  QRectF selectionRect;
+  QPointF delta;
+  foreach (QGraphicsItem *pItem, scene()->selectedItems()) {
+    if (pItem->parentItem()) {
+      continue;
+    }
+    QPointF itemOrigin;
+    qreal rotation;
+    QRectF rect;
+    if (Element *pElement = dynamic_cast<Element*>(pItem)) {
+      if (!pElement->mTransformation.isValid()) {
+        continue;
+      }
+      const ExtentAnnotation extent = pElement->mTransformation.getExtent();
+      itemOrigin = pElement->mTransformation.getOrigin();
+      rotation = pElement->mTransformation.getRotateAngle();
+      rect = QRectF(extent.at(0), extent.at(1)).normalized();
+    } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(pItem)) {
+      const QVector<QPointF> &points = pShapeAnnotation->getPoints();
+      itemOrigin = pShapeAnnotation->getOrigin();
+      rotation = pShapeAnnotation->getRotation();
+      rect = points.isEmpty() ? pShapeAnnotation->getBoundingRect().normalized() : QPolygonF(points).boundingRect();
+    } else {
+      continue;
+    }
+    // pos() is the offset of an item that is dragged but not yet moved in the annotation.
+    itemOrigin += pItem->pos();
+    if (!pItem->pos().isNull()) {
+      delta = pItem->pos();
+    }
+    // Placement points are relative to the origin and rotated around it.
+    rect = QTransform().translate(itemOrigin.x(), itemOrigin.y()).rotate(rotation).mapRect(rect);
+    selectionRect = selectedItemsCount == 0 ? rect : selectionRect.united(rect);
+    origin = itemOrigin;
+    selectedItemsCount++;
+  }
+  if (selectedItemsCount > 0) {
+    if (selectedItemsCount > 1) {
+      origin = selectionRect.center();
+    }
+    fields << QString("Origin: %1, %2").arg(positionLabelNumber(origin.x()), positionLabelNumber(origin.y()));
+    fields << QString("Size: %1 x %2").arg(positionLabelNumber(selectionRect.width()), positionLabelNumber(selectionRect.height()));
+    if (isMovingComponentsAndShapes() && !delta.isNull()) {
+      fields << QString("Delta: %1, %2").arg(positionLabelNumber(delta.x()), positionLabelNumber(delta.y()));
+    }
+  }
+  if (mHasLastMouseScenePosition) {
+    fields << QString("X: %1, Y: %2").arg(mLastMouseScenePosition.x()).arg(mLastMouseScenePosition.y());
+  }
+  MainWindow::instance()->getPositionLabel()->setText(fields.join(" | "));
 }
 
 WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
@@ -5812,6 +5870,13 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
 
 ModelWidget::~ModelWidget()
 {
+  // the scenes are deleted after this destructor and can emit selectionChanged() while they remove their items
+  if (mpIconGraphicsScene) {
+    mpIconGraphicsScene->disconnect(this);
+  }
+  if (mpDiagramGraphicsScene) {
+    mpDiagramGraphicsScene->disconnect(this);
+  }
   if (mpModelInstance) {
     delete mpModelInstance;
   }
@@ -7219,6 +7284,8 @@ void ModelWidget::createUndoStack()
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
   }
+  // items moved, rotated or resized by keys, dialogs, undo or redo
+  connect(mpUndoStack, SIGNAL(indexChanged(int)), SLOT(updatePositionLabel()));
   if (MainWindow::instance()->isDebug()) {
     mpUndoView = new QUndoView(mpUndoStack);
   }
@@ -7589,7 +7656,6 @@ void ModelWidget::showIconView(bool checked)
   mpIconGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -7626,7 +7692,6 @@ void ModelWidget::showDiagramView(bool checked)
   mpDiagramGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -7791,6 +7856,17 @@ void ModelWidget::handleCanRedoChanged(bool canRedo)
   handleCanUndoRedoChanged();
 }
 
+/*!
+ * \brief ModelWidget::updatePositionLabel
+ * Updates the position label in the status bar if this ModelWidget is shown.
+ */
+void ModelWidget::updatePositionLabel()
+{
+  if (mpModelWidgetContainer->getCurrentModelWidget() == this) {
+    mpModelWidgetContainer->updatePositionLabel(this);
+  }
+}
+
 void ModelWidget::closeEvent(QCloseEvent *event)
 {
   Q_UNUSED(event);
@@ -7938,6 +8014,29 @@ ModelWidget* ModelWidgetContainer::getCurrentModelWidget()
   } else {
     return qobject_cast<ModelWidget*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
   }
+}
+
+/*!
+ * \brief ModelWidgetContainer::updatePositionLabel
+ * Shows the cursor position of the text view or the last mouse position of the icon or diagram view in the status bar.
+ * Clears the position if no model is shown.
+ * \param pModelWidget
+ */
+void ModelWidgetContainer::updatePositionLabel(ModelWidget *pModelWidget)
+{
+  if (pModelWidget && MainWindow::instance()->isModelingPerspectiveActive()) {
+    if (pModelWidget->getTextViewToolButton()->isChecked() && pModelWidget->getEditor()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->updatePositionLabel();
+      return;
+    } else if (pModelWidget->getIconViewToolButton()->isChecked() && pModelWidget->getIconGraphicsView()) {
+      pModelWidget->getIconGraphicsView()->updatePositionLabel();
+      return;
+    } else if (pModelWidget->getDiagramViewToolButton()->isChecked() && pModelWidget->getDiagramGraphicsView()) {
+      pModelWidget->getDiagramGraphicsView()->updatePositionLabel();
+      return;
+    }
+  }
+  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -8347,7 +8446,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   bool omsSystem = false;
   bool omsSubmodel = false;
   bool omsConnector = false;
-  bool gitWorkingDirectory = false;
   bool iconGraphicsView = false;
   bool diagramGraphicsView = false;
   bool textView = false;
@@ -8361,12 +8459,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     iconGraphicsView = pModelWidget->getIconViewToolButton()->isChecked();
     diagramGraphicsView = pModelWidget->getDiagramViewToolButton()->isChecked();
     textView = pModelWidget->getTextViewToolButton()->isChecked();
-    // check for git working directory
-    /* ticket:5646 Crash when importing SSP files with TLM systems
-     * Disable the Git features until we have them implemented properly.
-     * GitCommands::getGitStdout causes crash in Linux.
-     */
-    //gitWorkingDirectory = !pLibraryTreeItem->getFileName().isEmpty() && GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
     if (pLibraryTreeItem->isModelica()) {
       modelica = true;
     } else if (pLibraryTreeItem->isSSP()) {
@@ -8389,6 +8481,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     zoomEnabled = true;
     plottingDiagram = true;
   }
+  updatePositionLabel(pModelWidget);
   // update the actions of the menu and toolbars
   MainWindow::instance()->getSaveAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel());
@@ -8443,25 +8536,12 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && omsSystem);
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
-  MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getCommitFilesAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getRevertCommitAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(enabled && gitWorkingDirectory);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
     if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
       MainWindow::instance()->getSaveAction()->setEnabled(false);
       MainWindow::instance()->getSaveAsAction()->setEnabled(false);
       MainWindow::instance()->getSaveAllAction()->setEnabled(false);
-      // Disable also Git actions
-      MainWindow::instance()->getLogCurrentFileAction()->setEnabled(false);
-      MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(false);
-      MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(false);
-      MainWindow::instance()->getCommitFilesAction()->setEnabled(false);
-      MainWindow::instance()->getRevertCommitAction()->setEnabled(false);
-      MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(false);
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();

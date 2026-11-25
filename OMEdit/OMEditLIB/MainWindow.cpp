@@ -81,11 +81,6 @@
 #include "FMI/FMUExportDialog.h"
 #include "FMI/ImportFMUDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
-#include "Git/CommitChangesDialog.h"
-#include "Git/RevertCommitsDialog.h"
-#include "Git/CleanDialog.h"
-#include "Git/GitCommands.h"
-#include "Traceability/TraceabilityInformationURI.h"
 #include "Plotting/DiagramWindow.h"
 #include "Interfaces/InformationInterface.h"
 #include "Interfaces/ModelInterface.h"
@@ -101,6 +96,12 @@
 #endif
 #include "LSP/ModelicaLSPClient.h"
 #include <QtSvg/QSvgGenerator>
+#include <QClipboard>
+#include <QDesktopServices>
+#include <QHeaderView>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
 #include <QStandardPaths>
 #include <QUrl>
 #include <QDir>
@@ -587,11 +588,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
-  // create traceability graph view widget
-  //  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
-#if !defined(__EMSCRIPTEN__)
-  mpTraceabilityInformationURI = new TraceabilityInformationURI(this);
-#endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -620,11 +616,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   updateRecentModelActionsAndList();
   // OMSens plugin
   mpOMSensPlugin = 0;
-  // create the Git commands instance
-  //mpGitCommands = new GitCommands(this);
-#if !defined(__EMSCRIPTEN__)
-  GitCommands::create();
-#endif
   // Create a centralwidget for the main window
   mpCentralStackedWidget = new QStackedWidget;
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
@@ -1219,10 +1210,6 @@ void MainWindow::beforeClosingMainWindow()
 #if !defined(__EMSCRIPTEN__)
   GDBAdapter::destroy();
 #endif
-  // delete the GitCommands object
-#if !defined(__EMSCRIPTEN__)
-  GitCommands::destroy();
-#endif
   // delete the searchwidget object to call the destructor, to cancel the search operation running on seperate thread
   delete mpSearchWidget;
   // delete the DocumentationWidget object
@@ -1679,6 +1666,11 @@ static bool isNativeFMUPlatform(const QString &platform)
 
 void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
 {
+  exportModelFMU(pLibraryTreeItem, FMUDefaultExperiment());
+}
+
+void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem, const FMUDefaultExperiment &experiment)
+{
   // check for a targetLanguage that can produce an FMU
   QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
   // The wasm targets export inside omc (component + a loader per native platform),
@@ -1776,7 +1768,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     QString fmuFileName;
     {
       OMCLongOperation longOperation;
-      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources, "<default>", experiment);
     }
     // hide progress bar
     hideProgressBar();
@@ -1812,10 +1804,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   {
     OMCLongOperation longOperation;
     if (wasmTarget) {
-      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources, "<default>", experiment);
       isTranslationSuccessful = !fmuFileName.isEmpty();
     } else {
-      isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+      isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources, "<default>", experiment);
     }
   }
   // hide progress bar
@@ -4426,6 +4418,7 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
       switchToWelcomePerspective();
       break;
   }
+  mpModelWidgetContainer->updatePositionLabel(mpModelWidgetContainer->getCurrentModelWidget());
 }
 
 /*!
@@ -4601,108 +4594,6 @@ void MainWindow::showAttachToProcessDialog()
   AttachToProcessDialog *pAttachToProcessDialog = new AttachToProcessDialog(this);
   pAttachToProcessDialog->exec();
 #endif
-}
-
-/*!
- * \brief MainWindow::createGitRepository
- * Slot activated when mpcreateGitRepositoryAction triggered signal is raised.\n
- * creates a git repository.
- */
-void MainWindow::createGitRepository()
-{
-#if !defined(__EMSCRIPTEN__)
-  QString gitRepositoryPath = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
-  if (gitRepositoryPath.isEmpty())
-    return;
-  GitCommands::instance()->createGitRepository(gitRepositoryPath);
-#endif
-}
-
-/*!
- * \brief MainWindow::logCurrentFile
- * Slot activated when mplogCurrentFileAction triggered signal is raised.\n
- * Shows the commited history of the current file.
- */
-void MainWindow::logCurrentFile()
-{
-#if !defined(__EMSCRIPTEN__)
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-     GitCommands::instance()->logCurrentFile(pModelWidget->getLibraryTreeItem()->getFileName());
-  }
-#endif
-}
-
-/*!
- * \brief MainWindow::stageCurrentFileForCommit
- * Slot activated when mpstageCurrentFileForCommitAction triggered signal is raised.\n
- * Sstages the current file for the next commit.
- */
-void MainWindow::stageCurrentFileForCommit()
-{
-#if !defined(__EMSCRIPTEN__)
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-     GitCommands::instance()->stageCurrentFileForCommit(pModelWidget->getLibraryTreeItem()->getFileName());
-  }
-#endif
-}
-
-/*!
- * \brief MainWindow::unstageCurrentFileFromCommit
- * Slot activated when mpunstageCurrentFileFromCommitAction triggered signal is raised.\n
- * unSstages the current file from the next commit.
- */
-void MainWindow::unstageCurrentFileFromCommit()
-{
-#if !defined(__EMSCRIPTEN__)
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-     GitCommands::instance()->unstageCurrentFileFromCommit(pModelWidget->getLibraryTreeItem()->getFileName());
-  }
-#endif
-}
-
-/*!
- * \brief MainWindow::commitFiles
- * Slot activated when mpcommitFilesaction triggered signal is raised.\n
- * commites modified files to git repository.
- */
-void MainWindow::commitFiles()
-{
-#if !defined(__EMSCRIPTEN__)
-  CommitChangesDialog *pCommitChangesDialog = new CommitChangesDialog(this);
-  pCommitChangesDialog->exec();
-#endif
-}
-
-/*!
- * \brief MainWindow::revertCommit
- * Slot activated when mpRevertCommitAction triggered signal is raised.\n
- * reverts previous commit.
- */
-void MainWindow::revertCommit()
-{
-#if !defined(__EMSCRIPTEN__)
-  RevertCommitsDialog *pRevertCommitsDialog = new RevertCommitsDialog(this);
-  pRevertCommitsDialog->exec();
-#endif
-}
-
-/*!
- * \brief MainWindow::cleanWorkingDirectory
- * Slot activated when mpCleanWorkingDirectoryAction triggered signal is raised.\n
- */
-void MainWindow::cleanWorkingDirectory()
-{
-#if !defined(__EMSCRIPTEN__)
-  CleanDialog *pCleanDialog = new CleanDialog(this);
-  pCleanDialog->exec();
-#endif
-//  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-//  if (pModelWidget) {
-//     mpGitCommands->cleanWorkingDirectory();
-//  }
 }
 
 /*!
@@ -5061,40 +4952,6 @@ void MainWindow::createActions()
   mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
   mpAttachDebuggerToRunningProcessAction->setStatusTip(Helper::attachToRunningProcessTip);
   connect(mpAttachDebuggerToRunningProcessAction, SIGNAL(triggered()), SLOT(showAttachToProcessDialog()));
-  // Git and traceability Menu
-  // Create git repository action
-  mpCreateGitRepositoryAction = new QAction(Helper::createGitReposiory, this);
-  mpCreateGitRepositoryAction->setStatusTip(Helper::createGitReposioryTip);
-  connect(mpCreateGitRepositoryAction, SIGNAL(triggered()), SLOT(createGitRepository()));
-  // Log current file action
-  mpLogCurrentFileAction = new QAction(Helper::logCurrentFile, this);
-  mpLogCurrentFileAction->setStatusTip(Helper::logCurrentFileTip);
-  mpLogCurrentFileAction->setEnabled(false);
-  connect(mpLogCurrentFileAction, SIGNAL(triggered()), SLOT(logCurrentFile()));
-  // Stage current file for commit action
-  mpStageCurrentFileForCommitAction = new QAction(Helper::stageCurrentFileForCommit, this);
-  mpStageCurrentFileForCommitAction->setStatusTip(Helper::stageCurrentFileForCommitTip);
-  mpStageCurrentFileForCommitAction->setEnabled(false);
-  connect(mpStageCurrentFileForCommitAction, SIGNAL(triggered()), SLOT(stageCurrentFileForCommit()));
-  // Unstage current file from commit action
-  mpUnstageCurrentFileFromCommitAction = new QAction(Helper::unstageCurrentFileFromCommit, this);
-  mpUnstageCurrentFileFromCommitAction->setStatusTip(Helper::unstageCurrentFileFromCommitTip);
-  mpUnstageCurrentFileFromCommitAction->setEnabled(false);
-  connect(mpUnstageCurrentFileFromCommitAction, SIGNAL(triggered()), SLOT(unstageCurrentFileFromCommit()));
-  // Commit action
-  mpCommitFilesAction = new QAction(Helper::commitFiles, this);
-  mpCommitFilesAction->setStatusTip(Helper::commitFilesTip);
-  mpCommitFilesAction->setEnabled(false);
-  connect(mpCommitFilesAction, SIGNAL(triggered()), SLOT(commitFiles()));
-  // revert action
-  mpRevertCommitAction = new QAction("Revert", this);
-  // mpRevertCommitAction->setStatusTip(Helper::commitFilesTip);
-  mpRevertCommitAction->setEnabled(false);
-  connect(mpRevertCommitAction, SIGNAL(triggered()), SLOT(revertCommit()));
-  // clean working directory action
-  mpCleanWorkingDirectoryAction = new QAction("Clean", this);
-  mpCleanWorkingDirectoryAction->setEnabled(false);
-  connect(mpCleanWorkingDirectoryAction, SIGNAL(triggered()), SLOT(cleanWorkingDirectory()));
   // Tools Menu
   // show OMC Logger widget action
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
@@ -5498,31 +5355,6 @@ void MainWindow::createMenus()
   // add Sensitivity Optimization menu to menu bar
   menuBar()->addAction(pSensitivityOptimizationMenu->menuAction());
 #endif
-  // Git menu
-  QMenu *pGitMenu = new QMenu(menuBar());
-  pGitMenu->setTitle(tr("&Git"));
-  // Traceability actions
-  QMenu *pTraceabilityMenu = new QMenu(menuBar());
-  pTraceabilityMenu->setObjectName("TraceabilityMenu");
-  pTraceabilityMenu->setTitle(tr("Traceability"));
-  // add actions to Git menu
-  pGitMenu->addAction(mpCreateGitRepositoryAction);
-  pGitMenu->addSeparator();
-  pGitMenu->addAction(mpLogCurrentFileAction);
-  pGitMenu->addAction(mpStageCurrentFileForCommitAction);
-  pGitMenu->addAction(mpUnstageCurrentFileFromCommitAction);
-  pGitMenu->addSeparator();
-  pGitMenu->addAction(mpCommitFilesAction);
-  pGitMenu->addAction(mpRevertCommitAction);
-  pGitMenu->addSeparator();
-  pGitMenu->addAction(mpCleanWorkingDirectoryAction);
-  pGitMenu->addSeparator();
-  pGitMenu->addAction(pTraceabilityMenu->menuAction());
-  // add Git menu to menu bar
-  /*! @todo Fix the Git feature and then uncomment the line below to add it to the menu.
-   * For now just don't add it to the menu.
-   */
-  //menuBar()->addAction(pGitMenu->menuAction());
   // Debug menu
   QMenu *pDebugMenu = new QMenu(menuBar());
   pDebugMenu->setTitle(tr("&Debug"));

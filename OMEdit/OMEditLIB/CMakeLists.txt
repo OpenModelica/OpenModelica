@@ -62,6 +62,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Search/SearchWidget.cpp
                       Options/OptionsDialog.cpp
                       Editors/BaseEditor.cpp
+                      Editors/GitLineChanges.cpp
                       Editors/ModelicaEditor.cpp
                       Editors/TransformationsEditor.cpp
                       Editors/TextEditor.cpp
@@ -139,13 +140,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       CRML/CRMLTranslatorOutputWidget.cpp
                       OMUQ/OMUQDialog.cpp
                       OMUQ/OMUQOutputWidget.cpp
-                      Git/GitCommands.cpp
-                      Git/CommitChangesDialog.cpp
-                      Git/RevertCommitsDialog.cpp
-                      Git/CleanDialog.cpp
                       OMEditApplication.cpp
-                      Traceability/TraceabilityGraphViewWidget.cpp
-                      Traceability/TraceabilityInformationURI.cpp
                       OMS/OMSProxy.cpp
                       OMS/OMSModel.cpp
                       OMS/ModelDialog.cpp
@@ -229,6 +224,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Options/OptionsDefaults.h
                       Options/OptionsDialog.h
                       Editors/BaseEditor.h
+                      Editors/GitLineChanges.h
                       Editors/ModelicaEditor.h
                       Editors/TransformationsEditor.h
                       Editors/TextEditor.h
@@ -308,13 +304,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       CRML/CRMLTranslatorOutputWidget.h
                       OMUQ/OMUQDialog.h
                       OMUQ/OMUQOutputWidget.h
-                      Git/GitCommands.h
-                      Git/CommitChangesDialog.h
-                      Git/RevertCommitsDialog.h
-                      Git/CleanDialog.h
                       OMEditApplication.h
-                      Traceability/TraceabilityGraphViewWidget.h
-                      Traceability/TraceabilityInformationURI.h
                       OMS/OMSProxy.h
                       OMS/OMSModel.h
                       OMS/ModelDialog.h

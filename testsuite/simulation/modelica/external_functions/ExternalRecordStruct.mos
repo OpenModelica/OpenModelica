@@ -1,0 +1,125 @@
+// name: ExternalRecordStruct
+// status: correct
+// depends: ExternalRecordStruct.c
+//
+// Records passed to external C functions as C structs, MLS 3.7, section
+// 12.9.1.3. R and Inner have a CStructTag and no Include annotation, so the
+// generated code defines their structs. R1 and R2 follow the example of
+// section 12.9.6.5: the struct of R2 has another member order and an extra
+// member.
+
+loadString("
+package ExternalRecordStruct
+  type Color = enumeration(red, green, blue);
+
+  record Inner
+    Integer i;
+    Boolean b;
+    annotation(CStructTag = \"Inner\");
+  end Inner;
+
+  record R
+    Real x;
+    Integer n;
+    Boolean flag;
+    Color c;
+    Inner in1;
+    String s;
+    annotation(CStructTag = \"R\");
+  end R;
+
+  record Tagged
+    Real value annotation(CName = \"val\");
+    Integer count annotation(CName = \"cnt\");
+    annotation(CStructTag = \"MyComp_Tagged\");
+  end Tagged;
+
+  record R1
+    Real x;
+    Integer y;
+    annotation(CStructTag = \"MyComp_R\");
+  end R1;
+
+  record R2
+    Real z;
+    Real w;
+    annotation(CStructTag = \"MyComp_R2\", Include = \"struct MyComp_R2 {double a, w, z;};\");
+  end R2;
+
+  function read
+    input R r;
+    output Real y;
+  external \"C\" y = ers_read(r) annotation(Include = \"#include \\\"ExternalRecordStruct.c\\\"\");
+  end read;
+
+  function write
+    input Real t;
+    output R r;
+  external \"C\" ers_write(t, r) annotation(Include = \"#include \\\"ExternalRecordStruct.c\\\"\");
+  end write;
+
+  function ret
+    input Real t;
+    output R r;
+  external \"C\" r = ers_return(t) annotation(Include = \"#include \\\"ExternalRecordStruct.c\\\"\");
+  end ret;
+
+  function fill
+    input Real t;
+    input Integer n;
+    output Inner a[n];
+  external \"C\" ers_fill(t, a, size(a, 1)) annotation(Include = \"#include \\\"ExternalRecordStruct.c\\\"\");
+  end fill;
+
+  function sum
+    input Inner a[:];
+    output Real y;
+  external \"C\" y = ers_sum(a, size(a, 1)) annotation(Include = \"#include \\\"ExternalRecordStruct.c\\\"\");
+  end sum;
+
+  function tagged
+    input Tagged r;
+    output Real y;
+  external \"C\" y = ers_tagged(r) annotation(Include = \"#include \\\"ExternalRecordStruct.c\\\"\");
+  end tagged;
+
+  function foo
+    input R1 r;
+    output R2 r2;
+  external \"C\" MyComp_foo(r, r2) annotation(Include = \"#include \\\"ExternalRecordStruct.c\\\"\");
+  end foo;
+
+  model M
+    R w = write(time);
+    Real yw = read(w);
+    R r = ret(time);
+    Real yr = read(r);
+    Inner a[3] = fill(time, 3);
+    Real s = sum(a);
+    Real t = tagged(Tagged(value = 2 + time, count = 3));
+    R2 r2 = foo(R1(x = 1.5 + time, y = 2));
+  end M;
+end ExternalRecordStruct;
+"); getErrorString();
+simulate(ExternalRecordStruct.M, stopTime = 1, numberOfIntervals = 1); getErrorString();
+{val(w.x, 0), val(w.n, 0), val(w.flag, 0), val(w.c, 0), val(w.in1.i, 0), val(w.in1.b, 0), val(yw, 0), val(yw, 1)};
+{val(r.x, 0), val(r.n, 0), val(r.flag, 0), val(r.c, 0), val(r.in1.i, 0), val(r.in1.b, 0), val(yr, 0)};
+{val(a[1].i, 0), val(a[2].i, 0), val(a[3].i, 1), val(a[1].b, 0), val(a[2].b, 0), val(s, 0)};
+{val(t, 0), val(r2.z, 0), val(r2.w, 0), val(r2.w, 1)};
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalRecordStruct.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ExternalRecordStruct.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.5, 7.0, 1.0, 3.0, 4.0, 1.0, 3.1431705e6, 3.1431715e6}
+// {0.25, 5.0, 0.0, 2.0, 6.0, 1.0, 2.16205025e6}
+// {1.0, 2.0, 4.0, 0.0, 1.0, 24.0}
+// {32.0, 2.0, 1.5, 2.5}
+// endResult

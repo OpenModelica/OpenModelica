@@ -76,23 +76,17 @@ the $Sensitivities block, where all currently every
 **top-level** parameter of the Real type is used to calculate the
 sensitivities w.r.t. **every state**.
 
-.. omc-gnuplot :: LotkaVolterraSensitivities
-  :caption: Results of the sensitivities calculated by IDA solver.
+.. omc-plot :: LotkaVolterra
+  :figure:
+  :caption: Results of the LotkaVolterra equations and their sensitivities calculated by the IDA solver.
 
-  $Sensitivities.lambda1.x
-  $Sensitivities.lambda1.y
-  $Sensitivities.lambda2.x
-  $Sensitivities.lambda2.y
-  $Sensitivities.mu1.x
-  $Sensitivities.mu1.y
-  $Sensitivities.mu2.x
-  $Sensitivities.mu2.y
-
-.. omc-gnuplot :: LotkaVolterraResults
-  :caption: Results of the LotkaVolterra equations.
-
-  x
-  y
+  Figure(title = "LotkaVolterra", plots = {
+    Plot(title = "Results", curves = {Curve(y = "x"), Curve(y = "y")}),
+    Plot(title = "Sensitivities", curves = {
+      Curve(y = "$Sensitivities.lambda1.x"), Curve(y = "$Sensitivities.lambda1.y"),
+      Curve(y = "$Sensitivities.lambda2.x"), Curve(y = "$Sensitivities.lambda2.y"),
+      Curve(y = "$Sensitivities.mu1.x"), Curve(y = "$Sensitivities.mu1.y"),
+      Curve(y = "$Sensitivities.mu2.x"), Curve(y = "$Sensitivities.mu2.y")})})
 
 .. omc-reset ::
 

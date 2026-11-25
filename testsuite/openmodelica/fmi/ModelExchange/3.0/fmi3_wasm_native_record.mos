@@ -42,11 +42,13 @@ diffSimulationResults("art_cs.mat", "plain_res.mat", "d_cs", 1e-9, 1e-9);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[openmodelica/fmi/ModelExchange/3.0/fmi3_wasm_native_record.mo:2:3-6:12:writable] Warning: The C struct of record ExtNativeRecord.State is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.
+// "
 // true
 // ""
 // "ExtNativeRecord.fmu"
-// "Notification: Building FMU for platform 'wasm' (1/1).
+// "[openmodelica/fmi/ModelExchange/3.0/fmi3_wasm_native_record.mo:2:3-6:12:writable] Warning: The C struct of record ExtNativeRecord.State is assumed to have the components of the record in the same order. This is deprecated: give the record an Include annotation that defines the struct.
+// Notification: Building FMU for platform 'wasm' (1/1).
 // Notification: Finished FMU for platform 'wasm' (1/1).
 // "
 // record SimulationResult

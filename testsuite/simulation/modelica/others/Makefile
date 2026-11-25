@@ -92,6 +92,7 @@ StateDerivativeAliases.mos \
 FilterSimulationResultsCsvTime.mos \
 DiffSimulationResultsAlgorithm.mos \
 DiffSimulationResultsOneRow.mos \
+PlotFigure.mos \
 FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \

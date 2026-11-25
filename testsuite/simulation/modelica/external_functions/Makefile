@@ -9,6 +9,9 @@ ExternalFunctionsWasmJit.mos \
 ExternalLibraries.mos \
 ExternalNlsRecovery.mos \
 ExternalProtectedArg.mos \
+ExternalRecordStruct.mos \
+ExternalRecordStructErrors.mos \
+ExternalRecordStructMLS36.mos \
 ExternalRHSFlag.mos \
 ExternalUncaughtException.mos \
 extObj_ticket3446.mos \
@@ -52,6 +55,8 @@ ExternalFunc1.c \
 ExternalFunc2.c \
 ExternalFunc2.h \
 ExternalNlsRecovery-f.c \
+ExternalRecordStruct.c \
+ExternalRecordStructMLS36.c \
 ExternalRHSFlag.c \
 ExternalUncaughtException.c \
 ExtObj.c \

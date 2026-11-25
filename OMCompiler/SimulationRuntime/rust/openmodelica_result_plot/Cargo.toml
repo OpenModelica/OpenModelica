@@ -1,0 +1,17 @@
+# `plotFigure`: a Figure record of the scripting API, drawn from result files
+# into SVG (charton) or PNG (resvg). Shared by the C omc through libomc_result
+# and by the Rust omc.
+[package]
+name = "openmodelica_result_plot"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[dependencies]
+openmodelica_result_files = { path = "../openmodelica_result_files", default-features = false }
+charton = "0.9.1"
+resvg = { version = "0.50", default-features = false, features = ["text"] }
+serde_json = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+resvg = { version = "0.50", default-features = false, features = ["text", "system-fonts", "memmap-fonts"] }

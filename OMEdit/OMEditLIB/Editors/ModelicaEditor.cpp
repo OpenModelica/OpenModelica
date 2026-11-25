@@ -1065,6 +1065,24 @@ QString ModelicaEditor::getPlainText()
 }
 
 /*!
+ * \brief ModelicaEditor::fileTextForGitDiff
+ * A class in a one-file package shows only a part of the file. Returns the whole file, as it is written on save.
+ * \param lineOffset
+ * \return
+ */
+QString ModelicaEditor::fileTextForGitDiff(int &lineOffset)
+{
+  if (isModelicaModelInPackageOneFile()) {
+    LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
+    const QString before = pLibraryTreeItem->getClassTextBefore();
+    lineOffset = before.count(QLatin1Char('\n'));
+    return before + StringHandler::trimmedEnd(getPlainText()) + "\n" + pLibraryTreeItem->getClassTextAfter();
+  }
+  lineOffset = 0;
+  return getPlainText();
+}
+
+/*!
  * \brief ModelicaEditor::showContextMenu
  * Create a context menu.
  * \param point

@@ -528,25 +528,6 @@
     </message>
 </context>
 <context>
-    <name>CleanDialog</name>
-    <message>
-        <source>Clean Repository</source>
-        <translation>Очистка репозитория</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Выбрать всё</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Имя</translation>
-    </message>
-    <message>
-        <source>Clean</source>
-        <translation>Очистить</translation>
-    </message>
-</context>
-<context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
@@ -873,69 +854,6 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     <message>
         <source>Preview:</source>
         <translation>Предпросмотр:</translation>
-    </message>
-</context>
-<context>
-    <name>CommitChangesDialog</name>
-    <message>
-        <source>Commit</source>
-        <translation>Коммит</translation>
-    </message>
-    <message>
-        <source>Repository:</source>
-        <translation>Репозиторий:</translation>
-    </message>
-    <message>
-        <source>Branch:</source>
-        <translation>Ветвь:</translation>
-    </message>
-    <message>
-        <source>Repository Information:</source>
-        <translation>Информация о репозитории:</translation>
-    </message>
-    <message>
-        <source>Commit Information:</source>
-        <translation>Информация о коммите:</translation>
-    </message>
-    <message>
-        <source>Author:</source>
-        <translation>Автор:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>Электронная почта:</translation>
-    </message>
-    <message>
-        <source>Description:</source>
-        <translation>Описание:</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Выбрать всё</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation>Статус</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>Файл</translation>
-    </message>
-    <message>
-        <source>Files:</source>
-        <translation>Файлы:</translation>
-    </message>
-    <message>
-        <source>commit</source>
-        <translation>коммит</translation>
-    </message>
-    <message>
-        <source>Commit Message </source>
-        <translation>Сообщение коммита </translation>
-    </message>
-    <message>
-        <source>Commit description:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3628,11 +3546,27 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Default Experiment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interval</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tolerance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Save as default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Keep these settings, except the DAE mode, for the next export</source>
+        <source>Keep these settings, except the DAE mode and the default experiment, for the next export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The interval and the tolerance must be greater than zero.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4350,13 +4284,6 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <source>System follows the operating system color scheme. The --DarkMode command line option overrides this setting.</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>GitCommands</name>
-    <message>
-        <source>Repository Creation Failed</source>
-        <translation>Ошибка создания репозитория</translation>
     </message>
 </context>
 <context>
@@ -5119,10 +5046,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Committing modified files to the repository</source>
-        <translation>Выполнить коммит для отправки изменённых файлов в репозиторий</translation>
-    </message>
-    <message>
         <source>Report Issue</source>
         <translation>Отправка информации об ошибке</translation>
     </message>
@@ -5445,42 +5368,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Manage debug configurations</source>
         <translation>Управление конфигурациями отладки</translation>
-    </message>
-    <message>
-        <source>Create Repository</source>
-        <translation>Создать репозиторий</translation>
-    </message>
-    <message>
-        <source>Create a Git repository</source>
-        <translation>Создать репозиторий Git</translation>
-    </message>
-    <message>
-        <source>Log Current File</source>
-        <translation>История коммитов текущего файла</translation>
-    </message>
-    <message>
-        <source>Logging current file</source>
-        <translation>Вывод истории коммитов для текущего файла</translation>
-    </message>
-    <message>
-        <source>Stage Current File</source>
-        <translation>Отслеживать изменения в текущем файле</translation>
-    </message>
-    <message>
-        <source>Staging current file for next commit</source>
-        <translation>Отслеживать изменения в текущем файле для передачи в следующем коммите</translation>
-    </message>
-    <message>
-        <source>Unstage Current File</source>
-        <translation>Не отслеживать изменения в текущем файле</translation>
-    </message>
-    <message>
-        <source>Unstaging current file from next commit</source>
-        <translation>Отключить передачу изменений файла в следующем коммите</translation>
-    </message>
-    <message>
-        <source>Commit</source>
-        <translation>Выполнить коммит</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -6486,25 +6373,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
 </context>
 <context>
-    <name>LogCommitDialog</name>
-    <message>
-        <source>Select Commit</source>
-        <translation>Выбор коммита</translation>
-    </message>
-    <message>
-        <source>Subject</source>
-        <translation>Тема</translation>
-    </message>
-    <message>
-        <source>SHA-1</source>
-        <translation>SHA-1</translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation>ОК</translation>
-    </message>
-</context>
-<context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
@@ -7244,14 +7112,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>&amp;SSP</source>
         <translation>&amp;SSP</translation>
-    </message>
-    <message>
-        <source>&amp;Git</source>
-        <translation>&amp;Git</translation>
-    </message>
-    <message>
-        <source>Traceability</source>
-        <translation>Отслеживание</translation>
     </message>
     <message>
         <source>&amp;Tools</source>
@@ -8443,10 +8303,6 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
         <translation>Сбросить параметры OMEdit? Отменить эту операцию будет невозможно. </translation>
     </message>
     <message>
-        <source>Traceability</source>
-        <translation>Отслеживание</translation>
-    </message>
-    <message>
         <source>Language Server</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8989,33 +8845,6 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <source>Warning</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>RevertCommitsDialog</name>
-    <message>
-        <source>Revert Commit</source>
-        <translation>Отмена коммита</translation>
-    </message>
-    <message>
-        <source>Working Directory:</source>
-        <translation>Рабочий каталог:</translation>
-    </message>
-    <message>
-        <source>Browse Directory</source>
-        <translation>Обзор каталога</translation>
-    </message>
-    <message>
-        <source>Commit:</source>
-        <translation>Коммит:</translation>
-    </message>
-    <message>
-        <source>Browse Commit</source>
-        <translation>Просмотр коммита</translation>
-    </message>
-    <message>
-        <source>Revert</source>
-        <translation>Отмена</translation>
     </message>
 </context>
 <context>
@@ -10015,40 +9844,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Font</source>
         <translation>Шрифт</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityGraphViewWidget</name>
-    <message>
-        <source>Traceability Graph View</source>
-        <translation>Окно графа отслеживания</translation>
-    </message>
-</context>
-<context>
-    <name>TraceabilityPage</name>
-    <message>
-        <source>Traceability</source>
-        <translation>Отслеживание</translation>
-    </message>
-    <message>
-        <source>User Name:</source>
-        <translation>Имя пользователя:</translation>
-    </message>
-    <message>
-        <source>Email:</source>
-        <translation>Электронная почта:</translation>
-    </message>
-    <message>
-        <source>Git Repository:</source>
-        <translation>Репозиторий Git:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon IP Address:</source>
-        <translation>IP-адрес службы отслеживания:</translation>
-    </message>
-    <message>
-        <source>Traceability Daemon Port:</source>
-        <translation>Порт службы отслеживания:</translation>
     </message>
 </context>
 <context>

@@ -1416,6 +1416,23 @@ algorithm
   b := i == 1;
 end isCIdentifier;
 
+public constant list<String> C_KEYWORDS = {
+  "_Alignas", "_Alignof", "_Atomic", "_BitInt", "_Bool", "_Complex",
+  "_Decimal128", "_Decimal32", "_Decimal64", "_Generic", "_Imaginary",
+  "_Noreturn", "_Static_assert", "_Thread_local", "alignas", "alignof", "auto",
+  "bool", "break", "case", "char", "const", "constexpr", "continue", "default",
+  "do", "double", "else", "enum", "extern", "false", "float", "for", "goto",
+  "if", "inline", "int", "long", "nullptr", "register", "restrict", "return",
+  "short", "signed", "sizeof", "static", "static_assert", "struct", "switch",
+  "thread_local", "true", "typedef", "typeof", "typeof_unqual", "union",
+  "unsigned", "void", "volatile", "while"};
+
+public function isCKeyword
+  "A keyword of C23, which cannot be used as an identifier."
+  input String str;
+  output Boolean b = listMember(str, C_KEYWORDS);
+end isCKeyword;
+
 public function isIntegerString
   input String str;
   output Boolean b;

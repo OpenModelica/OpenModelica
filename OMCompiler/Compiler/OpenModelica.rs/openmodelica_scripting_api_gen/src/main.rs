@@ -204,56 +204,107 @@ fn is_external_builtin(c: &Class) -> bool {
     false
 }
 
-/// Extract a simple-API function, or `None` if it does not qualify.
-fn collect_func(c: &Class) -> Option<Func> {
-    if !matches!(c.restriction, Restriction::R_FUNCTION { .. }) || c.partialPrefix {
-        return None;
+/// The packages visible from a class, innermost first.
+type Scope = Vec<Vec<metamodelica::Ref<Class>>>;
+
+fn split_path(p: &Path) -> Option<(&str, Option<&Path>)> {
+    match p {
+        Path::IDENT { name } => Some((name, None)),
+        Path::QUALIFIED { name, path } => Some((name, Some(path))),
+        Path::FULLYQUALIFIED { .. } => None,
     }
-    if !is_external_builtin(c) {
-        return None;
+}
+
+/// The class that `path` names in `scope`, and the scope of its body.
+fn resolve(scope: &[Vec<metamodelica::Ref<Class>>], path: &Path) -> Option<(metamodelica::Ref<Class>, Scope)> {
+    let (first, mut rest) = split_path(path)?;
+    let level = scope.iter().position(|classes| find_class(classes, first).is_some())?;
+    let mut class = find_class(&scope[level], first)?;
+    let mut class_scope: Scope = scope[level..].to_vec();
+    while let Some(p) = rest {
+        let (name, next) = split_path(p)?;
+        let inner = sub_classes(&class);
+        class = find_class(&inner, name)?;
+        class_scope.insert(0, inner);
+        rest = next;
     }
+    Some((class, class_scope))
+}
+
+fn element_specs(c: &Class) -> Option<Vec<metamodelica::Ref<ElementSpec>>> {
     let ClassDef::PARTS { classParts, .. } = &*c.body else {
         return None;
     };
-    let mut inputs = Vec::new();
-    let mut outputs = Vec::new();
+    let mut specs = Vec::new();
     for part in &**classParts {
         let contents = match &**part {
             ClassPart::PUBLIC { contents } | ClassPart::PROTECTED { contents } => contents,
             _ => continue,
         };
         for item in &**contents {
-            let ElementItem::ELEMENTITEM { element } = &**item else {
-                continue;
-            };
-            let Element::ELEMENT { specification, .. } = &**element else {
-                continue;
-            };
-            let ElementSpec::COMPONENTS {
-                attributes,
-                typeSpec,
-                components,
-            } = &**specification
-            else {
-                continue;
-            };
-            let dst = match attributes.direction {
-                Direction::INPUT => &mut inputs,
-                Direction::OUTPUT => &mut outputs,
-                _ => continue, // local protected vars etc. are not part of the signature
-            };
-            let attr_dims = attributes.arrayDim.len() as usize;
-            for comp in &**components {
-                let comp_dims = comp.component.arrayDim.len() as usize;
-                let ty = simple_ty(typeSpec, attr_dims + comp_dims)?; // any non-simple arg disqualifies
-                // A type-mismatched default makes omc's Lookup fail → drop the function.
-                if !default_ok(&comp.component.modification, &ty) {
-                    return None;
+            if let ElementItem::ELEMENTITEM { element } = &**item {
+                if let Element::ELEMENT { specification, .. } = &**element {
+                    specs.push(specification.clone());
                 }
-                dst.push((comp.component.name.to_string(), ty));
             }
         }
     }
+    Some(specs)
+}
+
+/// Inherited inputs and outputs come before the local ones, as in the old frontend.
+fn collect_args(
+    c: &Class,
+    scope: &[Vec<metamodelica::Ref<Class>>],
+    inputs: &mut Vec<(String, STy)>,
+    outputs: &mut Vec<(String, STy)>,
+) -> Option<()> {
+    let specs = element_specs(c)?;
+    for spec in &specs {
+        if let ElementSpec::EXTENDS { path, .. } = &**spec {
+            let (base, base_scope) = resolve(scope, path)?;
+            collect_args(&base, &base_scope, inputs, outputs)?;
+        }
+    }
+    for spec in &specs {
+        let ElementSpec::COMPONENTS {
+            attributes,
+            typeSpec,
+            components,
+        } = &**spec
+        else {
+            continue;
+        };
+        let dst = match attributes.direction {
+            Direction::INPUT => &mut *inputs,
+            Direction::OUTPUT => &mut *outputs,
+            _ => continue, // local protected vars etc. are not part of the signature
+        };
+        let attr_dims = attributes.arrayDim.len() as usize;
+        for comp in &**components {
+            let comp_dims = comp.component.arrayDim.len() as usize;
+            let ty = simple_ty(typeSpec, attr_dims + comp_dims)?; // any non-simple arg disqualifies
+            // A type-mismatched default makes omc's Lookup fail → drop the function.
+            if !default_ok(&comp.component.modification, &ty) {
+                return None;
+            }
+            dst.push((comp.component.name.to_string(), ty));
+        }
+    }
+    Some(())
+}
+
+/// Extract a simple-API function, or `None` if it does not qualify.
+fn collect_func(c: &Class, scope: &[Vec<metamodelica::Ref<Class>>]) -> Option<Func> {
+    if !matches!(c.restriction, Restriction::R_FUNCTION { .. }) || c.partialPrefix {
+        return None;
+    }
+    if !is_external_builtin(c) {
+        return None;
+    }
+    let mut inputs = Vec::new();
+    let mut outputs = Vec::new();
+    collect_args(c, scope, &mut inputs, &mut outputs)?;
     Some(Func {
         name: c.name.to_string(),
         inputs,
@@ -336,8 +387,13 @@ fn main() {
     let scripting = find_class(&sub_classes(&openmodelica), "Scripting")
         .expect("no `OpenModelica.Scripting` package in the builtin file");
 
+    let scripting_classes = sub_classes(&scripting);
+    let scope: Scope = vec![scripting_classes.clone(), sub_classes(&openmodelica), top.clone()];
     // Collect in source order, then reverse to match omc's prepended `tys`.
-    let mut funcs: Vec<Func> = sub_classes(&scripting).iter().filter_map(|c| collect_func(c)).collect();
+    let mut funcs: Vec<Func> = scripting_classes
+        .iter()
+        .filter_map(|c| collect_func(c, &scope))
+        .collect();
     funcs.reverse();
 
     let mut body = String::from(

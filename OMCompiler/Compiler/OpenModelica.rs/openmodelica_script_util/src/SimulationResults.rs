@@ -90,6 +90,7 @@ pub fn readVariables(
     mut filename: ArcStr,
     mut readParameters: bool,
     mut openmodelicaStyle: bool,
+    mut readDerivatives: bool,
 ) -> Result<metamodelica::List<ArcStr>> {
     reporting(|m| {
         list(scripting::read_variables(
@@ -97,6 +98,7 @@ pub fn readVariables(
             &filename,
             readParameters,
             openmodelicaStyle,
+            readDerivatives,
         ))
     })
 }
@@ -233,5 +235,18 @@ pub fn filterSimulationResults(
             numberOfIntervals,
             removeDescription,
         )
+    })
+}
+
+pub fn plotFigure(
+    mut figureJSON: ArcStr,
+    mut filename: ArcStr,
+    mut outputFile: ArcStr,
+    mut width: i32,
+    mut height: i32,
+    mut legendPosition: ArcStr,
+) -> Result<bool> {
+    reporting(|m| {
+        openmodelica_result_plot::plot(m, &figureJSON, &filename, &outputFile, width, height, &legendPosition)
     })
 }

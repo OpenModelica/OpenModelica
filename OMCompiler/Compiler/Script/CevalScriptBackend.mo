@@ -158,7 +158,7 @@ protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("simulationOptions",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE(), false);
+  },NONE());
 
 protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
@@ -171,7 +171,7 @@ protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.R
   DAE.TYPES_VAR("timeCompile",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeSimulation",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeTotal",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE(), false);
+  },NONE());
 
 //these are in reversed order than above
 protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResultValues =
@@ -442,10 +442,70 @@ algorithm
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
+public function experimentOptions
+  "The experiment of a simulation call or an FMU export: the arguments that are
+   given, else the experiment annotation, else the defaults. A given stepSize
+   sets numberOfIntervals to (stopTime - startTime) / stepSize, rounded down.
+   Without it, a given startTime, stopTime or numberOfIntervals sets stepSize to
+   (stopTime - startTime) / numberOfIntervals."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs "The given arguments";
+  input String fileNamePrefix;
+  input Option<InteractiveTypes.SimulationOptions> defaultOptions;
+  input Boolean optimization = false;
+  output InteractiveTypes.SimulationOptions opts;
+protected
+  Option<Real> step_size = NONE();
+  Boolean span_given = false;
+  Real span, step;
+algorithm
+  opts := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, defaultOptions, optimization);
+
+  for arg in namedArgs loop
+    () := match arg
+      local
+        Values.Value v;
+      case ("startTime", v)
+        algorithm
+          opts.startTime := DAE.RCONST(ValuesUtil.valueReal(v));
+          span_given := true;
+        then ();
+      case ("stopTime", v)
+        algorithm
+          opts.stopTime := DAE.RCONST(ValuesUtil.valueReal(v));
+          span_given := true;
+        then ();
+      case ("numberOfIntervals", v)
+        algorithm
+          opts.numberOfIntervals := DAE.ICONST(ValuesUtil.valueInteger(v));
+          span_given := true;
+        then ();
+      case ("stepSize", v)
+        algorithm
+          step_size := SOME(ValuesUtil.valueReal(v));
+        then ();
+      case ("tolerance", v)
+        algorithm
+          opts.tolerance := DAE.RCONST(ValuesUtil.valueReal(v));
+        then ();
+      else ();
+    end match;
+  end for;
+
+  span := Expression.toReal(opts.stopTime) - Expression.toReal(opts.startTime);
+  if isSome(step_size) then
+    SOME(step) := step_size;
+    opts.stepSize := DAE.RCONST(step);
+    opts.numberOfIntervals := DAE.ICONST(realInt(span / step));
+  elseif span_given then
+    opts.stepSize := DAE.RCONST(span / max(Expression.toReal(opts.numberOfIntervals), 1.0));
+  end if;
+end experimentOptions;
+
 public function simulationArguments
   "Returns the arguments of simulate, buildModel and the other simulation calls
    in the order they are declared. Arguments that are not given are taken from
-   the experiment annotation. stepSize, if given, sets numberOfIntervals."
+   the experiment annotation, see experimentOptions."
   input Absyn.Path className;
   input list<tuple<String, Values.Value>> namedArgs;
   input String callName;
@@ -453,27 +513,16 @@ public function simulationArguments
   output list<Values.Value> args;
 protected
   InteractiveTypes.SimulationOptions opts;
-  Values.Value start_time, stop_time, intervals;
-  list<Values.Value> rest;
 algorithm
-  opts := buildSimulationOptionsFromModelExperimentAnnotation(className,
+  opts := experimentOptions(className, namedArgs,
     AbsynUtil.pathString(AbsynUtil.unqotePathIdents(className)), defaultOptions,
     optimization = callName == "optimize");
 
-  args := list(simulationArgument(name, namedArgs, opts) for name in
-    {"startTime", "stopTime", "numberOfIntervals", "tolerance", "method", "fileNamePrefix",
-     "options", "outputFormat", "variableFilter", "cflags", "simflags"});
-
-  for arg in namedArgs loop
-    if Util.tuple21(arg) == "stepSize" then
-      start_time :: stop_time :: intervals :: rest := args;
-      intervals := Values.INTEGER(realInt((ValuesUtil.valueReal(stop_time) - ValuesUtil.valueReal(start_time)) /
-                                          ValuesUtil.valueReal(Util.tuple22(arg))));
-      args := start_time :: stop_time :: intervals :: rest;
-    end if;
-  end for;
-
-  args := ValuesMake.makeCodeTypeName(className) :: args;
+  args := ValuesMake.makeCodeTypeName(className) :: listAppend(
+    list(ValuesUtil.expValue(getSimulationOption(opts, name)) for name in
+      {"startTime", "stopTime", "numberOfIntervals", "tolerance"}),
+    list(simulationArgument(name, namedArgs, opts) for name in
+      {"method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"}));
 
   if callName == "simulate" then
     args := List.appendElt(simulationArgumentOrDefault("resimulateExecutable", namedArgs, Values.STRING("")), args);
@@ -504,7 +553,6 @@ protected
   Absyn.Path className;
   list<Values.Value> rest;
   list<String> names;
-  list<tuple<String, Values.Value>> named = {};
 algorithm
   if not listMember(callName, {"simulate", "translateModel", "buildModel", "linearize", "optimize", "moo",
                                "translateAcausalDAE", "buildAcausalDAE", "simulateAcausalDAE"}) then
@@ -514,22 +562,31 @@ algorithm
   names := simulationArgumentNames(callName);
   args := match inArgs
     case Values.CODE(Absyn.C_TYPENAME(className)) :: rest guard listLength(rest) == listLength(names)
-      algorithm
-        for arg in List.zip(names, rest) loop
-          if not isUnsetSimulationArgument(Util.tuple22(arg)) then
-            named := arg :: named;
-          end if;
-        end for;
-      then
-        simulationArguments(className, listReverse(named), callName);
+      then simulationArguments(className, givenArguments(names, rest), callName);
     else inArgs;
   end match;
 end simulationCallArguments;
 
+protected function givenArguments
+  "The arguments of a call that are not a sentinel, by name."
+  input list<String> names;
+  input list<Values.Value> values;
+  output list<tuple<String, Values.Value>> given = {};
+algorithm
+  for arg in List.zip(names, values) loop
+    if not isUnsetSimulationArgument(Util.tuple22(arg)) then
+      given := arg :: given;
+    end if;
+  end for;
+  given := listReverse(given);
+end givenArguments;
+
+protected constant list<String> experimentArgumentNames = {"startTime", "stopTime", "numberOfIntervals", "stepSize", "tolerance"};
+
 protected function simulationArgumentNames
   input String callName;
-  output list<String> names = {"startTime", "stopTime", "numberOfIntervals", "stepSize", "tolerance",
-    "method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"};
+  output list<String> names = listAppend(experimentArgumentNames,
+    {"method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"});
 algorithm
   if callName == "simulate" then
     names := List.appendElt("resimulateExecutable", names);
@@ -1279,18 +1336,19 @@ algorithm
     case ("modelEquationsUC",_)
       then Values.STRING("There were errors during extraction of uncertainty equations. Use getErrorString() to see them.");
 
-    case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_)
+    case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::vals)
       algorithm
-        (b, outCache,_) := translateModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
+        simSettings := fmuSimulationSettings(className, filenameprefix, str3, givenArguments(experimentArgumentNames, vals));
+        (b, outCache,_) := translateModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings), str3);
       then
         Values.BOOL(b);
 
     case ("translateModelFMU", _)
       then Values.STRING("");
 
-    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
+    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::vals)
       algorithm
-        simSettings := fmuSimulationSettings(className, filenameprefix, str3);
+        simSettings := fmuSimulationSettings(className, filenameprefix, str3, givenArguments(experimentArgumentNames, vals));
         (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings), str3);
       then
         ret_val;
@@ -1852,7 +1910,7 @@ algorithm
     local
       String s1,s2,str,str1,str2,str3,str4,method_str, pd,filename_1,filename,
              call,name, title,xLabel,yLabel,yLabelRight,filename2,varNameStr,xml_filename,pwd,omhome,os,
-             gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, yAxis, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,
+             gridStr, yAxis, legendPosition, footer,
              cname, annStr, annotationname, modifiername;
       list<Values.Value> vals,cvars;
       Absyn.Path path,classpath,baseClassPath;
@@ -2387,10 +2445,10 @@ algorithm
       then
         Values.INTEGER(i);
 
-    case ("readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b1),Values.BOOL(b2)})
+    case ("readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b1),Values.BOOL(b2),Values.BOOL(b3)})
       algorithm
         filename := Util.absoluteOrRelative(filename);
-        args := SimulationResults.readVariables(filename, b1, b2);
+        args := SimulationResults.readVariables(filename, b1, b2, b3);
         vals := List.map(args, ValuesMake.makeString);
       then
         ValuesMake.makeArray(vals);
@@ -2515,41 +2573,22 @@ algorithm
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
           Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
-          Values.BOOL(stackCurves)
+          Values.BOOL(stackCurves),
+          Values.STRING(str)
         })
       algorithm
-        // get OPENMODELICAHOME
-        omhome := Settings.getInstallationDirectoryPath();
-        // get the simulation filename
         filename := currentSimulationResult(filename);
-        pd := Autoconf.pathDelimiter;
-        // create absolute path of simulation result file
-        str1 := System.pwd() + pd + filename;
-        s1 := if Autoconf.os == "Windows_NT" then ".exe" else "";
-        filename := if System.regularFileExists(str1) then str1 else filename;
-        // check if plot callback is defined
-        b := System.plotCallBackDefined();
-        if boolOr(forceOMPlot, boolNot(b)) then
-          // create the path till OMPlot
-          str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-          // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves);
-          call := stringAppendList({"\"",str2,"\""," ",str3});
-          0 := System.spawnCall(str2, call);
-        elseif b then
-          logXStr := boolString(logX);
-          logYStr := boolString(logY);
-          x1Str := realString(x1);
-          x2Str := realString(x2);
-          y1Str := realString(y1);
-          y2Str := realString(y2);
-          curveWidthStr := realString(curveWidth);
-          curveStyleStr := intString(curveStyle);
-          autoScaleStr := boolString(autoScale);
-          System.plotCallBack(externalWindow,filename,title,gridStr,"plotall",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,"");
+        if stringEmpty(str) then
+          showPlot("plotAll", {}, externalWindow, filename, title, gridStr, logX, logY, xLabel, yLabel, x1, x2, y1, y2,
+            curveWidth, curveStyle, legendPosition, footer, autoScale, forceOMPlot, yAxis, yLabelRight, y1R, y2R, stackCurves);
+          b := true;
+        else
+          vars_1 := list(s for s guard not (stringEq(s, "time") or StringUtil.startsWith(s, "$")) in SimulationResults.readVariables(filename, false, false));
+          b := SimulationResults.plotFigure(plotFigureJSON(list(("time", s) for s in vars_1), stackCurves, title, logX, logY, xLabel, yLabel,
+            x1, x2, y1, y2, curveWidth, curveStyle), filename, str, 800, 450, legendPosition);
         end if;
       then
-        Values.BOOL(true);
+        Values.BOOL(b);
 
     case ("plotAll",_)
       then Values.BOOL(false);
@@ -2577,47 +2616,22 @@ algorithm
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
           Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
-          Values.BOOL(stackCurves)
+          Values.BOOL(stackCurves),
+          Values.STRING(str)
         })
       algorithm
-        // get the variables list
         vars_1 := List.map(cvars, ValuesUtil.printCodeVariableName);
-        // get OPENMODELICAHOME
-        omhome := Settings.getInstallationDirectoryPath();
-        // get the simulation filename
         filename := currentSimulationResult(filename);
-        pd := Autoconf.pathDelimiter;
-        // create absolute path of simulation result file
-        str1 := System.pwd() + pd + filename;
-        s1 := if Autoconf.os == "Windows_NT" then ".exe" else "";
-        filename := if System.regularFileExists(str1) then str1 else filename;
-        // check if plot callback is defined
-        b := System.plotCallBackDefined();
-        if boolOr(forceOMPlot, boolNot(b)) then
-          // seperate the variables
-          str := stringDelimitList(vars_1,"' '");
-          // create the path till OMPlot
-          str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-          // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves) + " '" + str + "'";
-          call := stringAppendList({"\"",str2,"\""," ",str3});
-          0 := System.spawnCall(str2, call);
-        elseif b then
-          logXStr := boolString(logX);
-          logYStr := boolString(logY);
-          x1Str := realString(x1);
-          x2Str := realString(x2);
-          y1Str := realString(y1);
-          y2Str := realString(y2);
-          curveWidthStr := realString(curveWidth);
-          curveStyleStr := intString(curveStyle);
-          autoScaleStr := boolString(autoScale);
-          // seperate the variables
-          str := stringDelimitList(vars_1, " ");
-          System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+        if stringEmpty(str) then
+          showPlot("plot", vars_1, externalWindow, filename, title, gridStr, logX, logY, xLabel, yLabel, x1, x2, y1, y2,
+            curveWidth, curveStyle, legendPosition, footer, autoScale, forceOMPlot, yAxis, yLabelRight, y1R, y2R, stackCurves);
+          b := true;
+        else
+          b := SimulationResults.plotFigure(plotFigureJSON(list(("time", s) for s in vars_1), stackCurves, title, logX, logY, xLabel, yLabel,
+            x1, x2, y1, y2, curveWidth, curveStyle), filename, str, 800, 450, legendPosition);
         end if;
       then
-        Values.BOOL(true);
+        Values.BOOL(b);
 
     case ("plot",_)
       then Values.BOOL(false);
@@ -3100,45 +3114,47 @@ algorithm
           Values.BOOL(forceOMPlot),
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
-          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
+          Values.STRING(str)
         })
       algorithm
-        // get OPENMODELICAHOME
-        omhome := Settings.getInstallationDirectoryPath();
-        // get the simulation filename
+        str1 := ValuesUtil.printCodeVariableName(cvar);
+        str2 := ValuesUtil.printCodeVariableName(cvar2);
         filename := currentSimulationResult(filename);
-        pd := Autoconf.pathDelimiter;
-        // create absolute path of simulation result file
-        str1 := System.pwd() + pd + filename;
-        s1 := if Autoconf.os == "Windows_NT" then ".exe" else "";
-        filename := if System.regularFileExists(str1) then str1 else filename;
-        // check if plot callback is defined
-        b := System.plotCallBackDefined();
-        if boolOr(forceOMPlot, boolNot(b)) then
-          // get the variables
-          str := ValuesUtil.printCodeVariableName(cvar) + "\" \"" + ValuesUtil.printCodeVariableName(cvar2);
-          // create the path till OMPlot
-          str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-          // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
-          call := stringAppendList({"\"",str2,"\""," ",str3});
-          0 := System.spawnCall(str2, call);
-        elseif b then
-          // get the variables
-          str := ValuesUtil.printCodeVariableName(cvar) + " " + ValuesUtil.printCodeVariableName(cvar2);
-          logXStr := boolString(logX);
-          logYStr := boolString(logY);
-          x1Str := realString(x1);
-          x2Str := realString(x2);
-          y1Str := realString(y1);
-          y2Str := realString(y2);
-          curveWidthStr := realString(curveWidth);
-          curveStyleStr := intString(curveStyle);
-          autoScaleStr := boolString(autoScale);
-          System.plotCallBack(externalWindow,filename,title,gridStr,"plotparametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+        if stringEmpty(str) then
+          showPlot("plotParametric", {str1, str2}, externalWindow, filename, title, gridStr, logX, logY, xLabel, yLabel, x1, x2, y1, y2,
+            curveWidth, curveStyle, legendPosition, footer, autoScale, forceOMPlot, yAxis, yLabelRight, y1R, y2R, false);
+          b := true;
+        else
+          b := SimulationResults.plotFigure(plotFigureJSON({(str1, str2)}, false, title, logX, logY, xLabel, yLabel,
+            x1, x2, y1, y2, curveWidth, curveStyle), filename, str, 800, 450, legendPosition);
         end if;
       then
-        Values.BOOL(true);
+        Values.BOOL(b);
+
+    case ("plotFigure",
+        {
+          v as Values.RECORD(),
+          Values.STRING(str),
+          Values.STRING(filename),
+          Values.INTEGER(x),
+          Values.INTEGER(y),
+          Values.ENUM_LITERAL(name = path)
+        })
+      algorithm
+        legendPosition := AbsynUtil.pathLastIdent(path);
+        filename := currentSimulationResult(filename);
+        if stringEmpty(str) then
+          showFigure(v, filename, legendPosition);
+          b := true;
+        else
+          b := SimulationResults.plotFigure(ValuesDump.valStringJSON(v), filename, str, x, y, legendPosition);
+        end if;
+      then
+        Values.BOOL(b);
+
+    case ("plotFigure",_)
+      then Values.BOOL(false);
 
     case ("plotParametric",_)
       then Values.BOOL(false);
@@ -4141,6 +4157,7 @@ protected function translateModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  input String method = "<default>" "`translateModelFMU(method=)`, folded into --fmiFlags where the FMU accepts it";
   output Boolean success = false;
   output FCore.Cache cache;
   output Values.Value outValue;
@@ -4148,6 +4165,7 @@ protected
   Flags.Flag flags;
 algorithm
   flags := loadCommandLineOptionsFromModel(className);
+  fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
 
   try
     (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
@@ -4486,10 +4504,10 @@ algorithm
 end insertBeforeTerminalClose;
 
 protected function fmuMethodToSimulationFlag
-  "`buildModelFMU(method=...)` names the integrator a Co-Simulation FMU embeds,
-   but an FMU reads its solver from `resources/<prefix>_flags.json`, which only
-   `--fmiFlags` writes. So fold an explicit method in there, unless the caller
-   already said `s:`.
+  "`buildModelFMU(method=...)` and `translateModelFMU(method=...)` name the
+   integrator a Co-Simulation FMU embeds, but an FMU reads its solver from
+   `resources/<prefix>_flags.json`, which only `--fmiFlags` writes. So fold an
+   explicit method in there, unless the caller already said `s:`.
 
    Only a method the FMU can integrate with: C's `FMI2CS_initializeSolverData`
    takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
@@ -4616,19 +4634,20 @@ algorithm
 end reportFMUPlatformsBuilt;
 
 protected function fmuSimulationSettings
-  "The SimulationSettings an FMU export runs with: the model's experiment defaults,
+  "The SimulationSettings an FMU export runs with: the experiment (experimentOptions),
    with `method` folded in when it is not \"<default>\" (a Co-Simulation FMU embeds
    its integrator, so the solver is chosen at export time)."
   input Absyn.Path className;
   input String inFileNamePrefix;
   input String method = "<default>";
+  input list<tuple<String, Values.Value>> experimentArgs = {} "The given experiment arguments";
   output SimCode.SimulationSettings simSettings;
 protected
   String filenameprefix;
 algorithm
   filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
   simSettings := convertSimulationOptionsToSimCode(
-    buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions)));
+    experimentOptions(className, experimentArgs, filenameprefix, SOME(defaultSimulationOptions)));
   if method <> "<default>" then
     simSettings.method := method;
   end if;
@@ -9759,6 +9778,14 @@ algorithm
   end match;
 end getComponentitemsName;
 
+constant Absyn.Path figurePath = Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.IDENT("Figure")));
+constant Absyn.Path plotPath = Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.IDENT("Plot")));
+constant Absyn.Path curvePath = Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.IDENT("Curve")));
+constant Absyn.Path axisPath = Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.IDENT("Axis")));
+constant Absyn.Path axisScalePath = Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.IDENT("AxisScale")));
+constant Absyn.Path linePatternSolidPath =
+  Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.QUALIFIED("LinePattern", Absyn.IDENT("Solid"))));
+
 function getModelFigures
   "The figures sub-annotation of Documentation, as Scripting.Figure records."
   input Absyn.Path classPath;
@@ -9813,7 +9840,7 @@ algorithm
     case SOME(e) then list(plotValue(p) for p in figureExpElements(e));
     else {};
   end match;
-  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Figure"),
+  value := Values.RECORD(figurePath,
     {figureStringArg(args, "title", ""),
      figureStringArg(args, "identifier", ""),
      figureStringArg(args, "group", ""),
@@ -9836,7 +9863,7 @@ algorithm
     case SOME(e) then list(curveValue(c) for c in figureExpElements(e));
     else {};
   end match;
-  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Plot"),
+  value := Values.RECORD(plotPath,
     {figureStringArg(args, "title", ""),
      figureStringArg(args, "identifier", ""),
      ValuesMake.makeArray(curves),
@@ -9852,12 +9879,16 @@ protected
   list<tuple<String, Absyn.Exp>> args;
 algorithm
   args := figureArgs(exp, {"x", "y", "legend", "zOrder"});
-  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Curve"),
+  value := Values.RECORD(curvePath,
     {figureRefArg(args, "x", "time"),
      figureRefArg(args, "y", ""),
      figureStringArg(args, "legend", ""),
-     figureIntArg2(args, "zOrder", 0)},
-    {"x", "y", "legend", "zOrder"}, -1);
+     figureIntArg2(args, "zOrder", 0),
+     Values.STRING(""),
+     Values.ENUM_LITERAL(linePatternSolidPath, 2),
+     Values.REAL(0.25),
+     Values.STRING("")},
+    {"x", "y", "legend", "zOrder", "color", "pattern", "thickness", "fileName"}, -1);
 end curveValue;
 
 function axisValue
@@ -9867,7 +9898,7 @@ protected
   list<tuple<String, Absyn.Exp>> args;
 algorithm
   args := match oexp case SOME(_) then figureArgs(Util.getOption(oexp), {"min", "max", "unit", "label", "scale"}); else {}; end match;
-  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Axis"),
+  value := Values.RECORD(axisPath,
     {figureRealBoundArg(args, "min"),
      figureRealBoundArg(args, "max"),
      figureStringArg(args, "unit", ""),
@@ -9894,7 +9925,7 @@ algorithm
       then ();
     else ();
   end match;
-  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.AxisScale"),
+  value := Values.RECORD(axisScalePath,
     {Values.STRING(scaleType), Values.INTEGER(base)},
     {"scaleType", "base"}, -1);
 end axisScaleValue;
@@ -10587,6 +10618,223 @@ algorithm
     end try;
   end try;
 end simulate;
+
+protected function showPlot
+  "Shows a plot through the plot callback, or in OMPlot."
+  input String plotType "plot, plotAll or plotParametric";
+  input list<String> vars;
+  input Boolean externalWindow;
+  input String filename;
+  input String title;
+  input String grid;
+  input Boolean logX;
+  input Boolean logY;
+  input String xLabel;
+  input String yLabel;
+  input Real x1;
+  input Real x2;
+  input Real y1;
+  input Real y2;
+  input Real curveWidth;
+  input Integer curveStyle;
+  input String legendPosition;
+  input String footer;
+  input Boolean autoScale;
+  input Boolean forceOMPlot;
+  input String yAxis;
+  input String yLabelRight;
+  input Real y1R;
+  input Real y2R;
+  input Boolean stack;
+protected
+  String pd = Autoconf.pathDelimiter, file, omplot, args, quote;
+algorithm
+  file := System.pwd() + pd + filename;
+  file := if System.regularFileExists(file) then file else filename;
+  if forceOMPlot or not System.plotCallBackDefined() then
+    omplot := stringAppendList({Settings.getInstallationDirectoryPath(), pd, "bin", pd, "OMPlot",
+      if Autoconf.os == "Windows_NT" then ".exe" else ""});
+    quote := if plotType == "plotParametric" then "\"" else "'";
+    args := "--filename=\"" + file + "\" --title=\"" + title + "\" --grid=" + grid + " --" + plotType + " --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+    if plotType <> "plotParametric" then
+      args := args + " --stack=" + boolString(stack);
+    end if;
+    if not listEmpty(vars) then
+      args := args + " " + quote + stringDelimitList(vars, quote + " " + quote) + quote;
+    end if;
+    0 := System.spawnCall(omplot, "\"" + omplot + "\" " + args);
+  else
+    System.plotCallBack(externalWindow, file, title, grid, System.tolower(plotType), boolString(logX), boolString(logY),
+      xLabel, yLabel, realString(x1), realString(x2), realString(y1), realString(y2), realString(curveWidth),
+      intString(curveStyle), legendPosition, footer, boolString(autoScale), stringDelimitList(vars, " "));
+  end if;
+end showPlot;
+
+protected function plotFigureJSON
+  "The arguments of plot, plotAll and plotParametric as a Figure in JSON, for SimulationResults.plotFigure."
+  input list<tuple<String, String>> curves "x and y of each curve";
+  input Boolean stack;
+  input String title;
+  input Boolean logX;
+  input Boolean logY;
+  input String xLabel;
+  input String yLabel;
+  input Real x1;
+  input Real x2;
+  input Real y1;
+  input Real y2;
+  input Real curveWidth;
+  input Integer curveStyle;
+  output String json;
+protected
+  String pattern;
+  list<JSON> jcurves, plots;
+  JSON xAxis, yAxis;
+algorithm
+  pattern := match curveStyle
+    case 2 then "Dash";
+    case 3 then "Dot";
+    case 4 then "DashDot";
+    case 5 then "DashDotDot";
+    else "Solid";
+  end match;
+  jcurves := list(JSON.LIST_OBJECT({
+      ("x", JSON.makeString(Util.tuple21(c))),
+      ("y", JSON.makeString(Util.tuple22(c))),
+      ("pattern", JSON.makeString(pattern)),
+      ("thickness", JSON.makeNumber(curveWidth * 25.4 / 96.0))}) for c in curves);
+  xAxis := plotAxisJSON(x1, x2, xLabel, logX);
+  yAxis := plotAxisJSON(y1, y2, yLabel, logY);
+  plots := if stack then list(plotJSON({c}, xAxis, yAxis) for c in jcurves) else {plotJSON(jcurves, xAxis, yAxis)};
+  json := JSON.toString(JSON.LIST_OBJECT({("title", JSON.makeString(title)), ("plots", JSON.makeList(plots))}));
+end plotFigureJSON;
+
+protected function plotJSON
+  input list<JSON> curves;
+  input JSON xAxis;
+  input JSON yAxis;
+  output JSON plot = JSON.LIST_OBJECT({("curves", JSON.makeList(curves)), ("x", xAxis), ("y", yAxis)});
+end plotJSON;
+
+protected function plotAxisJSON
+  "An axis; the range x1 = x2 of plot is automatic."
+  input Real lo;
+  input Real hi;
+  input String label;
+  input Boolean logScale;
+  output JSON axis;
+protected
+  Boolean auto = realEq(lo, hi);
+algorithm
+  axis := JSON.LIST_OBJECT({
+    ("min", JSON.makeList(if auto then {} else {JSON.makeNumber(lo)})),
+    ("max", JSON.makeList(if auto then {} else {JSON.makeNumber(hi)})),
+    ("label", JSON.makeString(label)),
+    ("scale", JSON.listObjectFromPair("scaleType", JSON.makeString(if logScale then "Log" else "Linear")))});
+end plotAxisJSON;
+
+protected function showFigure
+  "Shows each plot of a Figure with plot or plotParametric: one window per plot and result file, in the style of the first curve."
+  input Values.Value figure;
+  input String filename;
+  input String legendPosition;
+protected
+  list<Values.Value> plots, curves, rest;
+  String title, plotTitle, file, xLabel, yLabel;
+  list<String> xs, ys, vars;
+  Boolean parametric, logX, logY, externalWindow = false;
+  Real x1, x2, y1, y2, thickness;
+  Integer pattern;
+algorithm
+  Values.STRING(title) := figureField(figure, "title");
+  Values.ARRAY(valueLst = plots) := figureField(figure, "plots");
+  for p in plots loop
+    Values.ARRAY(valueLst = curves) := figureField(p, "curves");
+    rest := list(c for c guard figureCurvePattern(c) <> 1 in curves);
+    Values.STRING(plotTitle) := figureField(p, "title");
+    if stringEmpty(plotTitle) and listLength(plots) == 1 then
+      plotTitle := title;
+    end if;
+    (logX, x1, x2, xLabel) := figureAxis(figureField(p, "x"));
+    (logY, y1, y2, yLabel) := figureAxis(figureField(p, "y"));
+    while not listEmpty(rest) loop
+      file := figureCurveFile(listHead(rest), filename);
+      curves := list(c for c guard figureCurveFile(c, filename) == file in rest);
+      rest := list(c for c guard figureCurveFile(c, filename) <> file in rest);
+      xs := list(figureString(c, "x") for c in curves);
+      ys := list(figureString(c, "y") for c in curves);
+      parametric := false;
+      for x in xs loop
+        parametric := parametric or x <> "time";
+      end for;
+      vars := if parametric then List.flatten(list({x, y} threaded for x in xs, y in ys)) else ys;
+      Values.REAL(thickness) := figureField(listHead(curves), "thickness");
+      pattern := figureCurvePattern(listHead(curves));
+      showPlot(if parametric then "plotParametric" else "plot", vars, externalWindow, file, plotTitle, "simple",
+        logX, logY, if stringEmpty(xLabel) and not parametric then "time" else xLabel, yLabel, x1, x2, y1, y2,
+        thickness * 96.0 / 25.4, max(pattern - 1, 1), legendPosition, "", true, false, "L", "", 0.0, 0.0, false);
+      externalWindow := true;
+    end while;
+  end for;
+end showFigure;
+
+protected function figureField
+  "A field of a Figure, Plot, Curve or Axis record value."
+  input Values.Value rec;
+  input String name;
+  output Values.Value value;
+protected
+  list<Values.Value> values;
+  list<String> names;
+algorithm
+  Values.RECORD(orderd = values, comp = names) := rec;
+  value := listGet(values, List.position(name, names));
+end figureField;
+
+protected function figureString
+  input Values.Value rec;
+  input String name;
+  output String str;
+algorithm
+  Values.STRING(str) := figureField(rec, name);
+end figureString;
+
+protected function figureCurveFile
+  input Values.Value curve;
+  input String filename;
+  output String file = figureString(curve, "fileName");
+algorithm
+  if stringEmpty(file) then
+    file := filename;
+  end if;
+end figureCurveFile;
+
+protected function figureCurvePattern
+  input Values.Value curve;
+  output Integer pattern;
+algorithm
+  Values.ENUM_LITERAL(index = pattern) := figureField(curve, "pattern");
+end figureCurvePattern;
+
+protected function figureAxis
+  "An Axis value as the scale, range and label of plot; {0, 0} is an automatic range."
+  input Values.Value axis;
+  output Boolean logScale;
+  output Real lo = 0.0;
+  output Real hi = 0.0;
+  output String label;
+protected
+  list<Values.Value> mins, maxs;
+algorithm
+  Values.ARRAY(valueLst = mins) := figureField(axis, "min");
+  Values.ARRAY(valueLst = maxs) := figureField(axis, "max");
+  if not listEmpty(mins) and not listEmpty(maxs) then
+    lo := ValuesUtil.valueReal(listHead(mins));
+    hi := ValuesUtil.valueReal(listHead(maxs));
+  end if;
+  label := figureString(axis, "label");
+  logScale := figureString(figureField(axis, "scale"), "scaleType") == "Log";
+end figureAxis;
 
 annotation(__OpenModelica_Interface="backend_main");
 

@@ -77,13 +77,20 @@ pub extern "C" fn omc_result_script_variables(
     filename: *const c_char,
     parameters: c_int,
     omc_style: c_int,
+    derivatives: c_int,
     n_out: *mut usize,
 ) -> *mut *mut c_char {
     if n_out.is_null() {
         return ptr::null_mut();
     }
     guard(ptr::null_mut(), || {
-        let vars = scripting::read_variables(&mut Sink(msgs), &cstr(filename), parameters != 0, omc_style != 0);
+        let vars = scripting::read_variables(
+            &mut Sink(msgs),
+            &cstr(filename),
+            parameters != 0,
+            omc_style != 0,
+            derivatives != 0,
+        );
         malloc_strings(&vars, n_out)
     })
 }
@@ -257,6 +264,29 @@ pub extern "C" fn omc_result_script_filter(
             &names(vars, n),
             intervals,
             remove_description != 0,
+        ))
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_result_script_plot(
+    msgs: *const omc_result_messages,
+    figure_json: *const c_char,
+    result_file: *const c_char,
+    out_file: *const c_char,
+    width: c_int,
+    height: c_int,
+    legend_position: *const c_char,
+) -> c_int {
+    guard(0, || {
+        c_int::from(openmodelica_result_plot::plot(
+            &mut Sink(msgs),
+            &cstr(figure_json),
+            &cstr(result_file),
+            &cstr(out_file),
+            width,
+            height,
+            &cstr(legend_position),
         ))
     })
 }

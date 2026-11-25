@@ -587,9 +587,9 @@ dependencies = [
 
 [[package]]
 name = "charton"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "576c3b7f7ac121a53c6a87f51a75c5a15f85ffabfb78cb75685a78c1e95bd615"
+checksum = "24f3bed845ac4d9b6049979014d4d99a11ff7fd83ee5c3be6adbd1b8291c0e52"
 dependencies = [
  "ahash",
  "csscolorparser",
@@ -4899,6 +4899,7 @@ dependencies = [
  "openmodelica_mat_writer",
  "openmodelica_plt_writer",
  "openmodelica_result_files",
+ "openmodelica_result_plot",
 ]
 
 [[package]]
@@ -4925,6 +4926,16 @@ dependencies = [
  "openmodelica_mat_writer",
  "openmodelica_result_diff",
  "openmodelica_wasi",
+ "serde_json",
+]
+
+[[package]]
+name = "openmodelica_result_plot"
+version = "0.1.0"
+dependencies = [
+ "charton",
+ "openmodelica_result_files",
+ "resvg",
  "serde_json",
 ]
 
@@ -4957,6 +4968,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_package_manager",
  "openmodelica_result_files",
+ "openmodelica_result_plot",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
  "openmodelica_zip",
