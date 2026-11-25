@@ -4,6 +4,8 @@
 // teardown_command: rm -rf ExternalRHSFlag.o ExternalRHSFunc.a ExternalRHSFlagFunc* output.log
 //
 // External functions, that uses the RHS final flag.
+// RHSFinalFlag is a global variable of dassl.c. Only DASSL sets it: 0 while
+// DASSL evaluates the right-hand side, 1 for the evaluation at an output point.
 //
 //
 loadString("
