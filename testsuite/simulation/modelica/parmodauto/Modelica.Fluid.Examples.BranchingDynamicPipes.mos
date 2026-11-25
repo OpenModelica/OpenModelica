@@ -13,8 +13,8 @@ loadModel(Modelica);
 getErrorString();
 
 echo(false);
-// There is an issue with CVODE in this test: pipe flows differ from the reference.
-res := simulate(Modelica.Fluid.Examples.BranchingDynamicPipes, method="dassl", simflags="-noHomotopyOnFirstTry");
+// The pipe flows need a smaller tolerance than 1e-6.
+res := simulate(Modelica.Fluid.Examples.BranchingDynamicPipes, tolerance=1e-8, simflags="-noHomotopyOnFirstTry");
 echo(true);
 getErrorString();
 
