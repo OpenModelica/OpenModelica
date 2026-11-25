@@ -1,0 +1,70 @@
+// name:     fmi2_import_initial_event
+// keywords: FMI 2.0 import ModelExchange nextEventTime
+// status:   correct
+// teardown_command: rm -rf fmi2_import_initial_event.fmu fmi2_import_initial_event_me_FMU* fmi2_import_initial_event.fmutmp/ fmi2_import_initial_event.log fmi2_import_initial_event_res.mat fmi2_import_initial_event_info.json binaries sources documentation modelDescription.xml terminalsAndIcons resources
+//
+// The wrapper from importFMU does the event update after
+// fmi2ExitInitializationMode during initialization. It has no event at
+// time = 0+, thus CVODE takes the same steps as for the original model (#18401).
+
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+
+loadString("
+model fmi2_import_initial_event
+  Real x(start = 1, fixed = true);
+  discrete output Integer n(start = 0, fixed = true);
+equation
+  der(x) = -x;
+  when sample(0.3, 0.3) then
+    n = pre(n) + 1;
+  end when;
+end fmi2_import_initial_event;
+"); getErrorString();
+
+buildModelFMU(fmi2_import_initial_event, version = "2.0", fmuType = "me"); getErrorString();
+importFMU("fmi2_import_initial_event.fmu"); getErrorString();
+loadFile("fmi2_import_initial_event_me_FMU.mo"); getErrorString();
+
+simulate(fmi2_import_initial_event, method = "cvode"); getErrorString();
+simulate(fmi2_import_initial_event_me_FMU, method = "cvode"); getErrorString();
+
+abs(val(x, 1.0, "fmi2_import_initial_event_res.mat") - val(x, 1.0, "fmi2_import_initial_event_me_FMU_res.mat")) < 1e-12;
+val(n, 0.29, "fmi2_import_initial_event_me_FMU_res.mat");
+val(n, 1.0, "fmi2_import_initial_event_me_FMU_res.mat");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2_import_initial_event.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi2_import_initial_event_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "fmi2_import_initial_event_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'cvode', fileNamePrefix = 'fmi2_import_initial_event', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "fmi2_import_initial_event_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'cvode', fileNamePrefix = 'fmi2_import_initial_event_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
+// "
+// true
+// 0.0
+// 3.0
+// endResult

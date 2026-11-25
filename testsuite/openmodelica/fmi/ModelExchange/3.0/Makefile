@@ -8,6 +8,7 @@ fmi3_array_nonscalarized.mos \
 fmi3_arrays.mos \
 fmi3_arrays_scalarized.mos \
 fmi3_import_me.mos \
+fmi3_import_initial_event.mos \
 fmi3_import_exitinit_assert.mos \
 fmi3_import_boolean.mos \
 fmi3_import_discrete_inputs.mos \
