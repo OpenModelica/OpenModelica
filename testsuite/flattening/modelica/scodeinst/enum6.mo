@@ -1,7 +1,6 @@
 // name: enum6.mo
 // keywords:
-// status: correct
-// suite: disabled
+// status: incorrect
 //
 
 model M
@@ -17,12 +16,12 @@ model M
 end M;
 
 // Result:
-// class M
-//   constant Real p.e[E.one];
-//   constant Real p.e[E.two];
-//   constant Real p.e[E.three];
-//   Real e[P.E.one];
-//   Real e[P.E.two];
-//   Real e[P.E.three];
-// end M;
+// Error processing file: enum6.mo
+// [flattening/modelica/scodeinst/enum6.mo:14:17-14:27:writable] Notification: From here:
+// [flattening/modelica/scodeinst/enum6.mo:8:17-8:54:writable] Error: Redeclaration of enumeration 'E' is not a subtype of the redeclared element.
+//
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
 // endResult

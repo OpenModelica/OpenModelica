@@ -172,6 +172,8 @@ CevalFuncFor2.mo \
 CevalFuncIf1.mo \
 CevalFuncRecord1.mo \
 CevalFuncRecord2.mo \
+CevalFuncRecord3.mo \
+CevalFuncRecord4.mo \
 CevalFuncRecord5.mo \
 CevalFuncRecord6.mo \
 CevalFuncRecord7.mo \
@@ -450,6 +452,7 @@ enum2.mo \
 enum3.mo \
 enum4.mo \
 enum5.mo \
+enum6.mo \
 enum7.mo \
 enum8.mo \
 EnumConversion1.mo \
@@ -561,6 +564,9 @@ Final4.mo \
 Final5.mo \
 Final6.mo \
 Final7.mo \
+FinalParameter1.mo \
+FinalParameter2.mo \
+FinalParameter3.mo \
 ForConnect1.mo \
 ForConnect2.mo \
 ForConnect3.mo \
@@ -801,6 +807,7 @@ IfExpression8.mo \
 IfExpression10.mo \
 IfExpression11.mo \
 IfExpression12.mo \
+IfExpression13.mo \
 IfExpression14.mo \
 IfExpression15.mo \
 IfExpression16.mo \
@@ -1112,6 +1119,7 @@ RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
 RedeclareConnectorType1.mo \
 RedeclareConnectorType2.mo \
+RedeclareConstant1.mo \
 RedeclareDim1.mo \
 RedeclareDim2.mo \
 RedeclareElementClass1.mo \
@@ -1332,28 +1340,16 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-IfExpression13.mo \
 ProtectedMod4.mo \
-CevalFuncRecord3.mo \
-CevalFuncRecord4.mo \
-FinalParameter1.mo \
-FinalParameter2.mo \
-FinalParameter3.mo \
 IfExpression6.mo \
 IfExpression9.mo \
-RedeclareConstant1.mo \
 Connect3.mo \
-dim2.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \
 DuplicateElements8.mo \
 DuplicateElementsCond1.mo \
 conn12.mo \
 conn13.mo \
-conn14.mo \
-conn8.mo \
-conngraph2.mo \
-enum6.mo \
 expconn1.mo \
 expconn2.mo \
 expconn3.mo \
@@ -1361,7 +1357,6 @@ expconn4.mo \
 expconn5.mo \
 expconn6.mo \
 expconn7.mo \
-FuncBuiltinEnumTypeName.mo \
 ImportShadowing1.mo \
 InnerOuterExtends1.mo \
 inst1.mo \
@@ -1386,8 +1381,6 @@ InvalidVariability1.mo \
 InvalidVariability2.mo \
 PropagateRedeclareMod1.mo \
 redeclare8.mo \
-type4.mo \
-type5.mo \
 PackageConstant2.mo \
 
 

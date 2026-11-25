@@ -1,7 +1,6 @@
 // name: CevalFuncRecord3
 // keywords:
 // status: correct
-// suite: disabled
 //
 //
 
@@ -19,15 +18,15 @@ algorithm
 end f;
 
 model CevalFuncRecord3
-  constant R r1;
+  constant R r1(x = 1.0, y = 2.0);
   constant R r2 = f(r1);
 end CevalFuncRecord3;
 
 // Result:
 // class CevalFuncRecord3
-//   constant Real r1.x;
-//   constant Real r1.y;
-//   constant Real r2.x = r1.x;
-//   constant Real r2.y = r1.y;
+//   constant Real r1.x = 1.0;
+//   constant Real r1.y = 2.0;
+//   constant Real r2.x = 1.0;
+//   constant Real r2.y = 2.0;
 // end CevalFuncRecord3;
 // endResult
