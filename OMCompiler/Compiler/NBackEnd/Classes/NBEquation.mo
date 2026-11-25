@@ -2185,10 +2185,9 @@ public
         case IF_EQUATION() algorithm
           new_eq := match IfEquationBody.simplify(SOME(eq.body))
             case SOME(if_body) algorithm
-              if isNone(if_body.else_if) and not List.hasSeveralElements(if_body.then_eqns) then
-                // first if-branch is true and has only one equation
-                // just replace if-equation with body
-                new_eq := Pointer.access(listHead(if_body.then_eqns));
+              if isNone(if_body.else_if) and Expression.isEnd(if_body.condition) and not List.hasSeveralElements(if_body.then_eqns) then
+                // the only branch left is unconditional and has at most one equation
+                new_eq := if listEmpty(if_body.then_eqns) then Equation.DUMMY_EQUATION() else Pointer.access(listHead(if_body.then_eqns));
               else
                 eq.body := if_body;
                 try
@@ -3727,8 +3726,11 @@ public
     algorithm
       (lhs, success) := getLHS(body);
       if success then
-        rhs := SimplifyExp.simplify(getRHS(body));
-        eqn := Equation.makeAssignmentUpdate(eqn, lhs, rhs, Equation.getForIterator(eqn), Equation.getAttributes(eqn));
+        (rhs, success) := getRHS(body);
+        if success then
+          rhs := SimplifyExp.simplify(rhs);
+          eqn := Equation.makeAssignmentUpdate(eqn, lhs, rhs, Equation.getForIterator(eqn), Equation.getAttributes(eqn));
+        end if;
       end if;
     end inline;
 
@@ -3809,7 +3811,8 @@ public
               new_exp := Expression.END();
             end if;
           else
-            success := true;
+            // initial if-equations can have no else branch
+            success := Expression.isEnd(body.condition);
           end if;
         then new_exp;
         else algorithm

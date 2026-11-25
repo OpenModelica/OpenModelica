@@ -1149,6 +1149,7 @@ public
 
           // initial() -> true, initialSimplified() -> true
           init_0 := list(Partition.mapEqn(par, function cleanupInitialCall(kind = Partition.getKind(par))) for par in init_0);
+          init_0 := list(expandIfEquations(par) for par in init_0);
           // homotopy(actual, simplified) -> simplified
           init_0 := list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in init_0);
 
@@ -1157,6 +1158,7 @@ public
 
         // initial() -> true, initialSimplified() -> false
         bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(kind = Partition.getKind(par))) for par in bdae.init);
+        bdae.init := list(expandIfEquations(par) for par in bdae.init);
 
       then bdae;
 
@@ -1189,6 +1191,34 @@ public
       eq := Equation.simplify(eq);
     end if;
   end cleanupInitialCall;
+
+  function expandIfEquations
+    "Replaces each if-equation that has only an unconditional branch left by
+    the equations of that branch. The branches of an if-equation with
+    initialSimplified() can have different sizes."
+    input output Partition par;
+  protected
+    list<Pointer<Equation>> eqns = {};
+    Boolean expanded = false;
+  algorithm
+    for eqn_ptr in EquationPointers.toList(par.equations) loop
+      eqns := match Pointer.access(eqn_ptr)
+        local
+          IfEquationBody body;
+        // init and init_0 share the pointers of the branch equations
+        case Equation.IF_EQUATION(body = body as IfEquationBody.IF_EQUATION_BODY(else_if = NONE()))
+          guard Expression.isEnd(body.condition)
+          algorithm
+            expanded := true;
+          then List.append_reverse(list(Pointer.create(Pointer.access(e)) for e in body.then_eqns), eqns);
+        else eqn_ptr :: eqns;
+      end match;
+    end for;
+
+    if expanded then
+      par.equations := EquationPointers.fromList(listReverse(eqns));
+    end if;
+  end expandIfEquations;
 
   function cleanupHomotopy
     input output Expression exp;
