@@ -3487,12 +3487,37 @@ protected
             ErrorExt.rollBack(getInstanceName());
             new_dim := Dimension.fromExp(exp, Variability.CONSTANT);
           end if;
+
+          if Expression.contains(exp, function isNonInputCref(fn = fn)) then
+            new_dim := Dimension.UNKNOWN();
+          end if;
         then
           new_dim;
 
       else dim;
     end match;
   end evaluateCallTypeDim;
+
+  function isNonInputCref
+    "Returns true if exp is a reference to a local variable or an output of fn,
+     which cannot be replaced with an argument of the call."
+    input Expression exp;
+    input Function fn;
+    output Boolean res;
+  protected
+    InstNode node;
+  algorithm
+    res := match exp
+      case Expression.CREF(cref = ComponentRef.CREF())
+        algorithm
+          node := ComponentRef.node(listHead(ComponentRef.toListReverse(exp.cref)));
+        then
+          List.any(fn.locals, function InstNode.refEqual(node2 = node)) or
+          List.any(list(InstNode.fromHandle(o) for o in fn.outputs), function InstNode.refEqual(node2 = node));
+
+      else false;
+    end match;
+  end isNonInputCref;
 
   function resizableSizeExp
     "size(x, i) -> the expression of dimension i of x if it is resizable"
