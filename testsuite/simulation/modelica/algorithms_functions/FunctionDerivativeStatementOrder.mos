@@ -1,0 +1,87 @@
+// name: FunctionDerivativeStatementOrder
+// keywords: differentiation, function, derivative
+// status: correct
+//
+// In a derivative function, the derivative of an assignment comes before
+// the assignment, since it uses the values from before the assignment.
+
+loadString("
+package P
+function fpoly
+  input Real x;
+  input Real c[:];
+  output Real y;
+algorithm
+  y := 0;
+  for i in size(c, 1):-1:1 loop
+    y := y*x + c[i];
+  end for;
+end fpoly;
+
+function farray
+  input Real x;
+  output Real y;
+protected
+  Real v[2];
+algorithm
+  v := {x, 1};
+  for i in 1:2 loop
+    v := v*x;
+  end for;
+  y := v[1] + v[2];
+end farray;
+
+function g
+  input Real a;
+  input Real x;
+  output Real b;
+  output Real c;
+algorithm
+  b := a*x;
+  c := a + x;
+end g;
+
+function ftuple
+  input Real x;
+  output Real y;
+protected
+  Real a;
+  Real c;
+algorithm
+  a := x;
+  for i in 1:2 loop
+    (a, c) := g(a, x);
+  end for;
+  y := a + c;
+end ftuple;
+
+model M
+  Real y1 = fpoly(time, {0.939, 0.06, 0.005});
+  Real y2 = farray(time);
+  Real y3 = ftuple(time);
+  Real dy1 = der(y1) \"0.06 + 0.01*time\";
+  Real dy2 = der(y2) \"3*time^2 + 2*time\";
+  Real dy3 = der(y3) \"3*time^2 + 2*time + 1\";
+end M;
+end P;
+"); getErrorString();
+
+simulate(P.M, stopTime = 1); getErrorString();
+val(dy1, 0.5);
+val(dy2, 0.5);
+val(dy3, 0.5);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'P.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.065
+// 1.75
+// 2.75
+// endResult
