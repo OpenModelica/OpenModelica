@@ -7910,9 +7910,9 @@ template daeExpCallTuple(Exp call, Text additionalOutputs /* arguments 2..N */, 
 
   case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, dir, _, _}) then
     let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-    let var3 = daeExp(posX, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let var4 = daeExp(dir, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%var3%>, <%var4%><%additionalOutputs%>);<%\n%>'
+    let posX_T = daeExp(posX, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let dir_T = daeExp(dir, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%posX_T%>, <%dir_T%><%additionalOutputs%>);<%\n%>'
     tvar
 
   case exp as CALL(attr=attr as CALL_ATTR(isFunctionPointerCall=true)) then
