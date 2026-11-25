@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 world.mos \
+InfoJsonNotParsed.mos \
 noemit.mos \
 resultFileFlag.mos \
 resultFileFlagRealTime.mos \

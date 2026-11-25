@@ -75,16 +75,21 @@ fn section_code(s: Option<&str>) -> c_int {
 fn load(xml: &MODEL_DATA_XML) -> &'static Table {
     let cell = unsafe { &mut *TABLE.0.get() };
     if cell.is_none() {
-        match read(xml) {
-            Ok(table) => *cell = Some(table),
-            Err(msg) => parse_error(xml, &msg),
-        }
+        *cell = Some(read(xml).unwrap_or_else(|msg| {
+            parse_warning(xml, &msg);
+            Table {
+                entries: Vec::new(),
+                functions: Vec::new(),
+                n_profile_blocks: 0,
+            }
+        }));
     }
     cell.as_ref().expect("info.json table")
 }
 
-/// C's `errorStreamPrint` pair + `omc_throw_function(NULL)` of a failed parse.
-fn parse_error(xml: &MODEL_DATA_XML, msg: &str) -> ! {
+/// A file that does not parse is not fatal: the model runs on with an empty table,
+/// as it does without the file.
+fn parse_warning(xml: &MODEL_DATA_XML, msg: &str) {
     let name = if xml.fileName.is_null() {
         String::new()
     } else {
@@ -92,10 +97,16 @@ fn parse_error(xml: &MODEL_DATA_XML, msg: &str) -> ! {
             .to_string_lossy()
             .into_owned()
     };
-    omclog::error(omclog::STDOUT, true, &format!("Failed to parse {name}"));
-    omclog::error(omclog::STDOUT, false, msg);
-    omclog::close(omclog::STDOUT);
-    crate::support::rethrow(crate::support::omr_thread_data())
+    omclog::warning(omclog::STDOUT, true, &format!("Failed to parse {name}"));
+    omclog::warning(omclog::STDOUT, false, msg);
+    omclog::close_warning(omclog::STDOUT);
+    omclog::warning(
+        omclog::STDOUT,
+        false,
+        &format!(
+            "The simulation continues without the equation information of {name}: messages do not name the variables of an equation system and profiling data is not available."
+        ),
+    );
 }
 
 fn read(xml: &MODEL_DATA_XML) -> Result<Table, String> {

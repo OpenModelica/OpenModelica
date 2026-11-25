@@ -73,9 +73,9 @@ static inline const char* skipObjectRest(const char* str, int first, const char*
   while (*str != '}') {
     if (!first) {
       if (*str != ',') {
-        errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-        errorStreamPrint(OMC_LOG_STDOUT, 0, "JSON object expected ',' or '}', got: %.20s\n", str);
-        messageClose(OMC_LOG_STDOUT);
+        warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "JSON object expected ',' or '}', got: %.20s\n", str);
+        messageCloseWarning(OMC_LOG_STDOUT);
         omc_throw_function(NULL);
       }
       str++;
@@ -85,9 +85,9 @@ static inline const char* skipObjectRest(const char* str, int first, const char*
     str = skipValue(str, fileName);
     str = skipSpace(str);
     if (*str++ != ':') {
-      errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-      errorStreamPrint(OMC_LOG_STDOUT, 0, "JSON object expected ':', got: %.20s\n", str);
-      messageClose(OMC_LOG_STDOUT);
+      warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "JSON object expected ':', got: %.20s\n", str);
+      messageCloseWarning(OMC_LOG_STDOUT);
       omc_throw_function(NULL);
     }
     str = skipValue(str, fileName);
@@ -118,9 +118,9 @@ static const char* skipValue(const char* str, const char* fileName)
     str = skipSpace(str+1);
     while (*str != ']') {
       if (!first && *str++ != ',') {
-        errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-        errorStreamPrint(OMC_LOG_STDOUT, 0, "JSON array expected ',' or ']', got: %.20s\n", str);
-        messageClose(OMC_LOG_STDOUT);
+        warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "JSON array expected ',' or ']', got: %.20s\n", str);
+        messageCloseWarning(OMC_LOG_STDOUT);
         omc_throw_function(NULL);
       }
       first = 0;
@@ -134,15 +134,15 @@ static const char* skipValue(const char* str, const char* fileName)
     do {
       switch (*str) {
       case '\0':
-        errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-        errorStreamPrint(OMC_LOG_STDOUT, 0, "Found end of file, expected end of string");
-        messageClose(OMC_LOG_STDOUT);
+        warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "Found end of file, expected end of string");
+        messageCloseWarning(OMC_LOG_STDOUT);
         omc_throw_function(NULL);
       case '\\':
         if (*(str+1) == '\0') {
-          errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-          errorStreamPrint(OMC_LOG_STDOUT, 0, "Found end of file, expected end of string");
-          messageClose(OMC_LOG_STDOUT);
+          warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+          warningStreamPrint(OMC_LOG_STDOUT, 0, "Found end of file, expected end of string");
+          messageCloseWarning(OMC_LOG_STDOUT);
           omc_throw_function(NULL);
         }
         str+=2;
@@ -153,9 +153,9 @@ static const char* skipValue(const char* str, const char* fileName)
         str++;
       }
     } while (1);
-    errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reached state that should be impossible to reach.");
-    messageClose(OMC_LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Reached state that should be impossible to reach.");
+    messageCloseWarning(OMC_LOG_STDOUT);
     omc_throw_function(NULL);
   case '-':
   case '0':
@@ -172,17 +172,17 @@ static const char* skipValue(const char* str, const char* fileName)
     char *endptr = NULL;
     om_strtod(str,&endptr);
     if (str == endptr) {
-      errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-      errorStreamPrint(OMC_LOG_STDOUT, 0, "Not a number, got %.20s\n", str);
-      messageClose(OMC_LOG_STDOUT);
+      warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Not a number, got %.20s\n", str);
+      messageCloseWarning(OMC_LOG_STDOUT);
       omc_throw_function(NULL);
     }
     return endptr;
   }
   default:
-    errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "JSON value expected, got: %.20s\n", str);
-    messageClose(OMC_LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "JSON value expected, got: %.20s\n", str);
+    messageCloseWarning(OMC_LOG_STDOUT);
     omc_throw_function(NULL);
   }
 }
@@ -202,9 +202,9 @@ static inline const char* assertStringValue(const char *str, const char *value, 
   int len = strlen(value);
   str = skipSpace(str);
   if ('\"' != *str || strncmp(str+1,value,len) || str[len+1] != '\"') {
-    errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "JSON string value %s expected, got: %.20s\n", value, str);
-    messageClose(OMC_LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "JSON string value %s expected, got: %.20s\n", value, str);
+    messageCloseWarning(OMC_LOG_STDOUT);
     omc_throw_function(NULL);
   }
   return str + len + 2;
@@ -222,9 +222,9 @@ static inline const char* assertChar(const char *str, char c, const char *fileNa
 {
   str = skipSpace(str);
   if (c != *str) {
-    errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-    errorStreamPrint(OMC_LOG_STDOUT, 0,"Expected '%c', got: %.20s\n", c, str);
-    messageClose(OMC_LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    warningStreamPrint(OMC_LOG_STDOUT, 0,"Expected '%c', got: %.20s\n", c, str);
+    messageCloseWarning(OMC_LOG_STDOUT);
     omc_throw_function(NULL);
   }
   return str + 1;
@@ -245,15 +245,15 @@ static inline const char* assertNumber(const char *str, double expected, const c
   str = skipSpace(str);
   d = om_strtod(str, &endptr);
   if (str == endptr) {
-    errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Expected number, got: %.20s\n", str);
-    messageClose(OMC_LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Expected number, got: %.20s\n", str);
+    messageCloseWarning(OMC_LOG_STDOUT);
     omc_throw_function(NULL);
   }
   if (d != expected) {
-    errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Got number %f, expected: %f\n", d, expected);
-    messageClose(OMC_LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Got number %f, expected: %f\n", d, expected);
+    messageCloseWarning(OMC_LOG_STDOUT);
     omc_throw_function(NULL);
   }
   return endptr;
@@ -337,7 +337,7 @@ static const char* readFieldStringArrayIfExist(const char *str, const char *name
   };
   assertChar(str, ']', fileName);
   *numValues = n;
-  *values = malloc(sizeof(const char*)*n);
+  *values = calloc(n, sizeof(const char*));
   str = str2;
 
   for (int j = 0; j<n; ++j) {
@@ -425,9 +425,9 @@ static const char* readEquations(const char *str, MODEL_DATA_XML *xml)
   str = readEquation(str, xml->equationInfo, 0, xml->fileName);
   for (i=1; i<xml->nEquations; i++) {
     if (*str != ',') {
-      errorStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", xml->fileName);
-      errorStreamPrint(OMC_LOG_STDOUT, 0, "Expected %ld equations, but only found %i equations.",  xml->nEquations, i-1);
-      messageClose(OMC_LOG_STDOUT);
+      warningStreamPrint(OMC_LOG_STDOUT, 1, "Failed to parse %s", xml->fileName);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Expected %ld equations, but only found %i equations.",  xml->nEquations, i-1);
+      messageCloseWarning(OMC_LOG_STDOUT);
       omc_throw_function(NULL);
     } else {
       str = str + 1;
@@ -579,11 +579,28 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   // fprintf(stderr, "Loaded the JSON file in %fms...\n", rt_tock(0) * 1000.0);
   // fprintf(stderr, "Parse the JSON %s\n", xml->infoXMLData);
   // fprintf(stderr, "Parse the JSON %ld...\n", (long) xml->infoXMLData);
-  readInfoJson(xml->infoXMLData, xml);
+  /* The parser throws on the first thing it does not expect. */
+  volatile int parsed = 0;
+  threadData_t *threadData = (threadData_t*) pthread_getspecific(mmc_thread_data_key);
+  if (threadData) {
+    OMC_TRY_INTERNAL(mmc_jumper)
+    readInfoJson(xml->infoXMLData, xml);
+    parsed = 1;
+    OMC_CATCH_INTERNAL(mmc_jumper)
+  } else {
+    readInfoJson(xml->infoXMLData, xml);
+    parsed = 1;
+  }
   // fprintf(stderr, "Parsed the JSON in %fms...\n", rt_tock(0) * 1000.0);
 #if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_close_read(mmap_reader);
 #endif
+  if (!parsed) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "The simulation continues without the equation information of %s: messages do not name the variables of an equation system and profiling data is not available.", xml->fileName);
+    /* Without a file name every lookup gives the dummy info. */
+    modelInfoDeinit(xml);
+    xml->nProfileBlocks = 0;
+  }
 }
 
 /**
@@ -635,6 +652,8 @@ FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
   if(xml->functionNames == NULL)
   {
     modelInfoInit(xml);
+    if (xml->fileName == NULL)
+      return modelInfoGetDummyFunction(xml);
   }
   assert(xml->functionNames);
   return xml->functionNames[ix];
@@ -675,6 +694,8 @@ EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
 
   if (xml->equationInfo == NULL) {
     modelInfoInit(xml);
+    if (xml->fileName == NULL)
+      return modelInfoGetDummyEquation(xml);
   }
   assert(xml->equationInfo);
   if (ix<0 || ix > xml->nEquations) {
@@ -715,6 +736,8 @@ EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_
   if(xml->equationInfo == NULL)
   {
     modelInfoInit(xml);
+    if (xml->fileName == NULL)
+      return modelInfoGetDummyEquation(xml);
   }
   if(ix > xml->nProfileBlocks)
   {

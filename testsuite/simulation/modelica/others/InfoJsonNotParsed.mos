@@ -1,0 +1,46 @@
+// name: InfoJsonNotParsed
+// keywords: info.json runtime
+// status: correct
+// suite: cSources
+// teardown_command: rm -rf InfoJsonNotParsed InfoJsonNotParsed.exe InfoJsonNotParsed_* InfoJsonNotParsed.c InfoJsonNotParsed.h InfoJsonNotParsed.o InfoJsonNotParsed.makefile InfoJsonNotParsed.log InfoJsonNotParsed.libs
+//
+// An _info.json that the runtime cannot parse gives a warning; the simulation
+// runs without the equation information.
+// -lv LOG_NLS makes the runtime read the _info.json. The test changes the file
+// beside the simulation executable, which a wasm target does not write.
+
+loadString("
+model InfoJsonNotParsed
+  Real x(start = 1, fixed = true);
+  Real y(start = 1);
+equation
+  der(x) = -y;
+  y^3 + y = x;
+end InfoJsonNotParsed;
+"); getErrorString();
+
+echo(false);
+res := buildModel(InfoJsonNotParsed);
+json := readFile("InfoJsonNotParsed_info.json");
+broken := stringReplace(json, "\"eqIndex\":1,", "\"eqIndex\":100,");
+writeFile("InfoJsonNotParsed_info.json", broken);
+rc := system("./InfoJsonNotParsed -lv LOG_NLS", outputFile = "InfoJsonNotParsed.log");
+echo(true);
+getErrorString();
+broken <> json;
+rc;
+system("grep -q \"warning | Failed to parse InfoJsonNotParsed_info.json\" InfoJsonNotParsed.log");
+system("grep -q \"The simulation finished successfully\" InfoJsonNotParsed.log");
+readSimulationResultSize("InfoJsonNotParsed_res.mat") > 0;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// 0
+// 0
+// 0
+// true
+// endResult
