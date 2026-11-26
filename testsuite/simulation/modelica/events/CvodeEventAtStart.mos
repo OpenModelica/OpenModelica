@@ -1,0 +1,37 @@
+// name:     CvodeEventAtStart
+// keywords: events cvode root finding
+// status:   correct
+// teardown_command: rm -rf EventAtStart EventAtStart.exe EventAtStart.log EventAtStart.libs EventAtStart.makefile EventAtStart_*
+//
+// y changes from 1 to 2 immediately after time = 0. The root finding of CVODE
+// finds this state event at the start, and not at the first output point
+// (#18409).
+
+loadString("
+model EventAtStart
+  Real x(start = 0, fixed = true);
+  Real y;
+equation
+  der(x) = 1;
+  y = ceil(x + 1);
+end EventAtStart;
+"); getErrorString();
+
+simulate(EventAtStart, stopTime = 1, numberOfIntervals = 10, method = "cvode"); getErrorString();
+val(y, 0.0);
+val(y, 0.05);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EventAtStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'cvode', fileNamePrefix = 'EventAtStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// endResult

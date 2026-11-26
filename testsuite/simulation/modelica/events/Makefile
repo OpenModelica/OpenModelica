@@ -18,6 +18,7 @@ ChatteringEventsTestXML.mos \
 WasmJitInfoJson.mos \
 CheckEvents.mos \
 CheckEventsCvode.mos \
+CvodeEventAtStart.mos \
 cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
 derInWhenCondition.mos \
