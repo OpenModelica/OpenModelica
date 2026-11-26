@@ -59,6 +59,9 @@ public:
   void setBreak(bool break_);
   bool isBreak() const {return mpBreakAction->isChecked();}
   bool isModified() const;
+  QMenu *getFinalEachMenu() const {return mpFinalEachMenu;}
+protected:
+  virtual void keyPressEvent(QKeyEvent *event) override;
 private:
   QMenu *mpFinalEachMenu;
   QAction *mpFinalAction;

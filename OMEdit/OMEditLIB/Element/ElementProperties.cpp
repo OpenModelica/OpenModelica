@@ -155,6 +155,31 @@ void FinalEachToolButton::showParameterMenu()
 }
 
 /*!
+ * \brief FinalEachToolButton::keyPressEvent
+ * Opens the menu below the button with the first item active so that it can be used with the keyboard.
+ * Return and Enter are consumed so that they do not trigger the default button of the dialog.
+ * \param event
+ */
+void FinalEachToolButton::keyPressEvent(QKeyEvent *event)
+{
+  switch (event->key()) {
+    case Qt::Key_Return:
+    case Qt::Key_Enter:
+    case Qt::Key_Space:
+    case Qt::Key_Down:
+    // F4 opens a drop-down on Windows, like in QComboBox.
+    case Qt::Key_F4:
+      mpFinalEachMenu->setActiveAction(mpFinalEachMenu->actions().value(0));
+      mpFinalEachMenu->exec(mapToGlobal(QPoint(0, height())));
+      event->accept();
+      break;
+    default:
+      QToolButton::keyPressEvent(event);
+      break;
+  }
+}
+
+/*!
  * \brief ArrayParameterEditorDialog::ArrayParameterEditorDialog
  * Creates an editor to enter the cells of an array parameter like a table on paper.
  * \a arrayValue is shown as text in the expression field.
