@@ -10,7 +10,7 @@ Data reconciliation aims at improving the estimation of the actual state of a ph
 * physical constraints relating the measured quantities;
 * statistical inference methods.
 
-Measured values are adjusted so that the reconciled values satisfy the physical laws while remaining consistent with the uncertainty associated with each measurement. The resulting reconciled values are statistically more likely than the original measurements and generally exhibit reduced uncertainty. [16_IMOC_paper_22 | PDF]
+Measured values are adjusted so that the reconciled values satisfy the physical laws while remaining consistent with the uncertainty associated with each measurement. The resulting reconciled values are statistically more likely than the original measurements and generally exhibit reduced uncertainty.
 
 Besides uncertainty reduction, data reconciliation can be used to:
 
