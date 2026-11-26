@@ -528,10 +528,16 @@ public
     UnorderedMap<ComponentRef, Expression> replacements;
     Option<ComponentRef> iter_cref;
     ComponentRef solve_cref = cref;
+    list<Integer> indices = eqn_slice.indices;
   algorithm
+    // a scalar of an array body is solved from its row, the indices become frame indices
+    if not Type.isArray(ComponentRef.getSubscriptedType(cref, true)) then
+      (eqn_ptr, indices) := Equation.forBodyRow(eqn_ptr, indices);
+    end if;
+
     // single iterations of resizable loops stay generic, their index is only known at the analysis sizes
-    if List.hasOneElement(eqn_slice.indices) and isResizableForSlice(eqn_slice) then
-      iter_cref := iteratorCref(eqn_ptr, listHead(eqn_slice.indices), cref);
+    if List.hasOneElement(indices) and isResizableForSlice(Slice.SLICE(eqn_ptr, indices)) then
+      iter_cref := iteratorCref(eqn_ptr, listHead(indices), cref);
     else
       iter_cref := NONE();
     end if;
@@ -541,20 +547,20 @@ public
       if solve_status >= Status.UNSOLVABLE then
         // solve the single iteration instead
         solve_cref := cref;
-        (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr, true), cref,
+        (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(indices), Equation.sizes(eqn_ptr, true), cref,
           UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual), functions);
       end if;
-    elseif List.hasOneElement(eqn_slice.indices) then
+    elseif List.hasOneElement(indices) then
       replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
       // the index refers to the analysis sizes of resizable arrays
-      (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr, Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)), cref, replacements, functions);
+      (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(indices), Equation.sizes(eqn_ptr, Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)), cref, replacements, functions);
     else
       (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, functions, kind, implicit_index, slicing_map, varData, eqData);
     end if;
 
     // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
     if solve_status < Status.UNSOLVABLE then
-      solved_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+      solved_slice := Slice.SLICE(Pointer.create(eqn), indices);
     else
       (solved_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, cref, functions, kind, implicit_index, slicing_map, varData, eqData);
     end if;
@@ -1130,6 +1136,16 @@ public
 
     if Flags.isSet(Flags.DUMP_SOLVE) then
       solvePrintInput(eqn, fixed_cref);
+    end if;
+
+    // no element equation was found, an explicit solution would be array valued
+    if Equation.isArrayEquationForScalar(eqn, fixed_cref) then
+      status := Status.UNSOLVABLE;
+      invertRelation := RelationInversion.FALSE;
+      if Flags.isSet(Flags.DUMP_SOLVE) then
+        solvePrintOutput(eqn, status);
+      end if;
+      return;
     end if;
 
     (eqn, status, invertRelation) := solveSimple(eqn, fixed_cref);

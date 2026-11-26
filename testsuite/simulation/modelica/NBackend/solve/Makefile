@@ -9,6 +9,7 @@ solveCallTan.mos \
 solveForLoop.mos \
 solveMultaryBinary.mos \
 solveSumArrayElement.mos \
+solveForArrayBodyRow.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

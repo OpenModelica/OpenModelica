@@ -1,0 +1,40 @@
+// name: solveForArrayBodyRow
+// keywords: NewBackend, solve, for-loop, array equation
+// status: correct
+// cflags: --newBackend
+// suite: cSources
+// teardown_command: rm -rf solveForArrayBodyRow_* solveForArrayBodyRow solveForArrayBodyRow.c solveForArrayBodyRow.o solveForArrayBodyRow.libs solveForArrayBodyRow.log solveForArrayBodyRow.makefile output.log
+//
+// x[i, 2] is matched to row 2 of the array body in all iterations.
+// It is solved from that row and not from the whole array equation.
+
+loadString("
+model solveForArrayBodyRow
+  parameter Integer N = 3;
+  Real x[N, 2], y[N, 2];
+equation
+  for i in 1:N loop
+    x[i, :] + 0.5*{x[i, 2], x[i, 1]} + y[i, :] = {time, 2*time};
+  end for;
+  for i in 1:N loop
+    x[i, 1] = i;
+    y[i, 2] = 3;
+  end for;
+end solveForArrayBodyRow;
+"); getErrorString();
+
+buildModel(solveForArrayBodyRow, stopTime = 1); getErrorString();
+system("./solveForArrayBodyRow", "output.log");
+val(x[2, 2], 1, "solveForArrayBodyRow_res.mat");
+val(y[2, 1], 1, "solveForArrayBodyRow_res.mat");
+val(y[3, 1], 1, "solveForArrayBodyRow_res.mat");
+// Result:
+// true
+// ""
+// {"solveForArrayBodyRow", "solveForArrayBodyRow_init.xml"}
+// ""
+// 0
+// -2.0
+// 0.0
+// -0.75
+// endResult

@@ -1425,6 +1425,37 @@ public
         rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
     end arrayRow;
 
+    function forBodyRow
+      "the for-equation over one row of its array body, if all scalar indices are in that row.
+      The indices of the result are the frame indices. Unchanged otherwise."
+      input output Pointer<Equation> eqn_ptr;
+      input output list<Integer> indices "zero based";
+    protected
+      Equation eqn = Pointer.access(eqn_ptr), body;
+      Integer iter_size, row;
+    algorithm
+      () := match eqn
+        case FOR_EQUATION(body = {body as ARRAY_EQUATION()}) guard(not listEmpty(indices) and not Type.isResizable(body.ty)) algorithm
+          // the body row is the outer part of the scalar index
+          iter_size := Iterator.size(eqn.iter, Flags.getConfigBool(Flags.RESIZABLE_ARRAYS));
+          row := intDiv(listHead(indices), iter_size);
+          if List.all(indices, function rowIs(iter_size = iter_size, row = row)) then
+            eqn.body := {arrayRow(Pointer.create(body), row)};
+            eqn_ptr := Pointer.create(eqn);
+            indices := list(i - row * iter_size for i in indices);
+          end if;
+        then ();
+        else ();
+      end match;
+    end forBodyRow;
+
+    function rowIs
+      input Integer index;
+      input Integer iter_size;
+      input Integer row;
+      output Boolean b = intDiv(index, iter_size) == row;
+    end rowIs;
+
     function rowElement
       "the element of an array expression, expanded to make it solvable"
       input Expression exp;
@@ -2700,6 +2731,18 @@ public
         else false;
       end match;
     end isArrayEquation;
+
+    function isArrayEquationForScalar
+      "an array equation of more than one element and a scalar cref"
+      input Equation eqn;
+      input ComponentRef cref;
+      output Boolean b;
+    algorithm
+      b := match eqn
+        case ARRAY_EQUATION() then Type.sizeOf(eqn.ty) > 1 and not Type.isArray(ComponentRef.getSubscriptedType(cref, true));
+        else false;
+      end match;
+    end isArrayEquationForScalar;
 
     function isRecordOrTupleEquation extends checkEqn;
     algorithm
