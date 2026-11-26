@@ -8003,7 +8003,7 @@ algorithm
 
   varLst := BackendVariable.varList(vars);
   varMap := List.intRange(BackendVariable.varsSize(vars));
-  (noStartVarLst,varMap) := List.filterOnTrueSync(varLst, BackendVariable.varHasNoStartValue, varMap);
+  (noStartVarLst,varMap) := List.filterOnTrueSync(varLst, needsStartValue, varMap);
 
   // insert start values for crefs and build adjacency matrix
     //BackendDump.dumpVariables(vars,"VAR BEFORE");
@@ -8031,6 +8031,12 @@ algorithm
     //BackendDump.dumpVariables(vars,"VAR AFTER");
   systOut := BackendDAEUtil.setEqSystVars(systIn, vars);
 end preCalculateStartValues;
+
+protected function needsStartValue
+  "With fixed = true the start value, or its default, is the initial value."
+  input BackendDAE.Var var;
+  output Boolean b = not (BackendVariable.varHasStartValue(var) or BackendVariable.varFixed(var));
+end needsStartValue;
 
 protected function preCalculateStartValues1"try to solve the start equation for a var and set the resulting start value for it."
   input list<Integer> eqIndexes; // to be analyzed
