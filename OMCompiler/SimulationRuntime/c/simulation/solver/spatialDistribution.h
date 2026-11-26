@@ -43,6 +43,9 @@
  * If it cannot, the outer driver must find events before storing history.
  */
 
+#ifndef SPATIAL_DISTRIBUTION_H
+#define SPATIAL_DISTRIBUTION_H
+
 #include "../../simulation_data.h"
 #include "../../util/doubleEndedList.h"
 
@@ -74,3 +77,5 @@ long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len, i
 #ifdef __cplusplus
   }
 #endif
+
+#endif /* SPATIAL_DISTRIBUTION_H */
