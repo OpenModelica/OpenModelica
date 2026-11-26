@@ -238,11 +238,11 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
   createResizerItems();
   updateOriginItem();
   updateToolTip();
-  connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
-  connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
-  connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
-  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
-  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
+  connect(this, &Element::transformHasChanged, this, &Element::updatePlacementAnnotation);
+  connect(this, &Element::transformChange, this, &Element::updateOriginItem);
+  connect(this, &Element::transformHasChanged, this, &Element::updateOriginItem);
+  connect(mpGraphicsView, &GraphicsView::updateDynamicSelect, this, &Element::updateDynamicSelect);
+  connect(mpGraphicsView, &GraphicsView::resetDynamicSelect, this, &Element::resetDynamicSelect);
 }
 
 Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
@@ -260,8 +260,8 @@ Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
   mIsInheritedElement = mpParentElement->isInheritedElement();
   mElementType = Element::Extend;
   drawInheritedElementsAndShapes();
-  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
-  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
+  connect(mpGraphicsView, &GraphicsView::updateDynamicSelect, this, &Element::updateDynamicSelect);
+  connect(mpGraphicsView, &GraphicsView::resetDynamicSelect, this, &Element::resetDynamicSelect);
 }
 
 Element::Element(ModelInstance::Component *pModelComponent, Element *pParentElement, Element *pRootParentElement)
@@ -279,8 +279,8 @@ Element::Element(ModelInstance::Component *pModelComponent, Element *pParentElem
   mTransformation.parseTransformation(mpModelComponent->getAnnotation()->getPlacementAnnotation(), getCoordinateSystem());
   setTransform(mTransformation.getTransformationMatrix());
   updateToolTip();
-  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
-  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
+  connect(mpGraphicsView, &GraphicsView::updateDynamicSelect, this, &Element::updateDynamicSelect);
+  connect(mpGraphicsView, &GraphicsView::resetDynamicSelect, this, &Element::resetDynamicSelect);
 }
 
 Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, GraphicsView *pGraphicsView)
@@ -324,9 +324,9 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   createResizerItems();
   updateOriginItem();
   updateToolTip();
-  connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
-  connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
-  connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
+  connect(this, &Element::transformHasChanged, this, &Element::updatePlacementAnnotation);
+  connect(this, &Element::transformChange, this, &Element::updateOriginItem);
+  connect(this, &Element::transformHasChanged, this, &Element::updateOriginItem);
 }
 
 Element::Element(Element *pElement, Element *pParentElement, Element *pRootParentElement)
@@ -929,9 +929,9 @@ void Element::applyRotation(qreal angle)
 void Element::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
   // handle component position, rotation and scale changes
-  connect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleComponentMoved(bool)), Qt::UniqueConnection);
+  connect(this, &Element::transformChange, pConnectorLineAnnotation, &LineAnnotation::handleComponentMoved, Qt::UniqueConnection);
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    connect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()), Qt::UniqueConnection);
+    connect(this, &Element::transformChanging, pConnectorLineAnnotation, &LineAnnotation::updateConnectionTransformation, Qt::UniqueConnection);
   }
 }
 
@@ -942,9 +942,9 @@ void Element::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
  */
 void Element::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
-  disconnect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleComponentMoved(bool)));
+  disconnect(this, &Element::transformChange, pConnectorLineAnnotation, &LineAnnotation::handleComponentMoved);
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    disconnect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()));
+    disconnect(this, &Element::transformChanging, pConnectorLineAnnotation, &LineAnnotation::updateConnectionTransformation);
   }
 }
 
@@ -1513,28 +1513,28 @@ void Element::createActions()
   // Parameters Action
   mpShowElementAction = new QAction("Show Element", mpGraphicsView);
   mpShowElementAction->setStatusTip(tr("Shows the element"));
-  connect(mpShowElementAction, SIGNAL(triggered()), SLOT(showElement()));
+  connect(mpShowElementAction, &QAction::triggered, this, &Element::showElement);
   // Parameters Action
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
   mpParametersAction->setStatusTip(Helper::parametersTip);
-  connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
+  connect(mpParametersAction, &QAction::triggered, this, &Element::showParameters);
   // Todo: Connect /robbr
   // Attributes Action
   mpAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpAttributesAction->setStatusTip(tr("Shows the component attributes"));
-  connect(mpAttributesAction, SIGNAL(triggered()), SLOT(showAttributes()));
+  connect(mpAttributesAction, &QAction::triggered, this, &Element::showAttributes);
   // Open Class Action
   mpOpenClassAction = new QAction(ResourceCache::getIcon(":/Resources/icons/model.svg"), Helper::openClass, mpGraphicsView);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
-  connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
+  connect(mpOpenClassAction, &QAction::triggered, this, &Element::openClass);
   // FMU Properties Action
   mpElementPropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpElementPropertiesAction->setStatusTip(tr("Shows the Properties dialog"));
-  connect(mpElementPropertiesAction, SIGNAL(triggered()), SLOT(showElementPropertiesDialog()));
+  connect(mpElementPropertiesAction, &QAction::triggered, this, &Element::showElementPropertiesDialog);
   // ReplaceSubModel Action
   mpReplaceSubModelAction = new QAction(ResourceCache::getIcon(":/Resources/icons/import-fmu.svg"), Helper::replaceSubModel, this);
   mpReplaceSubModelAction->setStatusTip(tr("Replaces the SubModel, but retains the connections and parameters if valid"));
-  connect(mpReplaceSubModelAction, SIGNAL(triggered()), SLOT(showReplaceSubModelDialog()));
+  connect(mpReplaceSubModelAction, &QAction::triggered, this, &Element::showReplaceSubModelDialog);
 }
 
 /*!
@@ -1560,37 +1560,37 @@ void Element::createResizerItems()
   mpBottomLeftResizerItem = new ResizerItem(this);
   mpBottomLeftResizerItem->setPos(x1, y1);
   mpBottomLeftResizerItem->setResizePosition(ResizerItem::BottomLeft);
-  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
-  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
-  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
-  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
+  connect(mpBottomLeftResizerItem, &ResizerItem::resizerItemPressed, this, &Element::prepareResizeElement);
+  connect(mpBottomLeftResizerItem, &ResizerItem::resizerItemMoved, this, &Element::resizeElement);
+  connect(mpBottomLeftResizerItem, &ResizerItem::resizerItemReleased, this, &Element::finishResizeElement);
+  connect(mpBottomLeftResizerItem, &ResizerItem::resizerItemPositionChanged, this, &Element::resizedElement);
   mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isElementMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor);
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
   mpTopLeftResizerItem->setPos(x1, y2);
   mpTopLeftResizerItem->setResizePosition(ResizerItem::TopLeft);
-  connect(mpTopLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
-  connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
-  connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
-  connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
+  connect(mpTopLeftResizerItem, &ResizerItem::resizerItemPressed, this, &Element::prepareResizeElement);
+  connect(mpTopLeftResizerItem, &ResizerItem::resizerItemMoved, this, &Element::resizeElement);
+  connect(mpTopLeftResizerItem, &ResizerItem::resizerItemReleased, this, &Element::finishResizeElement);
+  connect(mpTopLeftResizerItem, &ResizerItem::resizerItemPositionChanged, this, &Element::resizedElement);
   mpTopLeftResizerItem->blockSignals(isSystemLibrary || isElementMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor);
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
   mpTopRightResizerItem->setPos(x2, y2);
   mpTopRightResizerItem->setResizePosition(ResizerItem::TopRight);
-  connect(mpTopRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
-  connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
-  connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
-  connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
+  connect(mpTopRightResizerItem, &ResizerItem::resizerItemPressed, this, &Element::prepareResizeElement);
+  connect(mpTopRightResizerItem, &ResizerItem::resizerItemMoved, this, &Element::resizeElement);
+  connect(mpTopRightResizerItem, &ResizerItem::resizerItemReleased, this, &Element::finishResizeElement);
+  connect(mpTopRightResizerItem, &ResizerItem::resizerItemPositionChanged, this, &Element::resizedElement);
   mpTopRightResizerItem->blockSignals(isSystemLibrary || isElementMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor);
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
   mpBottomRightResizerItem->setPos(x2, y1);
   mpBottomRightResizerItem->setResizePosition(ResizerItem::BottomRight);
-  connect(mpBottomRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
-  connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
-  connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
-  connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
+  connect(mpBottomRightResizerItem, &ResizerItem::resizerItemPressed, this, &Element::prepareResizeElement);
+  connect(mpBottomRightResizerItem, &ResizerItem::resizerItemMoved, this, &Element::resizeElement);
+  connect(mpBottomRightResizerItem, &ResizerItem::resizerItemReleased, this, &Element::finishResizeElement);
+  connect(mpBottomRightResizerItem, &ResizerItem::resizerItemPositionChanged, this, &Element::resizedElement);
   mpBottomRightResizerItem->blockSignals(isSystemLibrary || isElementMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor);
 }
 
@@ -1795,9 +1795,9 @@ void Element::updatePlacementAnnotation()
         /* Disconnect the signal so we don't go into the recursion for updatePlacementAnnotation();
          * Connect again after emitting the signal.
          */
-        disconnect(pElement, SIGNAL(transformHasChanged()), pElement, SLOT(updatePlacementAnnotation()));
+        disconnect(pElement, &Element::transformHasChanged, pElement, &Element::updatePlacementAnnotation);
         pElement->emitTransformHasChanged();
-        connect(pElement, SIGNAL(transformHasChanged()), pElement, SLOT(updatePlacementAnnotation()));
+        connect(pElement, &Element::transformHasChanged, pElement, &Element::updatePlacementAnnotation);
       }
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     }
@@ -2302,27 +2302,27 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
        */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
           && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
-        connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressFlipHorizontal()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressFlipVertical()), this, SLOT(flipVertical()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::deleteSignal, this, &Element::deleteMe, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::mouseRotateClockwise, this, &Element::rotateClockwise, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::mouseRotateAntiClockwise, this, &Element::rotateAntiClockwise, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::mouseFlipHorizontal, this, &Element::flipHorizontal, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::mouseFlipVertical, this, &Element::flipVertical, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressRotateClockwise, this, &Element::rotateClockwise, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressRotateAntiClockwise, this, &Element::rotateAntiClockwise, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressFlipHorizontal, this, &Element::flipHorizontal, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressFlipVertical, this, &Element::flipVertical, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressUp, this, &Element::moveUp, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressShiftUp, this, &Element::moveShiftUp, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressCtrlUp, this, &Element::moveCtrlUp, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressDown, this, &Element::moveDown, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressShiftDown, this, &Element::moveShiftDown, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressCtrlDown, this, &Element::moveCtrlDown, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressLeft, this, &Element::moveLeft, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressShiftLeft, this, &Element::moveShiftLeft, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressCtrlLeft, this, &Element::moveCtrlLeft, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressRight, this, &Element::moveRight, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressShiftRight, this, &Element::moveShiftRight, Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::keyPressCtrlRight, this, &Element::moveCtrlRight, Qt::UniqueConnection);
       }
       // select an ElementTreeItem in Element Browser
       if (!ignoreSelection()) {
@@ -2344,27 +2344,27 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
        */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
           && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
-        disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
-        disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));
-        disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-        disconnect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()));
-        disconnect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressFlipHorizontal()), this, SLOT(flipHorizontal()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressFlipVertical()), this, SLOT(flipVertical()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
+        disconnect(mpGraphicsView, &GraphicsView::deleteSignal, this, &Element::deleteMe);
+        disconnect(mpGraphicsView, &GraphicsView::mouseRotateClockwise, this, &Element::rotateClockwise);
+        disconnect(mpGraphicsView, &GraphicsView::mouseRotateAntiClockwise, this, &Element::rotateAntiClockwise);
+        disconnect(mpGraphicsView, &GraphicsView::mouseFlipHorizontal, this, &Element::flipHorizontal);
+        disconnect(mpGraphicsView, &GraphicsView::mouseFlipVertical, this, &Element::flipVertical);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressRotateClockwise, this, &Element::rotateClockwise);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressRotateAntiClockwise, this, &Element::rotateAntiClockwise);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressFlipHorizontal, this, &Element::flipHorizontal);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressFlipVertical, this, &Element::flipVertical);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressUp, this, &Element::moveUp);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressShiftUp, this, &Element::moveShiftUp);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlUp, this, &Element::moveCtrlUp);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressDown, this, &Element::moveDown);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressShiftDown, this, &Element::moveShiftDown);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlDown, this, &Element::moveCtrlDown);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressLeft, this, &Element::moveLeft);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressShiftLeft, this, &Element::moveShiftLeft);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlLeft, this, &Element::moveCtrlLeft);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressRight, this, &Element::moveRight);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressShiftRight, this, &Element::moveShiftRight);
+        disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlRight, this, &Element::moveCtrlRight);
       }
       // deselect an ElementTreeItem in Element Browser
       if (!ignoreSelection()) {

@@ -118,9 +118,9 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   // create send report button
   mpSendReportButton = new QPushButton(tr("Send Report"));
   mpSendReportButton->setAutoDefault(true);
-  connect(mpSendReportButton, SIGNAL(clicked()), SLOT(sendReport()));
+  connect(mpSendReportButton, &QPushButton::clicked, this, &CrashReportDialog::sendReport);
   mpCancelButton = new QPushButton(Helper::cancel);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &CrashReportDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpSendReportButton, QDialogButtonBox::ActionRole);
@@ -304,7 +304,7 @@ void CrashReportDialog::sendReport()
   QUrl url("https://dev.openmodelica.org/omeditcrashreports/cgi-bin/server.py");
   QNetworkRequest networkRequest(url);
   NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
-  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(reportSent(QNetworkReply*)));
+  connect(pNetworkAccessManager, &NetworkAccessManager::finished, this, &CrashReportDialog::reportSent);
   QNetworkReply *pNetworkReply = pNetworkAccessManager->post(networkRequest, pHttpMultiPart);
   pHttpMultiPart->setParent(pNetworkReply); // delete the pHttpMultiPart with the pNetworkReply
 }

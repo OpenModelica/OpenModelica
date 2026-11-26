@@ -104,7 +104,6 @@ public slots:
   void pauseInteractiveSimulation();
   void emitSendAddMonitoredItem(int nodeId, QString plotVariable) {emit sendAddMonitoredItem(nodeId, plotVariable);}
   void emitSendRemoveMonitoredItem(QString name) {emit sendRemoveMonitoredItem(name);}
-private slots:
   void setSpeed(QString value);
 protected:
   void sample();

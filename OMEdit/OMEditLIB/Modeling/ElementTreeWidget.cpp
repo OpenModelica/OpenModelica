@@ -833,10 +833,10 @@ ElementWidget::ElementWidget(QWidget *pParent)
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterElements);
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(filterElements()));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(filterElements()));
-  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(filterElements()));
-  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(filterElements()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), &QLineEdit::returnPressed, this, &ElementWidget::filterElements);
+  connect(mpTreeSearchFilters->getFilterTextBox(), &QLineEdit::textEdited, this, &ElementWidget::filterElements);
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), &QCheckBox::toggled, this, &ElementWidget::filterElements);
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ElementWidget::filterElements);
   // create tree view
   mpElementTreeModel = new ElementTreeModel(this);
   mpElementTreeProxyModel = new ElementTreeProxyModel(this);
@@ -845,9 +845,9 @@ ElementWidget::ElementWidget(QWidget *pParent)
   mpElementTreeView = new ElementTreeView(this);
   mpElementTreeView->setModel(mpElementTreeProxyModel);
   mpElementTreeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(expandAll()));
-  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(collapseAll()));
-  connect(mpElementTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(elementSelectionChanged(QItemSelection,QItemSelection)));
+  connect(mpTreeSearchFilters->getExpandAllButton(), &QToolButton::clicked, mpElementTreeView, &QTreeView::expandAll);
+  connect(mpTreeSearchFilters->getCollapseAllButton(), &QToolButton::clicked, mpElementTreeView, &QTreeView::collapseAll);
+  connect(mpElementTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &ElementWidget::elementSelectionChanged);
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);

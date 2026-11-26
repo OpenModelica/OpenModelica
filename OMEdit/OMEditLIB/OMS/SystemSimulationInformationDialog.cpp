@@ -637,10 +637,10 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
   mpOkButton->setEnabled(!pModelWidget->getLibraryTreeItem()->isSystemLibrary());
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(setSystemSimulationInformation()));
+  connect(mpOkButton, &QPushButton::clicked, this, &SystemSimulationInformationDialog::setSystemSimulationInformation);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &SystemSimulationInformationDialog::reject);
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

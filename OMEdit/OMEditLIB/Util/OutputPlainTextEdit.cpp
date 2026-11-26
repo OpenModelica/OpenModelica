@@ -48,7 +48,7 @@ OutputPlainTextEdit::OutputPlainTextEdit(QWidget *parent)
   mQueuedOutput.clear();
   mQueueTimer.setSingleShot(true);
   mQueueTimer.setInterval(10);
-  connect(&mQueueTimer, SIGNAL(timeout()), SLOT(handleNextOutputChunk()));
+  connect(&mQueueTimer, &QTimer::timeout, this, &OutputPlainTextEdit::handleNextOutputChunk);
   mUseTimer = true;
 }
 

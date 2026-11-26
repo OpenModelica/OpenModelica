@@ -91,8 +91,8 @@ BreakpointsTreeView::BreakpointsTreeView(BreakpointsWidget *pBreakPointsWidget)
   setContextMenuPolicy(Qt::CustomContextMenu);
   setUniformRowHeights(true);
   createActions();
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  connect(this, SIGNAL(doubleClicked(QModelIndex)), SLOT(breakPointDoubleClicked(QModelIndex)));
+  connect(this, &BreakpointsTreeView::customContextMenuRequested, this, &BreakpointsTreeView::showContextMenu);
+  connect(this, &BreakpointsTreeView::doubleClicked, this, &BreakpointsTreeView::breakPointDoubleClicked);
 }
 
 /*!
@@ -103,23 +103,23 @@ void BreakpointsTreeView::createActions()
   /* Go to file action */
   mpGotoFileAction = new QAction(QIcon(":/Resources/icons/next.svg"), tr("Go to File"), this);
   mpGotoFileAction->setStatusTip(tr("Goto file location"));
-  connect(mpGotoFileAction, SIGNAL(triggered()), SLOT(gotoFile()));
+  connect(mpGotoFileAction, &QAction::triggered, this, &BreakpointsTreeView::gotoFile);
   /* Add breakpoint action */
   mpAddBreakpointAction = new QAction(QIcon(":/Resources/icons/add-icon.svg"), Helper::add, this);
   mpAddBreakpointAction->setStatusTip(tr("Adds a breakpoint"));
-  connect(mpAddBreakpointAction, SIGNAL(triggered()), SLOT(addBreakpoint()));
+  connect(mpAddBreakpointAction, &QAction::triggered, this, &BreakpointsTreeView::addBreakpoint);
   /* Edit breakpoint action */
   mpEditBreakpointAction = new QAction(QIcon(":/Resources/icons/edit-icon.svg"), Helper::edit, this);
   mpEditBreakpointAction->setStatusTip(tr("Edits a breakpoint"));
-  connect(mpEditBreakpointAction, SIGNAL(triggered()), SLOT(editBreakpoint()));
+  connect(mpEditBreakpointAction, &QAction::triggered, this, &BreakpointsTreeView::editBreakpoint);
   /* Remove breakpoint action */
   mpDeleteBreakpointAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteBreakpointAction->setStatusTip(tr("Deletes a breakpoint"));
-  connect(mpDeleteBreakpointAction, SIGNAL(triggered()), SLOT(deleteBreakpoint()));
+  connect(mpDeleteBreakpointAction, &QAction::triggered, this, QOverload<>::of(&BreakpointsTreeView::deleteBreakpoint));
   /* remove all breakpoints action */
   mpDeleteAllBreakpointsAction = new QAction(tr("Delete All"), this);
   mpDeleteAllBreakpointsAction->setStatusTip(tr("Deletes all the breakpoints"));
-  connect(mpDeleteAllBreakpointsAction, SIGNAL(triggered()), SLOT(deleteAllBreakpoints()));
+  connect(mpDeleteAllBreakpointsAction, &QAction::triggered, this, &BreakpointsTreeView::deleteAllBreakpoints);
 }
 
 /*!

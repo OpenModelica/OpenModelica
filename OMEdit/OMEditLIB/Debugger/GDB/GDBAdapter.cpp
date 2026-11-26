@@ -78,11 +78,11 @@ GDBLoggerWidget::GDBLoggerWidget(QWidget *pParent)
   mpCommandTextBox = new QLineEdit;
   mpCommandTextBox->setEnabled(false);
   mpCommandTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
-  connect(mpCommandTextBox, SIGNAL(returnPressed()), SLOT(postCommand()));
+  connect(mpCommandTextBox, &QLineEdit::returnPressed, this, &GDBLoggerWidget::postCommand);
   /* send command button */
   mpSendCommandButton = new QPushButton(Helper::send);
   mpSendCommandButton->setEnabled(false);
-  connect(mpSendCommandButton, SIGNAL(clicked()), SLOT(postCommand()));
+  connect(mpSendCommandButton, &QPushButton::clicked, this, &GDBLoggerWidget::postCommand);
   /* Log Windows Splitter */
   QSplitter *pLogWindowsSplitter = new QSplitter;
   pLogWindowsSplitter->setChildrenCollapsible(false);
@@ -100,8 +100,8 @@ GDBLoggerWidget::GDBLoggerWidget(QWidget *pParent)
   pGridLayout->addWidget(mpCommandTextBox, 1, 0);
   pGridLayout->addWidget(mpSendCommandButton, 1, 1);
   setLayout(pGridLayout);
-  connect(GDBAdapter::instance(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
-  connect(GDBAdapter::instance(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(GDBAdapter::instance(), &GDBAdapter::GDBProcessStarted, this, &GDBLoggerWidget::handleGDBProcessStarted);
+  connect(GDBAdapter::instance(), &GDBAdapter::GDBProcessFinished, this, &GDBLoggerWidget::handleGDBProcessFinished);
 }
 
 /*!
@@ -200,7 +200,7 @@ TargetOutputWidget::TargetOutputWidget(QWidget *pParent)
   : OutputPlainTextEdit(pParent)
 {
   setFont(QFont(Helper::monospacedFontInfo.family()));
-  connect(GDBAdapter::instance(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
+  connect(GDBAdapter::instance(), &GDBAdapter::GDBProcessStarted, this, &TargetOutputWidget::handleGDBProcessStarted);
 }
 
 /*!
@@ -300,7 +300,7 @@ GDBAdapter::GDBAdapter(QWidget *pParent)
   mToken = 0;
   mCatchOMCBreakpointId = "1";
   mGDBCommandTimer.setSingleShot(true);
-  connect(&mGDBCommandTimer, SIGNAL(timeout()), SLOT(GDBcommandTimeout()));
+  connect(&mGDBCommandTimer, &QTimer::timeout, this, &GDBAdapter::GDBcommandTimeout);
 }
 
 /*!
@@ -337,16 +337,16 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
   mpGDBProcess->setProcessEnvironment(processEnvironment);
 #endif
   mpGDBProcess->setWorkingDirectory(workingDirectory);
-  connect(mpGDBProcess, SIGNAL(started()), SLOT(handleGDBProcessStarted()));
-  connect(mpGDBProcess, SIGNAL(readyReadStandardOutput()), SLOT(readGDBStandardOutput()));
-  connect(mpGDBProcess, SIGNAL(readyReadStandardError()), SLOT(readGDBErrorOutput()));
-  connect(mpGDBProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
-  connect(mpGDBProcess, SIGNAL(finished(int)), SLOT(handleGDBProcessFinished(int)));
-  connect(mpGDBProcess, SIGNAL(finished(int)), mpGDBProcess, SLOT(deleteLater()));
+  connect(mpGDBProcess, &QProcess::started, this, &GDBAdapter::handleGDBProcessStarted);
+  connect(mpGDBProcess, &QProcess::readyReadStandardOutput, this, &GDBAdapter::readGDBStandardOutput);
+  connect(mpGDBProcess, &QProcess::readyReadStandardError, this, &GDBAdapter::readGDBErrorOutput);
+  connect(mpGDBProcess, &QProcess::errorOccurred, this, &GDBAdapter::handleGDBProcessError);
+  connect(mpGDBProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &GDBAdapter::handleGDBProcessFinished);
+  connect(mpGDBProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), mpGDBProcess, &QProcess::deleteLater);
   mSimulationOptions = simulationOptions;
   if (mSimulationOptions.isValid()) {
-    connect(mpGDBProcess, SIGNAL(started()), SLOT(handleGDBProcessStartedForSimulation()));
-    connect(mpGDBProcess, SIGNAL(finished(int)), SLOT(handleGDBProcessFinishedForSimulation(int)));
+    connect(mpGDBProcess, &QProcess::started, this, &GDBAdapter::handleGDBProcessStartedForSimulation);
+    connect(mpGDBProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &GDBAdapter::handleGDBProcessFinishedForSimulation);
   }
   /* launch gdb with the default arguments
    * -q  quiet mode. Don't print welcome messages
@@ -377,12 +377,12 @@ void GDBAdapter::launch(QString processId, QString GDBPath)
   /* Set the environment for GDB process */
   mpGDBProcess->setProcessEnvironment(StringHandler::simulationProcessEnvironment());
 #endif
-  connect(mpGDBProcess, SIGNAL(started()), SLOT(handleGDBProcessStartedForAttach()));
-  connect(mpGDBProcess, SIGNAL(readyReadStandardOutput()), SLOT(readGDBStandardOutput()));
-  connect(mpGDBProcess, SIGNAL(readyReadStandardError()), SLOT(readGDBErrorOutput()));
-  connect(mpGDBProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
-  connect(mpGDBProcess, SIGNAL(finished(int)), SLOT(handleGDBProcessFinished(int)));
-  connect(mpGDBProcess, SIGNAL(finished(int)), mpGDBProcess, SLOT(deleteLater()));
+  connect(mpGDBProcess, &QProcess::started, this, &GDBAdapter::handleGDBProcessStartedForAttach);
+  connect(mpGDBProcess, &QProcess::readyReadStandardOutput, this, &GDBAdapter::readGDBStandardOutput);
+  connect(mpGDBProcess, &QProcess::readyReadStandardError, this, &GDBAdapter::readGDBErrorOutput);
+  connect(mpGDBProcess, &QProcess::errorOccurred, this, &GDBAdapter::handleGDBProcessError);
+  connect(mpGDBProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &GDBAdapter::handleGDBProcessFinished);
+  connect(mpGDBProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), mpGDBProcess, &QProcess::deleteLater);
   /*
     launch gdb with the default arguments
     -q  quiet mode. Don't print welcome messages
@@ -464,8 +464,8 @@ void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject 
     if (cmd.mFlags & GDBAdapter::BlockUntilResponse) {
       QEventLoop eventLoop;
       QTimer timer;
-      connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
-      connect(this, SIGNAL(commandCompleted()), &eventLoop, SLOT(quit()));
+      connect(&timer, &QTimer::timeout, &eventLoop, &QEventLoop::quit);
+      connect(this, &GDBAdapter::commandCompleted, &eventLoop, &QEventLoop::quit);
       /* Just in case command response doesn't arrive for some reason we don't want to stay in blocked state.
        * So we start a timer which will quit the event loop after 5 secs.
        */

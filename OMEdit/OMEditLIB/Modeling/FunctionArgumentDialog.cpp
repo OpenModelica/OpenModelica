@@ -86,8 +86,8 @@ FunctionArgumentDialog::FunctionArgumentDialog(LibraryTreeItem *pLibraryTreeItem
         QDialogButtonBox::StandardButton::Ok |
         QDialogButtonBox::StandardButton::Cancel);
   pMainLayout->addWidget(pButtons);
-  connect(pButtons, SIGNAL(accepted()), SLOT(accept()));
-  connect(pButtons, SIGNAL(rejected()), SLOT(reject()));
+  connect(pButtons, &QDialogButtonBox::accepted, this, &FunctionArgumentDialog::accept);
+  connect(pButtons, &QDialogButtonBox::rejected, this, &FunctionArgumentDialog::reject);
 
   setLayout(pMainLayout);
 }

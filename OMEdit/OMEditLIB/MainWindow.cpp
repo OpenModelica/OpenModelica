@@ -239,8 +239,8 @@ void MainWindow::startLanguageServer()
                                     QFileInfo(executable).absolutePath()));
   }
   LSPClient *pLSPClient = new ModelicaLSPClient(this);
-  connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
-  connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
+  connect(pLSPClient, &LSPClient::logMessage, this, &MainWindow::onLanguageServerLogMessage);
+  connect(pLSPClient, &LSPClient::serverError, this, [this](const QString &message) { onLanguageServerLogMessage(message); });
   // A library loaded while the initialize handshake is still in flight cannot be
   // announced yet, and no further row change would announce it later. Re-sync
   // once the server is ready; unchanged lists are dropped by updateLibraries().
@@ -390,7 +390,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpMessagesDockWidget->setWidget(MessagesWidget::instance());
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
-  connect(MessagesWidget::instance(), SIGNAL(messageAdded()), SLOT(showMessageBrowser()));
+  connect(MessagesWidget::instance(), &MessagesWidget::messageAdded, this, &MainWindow::showMessageBrowser);
   // Create the OMCProxy object.
   mpOMCProxy = new OMCProxy(threadData, this);
   if (getExitApplicationStatus()) {
@@ -426,7 +426,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpCancelOperationButton->setToolTip(tr("Cancel the running operation"));
   mpCancelOperationButton->setAutoRaise(true);
   mpCancelOperationButton->setVisible(false);
-  connect(mpCancelOperationButton, SIGNAL(clicked()), SLOT(cancelOmcOperation()));
+  connect(mpCancelOperationButton, &QToolButton::clicked, this, &MainWindow::cancelOmcOperation);
   // Position Label
   mpPositionLabel = new Label;
   mpPositionLabel->setMinimumWidth(75);
@@ -437,25 +437,25 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // welcome perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omedit.png"), tr("Welcome"));
   QShortcut *pWelcomeShortcut = new QShortcut(QKeySequence("Ctrl+f1"), this);
-  connect(pWelcomeShortcut, SIGNAL(activated()), SLOT(switchToWelcomePerspectiveSlot()));
+  connect(pWelcomeShortcut, &QShortcut::activated, this, &MainWindow::switchToWelcomePerspectiveSlot);
   mpPerspectiveTabbar->setTabToolTip(0, tr("Changes to welcome perspective (%1)").arg(pWelcomeShortcut->key().toString()));
   // modeling perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
   QShortcut *pModelingShortcut = new QShortcut(QKeySequence("Ctrl+f2"), this);
-  connect(pModelingShortcut, SIGNAL(activated()), SLOT(switchToModelingPerspectiveSlot()));
+  connect(pModelingShortcut, &QShortcut::activated, this, &MainWindow::switchToModelingPerspectiveSlot);
   mpPerspectiveTabbar->setTabToolTip(1, tr("Changes to modeling perspective (%1)").arg(pModelingShortcut->key().toString()));
   // plotting perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
   QShortcut *pPlottingShortcut = new QShortcut(QKeySequence("Ctrl+f3"), this);
-  connect(pPlottingShortcut, SIGNAL(activated()), SLOT(switchToPlottingPerspectiveSlot()));
+  connect(pPlottingShortcut, &QShortcut::activated, this, &MainWindow::switchToPlottingPerspectiveSlot);
   mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to plotting perspective (%1)").arg(pPlottingShortcut->key().toString()));
   // algorithmic debugging perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Debugging"));
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
-  connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
+  connect(pAlgorithmicDebuggingShortcut, &QShortcut::activated, this, &MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot);
   mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
-  connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
+  connect(mpPerspectiveTabbar, &QTabBar::currentChanged, this, &MainWindow::perspectiveTabChanged);
   // Create an object of StatusBar
   mpStatusBar = new StatusBar();
   mpStatusBar->setObjectName("statusBar");
@@ -577,7 +577,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpDocumentationDockWidget->setWidget(mpDocumentationWidget);
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   mpDocumentationDockWidget->hide();
-  connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
+  connect(mpDocumentationDockWidget, &QDockWidget::visibilityChanged, this, &MainWindow::documentationDockWidgetVisibilityChanged);
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -631,11 +631,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpMessagesTabWidget = new QTabWidget(this);
   mpMessagesTabWidget->setTabsClosable(true);
   mpMessagesTabWidget->setDocumentMode(true);
-  connect(mpMessagesTabWidget, SIGNAL(tabBarClicked(int)), SLOT(messagesTabBarClicked(int)));
-  connect(mpMessagesDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(messagesDockWidgetVisibilityChanged(bool)));
-  connect(MessagesWidget::instance(), SIGNAL(messageTabAdded(QWidget*,QString)), SLOT(messageTabAdded(QWidget*,QString)));
-  connect(MessagesWidget::instance(), SIGNAL(messageTabClosed(int)), SLOT(messageTabClosed(int)));
-  connect(mpMessagesTabWidget, SIGNAL(tabCloseRequested(int)), MessagesWidget::instance(), SLOT(closeTab(int)));
+  connect(mpMessagesTabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::messagesTabBarClicked);
+  connect(mpMessagesDockWidget, &QDockWidget::visibilityChanged, this, &MainWindow::messagesDockWidgetVisibilityChanged);
+  connect(MessagesWidget::instance(), &MessagesWidget::messageTabAdded, this, &MainWindow::messageTabAdded);
+  connect(MessagesWidget::instance(), &MessagesWidget::messageTabClosed, this, &MainWindow::messageTabClosed);
+  connect(mpMessagesTabWidget, &QTabWidget::tabCloseRequested, MessagesWidget::instance(), &MessagesWidget::closeTab);
   pCentralWidgetLayout->addWidget(mpMessagesTabWidget, 0);
   pCentralWidget->setLayout(pCentralWidgetLayout);
   //Set the centralwidget
@@ -701,7 +701,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpAutoSaveTimer = new QTimer(this);
   mpAutoSaveTimer->setTimerType(Qt::PreciseTimer);
   mpAutoSaveTimer->setInterval(OptionsDialog::instance()->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
-  connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
+  connect(mpAutoSaveTimer, &QTimer::timeout, this, &MainWindow::autoSave);
   // read auto save settings
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start();
@@ -1000,7 +1000,7 @@ void MainWindow::createRecentFileActions()
     QStringList dataList;
     dataList << recentFile.fileName << recentFile.encoding;
     pRecentFileAction->setData(dataList);
-    connect(pRecentFileAction, SIGNAL(triggered()), this, SLOT(openRecentFile()));
+    connect(pRecentFileAction, &QAction::triggered, this, &MainWindow::openRecentFile);
     mpRecentFilesMenu->addAction(pRecentFileAction);
   }
 }
@@ -1046,7 +1046,7 @@ void MainWindow::createRecentModelActions()
     QStringList dataList;
     dataList << recentModel.fileName << recentModel.encoding << recentModel.path;
     pRecentModelAction->setData(dataList);
-    connect(pRecentModelAction, SIGNAL(triggered()), this, SLOT(openRecentModel()));
+    connect(pRecentModelAction, &QAction::triggered, this, &MainWindow::openRecentModel);
     mpRecentModelsMenu->addAction(pRecentModelAction);
   }
 }
@@ -2336,14 +2336,14 @@ void MainWindow::addSystemLibraries()
       if (versions.isEmpty()) {
         QAction *pAction = new QAction(library, this);
         pAction->setData(QStringList() << library << "");
-        connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
+        connect(pAction, &QAction::triggered, mpLibraryWidget, QOverload<>::of(&LibraryWidget::loadSystemLibrary));
         mpLibrariesMenu->addAction(pAction);
       } else {
         QMenu *pLibraryMenu = new QMenu(library);
         foreach (QString version, versions) {
           QAction *pAction = new QAction(StringHandler::convertSemVertoReadableString(version), this);
           pAction->setData(QStringList() << library << version);
-          connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
+          connect(pAction, &QAction::triggered, mpLibraryWidget, QOverload<>::of(&LibraryWidget::loadSystemLibrary));
           pLibraryMenu->addAction(pAction);
         }
         mpLibrariesMenu->addMenu(pLibraryMenu);
@@ -4250,7 +4250,7 @@ void MainWindow::runDebugConfiguration()
   if (pAction) {
 #if !defined(__EMSCRIPTEN__)
     DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
-    connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
+    connect(pDebuggerConfigurationsDialog, &DebuggerConfigurationsDialog::debuggerLaunched, this, &MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot);
     DebuggerConfigurationPage* pDebuggerConfigurationPage = pDebuggerConfigurationsDialog->getDebuggerConfigurationPage(pAction->text());
     if (pDebuggerConfigurationPage) {
       pDebuggerConfigurationsDialog->runConfiguration(pDebuggerConfigurationPage);
@@ -4292,7 +4292,7 @@ void MainWindow::updateDebuggerToolBarMenu()
     DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
     QAction *pAction = new QAction(mpDebugConfigurationMenu);
     pAction->setText(debugConfiguration.name);
-    connect(pAction, SIGNAL(triggered()), SLOT(runDebugConfiguration()));
+    connect(pAction, &QAction::triggered, this, &MainWindow::runDebugConfiguration);
     mpDebugConfigurationMenu->addAction(pAction);
   }
   if (debugConfigurations.size() > 0) {
@@ -4578,7 +4578,7 @@ void MainWindow::showDebugConfigurationsDialog()
 {
 #if !defined(__EMSCRIPTEN__)
   DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
-  connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
+  connect(pDebuggerConfigurationsDialog, &DebuggerConfigurationsDialog::debuggerLaunched, this, &MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot);
   pDebuggerConfigurationsDialog->exec();
 #endif
 }
@@ -4620,74 +4620,74 @@ void MainWindow::showReSimulateSetup()
 void MainWindow::createActions()
 {
   mpSearchBrowserShortcut = new QShortcut(QKeySequence("Ctrl+h"), this);
-  connect(mpSearchBrowserShortcut, SIGNAL(activated()), SLOT(showSearchBrowser()));
+  connect(mpSearchBrowserShortcut, &QShortcut::activated, this, &MainWindow::showSearchBrowser);
   /* Menu Actions */
   // File Menu
   // create new Modelica class action
   mpNewModelicaClassAction = new QAction(Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
-  connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  connect(mpNewModelicaClassAction, &QAction::triggered, this, &MainWindow::createNewModelicaClass);
   // create new MOS action
   mpNewMOSFileAction = new QAction(Helper::newMOSScript, this);
   mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
-  connect(mpNewMOSFileAction, SIGNAL(triggered()), SLOT(createNewMOSFile()));
+  connect(mpNewMOSFileAction, &QAction::triggered, this, &MainWindow::createNewMOSFile);
   // create new SSP Model action
   mpNewSSPModelAction = new QAction(Helper::newOMSimulatorModel, this);
   mpNewSSPModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
-  connect(mpNewSSPModelAction, SIGNAL(triggered()), SLOT(createNewSSPModel()));
+  connect(mpNewSSPModelAction, &QAction::triggered, this, &MainWindow::createNewSSPModel);
   // create new CRML action
   if (isCRMLEnabled()) {
     mpNewCRMLFileAction = new QAction(Helper::newCRMLModel, this);
     mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
-    connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
+    connect(mpNewCRMLFileAction, &QAction::triggered, this, &MainWindow::createNewCRMLFile);
   }
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
   mpOpenModelicaFileAction->setStatusTip(tr("Opens the Modelica file(s)"));
-  connect(mpOpenModelicaFileAction, SIGNAL(triggered()), SLOT(openModelicaFile()));
+  connect(mpOpenModelicaFileAction, &QAction::triggered, this, &MainWindow::openModelicaFile);
   // open Modelica file with encoding action
   mpOpenModelicaFileWithEncodingAction = new QAction(Helper::openConvertModelicaFiles, this);
   mpOpenModelicaFileWithEncodingAction->setStatusTip(tr("Opens and converts the Modelica file(s) with encoding"));
-  connect(mpOpenModelicaFileWithEncodingAction, SIGNAL(triggered()), SLOT(showOpenModelicaFileDialog()));
+  connect(mpOpenModelicaFileWithEncodingAction, &QAction::triggered, this, &MainWindow::showOpenModelicaFileDialog);
   // load Modelica library action
   mpLoadModelicaLibraryAction = new QAction(tr("Load Library"), this);
   mpLoadModelicaLibraryAction->setStatusTip(tr("Loads the Modelica library"));
-  connect(mpLoadModelicaLibraryAction, SIGNAL(triggered()), SLOT(loadModelicaLibrary()));
+  connect(mpLoadModelicaLibraryAction, &QAction::triggered, this, &MainWindow::loadModelicaLibrary);
   // load encrypted library action
   mpLoadEncryptedLibraryAction = new QAction(tr("Load Encrypted Library"), this);
   mpLoadEncryptedLibraryAction->setStatusTip(tr("Loads the encrypted Modelica library"));
-  connect(mpLoadEncryptedLibraryAction, SIGNAL(triggered()), SLOT(loadEncryptedLibrary()));
+  connect(mpLoadEncryptedLibraryAction, &QAction::triggered, this, &MainWindow::loadEncryptedLibrary);
   // open compiled model action
   mpLoadCompiledModelAction = new QAction(Helper::loadCompiledModel, this);
   mpLoadCompiledModelAction->setStatusTip(tr("Loads the compiled model"));
-  connect(mpLoadCompiledModelAction, SIGNAL(triggered()), SLOT(loadCompiledModel()));
+  connect(mpLoadCompiledModelAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::loadCompiledModel));
   // open result file action
   mpOpenResultFileAction = new QAction(tr("Open Result File(s)"), this);
   mpOpenResultFileAction->setShortcut(QKeySequence("Ctrl+shift+o"));
   mpOpenResultFileAction->setStatusTip(tr("Opens the OpenModelica Result file"));
-  connect(mpOpenResultFileAction, SIGNAL(triggered()), SLOT(showOpenResultFileDialog()));
+  connect(mpOpenResultFileAction, &QAction::triggered, this, &MainWindow::showOpenResultFileDialog);
   // open transformations file action
   mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
-  connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
+  connect(mpOpenTransformationFileAction, &QAction::triggered, this, &MainWindow::showOpenTransformationFileDialog);
   // unload all action
   mpUnloadAllAction = new QAction(tr("Unload All"), this);
   mpUnloadAllAction->setStatusTip(tr("Unloads all loaded classes"));
-  connect(mpUnloadAllAction, SIGNAL(triggered()), SLOT(unloadAll()));
+  connect(mpUnloadAllAction, &QAction::triggered, this, [this]() { unloadAll(); });
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
-  connect(mpOpenDirectoryAction, SIGNAL(triggered()), SLOT(openDirectory()));
+  connect(mpOpenDirectoryAction, &QAction::triggered, this, &MainWindow::openDirectory);
   // open from cloud storage action
   mpOpenFromCloudAction = new QAction(tr("Open from Cloud Storage..."), this);
   mpOpenFromCloudAction->setStatusTip(tr("Opens a package stored in Google Drive or OneDrive"));
-  connect(mpOpenFromCloudAction, SIGNAL(triggered()), SLOT(openFromCloud()));
+  connect(mpOpenFromCloudAction, &QAction::triggered, this, &MainWindow::openFromCloud);
   // save to cloud storage action
   mpSaveToCloudAction = new QAction(tr("Save to Cloud Storage..."), this);
   mpSaveToCloudAction->setStatusTip(tr("Saves the active class to Google Drive or OneDrive"));
-  connect(mpSaveToCloudAction, SIGNAL(triggered()), SLOT(saveToCloud()));
+  connect(mpSaveToCloudAction, &QAction::triggered, this, &MainWindow::saveToCloud);
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -4708,32 +4708,32 @@ void MainWindow::createActions()
   // import FMU action
   mpImportFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::FMU, this);
   mpImportFMUAction->setStatusTip(Helper::importFMUTip);
-  connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
+  connect(mpImportFMUAction, &QAction::triggered, this, &MainWindow::importModelFMU);
   // import FMU model description action
   mpImportFMUModelDescriptionAction = new QAction(tr("FMU Model Description"), this);
   mpImportFMUModelDescriptionAction->setStatusTip(tr("Imports the model from the model description of a Functional Mock-up Unit (FMU)"));
-  connect(mpImportFMUModelDescriptionAction, SIGNAL(triggered()), SLOT(importFMUModelDescription()));
+  connect(mpImportFMUModelDescriptionAction, &QAction::triggered, this, &MainWindow::importFMUModelDescription);
   // import from OMNotebook action
   mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), tr("From OMNotebook"), this);
   mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
-  connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
+  connect(mpImportFromOMNotebookAction, &QAction::triggered, this, &MainWindow::importModelfromOMNotebook);
   // import ngspice netlist action
   mpImportNgspiceNetlistAction = new QAction(tr("Ngspice netlist"), this);
   mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
-  connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
+  connect(mpImportNgspiceNetlistAction, &QAction::triggered, this, &MainWindow::importNgspiceNetlist);
   // export to clipboard action
   mpExportToClipboardAction = new QAction(tr("To Clipboard"), this);
   mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
-  connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
+  connect(mpExportToClipboardAction, &QAction::triggered, this, &MainWindow::exportToClipboard);
   // export as image action
   mpExportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Image"), this);
   mpExportAsImageAction->setStatusTip(Helper::exportAsImageTip);
-  connect(mpExportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));
+  connect(mpExportAsImageAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::exportModelAsImage));
   // export FMU action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
   mpExportFMUAction->setEnabled(false);
-  connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
+  connect(mpExportFMUAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::exportModelFMU));
   // export FMU with setup action
   mpExportFMUWithSetupAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMUWithSetup, this);
   mpExportFMUWithSetupAction->setStatusTip(Helper::exportFMUWithSetupTip);
@@ -4742,51 +4742,51 @@ void MainWindow::createActions()
   // export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
   mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
-  connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
+  connect(mpExportReadonlyPackageAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::exportReadonlyPackage));
   // export encrypted package action
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
   mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
-  connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
+  connect(mpExportEncryptedPackageAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::exportEncryptedPackage));
   // export XML action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
   mpExportXMLAction->setEnabled(false);
-  connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
+  connect(mpExportXMLAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::exportModelXML));
   // export XML action
   mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("Figaro"), this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   mpExportFigaroAction->setEnabled(false);
-  connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
+  connect(mpExportFigaroAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::exportModelFigaro));
   // export to OMNotebook action
   mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.svg"), tr("To OMNotebook"), this);
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
   mpExportToOMNotebookAction->setEnabled(false);
-  connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
+  connect(mpExportToOMNotebookAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::exportModelToOMNotebook));
   // install library action
   mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
-  connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
+  connect(mpInstallLibraryAction, &QAction::triggered, this, &MainWindow::openInstallLibraryDialog);
   mpInstallLibraryFromFileAction = new QAction(tr("Install Library From File..."), this);
   mpInstallLibraryFromFileAction->setStatusTip(tr("Installs the libraries of a .mo or .zip file"));
-  connect(mpInstallLibraryFromFileAction, SIGNAL(triggered()), SLOT(installLibraryFromFile()));
+  connect(mpInstallLibraryFromFileAction, &QAction::triggered, this, &MainWindow::installLibraryFromFile);
   mpInstallLibraryFromDirectoryAction = new QAction(tr("Install Library From Directory..."), this);
   mpInstallLibraryFromDirectoryAction->setStatusTip(tr("Installs the libraries of a directory"));
-  connect(mpInstallLibraryFromDirectoryAction, SIGNAL(triggered()), SLOT(installLibraryFromDirectory()));
+  connect(mpInstallLibraryFromDirectoryAction, &QAction::triggered, this, &MainWindow::installLibraryFromDirectory);
   // upgrade installed libraries action
   mpUpgradeInstalledLibrariesAction = new QAction(Helper::upgradeInstalledLibraries, this);
   mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
-  connect(mpUpgradeInstalledLibrariesAction, SIGNAL(triggered()), SLOT(upgradeInstalledLibraries()));
+  connect(mpUpgradeInstalledLibrariesAction, &QAction::triggered, this, &MainWindow::upgradeInstalledLibraries);
   // update library index action
   mpUpdateLibraryIndexAction = new QAction(Helper::updateLibraryIndex, this);
   mpUpdateLibraryIndexAction->setStatusTip(tr("Updates the library index"));
-  connect(mpUpdateLibraryIndexAction, SIGNAL(triggered()), SLOT(updateLibraryIndex()));
+  connect(mpUpdateLibraryIndexAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::updateLibraryIndex));
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
-  connect(mpClearRecentFilesAction, SIGNAL(triggered()), SLOT(clearRecentFilesList()));
+  connect(mpClearRecentFilesAction, &QAction::triggered, this, &MainWindow::clearRecentFilesList);
   mpClearRecentModelsAction = new QAction(Helper::clearRecentModels, this);
   mpClearRecentModelsAction->setStatusTip(tr("Clears the recent models list"));
-  connect(mpClearRecentModelsAction, SIGNAL(triggered()), SLOT(clearRecentModelsList()));
+  connect(mpClearRecentModelsAction, &QAction::triggered, this, &MainWindow::clearRecentModelsList);
   // print  action
   mpPrintModelAction = new QAction(QIcon(":/Resources/icons/print.svg"), tr("Print..."), this);
   mpPrintModelAction->setShortcut(QKeySequence("Ctrl+p"));
@@ -4795,22 +4795,22 @@ void MainWindow::createActions()
   mpQuitAction->setStatusTip(tr("Quit the ").append(Helper::applicationIntroText));
   mpQuitAction->setShortcut(QKeySequence("Ctrl+q"));
   mpQuitAction->setMenuRole(QAction::QuitRole);
-  connect(mpQuitAction, SIGNAL(triggered()), SLOT(close()));
+  connect(mpQuitAction, &QAction::triggered, this, &MainWindow::close);
   // Edit Menu
   // undo action
   mpUndoAction = new QAction(QIcon(":/Resources/icons/undo.svg"), tr("Undo"), this);
   mpUndoAction->setShortcut(QKeySequence::Undo);
   mpUndoAction->setEnabled(false);
-  connect(mpUndoAction, SIGNAL(triggered()), SLOT(undo()));
+  connect(mpUndoAction, &QAction::triggered, this, &MainWindow::undo);
   // redo action
   mpRedoAction = new QAction(QIcon(":/Resources/icons/redo.svg"), tr("Redo"), this);
   mpRedoAction->setShortcut(QKeySequence::Redo);
   mpRedoAction->setEnabled(false);
-  connect(mpRedoAction, SIGNAL(triggered()), SLOT(redo()));
+  connect(mpRedoAction, &QAction::triggered, this, &MainWindow::redo);
   // filter classes action
   mpFilterClassesAction = new QAction(Helper::filterClasses, this);
   mpFilterClassesAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
-  connect(mpFilterClassesAction, SIGNAL(triggered()), SLOT(focusFilterClasses()));
+  connect(mpFilterClassesAction, &QAction::triggered, this, &MainWindow::focusFilterClasses);
   // View Menu
   // show/hide gridlines action
   mpShowGridLinesAction = new QAction(QIcon(":/Resources/icons/grid.svg"), tr("Grid Lines"), this);
@@ -4818,25 +4818,25 @@ void MainWindow::createActions()
   mpShowGridLinesAction->setCheckable(true);
   mpShowGridLinesAction->setChecked(true);
   mpShowGridLinesAction->setEnabled(false);
-  connect(mpShowGridLinesAction, SIGNAL(toggled(bool)), SLOT(setShowGridLines(bool)));
+  connect(mpShowGridLinesAction, &QAction::toggled, this, &MainWindow::setShowGridLines);
   // reset zoom action
   mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoomReset.svg"), Helper::resetZoom, this);
   mpResetZoomAction->setStatusTip(Helper::resetZoom);
   mpResetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
   mpResetZoomAction->setEnabled(false);
-  connect(mpResetZoomAction, SIGNAL(triggered()), SLOT(resetZoom()));
+  connect(mpResetZoomAction, &QAction::triggered, this, &MainWindow::resetZoom);
   // zoom in action
   mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.svg"), Helper::zoomIn, this);
   mpZoomInAction->setStatusTip(Helper::zoomIn);
   mpZoomInAction->setShortcut(QKeySequence("Ctrl++"));
   mpZoomInAction->setEnabled(false);
-  connect(mpZoomInAction, SIGNAL(triggered()), SLOT(zoomIn()));
+  connect(mpZoomInAction, &QAction::triggered, this, &MainWindow::zoomIn);
   // zoom out action
   mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.svg"), Helper::zoomOut, this);
   mpZoomOutAction->setStatusTip(Helper::zoomOut);
   mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
   mpZoomOutAction->setEnabled(false);
-  connect(mpZoomOutAction, SIGNAL(triggered()), SLOT(zoomOut()));
+  connect(mpZoomOutAction, &QAction::triggered, this, &MainWindow::zoomOut);
   // fit to diagram
   mpFitToDiagramAction = new QAction(QIcon(":/Resources/icons/fit-to-diagram.svg"), Helper::fitToDiagram, this);
   mpFitToDiagramAction->setStatusTip(Helper::fitToDiagram);
@@ -4844,179 +4844,179 @@ void MainWindow::createActions()
   // close window action
   mpCloseWindowAction = new QAction(tr("Close Window"), this);
   mpCloseWindowAction->setStatusTip(tr("Closes the active window"));
-  connect(mpCloseWindowAction, SIGNAL(triggered()), SLOT(closeWindow()));
+  connect(mpCloseWindowAction, &QAction::triggered, this, &MainWindow::closeWindow);
   // close all windows action
   mpCloseAllWindowsAction = new QAction(tr("Close All Windows"), this);
   mpCloseAllWindowsAction->setStatusTip(tr("Closes all windows"));
-  connect(mpCloseAllWindowsAction, SIGNAL(triggered()), SLOT(closeAllWindows()));
+  connect(mpCloseAllWindowsAction, &QAction::triggered, this, &MainWindow::closeAllWindows);
   // close all windows but this action
   mpCloseAllWindowsButThisAction = new QAction(tr("Close All Windows But This"), this);
   mpCloseAllWindowsButThisAction->setStatusTip(tr("Closes all windows except active window"));
-  connect(mpCloseAllWindowsButThisAction, SIGNAL(triggered()), SLOT(closeAllWindowsButThis()));
+  connect(mpCloseAllWindowsButThisAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::closeAllWindowsButThis));
   // Cascade windows action
   mpCascadeWindowsAction = new QAction(tr("Cascade Windows"), this);
   mpCascadeWindowsAction->setStatusTip(tr("Arranges all the child windows in a cascade pattern"));
-  connect(mpCascadeWindowsAction, SIGNAL(triggered()), SLOT(cascadeSubWindows()));
+  connect(mpCascadeWindowsAction, &QAction::triggered, this, &MainWindow::cascadeSubWindows);
   // Tile windows Horizontally action
   mpTileWindowsHorizontallyAction = new QAction(tr("Tile Windows Horizontally"), this);
   mpTileWindowsHorizontallyAction->setStatusTip(tr("Arranges all child windows in a horizontally tiled pattern"));
-  connect(mpTileWindowsHorizontallyAction, SIGNAL(triggered()), SLOT(tileSubWindowsHorizontally()));
+  connect(mpTileWindowsHorizontallyAction, &QAction::triggered, this, &MainWindow::tileSubWindowsHorizontally);
   // Tile windows Vertically action
   mpTileWindowsVerticallyAction = new QAction(tr("Tile Windows Vertically"), this);
   mpTileWindowsVerticallyAction->setStatusTip(tr("Arranges all child windows in a vertically tiled pattern"));
-  connect(mpTileWindowsVerticallyAction, SIGNAL(triggered()), SLOT(tileSubWindowsVertically()));
+  connect(mpTileWindowsVerticallyAction, &QAction::triggered, this, &MainWindow::tileSubWindowsVertically);
   // Tile windows Matrix action
   mpTileWindowsMatrixAction = new QAction(tr("Tile Windows Matrix"), this);
   mpTileWindowsMatrixAction->setStatusTip(tr("Arranges all child windows in a matrix pattern"));
   mpTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Shift+M"));
-  connect(mpTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(tileSubWindowsMatrix()));
+  connect(mpTileWindowsMatrixAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::tileSubWindowsMatrix));
   // Equate windows and tile them in a matrix action
   mpEquateAndTileWindowsMatrixAction = new QAction(tr("Equate && Tile Windows Matrix"), this);
   mpEquateAndTileWindowsMatrixAction->setStatusTip(tr("Equates the size of all child windows to the size of active window and arranges them in a matrix pattern"));
   mpEquateAndTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Shift+E"));
-  connect(mpEquateAndTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(equateAndTileSubWindowsMatrix()));
+  connect(mpEquateAndTileWindowsMatrixAction, &QAction::triggered, this, &MainWindow::equateAndTileSubWindowsMatrix);
   // Toggle between tab or sub-window view
   mpToggleTabOrSubWindowView = new QAction(tr("Toggle Tab/Sub-window View"), this);
   mpToggleTabOrSubWindowView->setStatusTip(tr("Toggle between tab or sub-window view mode"));
-  connect(mpToggleTabOrSubWindowView, SIGNAL(triggered()), SLOT(toggleTabOrSubWindowView()));
+  connect(mpToggleTabOrSubWindowView, &QAction::triggered, this, &MainWindow::toggleTabOrSubWindowView);
   // Simulation Menu
   // check model action
   mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.svg"), Helper::checkModel, this);
   mpCheckModelAction->setStatusTip(Helper::checkModelTip);
   mpCheckModelAction->setEnabled(false);
-  connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+  connect(mpCheckModelAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::checkModel));
   // check all models action
   mpCheckAllModelsAction = new QAction(QIcon(":/Resources/icons/check-all.svg"), Helper::checkAllModels, this);
   mpCheckAllModelsAction->setStatusTip(Helper::checkAllModelsTip);
   mpCheckAllModelsAction->setEnabled(false);
-  connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
+  connect(mpCheckAllModelsAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::checkAllModels));
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
   mpInstantiateModelAction->setStatusTip(tr("Instantiates the Modelica model"));
   mpInstantiateModelAction->setEnabled(false);
-  connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
+  connect(mpInstantiateModelAction, &QAction::triggered, this, QOverload<>::of(&MainWindow::instantiateModel));
   // simulation setup action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   mpSimulationSetupAction->setEnabled(false);
-  connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
+  connect(mpSimulationSetupAction, &QAction::triggered, this, &MainWindow::openSimulationDialog);
   // simulate action
   mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateModelAction->setStatusTip(Helper::simulateTip);
   mpSimulateModelAction->setEnabled(false);
-  connect(mpSimulateModelAction, SIGNAL(triggered()), SLOT(simulateModel()));
+  connect(mpSimulateModelAction, &QAction::triggered, this, &MainWindow::simulateModel);
   // simulate with transformational debugger action
   mpSimulateWithTransformationalDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-equation.svg"), Helper::simulateWithTransformationalDebugger, this);
   mpSimulateWithTransformationalDebuggerAction->setStatusTip(Helper::simulateWithTransformationalDebuggerTip);
   mpSimulateWithTransformationalDebuggerAction->setEnabled(false);
-  connect(mpSimulateWithTransformationalDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithTransformationalDebugger()));
+  connect(mpSimulateWithTransformationalDebuggerAction, &QAction::triggered, this, &MainWindow::simulateModelWithTransformationalDebugger);
   // simulate with algorithmic debugger action
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
-  connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
+  connect(mpSimulateWithAlgorithmicDebuggerAction, &QAction::triggered, this, &MainWindow::simulateModelWithAlgorithmicDebugger);
 #if !defined(WITHOUT_ANIMATION)
   // simulate with animation action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
   mpSimulateWithAnimationAction->setEnabled(false);
-  connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
+  connect(mpSimulateWithAnimationAction, &QAction::triggered, this, &MainWindow::simulateModelWithAnimation);
 #endif
   // simulate interactive action
   mpSimulateModelInteractiveAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateModelInteractiveAction->setStatusTip(Helper::simulateTip);
   mpSimulateModelInteractiveAction->setEnabled(false);
-  connect(mpSimulateModelInteractiveAction, SIGNAL(triggered()), SLOT(simulateModelInteractive()));
+  connect(mpSimulateModelInteractiveAction, &QAction::triggered, this, &MainWindow::simulateModelInteractive);
   // archived simulations action
   mpArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
   mpArchivedSimulationsAction->setStatusTip(tr("Shows the list of archived simulations"));
-  connect(mpArchivedSimulationsAction, SIGNAL(triggered()), SLOT(showArchivedSimulations()));
+  connect(mpArchivedSimulationsAction, &QAction::triggered, this, &MainWindow::showArchivedSimulations);
   // Data reconciliation menu
   // calculate data reconciliation
   mpCalculateDataReconciliationAction = new QAction(tr("Calculate Data Reconciliation"), this);
   mpCalculateDataReconciliationAction->setStatusTip(tr("Calculates the data reconciliation"));
-  connect(mpCalculateDataReconciliationAction, SIGNAL(triggered()), SLOT(showDataReconciliationDialog()));
+  connect(mpCalculateDataReconciliationAction, &QAction::triggered, this, &MainWindow::showDataReconciliationDialog);
   // CRML menu
   if (isCRMLEnabled()) {
     // run testsuite
     mpRunCRMLTestsuiteAction = new QAction(tr("Run CRML Testsuite"), this);
     mpRunCRMLTestsuiteAction->setStatusTip(tr("Runs the CRML Testsuite and display report"));
-    connect(mpRunCRMLTestsuiteAction, SIGNAL(triggered()), SLOT(runCRMLTestsuite()));
+    connect(mpRunCRMLTestsuiteAction, &QAction::triggered, this, &MainWindow::runCRMLTestsuite);
   }
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
   mpDebugConfigurationsAction->setStatusTip(Helper::debugConfigurationsTip);
-  connect(mpDebugConfigurationsAction, SIGNAL(triggered()), SLOT(showDebugConfigurationsDialog()));
+  connect(mpDebugConfigurationsAction, &QAction::triggered, this, &MainWindow::showDebugConfigurationsDialog);
   // attach debugger to process
   mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
   mpAttachDebuggerToRunningProcessAction->setStatusTip(Helper::attachToRunningProcessTip);
-  connect(mpAttachDebuggerToRunningProcessAction, SIGNAL(triggered()), SLOT(showAttachToProcessDialog()));
+  connect(mpAttachDebuggerToRunningProcessAction, &QAction::triggered, this, &MainWindow::showAttachToProcessDialog);
   // Tools Menu
   // show OMC Logger widget action
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
   mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
-  connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
+  connect(mpShowOMCLoggerWidgetAction, &QAction::triggered, mpOMCProxy, &OMCProxy::openOMCLoggerWidget);
 #ifdef Q_OS_WIN
   // show OpenModelica command prompt action
   mpShowOpenModelicaCommandPromptAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Command Prompt"), this);
   mpShowOpenModelicaCommandPromptAction->setStatusTip(tr("Open OpenModelica command prompt"));
-  connect(mpShowOpenModelicaCommandPromptAction, SIGNAL(triggered()), SLOT(showOpenModelicaCommandPrompt()));
+  connect(mpShowOpenModelicaCommandPromptAction, &QAction::triggered, this, &MainWindow::showOpenModelicaCommandPrompt);
 #endif
   // show OMC Diff widget action
   if (isDebug()) {
     mpShowOMCDiffWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Compiler Diff"), this);
     mpShowOMCDiffWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler Diff"));
-    connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
+    connect(mpShowOMCDiffWidgetAction, &QAction::triggered, mpOMCProxy, &OMCProxy::openOMCDiffWidget);
   }
   // open temporary directory action
   mpOpenTemporaryDirectoryAction = new QAction(tr("Open Temporary Directory"), this);
   mpOpenTemporaryDirectoryAction->setStatusTip(tr("Opens the temporary directory"));
-  connect(mpOpenTemporaryDirectoryAction, SIGNAL(triggered()), SLOT(openTemporaryDirectory()));
+  connect(mpOpenTemporaryDirectoryAction, &QAction::triggered, this, &MainWindow::openTemporaryDirectory);
   // open working directory action
   mpOpenWorkingDirectoryAction = new QAction(tr("Open Working Directory"), this);
   mpOpenWorkingDirectoryAction->setStatusTip(tr("Opens the current working directory"));
-  connect(mpOpenWorkingDirectoryAction, SIGNAL(triggered()), SLOT(openWorkingDirectory()));
+  connect(mpOpenWorkingDirectoryAction, &QAction::triggered, this, &MainWindow::openWorkingDirectory);
   // open terminal action
   mpOpenTerminalAction = new QAction(tr("Open Terminal"), this);
   mpOpenTerminalAction->setStatusTip(tr("Opens the terminal"));
-  connect(mpOpenTerminalAction, SIGNAL(triggered()), SLOT(openTerminal()));
+  connect(mpOpenTerminalAction, &QAction::triggered, this, &MainWindow::openTerminal);
   // open options action
   mpOptionsAction = new QAction(QIcon(":/Resources/icons/options.svg"), tr("Options"), this);
   mpOptionsAction->setStatusTip(tr("Shows the options window"));
   mpOptionsAction->setMenuRole(QAction::PreferencesRole);
-  connect(mpOptionsAction, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
+  connect(mpOptionsAction, &QAction::triggered, this, &MainWindow::openConfigurationOptions);
   // Run Sensitivity Analysis and Optimization action
   mpRunOMSensAction = new QAction(tr("Run Sensitivity Analysis and Optimization"), this);
   mpRunOMSensAction->setStatusTip(tr("Runs the sensitivity analysis and optimization"));
-  connect(mpRunOMSensAction, SIGNAL(triggered()), SLOT(runOMSensPlugin()));
+  connect(mpRunOMSensAction, &QAction::triggered, this, &MainWindow::runOMSensPlugin);
   // Help Menu
   // users guide action
   mpUsersGuideAction = new QAction(tr("OpenModelica User's Guide"), this);
   mpUsersGuideAction->setStatusTip(tr("Opens the OpenModelica User's Guide"));
   mpUsersGuideAction->setShortcut(QKeySequence(Qt::Key_F1));
-  connect(mpUsersGuideAction, SIGNAL(triggered()), SLOT(openUsersGuide()));
+  connect(mpUsersGuideAction, &QAction::triggered, this, &MainWindow::openUsersGuide);
   // users guide new pdf action
   mpUsersGuidePdfAction = new QAction(tr("OpenModelica User's Guide (PDF)"), this);
   mpUsersGuidePdfAction->setStatusTip(tr("Opens the OpenModelica User's Guide (PDF)"));
-  connect(mpUsersGuidePdfAction, SIGNAL(triggered()), SLOT(openUsersGuidePdf()));
+  connect(mpUsersGuidePdfAction, &QAction::triggered, this, &MainWindow::openUsersGuidePdf);
   // OpenModelica Scripting documentation action
   mpOpenModelicaScriptingAction = new QAction(tr("OpenModelica Scripting Documentation"), this);
   mpOpenModelicaScriptingAction->setStatusTip(tr("Opens the OpenModelica Scripting Documentation"));
-  connect(mpOpenModelicaScriptingAction, SIGNAL(triggered()), SLOT(openOpenModelicaScriptingDocumentation()));
+  connect(mpOpenModelicaScriptingAction, &QAction::triggered, this, &MainWindow::openOpenModelicaScriptingDocumentation);
   // Modelica documentation action
   mpModelicaDocumentationAction = new QAction(tr("Modelica Documentation"), this);
   mpModelicaDocumentationAction->setStatusTip(tr("Opens the Modelica Documentation"));
-  connect(mpModelicaDocumentationAction, SIGNAL(triggered()), SLOT(openModelicaDocumentation()));
+  connect(mpModelicaDocumentationAction, &QAction::triggered, this, &MainWindow::openModelicaDocumentation);
   // OMSimulator users guide action
   mpOMSimulatorUsersGuideAction = new QAction(tr("OMSimulator User's Guide"), this);
   mpOMSimulatorUsersGuideAction->setStatusTip(tr("Opens the OMSimulator User's Guide"));
-  connect(mpOMSimulatorUsersGuideAction, SIGNAL(triggered()), SLOT(openOMSimulatorUsersGuide()));
+  connect(mpOMSimulatorUsersGuideAction, &QAction::triggered, this, &MainWindow::openOMSimulatorUsersGuide);
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
   mpAboutOMEditAction->setMenuRole(QAction::AboutRole);
-  connect(mpAboutOMEditAction, SIGNAL(triggered()), SLOT(openAboutOMEdit()));
+  connect(mpAboutOMEditAction, &QAction::triggered, this, &MainWindow::openAboutOMEdit);
   /* Toolbar Actions */
   // custom shapes group
   mpShapesActionGroup = new QActionGroup(this);
@@ -5025,38 +5025,38 @@ void MainWindow::createActions()
   mpLineShapeAction = new QAction(QIcon(":/Resources/icons/line-shape.svg"), Helper::line, mpShapesActionGroup);
   mpLineShapeAction->setStatusTip(tr("Draws a line shape"));
   mpLineShapeAction->setCheckable(true);
-  connect(mpLineShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  connect(mpLineShapeAction, &QAction::triggered, this, &MainWindow::toggleShapesButton);
   // polygon creation action
   mpPolygonShapeAction = new QAction(QIcon(":/Resources/icons/polygon-shape.svg"), tr("Polygon"), mpShapesActionGroup);
   mpPolygonShapeAction->setStatusTip(tr("Draws a polygon shape"));
   mpPolygonShapeAction->setCheckable(true);
-  connect(mpPolygonShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  connect(mpPolygonShapeAction, &QAction::triggered, this, &MainWindow::toggleShapesButton);
   // rectangle creation action
   mpRectangleShapeAction = new QAction(QIcon(":/Resources/icons/rectangle-shape.svg"), tr("Rectangle"), mpShapesActionGroup);
   mpRectangleShapeAction->setStatusTip(tr("Draws a rectangle shape"));
   mpRectangleShapeAction->setCheckable(true);
-  connect(mpRectangleShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  connect(mpRectangleShapeAction, &QAction::triggered, this, &MainWindow::toggleShapesButton);
   // ellipse creation action
   mpEllipseShapeAction = new QAction(QIcon(":/Resources/icons/ellipse-shape.svg"), tr("Ellipse"), mpShapesActionGroup);
   mpEllipseShapeAction->setStatusTip(tr("Draws an ellipse shape"));
   mpEllipseShapeAction->setCheckable(true);
-  connect(mpEllipseShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  connect(mpEllipseShapeAction, &QAction::triggered, this, &MainWindow::toggleShapesButton);
   // text creation action
   mpTextShapeAction = new QAction(QIcon(":/Resources/icons/text-shape.svg"), tr("Text"), mpShapesActionGroup);
   mpTextShapeAction->setStatusTip(tr("Draws a text shape"));
   mpTextShapeAction->setCheckable(true);
-  connect(mpTextShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  connect(mpTextShapeAction, &QAction::triggered, this, &MainWindow::toggleShapesButton);
   // bitmap creation action
   mpBitmapShapeAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Bitmap"), mpShapesActionGroup);
   mpBitmapShapeAction->setStatusTip(tr("Inserts a bitmap"));
   mpBitmapShapeAction->setCheckable(true);
-  connect(mpBitmapShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  connect(mpBitmapShapeAction, &QAction::triggered, this, &MainWindow::toggleShapesButton);
   // connect/unconnect action
   mpConnectModeAction = new QAction(QIcon(":/Resources/icons/connect-mode.svg"), tr("Connect/Unconnect Mode"), mpShapesActionGroup);
   mpConnectModeAction->setStatusTip(tr("Changes to/from connect mode"));
   mpConnectModeAction->setCheckable(true);
   mpConnectModeAction->setChecked(true);
-  connect(mpConnectModeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  connect(mpConnectModeAction, &QAction::triggered, this, &MainWindow::toggleShapesButton);
   // transition mode action
   mpTransitionModeAction = new QAction(QIcon(":/Resources/icons/transition-mode.svg"), tr("Transition Mode"), this);
   mpTransitionModeAction->setStatusTip(tr("Changes to/from transition mode"));
@@ -5066,54 +5066,54 @@ void MainWindow::createActions()
   for (int i = 0; i < MaxRecentModels; ++i) {
     mpModelSwitcherActions[i] = new QAction(this);
     mpModelSwitcherActions[i]->setVisible(false);
-    connect(mpModelSwitcherActions[i], SIGNAL(triggered()), this, SLOT(openRecentModelWidget()));
+    connect(mpModelSwitcherActions[i], &QAction::triggered, this, &MainWindow::openRecentModelWidget);
   }
   // resimulate action
   mpReSimulateModelAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
   mpReSimulateModelAction->setStatusTip(Helper::reSimulateTip);
-  connect(mpReSimulateModelAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
+  connect(mpReSimulateModelAction, &QAction::triggered, this, &MainWindow::directReSimulate);
   // resimulate setup action
   mpReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
   mpReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
-  connect(mpReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
+  connect(mpReSimulateSetupAction, &QAction::triggered, this, &MainWindow::showReSimulateSetup);
   // new plot window action
   mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plot-window.svg"), tr("New Plot Window"), this);
   mpNewPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
-  connect(mpNewPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addPlotWindow()));
+  connect(mpNewPlotWindowAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::addPlotWindow);
   // new parametric plot action
   mpNewParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Parametric Plot Window"), this);
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
-  connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
+  connect(mpNewParametricPlotWindowAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::addParametricPlotWindow);
   // new array plot window action
   mpNewArrayPlotWindowAction = new QAction(QIcon(":/Resources/icons/array-plot-window.svg"), tr("New Array Plot Window"), this);
   mpNewArrayPlotWindowAction->setStatusTip(tr("Inserts new array plot window"));
-  connect(mpNewArrayPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addArrayPlotWindow()));
+  connect(mpNewArrayPlotWindowAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::addArrayPlotWindow);
   // new array parametric plot window action
   mpNewArrayParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/array-parametric-plot-window.svg"), tr("New Array Parametric Plot Window"), this);
   mpNewArrayParametricPlotWindowAction->setStatusTip(tr("Inserts new array parametric plot window"));
-  connect(mpNewArrayParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addArrayParametricPlotWindow()));
+  connect(mpNewArrayParametricPlotWindowAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::addArrayParametricPlotWindow);
 #if !defined(WITHOUT_ANIMATION)
   // new mpAnimationWindowAction plot action
   mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
   mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
-  connect(mpNewAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
+  connect(mpNewAnimationWindowAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::addAnimationWindow);
 #endif
   // Diagram window action
   mpDiagramWindowAction = new QAction(QIcon(":/Resources/icons/modeling.png"), tr("Diagram Window"), this);
   mpDiagramWindowAction->setStatusTip(tr("Inserts a diagram window"));
-  connect(mpDiagramWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addDiagramWindow()));
+  connect(mpDiagramWindowAction, &QAction::triggered, mpPlotWindowContainer, [this]() { mpPlotWindowContainer->addDiagramWindow(); });
   // export variables action
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
-  connect(mpExportVariablesAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(exportVariables()));
+  connect(mpExportVariablesAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::exportVariables);
   // save plot figures in their respective model annotations
   mpSaveFigureInModelAction = new QAction(QIcon(":/Resources/icons/save-figure-in-model.svg"), tr("Save Figure in Model"), this);
   mpSaveFigureInModelAction->setStatusTip(tr("Saves the current plot as a figure in the model annotation"));
-  connect(mpSaveFigureInModelAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(saveFigureInModel()));
+  connect(mpSaveFigureInModelAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::saveFigureInModel);
   // clear plot window action
   mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
-  connect(mpClearPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(clearPlotWindow()));
+  connect(mpClearPlotWindowAction, &QAction::triggered, mpPlotWindowContainer, &PlotWindowContainer::clearPlotWindow);
   // Add System Action
   mpAddSystemAction = new QAction(QIcon(":/Resources/icons/add-system.svg"), Helper::addSystem, this);
   mpAddSystemAction->setStatusTip(Helper::addSystemTip);
@@ -5765,7 +5765,7 @@ void MainWindow::createToolbars()
   // add actions to edit toolbar
   mpEditToolBar->addAction(mpUndoAction);
   mpEditToolBar->addAction(mpRedoAction);
-  connect(mpEditToolBar, SIGNAL(visibilityChanged(bool)), SLOT(editToolBarVisibilityChanged(bool)));
+  connect(mpEditToolBar, &QToolBar::visibilityChanged, this, &MainWindow::editToolBarVisibilityChanged);
   // View Toolbar
   mpViewToolBar = addToolBar(tr("View Toolbar"));
   mpViewToolBar->setObjectName("View Toolbar");
@@ -5778,7 +5778,7 @@ void MainWindow::createToolbars()
   mpViewToolBar->addAction(mpZoomOutAction);
   mpViewToolBar->addSeparator();
   mpViewToolBar->addAction(mpFitToDiagramAction);
-  connect(mpViewToolBar, SIGNAL(visibilityChanged(bool)), SLOT(viewToolBarVisibilityChanged(bool)));
+  connect(mpViewToolBar, &QToolBar::visibilityChanged, this, &MainWindow::viewToolBarVisibilityChanged);
   // Shapes Toolbar
   mpShapesToolBar = addToolBar(tr("Shapes Toolbar"));
   mpShapesToolBar->setObjectName("Shapes Toolbar");
@@ -5794,7 +5794,7 @@ void MainWindow::createToolbars()
   mpShapesToolBar->addAction(mpConnectModeAction);
   mpShapesToolBar->addSeparator();
   mpShapesToolBar->addAction(mpTransitionModeAction);
-  connect(mpShapesToolBar, SIGNAL(visibilityChanged(bool)), SLOT(shapesToolBarVisibilityChanged(bool)));
+  connect(mpShapesToolBar, &QToolBar::visibilityChanged, this, &MainWindow::shapesToolBarVisibilityChanged);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");
@@ -5811,9 +5811,9 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolButton->setMenu(mpModelSwitcherMenu);
   mpModelSwitcherToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.svg"));
-  connect(mpModelSwitcherToolButton, SIGNAL(clicked()), this, SLOT(openRecentModelWidget()));
+  connect(mpModelSwitcherToolButton, &QToolButton::clicked, this, &MainWindow::openRecentModelWidget);
   mpModelSwitcherToolBar->addWidget(mpModelSwitcherToolButton);
-  connect(mpModelSwitcherToolBar, SIGNAL(visibilityChanged(bool)), SLOT(modelSwitcherToolBarVisibilityChanged(bool)));
+  connect(mpModelSwitcherToolBar, &QToolBar::visibilityChanged, this, &MainWindow::modelSwitcherToolBarVisibilityChanged);
   // Check Toolbar
   mpCheckToolBar = addToolBar(tr("Check Toolbar"));
   mpCheckToolBar->setObjectName("Check Toolbar");
@@ -5822,7 +5822,7 @@ void MainWindow::createToolbars()
   mpCheckToolBar->addAction(mpCheckModelAction);
   mpCheckToolBar->addAction(mpCheckAllModelsAction);
   mpCheckToolBar->addAction(mpInstantiateModelAction);
-  connect(mpCheckToolBar, SIGNAL(visibilityChanged(bool)), SLOT(checkToolBarVisibilityChanged(bool)));
+  connect(mpCheckToolBar, &QToolBar::visibilityChanged, this, &MainWindow::checkToolBarVisibilityChanged);
   // Simulation Toolbar
   mpSimulationToolBar = addToolBar(tr("Simulation Toolbar"));
   mpSimulationToolBar->setObjectName("Simulation Toolbar");
@@ -5836,7 +5836,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
 //  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
-  connect(mpSimulationToolBar, SIGNAL(visibilityChanged(bool)), SLOT(simulationToolBarVisibilityChanged(bool)));
+  connect(mpSimulationToolBar, &QToolBar::visibilityChanged, this, &MainWindow::simulationToolBarVisibilityChanged);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
@@ -5844,7 +5844,7 @@ void MainWindow::createToolbars()
   // add actions to Re-simulation Toolbar
   mpReSimulationToolBar->addAction(mpReSimulateModelAction);
   mpReSimulationToolBar->addAction(mpReSimulateSetupAction);
-  connect(mpReSimulationToolBar, SIGNAL(visibilityChanged(bool)), SLOT(reSimulationToolBarVisibilityChanged(bool)));
+  connect(mpReSimulationToolBar, &QToolBar::visibilityChanged, this, &MainWindow::reSimulationToolBarVisibilityChanged);
   // Plot Toolbar
   mpPlotToolBar = addToolBar(tr("Plot Toolbar"));
   mpPlotToolBar->setObjectName("Plot Toolbar");
@@ -5864,12 +5864,12 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpSaveFigureInModelAction);
-  connect(mpPlotToolBar, SIGNAL(visibilityChanged(bool)), SLOT(plotToolBarVisibilityChanged(bool)));
+  connect(mpPlotToolBar, &QToolBar::visibilityChanged, this, &MainWindow::plotToolBarVisibilityChanged);
   // Debugger Toolbar
   mpDebuggerToolBar = addToolBar(tr("Debugger Toolbar"));
   mpDebuggerToolBar->setObjectName("Debugger Toolbar");
   mpDebuggerToolBar->setAllowedAreas(Qt::TopToolBarArea);
-  connect(mpDebuggerToolBar, SIGNAL(visibilityChanged(bool)), SLOT(debuggerToolBarVisibilityChanged(bool)));
+  connect(mpDebuggerToolBar, &QToolBar::visibilityChanged, this, &MainWindow::debuggerToolBarVisibilityChanged);
   // Debug Configuration Menu
   mpDebugConfigurationMenu = new QMenu;
   updateDebuggerToolBarMenu();
@@ -5879,7 +5879,7 @@ void MainWindow::createToolbars()
   mpDebugConfigurationToolButton->setMenu(mpDebugConfigurationMenu);
   mpDebugConfigurationToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpDebugConfigurationToolButton->setIcon(QIcon(":/Resources/icons/debugger.svg"));
-  connect(mpDebugConfigurationToolButton, SIGNAL(clicked()), SLOT(runDebugConfiguration()));
+  connect(mpDebugConfigurationToolButton, &QToolButton::clicked, this, &MainWindow::runDebugConfiguration);
   mpDebuggerToolBar->addWidget(mpDebugConfigurationToolButton);
   // SSP Toolbar
   mpOMSimulatorToolbar = addToolBar(tr("SSP Toolbar"));
@@ -5894,7 +5894,7 @@ void MainWindow::createToolbars()
   mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
-  connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));
+  connect(mpOMSimulatorToolbar, &QToolBar::visibilityChanged, this, &MainWindow::OMSimulatorToolBarVisibilityChanged);
 }
 
 /*!
@@ -5961,8 +5961,8 @@ MessageTab *MainWindow::createMessageTab(const QString &name, bool fixedTab)
   int index = mpMessagesTabWidget->addTab(pMessageTab, name);
   pMessageTab->setIndex(index);
   mpMessagesTabWidget->setCurrentIndex(index);
-  connect(pMessageTab, SIGNAL(clicked(int)), mpMessagesTabWidget, SIGNAL(tabBarClicked(int)));
-  connect(this, SIGNAL(resetMessagesTabWidgetNames()), pMessageTab, SLOT(resetTabText()));
+  connect(pMessageTab, &MessageTab::clicked, mpMessagesTabWidget, &QTabWidget::tabBarClicked);
+  connect(this, &MainWindow::resetMessagesTabWidgetNames, pMessageTab, &MessageTab::resetTabText);
   return pMessageTab;
 }
 
@@ -6081,7 +6081,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
 
 #if !defined(__EMSCRIPTEN__)
   NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
-  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(readOMContributors(QNetworkReply*)));
+  connect(pNetworkAccessManager, &QNetworkAccessManager::finished, this, &AboutOMEditDialog::readOMContributors);
   pNetworkAccessManager->get(QNetworkRequest(QUrl("https://api.github.com/repos/OpenModelica/OpenModelica/contributors")));
 #endif
 
@@ -6099,15 +6099,15 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   QPushButton *pCrashTestButton = new QPushButton(Helper::crashTest);
   pCrashTestButton->setAutoDefault(false);
   pCrashTestButton->setToolTip("Tests if the crash report functionality works properly");
-  connect(pCrashTestButton, SIGNAL(clicked()), SLOT(crashTest()));
+  connect(pCrashTestButton, &QPushButton::clicked, this, &AboutOMEditDialog::crashTest);
   // report button
   QPushButton *pReportButton = new QPushButton(Helper::reportIssue);
   pReportButton->setAutoDefault(false);
-  connect(pReportButton, SIGNAL(clicked()), SLOT(showReportIssue()));
+  connect(pReportButton, &QPushButton::clicked, this, &AboutOMEditDialog::showReportIssue);
   // close button
   QPushButton *pCloseButton = new QPushButton(Helper::close);
   pCloseButton->setAutoDefault(true);
-  connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(pCloseButton, &QPushButton::clicked, this, &AboutOMEditDialog::reject);
   // create buttons box
   QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
   pButtonBox->addButton(pCrashTestButton, QDialogButtonBox::ActionRole);

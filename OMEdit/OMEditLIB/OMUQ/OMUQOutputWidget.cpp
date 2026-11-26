@@ -96,7 +96,7 @@ OMUQOutputWidget::OMUQOutputWidget(const OMUQRunOptions &options, QWidget *pPare
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setEnabled(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancel()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &OMUQOutputWidget::cancel);
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   mpProgressBar->setRange(0, 1000);
@@ -135,11 +135,11 @@ void OMUQOutputWidget::start()
 #if QT_CONFIG(process)
   mpProcess = new QProcess(this);
   mpProcess->setWorkingDirectory(QFileInfo(mOptions.mPackage).absolutePath());
-  connect(mpProcess, SIGNAL(started()), SLOT(processStarted()));
-  connect(mpProcess, SIGNAL(readyReadStandardOutput()), SLOT(readStandardOutput()));
-  connect(mpProcess, SIGNAL(readyReadStandardError()), SLOT(readStandardError()));
-  connect(mpProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(processError(QProcess::ProcessError)));
-  connect(mpProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(processFinished(int,QProcess::ExitStatus)));
+  connect(mpProcess, &QProcess::started, this, &OMUQOutputWidget::processStarted);
+  connect(mpProcess, &QProcess::readyReadStandardOutput, this, &OMUQOutputWidget::readStandardOutput);
+  connect(mpProcess, &QProcess::readyReadStandardError, this, &OMUQOutputWidget::readStandardError);
+  connect(mpProcess, &QProcess::errorOccurred, this, &OMUQOutputWidget::processError);
+  connect(mpProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &OMUQOutputWidget::processFinished);
   QStringList args = {"-m", "omuq", "run", mOptions.mPackage, "--json",
                       "--study", QString::number(mOptions.mStudy),
                       "--activity", QString::number(mOptions.mActivity),

@@ -89,37 +89,37 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpPreviousAction = new QAction(QIcon(":/Resources/icons/previous.svg"), tr("Previous (backspace)"), this);
   mpPreviousAction->setStatusTip(tr("Moves to previous documentation"));
   mpPreviousAction->setDisabled(true);
-  connect(mpPreviousAction, SIGNAL(triggered()), SLOT(previousDocumentation()));
+  connect(mpPreviousAction, &QAction::triggered, this, &DocumentationWidget::previousDocumentation);
   // create the next action
   mpNextAction = new QAction(QIcon(":/Resources/icons/next.svg"), tr("Next (shift+backspace)"), this);
   mpNextAction->setStatusTip(tr("Moves to next documentation"));
   mpNextAction->setDisabled(true);
-  connect(mpNextAction, SIGNAL(triggered()), SLOT(nextDocumentation()));
+  connect(mpNextAction, &QAction::triggered, this, &DocumentationWidget::nextDocumentation);
   // create the edit info action
   mpEditInfoAction = new QAction(QIcon(":/Resources/icons/edit-info.svg"), tr("Edit Info Documentation"), this);
   mpEditInfoAction->setStatusTip(tr("Starts editing info documentation"));
   mpEditInfoAction->setDisabled(true);
-  connect(mpEditInfoAction, SIGNAL(triggered()), SLOT(editInfoDocumentation()));
+  connect(mpEditInfoAction, &QAction::triggered, this, &DocumentationWidget::editInfoDocumentation);
   // create the edit revisions action
   mpEditRevisionsAction = new QAction(QIcon(":/Resources/icons/edit-revisions.svg"), tr("Edit Revisions Documentation"), this);
   mpEditRevisionsAction->setStatusTip(tr("Starts editing revisions documentation"));
   mpEditRevisionsAction->setDisabled(true);
-  connect(mpEditRevisionsAction, SIGNAL(triggered()), SLOT(editRevisionsDocumentation()));
+  connect(mpEditRevisionsAction, &QAction::triggered, this, &DocumentationWidget::editRevisionsDocumentation);
   // create the edit infoHeader action
   mpEditInfoHeaderAction = new QAction(QIcon(":/Resources/icons/edit-info-header.svg"), tr("Edit __OpenModelica_infoHeader Documentation"), this);
   mpEditInfoHeaderAction->setStatusTip(tr("Starts editing __OpenModelica_infoHeader documentation"));
   mpEditInfoHeaderAction->setDisabled(true);
-  connect(mpEditInfoHeaderAction, SIGNAL(triggered()), SLOT(editInfoHeaderDocumentation()));
+  connect(mpEditInfoHeaderAction, &QAction::triggered, this, &DocumentationWidget::editInfoHeaderDocumentation);
   // create the save action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setStatusTip(tr("Saves the edited documentation"));
   mpSaveAction->setDisabled(true);
-  connect(mpSaveAction, SIGNAL(triggered()), SLOT(saveDocumentation()));
+  connect(mpSaveAction, &QAction::triggered, this, [this]() { saveDocumentation(); });
   // create the cancel action
   mpCancelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::cancel, this);
   mpCancelAction->setStatusTip(tr("Cancels the documentation editing"));
   mpCancelAction->setDisabled(true);
-  connect(mpCancelAction, SIGNAL(triggered()), SLOT(cancelDocumentation()));
+  connect(mpCancelAction, &QAction::triggered, this, &DocumentationWidget::cancelDocumentation);
   // add actions to documentation toolbar
   pDocumentationToolBar->addAction(mpPreviousAction);
   pDocumentationToolBar->addAction(mpNextAction);
@@ -147,7 +147,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpTabBar->setContentsMargins(0, 0, 0, 0);
   mpTabBar->addTab("");
   mpTabBar->addTab("");
-  connect(mpTabBar, SIGNAL(currentChanged(int)), SLOT(toggleEditor(int)));
+  connect(mpTabBar, &QTabBar::currentChanged, this, &DocumentationWidget::toggleEditor);
   // create the html editor widget
   mpHTMLEditorWidget = new QWidget;
   // editor toolbar
@@ -176,13 +176,13 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpStyleComboBox->addItem(tr("Heading 5"), "h5");
   mpStyleComboBox->addItem(tr("Heading 6"), "h6");
   mpStyleComboBox->addItem(tr("Preformatted"), "pre");
-  connect(mpStyleComboBox, SIGNAL(currentIndexChanged(int)), SLOT(formatBlock(int)));
+  connect(mpStyleComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DocumentationWidget::formatBlock);
   // font combobox
   mpFontComboBox = new QFontComboBox;
   mpFontComboBox->setMinimumHeight(toolbarIconSize);
   mpFontComboBox->setToolTip(tr("Font"));
   mpFontComboBox->setStatusTip(tr("Sets the text font"));
-  connect(mpFontComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontName(QFont)));
+  connect(mpFontComboBox, &QFontComboBox::currentFontChanged, this, &DocumentationWidget::fontName);
   // font combobox
   mpFontSizeSpinBox = new QSpinBox;
   mpFontSizeSpinBox->setMinimumHeight(toolbarIconSize);
@@ -191,30 +191,30 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpFontSizeSpinBox->setMinimum(1);
   mpFontSizeSpinBox->setMaximum(7);
 //  mpFontSizeSpinBox->setSpecialValueText(tr("(Default)"));
-  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(int)), SLOT(fontSize(int)));
+  connect(mpFontSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &DocumentationWidget::fontSize);
   // bold action
   mpBoldAction = new QAction(QIcon(":/Resources/icons/bold-icon.svg"), Helper::bold, this);
   mpBoldAction->setStatusTip(tr("Make your text bold"));
   mpBoldAction->setShortcut(QKeySequence("Ctrl+b"));
   mpBoldAction->setCheckable(true);
-  connect(mpBoldAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleBold), SLOT(trigger()));
+  connect(mpBoldAction, &QAction::triggered, this, [this]() { mpHTMLEditor->triggerPageAction(QWebEnginePage::ToggleBold); });
   // italic action
   mpItalicAction = new QAction(QIcon(":/Resources/icons/italic-icon.svg"), Helper::italic, this);
   mpItalicAction->setStatusTip(tr("Italicize your text"));
   mpItalicAction->setShortcut(QKeySequence("Ctrl+i"));
   mpItalicAction->setCheckable(true);
-  connect(mpItalicAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleItalic), SLOT(trigger()));
+  connect(mpItalicAction, &QAction::triggered, this, [this]() { mpHTMLEditor->triggerPageAction(QWebEnginePage::ToggleItalic); });
   // underline action
   mpUnderlineAction = new QAction(QIcon(":/Resources/icons/underline-icon.svg"), Helper::underline, this);
   mpUnderlineAction->setStatusTip(tr("Underline your text"));
   mpUnderlineAction->setShortcut(QKeySequence("Ctrl+u"));
   mpUnderlineAction->setCheckable(true);
-  connect(mpUnderlineAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleUnderline), SLOT(trigger()));
+  connect(mpUnderlineAction, &QAction::triggered, this, [this]() { mpHTMLEditor->triggerPageAction(QWebEnginePage::ToggleUnderline); });
   // strikethrough action
   mpStrikethroughAction = new QAction(QIcon(":/Resources/icons/strikethrough-icon.svg"), tr("Strikethrough"), this);
   mpStrikethroughAction->setStatusTip(tr("Cross something out by drawing a line through it"));
   mpStrikethroughAction->setCheckable(true);
-  connect(mpStrikethroughAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleStrikethrough), SLOT(trigger()));
+  connect(mpStrikethroughAction, &QAction::triggered, this, [this]() { mpHTMLEditor->triggerPageAction(QWebEnginePage::ToggleStrikethrough); });
   // subscript superscript action group
   QActionGroup *pSubscriptSuperscriptActionGroup = new QActionGroup(this);
   pSubscriptSuperscriptActionGroup->setExclusive(true);
@@ -222,12 +222,12 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpSubscriptAction = new QAction(QIcon(":/Resources/icons/subscript-icon.svg"), tr("Subscript"), pSubscriptSuperscriptActionGroup);
   mpSubscriptAction->setStatusTip(tr("Type very small letters just below the line of text"));
   mpSubscriptAction->setCheckable(true);
-  connect(mpSubscriptAction, SIGNAL(triggered()), SLOT(subscript()));
+  connect(mpSubscriptAction, &QAction::triggered, this, &DocumentationWidget::subscript);
   // superscript action
   mpSuperscriptAction = new QAction(QIcon(":/Resources/icons/superscript-icon.svg"), tr("Superscript"), pSubscriptSuperscriptActionGroup);
   mpSuperscriptAction->setStatusTip(tr("Type very small letters just above the line of text"));
   mpSuperscriptAction->setCheckable(true);
-  connect(mpSuperscriptAction, SIGNAL(triggered()), SLOT(superscript()));
+  connect(mpSuperscriptAction, &QAction::triggered, this, &DocumentationWidget::superscript);
   // text color toobutton
   mTextColor = Qt::black;
   mpTextColorDialog = new QColorDialog;
@@ -236,11 +236,11 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   QWidgetAction *pTextColorWidgetAction = new QWidgetAction(this);
   pTextColorWidgetAction->setDefaultWidget(mpTextColorDialog);
   pTextColorMenu->addAction(pTextColorWidgetAction);
-  connect(pTextColorMenu, SIGNAL(aboutToShow()), mpTextColorDialog, SLOT(show()));
-  connect(pTextColorMenu, SIGNAL(aboutToHide()), mpTextColorDialog, SLOT(hide()));
-  connect(mpTextColorDialog, SIGNAL(colorSelected(QColor)), pTextColorMenu, SLOT(hide()));
-  connect(mpTextColorDialog, SIGNAL(colorSelected(QColor)), SLOT(applyTextColor(QColor)));
-  connect(mpTextColorDialog, SIGNAL(rejected()), pTextColorMenu, SLOT(hide()));
+  connect(pTextColorMenu, &QMenu::aboutToShow, mpTextColorDialog, &QColorDialog::show);
+  connect(pTextColorMenu, &QMenu::aboutToHide, mpTextColorDialog, &QColorDialog::hide);
+  connect(mpTextColorDialog, &QColorDialog::colorSelected, pTextColorMenu, &QMenu::hide);
+  connect(mpTextColorDialog, &QColorDialog::colorSelected, this, QOverload<QColor>::of(&DocumentationWidget::applyTextColor));
+  connect(mpTextColorDialog, &QColorDialog::rejected, pTextColorMenu, &QMenu::hide);
   mpTextColorToolButton = new QToolButton;
   mpTextColorToolButton->setText(tr("Text Color"));
   mpTextColorToolButton->setToolTip(mpTextColorToolButton->text());
@@ -248,7 +248,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpTextColorToolButton->setMenu(pTextColorMenu);
   mpTextColorToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpTextColorToolButton->setIcon(createPixmapForToolButton(mTextColor, QIcon(":/Resources/icons/text-color-icon.svg")));
-  connect(mpTextColorToolButton, SIGNAL(clicked()), SLOT(applyTextColor()));
+  connect(mpTextColorToolButton, &QToolButton::clicked, this, QOverload<>::of(&DocumentationWidget::applyTextColor));
   // background color toolbutton
   mBackgroundColor = Qt::white;
   mpBackgroundColorDialog = new QColorDialog;
@@ -257,11 +257,11 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   QWidgetAction *pBackgroundColorWidgetAction = new QWidgetAction(this);
   pBackgroundColorWidgetAction->setDefaultWidget(mpBackgroundColorDialog);
   pBackgroundColorMenu->addAction(pBackgroundColorWidgetAction);
-  connect(pBackgroundColorMenu, SIGNAL(aboutToShow()), mpBackgroundColorDialog, SLOT(show()));
-  connect(pBackgroundColorMenu, SIGNAL(aboutToHide()), mpBackgroundColorDialog, SLOT(hide()));
-  connect(mpBackgroundColorDialog, SIGNAL(colorSelected(QColor)), pBackgroundColorMenu, SLOT(hide()));
-  connect(mpBackgroundColorDialog, SIGNAL(colorSelected(QColor)), SLOT(applyBackgroundColor(QColor)));
-  connect(mpBackgroundColorDialog, SIGNAL(rejected()), pBackgroundColorMenu, SLOT(hide()));
+  connect(pBackgroundColorMenu, &QMenu::aboutToShow, mpBackgroundColorDialog, &QColorDialog::show);
+  connect(pBackgroundColorMenu, &QMenu::aboutToHide, mpBackgroundColorDialog, &QColorDialog::hide);
+  connect(mpBackgroundColorDialog, &QColorDialog::colorSelected, pBackgroundColorMenu, &QMenu::hide);
+  connect(mpBackgroundColorDialog, &QColorDialog::colorSelected, this, QOverload<QColor>::of(&DocumentationWidget::applyBackgroundColor));
+  connect(mpBackgroundColorDialog, &QColorDialog::rejected, pBackgroundColorMenu, &QMenu::hide);
   mpBackgroundColorToolButton = new QToolButton;
   mpBackgroundColorToolButton->setText(tr("Background Color"));
   mpBackgroundColorToolButton->setToolTip(mpBackgroundColorToolButton->text());
@@ -269,7 +269,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpBackgroundColorToolButton->setMenu(pBackgroundColorMenu);
   mpBackgroundColorToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpBackgroundColorToolButton->setIcon(createPixmapForToolButton(mBackgroundColor, QIcon(":/Resources/icons/background-color-icon.svg")));
-  connect(mpBackgroundColorToolButton, SIGNAL(clicked()), SLOT(applyBackgroundColor()));
+  connect(mpBackgroundColorToolButton, &QToolButton::clicked, this, QOverload<>::of(&DocumentationWidget::applyBackgroundColor));
   // align left toolbutton
   mpAlignLeftToolButton = new QToolButton;
   mpAlignLeftToolButton->setText(tr("Align Left"));
@@ -278,7 +278,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpAlignLeftToolButton->setIcon(QIcon(":/Resources/icons/align-left.svg"));
   mpAlignLeftToolButton->setCheckable(true);
   mpAlignLeftToolButton->setChecked(true);
-  connect(mpAlignLeftToolButton, SIGNAL(clicked()), SLOT(alignLeft()));
+  connect(mpAlignLeftToolButton, &QToolButton::clicked, this, &DocumentationWidget::alignLeft);
   // align center toolbutton
   mpAlignCenterToolButton = new QToolButton;
   mpAlignCenterToolButton->setText(tr("Align Center"));
@@ -286,7 +286,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpAlignCenterToolButton->setStatusTip(tr("Aligns the text to the center"));
   mpAlignCenterToolButton->setIcon(QIcon(":/Resources/icons/align-center.svg"));
   mpAlignCenterToolButton->setCheckable(true);
-  connect(mpAlignCenterToolButton, SIGNAL(clicked()), SLOT(alignCenter()));
+  connect(mpAlignCenterToolButton, &QToolButton::clicked, this, &DocumentationWidget::alignCenter);
   // align right toolbutton
   mpAlignRightToolButton = new QToolButton;
   mpAlignRightToolButton->setText(tr("Align Right"));
@@ -294,7 +294,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpAlignRightToolButton->setStatusTip(tr("Aligns the text to the right"));
   mpAlignRightToolButton->setIcon(QIcon(":/Resources/icons/align-right.svg"));
   mpAlignRightToolButton->setCheckable(true);
-  connect(mpAlignRightToolButton, SIGNAL(clicked()), SLOT(alignRight()));
+  connect(mpAlignRightToolButton, &QToolButton::clicked, this, &DocumentationWidget::alignRight);
   // justify toolbutton
   mpJustifyToolButton = new QToolButton;
   mpJustifyToolButton->setText(tr("Justify"));
@@ -302,7 +302,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpJustifyToolButton->setStatusTip(tr("Justifies the text evenly"));
   mpJustifyToolButton->setIcon(QIcon(":/Resources/icons/justify.svg"));
   mpJustifyToolButton->setCheckable(true);
-  connect(mpJustifyToolButton, SIGNAL(clicked()), SLOT(justify()));
+  connect(mpJustifyToolButton, &QToolButton::clicked, this, &DocumentationWidget::justify);
   // alignment button group
   QButtonGroup *pAlignmentButtonGroup = new QButtonGroup(this);
   pAlignmentButtonGroup->setExclusive(true);
@@ -313,31 +313,31 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // decrease indent action
   mpDecreaseIndentAction = new QAction(QIcon(":/Resources/icons/decrease-indent.svg"), tr("Decrease Indent"), this);
   mpDecreaseIndentAction->setStatusTip(tr("Decreases the indent by moving left"));
-  connect(mpDecreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::Outdent), SLOT(trigger()));
+  connect(mpDecreaseIndentAction, &QAction::triggered, this, [this]() { mpHTMLEditor->triggerPageAction(QWebEnginePage::Outdent); });
   // increase indent action
   mpIncreaseIndentAction = new QAction(QIcon(":/Resources/icons/increase-indent.svg"), tr("Increase Indent"), this);
   mpIncreaseIndentAction->setStatusTip(tr("Increases the indent by moving right"));
-  connect(mpIncreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::Indent), SLOT(trigger()));
+  connect(mpIncreaseIndentAction, &QAction::triggered, this, [this]() { mpHTMLEditor->triggerPageAction(QWebEnginePage::Indent); });
   // bullet list action
   mpBulletListAction = new QAction(QIcon(":/Resources/icons/bullet-list.svg"), tr("Bullet List"), this);
   mpBulletListAction->setStatusTip(tr("Creates a bulleted list"));
   mpBulletListAction->setCheckable(true);
-  connect(mpBulletListAction, SIGNAL(triggered()), SLOT(bulletList()));
+  connect(mpBulletListAction, &QAction::triggered, this, &DocumentationWidget::bulletList);
   // numbered list action
   mpNumberedListAction = new QAction(QIcon(":/Resources/icons/numbered-list.svg"), tr("Numbered List"), this);
   mpNumberedListAction->setStatusTip(tr("Creates a numbered list"));
   mpNumberedListAction->setCheckable(true);
-  connect(mpNumberedListAction, SIGNAL(triggered()), SLOT(numberedList()));
+  connect(mpNumberedListAction, &QAction::triggered, this, &DocumentationWidget::numberedList);
   // link action
   mpLinkAction = new QAction(QIcon(":/Resources/icons/link.svg"), tr("Create Link"), this);
   mpLinkAction->setStatusTip(tr("Creates a link"));
   mpLinkAction->setEnabled(false);
-  connect(mpLinkAction, SIGNAL(triggered()), SLOT(createLink()));
+  connect(mpLinkAction, &QAction::triggered, this, &DocumentationWidget::createLink);
   // unklink action
   mpUnLinkAction = new QAction(QIcon(":/Resources/icons/unlink.svg"), tr("Remove Link"), this);
   mpUnLinkAction->setStatusTip(tr("Removes a link"));
   mpUnLinkAction->setEnabled(false);
-  connect(mpUnLinkAction, SIGNAL(triggered()), SLOT(removeLink()));
+  connect(mpUnLinkAction, &QAction::triggered, this, &DocumentationWidget::removeLink);
   // add actions to editor toolbar
   mpEditorToolBar->addWidget(mpStyleComboBox);
   mpEditorToolBar->addWidget(mpFontComboBox);
@@ -366,7 +366,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditorToolBar->addAction(mpLinkAction);
   mpEditorToolBar->addAction(mpUnLinkAction);
   // update the actions whenever the selectionChanged signal is raised.
-  connect(mpHTMLEditor->page(), SIGNAL(selectionChanged()), SLOT(updateActions()));
+  connect(mpHTMLEditor->page(), &QWebEnginePage::selectionChanged, this, &DocumentationWidget::updateActions);
   // Qt webengine editing works only when we have a selection.
   // Call updateActions() to disable all actions since there is not selection yet.
   updateActions();
@@ -382,7 +382,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpHTMLSourceEditor = new HTMLEditor(this);
   mpHTMLSourceEditor->hide();
   HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(OptionsDialog::instance()->getHTMLEditorPage(), mpHTMLSourceEditor->getPlainTextEdit());
-  connect(OptionsDialog::instance(), SIGNAL(HTMLEditorSettingsChanged()), pHTMLHighlighter, SLOT(settingsChanged()));
+  connect(OptionsDialog::instance(), &OptionsDialog::HTMLEditorSettingsChanged, pHTMLHighlighter, &HTMLHighlighter::settingsChanged);
   // eidtors widget layout
   QVBoxLayout *pEditorsWidgetLayout = new QVBoxLayout;
   pEditorsWidgetLayout->setAlignment(Qt::AlignTop);
@@ -742,7 +742,7 @@ void DocumentationWidget::updateHTMLSourceEditor()
 {
   QEventLoop eventLoop;
   QTimer timer;
-  connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+  connect(&timer, &QTimer::timeout, &eventLoop, &QEventLoop::quit);
   PlainTextEdit *textEdit = mpHTMLSourceEditor->getPlainTextEdit();
   mpHTMLEditor->page()->toHtml([&](const QString &result){
     textEdit->setPlainText(result);
@@ -1328,7 +1328,7 @@ bool DocumentationPage::acceptNavigationRequest(const QUrl &url, NavigationType 
     // qDebug() << "acceptNavigationRequest " << url.toString() << " , " << type << " , " << isMainFrame;
     if (isMainFrame) {
         mUrl = url;
-        QTimer::singleShot(20,this,SLOT(emitLinkClicked()));
+        QTimer::singleShot(20, this, &DocumentationPage::emitLinkClicked);
         return false;
     }
     // allow secondary frames such as iframes to be loaded automatically
@@ -1366,7 +1366,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
 {
   mpDocumentationWidget = pDocumentationWidget;
   setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+  connect(this, &DocumentationViewer::customContextMenuRequested, this, &DocumentationViewer::showContextMenu);
   resetZoom();
   // set DocumentationViewer settings
   // create a new QWebEnginePage so we can handle link clicks
@@ -1420,13 +1420,13 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   /* Qt WebEngine doesn't support DelegateAllLinks, linkClicked
    * We created an object of QWebEnginePage which overrides acceptNavigationRequest to handle link clicks
    */
-  connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
-  connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
+  connect(mpDocumentationPage, &DocumentationPage::linkClicked, this, &DocumentationViewer::processLinkClick);
+  connect(page(), &QWebEnginePage::linkHovered, this, QOverload<QString>::of(&DocumentationViewer::processLinkHover));
 #if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
-  connect(page(), SIGNAL(newWindowRequested(QWebEngineNewWindowRequest&)), SLOT(newWindowRequested(QWebEngineNewWindowRequest&)));
+  connect(page(), &QWebEnginePage::newWindowRequested, this, &DocumentationViewer::newWindowRequested);
 #endif
   createActions();
-  connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
+  connect(this, &DocumentationViewer::loadFinished, this, &DocumentationViewer::pageLoaded);
 }
 
 /*!

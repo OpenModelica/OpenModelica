@@ -356,31 +356,32 @@ namespace IAEX
     input_->installEventFilter(this);
 
 
-    connect( input_, SIGNAL( textChanged() ),
-      this, SLOT( contentChanged() ));
+    MyTextEdit *pInputTextEdit = static_cast<MyTextEdit*>(input_);
+    connect( input_, &QTextBrowser::textChanged,
+      this, &InputCell::contentChanged );
 
-      connect( input_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEvent() ));
-    connect( input_, SIGNAL( wheelMove(QWheelEvent*) ),
-      this, SLOT( wheelEvent(QWheelEvent*) ));
+      connect( pInputTextEdit, &MyTextEdit::clickOnCell,
+      this, &InputCell::clickEvent );
+    connect( pInputTextEdit, &MyTextEdit::wheelMove,
+      this, &InputCell::wheelEvent );
     // 2005-12-15 AF, new connections
-    connect( input_, SIGNAL( eval() ),
-      this, SLOT( eval() ));
-    connect( input_, SIGNAL( command() ),
-      this, SLOT( command() ));
-    connect( input_, SIGNAL( nextCommand() ),
-      this, SLOT( nextCommand() ));
-    connect( input_, SIGNAL( nextField() ),
-      this, SLOT( nextField() ));
+    connect( pInputTextEdit, &MyTextEdit::eval,
+      this, &InputCell::eval );
+    connect( pInputTextEdit, &MyTextEdit::command,
+      this, &InputCell::command );
+    connect( pInputTextEdit, &MyTextEdit::nextCommand,
+      this, &InputCell::nextCommand );
+    connect( pInputTextEdit, &MyTextEdit::nextField,
+      this, &InputCell::nextField );
     //2005-12-29 AF
-    connect( input_, SIGNAL( textChanged() ),
-      this, SLOT( addToHighlighter() ));
+    connect( input_, &QTextBrowser::textChanged,
+      this, &InputCell::addToHighlighter );
     // 2006-01-17 AF, new...
-    connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-      this, SLOT( charFormatChanged(const QTextCharFormat &) ));
+    connect( input_, &QTextBrowser::currentCharFormatChanged,
+      this, &InputCell::charFormatChanged );
     // 2006-04-27 AF,
-    connect( input_, SIGNAL( forwardAction(int) ),
-      this, SIGNAL( forwardAction(int) ));
+    connect( pInputTextEdit, &MyTextEdit::forwardAction,
+      this, &InputCell::forwardAction );
 
     contentChanged();
   }
@@ -409,14 +410,15 @@ namespace IAEX
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 //    output_->setContextMenuPolicy( Qt::NoContextMenu );
 
-    connect( output_, SIGNAL( textChanged() ),
-      this, SLOT(contentChanged()));
-    connect( output_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEventOutput() ));
-    connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
-      this, SLOT( wheelEvent(QWheelEvent*) ));
+    MyTextEdit *pOutputTextEdit = static_cast<MyTextEdit*>(output_);
+    connect( output_, &QTextBrowser::textChanged,
+      this, &InputCell::contentChanged);
+    connect( pOutputTextEdit, &MyTextEdit::clickOnCell,
+      this, &InputCell::clickEventOutput );
+    connect( pOutputTextEdit, &MyTextEdit::wheelMove,
+      this, &InputCell::wheelEvent );
 
-    connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
+    connect(pOutputTextEdit, &MyTextEdit::forwardAction, this, &InputCell::forwardAction);
 
     setOutputStyle();
 
@@ -473,8 +475,8 @@ namespace IAEX
     chaptercounter_->setFixedWidth(50);
     chaptercounter_->setReadOnly( true );
 
-    connect( chaptercounter_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEvent() ));
+    connect( static_cast<MyTextEdit*>(chaptercounter_), &MyTextEdit::clickOnCell,
+      this, &InputCell::clickEvent );
 
     addChapterCounter( chaptercounter_ );
   }

@@ -383,9 +383,8 @@ protected:
 
   QMenu* createStandardContextMenu();
   void contentsChanged();
-private slots:
-  virtual void showContextMenu(QPoint point) = 0;
 public slots:
+  virtual void showContextMenu(QPoint point) = 0;
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) = 0;
   void showFindReplaceWidget();
   void clearFindReplaceTexts();

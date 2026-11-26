@@ -226,7 +226,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
 {
   // create the filter text box
   mpFilterTextBox = new LineEdit;
-  connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
+  connect(this, &TreeSearchFilters::clearFilter, mpFilterTextBox, &LineEdit::textEdited);
   // filter timer
   mpFilterTimer = new QTimer(this);
   mpFilterTimer->setSingleShot(true);
@@ -257,7 +257,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpShowHideButton->setToolTip(showHideButtonText);
   mpShowHideButton->setAutoRaise(true);
   mpShowHideButton->setCheckable(true);
-  connect(mpShowHideButton, SIGNAL(toggled(bool)), SLOT(showHideFilters(bool)));
+  connect(mpShowHideButton, &QToolButton::toggled, this, &TreeSearchFilters::showHideFilters);
   // filters widget
   mpFiltersWidget = new QWidget;
   // create the case sensitivity checkbox
@@ -276,7 +276,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpFiltersHelpButton = new QToolButton;
   mpFiltersHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpFiltersHelpButton->setToolTip(tr("Filters help"));
-  connect(mpFiltersHelpButton, SIGNAL(clicked()), SLOT(showFiltersHelp()));
+  connect(mpFiltersHelpButton, &QToolButton::clicked, this, &TreeSearchFilters::showFiltersHelp);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
@@ -642,7 +642,7 @@ PreviewPlainTextEdit::PreviewPlainTextEdit(QWidget *parent)
   mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
 
   updateHighlights();
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateHighlights()));
+  connect(this, &PreviewPlainTextEdit::cursorPositionChanged, this, &PreviewPlainTextEdit::updateHighlights);
 }
 
 /*!

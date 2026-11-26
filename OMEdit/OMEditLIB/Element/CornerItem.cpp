@@ -67,9 +67,9 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
    * AND not a OMS connector i.e., input/output signals of fmu
    */
   if (!mIsSystemLibrary && !mIsElementMode && !mIsInherited && !mIsOMSConnector) {
-    connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
-    connect(this, SIGNAL(cornerItemPress(int)), mpShapeAnnotation, SLOT(cornerItemPressed(int)));
-    connect(this, SIGNAL(cornerItemRelease(bool)), mpShapeAnnotation, SLOT(cornerItemReleased(bool)));
+    connect(this, &CornerItem::cornerItemMoved, mpShapeAnnotation, &ShapeAnnotation::updateCornerItemPoint);
+    connect(this, &CornerItem::cornerItemPress, mpShapeAnnotation, &ShapeAnnotation::cornerItemPressed);
+    connect(this, &CornerItem::cornerItemRelease, mpShapeAnnotation, &ShapeAnnotation::cornerItemReleased);
   }
 }
 

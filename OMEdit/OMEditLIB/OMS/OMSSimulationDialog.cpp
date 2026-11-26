@@ -110,10 +110,10 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(saveSimulationSettings()));
+  connect(mpOkButton, &QPushButton::clicked, this, &OMSSimulationDialog::saveSimulationSettings);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &OMSSimulationDialog::reject);
   // adds buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

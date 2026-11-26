@@ -70,7 +70,7 @@ NavigationManagerView::NavigationManagerView(QWidget *pParent)
   pMainLayout->addWidget(mpListWidget);
   setLayout(pMainLayout);
   // keep the view updated whenever the navigation history changes
-  connect(NavigationManager::instance(), SIGNAL(navigationChanged()), SLOT(refresh()));
+  connect(NavigationManager::instance(), &NavigationManager::navigationChanged, this, &NavigationManagerView::refresh);
   refresh();
 }
 

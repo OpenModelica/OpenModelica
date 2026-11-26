@@ -95,7 +95,7 @@ ArchivedSimulationsWidget::ArchivedSimulationsWidget(QWidget *pParent)
   headers << tr("Model") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
   mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
   mpArchivedSimulationsTreeWidget->setIndentation(0);
-  connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
+  connect(mpArchivedSimulationsTreeWidget, &QTreeWidget::itemDoubleClicked, this, &ArchivedSimulationsWidget::showArchivedSimulation);
   QGridLayout *pMainGridLayout = new QGridLayout;
   pMainGridLayout->setAlignment(Qt::AlignTop);
   pMainGridLayout->addWidget(pHeadingLabel, 0, 0);

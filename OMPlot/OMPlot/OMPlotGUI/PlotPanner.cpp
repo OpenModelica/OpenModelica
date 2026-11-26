@@ -50,7 +50,7 @@ PlotPanner::PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent)
 {
 #endif
   setMouseButton(Qt::LeftButton, Qt::ControlModifier);
-  connect(this, SIGNAL(moved(int,int)), SLOT(updateView(int, int)));
+  connect(this, &PlotPanner::moved, this, &PlotPanner::updateView);
   mpParentPlot = pParent;
 
 }

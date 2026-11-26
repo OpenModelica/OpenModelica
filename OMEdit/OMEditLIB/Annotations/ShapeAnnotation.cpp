@@ -324,8 +324,8 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   mIsCornerItemClicked = false;
   mOldAnnotation = "";
   createActions();
-  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
-  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
+  connect(mpGraphicsView, &GraphicsView::updateDynamicSelect, this, &ShapeAnnotation::updateDynamicSelect);
+  connect(mpGraphicsView, &GraphicsView::resetDynamicSelect, this, &ShapeAnnotation::resetDynamicSelect);
 }
 
 /*!
@@ -438,11 +438,11 @@ void ShapeAnnotation::createActions()
   // shape properties
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
-  connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
+  connect(mpShapePropertiesAction, &QAction::triggered, this, &ShapeAnnotation::showShapeProperties);
   // edit transition action
   mpEditTransitionAction = new QAction(Helper::editTransition, mpGraphicsView);
   mpEditTransitionAction->setStatusTip(tr("Edits the transition"));
-  connect(mpEditTransitionAction, SIGNAL(triggered()), SLOT(editTransition()));
+  connect(mpEditTransitionAction, &QAction::triggered, this, &ShapeAnnotation::editTransition);
 }
 
 /*!
@@ -1782,30 +1782,30 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
           && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
-          connect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::manhattanize, this, &ShapeAnnotation::manhattanizeShapeSlot, Qt::UniqueConnection);
         }
-        connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+        connect(mpGraphicsView, &GraphicsView::deleteSignal, this, &ShapeAnnotation::deleteMe, Qt::UniqueConnection);
         if (!pLineAnnotation || !pLineAnnotation->isConnection()) {
-          connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getSendBackwardAction(), SIGNAL(triggered()), this, SLOT(sendBackward()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getBringToFrontAction(), &QAction::triggered, this, &ShapeAnnotation::bringToFront, Qt::UniqueConnection);
+          connect(mpGraphicsView->getBringForwardAction(), &QAction::triggered, this, &ShapeAnnotation::bringForward, Qt::UniqueConnection);
+          connect(mpGraphicsView->getSendToBackAction(), &QAction::triggered, this, &ShapeAnnotation::sendToBack, Qt::UniqueConnection);
+          connect(mpGraphicsView->getSendBackwardAction(), &QAction::triggered, this, &ShapeAnnotation::sendBackward, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::mouseRotateClockwise, this, &ShapeAnnotation::rotateClockwise, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::mouseRotateAntiClockwise, this, &ShapeAnnotation::rotateAntiClockwise, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressRotateClockwise, this, &ShapeAnnotation::rotateClockwise, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressRotateAntiClockwise, this, &ShapeAnnotation::rotateAntiClockwise, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressUp, this, &ShapeAnnotation::moveUp, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressShiftUp, this, &ShapeAnnotation::moveShiftUp, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressCtrlUp, this, &ShapeAnnotation::moveCtrlUp, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressDown, this, &ShapeAnnotation::moveDown, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressShiftDown, this, &ShapeAnnotation::moveShiftDown, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressCtrlDown, this, &ShapeAnnotation::moveCtrlDown, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressLeft, this, &ShapeAnnotation::moveLeft, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressShiftLeft, this, &ShapeAnnotation::moveShiftLeft, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressCtrlLeft, this, &ShapeAnnotation::moveCtrlLeft, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressRight, this, &ShapeAnnotation::moveRight, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressShiftRight, this, &ShapeAnnotation::moveShiftRight, Qt::UniqueConnection);
+          connect(mpGraphicsView, &GraphicsView::keyPressCtrlRight, this, &ShapeAnnotation::moveCtrlRight, Qt::UniqueConnection);
         }
       }
     } else if (!mIsCornerItemClicked) {
@@ -1817,30 +1817,30 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
           && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
-          disconnect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()));
+          disconnect(mpGraphicsView, &GraphicsView::manhattanize, this, &ShapeAnnotation::manhattanizeShapeSlot);
         }
-        disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
+        disconnect(mpGraphicsView, &GraphicsView::deleteSignal, this, &ShapeAnnotation::deleteMe);
         if (!pLineAnnotation || !pLineAnnotation->isConnection()) {
-          disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));
-          disconnect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()));
-          disconnect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()));
-          disconnect(mpGraphicsView->getSendBackwardAction(), SIGNAL(triggered()), this, SLOT(sendBackward()));
-          disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));
-          disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
+          disconnect(mpGraphicsView->getBringToFrontAction(), &QAction::triggered, this, &ShapeAnnotation::bringToFront);
+          disconnect(mpGraphicsView->getBringForwardAction(), &QAction::triggered, this, &ShapeAnnotation::bringForward);
+          disconnect(mpGraphicsView->getSendToBackAction(), &QAction::triggered, this, &ShapeAnnotation::sendToBack);
+          disconnect(mpGraphicsView->getSendBackwardAction(), &QAction::triggered, this, &ShapeAnnotation::sendBackward);
+          disconnect(mpGraphicsView, &GraphicsView::mouseRotateClockwise, this, &ShapeAnnotation::rotateClockwise);
+          disconnect(mpGraphicsView, &GraphicsView::mouseRotateAntiClockwise, this, &ShapeAnnotation::rotateAntiClockwise);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressRotateClockwise, this, &ShapeAnnotation::rotateClockwise);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressRotateAntiClockwise, this, &ShapeAnnotation::rotateAntiClockwise);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressUp, this, &ShapeAnnotation::moveUp);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressShiftUp, this, &ShapeAnnotation::moveShiftUp);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlUp, this, &ShapeAnnotation::moveCtrlUp);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressDown, this, &ShapeAnnotation::moveDown);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressShiftDown, this, &ShapeAnnotation::moveShiftDown);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlDown, this, &ShapeAnnotation::moveCtrlDown);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressLeft, this, &ShapeAnnotation::moveLeft);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressShiftLeft, this, &ShapeAnnotation::moveShiftLeft);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlLeft, this, &ShapeAnnotation::moveCtrlLeft);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressRight, this, &ShapeAnnotation::moveRight);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressShiftRight, this, &ShapeAnnotation::moveShiftRight);
+          disconnect(mpGraphicsView, &GraphicsView::keyPressCtrlRight, this, &ShapeAnnotation::moveCtrlRight);
         }
       }
     }

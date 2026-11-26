@@ -119,62 +119,62 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 void Tools::button_action()
 {
     arc = new QAction(QIcon(":/Resources/sketchIcons/qpainter-arc.svg"),tr("&Arc"),this);
-    connect(arc,SIGNAL(triggered()), this, SLOT(draw_arc()));
+    connect(arc, &QAction::triggered, this, &Tools::draw_arc);
 
     arrow = new QAction(QIcon(":/Resources/sketchIcons/arrow.svg"),tr("&Arrow"),this);
-    connect(arrow,SIGNAL(triggered()), this, SLOT(draw_arrow()));
+    connect(arrow, &QAction::triggered, this, &Tools::draw_arrow);
 
     line = new QAction(QIcon(":/Resources/sketchIcons/qpainter-line.svg"),tr("&Line"),this);
-    connect(line,SIGNAL(triggered()), this, SLOT(draw_line()));
+    connect(line, &QAction::triggered, this, &Tools::draw_line);
 
     rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-rectangle.svg"),tr("&Rectangle"),this);
-    connect(rectangle,SIGNAL(triggered()), this, SLOT(draw_rect()));
+    connect(rectangle, &QAction::triggered, this, &Tools::draw_rect);
 
     round_rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-roundrect.svg"),tr("&Rounded Rectangle"),this);
-    connect(round_rectangle,SIGNAL(triggered()), this, SLOT(draw_round_rect()));
+    connect(round_rectangle, &QAction::triggered, this, &Tools::draw_round_rect);
 
     ellipse = new QAction(QIcon(":/Resources/sketchIcons/qpainter-ellipse.svg"),tr("&Ellipse"),this);
-    connect(ellipse,SIGNAL(triggered()), this, SLOT(draw_ellipse()));
+    connect(ellipse, &QAction::triggered, this, &Tools::draw_ellipse);
 
     polygon = new QAction(QIcon(":/Resources/sketchIcons/qpainter-polygon.svg"),tr("&Polygon"),this);
-    connect(polygon,SIGNAL(triggered()), this, SLOT(draw_polygon()));
+    connect(polygon, &QAction::triggered, this, &Tools::draw_polygon);
 
     linearrow = new QAction(QIcon(":/Resources/sketchIcons/linearrow.svg"),tr("&LineArrow"),this);
-    connect(linearrow,SIGNAL(triggered()), this, SLOT(draw_linearrow()));
+    connect(linearrow, &QAction::triggered, this, &Tools::draw_linearrow);
 
     triangle = new QAction(QIcon(":/Resources/sketchIcons/triangle.svg"),tr("&Triangle"),this);
-    connect(triangle,SIGNAL(triggered()), this, SLOT(draw_triangle()));
+    connect(triangle, &QAction::triggered, this, &Tools::draw_triangle);
 
     text = new QAction(QIcon(":/Resources/sketchIcons/text.svg"),tr("&Text"),this);
-    connect(text,SIGNAL(triggered()), this, SLOT(draw_text()));
+    connect(text, &QAction::triggered, this, &Tools::draw_text);
 
     file_new = new QAction(tr("&New"),this);
-    connect(file_new,SIGNAL(triggered()), this, SLOT(draw_new()));
+    connect(file_new, &QAction::triggered, this, &Tools::draw_new);
 
     file_open = new QAction(tr("&Open"),this);
-    connect(file_open,SIGNAL(triggered()), this, SLOT(draw_open()));
+    connect(file_open, &QAction::triggered, this, &Tools::draw_open);
 
     file_save = new QAction(tr("&Save"),this);
-    connect(file_save,SIGNAL(triggered()), this, SLOT(draw_save()));
+    connect(file_save, &QAction::triggered, this, &Tools::draw_save);
 
     close_me = new QAction(tr("&Close"),this);
     close_me->setShortcut(QKeySequence("Ctrl+W"));
-    connect(close_me,SIGNAL(triggered()), this, SLOT(close()));
+    connect(close_me, &QAction::triggered, this, &Tools::close);
 
     file_image_save = new QAction(tr("&Export Image"),this);
-    connect(file_image_save,SIGNAL(triggered()), this, SLOT(draw_image_save()));
+    connect(file_image_save, &QAction::triggered, this, &Tools::draw_image_save);
 
     copy = new QAction(tr("&Copy"),this);
     copy->setShortcut(QKeySequence("Ctrl+C"));
-    connect(copy,SIGNAL(triggered()), this, SLOT(draw_copy()));
+    connect(copy, &QAction::triggered, this, &Tools::draw_copy);
 
     cut = new QAction(tr("&Cut"),this);
     cut->setShortcut(QKeySequence("Ctrl+X"));
-    connect(cut,SIGNAL(triggered()), this, SLOT(draw_cut()));
+    connect(cut, &QAction::triggered, this, &Tools::draw_cut);
 
     paste = new QAction(tr("&Paste"),this);
     paste->setShortcut(QKeySequence("Ctrl+V"));
-    connect(paste,SIGNAL(triggered()), this, SLOT(draw_paste()));
+    connect(paste, &QAction::triggered, this, &Tools::draw_paste);
 }
 
 void Tools::action()
@@ -1787,10 +1787,10 @@ void Tools::file_components() {
   addToolBar(tool_bar2);
 
   //events
-  connect(new_file,SIGNAL(clicked()),SLOT(draw_new()));
-  connect(save_file,SIGNAL(clicked()),SLOT(draw_save()));
-  connect(open_file,SIGNAL(clicked()),SLOT(draw_open()));
-  connect(export_file,SIGNAL(clicked()),SLOT(draw_image_save()));
+  connect(new_file, &QToolButton::clicked, this, &Tools::draw_new);
+  connect(save_file, &QToolButton::clicked, this, &Tools::draw_save);
+  connect(open_file, &QToolButton::clicked, this, &Tools::draw_open);
+  connect(export_file, &QToolButton::clicked, this, &Tools::draw_image_save);
 }
 
 void Tools::edit_components() {
@@ -1823,9 +1823,9 @@ void Tools::edit_components() {
   addToolBar(tool_bar3);
 
   //events
-  connect(cut_shape,SIGNAL(clicked()),SLOT(draw_cut()));
-  connect(copy_shape,SIGNAL(clicked()),SLOT(draw_copy()));
-  connect(paste_shape,SIGNAL(clicked()),SLOT(draw_paste()));
+  connect(cut_shape, &QToolButton::clicked, this, &Tools::draw_cut);
+  connect(copy_shape, &QToolButton::clicked, this, &Tools::draw_copy);
+  connect(paste_shape, &QToolButton::clicked, this, &Tools::draw_paste);
 }
 
 void Tools::color_pen_components() {
@@ -1883,11 +1883,11 @@ void Tools::color_pen_components() {
   tool_bar4->setEnabled(false);
   addToolBar(tool_bar4);
 
-  connect(select_color,SIGNAL(clicked()),SLOT(setColors()));
-  connect(fill_color,SIGNAL(clicked()),SLOT(brush_color()));
-  connect(select_pen,SIGNAL(activated(int)),SLOT(setPenStyles(int)));
-  connect(select_brush,SIGNAL(activated(int)),SLOT(setBrushStyles(int)));
-  connect(penWidth,SIGNAL(valueChanged(int)),SLOT(setPenWidths(int)));
+  connect(select_color, &QToolButton::clicked, this, &Tools::setColors);
+  connect(fill_color, &QToolButton::clicked, this, &Tools::brush_color);
+  connect(select_pen, QOverload<int>::of(&QComboBox::activated), this, &Tools::setPenStyles);
+  connect(select_brush, QOverload<int>::of(&QComboBox::activated), this, &Tools::setBrushStyles);
+  connect(penWidth, QOverload<int>::of(&QSpinBox::valueChanged), this, &Tools::setPenWidths);
 }
 
 void Tools::reloadShapesProerties() {

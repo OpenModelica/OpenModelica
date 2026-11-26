@@ -81,10 +81,10 @@ LoadCompiledModelDialog::LoadCompiledModelDialog(QWidget *pParent)
   // Create the buttons
   QPushButton *pOkButton = new QPushButton(Helper::ok);
   pOkButton->setAutoDefault(true);
-  connect(pOkButton, SIGNAL(clicked()), SLOT(loadCompiledModel()));
+  connect(pOkButton, &QPushButton::clicked, this, &LoadCompiledModelDialog::loadCompiledModel);
   QPushButton *pCancelButton = new QPushButton(Helper::cancel);
   pCancelButton->setAutoDefault(false);
-  connect(pCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(pCancelButton, &QPushButton::clicked, this, &LoadCompiledModelDialog::reject);
   // create buttons box
   QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
   pButtonBox->addButton(pOkButton, QDialogButtonBox::ActionRole);

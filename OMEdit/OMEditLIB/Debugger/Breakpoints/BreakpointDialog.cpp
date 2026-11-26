@@ -78,11 +78,11 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   }
   mpBrowseClassesButton = new QPushButton(tr("Browse Classes"));
   mpBrowseClassesButton->setAutoDefault(false);
-  connect(mpBrowseClassesButton, SIGNAL(clicked()), SLOT(browseClasses()));
+  connect(mpBrowseClassesButton, &QPushButton::clicked, this, &BreakpointDialog::browseClasses);
   mpBrowseFileSystemButton = new QPushButton(tr("File System"));
   mpBrowseFileSystemButton->setEnabled(false);
   mpBrowseFileSystemButton->setAutoDefault(false);
-  connect(mpBrowseFileSystemButton, SIGNAL(clicked()), SLOT(browseFileSystem()));
+  connect(mpBrowseFileSystemButton, &QPushButton::clicked, this, &BreakpointDialog::browseFileSystem);
   // Create the line number label and text box
   mpLineNumberLabel = new Label(tr("Line Number:"));
   mpLineNumberTextBox = new QLineEdit;
@@ -109,10 +109,10 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(addOrEditBreakpoint()));
+  connect(mpOkButton, &QPushButton::clicked, this, &BreakpointDialog::addOrEditBreakpoint);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &BreakpointDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

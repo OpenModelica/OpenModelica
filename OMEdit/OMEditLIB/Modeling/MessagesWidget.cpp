@@ -157,23 +157,23 @@ MessageWidget::MessageWidget(QWidget *pParent)
   mpMessagesTextBrowser->setOpenLinks(false);
   mpMessagesTextBrowser->setOpenExternalLinks(false);
   mpMessagesTextBrowser->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(mpMessagesTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openErrorMessageClass(QUrl)));
-  connect(mpMessagesTextBrowser, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+  connect(mpMessagesTextBrowser, &QTextBrowser::anchorClicked, this, &MessageWidget::openErrorMessageClass);
+  connect(mpMessagesTextBrowser, &QTextBrowser::customContextMenuRequested, this, &MessageWidget::showContextMenu);
   // create actions
   mpSelectAllAction = new QAction(tr("Select All"), this);
   mpSelectAllAction->setShortcut(QKeySequence("Ctrl+a"));
   mpSelectAllAction->setStatusTip(tr("Selects all the Messages"));
-  connect(mpSelectAllAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(selectAll()));
+  connect(mpSelectAllAction, &QAction::triggered, mpMessagesTextBrowser, &QTextBrowser::selectAll);
   mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
   mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
   mpCopyAction->setStatusTip(tr("Copy the Message"));
-  connect(mpCopyAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(copy()));
+  connect(mpCopyAction, &QAction::triggered, mpMessagesTextBrowser, &QTextBrowser::copy);
   mpClearThisTabAction = new QAction(tr("Clear This Tab"), this);
   mpClearThisTabAction->setStatusTip(tr("Clears the messages from this tab"));
-  connect(mpClearThisTabAction, SIGNAL(triggered()), SLOT(clearThisTabMessages()));
+  connect(mpClearThisTabAction, &QAction::triggered, this, &MessageWidget::clearThisTabMessages);
   mpClearAllTabsAction = new QAction(tr("Clear All Tabs"), this);
   mpClearAllTabsAction->setStatusTip(tr("Clears the messages from all tabs"));
-  connect(mpClearAllTabsAction, SIGNAL(triggered()), SLOT(clearAllTabsMessages()));
+  connect(mpClearAllTabsAction, &QAction::triggered, this, &MessageWidget::clearAllTabsMessages);
   // Main Layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -463,7 +463,7 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mpMessagesTabWidget->addTab(mpErrorMessageWidget, tr("Errors"));
   // Remove the close button of first few fixed tabs
   mpMessagesTabWidget->removeCloseButtonfromFixedTabs();
-  connect(mpMessagesTabWidget, SIGNAL(tabCloseRequested(int)), SLOT(closeTab(int)));
+  connect(mpMessagesTabWidget, &QTabWidget::tabCloseRequested, this, &MessagesWidget::closeTab);
   mSuppressMessagesList.clear();
 #ifdef Q_OS_WIN
   // nothing

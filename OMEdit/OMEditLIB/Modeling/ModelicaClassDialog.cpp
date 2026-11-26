@@ -66,10 +66,10 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   mpLibraryWidget = pLibraryWidget;
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterClasses);
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), &QLineEdit::returnPressed, this, &LibraryBrowseDialog::searchClasses);
+  connect(mpTreeSearchFilters->getFilterTextBox(), &QLineEdit::textEdited, this, &LibraryBrowseDialog::searchClasses);
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), &QCheckBox::toggled, this, &LibraryBrowseDialog::searchClasses);
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, &LibraryBrowseDialog::searchClasses);
   // create the tree
   mpLibraryTreeProxyModel = new LibraryTreeProxyModel(mpLibraryWidget, true);
   mpLibraryTreeProxyModel->setDynamicSortFilter(true);
@@ -84,9 +84,9 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   mpLibraryTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
   mpLibraryTreeView->setExpandsOnDoubleClick(false);
   mpLibraryTreeView->setModel(mpLibraryTreeProxyModel);
-  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(expandAll()));
-  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
-  connect(mpLibraryTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(useModelicaClass()));
+  connect(mpTreeSearchFilters->getExpandAllButton(), &QToolButton::clicked, mpLibraryTreeView, &QTreeView::expandAll);
+  connect(mpTreeSearchFilters->getCollapseAllButton(), &QToolButton::clicked, mpLibraryTreeView, &QTreeView::collapseAll);
+  connect(mpLibraryTreeView, &QTreeView::doubleClicked, this, &LibraryBrowseDialog::useModelicaClass);
   // try to automatically select if user has something in the text box.
   if (!mpLineEdit->text().isEmpty()) {
     findAndSelectLibraryTreeItem(QRegularExpression(mpLineEdit->text()));
@@ -94,10 +94,10 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(useModelicaClass()));
+  connect(mpOkButton, &QPushButton::clicked, this, &LibraryBrowseDialog::useModelicaClass);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -203,19 +203,19 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   /* Don't add optimization restriction for now.
   mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OPTIMIZATION));
   */
-  connect(mpSpecializationComboBox, SIGNAL(currentIndexChanged(int)), SLOT(showHideSaveContentsInOneFileCheckBox(int)));
+  connect(mpSpecializationComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox);
   // create the extends the label and text box
   mpExtendsClassLabel = new Label(tr("Extends (optional):"));
   mpExtendsClassTextBox = new QLineEdit;
   mpExtendsClassBrowseButton = new QPushButton(Helper::browse);
   mpExtendsClassBrowseButton->setAutoDefault(false);
-  connect(mpExtendsClassBrowseButton, SIGNAL(clicked()), SLOT(browseExtendsClass()));
+  connect(mpExtendsClassBrowseButton, &QPushButton::clicked, this, &ModelicaClassDialog::browseExtendsClass);
   // Create the parent package label, text box, browse button
   mpParentClassLabel = new Label(tr("Insert in class (optional):"));
   mpParentClassTextBox = new QLineEdit;
   mpParentClassBrowseButton = new QPushButton(Helper::browse);
   mpParentClassBrowseButton->setAutoDefault(false);
-  connect(mpParentClassBrowseButton, SIGNAL(clicked()), SLOT(browseParentClass()));
+  connect(mpParentClassBrowseButton, &QPushButton::clicked, this, &ModelicaClassDialog::browseParentClass);
   // create partial checkbox
   mpPartialCheckBox = new QCheckBox(tr("Partial"));
   // create encapsulated checkbox
@@ -229,10 +229,10 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(createModelicaClass()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ModelicaClassDialog::createModelicaClass);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -426,7 +426,7 @@ OpenModelicaFile::OpenModelicaFile(QWidget *pParent)
   mpFileTextBox = new QLineEdit;
   mpFileBrowseButton = new QPushButton(Helper::browse);
   mpFileBrowseButton->setAutoDefault(false);
-  connect(mpFileBrowseButton, SIGNAL(clicked()), SLOT(browseForFile()));
+  connect(mpFileBrowseButton, &QPushButton::clicked, this, &OpenModelicaFile::browseForFile);
   // create the encoding label, combobox and encoding note.
   mpEncodingLabel = new Label(Helper::encoding);
   mpEncodingComboBox = new QComboBox;
@@ -437,14 +437,14 @@ OpenModelicaFile::OpenModelicaFile(QWidget *pParent)
   mpOpenWithEncodingButton = new QPushButton(tr("Open with selected encoding"));
   mpOpenWithEncodingButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   mpOpenWithEncodingButton->setAutoDefault(true);
-  connect(mpOpenWithEncodingButton, SIGNAL(clicked()), SLOT(openModelicaFiles()));
+  connect(mpOpenWithEncodingButton, &QPushButton::clicked, this, [this]() { openModelicaFiles(); });
   /* Open and convert to utf-8 button */
   mpOpenAndConvertToUTF8Button = new QPushButton(tr("Open and convert to UTF-8"));
   mpOpenAndConvertToUTF8Button->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(mpOpenAndConvertToUTF8Button, SIGNAL(clicked()), SLOT(convertModelicaFiles()));
+  connect(mpOpenAndConvertToUTF8Button, &QPushButton::clicked, this, QOverload<>::of(&OpenModelicaFile::convertModelicaFiles));
   /* cancel button */
   mpCancelButton = new QPushButton(Helper::cancel);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOpenWithEncodingButton, QDialogButtonBox::ActionRole);
@@ -635,7 +635,7 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, QWidget *pParent
   int currentIndex = mpParentClassComboBox->findText(pModelWidget->getLibraryTreeItem()->parent()->getNameStructure(), Qt::MatchExactly);
   if (currentIndex > -1)
     mpParentClassComboBox->setCurrentIndex(currentIndex);
-  connect(mpParentClassComboBox, SIGNAL(editTextChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
+  connect(mpParentClassComboBox, &QComboBox::editTextChanged, this, &SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox);
   // create save contents of package in one file checkbox
   mpSaveContentsInOneFileCheckBox = new QCheckBox(Helper::saveContentsInOneFile);
   mpSaveContentsInOneFileCheckBox->setChecked(true);
@@ -646,10 +646,10 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, QWidget *pParent
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(saveAsModelicaClass()));
+  connect(mpOkButton, &QPushButton::clicked, this, &SaveAsClassDialog::saveAsModelicaClass);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -779,14 +779,14 @@ DuplicateClassDialog::DuplicateClassDialog(LibraryTreeItem *pLibraryTreeItem, QW
   mpPathTextBox = new QLineEdit(mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemLibrary() ? "" : mpLibraryTreeItem->parent()->getNameStructure());
   mpPathBrowseButton = new QPushButton(Helper::browse);
   mpPathBrowseButton->setAutoDefault(false);
-  connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
+  connect(mpPathBrowseButton, &QPushButton::clicked, this, &DuplicateClassDialog::browsePath);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(duplicateClass()));
+  connect(mpOkButton, &QPushButton::clicked, this, &DuplicateClassDialog::duplicateClass);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -837,22 +837,22 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     QPushButton *pKeepStructureButton = new QPushButton(tr("Keep Structure"));
     pKeepStructureButton->setToolTip(tr("Keeps the same file type structure for the package and its contents recursively."));
     pKeepStructureButton->setAutoDefault(true);
-    connect(pKeepStructureButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
+    connect(pKeepStructureButton, &QPushButton::clicked, &signalMapper, QOverload<>::of(&QSignalMapper::map));
     // One File button
     QPushButton *pOneFileButton = new QPushButton(tr("One File"));
     pOneFileButton->setToolTip(tr("Stores the package and all its contents in one file."));
     pOneFileButton->setAutoDefault(false);
-    connect(pOneFileButton, SIGNAL(clicked()), pSelectFileTypeDialog, SLOT(reject()));
+    connect(pOneFileButton, &QPushButton::clicked, pSelectFileTypeDialog, &QDialog::reject);
     // Directory button
     QPushButton *pDirectoryButton = new QPushButton(tr("Directory"));
     pDirectoryButton->setToolTip(tr("Creates a directory for the package."));
     pDirectoryButton->setAutoDefault(false);
-    connect(pDirectoryButton, SIGNAL(clicked()), pSelectFileTypeDialog, SLOT(accept()));
+    connect(pDirectoryButton, &QPushButton::clicked, pSelectFileTypeDialog, &QDialog::accept);
     // Directories button
     QPushButton *pDirectoriesForAllButton = new QPushButton(tr("Directories For All"));
     pDirectoriesForAllButton->setToolTip(tr("Creates the directories for the package and its contents recursively."));
     pDirectoriesForAllButton->setAutoDefault(false);
-    connect(pDirectoriesForAllButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
+    connect(pDirectoriesForAllButton, &QPushButton::clicked, &signalMapper, QOverload<>::of(&QSignalMapper::map));
     // set signal mapping
     signalMapper.setMapping(pDirectoriesForAllButton, 2);
     signalMapper.setMapping(pKeepStructureButton, 3);
@@ -1218,10 +1218,10 @@ RenameClassDialog::RenameClassDialog(QString name, QString nameStructure, QWidge
   // Create the buttons
   mpOkButton = new QPushButton(Helper::rename);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(renameClass()));
+  connect(mpOkButton, &QPushButton::clicked, this, &RenameClassDialog::renameClass);
   mpCancelButton = new QPushButton(tr("&Cancel"));
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -1300,10 +1300,10 @@ SaveTotalFileDialog::SaveTotalFileDialog(LibraryTreeItem *pLibraryTreeItem, QWid
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(saveTotalModel()));
+  connect(mpOkButton, &QPushButton::clicked, this, &SaveTotalFileDialog::saveTotalModel);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -1371,7 +1371,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   // Create the button
   QPushButton *pOkButton = new QPushButton(Helper::ok);
   pOkButton->setAutoDefault(true);
-  connect(pOkButton, SIGNAL(clicked()), SLOT(close()));
+  connect(pOkButton, &QPushButton::clicked, this, &InformationDialog::close);
   // set layout
   QHBoxLayout *buttonLayout = new QHBoxLayout;
   buttonLayout->setAlignment(Qt::AlignRight);
@@ -1475,10 +1475,10 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(convert()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ConvertClassUsesAnnotationDialog::convert);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -1734,23 +1734,23 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpMoveUpButton->setObjectName("ShapePointsButton");
   mpMoveUpButton->setIcon(QIcon(":/Resources/icons/up.svg"));
   mpMoveUpButton->setToolTip(Helper::moveUp);
-  connect(mpMoveUpButton, SIGNAL(clicked()), SLOT(moveUp()));
+  connect(mpMoveUpButton, &QToolButton::clicked, this, &GraphicsViewProperties::moveUp);
   mpMoveDownButton = new QToolButton;
   mpMoveDownButton->setObjectName("ShapePointsButton");
   mpMoveDownButton->setIcon(QIcon(":/Resources/icons/down.svg"));
   mpMoveDownButton->setToolTip(Helper::moveDown);
-  connect(mpMoveDownButton, SIGNAL(clicked()), SLOT(moveDown()));
+  connect(mpMoveDownButton, &QToolButton::clicked, this, &GraphicsViewProperties::moveDown);
   // uses manipulation buttons
   mpAddUsesAnnotationButton = new QToolButton;
   mpAddUsesAnnotationButton->setObjectName("ShapePointsButton");
   mpAddUsesAnnotationButton->setIcon(QIcon(":/Resources/icons/add-icon.svg"));
   mpAddUsesAnnotationButton->setToolTip(tr("Add new uses annotation"));
-  connect(mpAddUsesAnnotationButton, SIGNAL(clicked()), SLOT(addUsesAnnotation()));
+  connect(mpAddUsesAnnotationButton, &QToolButton::clicked, this, &GraphicsViewProperties::addUsesAnnotation);
   mpRemoveUsesAnnotationButton = new QToolButton;
   mpRemoveUsesAnnotationButton->setObjectName("ShapePointsButton");
   mpRemoveUsesAnnotationButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
   mpRemoveUsesAnnotationButton->setToolTip(tr("Remove uses annotation"));
-  connect(mpRemoveUsesAnnotationButton, SIGNAL(clicked()), SLOT(removeUsesAnnotation()));
+  connect(mpRemoveUsesAnnotationButton, &QToolButton::clicked, this, &GraphicsViewProperties::removeUsesAnnotation);
   mpUsesButtonBox = new QDialogButtonBox(Qt::Vertical);
   mpUsesButtonBox->addButton(mpMoveUpButton, QDialogButtonBox::ActionRole);
   mpUsesButtonBox->addButton(mpMoveDownButton, QDialogButtonBox::ActionRole);
@@ -1777,12 +1777,12 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(saveGraphicsViewProperties()));
+  connect(mpOkButton, &QPushButton::clicked, this, &GraphicsViewProperties::saveGraphicsViewProperties);
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpGraphicsView->getModelWidget()->isElementMode() || mpGraphicsView->isVisualizationView()) {
     mpOkButton->setDisabled(true);
   }
   mpCancelButton = new QPushButton(Helper::cancel);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -1971,15 +1971,15 @@ SaveChangesDialog::SaveChangesDialog(QWidget *pParent)
   // create the Yes button
   mpYesButton = new QPushButton(tr("Yes"));
   mpYesButton->setAutoDefault(true);
-  connect(mpYesButton, SIGNAL(clicked()), SLOT(saveChanges()));
+  connect(mpYesButton, &QPushButton::clicked, this, &SaveChangesDialog::saveChanges);
   // create the No button
   mpNoButton = new QPushButton(tr("No"));
   mpNoButton->setAutoDefault(false);
-  connect(mpNoButton, SIGNAL(clicked()), SLOT(accept()));
+  connect(mpNoButton, &QPushButton::clicked, this, &QDialog::accept);
   // create the Cancel button
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpYesButton, QDialogButtonBox::ActionRole);
@@ -2162,15 +2162,15 @@ ExportFigaroDialog::ExportFigaroDialog(LibraryTreeItem *ppLibraryTreeItem, QWidg
   mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
   mpWorkingDirectoryTextBox = new QLineEdit(Utilities::tempDirectory());
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
-  connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));
+  connect(mpWorkingDirectoryBrowseButton, &QPushButton::clicked, this, &ExportFigaroDialog::browseWorkingDirectory);
   // create the export button
   mpExportFigaroButton = new QPushButton(Helper::exportFigaro);
   mpExportFigaroButton->setAutoDefault(true);
-  connect(mpExportFigaroButton, SIGNAL(clicked()), SLOT(exportModelFigaro()));
+  connect(mpExportFigaroButton, &QPushButton::clicked, this, &ExportFigaroDialog::exportModelFigaro);
   // create the cancel button
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpExportFigaroButton, QDialogButtonBox::ActionRole);
@@ -2241,14 +2241,14 @@ CreateNewItemDialog::CreateNewItemDialog(QString path, bool isCreateFile, QStrin
   mpPathTextBox = new QLineEdit(path);
   mpPathBrowseButton = new QPushButton(Helper::browse);
   mpPathBrowseButton->setAutoDefault(false);
-  connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
+  connect(mpPathBrowseButton, &QPushButton::clicked, this, &CreateNewItemDialog::browsePath);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(createNewFileOrFolder()));
+  connect(mpOkButton, &QPushButton::clicked, this, &CreateNewItemDialog::createNewFileOrFolder);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -2388,10 +2388,10 @@ RenameItemDialog::RenameItemDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *p
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(renameItem()));
+  connect(mpOkButton, &QPushButton::clicked, this, &RenameItemDialog::renameItem);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -2526,10 +2526,10 @@ ComponentNameDialog::ComponentNameDialog(const QString &nameStructure, QString n
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(updateComponentName()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ComponentNameDialog::updateComponentName);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

@@ -49,8 +49,8 @@
 // The stub bases are Q_OBJECT so moc can chain DocumentationViewer/Documentation
 // Page (which derive from them and carry Q_OBJECT). Methods are inline no-ops;
 // the callback-taking ones (runJavaScript/toHtml) are templates that accept and
-// ignore any functor. Base-class signals are connected via the string-based
-// SIGNAL()/SLOT() macros at the call sites, so they need not be declared here.
+// ignore any functor. The base-class signals that the call sites connect to are
+// declared, as pointer-to-member connects need them.
 //
 // On wasm the stubs are replaced by WasmDocViewer.h, a functional QTextBrowser-based
 // viewer (the documentation actually renders); MSVC keeps the no-op stubs.
@@ -110,6 +110,8 @@ public:
   void setHtml(const QString &) {}
   void setUrl(const QUrl &) {}
 signals:
+  void linkHovered(const QString &);
+  void selectionChanged();
   void newWindowRequested(QWebEngineNewWindowRequest &request);
 protected:
   virtual bool acceptNavigationRequest(const QUrl &, NavigationType, bool) { return true; }
@@ -123,12 +125,15 @@ public:
   QWebEnginePage *page() const { return mpPage; }
   void setPage(QWebEnginePage *pPage) { mpPage = pPage; }
   QAction *pageAction(QWebEnginePage::WebAction) const { return nullptr; }
+  void triggerPageAction(QWebEnginePage::WebAction, bool = false) {}
   QWebEngineSettings *settings() const { static QWebEngineSettings settings; return &settings; }
   void setUrl(const QUrl &) {}
   void setHtml(const QString &) {}
   void load(const QUrl &) {}
   void setZoomFactor(qreal) {}
   qreal zoomFactor() const { return 1.0; }
+signals:
+  void loadFinished(bool ok);
 private:
   QWebEnginePage *mpPage = nullptr;
 };

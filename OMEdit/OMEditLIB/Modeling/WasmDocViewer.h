@@ -119,6 +119,7 @@ public:
   QWebEnginePage *page() const { return mpPage; }
   void setPage(QWebEnginePage *pPage);
   QAction *pageAction(QWebEnginePage::WebAction) const { return nullptr; }
+  void triggerPageAction(QWebEnginePage::WebAction, bool = false) {}
   QWebEngineSettings *settings() const { static QWebEngineSettings settings; return &settings; }
   void setUrl(const QUrl &url);
   void setHtml(const QString &html);

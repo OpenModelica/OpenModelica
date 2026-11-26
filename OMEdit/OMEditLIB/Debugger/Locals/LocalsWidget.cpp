@@ -630,10 +630,10 @@ LocalsWidget::LocalsWidget(QWidget *pParent)
   mpLocalsTreeProxyModel->setDynamicSortFilter(true);
   mpLocalsTreeProxyModel->setSourceModel(mpLocalsTreeModel);
   mpLocalsTreeView->setModel(mpLocalsTreeProxyModel);
-  connect(mpLocalsTreeView, SIGNAL(expanded(QModelIndex)), SLOT(localsTreeItemExpanded(QModelIndex)));
+  connect(mpLocalsTreeView, &LocalsTreeView::expanded, this, &LocalsWidget::localsTreeItemExpanded);
   /* Local value viewer */
   mpLocalValueViewer = new QPlainTextEdit;
-  connect(mpLocalsTreeView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), SLOT(showLocalValue(QModelIndex,QModelIndex)));
+  connect(mpLocalsTreeView->selectionModel(), &QItemSelectionModel::currentChanged, this, &LocalsWidget::showLocalValue);
   QSplitter *pLocalsSplitter = new QSplitter;
   pLocalsSplitter->setOrientation(Qt::Vertical);
   pLocalsSplitter->setChildrenCollapsible(false);
@@ -648,7 +648,7 @@ LocalsWidget::LocalsWidget(QWidget *pParent)
   pMainLayout->setContentsMargins(0, 0, 1, 0);
   pMainLayout->addWidget(pLocalsSplitter, 0, 0);
   setLayout(pMainLayout);
-  connect(GDBAdapter::instance(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(GDBAdapter::instance(), &GDBAdapter::GDBProcessFinished, this, &LocalsWidget::handleGDBProcessFinished);
 }
 
 void LocalsWidget::localsTreeItemExpanded(QModelIndex index)

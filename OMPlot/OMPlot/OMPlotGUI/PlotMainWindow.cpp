@@ -75,12 +75,12 @@ void PlotMainWindow::createActions()
 {
   mpCloseAction = new QAction(tr("Close"), this);
   mpCloseAction->setShortcut(QKeySequence("Ctrl+q"));
-  connect(mpCloseAction, SIGNAL(triggered()), SLOT(close()));
+  connect(mpCloseAction, &QAction::triggered, this, &PlotMainWindow::close);
 
   mpTabViewAction = new QAction(tr("Tab View"), this);
   mpTabViewAction->setCheckable(true);
   mpTabViewAction->setChecked(true);
-  connect(mpTabViewAction, SIGNAL(triggered(bool)), SLOT(switchWindowsView(bool)));
+  connect(mpTabViewAction, &QAction::triggered, this, &PlotMainWindow::switchWindowsView);
 }
 
 void PlotMainWindow::createMenus()

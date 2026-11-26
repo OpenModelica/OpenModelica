@@ -72,20 +72,20 @@ namespace IAEX
     ui.setupUi(this);
 
     // connections
-    connect( ui.viewReplaceButton_, SIGNAL( clicked() ),
-      this, SLOT( showHideReplace() ));
-    connect( ui.hideReplaceButton_, SIGNAL( clicked() ),
-      this, SLOT( showHideReplace() ));
-    connect( ui.searchButton_, SIGNAL( clicked() ),
-      this, SLOT( search() ));
-    connect( ui.replaceButton_, SIGNAL( clicked() ),
-      this, SLOT( replace() ));
-    connect( ui.replaceAllButton_, SIGNAL( clicked() ),
-      this, SLOT( replaceAll() ));
-    connect( ui.searchComboBox_, SIGNAL( returnPressed() ),
-      this, SLOT( search() ));
-    connect( ui.closeButton_, SIGNAL( clicked() ),
-      this, SLOT( closeForm() ));
+    connect( ui.viewReplaceButton_, &QPushButton::clicked,
+      this, &SearchForm::showHideReplace );
+    connect( ui.hideReplaceButton_, &QPushButton::clicked,
+      this, &SearchForm::showHideReplace );
+    connect( ui.searchButton_, &QPushButton::clicked,
+      this, &SearchForm::search );
+    connect( ui.replaceButton_, &QPushButton::clicked,
+      this, &SearchForm::replace );
+    connect( ui.replaceAllButton_, &QPushButton::clicked,
+      this, &SearchForm::replaceAll );
+    connect( ui.searchComboBox_, &ComboBoxSearch::returnPressed,
+      this, &SearchForm::search );
+    connect( ui.closeButton_, &QPushButton::clicked,
+      this, &SearchForm::closeForm );
 
     // Replace stuff
     showOrHideReplace();

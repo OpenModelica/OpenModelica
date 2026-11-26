@@ -68,7 +68,7 @@ void NetworkAccessManager::proxyAuthentication(const QNetworkProxy &proxy, QAuth
 
   switch (answer) {
     case QDialog::Rejected:
-      disconnect(this, SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)), this, SLOT(proxyAuthentication(QNetworkProxy,QAuthenticator*)));
+      disconnect(this, &QNetworkAccessManager::proxyAuthenticationRequired, this, &NetworkAccessManager::proxyAuthentication);
       break;
     case QDialog::Accepted:
     default:
@@ -91,8 +91,8 @@ void NetworkAccessManager::requestFinished(QNetworkReply *pNetworkReply)
 
 QNetworkReply* NetworkAccessManager::createRequest(QNetworkAccessManager::Operation operation, const QNetworkRequest &request, QIODevice *outgoingData)
 {
-  connect(this, SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)), SLOT(proxyAuthentication(QNetworkProxy,QAuthenticator*)), Qt::UniqueConnection);
-  connect(this, SIGNAL(finished(QNetworkReply*)), SLOT(requestFinished(QNetworkReply*)), Qt::UniqueConnection);
+  connect(this, &QNetworkAccessManager::proxyAuthenticationRequired, this, &NetworkAccessManager::proxyAuthentication, Qt::UniqueConnection);
+  connect(this, &QNetworkAccessManager::finished, this, &NetworkAccessManager::requestFinished, Qt::UniqueConnection);
 
   QNetworkReply *pNetworkReply = QNetworkAccessManager::createRequest(operation, request, outgoingData);
   if (mIgnoreSslErrors) {
@@ -114,10 +114,10 @@ ProxyCredentialsDialog::ProxyCredentialsDialog(const QString &proxyName, QWidget
   // Create the buttons
   QPushButton *pOkButton = new QPushButton(Helper::ok);
   pOkButton->setAutoDefault(true);
-  connect(pOkButton, SIGNAL(clicked()), SLOT(accept()));
+  connect(pOkButton, &QPushButton::clicked, this, &ProxyCredentialsDialog::accept);
   QPushButton *pCancelButton = new QPushButton(Helper::cancel);
   pCancelButton->setAutoDefault(false);
-  connect(pCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(pCancelButton, &QPushButton::clicked, this, &ProxyCredentialsDialog::reject);
   // create buttons box
   QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
   pButtonBox->addButton(pOkButton, QDialogButtonBox::ActionRole);

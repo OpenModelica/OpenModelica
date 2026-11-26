@@ -101,12 +101,12 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   mpContentChangeTimer = new QTimer(this);
   mpContentChangeTimer->setSingleShot(true);
   mpContentChangeTimer->setInterval(kContentChangeDebounceMs);
-  connect(mpContentChangeTimer, SIGNAL(timeout()), SLOT(sendLanguageServerContentChange()));
+  connect(mpContentChangeTimer, &QTimer::timeout, this, &ModelicaEditor::sendLanguageServerContentChange);
   // Falls back to basic navigation when the server does not answer go-to-definition in time.
   mpDefinitionFallbackTimer = new QTimer(this);
   mpDefinitionFallbackTimer->setSingleShot(true);
   mpDefinitionFallbackTimer->setInterval(kDefinitionFallbackMs);
-  connect(mpDefinitionFallbackTimer, SIGNAL(timeout()), SLOT(onDefinitionFallbackTimeout()));
+  connect(mpDefinitionFallbackTimer, &QTimer::timeout, this, &ModelicaEditor::onDefinitionFallbackTimeout);
 }
 
 ModelicaEditor::~ModelicaEditor()
@@ -423,13 +423,13 @@ bool ModelicaEditor::ensureLanguageServerConnected()
     return false;
   }
   if (mConnectedLSPClient != pLSPClient) {
-    connect(pLSPClient, SIGNAL(hoverResult(int,QString)), this, SLOT(onLSPHoverResult(int,QString)));
-    connect(pLSPClient, SIGNAL(definitionResult(int,LSP::Location)), this, SLOT(onLSPDefinitionResult(int,LSP::Location)));
+    connect(pLSPClient, &LSPClient::hoverResult, this, &ModelicaEditor::onLSPHoverResult);
+    connect(pLSPClient, &LSPClient::definitionResult, this, &ModelicaEditor::onLSPDefinitionResult);
     // A server that crashes is restarted by the same client object, which drops
     // the documents it had open. Without this the editor would keep believing
     // its document is open and never send didOpen again, so every later request
     // would name a uri the new process has never seen.
-    connect(pLSPClient, SIGNAL(initialized()), this, SLOT(onLanguageServerInitialized()));
+    connect(pLSPClient, &LSPClient::initialized, this, &ModelicaEditor::onLanguageServerInitialized);
     mConnectedLSPClient = pLSPClient;
     mLSPDocumentOpened = false;
   }

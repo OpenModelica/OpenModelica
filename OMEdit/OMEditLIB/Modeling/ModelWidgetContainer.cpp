@@ -137,7 +137,7 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
   : QGraphicsScene(pModelWidget), mViewType(viewType)
 {
   mpModelWidget = pModelWidget;
-  connect(this, SIGNAL(selectionChanged()), mpModelWidget, SLOT(updatePositionLabel()));
+  connect(this, &QGraphicsScene::selectionChanged, mpModelWidget, &ModelWidget::updatePositionLabel);
 }
 
 /*!
@@ -2883,50 +2883,50 @@ void GraphicsView::createActions()
   // parameters Action
   mpParametersAction = new QAction(Helper::parameters, this);
   mpParametersAction->setStatusTip(tr("Shows the class parameters"));
-  connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
+  connect(mpParametersAction, &QAction::triggered, this, &GraphicsView::showParameters);
   // Graphics View Properties Action
   if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     mpPropertiesAction = new QAction(Helper::systemSimulationInformation, this);
   } else {
     mpPropertiesAction = new QAction(Helper::properties, this);
   }
-  connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
+  connect(mpPropertiesAction, &QAction::triggered, this, &GraphicsView::showGraphicsViewProperties);
   // rename Action
   mpRenameAction = new QAction(Helper::rename, this);
   mpRenameAction->setStatusTip(Helper::renameTip);
-  connect(mpRenameAction, SIGNAL(triggered()), SLOT(showRenameDialog()));
+  connect(mpRenameAction, &QAction::triggered, this, &GraphicsView::showRenameDialog);
   // Actions for shapes and Components
   // Manhattanize Action
   mpManhattanizeAction = new QAction(tr("Manhattanize"), this);
   mpManhattanizeAction->setStatusTip(tr("Manhattanize the lines"));
   mpManhattanizeAction->setDisabled(isSystemLibrary);
-  connect(mpManhattanizeAction, SIGNAL(triggered()), SLOT(manhattanizeItems()));
+  connect(mpManhattanizeAction, &QAction::triggered, this, &GraphicsView::manhattanizeItems);
   // Delete Action
   mpDeleteAction = new QAction(ResourceCache::getIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the item"));
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
-  connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteItems()));
+  connect(mpDeleteAction, &QAction::triggered, this, &GraphicsView::deleteItems);
   // cut action
   mpCutAction = new QAction(ResourceCache::getIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
   mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
   mpCutAction->setDisabled(isSystemLibrary);
-  connect(mpCutAction, SIGNAL(triggered()), SLOT(cutItems()));
+  connect(mpCutAction, &QAction::triggered, this, &GraphicsView::cutItems);
   // copy action
   mpCopyAction = new QAction(ResourceCache::getIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
   mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
-  connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyItems()));
+  connect(mpCopyAction, &QAction::triggered, this, QOverload<>::of(&GraphicsView::copyItems));
   // paste action
   mpPasteAction = new QAction(ResourceCache::getIcon(":/Resources/icons/paste.svg"), tr("Paste"), this);
   mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));
   mpPasteAction->setDisabled(isSystemLibrary);
-  connect(mpPasteAction, SIGNAL(triggered()), SLOT(pasteItems()));
+  connect(mpPasteAction, &QAction::triggered, this, [this]() { pasteItems(); });
   // Duplicate Action
   mpDuplicateAction = new QAction(ResourceCache::getIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
   mpDuplicateAction->setStatusTip(Helper::duplicateTip);
   mpDuplicateAction->setShortcut(QKeySequence("Ctrl+d"));
   mpDuplicateAction->setDisabled(isSystemLibrary);
-  connect(mpDuplicateAction, SIGNAL(triggered()), SLOT(duplicateItems()));
+  connect(mpDuplicateAction, &QAction::triggered, this, QOverload<>::of(&GraphicsView::duplicateItems));
   // Bring To Front Action
   mpBringToFrontAction = new QAction(ResourceCache::getIcon(":/Resources/icons/bring-to-front.svg"), tr("Bring to Front"), this);
   mpBringToFrontAction->setStatusTip(tr("Brings the item to front"));
@@ -2952,41 +2952,41 @@ void GraphicsView::createActions()
   mpRotateClockwiseAction->setStatusTip(tr("Rotates the item clockwise"));
   mpRotateClockwiseAction->setShortcut(QKeySequence("Ctrl+r"));
   mpRotateClockwiseAction->setDisabled(isSystemLibrary);
-  connect(mpRotateClockwiseAction, SIGNAL(triggered()), SLOT(rotateClockwise()));
+  connect(mpRotateClockwiseAction, &QAction::triggered, this, &GraphicsView::rotateClockwise);
   // Rotate Anti-ClockWise Action
   mpRotateAntiClockwiseAction = new QAction(ResourceCache::getIcon(":/Resources/icons/rotateanticlockwise.svg"), tr("Rotate Anticlockwise"), this);
   mpRotateAntiClockwiseAction->setStatusTip(tr("Rotates the item anticlockwise"));
   mpRotateAntiClockwiseAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
   mpRotateAntiClockwiseAction->setDisabled(isSystemLibrary);
-  connect(mpRotateAntiClockwiseAction, SIGNAL(triggered()), SLOT(rotateAntiClockwise()));
+  connect(mpRotateAntiClockwiseAction, &QAction::triggered, this, &GraphicsView::rotateAntiClockwise);
   // Flip Horizontal Action
   mpFlipHorizontalAction = new QAction(ResourceCache::getIcon(":/Resources/icons/flip-horizontal.svg"), tr("Flip Horizontal"), this);
   mpFlipHorizontalAction->setStatusTip(tr("Flips the item horizontally"));
   mpFlipHorizontalAction->setShortcut(QKeySequence("h"));
   mpFlipHorizontalAction->setDisabled(isSystemLibrary);
-  connect(mpFlipHorizontalAction, SIGNAL(triggered()), SLOT(flipHorizontal()));
+  connect(mpFlipHorizontalAction, &QAction::triggered, this, &GraphicsView::flipHorizontal);
   // Flip Vertical Action
   mpFlipVerticalAction = new QAction(ResourceCache::getIcon(":/Resources/icons/flip-vertical.svg"), tr("Flip Vertical"), this);
   mpFlipVerticalAction->setStatusTip(tr("Flips the item vertically"));
   mpFlipVerticalAction->setShortcut(QKeySequence("v"));
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
-  connect(mpFlipVerticalAction, SIGNAL(triggered()), SLOT(flipVertical()));
+  connect(mpFlipVerticalAction, &QAction::triggered, this, &GraphicsView::flipVertical);
   // create connector Action
   mpCreateConnectorAction = new QAction(tr("Create Connector"), this);
   mpCreateConnectorAction->setStatusTip(tr("Creates a connector"));
-  connect(mpCreateConnectorAction, SIGNAL(triggered()), SLOT(createConnector()));
+  connect(mpCreateConnectorAction, &QAction::triggered, this, &GraphicsView::createConnector);
   // cancel connection Action
   mpCancelConnectionAction = new QAction(tr("Cancel Connection"), this);
   mpCancelConnectionAction->setStatusTip(tr("Cancels the current connection"));
-  connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(cancelConnection()));
+  connect(mpCancelConnectionAction, &QAction::triggered, this, &GraphicsView::cancelConnection);
   // set initial state Action
   mpSetInitialStateAction = new QAction(tr("Set Initial State"), this);
   mpSetInitialStateAction->setStatusTip(tr("Sets the state as initial state"));
-  connect(mpSetInitialStateAction, SIGNAL(triggered()), SLOT(setInitialState()));
+  connect(mpSetInitialStateAction, &QAction::triggered, this, &GraphicsView::setInitialState);
   // cancel transition Action
   mpCancelTransitionAction = new QAction(tr("Cancel Transition"), this);
   mpCancelTransitionAction->setStatusTip(tr("Cancels the current transition"));
-  connect(mpCancelTransitionAction, SIGNAL(triggered()), SLOT(cancelTransition()));
+  connect(mpCancelTransitionAction, &QAction::triggered, this, &GraphicsView::cancelTransition);
   // create new model from selection Action
   mpCreateModelFromSelectionAction = new QAction(tr("Create New Model from Selection"), this);
   mpCreateModelFromSelectionAction->setStatusTip(tr("Moves the selected items to a new model and connects it through new connectors"));
@@ -5798,7 +5798,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpRecentItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
   QPushButton *pClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
   pClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(pClearRecentFilesListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentFilesList()));
+  connect(pClearRecentFilesListButton, &QPushButton::clicked, MainWindow::instance(), &MainWindow::clearRecentFilesList);
   // RecentFiles Frame layout. The clear button sits in the heading row so that the list gets the whole frame.
   QHBoxLayout *recentFilesHeadingHBLayout = new QHBoxLayout;
   recentFilesHeadingHBLayout->addWidget(pRecentFilesLabel, 1, Qt::AlignLeft);
@@ -5824,10 +5824,10 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpRecentModelItemsListWidget->setMovement(QListView::Static);
   mpRecentModelItemsListWidget->setIconSize(Helper::iconSize);
   mpRecentModelItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
-  connect(mpRecentModelItemsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentModelItem(QListWidgetItem*)));
+  connect(mpRecentModelItemsListWidget, &QListWidget::itemClicked, this, &WelcomePageWidget::openRecentModelItem);
   QPushButton *pClearRecentModelsListButton = new QPushButton(Helper::clearRecentModels);
   pClearRecentModelsListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(pClearRecentModelsListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentModelsList()));
+  connect(pClearRecentModelsListButton, &QPushButton::clicked, MainWindow::instance(), &MainWindow::clearRecentModelsList);
   // RecentModels Frame layout. The clear button sits in the heading row so that the list gets the whole frame.
   QHBoxLayout *recentModelsHeadingHBLayout = new QHBoxLayout;
   recentModelsHeadingHBLayout->addWidget(pRecentModelsLabel, 1, Qt::AlignLeft);
@@ -5858,12 +5858,12 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpLatestNewsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
   QPushButton *pReloadLatestNewsButton = new QPushButton(Helper::reload);
   pReloadLatestNewsButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(pReloadLatestNewsButton, SIGNAL(clicked()), SLOT(addLatestNewsListItems()));
+  connect(pReloadLatestNewsButton, &QPushButton::clicked, this, &WelcomePageWidget::addLatestNewsListItems);
   Label *pVisitWebsiteLabel = new Label(tr("For more details visit our website <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>"));
   pVisitWebsiteLabel->setTextFormat(Qt::RichText);
   pVisitWebsiteLabel->setTextInteractionFlags(pVisitWebsiteLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
   pVisitWebsiteLabel->setOpenExternalLinks(true);
-  connect(mpLatestNewsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openLatestNewsItem(QListWidgetItem*)));
+  connect(mpLatestNewsListWidget, &QListWidget::itemClicked, this, &WelcomePageWidget::openLatestNewsItem);
   // Latest News Frame layout
   QVBoxLayout *latestNewsFrameVBLayout = new QVBoxLayout;
   latestNewsFrameVBLayout->addWidget(pLatestNewsLabel);
@@ -5876,7 +5876,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpLatestNewsFrame->setLayout(latestNewsFrameVBLayout);
   // create http object for request
   mpLatestNewsNetworkAccessManager = new NetworkAccessManager;
-  connect(mpLatestNewsNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(readLatestNewsXML(QNetworkReply*)));
+  connect(mpLatestNewsNetworkAccessManager, &QNetworkAccessManager::finished, this, &WelcomePageWidget::readLatestNewsXML);
   addLatestNewsListItems();
   // splitter
   mpSplitter = new QSplitter;
@@ -5914,16 +5914,16 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   const QString buttonStyleSheet = "QPushButton{padding: 5px 15px 5px 15px;}";
   QPushButton *pCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
   pCreateModelButton->setStyleSheet(buttonStyleSheet);
-  connect(pCreateModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(createNewModelicaClass()));
+  connect(pCreateModelButton, &QPushButton::clicked, MainWindow::instance(), &MainWindow::createNewModelicaClass);
   QPushButton *pOpenModelButton = new QPushButton(Helper::openModelicaFiles);
   pOpenModelButton->setStyleSheet(buttonStyleSheet);
-  connect(pOpenModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openModelicaFile()));
+  connect(pOpenModelButton, &QPushButton::clicked, MainWindow::instance(), &MainWindow::openModelicaFile);
   QPushButton *pSystemLibrariesButton = new QPushButton(tr("System Libraries"));
   pSystemLibrariesButton->setStyleSheet(buttonStyleSheet);
   pSystemLibrariesButton->setMenu(MainWindow::instance()->getLibrariesMenu());
   QPushButton *pInstallLibraryButton = new QPushButton(Helper::installLibrary);
   pInstallLibraryButton->setStyleSheet(buttonStyleSheet);
-  connect(pInstallLibraryButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openInstallLibraryDialog()));
+  connect(pInstallLibraryButton, &QPushButton::clicked, MainWindow::instance(), &MainWindow::openInstallLibraryDialog);
   // bottom frame layout
   QHBoxLayout *pBottomFrameLayout = new QHBoxLayout;
   pBottomFrameLayout->setAlignment(Qt::AlignLeft);
@@ -6238,7 +6238,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
      */
     mUpdateModelTimer.setSingleShot(true);
     mUpdateModelTimer.setInterval(500);
-    connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
+    connect(&mUpdateModelTimer, &QTimer::timeout, this, &ModelWidget::updateModel);
   } else if (mpLibraryTreeItem->isSSP()) {
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()) {
@@ -6286,8 +6286,8 @@ void ModelWidget::addDependsOnModel(const QString &dependsOnModel)
 {
   if (!mDependsOnModelsList.contains(dependsOnModel)) {
     mDependsOnModelsList.append(dependsOnModel);
-    connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)),
-            SLOT(updateModelIfDependsOn(QString,bool)), Qt::UniqueConnection);
+    connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), &LibraryTreeModel::modelStateChanged,
+            this, &ModelWidget::updateModelIfDependsOn, Qt::UniqueConnection);
   }
 }
 
@@ -6344,7 +6344,7 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
   mpIconGraphicsView->drawCoordinateSystem(modelInfo.mName.isEmpty());
   mpDiagramGraphicsView->drawCoordinateSystem(modelInfo.mName.isEmpty());
   clearDependsOnModels();
-  disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
+  disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), &LibraryTreeModel::modelStateChanged, this, &ModelWidget::updateModelIfDependsOn);
   // if we are drawing the model inside the element mode and the parent element is extends so draw the element as inherited.
   ModelInstance::Element *pElement = mpModelInstance->getRootParentElement();
   if (pElement && pElement->isExtend()) {
@@ -6527,7 +6527,7 @@ void ModelWidget::createModelWidgetComponents()
     mpBackToolButton->setToolTip(tr("Back"));
     mpBackToolButton->setAutoRaise(true);
     mpBackToolButton->setEnabled(false);
-    connect(mpBackToolButton, SIGNAL(clicked()), SLOT(backElement()));
+    connect(mpBackToolButton, &QToolButton::clicked, this, &ModelWidget::backElement);
     // forward tool button
     mpForwardToolButton = new QToolButton;
     mpForwardToolButton->setText(tr("Forward"));
@@ -6535,7 +6535,7 @@ void ModelWidget::createModelWidgetComponents()
     mpForwardToolButton->setToolTip(tr("Forward"));
     mpForwardToolButton->setAutoRaise(true);
     mpForwardToolButton->setEnabled(false);
-    connect(mpForwardToolButton, SIGNAL(clicked()), SLOT(forwardElement()));
+    connect(mpForwardToolButton, &QToolButton::clicked, this, &ModelWidget::forwardElement);
     // exit tool button
     mpExitToolButton = new QToolButton;
     mpExitToolButton->setText(tr("Exit"));
@@ -6543,7 +6543,7 @@ void ModelWidget::createModelWidgetComponents()
     mpExitToolButton->setToolTip(tr("Exit Element"));
     mpExitToolButton->setAutoRaise(true);
     mpExitToolButton->setEnabled(false);
-    connect(mpExitToolButton, SIGNAL(clicked()), SLOT(exitElement()));
+    connect(mpExitToolButton, &QToolButton::clicked, this, &ModelWidget::exitElement);
     // description label for element mode
     mpElementModeLabel = new Label;
     // frame to contain element mode buttons
@@ -6570,7 +6570,7 @@ void ModelWidget::createModelWidgetComponents()
     mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
     mpFileLockToolButton->setEnabled(mpLibraryTreeItem->isReadOnly() && !mpLibraryTreeItem->isSystemLibrary());
     mpFileLockToolButton->setAutoRaise(true);
-    connect(mpFileLockToolButton, SIGNAL(clicked()), SLOT(makeFileWritAble()));
+    connect(mpFileLockToolButton, &QToolButton::clicked, this, &ModelWidget::makeFileWritAble);
     // create project status bar
     mpModelStatusBar = new QStatusBar;
     mpModelStatusBar->setObjectName("ModelStatusBar");
@@ -6584,10 +6584,10 @@ void ModelWidget::createModelWidgetComponents()
     MainWindow *pMainWindow = MainWindow::instance();
     // show hide widgets based on library type
     if (mpLibraryTreeItem->isModelica()) {
-      connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
-      connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
-      connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
-      connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
+      connect(mpIconViewToolButton, &QToolButton::toggled, this, &ModelWidget::showIconView);
+      connect(mpDiagramViewToolButton, &QToolButton::toggled, this, &ModelWidget::showDiagramView);
+      connect(mpTextViewToolButton, &QToolButton::toggled, this, &ModelWidget::showTextView);
+      connect(mpDocumentationViewToolButton, &QToolButton::clicked, this, &ModelWidget::showDocumentationView);
       pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
@@ -6601,7 +6601,7 @@ void ModelWidget::createModelWidgetComponents()
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor);
       pModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(OptionsDialog::instance(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+      connect(OptionsDialog::instance(), &OptionsDialog::modelicaEditorSettingsChanged, pModelicaTextHighlighter, &ModelicaHighlighter::settingsChanged);
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
@@ -6623,7 +6623,7 @@ void ModelWidget::createModelWidgetComponents()
         CEditor *pCEditor = dynamic_cast<CEditor*>(mpEditor);
         pCEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
-        connect(OptionsDialog::instance(), SIGNAL(cEditorSettingsChanged()), pCHighlighter, SLOT(settingsChanged()));
+        connect(OptionsDialog::instance(), &OptionsDialog::cEditorSettingsChanged, pCHighlighter, &CHighlighter::settingsChanged);
       } else if (mpLibraryTreeItem->isCRMLFile()) {
         mpEditor = new CRMLEditor(this);
         CRMLHighlighter *pCRMLHighlighter;
@@ -6631,7 +6631,7 @@ void ModelWidget::createModelWidgetComponents()
         CRMLEditor *pCRMLEditor = dynamic_cast<CRMLEditor*>(mpEditor);
         pCRMLEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
-        connect(OptionsDialog::instance(), SIGNAL(crmlEditorSettingsChanged()), pCRMLHighlighter, SLOT(settingsChanged()));
+        connect(OptionsDialog::instance(), &OptionsDialog::crmlEditorSettingsChanged, pCRMLHighlighter, &CRMLHighlighter::settingsChanged);
       } else if (mpLibraryTreeItem->isMOSFile()) {
         mpEditor = new MOSEditor(this);
         MOSHighlighter *pMOSHighlighter;
@@ -6639,7 +6639,7 @@ void ModelWidget::createModelWidgetComponents()
         MOSEditor *pMOSEditor = dynamic_cast<MOSEditor*>(mpEditor);
         pMOSEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
-        connect(OptionsDialog::instance(), SIGNAL(mosEditorSettingsChanged()), pMOSHighlighter, SLOT(settingsChanged()));
+        connect(OptionsDialog::instance(), &OptionsDialog::mosEditorSettingsChanged, pMOSHighlighter, &MOSHighlighter::settingsChanged);
       } else if (Utilities::isModelicaFile(fileInfo.suffix())) {
         mpEditor = new MetaModelicaEditor(this);
         MetaModelicaHighlighter *pMetaModelicaHighlighter;
@@ -6647,7 +6647,7 @@ void ModelWidget::createModelWidgetComponents()
         MetaModelicaEditor *pMetaModelicaEditor = dynamic_cast<MetaModelicaEditor*>(mpEditor);
         pMetaModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
-        connect(OptionsDialog::instance(), SIGNAL(metaModelicaEditorSettingsChanged()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
+        connect(OptionsDialog::instance(), &OptionsDialog::metaModelicaEditorSettingsChanged, pMetaModelicaHighlighter, &MetaModelicaHighlighter::settingsChanged);
       } else {
         mpEditor = new TextEditor(this);
         TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
@@ -6659,14 +6659,14 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
     } else if (mpLibraryTreeItem->isSSP()) {
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-        connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
+        connect(mpIconViewToolButton, &QToolButton::toggled, this, &ModelWidget::showIconView);
         pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
       }
-      connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
+      connect(mpDiagramViewToolButton, &QToolButton::toggled, this, &ModelWidget::showDiagramView);
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       // Only the top level OMSimualtor models or systems or components will have the editor.
       if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-        connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
+        connect(mpTextViewToolButton, &QToolButton::toggled, this, &ModelWidget::showTextView);
         pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
         // create an editor
         mpEditor = new OMSimulatorEditor(this);
@@ -6674,7 +6674,7 @@ void ModelWidget::createModelWidgetComponents()
         pOMSimulatorEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
         OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(OptionsDialog::instance()->getOMSimulatorEditorPage(), mpEditor->getPlainTextEdit());
         mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-        connect(OptionsDialog::instance(), SIGNAL(omsimulatorEditorSettingsChanged()), pOMSimulatorHighlighter, SLOT(settingsChanged()));
+        connect(OptionsDialog::instance(), &OptionsDialog::omsimulatorEditorSettingsChanged, pOMSimulatorHighlighter, &OMSimulatorHighlighter::settingsChanged);
       }
       drawOMSModelDiagramElements();
       drawOMSModelConnections();
@@ -6693,8 +6693,8 @@ void ModelWidget::createModelWidgetComponents()
       }
     }
     if (mpEditor) {
-      connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
-      connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
+      connect(mpEditor->getPlainTextEdit()->document(), &QTextDocument::undoAvailable, this, &ModelWidget::handleCanUndoChanged);
+      connect(mpEditor->getPlainTextEdit()->document(), &QTextDocument::redoAvailable, this, &ModelWidget::handleCanRedoChanged);
       mpMainLayout->addWidget(mpEditor, 1);
     }
     setLayout(mpMainLayout);
@@ -7062,7 +7062,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     /* if a class inside a package one file is renamed then it is already deleted by calling loadString using the whole package contents
      * so we tell unloadLibraryTreeItem to don't try deleteClass since it will only produce error
      */
-    disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
+    disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), &LibraryTreeModel::modelStateChanged, this, &ModelWidget::updateModelIfDependsOn);
     // set this to null before calling unloadLibraryTreeItem to this ModelWidget is not deleted.
     mpLibraryTreeItem->setModelWidget(0);
     const QString nameStructure = mpLibraryTreeItem->getNameStructure();
@@ -7681,11 +7681,11 @@ void ModelWidget::createUndoStack()
     }
   } else {
     mpUndoStack = new UndoStack(this);
-    connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
-    connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
+    connect(mpUndoStack, &QUndoStack::canUndoChanged, this, &ModelWidget::handleCanUndoChanged);
+    connect(mpUndoStack, &QUndoStack::canRedoChanged, this, &ModelWidget::handleCanRedoChanged);
   }
   // items moved, rotated or resized by keys, dialogs, undo or redo
-  connect(mpUndoStack, SIGNAL(indexChanged(int)), SLOT(updatePositionLabel()));
+  connect(mpUndoStack, &QUndoStack::indexChanged, this, &ModelWidget::updatePositionLabel);
   if (MainWindow::instance()->isDebug()) {
     mpUndoView = new QUndoView(mpUndoStack);
   }
@@ -8309,7 +8309,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   mpRecentModelsList->setTextElideMode(Qt::ElideMiddle);
   mpRecentModelsList->setViewMode(QListView::ListMode);
   mpRecentModelsList->setMovement(QListView::Static);
-  connect(mpRecentModelsList, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentModelWidget(QListWidgetItem*)));
+  connect(mpRecentModelsList, &QListWidget::itemClicked, this, &ModelWidgetContainer::openRecentModelWidget);
   QGridLayout *pModelSwitcherLayout = new QGridLayout;
   pModelSwitcherLayout->setContentsMargins(0, 0, 0, 0);
   pModelSwitcherLayout->addWidget(mpRecentModelsList, 0, 0);
@@ -8317,19 +8317,19 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   mpLastActiveSubWindow = 0;
   // install QApplication event filter to handle the ctrl+tab and ctrl+shift+tab
   QApplication::instance()->installEventFilter(this);
-  connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), SLOT(currentModelWidgetChanged(QMdiSubWindow*)));
-  connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), MainWindow::instance(), SLOT(updateModelSwitcherMenu(QMdiSubWindow*)));
+  connect(this, &QMdiArea::subWindowActivated, this, &ModelWidgetContainer::currentModelWidgetChanged);
+  connect(this, &QMdiArea::subWindowActivated, MainWindow::instance(), &MainWindow::updateModelSwitcherMenu);
   // add actions
-  connect(MainWindow::instance()->getSaveAction(), SIGNAL(triggered()), SLOT(saveModelWidget()));
-  connect(MainWindow::instance()->getSaveAsAction(), SIGNAL(triggered()), SLOT(saveAsModelWidget()));
-  connect(MainWindow::instance()->getSaveTotalAction(), SIGNAL(triggered()), SLOT(saveTotalModelWidget()));
-  connect(MainWindow::instance()->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
-  connect(MainWindow::instance()->getFitToDiagramAction(), SIGNAL(triggered()), SLOT(fitToDiagram()));
-  connect(MainWindow::instance()->getAddSystemAction(), SIGNAL(triggered()), SLOT(addSystem()));
-  connect(MainWindow::instance()->getAddOrEditIconAction(), SIGNAL(triggered()), SLOT(addOrEditIcon()));
-  connect(MainWindow::instance()->getDeleteIconAction(), SIGNAL(triggered()), SLOT(deleteIcon()));
-  connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
-  connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
+  connect(MainWindow::instance()->getSaveAction(), &QAction::triggered, this, &ModelWidgetContainer::saveModelWidget);
+  connect(MainWindow::instance()->getSaveAsAction(), &QAction::triggered, this, &ModelWidgetContainer::saveAsModelWidget);
+  connect(MainWindow::instance()->getSaveTotalAction(), &QAction::triggered, this, &ModelWidgetContainer::saveTotalModelWidget);
+  connect(MainWindow::instance()->getPrintModelAction(), &QAction::triggered, this, &ModelWidgetContainer::printModel);
+  connect(MainWindow::instance()->getFitToDiagramAction(), &QAction::triggered, this, &ModelWidgetContainer::fitToDiagram);
+  connect(MainWindow::instance()->getAddSystemAction(), &QAction::triggered, this, &ModelWidgetContainer::addSystem);
+  connect(MainWindow::instance()->getAddOrEditIconAction(), &QAction::triggered, this, &ModelWidgetContainer::addOrEditIcon);
+  connect(MainWindow::instance()->getDeleteIconAction(), &QAction::triggered, this, &ModelWidgetContainer::deleteIcon);
+  connect(MainWindow::instance()->getAddConnectorAction(), &QAction::triggered, this, &ModelWidgetContainer::addConnector);
+  connect(MainWindow::instance()->getAddSubModelAction(), &QAction::triggered, this, &ModelWidgetContainer::addSubModel);
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)

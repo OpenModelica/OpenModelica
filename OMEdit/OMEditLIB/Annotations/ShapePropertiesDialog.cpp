@@ -273,7 +273,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // text color button
   mpTextPickColorButton = new QPushButton(Helper::pickColor);
   mpTextPickColorButton->setAutoDefault(false);
-  connect(mpTextPickColorButton, SIGNAL(clicked()), SLOT(textPickColor()));
+  connect(mpTextPickColorButton, &QPushButton::clicked, this, &ShapePropertiesDialog::textPickColor);
   setLineColor(mpShapeAnnotation->getLineColor());
   setTextPickColorButtonIcon();
   // set the text color group box layout
@@ -286,7 +286,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpLineColorLabel = new Label(Helper::color);
   mpLinePickColorButton = new QPushButton(Helper::pickColor);
   mpLinePickColorButton->setAutoDefault(false);
-  connect(mpLinePickColorButton, SIGNAL(clicked()), SLOT(linePickColor()));
+  connect(mpLinePickColorButton, &QPushButton::clicked, this, &ShapePropertiesDialog::linePickColor);
   setLineColor(mpShapeAnnotation->getLineColor());
   setLinePickColorButtonIcon();
   // Line Pattern
@@ -360,7 +360,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpFillColorLabel = new Label(Helper::color);
   mpFillPickColorButton = new QPushButton(Helper::pickColor);
   mpFillPickColorButton->setAutoDefault(false);
-  connect(mpFillPickColorButton, SIGNAL(clicked()), SLOT(fillPickColor()));
+  connect(mpFillPickColorButton, &QPushButton::clicked, this, &ShapePropertiesDialog::fillPickColor);
   setFillColor(mpShapeAnnotation->getFillColor());
   setFillPickColorButtonIcon();
   // Fill Pattern
@@ -385,10 +385,10 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpFileTextBox = new QLineEdit(mpShapeAnnotation->getFileName());
   mpFileTextBox->setEnabled(false);
   mpBrowseFileButton = new QPushButton(Helper::browse);
-  connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(browseImageFile()));
+  connect(mpBrowseFileButton, &QPushButton::clicked, this, &ShapePropertiesDialog::browseImageFile);
   mpStoreImageInModelCheckBox = new QCheckBox(tr("Store image in model"));
   mpStoreImageInModelCheckBox->setChecked(mpShapeAnnotation->getFileName().isEmpty());
-  connect(mpStoreImageInModelCheckBox, SIGNAL(toggled(bool)), SLOT(storeImageInModelToggled(bool)));
+  connect(mpStoreImageInModelCheckBox, &QCheckBox::toggled, this, &ShapePropertiesDialog::storeImageInModelToggled);
   mpPreviewImageLabel = new Label;
   mpPreviewImageLabel->setAlignment(Qt::AlignCenter);
   mpPreviewImageLabel->setPixmap(QPixmap::fromImage(mpShapeAnnotation->getImage()));
@@ -449,23 +449,23 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpMovePointUpButton->setObjectName("ShapePointsButton");
   mpMovePointUpButton->setIcon(ResourceCache::getIcon(":/Resources/icons/up.svg"));
   mpMovePointUpButton->setToolTip(tr("Move point up"));
-  connect(mpMovePointUpButton, SIGNAL(clicked()), SLOT(movePointUp()));
+  connect(mpMovePointUpButton, &QToolButton::clicked, this, &ShapePropertiesDialog::movePointUp);
   mpMovePointDownButton = new QToolButton;
   mpMovePointDownButton->setObjectName("ShapePointsButton");
   mpMovePointDownButton->setIcon(ResourceCache::getIcon(":/Resources/icons/down.svg"));
   mpMovePointDownButton->setToolTip(tr("Move point down"));
-  connect(mpMovePointDownButton, SIGNAL(clicked()), SLOT(movePointDown()));
+  connect(mpMovePointDownButton, &QToolButton::clicked, this, &ShapePropertiesDialog::movePointDown);
   // points manipulation buttons
   mpAddPointButton = new QToolButton;
   mpAddPointButton->setObjectName("ShapePointsButton");
   mpAddPointButton->setIcon(ResourceCache::getIcon(":/Resources/icons/add-icon.svg"));
   mpAddPointButton->setToolTip(tr("Add new point"));
-  connect(mpAddPointButton, SIGNAL(clicked()), SLOT(addPoint()));
+  connect(mpAddPointButton, &QToolButton::clicked, this, &ShapePropertiesDialog::addPoint);
   mpRemovePointButton = new QToolButton;
   mpRemovePointButton->setObjectName("ShapePointsButton");
   mpRemovePointButton->setIcon(ResourceCache::getIcon(":/Resources/icons/delete.svg"));
   mpRemovePointButton->setToolTip(tr("Remove point"));
-  connect(mpRemovePointButton, SIGNAL(clicked()), SLOT(removePoint()));
+  connect(mpRemovePointButton, &QToolButton::clicked, this, &ShapePropertiesDialog::removePoint);
   mpPointsButtonBox = new QDialogButtonBox(Qt::Vertical);
   mpPointsButtonBox->addButton(mpMovePointUpButton, QDialogButtonBox::ActionRole);
   mpPointsButtonBox->addButton(mpMovePointDownButton, QDialogButtonBox::ActionRole);
@@ -481,13 +481,13 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(saveShapeProperties()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ShapePropertiesDialog::saveShapeProperties);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &ShapePropertiesDialog::reject);
   mpApplyButton = new QPushButton(Helper::apply);
   mpApplyButton->setAutoDefault(false);
-  connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applyShapeProperties()));
+  connect(mpApplyButton, &QPushButton::clicked, this, &ShapePropertiesDialog::applyShapeProperties);
   if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
       || mpShapeAnnotation->getGraphicsView()->getModelWidget()->isElementMode() || mpShapeAnnotation->isInheritedShape()) {
     mpOkButton->setDisabled(true);

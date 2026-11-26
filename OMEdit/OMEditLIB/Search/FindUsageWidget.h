@@ -120,7 +120,7 @@ public slots:
 class LineEdit;
 class Label;
 class TreeSearchFilters;
-class FindUsageWidget : QWidget
+class FindUsageWidget : public QWidget
 {
   Q_OBJECT
 private:

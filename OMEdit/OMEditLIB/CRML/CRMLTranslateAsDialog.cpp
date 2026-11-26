@@ -71,20 +71,20 @@ CRMLTranslateAsDialog::CRMLTranslateAsDialog(CRMLTranslatorOptions *pCRMLTransla
   mpOutputDirectoryTextBox->setText(StringHandler::getLastOpenDirectory());
   mpOutputDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpOutputDirectoryBrowseButton->setAutoDefault(false);
-  connect(mpOutputDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseOutputDirectory()));
+  connect(mpOutputDirectoryBrowseButton, &QPushButton::clicked, this, &CRMLTranslateAsDialog::browseOutputDirectory);
   // Create the parent package label, text box, browse button
   mpParentClassLabel = new Label(tr("Insert in class - within (optional):"));
   mpParentClassTextBox = new QLineEdit;
   mpParentClassBrowseButton = new QPushButton(Helper::browse);
   mpParentClassBrowseButton->setAutoDefault(false);
-  connect(mpParentClassBrowseButton, SIGNAL(clicked()), SLOT(browseParentClass()));
+  connect(mpParentClassBrowseButton, &QPushButton::clicked, this, &CRMLTranslateAsDialog::browseParentClass);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(translateAsCRML()));
+  connect(mpOkButton, &QPushButton::clicked, this, &CRMLTranslateAsDialog::translateAsCRML);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &CRMLTranslateAsDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

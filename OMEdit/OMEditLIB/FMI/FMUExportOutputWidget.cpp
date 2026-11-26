@@ -84,7 +84,7 @@ FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, 
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpCancelButton = new QPushButton(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelCompilation()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &FmuExportOutputWidget::cancelCompilation);
 
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
@@ -181,11 +181,11 @@ void FmuExportOutputWidget::updateMessageTab(const QString &text)
 void FmuExportOutputWidget::compileModelCRuntime()
 {
   mpCompilationProcess = new QProcess;
-  connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
-  connect(mpCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
-  connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpCompilationProcess, &QProcess::started, this, &FmuExportOutputWidget::compilationProcessStarted);
+  connect(mpCompilationProcess, &QProcess::readyReadStandardOutput, this, &FmuExportOutputWidget::readCompilationStandardOutput);
+  connect(mpCompilationProcess, &QProcess::readyReadStandardError, this, &FmuExportOutputWidget::readCompilationStandardError);
+  connect(mpCompilationProcess, &QProcess::errorOccurred, this, &FmuExportOutputWidget::compilationProcessError);
+  connect(mpCompilationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &FmuExportOutputWidget::compilationProcessFinished);
 
   QString cmakeBuildPath = QString("%1%2").arg(mFmuTmpPath, "/sources/build_cmake");
   if (!QDir().exists(cmakeBuildPath)) {
@@ -349,11 +349,11 @@ void FmuExportOutputWidget::compilationProcessError(QProcess::ProcessError error
 void FmuExportOutputWidget::runPostCompilation()
 {
   mpPostCompilationProcess = new QProcess;
-  connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
-  connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
-  connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
-  connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
-  connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
+  connect(mpPostCompilationProcess, &QProcess::started, this, &FmuExportOutputWidget::postCompilationProcessStarted);
+  connect(mpPostCompilationProcess, &QProcess::readyReadStandardOutput, this, &FmuExportOutputWidget::readPostCompilationStandardOutput);
+  connect(mpPostCompilationProcess, &QProcess::readyReadStandardError, this, &FmuExportOutputWidget::readPostCompilationStandardError);
+  connect(mpPostCompilationProcess, &QProcess::errorOccurred, this, &FmuExportOutputWidget::postCompilationProcessError);
+  connect(mpPostCompilationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &FmuExportOutputWidget::postCompilationProcessFinished);
 
   QString program = "cmake";
   QStringList arguments;
@@ -374,11 +374,11 @@ void FmuExportOutputWidget::runPostCompilation()
 void FmuExportOutputWidget::compileModelCppRuntime()
 {
   mpPostCompilationProcess = new QProcess;
-  connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
-  connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
-  connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
-  connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
-  connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
+  connect(mpPostCompilationProcess, &QProcess::started, this, &FmuExportOutputWidget::postCompilationProcessStarted);
+  connect(mpPostCompilationProcess, &QProcess::readyReadStandardOutput, this, &FmuExportOutputWidget::readPostCompilationStandardOutput);
+  connect(mpPostCompilationProcess, &QProcess::readyReadStandardError, this, &FmuExportOutputWidget::readPostCompilationStandardError);
+  connect(mpPostCompilationProcess, &QProcess::errorOccurred, this, &FmuExportOutputWidget::postCompilationProcessError);
+  connect(mpPostCompilationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &FmuExportOutputWidget::postCompilationProcessFinished);
 
   // set the current directory to makefile directory
   MainWindow::instance()->getOMCProxy()->changeDirectory(mFmuTmpPath);

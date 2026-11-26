@@ -90,7 +90,7 @@ public:
     vboxLayout1->addWidget(okButton);
 
     retranslateUi(Dialog);
-    QObject::connect(okButton, SIGNAL(clicked()), Dialog, SLOT(accept()));
+    QObject::connect(okButton, &QPushButton::clicked, Dialog, &QDialog::accept);
 
     QMetaObject::connectSlotsByName(Dialog);
     } // setupUi

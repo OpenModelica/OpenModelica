@@ -158,35 +158,35 @@ void AbstractAnimationWindow::createActions()
   // choose file action
   mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::animationChooseFile, this);
   mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
-  connect(mpAnimationChooseFileAction, SIGNAL(triggered()),this, SLOT(chooseAnimationFileSlotFunction()));
+  connect(mpAnimationChooseFileAction, &QAction::triggered, this, &AbstractAnimationWindow::chooseAnimationFileSlotFunction);
   // initialize action
   mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), Helper::animationInitialize, this);
   mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
   mpAnimationInitializeAction->setEnabled(false);
-  connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
+  connect(mpAnimationInitializeAction, &QAction::triggered, this, &AbstractAnimationWindow::initSlotFunction);
   // animation play action
   mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play_animation.svg"), Helper::animationPlay, this);
   mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
   mpAnimationPlayAction->setEnabled(false);
-  connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
+  connect(mpAnimationPlayAction, &QAction::triggered, this, &AbstractAnimationWindow::playSlotFunction);
   // animation pause action
   mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.svg"), Helper::animationPause, this);
   mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
   mpAnimationPauseAction->setEnabled(false);
-  connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
+  connect(mpAnimationPauseAction, &QAction::triggered, this, &AbstractAnimationWindow::pauseSlotFunction);
   // animation repeat action
   mpAnimationRepeatAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::animationRepeat, this);
   mpAnimationRepeatAction->setStatusTip(Helper::animationRepeatTip);
   mpAnimationRepeatAction->setEnabled(false);
   mpAnimationRepeatAction->setCheckable(true);
-  connect(mpAnimationRepeatAction, SIGNAL(triggered(bool)),this, SLOT(repeatSlotFunciton(bool)));
+  connect(mpAnimationRepeatAction, &QAction::triggered, this, &AbstractAnimationWindow::repeatSlotFunciton);
   // animation slide
   mpAnimationSlider = new QSlider(Qt::Horizontal);
   mpAnimationSlider->setMinimum(0);
   mpAnimationSlider->setMaximum(mSliderRange);
   mpAnimationSlider->setSliderPosition(0);
   mpAnimationSlider->setEnabled(false);
-  connect(mpAnimationSlider, SIGNAL(valueChanged(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
+  connect(mpAnimationSlider, &QSlider::valueChanged, this, &AbstractAnimationWindow::sliderSetTimeSlotFunction);
   // animation time
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   pDoubleValidator->setBottom(0);
@@ -196,7 +196,7 @@ void AbstractAnimationWindow::createActions()
   mpTimeTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
   mpTimeTextBox->setEnabled(false);
   mpTimeTextBox->setValidator(pDoubleValidator);
-  connect(mpTimeTextBox, SIGNAL(returnPressed()),this, SLOT(jumpToTimeSlotFunction()));
+  connect(mpTimeTextBox, &QLineEdit::returnPressed, this, &AbstractAnimationWindow::jumpToTimeSlotFunction);
   // animation speed
   mpAnimationSpeedLabel = new Label;
   mpAnimationSpeedLabel->setText(tr("Speed:"));
@@ -208,23 +208,23 @@ void AbstractAnimationWindow::createActions()
   mpSpeedComboBox->setEnabled(false);
   mpSpeedComboBox->setValidator(pDoubleValidator);
   mpSpeedComboBox->setCompleter(0);
-  connect(mpSpeedComboBox, SIGNAL(currentIndexChanged(int)),this, SLOT(setSpeedSlotFunction()));
-  connect(mpSpeedComboBox->lineEdit(), SIGNAL(textChanged(QString)),this, SLOT(setSpeedSlotFunction()));
+  connect(mpSpeedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AbstractAnimationWindow::setSpeedSlotFunction);
+  connect(mpSpeedComboBox->lineEdit(), &QLineEdit::textChanged, this, &AbstractAnimationWindow::setSpeedSlotFunction);
   // perspective drop down
   mpPerspectiveDropDownBox = new QComboBox;
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("Isometric"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"),QString("Side"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("Front"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.svg"),QString("Top"));
-  connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
+  connect(mpPerspectiveDropDownBox, QOverload<int>::of(&QComboBox::activated), this, &AbstractAnimationWindow::setPerspective);
   // rotate camera left action
   mpRotateCameraLeftAction = new QAction(QIcon(":/Resources/icons/rotateCameraLeft.svg"), tr("Rotate Left"), this);
   mpRotateCameraLeftAction->setStatusTip(tr("Rotate the camera left"));
-  connect(mpRotateCameraLeftAction, SIGNAL(triggered()), this, SLOT(rotateCameraLeft()));
+  connect(mpRotateCameraLeftAction, &QAction::triggered, this, &AbstractAnimationWindow::rotateCameraLeft);
   // rotate camera right action
   mpRotateCameraRightAction = new QAction(QIcon(":/Resources/icons/rotateCameraRight.svg"), tr("Rotate Right"), this);
   mpRotateCameraRightAction->setStatusTip(tr("Rotate the camera right"));
-  connect(mpRotateCameraRightAction, SIGNAL(triggered()), this, SLOT(rotateCameraRight()));
+  connect(mpRotateCameraRightAction, &QAction::triggered, this, &AbstractAnimationWindow::rotateCameraRight);
   // interactive control action
   mpInteractiveControlAction = mpAnimationParameterDockerWidget->toggleViewAction();
   mpInteractiveControlAction->setIcon(QIcon(":/Resources/icons/control-panel.svg"));
@@ -290,7 +290,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
       layout->addSpacing(12);
       layout->addWidget(new QLabel(QString::fromStdString(FMUvis->getFMU()->getFMUData()->_stateNames.at(stateIdx)),this));
       layout->addWidget(stateValWidget);
-      connect(mSpinBoxVector.at(stateIdx), SIGNAL(valueChangedFrom(double, int)), this, SLOT(setStateSolveSystem(double, int)));
+      connect(mSpinBoxVector.at(stateIdx), &DoubleSpinBoxIndexed::valueChangedFrom, this, &AbstractAnimationWindow::setStateSolveSystem);
     }
 
     //widgets for the inputs
@@ -310,7 +310,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
     }
     QPushButton* updateButton = new QPushButton(QIcon(":/Resources/icons/update.svg"), "&update system",this);
     layout->addWidget(updateButton);
-    connect(updateButton, SIGNAL(released()), this, SLOT(setStatesSolveSystem()));
+    connect(updateButton, &QPushButton::released, this, &AbstractAnimationWindow::setStatesSolveSystem);
     */
 
     layout->setSizeConstraint(QLayout::SetMinimumSize);
@@ -419,7 +419,7 @@ bool AbstractAnimationWindow::loadVisualization()
       return false;
     }
     mpVisualization->setScene(mpViewerWidget->getScene());
-    connect(mpVisualization->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
+    connect(mpVisualization->getTimeManager()->getUpdateSceneTimer(), &QTimer::timeout, this, &AbstractAnimationWindow::updateScene);
     mpVisualization->initData();
     mpVisualization->setUpScene();
     mpVisualization->initVisualization();
@@ -653,8 +653,7 @@ DoubleSpinBoxIndexed::DoubleSpinBoxIndexed(QWidget *pParent, int idx)
   : QDoubleSpinBox(pParent)
 {
   mStateIdx = idx;
-  connect( this, SIGNAL(valueChanged(double)),
-           this, SLOT(slotForwardValueChanged(double)));
+  connect(this, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DoubleSpinBoxIndexed::slotForwardValueChanged);
 }
 
 /*!

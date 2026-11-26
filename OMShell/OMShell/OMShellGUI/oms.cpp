@@ -242,9 +242,6 @@ OMS::OMS( QWidget* parent )
   createAction();
   createMenu();
 
-//  connect( this, SIGNAL( emitQuit() ),
-//    qApp, SLOT( quit() ));
-
   // windows stuff
   resize( 800, 600 );
   setWindowTitle( tr("OMShell - OpenModelica Shell") );
@@ -344,20 +341,21 @@ void OMS::createMoshEdit()
 
   textFormat_ = moshEdit_->currentCharFormat();
 
-  connect( moshEdit_, SIGNAL( returnPressed() ),
-    this, SLOT( returnPressed() ));
-  connect( moshEdit_, SIGNAL( insertNewline() ),
-    this, SLOT( insertNewline() ));
-  connect( moshEdit_, SIGNAL( prevCommand() ),
-    this, SLOT( prevCommand() ));
-  connect( moshEdit_, SIGNAL( nextCommand() ),
-    this, SLOT( nextCommand() ));
-  connect( moshEdit_, SIGNAL( goHome(bool) ),
-    this, SLOT( goHome(bool) ));
-  connect( moshEdit_, SIGNAL( codeCompletion(bool) ),
-    this, SLOT( codeCompletion(bool) ));
-  connect( moshEdit_, SIGNAL( codeNextField() ),
-    this, SLOT( codeNextField() ));
+  MyTextEdit *pMyTextEdit = static_cast<MyTextEdit*>(moshEdit_);
+  connect( pMyTextEdit, &MyTextEdit::returnPressed,
+    this, &OMS::returnPressed );
+  connect( pMyTextEdit, &MyTextEdit::insertNewline,
+    this, &OMS::insertNewline );
+  connect( pMyTextEdit, &MyTextEdit::prevCommand,
+    this, &OMS::prevCommand );
+  connect( pMyTextEdit, &MyTextEdit::nextCommand,
+    this, &OMS::nextCommand );
+  connect( pMyTextEdit, &MyTextEdit::goHome,
+    this, &OMS::goHome );
+  connect( pMyTextEdit, &MyTextEdit::codeCompletion,
+    this, &OMS::codeCompletion );
+  connect( pMyTextEdit, &MyTextEdit::codeNextField,
+    this, &OMS::codeNextField );
 }
 
 void OMS::createAction()
@@ -365,61 +363,61 @@ void OMS::createAction()
   loadModel_ = new QAction( tr("&Open"), this );
   loadModel_->setShortcut(QKeySequence("Ctrl+O"));
   loadModel_->setStatusTip( tr("Open mo-file") );
-  connect( loadModel_, SIGNAL( triggered() ),
-    this, SLOT( loadModel() ));
+  connect( loadModel_, &QAction::triggered,
+    this, &OMS::loadModel );
 
   loadModelicaLibrary_ = new QAction( tr("Load &Modelica Library"), this );
   loadModelicaLibrary_->setShortcut(QKeySequence("Ctrl+L"));
   loadModelicaLibrary_->setStatusTip( tr("Load the Modelica Standard Library") );
-  connect( loadModelicaLibrary_, SIGNAL( triggered() ),
-    this, SLOT( loadModelicaLibrary() ));
+  connect( loadModelicaLibrary_, &QAction::triggered,
+    this, &OMS::loadModelicaLibrary );
 
   exit_ = new QAction( tr("&Exit"), this );
   exit_->setShortcut(QKeySequence("Ctrl+D"));
   exit_->setStatusTip( tr("Quit the application") );
-  connect( exit_, SIGNAL( triggered() ),
-    this, SLOT( close() ));
+  connect( exit_, &QAction::triggered,
+    this, &OMS::close );
 
   cut_ = new QAction( tr("Cu&t"), this );
   cut_->setShortcut(QKeySequence("Ctrl+X"));
   cut_->setStatusTip( tr("Cut the selection") );
-  connect( cut_, SIGNAL( triggered() ),
-    this, SLOT( cut() ));
+  connect( cut_, &QAction::triggered,
+    this, &OMS::cut );
 
   copy_ = new QAction( tr("&Copy"), this );
   copy_->setShortcut(QKeySequence("Ctrl+C"));
   copy_->setStatusTip( tr("Copy the selection") );
-  connect( copy_, SIGNAL( triggered() ),
-    this, SLOT( copy() ));
+  connect( copy_, &QAction::triggered,
+    this, &OMS::copy );
 
   paste_ = new QAction( tr("&Paste"), this );
   paste_->setShortcut(QKeySequence("Ctrl+V"));
   paste_->setStatusTip( tr("Insert from clipboard") );
-  connect( paste_, SIGNAL( triggered() ),
-    this, SLOT( paste() ));
+  connect( paste_, &QAction::triggered,
+    this, &OMS::paste );
 
 
   font_ = new QAction( tr("&FontSize"), this );
   font_->setStatusTip( "Select font size" );
-  connect( font_, SIGNAL( triggered() ),
-    this, SLOT( fontSize() ));
+  connect( font_, &QAction::triggered,
+    this, &OMS::fontSize );
 
   aboutOMS_ = new QAction( tr("&About OMShell"), this );
   aboutOMS_->setStatusTip( tr("About this application") );
-  connect( aboutOMS_, SIGNAL( triggered() ),
-    this, SLOT( aboutOMS() ));
+  connect( aboutOMS_, &QAction::triggered,
+    this, &OMS::aboutOMS );
 
   // Added 2006-02-21 AF
   aboutQT_ = new QAction( tr("About &Qt"), this );
   aboutQT_->setStatusTip( tr("About Qt") );
-  connect( aboutQT_, SIGNAL( triggered() ),
-    this, SLOT( aboutQT() ));
+  connect( aboutQT_, &QAction::triggered,
+    this, &OMS::aboutQT );
 
   clearWindow_ = new QAction( tr("Cl&ear"), this );
   clearWindow_->setShortcut(QKeySequence("Ctrl+Shift+C"));
   clearWindow_->setStatusTip( tr("Clear the input window") );
-  connect( clearWindow_, SIGNAL( triggered() ),
-    this, SLOT( clear() ));
+  connect( clearWindow_, &QAction::triggered,
+    this, &OMS::clear );
 }
 
 void OMS::createMenu()

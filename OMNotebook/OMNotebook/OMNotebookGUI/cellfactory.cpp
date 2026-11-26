@@ -95,6 +95,7 @@ namespace IAEX
   */
   Cell *CellFactory::createCell(const QString &style, Cell *parent)
   {
+    CellDocument *pCellDocument = static_cast<CellDocument*>(doc_);
     if(style == "input" || style == "Input" || style == "ModelicaInput")
     {
       InputCell *text = new InputCell(doc_, parent);
@@ -121,43 +122,30 @@ namespace IAEX
       catch( const std::exception &e )
       {}
 
-      QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
-      QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
-      QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
-        doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
+      QObject::connect(text, &InputCell::cellselected,
+        pCellDocument, &CellDocument::selectedACell);
+      QObject::connect(text, &InputCell::clicked,
+        pCellDocument, &CellDocument::mouseClickedOnCell);
+      QObject::connect(text, &InputCell::clickedOutput,
+        pCellDocument, &CellDocument::mouseClickedOnCellOutput);
 
       // 2005-11-29 AF
-      QObject::connect( text, SIGNAL( heightChanged() ),
-        doc_, SLOT( updateScrollArea() ));
+      QObject::connect(text, &InputCell::heightChanged,
+        pCellDocument, &CellDocument::updateScrollArea);
 
       // 2006-01-17 AF
-      QObject::connect( text, SIGNAL( textChanged(bool) ),
-        doc_, SLOT( setChanged(bool) ));
+      QObject::connect(text, QOverload<bool>::of(&InputCell::textChanged),
+        pCellDocument, &CellDocument::setChanged);
 
       // 2006-04-27 AF
-      QObject::connect( text, SIGNAL( forwardAction(int) ),
-        doc_, SIGNAL( forwardAction(int) ));
+      QObject::connect(text, &InputCell::forwardAction,
+        pCellDocument, &CellDocument::forwardAction);
 
-      //      CellDocument* d = dynamic_cast<CellDocument*>(doc_);
-      //      DocumentView* d2 = d->observers_[0];
-      //      NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
-      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
-      QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
-      QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
-      QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+      QObject::connect(text->input_, &QTextBrowser::copyAvailable, pCellDocument, &CellDocument::copyAvailable);
+      QObject::connect(text->input_, &QTextBrowser::undoAvailable, pCellDocument, &CellDocument::undoAvailable);
+      QObject::connect(text->input_, &QTextBrowser::redoAvailable, pCellDocument, &CellDocument::redoAvailable);
+      QObject::connect(text->output_, &QTextBrowser::copyAvailable, pCellDocument, &CellDocument::copyAvailable);
 
-      //QObject::connect(doc_, SIGNAL(evaluate()), text->input_, SIGNAL(eval()));
-
-      /*
-      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->cutAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), d3->undoAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), d3->redoAction, SLOT(setEnabled(bool)));
-
-      QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
-      */
       return text;
     }
     else if( style == "cursor")
@@ -168,14 +156,14 @@ namespace IAEX
     {
       Cell *text = new CellGroup(parent);
 
-      QObject::connect(text, SIGNAL(cellOpened(Cell *, bool)),
-        doc_, SLOT(cursorMoveAfter(Cell*, bool)));
-      QObject::connect(text, SIGNAL(cellselected(Cell *, Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
-      QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
-      QObject::connect(text, SIGNAL(openLink(const QUrl*)),
-        doc_, SLOT(linkClicked(const QUrl*)));
+      QObject::connect(text, &Cell::cellOpened,
+        pCellDocument, &CellDocument::cursorMoveAfter);
+      QObject::connect(text, &Cell::cellselected,
+        pCellDocument, &CellDocument::selectedACell);
+      QObject::connect(text, &Cell::clicked,
+        pCellDocument, &CellDocument::mouseClickedOnCell);
+      QObject::connect(text, &Cell::openLink,
+        pCellDocument, &CellDocument::linkClicked);
 
       return text;
     }
@@ -200,37 +188,37 @@ namespace IAEX
         QMessageBox::warning(nullptr, QObject::tr("Warning"), e.what());
       }
 
-      QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
-      QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
-      QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
-        doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
+      QObject::connect(text, &LatexCell::cellselected,
+        pCellDocument, &CellDocument::selectedACell);
+      QObject::connect(text, &LatexCell::clicked,
+        pCellDocument, &CellDocument::mouseClickedOnCell);
+      QObject::connect(text, &LatexCell::clickedOutput,
+        pCellDocument, &CellDocument::mouseClickedOnCellOutput);
 
       // 2005-11-29 AF
-      QObject::connect( text, SIGNAL( heightChanged() ),
-        doc_, SLOT( updateScrollArea() ));
+      QObject::connect(text, &LatexCell::heightChanged,
+        pCellDocument, &CellDocument::updateScrollArea);
 
       // 2006-01-17 AF
-      QObject::connect( text, SIGNAL( textChanged(bool) ),
-        doc_, SLOT( setChanged(bool) ));
+      QObject::connect(text, QOverload<bool>::of(&LatexCell::textChanged),
+        pCellDocument, &CellDocument::setChanged);
 
       // 2006-04-27 AF
-      QObject::connect( text, SIGNAL( forwardAction(int) ),
-        doc_, SIGNAL( forwardAction(int) ));
+      QObject::connect(text, &LatexCell::forwardAction,
+        pCellDocument, &CellDocument::forwardAction);
 
 
-      QObject::connect( text, SIGNAL( updatePos(int, int)), doc_, SIGNAL(updatePos(int, int)));
-      QObject::connect( text, SIGNAL( newState(QString)), doc_, SIGNAL(newState(QString)));
-      QObject::connect(text, SIGNAL( setStatusMenu(QList<QAction*>)), doc_, SIGNAL(setStatusMenu(QList<QAction*>)));
+      QObject::connect(text, &LatexCell::updatePos, pCellDocument, &CellDocument::updatePos);
+      QObject::connect(text, &LatexCell::newState, pCellDocument, &CellDocument::newState);
+      QObject::connect(text, &LatexCell::setStatusMenu, pCellDocument, &CellDocument::setStatusMenu);
 
 
-      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
-      QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
-      QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
-      QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
-      QObject::connect(text->output_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
-      QObject::connect(text->output_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
+      QObject::connect(text->input_, &MyTextEdit3::copyAvailable, pCellDocument, &CellDocument::copyAvailable);
+      QObject::connect(text->input_, &MyTextEdit3::undoAvailable, pCellDocument, &CellDocument::undoAvailable);
+      QObject::connect(text->input_, &MyTextEdit3::redoAvailable, pCellDocument, &CellDocument::redoAvailable);
+      QObject::connect(text->output_, &MyTextEdit3::copyAvailable, pCellDocument, &CellDocument::copyAvailable);
+      QObject::connect(text->output_, &MyTextEdit3::undoAvailable, pCellDocument, &CellDocument::undoAvailable);
+      QObject::connect(text->output_, &MyTextEdit3::redoAvailable, pCellDocument, &CellDocument::redoAvailable);
 
       return text;
     }
@@ -257,59 +245,38 @@ namespace IAEX
 
       text->setDelegate(OmcInteractiveEnvironment::getInstance());
 
-      QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
-      QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
-      QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
-        doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
+      QObject::connect(text, &GraphCell::cellselected,
+        pCellDocument, &CellDocument::selectedACell);
+      QObject::connect(text, &GraphCell::clicked,
+        pCellDocument, &CellDocument::mouseClickedOnCell);
+      QObject::connect(text, &GraphCell::clickedOutput,
+        pCellDocument, &CellDocument::mouseClickedOnCellOutput);
 
       // 2005-11-29 AF
-      QObject::connect( text, SIGNAL( heightChanged() ),
-        doc_, SLOT( updateScrollArea() ));
+      QObject::connect(text, &GraphCell::heightChanged,
+        pCellDocument, &CellDocument::updateScrollArea);
 
       // 2006-01-17 AF
-      QObject::connect( text, SIGNAL( textChanged(bool) ),
-        doc_, SLOT( setChanged(bool) ));
+      QObject::connect(text, QOverload<bool>::of(&GraphCell::textChanged),
+        pCellDocument, &CellDocument::setChanged);
 
       // 2006-04-27 AF
-      QObject::connect( text, SIGNAL( forwardAction(int) ),
-        doc_, SIGNAL( forwardAction(int) ));
+      QObject::connect(text, &GraphCell::forwardAction,
+        pCellDocument, &CellDocument::forwardAction);
 
 
-      QObject::connect( text, SIGNAL( updatePos(int, int)), doc_, SIGNAL(updatePos(int, int)));
-      QObject::connect( text, SIGNAL( newState(QString)), doc_, SIGNAL(newState(QString)));
-      QObject::connect(text, SIGNAL( setStatusMenu(QList<QAction*>)), doc_, SIGNAL(setStatusMenu(QList<QAction*>)));
+      QObject::connect(text, &GraphCell::updatePos, pCellDocument, &CellDocument::updatePos);
+      QObject::connect(text, &GraphCell::newState, pCellDocument, &CellDocument::newState);
+      QObject::connect(text, &GraphCell::setStatusMenu, pCellDocument, &CellDocument::setStatusMenu);
 
 
-      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
-      QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
-      QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
-      QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+      QObject::connect(text->input_, &MyTextEdit2a::copyAvailable, pCellDocument, &CellDocument::copyAvailable);
+      QObject::connect(text->input_, &MyTextEdit2a::undoAvailable, pCellDocument, &CellDocument::undoAvailable);
+      QObject::connect(text->input_, &MyTextEdit2a::redoAvailable, pCellDocument, &CellDocument::redoAvailable);
+      QObject::connect(text->output_, &QTextBrowser::copyAvailable, pCellDocument, &CellDocument::copyAvailable);
 
-      //      if(CellDocument* d = dynamic_cast<CellDocument*>(doc_))
-      QObject::connect(doc_, SIGNAL(setAutoIndent(bool)), text->input_, SLOT(setAutoIndent(bool)));
-      //QObject::connect(doc_, SIGNAL(evaluate()), text->input_, SIGNAL(eval()));
+      QObject::connect(pCellDocument, &CellDocument::setAutoIndent, text->input_, &MyTextEdit2a::setAutoIndent);
       text->input_->setAutoIndent(dynamic_cast<CellDocument*>(doc_)->autoIndent);
-      /*
-      if(d)
-      {
-      if(d->observers_.size())
-      {
-
-
-      DocumentView* d2 = d->observers_[0];
-
-      NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
-      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->cutAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), d3->undoAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), d3->redoAction, SLOT(setEnabled(bool)));
-
-      QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
-      }
-      }
-      */
       return text;
     }
 
@@ -326,43 +293,32 @@ namespace IAEX
 
 
 
-      QObject::connect(text, SIGNAL(cellselected(Cell *, Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
-      QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
-      QObject::connect(text, SIGNAL(openLink(const QUrl*)),
-        doc_, SLOT(linkClicked(const QUrl*)));
+      QObject::connect(text, &TextCell::cellselected,
+        pCellDocument, &CellDocument::selectedACell);
+      QObject::connect(text, &TextCell::clicked,
+        pCellDocument, &CellDocument::mouseClickedOnCell);
+      QObject::connect(text, &TextCell::openLink,
+        pCellDocument, &CellDocument::linkClicked);
 
       // 2005-11-29 AF
-      QObject::connect( text, SIGNAL( heightChanged() ),
-        doc_, SLOT( updateScrollArea() ));
+      QObject::connect(text, &TextCell::heightChanged,
+        pCellDocument, &CellDocument::updateScrollArea);
 
       // 2006-01-17 AF
-      QObject::connect( text, SIGNAL( textChanged(bool) ),
-        doc_, SLOT( setChanged(bool) ));
+      QObject::connect(text, QOverload<bool>::of(&TextCell::textChanged),
+        pCellDocument, &CellDocument::setChanged);
 
       // 2006-02-10 AF
-      QObject::connect( text, SIGNAL( hoverOverUrl(const QUrl &) ),
-        doc_, SLOT( hoverOverUrl(const QUrl &) ));
+      QObject::connect(text, &TextCell::hoverOverUrl,
+        pCellDocument, &CellDocument::hoverOverUrl);
 
       // 2006-04-27 AF
-      QObject::connect( text, SIGNAL( forwardAction(int) ),
-        doc_, SIGNAL( forwardAction(int) ));
+      QObject::connect(text, &TextCell::forwardAction,
+        pCellDocument, &CellDocument::forwardAction);
 
-      QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
-      QObject::connect(text->text_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
-      QObject::connect(text->text_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
-      //      QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), this, SLOT(copyAvailable(bool)));
-      /*
-
-      CellDocument* d = dynamic_cast<CellDocument*>(doc_);
-      DocumentView* d2 = d->observers_[0];
-      NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
-      QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), d3->cutAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->text_, SIGNAL(undoAvailable(bool)), d3->undoAction, SLOT(setEnabled(bool)));
-      QObject::connect(text->text_, SIGNAL(redoAvailable(bool)), d3->redoAction, SLOT(setEnabled(bool)));
-      */
+      QObject::connect(text->text_, &QTextBrowser::copyAvailable, pCellDocument, &CellDocument::copyAvailable);
+      QObject::connect(text->text_, &QTextBrowser::undoAvailable, pCellDocument, &CellDocument::undoAvailable);
+      QObject::connect(text->text_, &QTextBrowser::redoAvailable, pCellDocument, &CellDocument::redoAvailable);
       return text;
     }
   }

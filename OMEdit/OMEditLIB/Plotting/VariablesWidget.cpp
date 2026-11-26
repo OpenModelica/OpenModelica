@@ -1623,17 +1623,17 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
   mpTreeSearchFilters->getFilterTimer()->setInterval(OptionsDialog::instance()->getPlottingPage()->getFilterIntervalSpinBox()->value() * 1000);
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), mpTreeSearchFilters->getFilterTimer(), SLOT(start()));
-  connect(mpTreeSearchFilters->getFilterTimer(), SIGNAL(timeout()), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), &LineEdit::returnPressed, this, &VariablesWidget::findVariables);
+  connect(mpTreeSearchFilters->getFilterTextBox(), &LineEdit::textEdited, mpTreeSearchFilters->getFilterTimer(), QOverload<>::of(&QTimer::start));
+  connect(mpTreeSearchFilters->getFilterTimer(), &QTimer::timeout, this, &VariablesWidget::findVariables);
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), &QCheckBox::toggled, this, &VariablesWidget::findVariables);
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, &VariablesWidget::findVariables);
   // simulation time label and combobox
   mpSimulationTimeLabel = new Label(tr("Simulation Time Unit"));
   mpSimulationTimeComboBox = new QComboBox;
   mpSimulationTimeComboBox->addItem("s");
   mpSimulationTimeComboBox->addItems(Helper::timeDisplayUnits);
-  connect(mpSimulationTimeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(timeUnitChanged(int)));
+  connect(mpSimulationTimeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &VariablesWidget::timeUnitChanged);
   // simulation time slider
   mSliderRange = 1000;
   mpTimeControlsDescriptionLabel = new Label;
@@ -1641,7 +1641,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpSimulationTimeSlider = new QSlider(Qt::Horizontal);
   mpSimulationTimeSlider->setRange(0, mSliderRange);
   mpSimulationTimeSlider->setSliderPosition(0);
-  connect(mpSimulationTimeSlider, SIGNAL(valueChanged(int)), SLOT(simulationTimeChanged(int)));
+  connect(mpSimulationTimeSlider, &QSlider::valueChanged, this, &VariablesWidget::simulationTimeChanged);
   // toolbar
   mpToolBar = new QToolBar;
   int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
@@ -1649,15 +1649,15 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   // rewind action
   mpRewindAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), tr("Rewind"), this);
   mpRewindAction->setStatusTip(tr("Rewind the visualization to the start"));
-  connect(mpRewindAction, SIGNAL(triggered()), SLOT(rewindVisualization()));
+  connect(mpRewindAction, &QAction::triggered, this, &VariablesWidget::rewindVisualization);
   // play action
   mpPlayAction = new QAction(QIcon(":/Resources/icons/play_animation.svg"), Helper::animationPlay, this);
   mpPlayAction->setStatusTip(tr("Play the visualization"));
-  connect(mpPlayAction, SIGNAL(triggered()), SLOT(playVisualization()));
+  connect(mpPlayAction, &QAction::triggered, this, &VariablesWidget::playVisualization);
   // pause action
   mpPauseAction = new QAction(QIcon(":/Resources/icons/pause.svg"), Helper::animationPause, this);
   mpPauseAction->setStatusTip(tr("Pause the visualization"));
-  connect(mpPauseAction, SIGNAL(triggered()), SLOT(pauseVisualization()));
+  connect(mpPauseAction, &QAction::triggered, this, &VariablesWidget::pauseVisualization);
   // time
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   pDoubleValidator->setBottom(0);
@@ -1666,7 +1666,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpTimeTextBox = new QLineEdit("0.0");
   mpTimeTextBox->setMaximumHeight(toolbarIconSize);
   mpTimeTextBox->setValidator(pDoubleValidator);
-  connect(mpTimeTextBox, SIGNAL(returnPressed()), SLOT(visualizationTimeChanged()));
+  connect(mpTimeTextBox, &QLineEdit::returnPressed, this, &VariablesWidget::visualizationTimeChanged);
   // speed
   mpSpeedLabel = new Label;
   mpSpeedLabel->setText(Helper::speed);
@@ -1677,8 +1677,8 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpSpeedComboBox->setMaximumHeight(toolbarIconSize);
   mpSpeedComboBox->setValidator(pDoubleValidator);
   mpSpeedComboBox->setCompleter(0);
-  connect(mpSpeedComboBox, SIGNAL(currentIndexChanged(int)), SLOT(visualizationSpeedChanged()));
-  connect(mpSpeedComboBox->lineEdit(), SIGNAL(textChanged(QString)), SLOT(visualizationSpeedChanged()));
+  connect(mpSpeedComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &VariablesWidget::visualizationSpeedChanged);
+  connect(mpSpeedComboBox->lineEdit(), &QLineEdit::textChanged, this, &VariablesWidget::visualizationSpeedChanged);
   // add actions to toolbar
   mpToolBar->addAction(mpRewindAction);
   mpToolBar->addSeparator();
@@ -1696,7 +1696,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpTimeManager->setEndTime(1.0);
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setPause(true);
-  connect(mpTimeManager->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(incrementVisualization()));
+  connect(mpTimeManager->getUpdateSceneTimer(), &QTimer::timeout, this, &VariablesWidget::incrementVisualization);
   // create variables tree widget
   mpVariablesTreeView = new VariablesTreeView(this);
   mpVariablesTreeModel = new VariablesTreeModel(mpVariablesTreeView);
@@ -1722,16 +1722,16 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   pMainLayout->addWidget(mpToolBar, 4, 0, 1, 2);
   pMainLayout->addWidget(mpVariablesTreeView, 5, 0, 1, 2);
   setLayout(pMainLayout);
-  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(expandAll()));
-  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
-  connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex,qreal,int,int)), SLOT(plotVariables(QModelIndex,qreal,int,int)));
-  connect(mpVariablesTreeModel, SIGNAL(unitChanged(QModelIndex)), SLOT(unitChanged(QModelIndex)));
-  connect(mpVariablesTreeModel, SIGNAL(valueEntered(QModelIndex)), SLOT(valueEntered(QModelIndex)));
-  connect(mpVariablesTreeView, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  connect(MainWindow::instance()->getPlotWindowContainer(), SIGNAL(subWindowActivated(QMdiSubWindow*)), this, SLOT(updateVariablesTree(QMdiSubWindow*)));
-  connect(mpVariablesTreeModel, SIGNAL(variableTreeItemRemoved(QString)), MainWindow::instance()->getPlotWindowContainer(), SLOT(updatePlotWindows(QString)));
-  //connect(mpVariablesTreeModel, SIGNAL(clicked(QModelIndex)), this, SLOT(selectInteractivePlotWindow(QModelIndex)));
-  //connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex)), SLOT(selectInteractivePlotWindow(QModelIndex)));
+  connect(mpTreeSearchFilters->getExpandAllButton(), &QToolButton::clicked, mpVariablesTreeView, &VariablesTreeView::expandAll);
+  connect(mpTreeSearchFilters->getCollapseAllButton(), &QToolButton::clicked, mpVariablesTreeView, &VariablesTreeView::collapseAll);
+  connect(mpVariablesTreeModel, &VariablesTreeModel::itemChecked, this, [this](const QModelIndex &index, qreal curveThickness, int curveStyle, int keyDown) {
+    plotVariables(index, curveThickness, curveStyle, keyDown);
+  });
+  connect(mpVariablesTreeModel, &VariablesTreeModel::unitChanged, this, &VariablesWidget::unitChanged);
+  connect(mpVariablesTreeModel, &VariablesTreeModel::valueEntered, this, &VariablesWidget::valueEntered);
+  connect(mpVariablesTreeView, &VariablesTreeView::customContextMenuRequested, this, &VariablesWidget::showContextMenu);
+  connect(MainWindow::instance()->getPlotWindowContainer(), &PlotWindowContainer::subWindowActivated, this, &VariablesWidget::updateVariablesTree);
+  connect(mpVariablesTreeModel, &VariablesTreeModel::variableTreeItemRemoved, MainWindow::instance()->getPlotWindowContainer(), &PlotWindowContainer::updatePlotWindows);
   enableVisualizationControls(false);
 }
 
@@ -2199,7 +2199,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
       unCheckVariableAndErrorMessage(index, tr("No plot window is active for plotting. Please select a plot window or open a new one."));
       return;
     }
-    connect(pPlotWindow, SIGNAL(prefixUnitsChanged()), this, SLOT(updatePlottedVariablesDisplayUnitAndValue()), Qt::UniqueConnection);
+    connect(pPlotWindow, &OMPlot::PlotWindow::prefixUnitsChanged, this, &VariablesWidget::updatePlottedVariablesDisplayUnitAndValue, Qt::UniqueConnection);
     bool ctrl = Qt::KeyboardModifiers(keyDown).testFlag(Qt::ControlModifier);
     // if plottype is PLOT or PLOTARRAY then
     if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
@@ -3017,7 +3017,7 @@ void VariablesWidget::showContextMenu(QPoint point)
     pDeleteResultAction->setData(pVariablesTreeItem->getVariableName());
     pDeleteResultAction->setShortcut(QKeySequence::Delete);
     pDeleteResultAction->setStatusTip(tr("Delete the result"));
-    connect(pDeleteResultAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(removeVariableTreeItem()));
+    connect(pDeleteResultAction, &QAction::triggered, mpVariablesTreeModel, QOverload<>::of(&VariablesTreeModel::removeVariableTreeItem));
     /* set result active action */
     QAction *pEnableTimeControlsAction = new QAction(tr("Enable Time Controls"), this);
     pEnableTimeControlsAction->setData(pVariablesTreeItem->getVariableName());
@@ -3026,15 +3026,15 @@ void VariablesWidget::showContextMenu(QPoint point)
     bool isDiagramWindow = pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget());
     bool isActiveVariableTreeItem = pVariablesTreeItem == mpVariablesTreeModel->getActiveVariablesTreeItem();
     pEnableTimeControlsAction->setEnabled(!pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation() && !isDiagramWindow && !isActiveVariableTreeItem);
-    connect(pEnableTimeControlsAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(enableTimeControls()));
+    connect(pEnableTimeControlsAction, &QAction::triggered, mpVariablesTreeModel, &VariablesTreeModel::enableTimeControls);
     /* resimulate action */
     QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
     pReSimulateAction->setStatusTip(Helper::reSimulateTip);
-    connect(pReSimulateAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
+    connect(pReSimulateAction, &QAction::triggered, this, &VariablesWidget::directReSimulate);
     /* resimulate setup action */
     QAction *pReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
     pReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
-    connect(pReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
+    connect(pReSimulateSetupAction, &QAction::triggered, this, &VariablesWidget::showReSimulateSetup);
 
     QMenu menu(this);
     menu.addAction(pDeleteResultAction);
@@ -3060,8 +3060,8 @@ void VariablesWidget::showContextMenu(QPoint point)
     pGetInitDepends->setData(pVariablesTreeItem->getInitialUses());
     pGetInitDepends->setStatusTip(tr("Show only variables that depend on this variable in the initial system of equations"));
 
-    connect(pGetDepends, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(filterDependencies()));
-    connect(pGetInitDepends, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(filterDependencies()));
+    connect(pGetDepends, &QAction::triggered, mpVariablesTreeModel, &VariablesTreeModel::filterDependencies);
+    connect(pGetInitDepends, &QAction::triggered, mpVariablesTreeModel, &VariablesTreeModel::filterDependencies);
 
     QMenu menu(this);
     menu.addAction(pGetDepends);
@@ -3080,7 +3080,7 @@ void VariablesWidget::showContextMenu(QPoint point)
       pGetDefines->setStatusTip(tr("Open debugger for the equation"));
       menu.addAction(pGetDefines);
 
-      connect(pGetDefines, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(openTransformationsBrowser()));
+      connect(pGetDefines, &QAction::triggered, mpVariablesTreeModel, &VariablesTreeModel::openTransformationsBrowser);
     }
 
     menu.exec(mpVariablesTreeView->viewport()->mapToGlobal(point));

@@ -247,6 +247,7 @@ public slots:
   void showShapeProperties();
   void editTransition();
   void manhattanizeShape(bool addToStack = true);
+  void manhattanizeShapeSlot() {manhattanizeShape();}
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
 protected:
