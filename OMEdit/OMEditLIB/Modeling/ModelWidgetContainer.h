@@ -171,6 +171,7 @@ private:
   QAction *mpCancelConnectionAction;
   QAction *mpSetInitialStateAction;
   QAction *mpCancelTransitionAction;
+  QAction *mpCreateModelFromSelectionAction;
   // scene->items().contains(...) involves sorting on each items() call, avoid it
   QSet<QGraphicsItem*> mAllItems;
 public:
@@ -369,9 +370,12 @@ public:
   void addErrorTextShape();
   void removeErrorTextShape();
   void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
+  bool createModelFromSelection(const QString &name, const QString &description, const QString &parentClass, const QString &componentName,
+                                bool replaceSelection);
 private:
   void createActions();
   void scaleUnderMouse(qreal factor);
+  QList<Element*> getElementsToMoveToNewModel() const;
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
   void duplicateItems(const QString &action);
@@ -460,6 +464,7 @@ public slots:
   void cancelConnection();
   void setInitialState();
   void cancelTransition();
+  void createModelFromSelection();
 protected:
   virtual void dragMoveEvent(QDragMoveEvent *event) override;
   virtual void dropEvent(QDropEvent *event) override;

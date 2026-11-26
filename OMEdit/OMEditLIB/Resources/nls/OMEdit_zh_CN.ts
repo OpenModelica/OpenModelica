@@ -988,6 +988,25 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     </message>
 </context>
 <context>
+    <name>CreateModelFromSelectionDialog</name>
+    <message>
+        <source>Create New Model from Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert in class (optional):</source>
+        <translation type="unfinished">插入到类（可选）：</translation>
+    </message>
+    <message>
+        <source>Replace the selection with a component of the new model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Component name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CreateNewItemDialog</name>
     <message>
         <source>Please enter path.</source>
@@ -4475,6 +4494,14 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>取消当前转换</translation>
     </message>
     <message>
+        <source>Create New Model from Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Moves the selected items to a new model and connects it through new connectors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Error in class annotation %1</source>
         <translation>类注解错误 %1</translation>
     </message>
@@ -4487,6 +4514,10 @@ You can choose between waiting longer or abort debugging.</source>
 Please check the Messages browser for error messages and possibly undo the latest changes with ctrl-z.</source>
         <translation>该模型的Modelica代码无效，因此无法显示图形。
 请检查消息浏览器中的错误信息，或使用 Ctrl-Z 撤销最近更改。</translation>
+    </message>
+    <message>
+        <source>Select at least one component that is not a connector of &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rotate Anticlockwise</source>

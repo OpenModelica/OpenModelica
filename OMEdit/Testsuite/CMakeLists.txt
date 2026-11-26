@@ -66,6 +66,10 @@ set(OMEDIT_TEST_CONDITIONALCOMPONENT_SOURCES ConditionalComponent/ConditionalCom
                                                    ConditionalComponent/ConditionalComponentTest.h)
 add_omedit_test(ConditionalComponent "${OMEDIT_TEST_CONDITIONALCOMPONENT_SOURCES}")
 
+set(OMEDIT_TEST_CREATEMODELFROMSELECTION_SOURCES CreateModelFromSelection/CreateModelFromSelectionTest.cpp
+                                                 CreateModelFromSelection/CreateModelFromSelectionTest.h)
+add_omedit_test(CreateModelFromSelection "${OMEDIT_TEST_CREATEMODELFROMSELECTION_SOURCES}")
+
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")

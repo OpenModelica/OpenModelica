@@ -76,6 +76,8 @@
 #include <QToolButton>
 #include <QStringBuilder>
 
+#include <algorithm>
+
 const QString cutCopyPasteComponentsConnectionsFormat("application/OMEdit.cut-copy-paste-components-connections");
 const QString cutCopyPasteComponentsFormat("application/OMEdit.cut-copy-paste-components");
 const QString cutCopyPasteConnectionsFormat("application/OMEdit.cut-copy-paste-connections");
@@ -2985,6 +2987,10 @@ void GraphicsView::createActions()
   mpCancelTransitionAction = new QAction(tr("Cancel Transition"), this);
   mpCancelTransitionAction->setStatusTip(tr("Cancels the current transition"));
   connect(mpCancelTransitionAction, SIGNAL(triggered()), SLOT(cancelTransition()));
+  // create new model from selection Action
+  mpCreateModelFromSelectionAction = new QAction(tr("Create New Model from Selection"), this);
+  mpCreateModelFromSelectionAction->setStatusTip(tr("Moves the selected items to a new model and connects it through new connectors"));
+  connect(mpCreateModelFromSelectionAction, &QAction::triggered, this, QOverload<>::of(&GraphicsView::createModelFromSelection));
 }
 
 /*!
@@ -3793,6 +3799,10 @@ void GraphicsView::modelicaOneComponentContextMenu(Element *pComponent, QMenu *p
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
+  if (isDiagramView()) {
+    pMenu->addSeparator();
+    pMenu->addAction(mpCreateModelFromSelectionAction);
+  }
 }
 
 /*!
@@ -3810,6 +3820,10 @@ void GraphicsView::modelicaMultipleItemsContextMenu(QMenu *pMenu)
   pMenu->addSeparator();
   pMenu->addAction(mpRotateClockwiseAction);
   pMenu->addAction(mpRotateAntiClockwiseAction);
+  if (isDiagramView()) {
+    pMenu->addSeparator();
+    pMenu->addAction(mpCreateModelFromSelectionAction);
+  }
 }
 
 /*!
@@ -4433,6 +4447,378 @@ void GraphicsView::cancelTransition()
   if (mpTransitionLineAnnotation) {
     removeCurrentTransition();
   }
+}
+
+/*!
+ * \brief GraphicsView::getElementsToMoveToNewModel
+ * Returns the selected components that createModelFromSelection moves to the new model.
+ * Connectors of the current class are not moved since they define its interface.
+ * \return
+ */
+QList<Element*> GraphicsView::getElementsToMoveToNewModel() const
+{
+  QList<Element*> elements;
+  foreach (Element *pElement, mElementsList) {
+    if (pElement->isSelected() && !pElement->isInheritedElement() && !pElement->isConnector() && pElement->getModelComponent()) {
+      elements.append(pElement);
+    }
+  }
+  return elements;
+}
+
+/*!
+ * \brief GraphicsView::createModelFromSelection
+ * Slot activated when mpCreateModelFromSelectionAction triggered SIGNAL is raised.
+ * Asks for the name of the new model and creates it from the selection.
+ */
+void GraphicsView::createModelFromSelection()
+{
+  LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
+  if (!isDiagramView() || !pLibraryTreeItem->isModelica() || pLibraryTreeItem->isSystemLibrary() || mpModelWidget->isElementMode()) {
+    return;
+  }
+  QStringList movedNames;
+  foreach (Element *pElement, getElementsToMoveToNewModel()) {
+    movedNames.append(pElement->getName());
+  }
+  if (movedNames.isEmpty()) {
+    QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("Select at least one component that is not a connector of <b>%1</b>.").arg(pLibraryTreeItem->getName()), QMessageBox::Ok);
+    return;
+  }
+  QStringList usedElementNames;
+  foreach (Element *pElement, mElementsList) {
+    if (!movedNames.contains(pElement->getName())) {
+      usedElementNames.append(pElement->getName());
+    }
+  }
+  foreach (Element *pElement, mInheritedElementsList) {
+    usedElementNames.append(pElement->getName());
+  }
+  QString parentClass;
+  if (pLibraryTreeItem->parent() && !pLibraryTreeItem->parent()->isRootItem()) {
+    parentClass = pLibraryTreeItem->parent()->getNameStructure();
+  }
+  CreateModelFromSelectionDialog *pCreateModelFromSelectionDialog = new CreateModelFromSelectionDialog(parentClass, usedElementNames, MainWindow::instance());
+  if (pCreateModelFromSelectionDialog->exec() == QDialog::Accepted) {
+    createModelFromSelection(pCreateModelFromSelectionDialog->getName(), pCreateModelFromSelectionDialog->getDescription(),
+                             pCreateModelFromSelectionDialog->getParentClass(), pCreateModelFromSelectionDialog->getComponentName(),
+                             pCreateModelFromSelectionDialog->replaceSelection());
+  }
+  pCreateModelFromSelectionDialog->deleteLater();
+}
+
+/*!
+ * \brief GraphicsView::createModelFromSelection
+ * Moves the selected components, the connections between them and the selected shapes to a new model.
+ * A connector is added to the new model for each connector that is connected to an element outside the selection.
+ * The selection is optionally replaced by a component of the new model, connected as the selection was.
+ * \param name - the name of the new model.
+ * \param description - the description of the new model.
+ * \param parentClass - the class to insert the new model in. Empty for the top level.
+ * \param componentName - the name of the component that replaces the selection.
+ * \param replaceSelection - replace the selection with a component of the new model.
+ * \return true on success.
+ */
+bool GraphicsView::createModelFromSelection(const QString &name, const QString &description, const QString &parentClass, const QString &componentName,
+                                            bool replaceSelection)
+{
+  LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
+  if (!isDiagramView() || !pLibraryTreeItem->isModelica() || pLibraryTreeItem->isSystemLibrary() || mpModelWidget->isElementMode()
+      || name.isEmpty() || (replaceSelection && (componentName.isEmpty() || componentName.compare(name) == 0))) {
+    return false;
+  }
+  const QList<Element*> elements = getElementsToMoveToNewModel();
+  if (elements.isEmpty()) {
+    return false;
+  }
+  QStringList movedNames;
+  QRectF boundingRect;
+  foreach (Element *pElement, elements) {
+    movedNames.append(pElement->getName());
+    boundingRect = boundingRect.united(pElement->sceneBoundingRect());
+  }
+  QList<ShapeAnnotation*> shapes;
+  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    if (pShapeAnnotation->isSelected() && !pShapeAnnotation->isInheritedShape()) {
+      shapes.append(pShapeAnnotation);
+      boundingRect = boundingRect.united(pShapeAnnotation->sceneBoundingRect());
+    }
+  }
+
+  struct Port {
+    QString name;
+    QString declaration;
+    QString innerName;
+    QPointF innerPosition;
+    QColor color;
+    bool left;
+    QPointF diagramPosition;
+    QPointF iconPosition;
+  };
+  struct BoundaryConnection {
+    int port;
+    QString outerName;
+    QPointF outerPosition;
+    bool innerIsStart;
+    QColor color;
+  };
+  QList<Port> ports;
+  QList<BoundaryConnection> boundaryConnections;
+  QStringList connections;
+  QStringList usedNames = movedNames;
+  foreach (LineAnnotation *pConnection, mConnectionsList) {
+    if (pConnection->isInheritedShape() || !pConnection->getStartElement() || !pConnection->getEndElement()) {
+      continue;
+    }
+    const bool startMoved = elements.contains(pConnection->getStartElement()->getRootParentElement());
+    const bool endMoved = elements.contains(pConnection->getEndElement()->getRootParentElement());
+    if (startMoved && endMoved) {
+      connections << "connect(" % pConnection->getStartElementName() % ", " % pConnection->getEndElementName() % ") annotation (" % pConnection->getShapeAnnotation() % ");";
+    } else if (startMoved || endMoved) {
+      const PointArrayAnnotation &points = pConnection->getPoints();
+      if (points.size() < 2) {
+        continue;
+      }
+      BoundaryConnection boundaryConnection;
+      boundaryConnection.innerIsStart = startMoved;
+      boundaryConnection.color = pConnection->getLineColor();
+      Element *pInnerConnector = startMoved ? pConnection->getStartElement() : pConnection->getEndElement();
+      const QString innerName = startMoved ? pConnection->getStartElementName() : pConnection->getEndElementName();
+      boundaryConnection.outerName = startMoved ? pConnection->getEndElementName() : pConnection->getStartElementName();
+      const QPointF innerPosition = pConnection->mapToScene(startMoved ? points.at(0) : points.at(points.size() - 1));
+      boundaryConnection.outerPosition = pConnection->mapToScene(startMoved ? points.at(points.size() - 1) : points.at(0));
+      // several connections to the same connector share one port
+      boundaryConnection.port = -1;
+      for (int i = 0; i < ports.size(); ++i) {
+        if (ports.at(i).innerName.compare(innerName) == 0) {
+          boundaryConnection.port = i;
+          break;
+        }
+      }
+      if (boundaryConnection.port < 0) {
+        Port port;
+        port.innerName = innerName;
+        port.innerPosition = innerPosition;
+        port.color = boundaryConnection.color;
+        port.name = pInnerConnector->getName();
+        if (usedNames.contains(port.name)) {
+          port.name = QString("%1_%2").arg(pInnerConnector->getRootParentElement()->getName(), pInnerConnector->getName());
+        }
+        const QString baseName = port.name;
+        for (int i = 1; usedNames.contains(port.name); ++i) {
+          port.name = QString("%1%2").arg(baseName).arg(i);
+        }
+        usedNames.append(port.name);
+        // a connection to the whole connector array needs an array port
+        QString dimensions;
+        if (pInnerConnector->isArray() && !innerName.endsWith("]")) {
+          const QStringList arrayIndexes = pInnerConnector->getTypedArrayIndexes();
+          if (!arrayIndexes.isEmpty()) {
+            dimensions = "[" % arrayIndexes.join(", ") % "]";
+          }
+        }
+        port.declaration = pInnerConnector->getClassName() % " " % port.name % dimensions;
+        boundaryConnection.port = ports.size();
+        ports.append(port);
+      }
+      boundaryConnections.append(boundaryConnection);
+    }
+  }
+
+  // The new model is centered at the origin.
+  const QPointF center = snapPointToGrid(boundingRect.center());
+  const QPointF offset(-qRound(center.x()), -qRound(center.y()));
+  QRectF extent = boundingRect.translated(offset).adjusted(-20, -20, 20, 20).united(QRectF(-100, -100, 200, 200));
+  extent = QRectF(QPointF(qFloor(extent.left() / 10) * 10, qFloor(extent.top() / 10) * 10),
+                  QPointF(qCeil(extent.right() / 10) * 10, qCeil(extent.bottom() / 10) * 10));
+  // Place the ports on the left and right border of the diagram at the height of the connector they are connected to.
+  QList<int> leftPorts, rightPorts;
+  for (int i = 0; i < ports.size(); ++i) {
+    Port &port = ports[i];
+    const QPointF innerPosition = port.innerPosition + offset;
+    port.left = innerPosition.x() <= 0;
+    QList<int> &sidePorts = port.left ? leftPorts : rightPorts;
+    qreal y = snapPointToGrid(innerPosition).y();
+    bool overlaps = true;
+    while (overlaps) {
+      overlaps = false;
+      foreach (int j, sidePorts) {
+        if (qAbs(ports.at(j).diagramPosition.y() - y) < 20) {
+          y -= 20;
+          overlaps = true;
+          break;
+        }
+      }
+    }
+    extent.setTop(qMin(extent.top(), qFloor((y - 20) / 10) * 10.0));
+    port.diagramPosition = QPointF(0, y);
+    sidePorts.append(i);
+  }
+  for (int i = 0; i < ports.size(); ++i) {
+    ports[i].diagramPosition.setX(ports.at(i).left ? extent.left() : extent.right());
+  }
+  // Distribute the ports evenly on the left and right side of the icon, keeping their vertical order from the diagram.
+  auto placeIconPorts = [&ports](QList<int> sidePorts, qreal x) {
+    std::sort(sidePorts.begin(), sidePorts.end(), [&ports](int a, int b) {return ports.at(a).diagramPosition.y() > ports.at(b).diagramPosition.y();});
+    for (int i = 0; i < sidePorts.size(); ++i) {
+      ports[sidePorts.at(i)].iconPosition = QPointF(x, qRound((100 - 200 * (i + 0.5) / sidePorts.size()) / 10) * 10);
+    }
+  };
+  placeIconPorts(leftPorts, -110);
+  placeIconPorts(rightPorts, 110);
+
+  auto pointString = [](const QPointF &point) {
+    return QString("{%1, %2}").arg(point.x()).arg(point.y());
+  };
+  auto colorString = [](const QColor &color) {
+    return QString("{%1, %2, %3}").arg(color.red()).arg(color.green()).arg(color.blue());
+  };
+  auto linePoints = [&pointString](const QPointF &start, const QPointF &end) -> QString {
+    QStringList points;
+    points << pointString(start);
+    if (start.y() != end.y()) {
+      const qreal x = qRound((start.x() + end.x()) / 2);
+      points << pointString(QPointF(x, start.y())) << pointString(QPointF(x, end.y()));
+    }
+    points << pointString(end);
+    return "{" % points.join(", ") % "}";
+  };
+  auto lineString = [&linePoints, &colorString](const QPointF &start, const QPointF &end, const QColor &color) {
+    return QString("Line(points=%1, color=%2)").arg(linePoints(start, end), colorString(color));
+  };
+
+  // Create the new model.
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem();
+  if (!parentClass.isEmpty()) {
+    pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(parentClass);
+    if (!pParentLibraryTreeItem) {
+      return false;
+    }
+  }
+  mpModelWidget->processPendingModelUpdate();
+  QString classText = "model " % name;
+  if (!description.isEmpty()) {
+    classText += " \"" % StringHandler::escapeString(description) % "\"";
+  }
+  classText += " end " % name % ";";
+  QString fileName = name;
+  if (!pParentLibraryTreeItem->isRootItem()) {
+    classText = "within " % pParentLibraryTreeItem->getNameStructure() % "; " % classText;
+    fileName = pParentLibraryTreeItem->isSaveInOneFile() ? pParentLibraryTreeItem->mClassInformation.fileName : pParentLibraryTreeItem->getNameStructure() % "." % name;
+  }
+  const QString newClassName = pParentLibraryTreeItem->isRootItem() ? name : pParentLibraryTreeItem->getNameStructure() % "." % name;
+  if (!pOMCProxy->loadString(classText, fileName, Helper::utf8, false, false)) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(pOMCProxy->getErrorString()), QMessageBox::Ok);
+    return false;
+  }
+  QStringList movedItems;
+  foreach (Element *pElement, elements) {
+    movedItems << pElement->getModelComponent()->toString(false, true) % " annotation(" % pElement->getPlacementAnnotation(true) % ");";
+  }
+  if (!connections.isEmpty()) {
+    movedItems << "equation" << connections;
+  }
+  if (!shapes.isEmpty()) {
+    QStringList graphics;
+    foreach (ShapeAnnotation *pShapeAnnotation, shapes) {
+      graphics << pShapeAnnotation->getShapeAnnotation();
+    }
+    movedItems << "annotation (Diagram(graphics={" % graphics.join(", ") % "}));";
+  }
+  pOMCProxy->loadClassContentString(movedItems.join("\n"), newClassName, qRound(offset.x()), qRound(offset.y()));
+  QStringList portItems, portConnections;
+  foreach (const Port &port, ports) {
+    portItems << port.declaration % " annotation(Placement(transformation(origin=" % pointString(port.diagramPosition) % ", extent={{-10, -10}, {10, 10}}), "
+                 % "iconTransformation(origin=" % pointString(port.iconPosition) % ", extent={{-10, -10}, {10, 10}})));";
+    portConnections << "connect(" % port.name % ", " % port.innerName % ") annotation ("
+                       % lineString(port.diagramPosition, port.innerPosition + offset, port.color) % ");";
+  }
+  if (!portConnections.isEmpty()) {
+    portItems << "equation" << portConnections;
+  }
+  portItems << QString("annotation (Icon(graphics={Rectangle(extent={{-100, 100}, {100, -100}}, lineColor={0, 0, 127}, fillColor={255, 255, 255}, "
+                       "fillPattern=FillPattern.Solid), Text(extent={{-150, 150}, {150, 110}}, textString=\"%name\", textColor={0, 0, 255})}), "
+                       "Diagram(coordinateSystem(extent={%1, %2})));").arg(pointString(extent.topLeft()), pointString(extent.bottomRight()));
+  pOMCProxy->loadClassContentString(portItems.join("\n"), newClassName);
+  // Add the new model to the Libraries Browser.
+  LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, pParentLibraryTreeItem, false, false, true);
+  pNewLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+  if (pParentLibraryTreeItem->isSaveFolderStructure()) {
+    pParentLibraryTreeItem->setIsSaved(false);
+    pLibraryTreeModel->updateLibraryTreeItem(pParentLibraryTreeItem);
+  }
+  pLibraryTreeModel->updateLibraryTreeItemClassText(pNewLibraryTreeItem);
+
+  if (!replaceSelection) {
+    pLibraryTreeModel->showModelWidget(pNewLibraryTreeItem, true);
+    return true;
+  }
+  // Replace the selection with a component of the new model.
+  const QString action = "Create new model from selection";
+  mpModelWidget->beginMacro(action);
+  clearSelection();
+  foreach (Element *pElement, elements) {
+    pElement->setSelected(true);
+  }
+  foreach (ShapeAnnotation *pShapeAnnotation, shapes) {
+    pShapeAnnotation->setSelected(true);
+  }
+  deleteItems();
+  mpModelWidget->processPendingModelUpdate();
+  ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+  QStringList componentItems;
+  componentItems << newClassName % " " % componentName % " annotation(Placement(transformation(origin=" % pointString(center) % ", extent={{-10, -10}, {10, 10}})));";
+  if (!boundaryConnections.isEmpty()) {
+    componentItems << "equation";
+  }
+  struct NewConnection {
+    QString from;
+    QString to;
+    QString points;
+    QColor color;
+  };
+  QList<NewConnection> newConnections;
+  foreach (const BoundaryConnection &boundaryConnection, boundaryConnections) {
+    const Port &port = ports.at(boundaryConnection.port);
+    const QString portName = componentName % "." % port.name;
+    // the icon of the component is scaled from {{-100, -100}, {100, 100}} to {{-10, -10}, {10, 10}}
+    const QPointF portPosition = center + port.iconPosition / 10;
+    NewConnection newConnection;
+    if (boundaryConnection.innerIsStart) {
+      newConnection = {portName, boundaryConnection.outerName, linePoints(portPosition, boundaryConnection.outerPosition), boundaryConnection.color};
+    } else {
+      newConnection = {boundaryConnection.outerName, portName, linePoints(boundaryConnection.outerPosition, portPosition), boundaryConnection.color};
+    }
+    componentItems << "connect(" % newConnection.from % ", " % newConnection.to % ") annotation (Line(points=" % newConnection.points
+                      % ", color=" % colorString(newConnection.color) % "));";
+    newConnections.append(newConnection);
+  }
+  if (!pOMCProxy->loadClassContentString(componentItems.join("\n"), pLibraryTreeItem->getNameStructure())) {
+    mpModelWidget->endMacro();
+    return false;
+  }
+  /* Add the new component and connections to the view before creating the ModelInfo.
+   * OMCUndoCommand redraws the model by matching the elements and connections of the ModelInfo by position.
+   */
+  ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), componentName, newClassName, false);
+  addElementToView(pComponent, false, false, false, QPointF(0, 0), QString("Placement(true,%1,%2,-10,-10,10,10,0,-,-,-,-,-,-,)").arg(center.x()).arg(center.y()), false);
+  foreach (const NewConnection &newConnection, newConnections) {
+    const QString lineShape = QString("true, {0, 0}, 0, %1, %2, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None")
+                              .arg(newConnection.points, colorString(newConnection.color));
+    LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, 0, 0, this);
+    pConnectionLineAnnotation->setStartElementName(newConnection.from);
+    pConnectionLineAnnotation->setEndElementName(newConnection.to);
+    addConnectionToView(pConnectionLineAnnotation, false);
+  }
+  ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+  mpModelWidget->getUndoStack()->push(new OMCUndoCommand(pLibraryTreeItem, oldModelInfo, newModelInfo, action));
+  mpModelWidget->updateModelText();
+  mpModelWidget->endMacro();
+  return true;
 }
 
 /*!
@@ -5248,6 +5634,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     mpRotateAntiClockwiseAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
     mpFlipHorizontalAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
     mpFlipVerticalAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpCreateModelFromSelectionAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode && !isVisualizationView());
     menu.exec(event->globalPos());
     return; // return from it because at a time we only want one context menu.
   }

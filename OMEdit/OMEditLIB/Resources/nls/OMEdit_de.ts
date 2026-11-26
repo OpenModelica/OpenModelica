@@ -993,6 +993,25 @@ Die lokale Kopie und ihr Synchronisierungsstatus werden entfernt. In der Cloud w
     </message>
 </context>
 <context>
+    <name>CreateModelFromSelectionDialog</name>
+    <message>
+        <source>Create New Model from Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert in class (optional):</source>
+        <translation type="unfinished">In Klasse einfügen (optional):</translation>
+    </message>
+    <message>
+        <source>Replace the selection with a component of the new model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Component name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CreateNewItemDialog</name>
     <message>
         <source>Please enter path.</source>
@@ -4414,6 +4433,10 @@ Weiter warten oder das Debuggen abbrechen?</numerusform>
         <translation>Spiegelt das Element vertikal</translation>
     </message>
     <message>
+        <source>Moves the selected items to a new model and connects it through new connectors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Error in class annotation %1</source>
         <translation>Fehler in der Klassenannotation %1</translation>
     </message>
@@ -4426,6 +4449,10 @@ Weiter warten oder das Debuggen abbrechen?</numerusform>
 Please check the Messages browser for error messages and possibly undo the latest changes with ctrl-z.</source>
         <translation>Der Modelica-Code dieses Modells ist ungültig, daher kann die Grafik nicht angezeigt werden.
 Fehlermeldungen stehen im Meldungsbrowser; eventuell die letzten Änderungen mit Strg+Z rückgängig machen.</translation>
+    </message>
+    <message>
+        <source>Select at least one component that is not a connector of &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rotate Clockwise</source>
@@ -4502,6 +4529,10 @@ Fehlermeldungen stehen im Meldungsbrowser; eventuell die letzten Änderungen mit
     <message>
         <source>Cancels the current transition</source>
         <translation>Bricht die aktuelle Transition ab</translation>
+    </message>
+    <message>
+        <source>Create New Model from Selection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
