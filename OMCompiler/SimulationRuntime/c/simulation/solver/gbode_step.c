@@ -972,7 +972,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     stepSize = stepSize/2;
     lastStepSize = lastStepSize/2;
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
-  } else do {
+  } else {
     // debug the approximations after performed step
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
       infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (first 1/2 step) approximation:");
@@ -989,7 +989,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       sData->timeValue = gbData->time;
       memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
       step_info = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
-      if (step_info) break;
+      if (step_info) goto restore;
       gbData->tv[1] = gbData->tv[0];
       memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
       memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
@@ -1018,7 +1018,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
         sData->timeValue = gbData->time + gbData->stepSize;
         memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
         step_info = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
-        if (step_info) break;
+        if (step_info) goto restore;
         gbData->tv[0] = gbData->time;
         memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
         memcpy(gbData->kv, fODE, nStates * sizeof(double));
@@ -1043,8 +1043,9 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
         }
       }
     }
-  } while (0);
+  }
 
+restore:
   // Restore time values and step size
   gbData->time = timeValue;
   gbData->stepSize = stepSize;
