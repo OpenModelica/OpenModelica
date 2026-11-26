@@ -322,6 +322,15 @@ pub fn equation_vars(data: *mut DATA, eq_index: u32) -> Vec<String> {
     }
 }
 
+/// Whether the equation is in the `initialEquations` section, as `LOG_EBDD` labels it.
+pub fn is_initial_section(data: *mut DATA, eq_index: u32) -> bool {
+    let xml = unsafe { &mut (*(*data).modelData).modelDataXml };
+    load(xml)
+        .entries
+        .get(eq_index as usize)
+        .is_some_and(|e| e.section == EQUATION_SECTION_INITIAL)
+}
+
 /// Whether the equation is in the section `LOG_NLS_NEWTON_DIAGNOSTICS` reports on:
 /// `initialEquations_lambda0`, or `initialEquations` for a model without one.
 pub fn is_init_diag_section(data: *mut DATA, eq_index: u32) -> bool {

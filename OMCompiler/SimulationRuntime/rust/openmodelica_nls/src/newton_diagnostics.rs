@@ -11,6 +11,7 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
+use openmodelica_solvers::ebdd;
 use openmodelica_solvers::fmath;
 
 use openmodelica_solvers::omclog;
@@ -104,7 +105,15 @@ fn mat_mult(a: &[Vec<f64>], b: &[Vec<f64>]) -> Vec<Vec<f64>> {
 
 /// C's `newtonDiagnostics`. `x0` is the start point, `f` the residual there,
 /// `names` the unknowns' names.
-pub fn newton_diagnostics(eq_index: u32, x0: &[f64], f: &[f64], names: &[String], diag: &DiagInfo, cb: &mut Callbacks) {
+pub fn newton_diagnostics(
+    eq_index: u32,
+    time: f64,
+    x0: &[f64],
+    f: &[f64],
+    names: &[String],
+    diag: &DiagInfo,
+    cb: &mut Callbacks,
+) {
     let m = x0.len();
     let name = |j: usize| names.get(j).map_or("", |s| s.as_str());
     let mut lambda = 1.0f64;
@@ -211,6 +220,15 @@ pub fn newton_diagnostics(eq_index: u32, x0: &[f64], f: &[f64], names: &[String]
         .collect();
     let q = w_idx.len();
     let z_idx: Vec<usize> = (0..m).filter(|i| !w_idx.contains(i)).collect();
+
+    if ebdd::active() {
+        let initial = ebdd::is_initial(eq_index, true);
+        ebdd::convergence_diagnostics(eq_index, initial, time, m, p, names, &w_idx);
+        // The linearly dependent variables are the singular part of the system.
+        if !z_idx.is_empty() {
+            ebdd::null_space(eq_index, initial, time, m, names, &z_idx);
+        }
+    }
 
     open!("Information about the system from non-linear pattern");
     info!("Total number of equations = {}", diag.pattern[0]);

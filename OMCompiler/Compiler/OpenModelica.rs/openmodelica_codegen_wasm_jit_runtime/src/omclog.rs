@@ -43,5 +43,6 @@ pub(crate) fn sink(_stream: Stream, _ty: LogType, s: &str) {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_set_log_streams(lo: u32, hi: u32) {
     openmodelica_sim_meta::driver::set_log_sink(sink);
+    openmodelica_sim_meta::ebdd::set_sink(crate::files::append_file);
     set_mask(((hi as Mask) << 32) | lo as Mask);
 }

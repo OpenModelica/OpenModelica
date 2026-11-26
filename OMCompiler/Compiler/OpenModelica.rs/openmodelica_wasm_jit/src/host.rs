@@ -714,6 +714,22 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
             let _ = openmodelica_wasi::fs::write(String::from_utf8_lossy(name).as_ref(), data);
         },
     ))?;
+    // The runtime's `files::append_file`: the records of `<prefix>_dbg.json`.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_append_file",
+        |caller: wasmtime::Caller<'_, HostState>, name: u32, name_len: u32, data: u32, data_len: u32| {
+            let Some(memory) = caller.data().memory else { return };
+            let bytes = memory.data(&caller);
+            let (Some(name), Some(data)) = (
+                bytes.get(name as usize..(name + name_len) as usize),
+                bytes.get(data as usize..(data + data_len) as usize),
+            ) else {
+                return;
+            };
+            let _ = openmodelica_wasi::fs::append(String::from_utf8_lossy(name).as_ref(), data);
+        },
+    ))?;
     // The in-wasm session's result file (`session.rs`'s `HostOut`).
     wt(linker.func_wrap(
         "env",
@@ -1118,6 +1134,23 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
                 let view = memory.view(&env);
                 if view.read(name as u64, &mut nbuf).is_ok() && view.read(data as u64, &mut dbuf).is_ok() {
                     let _ = openmodelica_wasi::fs::write(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf);
+                }
+            },
+        ),
+    );
+    imports.define(
+        "env",
+        "rt_host_append_file",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |env: wasmer::FunctionEnvMut<HostEnv>, name: u32, name_len: u32, data: u32, data_len: u32| {
+                let Some(memory) = env.data().mem.clone() else { return };
+                let mut nbuf = vec![0u8; name_len as usize];
+                let mut dbuf = vec![0u8; data_len as usize];
+                let view = memory.view(&env);
+                if view.read(name as u64, &mut nbuf).is_ok() && view.read(data as u64, &mut dbuf).is_ok() {
+                    let _ = openmodelica_wasi::fs::append(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf);
                 }
             },
         ),

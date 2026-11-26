@@ -127,7 +127,7 @@ pub const STATS_V: Stream = 53;
 pub const SUCCESS: Stream = 54;
 pub const SYNCHRONOUS: Stream = 55;
 pub const ZEROCROSSINGS: Stream = 56;
-/// Equation-based declarative debugger export (`<model>_dbg.json`); only the C runtime emits it.
+/// Equation-based declarative debugger export (`<model>_dbg.json`), see [`crate::ebdd`].
 pub const EBDD: Stream = 57;
 
 /// C's `OMC_LOG_TYPE_*` / `OMC_LOG_TYPE_DESC`.

@@ -34,6 +34,7 @@ pub mod newton_diagnostics;
 #[cfg(test)]
 mod nls_c_trace;
 
+use openmodelica_solvers::ebdd;
 use openmodelica_solvers::fmath;
 use openmodelica_solvers::format_g;
 use openmodelica_solvers::omclog;
@@ -1406,6 +1407,8 @@ fn homotopy_algorithm(
     start_dir: f64,
     log: omclog::Stream,
     export: Option<HomExport>,
+    // `(eq_index, time)` of an initialization homotopy, whose path `LOG_EBDD` records.
+    ebdd_path: Option<(u32, f64)>,
     hom: &mut impl Homotopy,
 ) -> core::result::Result<usize, HomFail> {
     let t = solverflags::hom_tuning();
@@ -1612,6 +1615,18 @@ fn homotopy_algorithm(
             }
             y0.copy_from_slice(&y1);
             prev_tangent.copy_from_slice(&tangent);
+            if let Some((eq_index, time)) = ebdd_path.filter(|_| ebdd::active()) {
+                ebdd::homotopy_step(
+                    eq_index,
+                    ebdd::is_initial(eq_index, true),
+                    time,
+                    num_steps,
+                    y0[n],
+                    var_names(eq_index),
+                    &y0[..n],
+                    &hvec,
+                );
+            }
             if let Some((_, s)) = csv.as_mut() {
                 s.push_str(&omclog::g(y0[n], 0, 16));
                 for v in &y0[..n] {
@@ -1744,7 +1759,17 @@ fn homotopy_solve(
                 xscaling: &xscaling,
                 eval,
             };
-            homotopy_algorithm(n, &mut y, &xscaling, start_dir, omclog::NLS_HOMOTOPY, None, &mut hom).is_ok()
+            homotopy_algorithm(
+                n,
+                &mut y,
+                &xscaling,
+                start_dir,
+                omclog::NLS_HOMOTOPY,
+                None,
+                None,
+                &mut hom,
+            )
+            .is_ok()
         }
         HomVariant::Fixpoint => {
             let mut hom = FixpointHom {
@@ -1754,7 +1779,17 @@ fn homotopy_solve(
                 xscaling: &xscaling,
                 eval,
             };
-            homotopy_algorithm(n, &mut y, &xscaling, start_dir, omclog::NLS_HOMOTOPY, None, &mut hom).is_ok()
+            homotopy_algorithm(
+                n,
+                &mut y,
+                &xscaling,
+                start_dir,
+                omclog::NLS_HOMOTOPY,
+                None,
+                None,
+                &mut hom,
+            )
+            .is_ok()
         }
     };
     if ok {
@@ -1772,6 +1807,7 @@ fn init_homotopy_solve<'e>(
     positive_nominal: &[f64],
     bounds: &[f64],
     export: Option<(u32, bool, alloc::vec::Vec<alloc::string::String>)>,
+    ebdd_path: Option<(u32, f64)>,
     eval: &mut (dyn FnMut(&[f64], &mut [f64]) + 'e),
     mut jac: Option<&mut (dyn FnMut(&[f64], &mut [f64]) + 'e)>,
 ) -> Option<usize> {
@@ -1828,7 +1864,16 @@ fn init_homotopy_solve<'e>(
                 eval,
                 jac: jac.as_deref_mut(),
             };
-            homotopy_algorithm(n, &mut y, &xscaling, dir, omclog::INIT_HOMOTOPY, hom_export, &mut hom)
+            homotopy_algorithm(
+                n,
+                &mut y,
+                &xscaling,
+                dir,
+                omclog::INIT_HOMOTOPY,
+                hom_export,
+                ebdd_path,
+                &mut hom,
+            )
         };
         match r {
             Ok(steps) => {
@@ -3164,6 +3209,8 @@ fn newton_c(
     jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
     has_jac: bool,
     trace: Option<&HomotopyTrace>,
+    // The system whose iterations `LOG_EBDD` records.
+    ebdd_trace: Option<&HomotopyTrace>,
     casual: bool,
 ) -> (bool, bool) {
     const ALPHA: f64 = 1.0e-1;
@@ -3350,6 +3397,19 @@ fn newton_c(
     let mut vanishing = false;
     loop {
         nls_stat_inc(STAT_NLS_ITER);
+        if let Some(t) = ebdd_trace {
+            ebdd::newton_iteration(
+                t.eq_index,
+                ebdd::is_initial(t.eq_index, t.initial),
+                t.time,
+                iter + 1,
+                var_names(t.eq_index),
+                &x[..n],
+                &fvec,
+                res_scaling,
+                &xscaling,
+            );
+        }
         if let Some(t) = trace {
             omclog::debug_int(omclog::NLS_V, "Iteration:", iter + 1);
             for i in 0..n {
@@ -3652,6 +3712,19 @@ fn newton_c(
                 omclog::debug_string(omclog::NLS_V, "UPS! assert when calculating Jacobian!!!");
             }
             return (false, false);
+        }
+        // The Jacobian at the iterate the next iteration enters with.
+        if let Some(t) = ebdd_trace {
+            ebdd::jacobian(
+                t.eq_index,
+                ebdd::is_initial(t.eq_index, t.initial),
+                t.time,
+                iter + 1,
+                var_names(t.eq_index),
+                n,
+                &jac,
+                &xscaling,
+            );
         }
         row_scaling(n, &jac, res_scaling);
         // C's `linearSolverWrapper` at the head of the next iteration, over the
@@ -4499,6 +4572,7 @@ pub fn solve_nls(
                 let mut jacobian = |xs: &[f64], fj: &mut [f64]| jaceval_layout(xs, fj, true);
                 newton_diagnostics::newton_diagnostics(
                     eq_index,
+                    time,
                     &nlsx_old,
                     &scratch,
                     &names,
@@ -4734,6 +4808,7 @@ pub fn solve_nls(
                                     &mut jaceval,
                                     has_jac,
                                     newton_trace,
+                                    ebdd::active().then_some(&t),
                                     casual,
                                 );
                                 newton_trace = trace.map(|_| &t_again);
@@ -4850,6 +4925,7 @@ pub fn solve_nls(
                                 &mut eval,
                                 &mut jaceval,
                                 has_jac,
+                                None,
                                 None,
                                 casual,
                             )
@@ -4998,6 +5074,7 @@ pub fn solve_nls(
             &positive_nominal,
             &bounds,
             export,
+            Some((eq_index, time)),
             &mut eval,
             has_hom_jac.then_some(&mut hom_jac as &mut dyn FnMut(&[f64], &mut [f64])),
         );
@@ -5074,12 +5151,35 @@ pub fn solve_nls(
         1
     };
 
-    if log_nls {
+    let log_ebdd = ebdd::active();
+    if log_nls || log_ebdd {
         let c = counters_of(eq_index);
         c[0].fetch_add(flags().iters.load(Ordering::Relaxed) - iter0, Ordering::Relaxed);
         c[1].fetch_add(n_feval.get(), Ordering::Relaxed);
         c[2].fetch_add(flags().jac_evals.load(Ordering::Relaxed) - jac0, Ordering::Relaxed);
+    }
+    if log_nls {
         log_nls_leave(eq_index, converged || strict_used, &x);
+    }
+    if log_ebdd {
+        // C's `resValues`: the residual at the values the system is left with. A
+        // failed solve evaluated it above; the strict set's is not ours to take.
+        if strict_used {
+            scratch.fill(f64::NAN);
+        } else if converged {
+            uncounted(&n_feval, || eval(&x, &mut scratch));
+        }
+        ebdd::nonlinear(
+            eq_index,
+            ebdd::is_initial(eq_index, saved_rel_fresh == 2),
+            time,
+            if converged || strict_used { "solved" } else { "failed" },
+            counters_of(eq_index)[0].load(Ordering::Relaxed),
+            var_names(eq_index),
+            if converged || strict_used { &x[..] } else { &warm[..] },
+            &scratch,
+            &|i| positive_nominal[i] * nominal_sign[i],
+        );
     }
 
     if saved_rel_fresh != 2 {
