@@ -2587,3 +2587,158 @@ void ComponentNameDialog::updateComponentName()
   }
   accept();
 }
+
+/*!
+ * \class CreateModelFromSelectionDialog
+ * \brief Asks for the name and location of the model created from the selected elements.
+ */
+/*!
+ * \brief CreateModelFromSelectionDialog::CreateModelFromSelectionDialog
+ * \param parentClass - the default class to insert the new model in.
+ * \param usedElementNames - the element names that the replacing component can not use.
+ * \param pParent
+ */
+CreateModelFromSelectionDialog::CreateModelFromSelectionDialog(const QString &parentClass, const QStringList &usedElementNames, QWidget *pParent)
+  : QDialog(pParent), mUsedElementNames(usedElementNames)
+{
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Create New Model from Selection")));
+  setMinimumWidth(450);
+  Label *pNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  connect(mpNameTextBox, &QLineEdit::textEdited, this, &CreateModelFromSelectionDialog::updateComponentNameFromName);
+  Label *pDescriptionLabel = new Label(QString("%1:").arg(Helper::description));
+  mpDescriptionTextBox = new QLineEdit;
+  Label *pParentClassLabel = new Label(tr("Insert in class (optional):"));
+  mpParentClassTextBox = new QLineEdit(parentClass);
+  QPushButton *pParentClassBrowseButton = new QPushButton(Helper::browse);
+  pParentClassBrowseButton->setAutoDefault(false);
+  connect(pParentClassBrowseButton, &QPushButton::clicked, this, &CreateModelFromSelectionDialog::browseParentClass);
+  mpReplaceSelectionCheckBox = new QCheckBox(tr("Replace the selection with a component of the new model"));
+  mpReplaceSelectionCheckBox->setChecked(true);
+  mpComponentNameLabel = new Label(tr("Component name:"));
+  mpComponentNameTextBox = new QLineEdit;
+  connect(mpComponentNameTextBox, &QLineEdit::textEdited, this, [this]() {mComponentNameEdited = true;});
+  connect(mpReplaceSelectionCheckBox, &QCheckBox::toggled, mpComponentNameLabel, &Label::setEnabled);
+  connect(mpReplaceSelectionCheckBox, &QCheckBox::toggled, mpComponentNameTextBox, &QLineEdit::setEnabled);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, &QPushButton::clicked, this, &CreateModelFromSelectionDialog::createModel);
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, &QPushButton::clicked, this, &CreateModelFromSelectionDialog::reject);
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(pNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1, 1, 2);
+  pMainLayout->addWidget(pDescriptionLabel, 1, 0);
+  pMainLayout->addWidget(mpDescriptionTextBox, 1, 1, 1, 2);
+  pMainLayout->addWidget(pParentClassLabel, 2, 0);
+  pMainLayout->addWidget(mpParentClassTextBox, 2, 1);
+  pMainLayout->addWidget(pParentClassBrowseButton, 2, 2);
+  pMainLayout->addWidget(mpReplaceSelectionCheckBox, 3, 0, 1, 3);
+  pMainLayout->addWidget(mpComponentNameLabel, 4, 0);
+  pMainLayout->addWidget(mpComponentNameTextBox, 4, 1, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief CreateModelFromSelectionDialog::isValidIdentifier
+ * Returns true if name is a valid Modelica identifier.
+ * \param name
+ * \return
+ */
+bool CreateModelFromSelectionDialog::isValidIdentifier(const QString &name)
+{
+  if (StringHandler::nameContainsComma(name)) {
+    return false;
+  }
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->setLoggingEnabled(false);
+  QList<QString> result = pOMCProxy->parseString(QString("model M N %1; end M;").arg(name), "M", false);
+  pOMCProxy->setLoggingEnabled(true);
+  return !result.isEmpty();
+}
+
+/*!
+ * \brief CreateModelFromSelectionDialog::updateComponentNameFromName
+ * Suggests a component name from the model name until the user edits the component name.
+ * \param name
+ */
+void CreateModelFromSelectionDialog::updateComponentNameFromName(const QString &name)
+{
+  if (!mComponentNameEdited) {
+    QString componentName = name.trimmed();
+    if (!componentName.isEmpty()) {
+      componentName[0] = componentName.at(0).toLower();
+      // a component can not have the name of its class
+      if (componentName.compare(name.trimmed()) == 0) {
+        componentName.append("1");
+      }
+    }
+    mpComponentNameTextBox->setText(componentName);
+  }
+}
+
+void CreateModelFromSelectionDialog::browseParentClass()
+{
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(Helper::selectParentClassName, mpParentClassTextBox, MainWindow::instance()->getLibraryWidget());
+  pLibraryBrowseDialog->exec();
+}
+
+/*!
+ * \brief CreateModelFromSelectionDialog::createModel
+ * Validates the input and accepts the dialog.
+ */
+void CreateModelFromSelectionDialog::createModel()
+{
+  const QString title = QString("%1 - %2").arg(Helper::applicationName, Helper::error);
+  if (getName().isEmpty()) {
+    QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("model"), QMessageBox::Ok);
+    return;
+  }
+  if (!isValidIdentifier(getName())) {
+    QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(getName()), QMessageBox::Ok);
+    return;
+  }
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  QString model = getName();
+  QString parentPackage = "Global Scope";
+  if (!getParentClass().isEmpty()) {
+    LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(getParentClass());
+    if (!pParentLibraryTreeItem) {
+      QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(getParentClass()), QMessageBox::Ok);
+      return;
+    }
+    if (pParentLibraryTreeItem->isSystemLibrary()) {
+      QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(getParentClass()), QMessageBox::Ok);
+      return;
+    }
+    model = getParentClass() + "." + getName();
+    parentPackage = QString("Package '%1'").arg(getParentClass());
+  }
+  if (MainWindow::instance()->getOMCProxy()->existClass(model) || pLibraryTreeModel->findLibraryTreeItemOneLevel(model)) {
+    QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("model", model, parentPackage), QMessageBox::Ok);
+    return;
+  }
+  if (replaceSelection()) {
+    if (getComponentName().isEmpty()) {
+      QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::item), QMessageBox::Ok);
+      return;
+    }
+    if (!isValidIdentifier(getComponentName())) {
+      QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(getComponentName()), QMessageBox::Ok);
+      return;
+    }
+    if (getComponentName().compare(getName()) == 0 || mUsedElementNames.contains(getComponentName())) {
+      QMessageBox::critical(this, title, GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(getComponentName()), QMessageBox::Ok);
+      return;
+    }
+  }
+  accept();
+}

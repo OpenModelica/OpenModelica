@@ -993,6 +993,25 @@ La copia locale e il suo stato di sincronizzazione vengono rimossi. Nel cloud no
     </message>
 </context>
 <context>
+    <name>CreateModelFromSelectionDialog</name>
+    <message>
+        <source>Create New Model from Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert in class (optional):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Replace the selection with a component of the new model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Component name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CreateNewItemDialog</name>
     <message>
         <source>Please enter path.</source>
@@ -4454,6 +4473,14 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>Ribalta la voce verticalmente</translation>
     </message>
     <message>
+        <source>Create New Model from Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Moves the selected items to a new model and connects it through new connectors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Error in class annotation %1</source>
         <translation>Errore nell&apos;annotazione della classe %1</translation>
     </message>
@@ -4466,6 +4493,10 @@ You can choose between waiting longer or abort debugging.</source>
 Please check the Messages browser for error messages and possibly undo the latest changes with ctrl-z.</source>
         <translation>Il codice Modelica di questo modello non è valido, quindi la grafica non può essere visualizzata.
 Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annullare le ultime modifiche con Ctrl+Z.</translation>
+    </message>
+    <message>
+        <source>Select at least one component that is not a connector of &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rotate Anticlockwise</source>

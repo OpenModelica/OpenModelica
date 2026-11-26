@@ -425,4 +425,34 @@ private slots:
   void updateComponentName();
 };
 
+class CreateModelFromSelectionDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  CreateModelFromSelectionDialog(const QString &parentClass, const QStringList &usedElementNames, QWidget *pParent = 0);
+  QString getName() const {return mpNameTextBox->text().trimmed();}
+  QString getDescription() const {return mpDescriptionTextBox->text().trimmed();}
+  QString getParentClass() const {return mpParentClassTextBox->text().trimmed();}
+  QString getComponentName() const {return mpComponentNameTextBox->text().trimmed();}
+  bool replaceSelection() const {return mpReplaceSelectionCheckBox->isChecked();}
+private:
+  QStringList mUsedElementNames;
+  bool mComponentNameEdited = false;
+  QLineEdit *mpNameTextBox;
+  QLineEdit *mpDescriptionTextBox;
+  QLineEdit *mpParentClassTextBox;
+  QCheckBox *mpReplaceSelectionCheckBox;
+  Label *mpComponentNameLabel;
+  QLineEdit *mpComponentNameTextBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+
+  bool isValidIdentifier(const QString &name);
+private slots:
+  void updateComponentNameFromName(const QString &name);
+  void browseParentClass();
+  void createModel();
+};
+
 #endif // MODELICACLASSDIALOG_H
