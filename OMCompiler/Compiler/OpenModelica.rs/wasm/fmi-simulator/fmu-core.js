@@ -220,7 +220,8 @@ export async function loadComponent(component, { files, onLog, shimBase = './ven
     clockUpdate() {}, lockPreemption() {}, unlockPreemption() {},
   };
   imports['fmi:fmi3/intermediate-update-callbacks'] = {
-    intermediateUpdate: () => ({ earlyReturnRequested: false, earlyReturnTime: 0 }),
+    // tuple<early-return-requested, early-return-time>
+    intermediateUpdate: () => [false, 0],
   };
   // `external "C"` served from a platform library: nothing to serve it from here.
   for (const n of gen.imports.filter((n) => n.startsWith('om:ext/native'))) {
