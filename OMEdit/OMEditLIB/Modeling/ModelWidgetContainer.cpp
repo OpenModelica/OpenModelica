@@ -3535,6 +3535,19 @@ void GraphicsView::resetZoom()
   resizeEvent(new QResizeEvent(QSize(0,0), QSize(0,0)));
 }
 
+/*!
+ * \brief GraphicsView::scaleUnderMouse
+ * Scales the view towards the mouse cursor, or towards the view center when the cursor is not over the view.
+ * \param factor
+ */
+void GraphicsView::scaleUnderMouse(qreal factor)
+{
+  const ViewportAnchor anchor = transformationAnchor();
+  setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+  scale(factor, factor);
+  setTransformationAnchor(anchor);
+}
+
 //! Increases zoom factor by 12%.
 //! @see resetZoom()
 //! @see zoomOut()
@@ -3543,7 +3556,7 @@ void GraphicsView::zoomIn()
   // zoom in limitation max: 1000%
   if (transform().m11() < 34 && transform().m22() > -34) {
     setIsCustomScale(true);
-    scale(1.12, 1.12);
+    scaleUnderMouse(1.12);
   }
 }
 
@@ -3555,7 +3568,7 @@ void GraphicsView::zoomOut()
   // zoom out limitation min: 10%
   if (transform().m11() > 0.2 && transform().m22() < -0.2) {
     setIsCustomScale(true);
-    scale(1/1.12, 1/1.12);
+    scaleUnderMouse(1/1.12);
   }
 }
 
