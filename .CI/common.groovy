@@ -2044,11 +2044,13 @@ void fmpyLinux() {
   echo "${env.NODE_NAME}"
   unstash 'cross-fmu'
   unstash 'fmpy-fmu'
-  sh '''
-  export HOME="$PWD"
+  // fmpy compile joins the jobserver only with make >= 4.4 (fifo style).
+  sh """
+  export HOME="\$PWD"
+  export CC=clang
   cd testsuite/special/FMPy/
-  make test
-  '''
+  make -j${numPhysicalCPU()} -O test
+  """
 }
 
 void uploadCompliance() {

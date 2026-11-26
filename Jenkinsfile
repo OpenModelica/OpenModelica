@@ -823,7 +823,7 @@ pipeline {
           agent {
             docker {
               label 'linux'
-              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04'
               alwaysPull true
               customWorkspace 'ws/OpenModelica'
             }
