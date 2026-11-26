@@ -1,0 +1,28 @@
+// name:   ConvertMessage1
+// status: correct
+// depends: scripts
+
+loadString("
+  package ConvertMessage1
+    model M
+      A.B.C c;
+      A.B b(x = 1.0);
+      Real x = A.B.x;
+    equation
+      x = fn(A.B.x);
+    end M;
+  end ConvertMessage1;
+");
+
+runConversionScript(ConvertMessage1, "scripts/ConvertMessage1.mos");
+getErrorString();
+
+// Result:
+// true
+// true
+// "[<interactive>:4:7-4:14:writable] Warning: A.B.C can't be converted
+// [<interactive>:5:13-5:20:writable] Warning: x in A.B can't be converted
+// [<interactive>:6:14-6:21:writable] Warning: x in A.B can't be converted
+// [<interactive>:8:7-8:20:writable] Warning: x in A.B can't be converted
+// "
+// endResult

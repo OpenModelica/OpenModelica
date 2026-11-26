@@ -15,6 +15,7 @@ ConvertClassVectorize3.mos \
 ConvertEmptyScript1.mos \
 ConvertElement1.mos \
 ConvertElement2.mos \
+ConvertMessage1.mos \
 ConvertModifiers1.mos \
 ConvertModifiers2.mos \
 ConvertModifiers3.mos \
