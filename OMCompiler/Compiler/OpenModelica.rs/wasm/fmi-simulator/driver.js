@@ -119,6 +119,11 @@ export class Driver {
     if (!this.exports.om_fmi_info()) throw new Error(this.lastError());
     this.info = this.out();
 
+    if (!this.info.coSimulation && !this.info.modelExchange) {
+      throw new Error(this.info.scheduledExecution
+        ? 'the FMU has only Scheduled Execution, which this simulator does not support'
+        : 'the FMU has neither a Co-Simulation nor a Model Exchange interface');
+    }
     const kind = this.info.coSimulation ? 1 : 0;
     if (!this.exports.om_fmi_select_component(kind)) throw new Error(this.lastError());
     const component = this.binary();
