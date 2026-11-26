@@ -278,6 +278,23 @@ public
     end match;
   end isScalarProduct;
 
+  function isMultiplication
+    input Operator operator;
+    output Boolean res;
+  algorithm
+    res := match operator.op
+      case Op.MUL then true;
+      case Op.MUL_EW then true;
+      case Op.MUL_SCALAR_ARRAY then true;
+      case Op.MUL_ARRAY_SCALAR then true;
+      case Op.MUL_VECTOR_MATRIX then true;
+      case Op.MUL_MATRIX_VECTOR then true;
+      case Op.SCALAR_PRODUCT then true;
+      case Op.MATRIX_PRODUCT then true;
+      else false;
+    end match;
+  end isMultiplication;
+
   function fromAbsyn
     input Absyn.Operator inOperator;
     output Operator outOperator;

@@ -3,6 +3,7 @@ TEST=../../../rtest -v
 TESTFILES=\
 ActualStream.mo \
 ActualStreamMinMax.mo \
+ActualStreamMul1.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamInvalidArgument.mo \
