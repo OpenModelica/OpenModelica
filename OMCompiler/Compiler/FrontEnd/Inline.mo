@@ -1601,6 +1601,7 @@ protected function replaceArgsInExp
   input HashTableCG.HashTable checkcr;
 algorithm
   (exp,(_,_,true,_)) := Expression.traverseExpBottomUp(exp,replaceArgs,(argmap,checkcr,true,newArgMemo()));
+  exp := Expression.expandLets(exp);
 end replaceArgsInExp;
 
 public function newArgMemo

@@ -1021,6 +1021,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as RSUB(__)            then daeExpRSub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as LET(__)             then daeExp(expandLets(e), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as METARECORDCALL(__)  then daeExpRecordCall(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as META_TUPLE(__)      then error(sourceInfo(), 'Unsupported META_TUPLE exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
   case e as META_OPTION(__)     then error(sourceInfo(), 'Unsupported META_OPTION exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')

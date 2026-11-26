@@ -81,6 +81,8 @@ import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
 import InstContext = NFInstContext;
+import System;
+import Global;
 import ComplexType = NFComplexType;
 
 import Call = NFCall;
@@ -184,6 +186,10 @@ public
             checkNotPartial(cref, context, info);
             ty_call := typeMatchNormalCall(call, context, info);
             (outExp, ty, var, pur)  := typeCallExp(ty_call);
+
+            if InstContext.inFunction(context) and isVectorized(ty_call) then
+              outExp := bindUnsubscriptedArguments(outExp, info);
+            end if;
           end if;
         then
           outExp;
@@ -3608,6 +3614,174 @@ protected
     checkedSize := Expression.CALL(UNTYPED_CALL(fn_ref, {size, otherSize, Expression.STRING(description)}, {}));
     checkedSize := Typing.typeExp(checkedSize, context, info);
   end makeCheckedSize;
+
+  function bindUnsubscriptedArguments
+    "A vectorized call moves its iterators into its arguments. A part of an
+     argument that cannot take the subscript, e.g. g(x) in abs(g(x)[i]), would
+     be evaluated for each element; it is bound with a let expression instead,
+     so that it is evaluated one time."
+    input Expression exp;
+    input SourceInfo info;
+    output Expression outExp = exp;
+  protected
+    list<InstNode> iters;
+    list<tuple<InstNode, Expression>> ctor_iters, lets = {};
+    list<Expression> remaining;
+    InstNode node;
+    Type ty;
+    Expression body, e, cref_exp;
+  algorithm
+    () := match exp
+      case Expression.CALL(call = TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = ctor_iters))
+        algorithm
+          iters := list(Util.tuple21(i) for i in ctor_iters);
+          remaining := listReverse(collectUnsubscripted(body, iters, {}, {}));
+
+          while not listEmpty(remaining) loop
+            e :: remaining := remaining;
+
+            if not Expression.isCref(e) then
+              ty := Expression.typeOf(e);
+              node := InstNode.newIterator("$let" + String(System.tmpTickIndex(Global.iteratorIndex)), ty, info);
+              cref_exp := Expression.fromCref(ComponentRef.makeIterator(node, ty));
+              outExp := Expression.map(outExp, function replaceEqualExp(target = e, replacement = cref_exp));
+              remaining := list(Expression.map(r, function replaceEqualExp(target = e, replacement = cref_exp)) for r in remaining);
+              lets := (node, e) :: lets;
+            end if;
+          end while;
+
+          // A later binding can use an earlier one, so the first one is outermost.
+          for l in lets loop
+            (node, e) := l;
+            outExp := Expression.LET(node, e, outExp);
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end bindUnsubscriptedArguments;
+
+  function collectUnsubscripted
+    "Collects the parts of exp that cannot take the subscripts of the iterators
+     iters. A part in a branch of an if-expression is not collected, since it
+     is evaluated only if the branch is selected."
+    input Expression exp;
+    input list<InstNode> iters;
+    input list<InstNode> innerNodes "Iterators and lets bound inside the argument.";
+    input output list<Expression> bound;
+  protected
+    Expression e;
+    list<tuple<InstNode, Expression>> exp_iters;
+  algorithm
+    () := match exp
+      case Expression.SUBSCRIPTED_EXP(exp = e)
+        guard isUnsubscripted(e, exp.subscripts, iters, innerNodes)
+        algorithm
+          if not List.any(bound, function Expression.isEqual(exp2 = e)) then
+            bound := e :: bound;
+          end if;
+        then
+          ();
+
+      case Expression.IF()
+        algorithm
+          bound := collectUnsubscripted(exp.condition, iters, innerNodes, bound);
+        then
+          ();
+
+      case Expression.LET()
+        algorithm
+          bound := collectUnsubscripted(exp.binding, iters, innerNodes, bound);
+          bound := collectUnsubscripted(exp.body, iters, exp.node :: innerNodes, bound);
+        then
+          ();
+
+      case Expression.CALL(call = TYPED_ARRAY_CONSTRUCTOR(exp = e, iters = exp_iters))
+        algorithm
+          bound := collectUnsubscriptedIters(e, exp_iters, iters, innerNodes, bound);
+        then
+          ();
+
+      case Expression.CALL(call = TYPED_REDUCTION(exp = e, iters = exp_iters))
+        algorithm
+          bound := collectUnsubscriptedIters(e, exp_iters, iters, innerNodes, bound);
+        then
+          ();
+
+      else
+        algorithm
+          (_, bound) := Expression.mapFoldShallow(exp,
+            function collectUnsubscriptedShallow(iters = iters, innerNodes = innerNodes), bound);
+        then
+          ();
+    end match;
+  end collectUnsubscripted;
+
+  function collectUnsubscriptedShallow
+    input output Expression exp;
+    input output list<Expression> bound;
+    input list<InstNode> iters;
+    input list<InstNode> innerNodes;
+  algorithm
+    bound := collectUnsubscripted(exp, iters, innerNodes, bound);
+  end collectUnsubscriptedShallow;
+
+  function collectUnsubscriptedIters
+    input Expression exp;
+    input list<tuple<InstNode, Expression>> expIters;
+    input list<InstNode> iters;
+    input list<InstNode> innerNodes;
+    input output list<Expression> bound;
+  algorithm
+    for i in expIters loop
+      bound := collectUnsubscripted(Util.tuple22(i), iters, innerNodes, bound);
+    end for;
+
+    bound := collectUnsubscripted(exp, iters,
+      listAppend(list(Util.tuple21(i) for i in expIters), innerNodes), bound);
+  end collectUnsubscriptedIters;
+
+  function isUnsubscripted
+    "Returns true if exp[subs] is a part that cannot take a subscript with one
+     of the iterators iters, and exp can be evaluated outside the argument."
+    input Expression exp;
+    input list<Subscript> subs;
+    input list<InstNode> iters;
+    input list<InstNode> innerNodes;
+    output Boolean res;
+  algorithm
+    if not Subscript.listContainsExp(subs, function isIteratorCrefOf(iters = iters)) then
+      res := false;
+    elseif Expression.isLiteral(exp) or Expression.isCref(exp) or Expression.isCallNamed(exp, "fill") then
+      res := false;
+    else
+      res := not (List.any(iters, function Expression.containsIterator(exp = exp)) or
+                  List.any(innerNodes, function Expression.containsIterator(exp = exp)));
+    end if;
+  end isUnsubscripted;
+
+  function isIteratorCrefOf
+    input Expression exp;
+    input list<InstNode> iters;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CREF(cref = ComponentRef.CREF())
+        then List.any(iters, function InstNode.refEqual(node2 = ComponentRef.node(exp.cref)));
+      else false;
+    end match;
+  end isIteratorCrefOf;
+
+  function replaceEqualExp
+    input output Expression exp;
+    input Expression target;
+    input Expression replacement;
+  algorithm
+    if Expression.isEqual(exp, target) then
+      exp := replacement;
+    end if;
+  end replaceEqualExp;
 
   function isVectorized
     input NFCall call;

@@ -248,6 +248,9 @@ algorithm
       then
         evalCast(exp1, exp.ty);
 
+    case Expression.LET()
+      then evalExp(Expression.replaceIterator(exp.body, exp.node, evalExp(exp.binding, target)), target);
+
     case Expression.BOX()   then evalExp(exp.exp, target);
     case Expression.UNBOX() then evalExp(exp.exp, target);
 

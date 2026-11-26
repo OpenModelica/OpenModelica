@@ -813,7 +813,7 @@ public
         list<Subscript> cref_subs;
 
       case CREF(subscripts = cref_subs)
-        guard applyToScope or cref.origin == Origin.CREF
+        guard applyToScope or cref.origin == Origin.CREF or cref.origin == Origin.ITERATOR
         algorithm
           if not reverse then
             (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend, reverse);

@@ -2248,6 +2248,69 @@ algorithm
   outValues := List.map(inDims, dimensionSizeAll);
 end dimensionsSizes;
 
+public function expandLets
+  "Replaces each let expression with its body, where the references to the
+   bound name are replaced with the binding."
+  input output DAE.Exp exp;
+algorithm
+  (exp, _) := traverseExpBottomUp(exp, expandLet, 0);
+end expandLets;
+
+protected function expandLet
+  input output DAE.Exp exp;
+  input output Integer dummy;
+protected
+  String name;
+  DAE.Exp binding, body;
+algorithm
+  () := match exp
+    case DAE.LET(name = name, binding = binding, body = body)
+      algorithm
+        (exp, _) := traverseExpBottomUp(body, function replaceLetName(name = name, binding = binding), 0);
+      then
+        ();
+
+    else ();
+  end match;
+end expandLet;
+
+protected function replaceLetName
+  input output DAE.Exp exp;
+  input output Integer dummy;
+  input String name;
+  input DAE.Exp binding;
+protected
+  String id;
+  list<DAE.Subscript> subs;
+  DAE.ComponentRef rest;
+algorithm
+  exp := match exp
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id, subscriptLst = subs)) guard id == name
+      then applyExpSubscripts(binding, subs);
+    case DAE.CREF(componentRef = DAE.CREF_QUAL(ident = id, subscriptLst = subs, componentRef = rest)) guard id == name
+      then applyFieldPath(applyExpSubscripts(binding, subs), rest);
+    else exp;
+  end match;
+end replaceLetName;
+
+protected function applyFieldPath
+  "Accesses the fields of a record expression named by a cref, e.g. .x[2].y."
+  input output DAE.Exp exp;
+  input DAE.ComponentRef path;
+protected
+  String id;
+  DAE.Type ty;
+  list<DAE.Subscript> subs;
+  DAE.ComponentRef rest;
+algorithm
+  exp := match path
+    case DAE.CREF_IDENT(ident = id, identType = ty, subscriptLst = subs)
+      then applyExpSubscripts(DAE.RSUB(exp, -1, id, ty), subs);
+    case DAE.CREF_QUAL(ident = id, identType = ty, subscriptLst = subs, componentRef = rest)
+      then applyFieldPath(applyExpSubscripts(DAE.RSUB(exp, -1, id, ty), subs), rest);
+  end match;
+end applyFieldPath;
+
 public function typeof "Retrieves the Type of the Expression"
   input DAE.Exp inExp;
   output DAE.Type outType;
@@ -2305,6 +2368,7 @@ algorithm
         tp;
     case DAE.TSUB(ty = tp) then tp;
     case DAE.RSUB() then inExp.ty;
+    case DAE.LET() then typeof(inExp.body);
     case DAE.CODE(ty = tp) then tp;
       /* array reduction with known size */
     case DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=iterExp,guardExp=NONE())},expr = operExp, reductionInfo=DAE.REDUCTIONINFO(exprType=DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array")))
@@ -5173,6 +5237,19 @@ algorithm
         (e1, ext_arg) := inFunc(e1, ext_arg);
       then (e1, ext_arg);
 
+    case e1 as DAE.LET()
+      algorithm
+        (e2_1, ext_arg) := traverseExpBottomUp(e1.binding, inFunc, inExtArg);
+        (e3_1, ext_arg) := traverseExpBottomUp(e1.body, inFunc, ext_arg);
+        if not referenceEq(e1.binding, e2_1) then
+          e1.binding := e2_1;
+        end if;
+        if not referenceEq(e1.body, e3_1) then
+          e1.body := e3_1;
+        end if;
+        (e1, ext_arg) := inFunc(e1, ext_arg);
+      then (e1, ext_arg);
+
     case DAE.SIZE(exp=e1, sz=NONE()) algorithm
       (e1_1, ext_arg) := traverseExpBottomUp(e1, inFunc, inExtArg);
       e := if referenceEq(e1, e1_1) then inExp else DAE.SIZE(e1_1, NONE());
@@ -5751,6 +5828,18 @@ algorithm
         (e1_1,ext_arg_1) := traverseExpTopDown(e1.exp, func, ext_arg);
         if not referenceEq(e1.exp, e1_1) then
           e1.exp := e1_1;
+        end if;
+      then (e1,ext_arg_1);
+
+    case (_,e1 as DAE.LET(),ext_arg)
+      algorithm
+        (e2_1,ext_arg_1) := traverseExpTopDown(e1.binding, func, ext_arg);
+        (e3_1,ext_arg_1) := traverseExpTopDown(e1.body, func, ext_arg_1);
+        if not referenceEq(e1.binding, e2_1) then
+          e1.binding := e2_1;
+        end if;
+        if not referenceEq(e1.body, e3_1) then
+          e1.body := e3_1;
         end if;
       then (e1,ext_arg_1);
 
@@ -7234,6 +7323,19 @@ algorithm
         (e2, arg) := traverseExpBidir(e1.exp, inEnterFunc, inExitFunc, inArg);
         if referenceEq(e1.exp, e2) then
           e1.exp := e2;
+        end if;
+      then
+        (e1, arg);
+
+    case e1 as DAE.LET()
+      algorithm
+        (e2, arg) := traverseExpBidir(e1.binding, inEnterFunc, inExitFunc, inArg);
+        (e3, arg) := traverseExpBidir(e1.body, inEnterFunc, inExitFunc, arg);
+        if not referenceEq(e1.binding, e2) then
+          e1.binding := e2;
+        end if;
+        if not referenceEq(e1.body, e3) then
+          e1.body := e3;
         end if;
       then
         (e1, arg);

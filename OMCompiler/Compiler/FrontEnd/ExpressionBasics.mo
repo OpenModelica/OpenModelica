@@ -588,6 +588,13 @@ algorithm
         comp := if comp==0 then stringCompare(inExp1.fieldName, s) else comp;
       then if comp==0 then compare(inExp1.exp, e) else comp;
 
+    case DAE.LET()
+      algorithm
+        DAE.LET(name = s, binding = e1, body = e2) := inExp2;
+        comp := stringCompare(inExp1.name, s);
+        comp := if comp == 0 then compare(inExp1.binding, e1) else comp;
+      then if comp == 0 then compare(inExp1.body, e2) else comp;
+
     case DAE.TSUB()
       algorithm
         DAE.TSUB(exp = e, ix=i, ty = ty) := inExp2;

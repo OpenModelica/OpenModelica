@@ -1581,6 +1581,13 @@ uniontype Exp "Expressions
     Pattern pattern;
   end PATTERN;
 
+  record LET "let name = binding in body. The binding is evaluated one
+    time, and references to name in body have its value."
+    Ident name;
+    Exp binding;
+    Exp body;
+  end LET;
+
   /* --- */
 
 end Exp;

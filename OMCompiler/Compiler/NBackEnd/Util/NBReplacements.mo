@@ -382,6 +382,7 @@ public
 
             // get the expression from function body (fails if its not a single replacable assignment)
             body_exp := Function.getSingleBodyExp(fn);
+            body_exp := Expression.expandLets(body_exp);
             // replace input withs arguments in expression
             body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
             // if any of the inputs had an undetermined size, retype the new body

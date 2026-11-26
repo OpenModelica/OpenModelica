@@ -5963,6 +5963,7 @@ end getTempDeclMatchOutputName;
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
   case e as TSUB(__)            then daeExpTsub(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
   case e as RSUB(__)            then daeExpRsub(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  case e as LET(__)             then daeExpLet(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
   case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
   case e as TUPLE(__)           then daeExpTuple(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -8231,6 +8232,27 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
   case TSUB(__) then
     error(sourceInfo(), '<%ExpressionDumpTpl.dumpExp(inExp,"\"")%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
 end daeExpTsub;
+
+template daeExpLet(Exp exp, Context context, Text &preExp,
+                   Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  match exp
+  case LET(name = letName, binding = letBinding, body = letBody) then
+    let ty = expTypeArrayIf(typeof(letBinding))
+    match context
+    case FUNCTION_CONTEXT(__) then
+      match rcKind(ty)
+      case ""
+      case "array" then
+        let var = contextIteratorName(letName, context)
+        let &varDecls += '<%ty%> <%var%><%rcZeroInit(ty)%>;<%\n%>'
+        let &varFrees += rcRelease(ty, var)
+        let b = daeExp(letBinding, context, &preExp, &varDecls, &varFrees, &auxFunction)
+        let &preExp += '<%rcReleaseBefore(ty, var)%><%var%> = <%b%>;<%rcArrayRetain(ty, var)%><%\n%>'
+        daeExp(letBody, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      else daeExp(expandLets(exp), context, &preExp, &varDecls, &varFrees, &auxFunction)
+    else daeExp(expandLets(exp), context, &preExp, &varDecls, &varFrees, &auxFunction)
+end daeExpLet;
 
 template daeExpRsub(Exp inExp, Context context, Text &preExp,
                     Text &varDecls, Text &varFrees, Text &auxFunction)
