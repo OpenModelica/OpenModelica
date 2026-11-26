@@ -204,17 +204,11 @@ algorithm
         else evaluateOperatorsShallow(exp, sets, setsArray, variables, ctable, replacements);
       end match;
 
-    case Expression.BINARY(exp1 = Expression.CREF(),
-                           operator = Operator.OPERATOR(op = Op.MUL),
-                           exp2 = Expression.CALL(call = call as Call.TYPED_CALL()))
-      guard AbsynUtil.isNamedPathIdent(Function.name(call.fn), "actualStream")
-      then evaluateActualStreamMul(exp.exp1, listHead(call.arguments), exp.operator, sets, setsArray, variables, ctable, replacements);
-
-    case Expression.BINARY(exp1 = Expression.CALL(call = call as Call.TYPED_CALL()),
-                           operator = Operator.OPERATOR(op = Op.MUL),
-                           exp2 = Expression.CREF())
-      guard AbsynUtil.isNamedPathIdent(Function.name(call.fn), "actualStream")
-      then evaluateActualStreamMul(exp.exp2, listHead(call.arguments), exp.operator, sets, setsArray, variables, ctable, replacements);
+    // Special case for flow * actualStream(s).
+    case Expression.BINARY()
+      guard Operator.isMultiplication(exp.operator) and
+            Expression.contains(exp, function Expression.isCallNamed(name = "actualStream"))
+      then evaluateActualStreamMul(ExpandExp.expand(exp), sets, setsArray, variables, ctable, replacements);
 
     // Only evaluate the branch that is taken if the condition is known, e.g. in an
     // expanded array constructor {if i <= n then inStream(c[i].h) else ... for i in 1:n+1}
@@ -1285,6 +1279,53 @@ end evaluateActualStream;
 function evaluateActualStreamMul
   "Handles expressions on the form flowCref * actualStream(streamCref) where
    flowCref is associated with streamCref."
+  input Expression exp;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
+  output Expression outExp;
+protected
+  Expression arg;
+  array<Expression> arr;
+
+  import NFOperator.Op;
+algorithm
+  outExp := match exp
+    // flow * actualStream
+    case Expression.BINARY(exp1 = Expression.CREF(), operator = Operator.OPERATOR(op = Op.MUL))
+      guard Expression.isCallNamed(exp.exp2, "actualStream")
+      algorithm
+        arg := listHead(Call.arguments(Expression.callOf(exp.exp2)));
+      then
+        evaluateActualStreamMul2(exp.exp1, arg, exp.operator, sets, setsArray, variables, ctable, replacements);
+
+    // actualStream * flow
+    case Expression.BINARY(exp2 = Expression.CREF(), operator = Operator.OPERATOR(op = Op.MUL))
+      guard Expression.isCallNamed(exp.exp1, "actualStream")
+      algorithm
+        arg := listHead(Call.arguments(Expression.callOf(exp.exp1)));
+      then
+        evaluateActualStreamMul2(exp.exp2, arg, exp.operator, sets, setsArray, variables, ctable, replacements);
+
+    // {flow * actualStream, ...}
+    case Expression.ARRAY()
+      guard not arrayEmpty(exp.elements)
+      algorithm
+        arr := Array.map(exp.elements,
+          function evaluateActualStreamMul(sets = sets, setsArray = setsArray, variables = variables,
+                                           ctable = ctable, replacements = replacements));
+      then
+        Expression.makeExpArray(arr, Expression.typeOf(arr[1]));
+
+    // Ignore anything else since the case in evaluateOperators is very general,
+    // to handle e.g. arrays where only some elements use actualStream.
+    else exp;
+  end match;
+end evaluateActualStreamMul;
+
+function evaluateActualStreamMul2
   input Expression crefExp;
   input Expression actualStreamArg;
   input Operator op;
@@ -1307,7 +1348,7 @@ algorithm
     case Expression.IF() guard ComponentRef.isEqual(cr, flow_cr) then makeSmoothCall(outExp, 0);
     else outExp;
   end match;
-end evaluateActualStreamMul;
+end evaluateActualStreamMul2;
 
 function evaluateFlowDirection
   input ComponentRef flowCref;
