@@ -6322,6 +6322,8 @@ struct ResCtx {
     engine: *mut dyn SimEngine,
     /// CVODE: the time of the last failed right-hand side, NaN before.
     rhs_fail_t: f64,
+    /// CVODE: its steps and failed step attempts at `rhs_fail_t`.
+    rhs_fail_counts: (i64, i64),
     sim_data: u32,
     states_base: u32,
     ders_base: u32,
@@ -7685,6 +7687,7 @@ impl Driver for DasslDriver {
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
             rhs_fail_t: f64::NAN,
+            rhs_fail_counts: (0, 0),
             sim_data,
             states_base,
             ders_base,
@@ -9476,6 +9479,7 @@ impl SolverCore {
         ResCtx {
             engine: e as *mut dyn SimEngine,
             rhs_fail_t: f64::NAN,
+            rhs_fail_counts: (0, 0),
             sim_data: self.sim_data,
             states_base: self.states_base,
             ders_base: self.ders_base,
@@ -11431,11 +11435,21 @@ impl Driver for EventsDriver {
 // The callbacks reach wasm through the same [`ResCtx`] the DASSL ones use, but
 // receive it as CVODE's `user_data` rather than through the `RES_CTX` global.
 
+/// Whether CVODE reduced the step after the failure counted in `then`
+/// (`(steps, failed step attempts)`) without taking a step since.
+#[cfg(sundials)]
+fn repeated_rhs_failure(now: (i64, i64), then: (i64, i64)) -> bool {
+    now.0 == then.0 && now.1 > then.1
+}
+
 /// `CVRhsFn`: `ydot := f(t, y)` by [`cvode_eval`]. A wasm trap is unrecoverable
 /// (-1); a model error or a non-converging nonlinear system is recoverable (+1),
 /// which makes CVODE retry from a smaller step, as `dassl_res` does, unless it
-/// fails again at the same time: a shorter step no longer moves the point, as
-/// with DASKR's minimum step size.
+/// fails again at the same time after CVODE reduced the step, without a step in
+/// between: a shorter step no longer moves the point, as with DASKR's minimum
+/// step size. Within one step attempt the Newton solver retries at the same time
+/// with a new Jacobian, and a stop time can make a later step end at the same
+/// time again; neither counts.
 #[cfg(sundials)]
 unsafe extern "C" fn cvode_rhs(
     t: f64,
@@ -11456,7 +11470,13 @@ unsafe extern "C" fn cvode_rhs(
                     .copy_from_slice(&s.f);
                 0
             }
-            _ if failed > 0 && (t - ctx.rhs_fail_t).abs() <= 4.0 * f64::EPSILON * t.abs() => {
+            _ if failed > 0
+                && repeated_rhs_failure(
+                    crate::sundials::cvode_steps_and_solve_fails(ctx.ida.mem),
+                    ctx.rhs_fail_counts,
+                )
+                && (t - ctx.rhs_fail_t).abs() <= 4.0 * f64::EPSILON * t.abs() =>
+            {
                 omclog::warning(
                     omclog::STDOUT,
                     false,
@@ -11466,6 +11486,7 @@ unsafe extern "C" fn cvode_rhs(
             }
             _ => {
                 ctx.rhs_fail_t = t;
+                ctx.rhs_fail_counts = crate::sundials::cvode_steps_and_solve_fails(ctx.ida.mem);
                 failed
             }
         },
@@ -11825,6 +11846,7 @@ impl Driver for CvodeDriver {
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
             rhs_fail_t: f64::NAN,
+            rhs_fail_counts: (0, 0),
             sim_data,
             states_base,
             ders_base: self.ders_base,
@@ -12804,6 +12826,7 @@ impl Driver for IdaDriver {
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
             rhs_fail_t: f64::NAN,
+            rhs_fail_counts: (0, 0),
             sim_data,
             states_base,
             ders_base: self.ders_base,
