@@ -5475,11 +5475,35 @@ algorithm
   end match;
 end elementArgName;
 
+public function elementArgInfo
+  input Absyn.ElementArg arg;
+  output SourceInfo info;
+algorithm
+  info := match arg
+    case Absyn.MODIFICATION() then arg.info;
+    case Absyn.REDECLARATION() then arg.info;
+    case Absyn.INHERITANCEBREAK() then arg.info;
+    else Absyn.dummyInfo;
+  end match;
+end elementArgInfo;
+
 public function elementArgEqualName
   input Absyn.ElementArg inArg1;
   input Absyn.ElementArg inArg2;
   output Boolean outEqual = pathEqual(elementArgName(inArg1), elementArgName(inArg2));
 end elementArgEqualName;
+
+public function isElementArgNamed
+  input Absyn.ElementArg arg;
+  input Absyn.Path name;
+  output Boolean named;
+algorithm
+  named := match (arg, name)
+    case (Absyn.MODIFICATION(), _) then pathEqual(arg.path, name);
+    case (Absyn.REDECLARATION(), Absyn.Path.IDENT()) then elementSpecName(arg.elementSpec) == name.name;
+    else false;
+  end match;
+end isElementArgNamed;
 
 public function optMsg
   "Creates a Absyn.Msg based on a boolean value."

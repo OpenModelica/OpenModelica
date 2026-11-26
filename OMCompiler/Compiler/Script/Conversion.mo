@@ -75,6 +75,7 @@ protected
 
     record MESSAGE "convertMessage"
       String message;
+      Option<String> oldElement;
     end MESSAGE;
   end ConversionRule;
 
@@ -579,12 +580,19 @@ protected
   algorithm
     () := match args
       local
-        String cls_name, msg;
+        String cls_name, msg, old_element;
         ConversionRule rule;
 
       case {Absyn.Exp.STRING(value = cls_name), Absyn.Exp.STRING(value = msg)}
         algorithm
-          rule := ConversionRule.MESSAGE(msg);
+          rule := ConversionRule.MESSAGE(msg, NONE());
+          rules := addRule(parsePathList(cls_name), rule, rules);
+        then
+          ();
+
+      case {Absyn.Exp.STRING(value = cls_name), Absyn.Exp.STRING(value = msg), Absyn.Exp.STRING(value = old_element)}
+        algorithm
+          rule := ConversionRule.MESSAGE(msg, SOME(old_element));
           rules := addRule(parsePathList(cls_name), rule, rules);
         then
           ();
@@ -709,12 +717,20 @@ protected
     // The rules at the head of the list applies to the referenced type.
     modifierRules := sortLocalRules(listHead(found_rules), localRules);
 
-    // Also try to find a convertClass rule, which might be for a prefix of the
-    // type name. The rule for the longest prefix is used.
+    // Also try to find a convertClass or convertMessage rule, which might be
+    // for a prefix of the type name. The rule for the longest prefix is used.
     for rl in found_rules loop
       for r in rl loop
         () := match r
           case ConversionRule.CLASS()
+            algorithm
+              if isNone(typeRule) then
+                typeRule := SOME(r);
+              end if;
+            then
+              ();
+
+          case ConversionRule.MESSAGE(oldElement = NONE())
             algorithm
               if isNone(typeRule) then
                 typeRule := SOME(r);
@@ -750,6 +766,8 @@ protected
     input list<ConversionRule> rules;
     input RuleTable localRules;
     output list<ConversionRule> modifierRules = {};
+  protected
+    String name;
   algorithm
     for rule in rules loop
       () := match rule
@@ -761,6 +779,12 @@ protected
             ();
 
         case ConversionRule.MODIFIERS()
+          algorithm
+            modifierRules := rule :: modifierRules;
+          then
+            ();
+
+        case ConversionRule.MESSAGE(oldElement = SOME(name))
           algorithm
             modifierRules := rule :: modifierRules;
           then
@@ -1153,9 +1177,17 @@ protected
   function convertModification2
     input list<ConversionRule> modifierRules;
     input output list<Absyn.ElementArg> elemArgs;
+  protected
+    String old_elem;
   algorithm
     for rule in modifierRules loop
-      elemArgs := convertModifier(rule, elemArgs);
+      elemArgs := match rule
+        case ConversionRule.MODIFIERS()
+          then convertModifier(rule, elemArgs);
+        case ConversionRule.MESSAGE(oldElement = SOME(old_elem))
+          then convertModifierMessage(rule.message, old_elem, elemArgs);
+        else elemArgs;
+      end match;
     end for;
   end convertModification2;
 
@@ -1226,7 +1258,7 @@ protected
   end makePlaceholderTable;
 
   function getElementArgBinding
-    "Returns the binding of a modifier, or NONE() if the modifier has not binding."
+    "Returns the binding of a modifier, or NONE() if the modifier has no binding."
     input Absyn.ElementArg arg;
     output Option<Absyn.Exp> exp;
   protected
@@ -1341,6 +1373,21 @@ protected
       end if;
     end for;
   end mergeModifiers;
+
+  function convertModifierMessage
+    "Applies a single convertMessage rule to a list of Absyn.ElementArgs."
+    input String message;
+    input String name;
+    input output list<Absyn.ElementArg> elemArgs;
+  protected
+    Absyn.Path path = Absyn.Path.IDENT(name);
+  algorithm
+    for e in elemArgs loop
+      if AbsynUtil.isElementArgNamed(e, path) then
+        Error.addSourceMessage(Error.CONVERSION_MESSAGE, {message}, AbsynUtil.elementArgInfo(e));
+      end if;
+    end for;
+  end convertModifierMessage;
 
   function convertTypeSpec
     "Converts an Absyn.TypeSpec."
