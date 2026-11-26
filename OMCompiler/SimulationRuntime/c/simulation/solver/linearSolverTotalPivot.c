@@ -188,7 +188,8 @@ void getIndicesOfPivotElementLS(int *n, int *m, int *l, double* A, int *indRow, 
  * @param indRow  Work array for row indices, used for coloring.
  * @param indCol  Work array for column indices, used for coloring.
  * @param rank    On return: Rank of matrix A|b.
- * @return int    Return 0 on success, -1 if system is under-determined.
+ * @return int    Return 0 on success, -1 if system is under-determined, or
+ *                A|b or the solution is not finite.
  */
 int solveSystemWithTotalPivotSearchLS(DATA* data, int n, double* x, double* Ab, int* indRow, int* indCol, int *rank)
 {
@@ -202,6 +203,12 @@ int solveSystemWithTotalPivotSearchLS(DATA* data, int n, double* x, double* Ab, 
 
    /* assume full rank of matrix A|b [n x (n+1)] */
    *rank = n;
+
+   for (i = 0; i < n*m; i++) {
+     if (!isfinite(Ab[i])) {
+       return -1;
+     }
+   }
 
    for (i=0; i<n; i++) {
       indRow[i] = i;
@@ -265,6 +272,9 @@ int solveSystemWithTotalPivotSearchLS(DATA* data, int n, double* x, double* Ab, 
         x[indCol[i]] = x[indCol[i]] - Ab[indRow[i] + indCol[j]*n]*x[indCol[j]];
       }
       x[indCol[i]]=x[indCol[i]]/Ab[indRow[i] + indCol[i]*n];
+    }
+    if (!isfinite(x[indCol[i]])) {
+      return -1;
     }
   }
   x[n]=1.0;
@@ -431,6 +441,14 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
       /* add the solution to old solution vector*/
       vecAddLS(n, aux_x, solverData->x, aux_x);
       wrapper_fvec_totalpivot(aux_x, solverData->b, &resUserData, sysNumber);
+      residualNorm = _omc_gen_euclideanVectorNorm(solverData->b, n);
+
+      if (isnan(residualNorm)) {
+        warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures), data->simulationInfo->maxWarnDisplays,
+                                    "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
+                                    (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
+        success = 0;
+      }
     } else {
        /* take the solution */
        vecCopyLS(n, solverData->x, aux_x);

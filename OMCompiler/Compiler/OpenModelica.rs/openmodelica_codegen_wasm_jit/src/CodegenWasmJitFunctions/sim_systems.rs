@@ -1376,15 +1376,10 @@ fn emit_lin_step(
 ) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
-    // `retry` guards the second pass: C never checks the total-pivot step.
-    let retry = dense_a_sparse.is_some().then(|| {
-        let l = ctx.alloc_temp(WTy::I32);
-        ctx.emit(I::I32Const(0));
-        ctx.emit(I::LocalSet(l));
+    if dense_a_sparse.is_some() {
         ctx.emit(I::Block(we::BlockType::Empty));
         ctx.emit(I::Loop(we::BlockType::Empty));
-        l
-    });
+    }
 
     match m1.slot_tab_off {
         Some(tab) => {
@@ -1413,10 +1408,6 @@ fn emit_lin_step(
     }
     emit_residual_eval(ctx, base, m1.residuals, m1.res_off, lower_inner)?;
 
-    if let Some(retry) = retry {
-        ctx.emit(I::LocalGet(retry));
-        ctx.emit(I::BrIf(1));
-    }
     // rt_ls_check_step(res_ptr, b_ptr, n, index, time, dense).
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::I32Const(m1.res_off as i32));
@@ -1430,8 +1421,8 @@ fn emit_lin_step(
     ctx.emit(I::I32Const(dense_a_sparse.map_or(0, |sparse| 1 + sparse as i32)));
     ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index("rt_ls_check_step")?));
-    match retry {
-        Some(retry) => {
+    match dense_a_sparse {
+        Some(_) => {
             let verdict = ctx.alloc_temp(WTy::I32);
             ctx.emit(I::LocalSet(verdict));
             ctx.emit(I::LocalGet(verdict));
@@ -1453,8 +1444,6 @@ fn emit_lin_step(
             emit_linsolve_context(ctx, index)?;
             ctx.emit(I::Call(rt_index("rt_linsolve_totalpivot")?));
             emit_lin_unsolved(ctx, index, base)?;
-            ctx.emit(I::I32Const(1));
-            ctx.emit(I::LocalSet(retry));
             ctx.emit(I::Br(0));
             ctx.emit(I::End); // loop
             ctx.emit(I::End); // block

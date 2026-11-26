@@ -1,0 +1,60 @@
+// name: totalPivotResidual
+// status: correct
+// teardown_command: rm -f TotalPivotInf*
+//
+// c = 0 puts -inf into the torn linear system. The total pivot solver must
+// fail and not accept the step of 0 that the -inf pivot gives (#18253).
+// -d=-parameterDivisors removes the parameter check that finds c = 0 first.
+
+loadString("
+model TotalPivotInf
+  parameter Real c = 1;
+  parameter Real pAtm = 101325;
+  Real d;
+  Real p;
+  Real pWin;
+equation
+  pWin = 0.5*c*d;
+  p = pAtm + pWin;
+  d = 1.2/101325*p;
+end TotalPivotInf;
+"); getErrorString();
+setCommandLineOptions("-d=-parameterDivisors"); getErrorString();
+simulate(TotalPivotInf, stopTime = 1, numberOfIntervals = 4, simflags = "-override=c=0"); getErrorString();
+simulate(TotalPivotInf, stopTime = 1, numberOfIntervals = 4, simflags = "-override=c=0 -ls=totalpivot"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 4, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TotalPivotInf', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=c=0'",
+//     messages = "Simulation execution failed for model: TotalPivotInf
+// LOG_STDOUT        | warning | You are overriding c with a small value or zero.
+// |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | Error solving linear system of equations (no. 14) at time 0.000000.
+// LOG_STDOUT        | warning | Solving linear system 14 fails at time 0. For more information use -lv LOG_LS.
+// LOG_ASSERT        | debug   | Solving linear system 14 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_LS.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 4, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TotalPivotInf', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=c=0 -ls=totalpivot'",
+//     messages = "Simulation execution failed for model: TotalPivotInf
+// LOG_STDOUT        | warning | You are overriding c with a small value or zero.
+// |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
+// LOG_STDOUT        | warning | Error solving linear system of equations (no. 14) at time 0.000000.
+// LOG_STDOUT        | warning | Solving linear system 14 fails at time 0. For more information use -lv LOG_LS.
+// LOG_ASSERT        | debug   | Solving linear system 14 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_LS.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

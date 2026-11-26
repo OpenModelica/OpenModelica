@@ -3479,7 +3479,6 @@ fn lin_dense(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: usize, eq_index: i32, time: 
                     return 1;
                 }
                 ls_report_fallback(eq_index, time, count);
-                ls_failure_entry(eq_index).fell_back = true;
             }
         }
     }
@@ -3489,7 +3488,7 @@ fn lin_dense(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: usize, eq_index: i32, time: 
 /// C's `solveTotalPivot` fallback for a step [`rt_ls_check_step`] rejected: the
 /// same `A` — a linear system's Jacobian does not depend on its unknowns, so C's
 /// re-evaluation of it lands on the same numbers — against the negated residual.
-/// 0 ok, 1 inconsistent. Same `solve_linear_system` call, so not a new solve.
+/// 0 ok, 1 unsolved. Same `solve_linear_system` call, so not a new solve.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_linsolve_totalpivot(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
     let n = n as usize;
@@ -3548,6 +3547,7 @@ fn ls_start_log(eq_index: i32, size: usize, time: f64, solver: &str) {
 fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) -> i32 {
     ls_start_log(eq_index, n, time, "Total Pivot");
     if nls::total_pivot_solve(a, b, n) {
+        ls_failure_entry(eq_index).total_pivot = true;
         return 0;
     }
     omclog::warning!(
@@ -3584,8 +3584,9 @@ pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
 /// Returns 0 when the step stands, 1 when the solve must be redone with total
 /// pivoting (`-res` left in `b` to step on from where the unknowns now are), and 2
 /// when the system is unsolved with no retry to make. Only C's `LS_DEFAULT` has
-/// that fallback: `-ls=lapack`, the sparse solvers and `-ls=klu`/`lis`
-/// all leave a rejected step unsolved.
+/// that fallback: `-ls=lapack`, the sparse solvers, `-ls=klu`/`lis` and a
+/// total-pivot step all leave a rejected step unsolved. As in C, a total-pivot
+/// step is rejected only for a NaN residual.
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
 pub extern "C" fn rt_ls_check_step(
@@ -3607,23 +3608,14 @@ pub extern "C" fn rt_ls_check_step(
         dense == 1
     };
     let dense = (dense != 0 && solved_dense) as i32;
-    // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
-    if dense != 0
-        && matches!(
-            openmodelica_solvers::solverflags::ls(),
-            openmodelica_solvers::solverflags::Ls::TotalPivot
-        )
-    {
-        return 0;
-    }
-    if ls_took_fallback(eq_index) {
-        return 0;
-    }
+    let total_pivot = ls_took_total_pivot(eq_index);
     let n = n as usize;
     let res = unsafe { core::slice::from_raw_parts(res_ptr as *const f64, n) };
     let norm = nls::enorm(res);
-    if !(norm.is_nan() || norm > 1e-4) {
-        ls_solved(eq_index);
+    if !(norm.is_nan() || (!total_pivot && norm > 1e-4)) {
+        if !total_pivot {
+            ls_solved(eq_index);
+        }
         return 0;
     }
     let count = ls_note_failure(eq_index);
@@ -3634,7 +3626,8 @@ pub extern "C" fn rt_ls_check_step(
         "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
         openmodelica_sim_meta::driver::format_g(norm, 15),
     );
-    if casual == 0
+    if !total_pivot
+        && casual == 0
         && dense != 0
         && matches!(
             openmodelica_solvers::solverflags::ls(),
@@ -3657,8 +3650,8 @@ pub extern "C" fn rt_ls_check_step(
 struct LsFailure {
     failed: bool,
     failures: u64,
-    /// The last solve was the total-pivot fallback, whose step C takes unchecked.
-    fell_back: bool,
+    /// The last solve was a total-pivot solve, whose rejected step has no fallback.
+    total_pivot: bool,
     /// The last solve used the sparse solver.
     sparse: bool,
 }
@@ -3679,10 +3672,10 @@ fn ls_solved(eq_index: i32) {
     }
 }
 
-/// Takes the total-pivot-fallback flag: C's step after it goes unchecked.
-fn ls_took_fallback(eq_index: i32) -> bool {
+/// Takes the flag [`ls_total_pivot`] sets.
+fn ls_took_total_pivot(eq_index: i32) -> bool {
     match unsafe { &mut *LS_FAILURES.0.get() }.get_mut(&eq_index) {
-        Some(e) => core::mem::replace(&mut e.fell_back, false),
+        Some(e) => core::mem::replace(&mut e.total_pivot, false),
         None => false,
     }
 }
