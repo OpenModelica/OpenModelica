@@ -7758,9 +7758,9 @@ let &sub = buffer ""
 
   case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, posVelo}) then
     let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
-    let var3 = daeExp(posX, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let var4 = daeExp(posVelo, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%var3%>, <%var4%>, NULL);<%\n%>'
+    let posX_T = daeExp(posX, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let dir_T = daeExp(posVelo, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%posX_T%>, <%dir_T%>, NULL);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
