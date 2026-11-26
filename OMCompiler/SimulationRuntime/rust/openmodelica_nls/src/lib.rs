@@ -965,9 +965,13 @@ pub fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usi
 
 /// Total-pivot fallback for a singular / rank-deficient `A x = b`, a port of C's
 /// `solveSystemWithTotalPivotSearchLS`. Returns `true` (with `b ← x`) for a
-/// consistent system, picking the same particular solution C does; `false` only
-/// when the system is inconsistent. `A` is column-major `n`×`n`.
+/// consistent system, picking the same particular solution C does; `false`
+/// when the system is inconsistent, or `A`, `b` or the solution is not finite.
+/// `A` is column-major `n`×`n`.
 pub fn total_pivot_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
+    if !a[..n * n].iter().chain(&b[..n]).all(|v| v.is_finite()) {
+        return false;
+    }
     let m = n + 1;
     // Ab: n×(n+1) column-major; first n columns are A, the last is -b.
     let mut ab = vec![0.0f64; n * m];
@@ -1021,6 +1025,9 @@ pub fn total_pivot_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
                 xi -= ab[ind_row[i] + ind_col[j] * n] * x[ind_col[j]];
             }
             x[ind_col[i]] = xi / ab[ind_row[i] + ind_col[i] * n];
+        }
+        if !x[ind_col[i]].is_finite() {
+            return false;
         }
     }
     b.copy_from_slice(&x[..n]);
@@ -5378,6 +5385,13 @@ mod tests {
         let a = [1.0, 2.0, 2.0, 4.0];
         let mut b = [3.0, 7.0];
         assert!(!total_pivot_solve(&a, &mut b, 2));
+    }
+
+    #[test]
+    fn total_pivot_not_finite_fails() {
+        assert!(!total_pivot_solve(&[f64::NEG_INFINITY], &mut [f64::NAN], 1));
+        assert!(!total_pivot_solve(&[f64::NEG_INFINITY], &mut [-101325.0], 1));
+        assert!(!total_pivot_solve(&[1.0], &mut [f64::INFINITY], 1));
     }
 
     // LM converges from a far-off guess where a full Newton step would overshoot.

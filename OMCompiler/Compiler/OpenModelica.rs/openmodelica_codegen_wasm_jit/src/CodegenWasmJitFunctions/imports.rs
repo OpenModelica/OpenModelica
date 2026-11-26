@@ -332,7 +332,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
         &[WTy::I32],
     ),
     // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n, index, time) ->
-    // 0 ok / 1 inconsistent. C's fallback for a step `rt_ls_check_step` rejected.
+    // 0 ok / 1 unsolved. C's fallback for a step `rt_ls_check_step` rejected.
     (
         "rt_linsolve_totalpivot",
         &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64],

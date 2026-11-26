@@ -700,6 +700,7 @@ fn solve_total_pivot(
     if omclog::active(omclog::LS_V) {
         log_vector_tp("SOLUTION:", &b[..size]);
     }
+    let mut ok = true;
     let mut residual_norm = None;
     if ls.method == 1 {
         // The step is added to the old solution, then the inner equations run at
@@ -709,7 +710,19 @@ fn solve_total_pivot(
         }
         let mut res = vec![0.0f64; size.max(1)];
         residual(data, thread_data, ls, aux_x, &mut res);
-        residual_norm = Some(res[..size].iter().map(|v| v * v).sum::<f64>().sqrt());
+        let norm = res[..size].iter().map(|v| v * v).sum::<f64>().sqrt();
+        residual_norm = Some(norm);
+        if norm.is_nan() {
+            ls.numberOfFailures += 1;
+            omclog::warning_with_limit!(
+                omclog::LS,
+                ls.numberOfFailures as u64,
+                unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
+                "Failed to solve linear system of equations (no. {eq}) at time {time:.6}. Residual norm is {}.",
+                omclog::g(norm, 0, 15),
+            );
+            ok = false;
+        }
     } else {
         for i in 0..size {
             unsafe { *aux_x.add(i) = b[i] };
@@ -718,7 +731,7 @@ fn solve_total_pivot(
     if omclog::active(omclog::LS_V) {
         log_solution(data, ls, residual_norm, aux_x, 6);
     }
-    true
+    ok
 }
 
 /// One call of the torn system's residual function at `x`.
