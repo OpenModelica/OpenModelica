@@ -5309,7 +5309,7 @@ algorithm
     if listEmpty(noLoopTerms) then
       break;
     else
-      (tmp_loopTerms, noLoopTerms) := List.split1OnTrue(noLoopTerms, Expression.expHasCrefNoPreOrStart, cr);
+      (tmp_loopTerms, noLoopTerms) := List.split1OnTrue(noLoopTerms, simplifyLoops_HasVar, cr);
       loopTerms := listAppend(tmp_loopTerms, loopTerms);
     end if;
   end for;
@@ -5328,12 +5328,25 @@ algorithm
     if listEmpty(noLoopTerms) then
       break;
     else
-      (tmp_loopTerms, noLoopTerms) := List.split1OnTrue(noLoopTerms, Expression.expHasCrefNoPreOrStart, cr);
+      (tmp_loopTerms, noLoopTerms) := List.split1OnTrue(noLoopTerms, simplifyLoops_HasVar, cr);
       loopTerms := listAppend(tmp_loopTerms, loopTerms);
     end if;
   end for;
 
 end simplifyLoops_SplitFactors;
+
+protected function simplifyLoops_HasVar
+  "True if the expression uses the variable, also through its whole array,
+   e.g. y in sum(y) or in the subscripted array y[1]."
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCr;
+  output Boolean hasVar;
+algorithm
+  hasVar := Expression.expHasCrefNoPreOrStart(inExp, inCr);
+  if not hasVar and not listEmpty(ComponentReference.crefLastSubs(inCr)) then
+    hasVar := Expression.expHasCrefNoPreOrStart(inExp, ComponentReferenceBasics.crefStripLastSubs(inCr));
+  end if;
+end simplifyLoops_HasVar;
 
 // =============================================================================
 // section for introduceDerAlias

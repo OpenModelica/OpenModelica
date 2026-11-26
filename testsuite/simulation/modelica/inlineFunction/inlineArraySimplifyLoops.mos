@@ -1,0 +1,64 @@
+// name: inlineArraySimplifyLoops
+// keywords: simplifyLoops inline append
+// status: correct
+//
+// simplifyLoops keeps a term in the loop when it uses a loop variable
+// through its whole array, here the inlined output of f in sum(f(x)).
+//
+
+setCommandLineOptions("+inlineMethod=append +simplifyLoops=2"); getErrorString();
+loadString("
+model SumOfCall
+  function f
+    input Real[5] x;
+    output Real[7] y;
+  protected
+    Real sumx = exp(-sqrt(sum(x)));
+  algorithm
+    y[1] := sumx^2;
+    y[2] := 2*sumx^2;
+    y[3] := 3*sumx^2;
+    y[4] := 4*sumx^2;
+    y[5] := 5*sumx^2;
+    y[6] := 6*sumx^2;
+    y[7] := 7*sumx^2;
+    annotation(Inline=true);
+  end f;
+
+  Real y(fixed = true, start = 1);
+  Real v(fixed = true, start = -1);
+  Real a;
+  Real[5] x;
+equation
+  x[1] = a + 2*sin(time) + 1;
+  x[2] = a + sin(time) + 1;
+  x[3] = a + 7*sin(time) + 1;
+  x[4] = a + 2*sin(time) + 1;
+  x[5] = x[3] + a + cos(a) + 6*sin(time) + 2;
+  a = sum(f(x))/10;
+  der(y) = cos(sum(f(x)))*der(v) + cos(time);
+  der(v) = der(y)*2;
+end SumOfCall;
+"); getErrorString();
+simulate(SumOfCall); getErrorString();
+val(a, {0.0, 0.5, 1.0});
+val(y, {0.0, 0.5, 1.0});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SumOfCall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SumOfCall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {0.00958538340250036, 3.6634603071437346e-4, 5.843462362282555e-5}
+// {1.0, 0.5200004296022479, 0.15794570216590909}
+// endResult
