@@ -1349,6 +1349,11 @@ QStringList ModelicaHighlighter::getTypes()
   return typesList;
 }
 
+namespace {
+// Block state bit that is set while an annotation is open.
+const int FoldingStateFlag = 0x100;
+}
+
 /*!
  * \brief ModelicaTextHighlighter::highlightMultiLine
  * Highlights the multilines text.
@@ -1359,7 +1364,7 @@ void ModelicaHighlighter::highlightMultiLine(const QString &text)
 {
   /* Hand-written recognizer beats the crap known as QRegEx ;) */
   int index = 0, startIndex = 0;
-  int blockState = previousBlockState();
+  int blockState = previousBlockState() & ~FoldingStateFlag;
   bool foldingState = false;
   QTextBlock previousTextBlck = currentBlock().previous();
   TextBlockUserData *pPreviousTextBlockUserData = BaseEditorDocumentLayout::userData(previousTextBlck);
@@ -1489,6 +1494,13 @@ void ModelicaHighlighter::highlightMultiLine(const QString &text)
       setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
       setCurrentBlockState(3);
       break;
+  }
+  /* The folding state is part of the block state so that QSyntaxHighlighter also highlights the next blocks when it changes,
+   * e.g., when the line that starts an annotation is commented out.
+   * See #15243.
+   */
+  if (foldingState) {
+    setCurrentBlockState(currentBlockState() | FoldingStateFlag);
   }
 }
 
