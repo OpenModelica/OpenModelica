@@ -1,4 +1,4 @@
-// name: ActualStreamMul
+// name: ActualStreamMul1
 // keywords: stream actualStream connector
 // status: correct
 //
@@ -16,7 +16,7 @@ model A
   S s1, s2;
 end A;
 
-model ActualStreamMul
+model ActualStreamMul1
   A a;
   Real x;
   Real y[2];
@@ -30,10 +30,11 @@ equation
   y = actualStream(a.s1.sa) * a.s1.f;
   y = {actualStream(a.s1.sa[1]), actualStream(a.s1.sa[2])} * a.s1.f;
   y = {2, actualStream(a.s1.sa[2])} .* {1, a.s1.f};
-end ActualStreamMul;
+  x = a.s1.f * 800 * (actualStream(a.s1.s) - 10);
+end ActualStreamMul1;
 
 // Result:
-// class ActualStreamMul
+// class ActualStreamMul1
 //   Real a.s1.r;
 //   Real a.s1.f;
 //   Real a.s1.s;
@@ -64,5 +65,6 @@ end ActualStreamMul;
 //   y[2] = smooth(0, a.s1.f * (if a.s1.f > 0.0 then a.s2.sa[2] else a.s1.sa[2]));
 //   y[1] = 2.0;
 //   y[2] = smooth(0, a.s1.f * (if a.s1.f > 0.0 then a.s2.sa[2] else a.s1.sa[2]));
-// end ActualStreamMul;
+//   x = a.s1.f * 800.0 * ((if a.s1.f > 0.0 then a.s2.s else a.s1.s) - 10.0);
+// end ActualStreamMul1;
 // endResult

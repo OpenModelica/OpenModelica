@@ -1319,9 +1319,8 @@ algorithm
       then
         Expression.makeExpArray(arr, Expression.typeOf(arr[1]));
 
-    // Ignore anything else since the case in evaluateOperators is very general,
-    // to handle e.g. arrays where only some elements use actualStream.
-    else exp;
+    // For anything else, keep recursing and evaluating connection operators.
+    else evaluateOperatorsShallow(exp, sets, setsArray, variables, ctable, replacements);
   end match;
 end evaluateActualStreamMul;
 
