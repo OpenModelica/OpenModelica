@@ -79,6 +79,7 @@ resizableInputs.mos \
 resizableJacobianOffsets.mos \
 resizableAlgebraicLoops.mos \
 resizableUnexpandedLoops.mos \
+resizableLoopIdentity.mos \
 resizableFill.mos \
 resizableStreams.mos \
 resizableEvaluate.mos \
