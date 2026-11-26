@@ -389,7 +389,6 @@ function renderInfo(fileName, probe) {
   renderSolvers(probe.solvers);
 
   const avail = kinds(probe);
-  if (!avail.length) throw new Error('the component exports neither a Co-Simulation nor a Model Exchange interface');
   ifaceEl.replaceChildren();
   for (const k of avail) ifaceEl.append(new Option(k.label, k.id));
   ifaceEl.disabled = avail.length < 2;
