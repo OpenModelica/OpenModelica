@@ -160,6 +160,10 @@ set(OMEDIT_TEST_RECORDCHOICESALLMATCHING_SOURCES RecordChoicesAllMatching/Record
                                                    RecordChoicesAllMatching/RecordChoicesAllMatching.h)
 add_omedit_test(RecordChoicesAllMatching "${OMEDIT_TEST_RECORDCHOICESALLMATCHING_SOURCES}")
 
+set(OMEDIT_TEST_FINALEACHTOOLBUTTON_SOURCES FinalEachToolButton/FinalEachToolButtonTest.cpp
+                                           FinalEachToolButton/FinalEachToolButtonTest.h)
+add_omedit_test(FinalEachToolButton "${OMEDIT_TEST_FINALEACHTOOLBUTTON_SOURCES}")
+
 set(OMEDIT_TEST_GITLINECHANGES_SOURCES GitLineChanges/GitLineChangesTest.cpp
                                        GitLineChanges/GitLineChangesTest.h)
 add_omedit_test(GitLineChanges "${OMEDIT_TEST_GITLINECHANGES_SOURCES}")
