@@ -981,7 +981,7 @@ public
     // whole-array component, undercounting rows for the caller's adjacency/
     // sparsity build (e.g. NBJacobian.compJacobian, empty Jacobian columns).
     if not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(eqn_ptr) and List.hasOneElement(eqn_slice.indices) then
-      subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(listHead(eqn_slice.indices), Equation.sizes(eqn_ptr)));
+      subs := Slice.indexToSubscripts(listHead(eqn_slice.indices), Equation.sizes(eqn_ptr));
       lhs_cref := ComponentRef.setSubscripts(subs, Expression.toCref(Util.getOption(Equation.getLHS(eqn))));
       comp := SLICED_COMPONENT(lhs_cref, Slice.SLICE(BVariable.getVarPointer(lhs_cref, sourceInfo()), {}), eqn_slice, NBSolve.Status.EXPLICIT);
     else

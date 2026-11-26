@@ -832,6 +832,17 @@ public
     end for;
   end indexToLocation;
 
+  function indexToSubscripts
+    "the one based subscripts of a scalar index, outermost first like the sizes"
+    input Integer index;
+    input list<Integer> sizes "outermost first";
+    output list<Subscript> subs = {};
+  algorithm
+    for l in indexToLocation(index, sizes) loop
+      subs := Subscript.INDEX(Expression.INTEGER(l + 1)) :: subs;
+    end for;
+  end indexToSubscripts;
+
   function transposeLocations
     "transpose the location indices.
     Before:   Each inner list of indices represents a scalar equations

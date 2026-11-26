@@ -7,6 +7,7 @@ linearSystemForResiduals.mos \
 slicedLinearSystem.mos \
 minimalTearing.mos \
 partialForArrayBody.mos \
+partialMatrixResidual.mos \
 partialForArrayBodyLinear.mos \
 partialNestedFor.mos \
 minimalTearing_simple.mos \
