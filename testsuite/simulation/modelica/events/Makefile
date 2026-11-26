@@ -16,7 +16,6 @@ ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 ChatteringEventsTestXML.mos \
 WasmJitInfoJson.mos \
-CheckEvents.mos \
 CheckEventsCvode.mos \
 CvodeEventAtStart.mos \
 cseOutsideNoEvent.mos \

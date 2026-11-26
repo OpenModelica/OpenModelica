@@ -12,6 +12,8 @@ packageVersion := "4.1.0";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2);
+// The free motion needs a smaller tolerance than 1e-6.
+simflags := "-tolerance=1e-8";
 // Not compared, they differ from the official MSL reference: referenceSystem.pointMass6.v_0[2], referenceSystem.pointMass1.w_a[1], freeMotion.v_rel_a[2]
 compareVars :=
 {
@@ -38,8 +40,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2
+// "-tolerance=1e-8"
 // {"freeMotion.r_rel_a[1]", "freeMotion.r_rel_a[2]", "freeMotion.r_rel_a[3]", "freeMotion.v_rel_a[1]", "freeMotion.v_rel_a[3]", "referenceSystem.pointMass1.w_a[2]", "referenceSystem.pointMass1.w_a[3]", "referenceSystem.pointMass3.v_0[1]", "referenceSystem.pointMass6.frame_a.r_0[1]", "referenceSystem.pointMass6.frame_a.r_0[2]", "referenceSystem.pointMass6.frame_a.r_0[3]", "referenceSystem.pointMass6.v_0[3]"}
-// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2', options = '', outputFormat = 'mat', variableFilter = 'time|freeMotion.r_rel_a.1.|freeMotion.r_rel_a.2.|freeMotion.r_rel_a.3.|freeMotion.v_rel_a.1.|freeMotion.v_rel_a.3.|referenceSystem.pointMass1.w_a.2.|referenceSystem.pointMass1.w_a.3.|referenceSystem.pointMass3.v_0.1.|referenceSystem.pointMass6.frame_a.r_0.1.|referenceSystem.pointMass6.frame_a.r_0.2.|referenceSystem.pointMass6.frame_a.r_0.3.|referenceSystem.pointMass6.v_0.3.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2', options = '', outputFormat = 'mat', variableFilter = 'time|freeMotion.r_rel_a.1.|freeMotion.r_rel_a.2.|freeMotion.r_rel_a.3.|freeMotion.v_rel_a.1.|freeMotion.v_rel_a.3.|referenceSystem.pointMass1.w_a.2.|referenceSystem.pointMass1.w_a.3.|referenceSystem.pointMass3.v_0.1.|referenceSystem.pointMass6.frame_a.r_0.1.|referenceSystem.pointMass6.frame_a.r_0.2.|referenceSystem.pointMass6.frame_a.r_0.3.|referenceSystem.pointMass6.v_0.3.', cflags = '', simflags = '-tolerance=1e-8 -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

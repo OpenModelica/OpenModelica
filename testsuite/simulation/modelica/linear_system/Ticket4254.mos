@@ -28,7 +28,7 @@ annotation(
 end foo;
 ");getErrorString();
 
-simulate(foo);getErrorString(); 
+simulate(foo);getErrorString();
 filterSimulationResults("foo_res.mat", "Ticket4254.mat", {"Pw"});
 
 res := OpenModelica.Scripting.compareSimulationResults("foo_res.mat",

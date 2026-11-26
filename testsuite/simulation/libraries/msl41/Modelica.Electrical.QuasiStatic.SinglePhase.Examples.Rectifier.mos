@@ -12,6 +12,8 @@ packageVersion := "4.1.0";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier);
+// iAC.mean2.y needs a smaller tolerance than 1e-6.
+simflags := "-tolerance=1e-8";
 compareVars :=
 {
    "voltageQS.pin_p.reference.gamma",
@@ -29,8 +31,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier
+// "-tolerance=1e-8"
 // {"voltageQS.pin_p.reference.gamma", "iAC.mean1.y", "iAC.mean2.y", "iDC2.mean.y"}
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = 'time|voltageQS.pin_p.reference.gamma|iAC.mean1.y|iAC.mean2.y|iDC2.mean.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = 'time|voltageQS.pin_p.reference.gamma|iAC.mean1.y|iAC.mean2.y|iDC2.mean.y', cflags = '', simflags = '-tolerance=1e-8 -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

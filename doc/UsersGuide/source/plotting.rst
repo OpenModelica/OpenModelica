@@ -47,7 +47,7 @@ are made that way:
 
 By re-simulating and saving results at many more points, for example using the
 default 500 intervals, a much smoother plot can be obtained.
-Note that the default solver method dassl has more internal points than the output points in the initial plot.
+Note that cvode, which the default method auto chooses, has more internal points than the output points in the initial plot.
 The results are identical, except the detailed plot has a smoother curve.
 
 .. omc-mos ::

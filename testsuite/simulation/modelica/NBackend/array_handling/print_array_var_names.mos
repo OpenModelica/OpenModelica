@@ -17,7 +17,9 @@ end print_array_var_names;
 
 setCommandLineOptions("--newBackend --simCodeScalarize=false --simCodeTarget=C"); getErrorString();
 
-buildModel(print_array_var_names, stopTime=0.1, numberOfIntervals=1); getErrorString();
+// dassl_setNominals prints the absolute tolerances with the scalar names;
+// CVODE prints no tolerances.
+buildModel(print_array_var_names, stopTime=0.1, numberOfIntervals=1, method="dassl"); getErrorString();
 system("./print_array_var_names -lv=LOG_SOLVER_V | grep -E ' -> |\\(pre: ' > print_array_var_names_solver.log"); getErrorString();
 readFile("print_array_var_names_solver.log");
 

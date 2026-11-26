@@ -22,8 +22,14 @@ loadString("
 
 setCommandLineOptions("--newBackend");
 simulate(mathEvents, stopTime = 200000, numberOfIntervals = 4); getErrorString();
-// two points per event: the events of mod, ceil, floor and integer, none of noEvent(mod())
-readSimulationResultSize("mathEvents_res.mat");
+// About 260 events of mod, ceil, floor and integer, two rows each. The exact
+// number depends on whether the solver locates simultaneous events, e.g. of
+// mod and ceil at t = 86400, as one or two events. noEvent(mod(time, 2.0))
+// would add about 100000 events.
+echo(false);
+n := readSimulationResultSize("mathEvents_res.mat");
+echo(true);
+n > 500 and n < 600;
 val(h, 200000);
 val(d, 200000);
 val(f, 200000);
@@ -41,7 +47,8 @@ val(i, 200000);
 // "
 // end SimulationResult;
 // ""
-// 530
+// true
+// true
 // 7.555555555555557
 // 3.0
 // 260.0

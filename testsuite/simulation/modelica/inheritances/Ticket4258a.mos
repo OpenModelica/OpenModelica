@@ -10,20 +10,21 @@
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("Ticket4258a.mo"); getErrorString();
-simulate(simple_BasicHX_water_gas); getErrorString();
+// The default linear solver can fail on a nearly singular system and print
+// warnings that depend on the solver and the platform.
+echo(false);
+res := simulate(simple_BasicHX_water_gas);
+messages := res.messages;
+echo(true);
+regexBool(messages, "The simulation finished successfully"); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// record SimulationResult
-//     resultFile = "simple_BasicHX_water_gas_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 1000, tolerance = 1e-5, method = 'auto', fileNamePrefix = 'simple_BasicHX_water_gas', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// true
+// true
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================

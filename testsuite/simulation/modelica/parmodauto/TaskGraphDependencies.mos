@@ -51,27 +51,29 @@ getErrorString();
 
 echo(false);
 
+// The checks below have a bound of 1e-6, which needs a smaller tolerance than 1e-6.
+// The values are from DASSL with tolerance 1e-12.
 setCommandLineOptions("--parmodauto --simCodeTarget=C");
-resAlgC := simulate(AlgorithmInTornSystem, stopTime=1);
-algorithmC := abs(val(s1, 1.0) - 0.7132821704189992) < 1e-6 and abs(val(s2, 1.0) - 0.359969483253544) < 1e-6;
+resAlgC := simulate(AlgorithmInTornSystem, stopTime=1, tolerance=1e-8);
+algorithmC := abs(val(s1, 1.0) - 0.7132810577259543) < 1e-6 and abs(val(s2, 1.0) - 0.3599696057124625) < 1e-6;
 errAlgC := getErrorString();
 
 setCommandLineOptions("--simCodeTarget=C+Rust");
-resAlgRust := simulate(AlgorithmInTornSystem, stopTime=1);
-algorithmRust := abs(val(s1, 1.0) - 0.7132821704189992) < 1e-6 and abs(val(s2, 1.0) - 0.359969483253544) < 1e-6;
+resAlgRust := simulate(AlgorithmInTornSystem, stopTime=1, tolerance=1e-8);
+algorithmRust := abs(val(s1, 1.0) - 0.7132810577259543) < 1e-6 and abs(val(s2, 1.0) - 0.3599696057124625) < 1e-6;
 errAlgRust := getErrorString();
 
 // Without tearing the linear system is given as A and b.
 setCommandLineOptions("--postOptModules-=tearingSystem --simCodeTarget=C");
-resLinC := simulate(LinearSystemUses, stopTime=1);
-linearC := abs(val(s, 1.0) - 0.6127873760348345) < 1e-6;
+resLinC := simulate(LinearSystemUses, stopTime=1, tolerance=1e-8);
+linearC := abs(val(s, 1.0) - 0.6127912981626882) < 1e-6;
 // The system reads u, which another task computes.
 linearUses := regexBool(readFile("LinearSystemUses_ode.json"), "\"tag\":\"system\"[^}]*\"uses\":[[][^]]*\"u\"");
 errLinC := getErrorString();
 
 setCommandLineOptions("--simCodeTarget=C+Rust");
-resLinRust := simulate(LinearSystemUses, stopTime=1);
-linearRust := abs(val(s, 1.0) - 0.6127873760348345) < 1e-6;
+resLinRust := simulate(LinearSystemUses, stopTime=1, tolerance=1e-8);
+linearRust := abs(val(s, 1.0) - 0.6127912981626882) < 1e-6;
 errLinRust := getErrorString();
 
 echo(true);

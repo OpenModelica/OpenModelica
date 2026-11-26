@@ -9175,10 +9175,6 @@ Can cause high overhead but values will not be missed.</source>
         <translation>只读嵌入式服务器端口。</translation>
     </message>
     <message>
-        <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation>激活方法内部根查找过程：dassl 和 ida 。</translation>
-    </message>
-    <message>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>
         <translation>在执行事件后激活积分方法的重新启动使用：dassl、ida</translation>
     </message>
@@ -9297,6 +9293,10 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Root Finding</source>
         <translation>根查找</translation>
+    </message>
+    <message>
+        <source>Activates the internal root finding procedure of methods: dassl, ida and cvode.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restart After Event</source>
