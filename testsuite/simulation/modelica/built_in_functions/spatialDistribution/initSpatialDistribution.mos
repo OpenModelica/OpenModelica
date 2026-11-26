@@ -44,10 +44,11 @@ equation
   (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
 end SingleBeltInitialize2;"); getErrorString();
 
-// Simulate
-simulate(SingleBeltInitialize1, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErrorString();
+// Simulate past t = 0.1, where the end of the initial distribution leaves the
+// belt, so that the event at t = 0.1 does not fall on the stop time.
+simulate(SingleBeltInitialize1, stopTime=0.11, simflags="-lv=LOG_EVENTS"); getErrorString();
 
-simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErrorString();
+simulate(SingleBeltInitialize2, stopTime=0.11, simflags="-lv=LOG_EVENTS"); getErrorString();
 
 
 // Result:
@@ -59,13 +60,13 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 // ""
 // record SimulationResult
 //     resultFile = "SingleBeltInitialize1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'SingleBeltInitialize1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.11, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SingleBeltInitialize1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = $spatialDistributionZeroCrossing(0, 0, x, true)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
 // |                 | |       | | [1] (pre: false)  true = $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=3.33076252011e-17
+// LOG_EVENTS        | info    | state event at time=3.33066931315e-17
 // |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.0557
 // |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
@@ -73,13 +74,15 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 // |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.09
 // |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_EVENTS        | info    | state event at time=0.1
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // record SimulationResult
 //     resultFile = "SingleBeltInitialize2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'SingleBeltInitialize2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.11, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SingleBeltInitialize2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = $spatialDistributionZeroCrossing(0, 0, x, false)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
