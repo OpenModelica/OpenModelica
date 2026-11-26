@@ -371,6 +371,7 @@ public:
   void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 private:
   void createActions();
+  void scaleUnderMouse(qreal factor);
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
   void duplicateItems(const QString &action);
