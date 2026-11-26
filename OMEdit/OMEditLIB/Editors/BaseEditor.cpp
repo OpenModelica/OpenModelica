@@ -2636,6 +2636,10 @@ void BaseEditor::toggleCommentSelection()
     cursor.setPosition(start);
     cursor.insertText(definition.multiLineStart());
   } else {
+    // include the hidden lines of a folded block. See #15243.
+    while (endBlock.next().isValid() && !endBlock.next().isVisible()) {
+      endBlock = endBlock.next();
+    }
     endBlock = endBlock.next();
     doSingleLineStyleUncomment = true;
     for (QTextBlock block = startBlock; block != endBlock; block = block.next()) {
