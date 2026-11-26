@@ -4674,7 +4674,7 @@ bool GraphicsView::createModelFromSelection(const QString &name, const QString &
   auto colorString = [](const QColor &color) {
     return QString("{%1, %2, %3}").arg(color.red()).arg(color.green()).arg(color.blue());
   };
-  auto linePoints = [&pointString](const QPointF &start, const QPointF &end) {
+  auto linePoints = [&pointString](const QPointF &start, const QPointF &end) -> QString {
     QStringList points;
     points << pointString(start);
     if (start.y() != end.y()) {
