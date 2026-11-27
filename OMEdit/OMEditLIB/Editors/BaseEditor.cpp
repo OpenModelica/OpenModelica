@@ -2395,7 +2395,7 @@ QMenu* BaseEditor::createStandardContextMenu()
     pUndoAction->setShortcut(QKeySequence::Undo);
     pUndoAction->setEnabled(mpPlainTextEdit->isUndoAvailable());
     QAction *pRedoAction = pMenu->addAction(tr("Redo"));
-    connect(pRedoAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::undo);
+    connect(pRedoAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::redo);
     pRedoAction->setIcon(ResourceCache::getIcon(":/Resources/icons/redo.svg"));
     pRedoAction->setShortcut(QKeySequence::Redo);
     pRedoAction->setEnabled(mpPlainTextEdit->isRedoAvailable());
