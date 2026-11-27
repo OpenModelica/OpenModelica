@@ -66,6 +66,7 @@
 #include <QFile>
 #include <QNetworkReply>
 #include <QProgressDialog>
+#include <QRegularExpression>
 #include <QSysInfo>
 #include <QCryptographicHash>
 #include <QJsonArray>
@@ -1461,6 +1462,22 @@ void OptionsDialog::readFMISettings()
   // read platforms
   if (mpSettings->contains("FMIExport/Platforms")) {
     QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
+    // Docker platforms saved by an older OMEdit use an older cross compilation image.
+    static const QRegularExpression oldCrossbuildPlatform("^(\\S+) docker run (--pull=never )?(multiarch/crossbuild|ghcr\\.io/openmodelica/crossbuild(:\\S*)?)$");
+    for (QString &platform : platforms) {
+      platform = platform.trimmed();
+      const QRegularExpressionMatch match = oldCrossbuildPlatform.match(platform);
+      if (match.hasMatch()) {
+        const QString currentPlatform = match.captured(1) + " docker run " + OptionsDefaults::FMI::crossbuildImage;
+        foreach (QCheckBox *pPlatformCheckBox, mpFMIPage->getPlatformsGroupBox()->findChildren<QCheckBox*>()) {
+          if (pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString() == currentPlatform) {
+            platform = currentPlatform;
+            break;
+          }
+        }
+      }
+    }
+    platforms.removeDuplicates();
     int i = 0;
     while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
       if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
@@ -6544,9 +6561,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
   pPlatformsLayout->addWidget(pNativePlatformCheckBox);
   // docker platforms
-  // Referenced by tag, omc resolves the digest and checks it against the one it trusts.
-  // See https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1293204639?tag=v1.28.0
-  const QString dockerImage = "ghcr.io/openmodelica/crossbuild:v1.28.0";
+  const QString dockerImage = OptionsDefaults::FMI::crossbuildImage;
   QStringList dockerPlarforms;
   dockerPlarforms << ("x86_64-linux-gnu docker run " + dockerImage)
                   << ("i686-linux-gnu docker run " + dockerImage)

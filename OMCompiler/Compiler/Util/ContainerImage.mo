@@ -47,6 +47,7 @@ protected
   import StringUtil;
   import System;
   import Util;
+  import Vector;
 
   constant String containerTool = "docker" "Simplify future switch to other container virtualization software, e.g. podman";
 
@@ -83,6 +84,12 @@ public
     input String containerReference;
     output ContainerImage image;
   algorithm
+    // The reference is passed unquoted to sh and cmd.exe.
+    if System.regex(containerReference, "^[A-Za-z0-9._:/@-]+$", 1, true) <> 1 then
+      Error.addCompilerError("Container image reference '" + containerReference + "' contains invalid characters.");
+      fail();
+    end if;
+
     image := match Util.stringSplitAtChar(containerReference, "/")
     local
       String host_and_port;
@@ -122,6 +129,7 @@ public
     String manifestFile;
     JSON manifest;
     JSON descriptor;
+    list<JSON> descriptors;
     JSON digest;
     String digest_sha256_str;
   algorithm
@@ -133,7 +141,7 @@ public
 
     // TODO: docker manifest inspect is experimental!
     // See https://docs.docker.com/reference/cli/docker/manifest/inspect/
-    cmd := ContainerImage.containerTool + " manifest inspect " + quoteForShell(imageName) + " -v";
+    cmd := ContainerImage.containerTool + " manifest inspect " + imageName + " -v";
     if System.systemCall(cmd, outFile=manifestFile) <> 0 then
       Error.addCompilerError("Failed to retrieve manifest of container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(manifestFile) + "\n");
@@ -149,14 +157,25 @@ public
       case JSON.LIST_OBJECT() then JSON.getOrDefault(manifest, "Descriptor", JSON.NULL());
       case JSON.ARRAY()
         algorithm
-          /* A manifest list has one entry per platform, each with the digest of
-           * that platform instead of the digest of the manifest list itself.
+          /* An image index has one entry per platform, each with the digest of
+           * that platform's image. Build attestations are entries with
+           * platform unknown/unknown.
            */
-          Error.addCompilerError("Container image '" + imageName + "' is a multi-platform image, which isn't supported for cross compilation.");
-          Error.addCompilerNotification("Use a reference to a single platform image, e.g. one of the images listed by `" +
-                                        ContainerImage.containerTool + " manifest inspect " + imageName + "`.");
-          System.removeFile(manifestFile);
-        then fail();
+          descriptors := {};
+          for entry in Vector.toList(manifest.values) loop
+            descriptor := JSON.getOrDefault(entry, "Descriptor", JSON.NULL());
+            if not isAttestation(descriptor) then
+              descriptors := descriptor :: descriptors;
+            end if;
+          end for;
+          if listLength(descriptors) <> 1 then
+            Error.addCompilerError("Container image '" + imageName + "' is a multi-platform image, which isn't supported for cross compilation.");
+            Error.addCompilerNotification("Use a reference to a single platform image, e.g. one of the images listed by `" +
+                                          ContainerImage.containerTool + " manifest inspect " + imageName + "`.");
+            System.removeFile(manifestFile);
+            fail();
+          end if;
+        then listHead(descriptors);
       else
         algorithm
           Error.addCompilerError("Failed to retrieve manifest descriptor of container image '" + imageName + "'.");
@@ -194,7 +213,7 @@ public
     "Add compiler warning if container image is not known.
      Run this function before downloading any container images.
      Image has to be 'ghcr.io/openmodelica/crossbuild' with a known tag and
-     digest to be trusted."
+     digest to be trusted. Fails if the known tag has an unknown digest."
     input ContainerImage image;
     output Boolean isOpenModelicaImage = false "True if image is 'ghcr.io/openmodelica/crossbuild'";
     output Boolean hasKnownDigest = false "True if image is 'ghcr.io/openmodelica/crossbuild' and digest 256 SHA is known in this version of OMC.";
@@ -252,13 +271,14 @@ public
     hasKnownDigest := match (image.digest, isKnownTag)
       local
         String digest;
-      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1293204639?tag=v1.28.0
-      case (SOME("sha256:7f0038259e8de276384dc1a0d7297f947e8f3dc4457c08d5dced32f2e49599d8"), true) then true;
+      // ghcr.io/openmodelica/crossbuild:v1.28.0, linux/amd64 image, see https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild
+      case (SOME("sha256:0bfe251cd4f31f6452fd50e067b195fad8946e1afc06c2a4f385f9a42d7f67cd"), true) then true;
+      // The known tag was moved in the registry, so don't run the image.
       case (SOME(digest), true)
       algorithm
-        Error.addCompilerWarning("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
+        Error.addCompilerError("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
         Error.addCompilerNotification("Check https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/ for available cross-build images managed by OpenModelica.");
-        then false;
+        then fail();
       case (NONE(), true)
       algorithm
         Error.addCompilerError("Container image \"" + toString(image) + "\" has no digest. That shouldn't be possible.");
@@ -269,17 +289,18 @@ public
   end isTrustedOpenModelicaImage;
 
   function pull
-    "Pull container image."
+    "Pull container image. Uses the digest, if known, so the downloaded image
+     is the one that was checked by isTrustedOpenModelicaImage."
     input ContainerImage image;
     input String logFilePrefix;
   protected
     String pullLogFile;
-    String imageName = toString(image);
+    String imageName = toString(image, useDigest = true);
     String cmd;
   algorithm
     pullLogFile := logFilePrefix + "." + image.repository + "_pull.log";
 
-    cmd := ContainerImage.containerTool + " pull " + quoteForShell(imageName);
+    cmd := ContainerImage.containerTool + " pull " + imageName;
     if System.systemCall(cmd, outFile=pullLogFile) <> 0 then
       Error.addCompilerError("Failed to pull container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(pullLogFile) + "\n");
@@ -290,12 +311,6 @@ public
     Error.addCompilerNotification(System.readFile(pullLogFile) + "\n");
     System.removeFile(pullLogFile);
   end pull;
-
-  function pullCommand
-    "Return the command to download the container image manually."
-    input ContainerImage image;
-    output String cmd = ContainerImage.containerTool + " pull " + quoteForShell(toString(image));
-  end pullCommand;
 
   function isAvailableLocally
     "Check if container image is already available on this machine.
@@ -315,7 +330,7 @@ public
       System.removeFile(inspectLogFile);
     end if;
 
-    cmd := ContainerImage.containerTool + " image inspect " + quoteForShell(imageName);
+    cmd := ContainerImage.containerTool + " image inspect " + imageName;
     isAvailable := System.systemCall(cmd, outFile=inspectLogFile) == 0;
 
     if System.regularFileExists(inspectLogFile) then
@@ -369,7 +384,7 @@ public
     end if;
 
     // Verification using cosign
-    cmd := "cosign verify " + quoteForShell(imageReference) +
+    cmd := "cosign verify " + imageReference +
            " --certificate-identity=https://github.com/OpenModelica/openmodelica-crossbuild/.github/workflows/publish.yml@refs/tags/v1.28.0" +
            " --certificate-oidc-issuer=https://token.actions.githubusercontent.com";
 
@@ -428,6 +443,19 @@ public
   end nameToString;
 
 protected
+  function isAttestation
+    "True if the manifest descriptor is a build attestation and not an image."
+    input JSON descriptor;
+    output Boolean isAttestation;
+  protected
+    JSON platform = JSON.getOrDefault(descriptor, "platform", JSON.NULL());
+  algorithm
+    isAttestation := match (JSON.getOrDefault(platform, "os", JSON.NULL()), JSON.getOrDefault(platform, "architecture", JSON.NULL()))
+      case (JSON.STRING("unknown"), JSON.STRING("unknown")) then true;
+      else false;
+    end match;
+  end isAttestation;
+
   // Helper functions for parsing
   function parseContainerHostPort
     "Parse container host and port string:
@@ -451,18 +479,6 @@ protected
         then fail();
     end match;
   end parseContainerHostPort;
-
-  function quoteForShell
-    "Single-quote a container reference for the shell. parseContainerReference does not
-     constrain the character set of host, namespace, repository or tag, and the reference
-     comes from the user via the platforms argument, so it must not reach a shell bare."
-    input String str;
-    output String quoted;
-  algorithm
-    // Close the quote, escape the quote character, reopen: the POSIX way, as there is
-    // no escape inside a single-quoted string.
-    quoted := "'" + System.stringReplace(str, "'", "'\\''") + "'";
-  end quoteForShell;
 
   function parseContainerRepository
     "Parse container image repository string:

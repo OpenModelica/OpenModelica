@@ -330,6 +330,8 @@ namespace OptionsDefaults
     bool includeResources = false;
     bool generateDebugSymbols = false;
     bool deleteFMUDirectoyAndModel = false;
+    // omc checks the digest of this tag, see ContainerImage.isTrustedOpenModelicaImage.
+    QString crossbuildImage = "ghcr.io/openmodelica/crossbuild:v1.28.0";
   }
 
   namespace OMSimulator {

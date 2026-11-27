@@ -369,7 +369,8 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
     * ``x86_64-w64-mingw32``
 
   OpenModelica will add a matching ``CMAKE_TOOLCHAIN_FILE`` to the compilation
-  process.
+  process. If the image is not available locally, OpenModelica downloads it by
+  the digest that this version of OpenModelica knows.
 
   If your model depends on external C libraries the library has to be available
   for the target platform, e.g. in ``Resources/Library/win64`` when compiling for
@@ -380,10 +381,10 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
 
 * ``<cpu>-<vendor>-<os> docker run <image>`` Host triple with Docker image:
   OpenModelica will use the specified Docker image to cross compile for given host triple.
-  Because privilege escalation is very easy to achieve with Docker OMEdit adds
-  ``--pull=never`` to the Docker calls for the ``multiarch/crossbuild`` images. Only use
+  Because privilege escalation is very easy to achieve with Docker, only use
   this option if you understand the security risks associated with Docker images from
-  unknown sources.
+  unknown sources. Add ``--pull=never`` to only use images that are already available
+  locally.
   E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross compile
   for a 64 bit Linux OS.
   Because system libraries can be different for different versions of the same operating

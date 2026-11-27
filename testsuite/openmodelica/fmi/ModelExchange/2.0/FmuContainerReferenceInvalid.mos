@@ -1,0 +1,30 @@
+// name:     FmuContainerReferenceInvalid
+// keywords: FMI 2.0 export cross compilation docker
+// status:   correct
+// teardown_command: rm -rf FmuContainerReferenceInvalid.fmutmp FmuContainerReferenceInvalid.fmu FmuContainerReferenceInvalid.log FmuContainerReferenceInvalid_info.json /tmp/FmuContainerReferenceInvalid
+//
+// A container image reference with shell metacharacters is rejected before
+// any command is run.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadString("
+model FmuContainerReferenceInvalid
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end FmuContainerReferenceInvalid;
+"); getErrorString();
+buildModelFMU(FmuContainerReferenceInvalid, version = "2.0", fmuType = "me", platforms = {"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0;touch$IFS/tmp/FmuContainerReferenceInvalid"}); getErrorString();
+regularFileExists("/tmp/FmuContainerReferenceInvalid");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ""
+// "Notification: Building FMU for platform 'x86_64-linux-gnu' (1/1).
+// Error: Container image reference 'ghcr.io/openmodelica/crossbuild:v1.28.0;touch$IFS/tmp/FmuContainerReferenceInvalid' contains invalid characters.
+// "
+// false
+// endResult
