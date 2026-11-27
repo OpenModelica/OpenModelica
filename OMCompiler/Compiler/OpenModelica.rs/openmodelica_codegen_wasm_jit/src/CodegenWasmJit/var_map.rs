@@ -94,6 +94,8 @@ pub(crate) struct SimVarMap {
     pub(super) n_spatial: u32,
     /// `+profiling`'s clock plan (`SimCtx::prof`).
     pub(super) prof: Option<Arc<ProfPlan>>,
+    /// `SimCtx::jacobian`.
+    pub(super) jacobian: bool,
 }
 
 /// The result variables; an array's elements may be one entry ([`VarArray`]).
@@ -1078,6 +1080,7 @@ pub(super) fn build_var_map(
         n_delays: 0,
         n_spatial: 0,
         prof: None,
+        jacobian: false,
     };
     let mut results = ResultList::default();
     // User-settable parameters (isValueChangeable), collected as they are laid out.

@@ -371,6 +371,29 @@ pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) 
     res
 }
 
+/// C's `division_error_time` behind `DIVISION`, for a zero divisor in a Jacobian.
+/// C also prints the file and line of its generated source.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_div_jac(a: f64, b: f64, msg: u32, time: f64) -> f64 {
+    let s = borrowed_str(msg);
+    let t = crate::omclog::f(time, 0, 6);
+    if no_throw_div_zero() {
+        crate::omclog::warning!(
+            crate::omclog::DIVISION,
+            false,
+            "division by zero in partial equation: {s}\nat Time={t}\nsolver will try to handle that.",
+        );
+    } else {
+        crate::omclog::warning!(
+            crate::omclog::STDOUT,
+            false,
+            "division by zero in partial equation: {s}\nat Time={t}",
+        );
+        throw_stream("division by zero");
+    }
+    a / b
+}
+
 /// [`nls::kinsol`]'s `numeric_csc` for the runtime's own sparse Newton: C's
 /// `nlsSparseJac`, one residual evaluation per colour group. `fx` is the residual at
 /// `x`; an empty `colors` leaves every column its own colour.

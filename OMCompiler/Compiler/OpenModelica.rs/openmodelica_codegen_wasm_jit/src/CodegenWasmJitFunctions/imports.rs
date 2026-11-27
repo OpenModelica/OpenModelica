@@ -491,13 +491,14 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_prof_tick", &[WTy::I32], &[]),
     ("rt_prof_acc", &[WTy::I32], &[]),
     ("rt_prof_add_ncall", &[WTy::I32, WTy::I32], &[]),
-    // C's `throwStreamPrint` and the reporting half of its `DIVISION_SIM`.
+    // C's `throwStreamPrint` and the reporting half of its `DIVISION_SIM` and `DIVISION`.
     ("rt_throw_stream", &[WTy::I32], &[]),
     (
         "rt_div_sim",
         &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32],
         &[WTy::F64],
     ),
+    ("rt_div_jac", &[WTy::F64, WTy::F64, WTy::I32, WTy::F64], &[WTy::F64]),
     // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
     ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
     // `rt_nls_note_assert` plus C's log line for the absorbed assertion:
