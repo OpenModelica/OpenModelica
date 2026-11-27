@@ -276,6 +276,14 @@ void Quick3DViewerWidget::fitToScene()
   applyCamera();
 }
 
+void Quick3DViewerWidget::setCameraState(const CameraState& state)
+{
+  mCenter = state.center;
+  mOrientation = state.orientation;
+  mDistance = state.distance;
+  applyCamera();
+}
+
 void Quick3DViewerWidget::setCameraView(CameraView view)
 {
   // Right/up/eye-direction per view, looking at the origin.

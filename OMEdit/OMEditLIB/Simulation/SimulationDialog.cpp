@@ -2044,8 +2044,14 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (simulationOptions.getSimulateWithAnimation()) {
       const bool animatable = simulationOptions.getFullResultFileName().endsWith(".mat") || simulationOptions.getFullResultFileName().endsWith(".arrow");
       if (animatable) {
-        MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow();
-        AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
+        PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
+        AnimationWindow *pAnimationWindow = pPlotWindowContainer->getAnimationWindow(resultFileInfo.absoluteFilePath());
+        if (pAnimationWindow) {
+          pPlotWindowContainer->setActiveSubWindow(qobject_cast<QMdiSubWindow*>(pAnimationWindow->parentWidget()));
+        } else {
+          pPlotWindowContainer->addAnimationWindow();
+          pAnimationWindow = pPlotWindowContainer->getCurrentAnimationWindow();
+        }
         if (pAnimationWindow) {
           pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
         }

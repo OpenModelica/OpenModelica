@@ -121,10 +121,16 @@ Quick3DScene::Quick3DScene(QQmlEngine* engine, QQuick3DObject* sceneRoot)
 
 Quick3DScene::~Quick3DScene()
 {
+  clear();
+  delete mItemComponent;
+}
+
+void Quick3DScene::clear()
+{
   for (const Item& item : mItems) {
     delete item.node;
   }
-  delete mItemComponent;
+  mItems.clear();
 }
 
 std::string Quick3DScene::getPath() const

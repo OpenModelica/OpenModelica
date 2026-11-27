@@ -48,6 +48,7 @@
 #include "VisualizationCSV.h"
 
 #include <QDockWidget>
+#include <QFileInfo>
 #include <QGridLayout>
 #include <QFrame>
 
@@ -117,6 +118,9 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
 {
   std::string file = fileName.toStdString();
   if (file.compare("")) {
+    // keep the camera of the user when the same file is loaded again, e.g., after a re-simulation.
+    const bool reload = mpVisualization && QFileInfo(getFilePath()) == QFileInfo(fileName);
+    const Quick3DViewerWidget::CameraState cameraState = mpViewerWidget->getCameraState();
     std::size_t pos = file.find_last_of("/\\");
     mPathName = file.substr(0, pos + 1);
     mFileName = file.substr(pos + 1, file.length());
@@ -134,10 +138,14 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
       mpSpeedComboBox->setEnabled(true);
       mpTimeTextBox->setEnabled(true);
       mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+      setSpeedSlotFunction();
+      mpVisualization->getTimeManager()->setRepeat(mpAnimationRepeatAction->isChecked());
       /* Only use isometric view as default for csv file type.
        * Otherwise use side view as default which suits better for Modelica models.
        */
-      if (isCSV(mFileName)) {
+      if (reload) {
+        mpViewerWidget->setCameraState(cameraState);
+      } else if (isCSV(mFileName)) {
         mpPerspectiveDropDownBox->setCurrentIndex(0);
         cameraPositionIsometric();
       } else {
@@ -403,6 +411,7 @@ bool AbstractAnimationWindow::loadVisualization()
                                                             Helper::errorLevel));
       return false;
     }
+    clearVisualization();
     //init visualization
     if (visType == VisType::MAT) {
       mpVisualization = new VisualizationMAT(mFileName, mPathName);
@@ -444,6 +453,24 @@ bool AbstractAnimationWindow::loadVisualization()
   }
 
   return true;
+}
+
+/*!
+ * \brief AbstractAnimationWindow::clearVisualization
+ * Removes the current visualization and its scene items, so that the window can load a new file.
+ */
+void AbstractAnimationWindow::clearVisualization()
+{
+  if (mpVisualization) {
+    QTimer *pUpdateSceneTimer = mpVisualization->getTimeManager()->getUpdateSceneTimer();
+    pUpdateSceneTimer->stop();
+    disconnect(pUpdateSceneTimer, nullptr, this, nullptr);
+    delete mpVisualization;
+    mpVisualization = nullptr;
+  }
+  if (mpViewerWidget->getScene()) {
+    mpViewerWidget->getScene()->clear();
+  }
 }
 
 void AbstractAnimationWindow::resetCamera() { if (mpViewerWidget) mpViewerWidget->fitToScene(); }

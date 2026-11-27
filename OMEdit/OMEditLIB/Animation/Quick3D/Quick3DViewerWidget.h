@@ -61,6 +61,12 @@ class Quick3DViewerWidget : public QQuickWidget
   Q_OBJECT
 public:
   enum CameraView { Isometric, Top, Side, Front };
+  struct CameraState
+  {
+    QVector3D center;
+    QQuaternion orientation;
+    float distance;
+  };
 
   Quick3DViewerWidget(QWidget* parent = nullptr);
   ~Quick3DViewerWidget() override;
@@ -76,6 +82,8 @@ public:
 
   // Frame the whole scene (bounding sphere) at the current view angle.
   void fitToScene();
+  CameraState getCameraState() const { return {mCenter, mOrientation, mDistance}; }
+  void setCameraState(const CameraState& state);
   // Snap to a preset viewing angle, keeping the framed distance/centre.
   void setCameraView(CameraView view);
   // Turntable orbit by the given yaw/pitch deltas (degrees).

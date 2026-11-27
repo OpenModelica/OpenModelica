@@ -80,9 +80,11 @@ public:
   AbstractAnimationWindow(QWidget *pParent);
   VisualizationAbstract* getVisualization() {return mpVisualization;}
   void openAnimationFile(QString fileName);
+  QString getFilePath() const {return QString::fromStdString(mPathName + mFileName);}
   virtual void createActions();
 private:
   bool loadVisualization();
+  void clearVisualization();
 protected:
   //to be animated
   std::string mPathName;
