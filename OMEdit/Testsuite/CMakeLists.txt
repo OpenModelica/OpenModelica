@@ -100,6 +100,10 @@ add_omedit_test(Homotopy "${OMEDIT_TEST_HOMOTOPY_SOURCES}")
 # to figure out why it takes so long in the first place.
 # set_tests_properties(Homotopy PROPERTIES TIMEOUT 300)
 
+set(OMEDIT_TEST_SIMULATIONINTERVAL_SOURCES SimulationInterval/SimulationIntervalTest.cpp
+                                           SimulationInterval/SimulationIntervalTest.h)
+add_omedit_test(SimulationInterval "${OMEDIT_TEST_SIMULATIONINTERVAL_SOURCES}")
+
 set(OMEDIT_TEST_LANGUAGESERVER_SOURCES LanguageServer/LanguageServerTest.cpp
                                        LanguageServer/LanguageServerTest.h)
 add_omedit_test(LanguageServer "${OMEDIT_TEST_LANGUAGESERVER_SOURCES}")
