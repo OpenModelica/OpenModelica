@@ -51,6 +51,7 @@
 #include "Util/StringHandler.h"
 #include "qwt_text.h"
 
+#include <QFileInfo>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QMenu>
@@ -193,6 +194,26 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
       return 0;
     }
   }
+}
+
+/*!
+ * \brief PlotWindowContainer::getAnimationWindow
+ * Returns the most recently active animation window showing fileName, or null if there is none.
+ * \param fileName
+ * \return
+ */
+AnimationWindow* PlotWindowContainer::getAnimationWindow(const QString &fileName)
+{
+  QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
+  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+    if (isAnimationWindow(subWindowsList.at(i)->widget())) {
+      AnimationWindow *pAnimationWindow = qobject_cast<AnimationWindow*>(subWindowsList.at(i)->widget());
+      if (pAnimationWindow && QFileInfo(pAnimationWindow->getFilePath()) == QFileInfo(fileName)) {
+        return pAnimationWindow;
+      }
+    }
+  }
+  return 0;
 }
 #endif
 

@@ -63,6 +63,7 @@ public:
   OMPlot::PlotWindow* getInteractiveWindow(QString targetWindow);
 #if !defined(WITHOUT_ANIMATION)
   AnimationWindow* getCurrentAnimationWindow();
+  AnimationWindow* getAnimationWindow(const QString &fileName);
 #endif
   QMdiSubWindow* getDiagramSubWindowFromMdi();
   DiagramWindow* getDiagramWindow() {return mpDiagramWindow;}

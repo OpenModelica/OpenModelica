@@ -60,6 +60,7 @@ public:
   virtual void setUpVectors(std::vector<VectorObject>& vectors) = 0;
   virtual void updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) = 0;
   virtual void modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) = 0;
+  virtual void clear() = 0;
 };
 
 #endif // ANIMATIONSCENE_H

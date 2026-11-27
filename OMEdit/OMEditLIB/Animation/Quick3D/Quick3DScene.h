@@ -73,6 +73,7 @@ public:
   void setUpVectors(std::vector<VectorObject>& vectors) override;
   void updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) override;
   void modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) override;
+  void clear() override;
 
   // World-space bounding sphere of all current items (for camera framing). Returns
   // false when the scene is empty.
