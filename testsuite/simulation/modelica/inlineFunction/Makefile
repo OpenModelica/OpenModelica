@@ -4,6 +4,7 @@ TESTFILES = \
 inlineArray2.mos \
 inlineArray3.mos \
 inlineArrayRecord.mos \
+inlineArraySimplifyLoops.mos \
 inlineAttributes15947.mos \
 inlineCallResultSize.mos \
 inlineFunction1.mos \

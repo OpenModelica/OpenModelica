@@ -234,6 +234,9 @@ pub(crate) struct SimCtx {
     /// True while lowering a when-body, which runs only at its event: a violated
     /// `assert()` there is never held (`rt_assert_when`).
     pub(crate) when_body: bool,
+    /// True while lowering a Jacobian, C's `JACOBIAN_CONTEXT`: a division is
+    /// `DIVISION`, not `DIVISION_SIM`.
+    pub(crate) jacobian: bool,
     /// `SimData` byte offset of the zero-crossing hysteresis tolerance, written by
     /// the driver at run start from the run's tolerance. Continuous (Real) indexed
     /// relations use a ±`tolZC*(max(|a|,|b|)+max(nom))` band at events and in

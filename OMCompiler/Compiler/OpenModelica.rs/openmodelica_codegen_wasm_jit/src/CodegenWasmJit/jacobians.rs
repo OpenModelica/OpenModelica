@@ -378,6 +378,7 @@ fn jac_generic_calls(
 pub(super) fn with_jac_calls(var_map: &SimVarMap, jm: &SimCode::JacobianMatrix) -> SimVarMap {
     let mut out = var_map.clone();
     out.generic_calls = jac_generic_calls(&var_map.generic_calls, jm);
+    out.jacobian = true;
     out
 }
 
@@ -394,9 +395,11 @@ pub(super) fn lower_with_jac_calls(
         .ok_or("CodegenWasmJit: a Jacobian outside a simulation function")?;
     let calls = jac_generic_calls(&sim.generic_calls, jm);
     let saved = std::mem::replace(&mut sim.generic_calls, calls);
+    let saved_jacobian = std::mem::replace(&mut sim.jacobian, true);
     let res = lower(ctx);
     if let Some(sim) = ctx.sim.as_mut() {
         sim.generic_calls = saved;
+        sim.jacobian = saved_jacobian;
     }
     res
 }

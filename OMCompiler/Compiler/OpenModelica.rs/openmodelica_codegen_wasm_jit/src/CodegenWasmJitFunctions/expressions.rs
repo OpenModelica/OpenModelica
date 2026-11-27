@@ -741,7 +741,10 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
         if ctx.sim.is_none() {
             emit_div_zero_guard(ctx, e1, op, e2, wty)?;
         } else if wty == WTy::F64 && !is_checked_divisor(ctx, e2)? {
-            return emit_div_sim(ctx, e2);
+            return match ctx.sim()?.jacobian {
+                true => emit_div_jac(ctx, e2),
+                false => emit_div_sim(ctx, e2),
+            };
         }
     }
     match (op, wty) {
@@ -860,6 +863,32 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     ctx.emit(I::Call(rt_index("rt_div_sim")?));
     ctx.emit(I::Else);
     ctx.emit(I::LocalGet(res));
+    ctx.emit(I::End);
+    Ok(WTy::F64)
+}
+
+/// C's `DIVISION`, with `a` and `b` on the stack: `rt_div_jac` (nls.rs) has what C
+/// does with a zero divisor.
+fn emit_div_jac(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
+    use we::Instruction as I;
+    let (ta, tb) = (ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64));
+    ctx.emit(I::LocalSet(tb));
+    ctx.emit(I::LocalSet(ta));
+    ctx.emit(I::LocalGet(tb));
+    ctx.emit(I::F64Const(0.0f64.into()));
+    ctx.emit(I::F64Eq);
+    emit_unlikely_if(ctx, we::BlockType::Result(we::ValType::F64));
+    ctx.emit(I::LocalGet(ta));
+    ctx.emit(I::LocalGet(tb));
+    emit_shared_str(ctx, &dumped_exp(e2)?);
+    let data = ctx.sim()?.data_local;
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
+    ctx.emit(I::Call(rt_index("rt_div_jac")?));
+    ctx.emit(I::Else);
+    ctx.emit(I::LocalGet(ta));
+    ctx.emit(I::LocalGet(tb));
+    ctx.emit(I::F64Div);
     ctx.emit(I::End);
     Ok(WTy::F64)
 }
