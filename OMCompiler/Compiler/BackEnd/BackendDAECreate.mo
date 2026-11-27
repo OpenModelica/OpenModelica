@@ -130,6 +130,7 @@ algorithm
     System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
     System.tmpTickResetIndex(1, Global.backendDAE_cseIndex);
     System.tmpTickResetIndex(0, Global.strongComponent_index);
+    System.tmpTickResetIndex(0, Global.backendDAE_letIndex);
     functionTree := FCore.getFunctionTree(inCache);
     //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
     functionTree := lowerFunctions(functionTree);

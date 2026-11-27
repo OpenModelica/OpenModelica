@@ -268,7 +268,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
 fn compile_let(ctx: &mut FnCtx, exp: &DAE::Exp, name: &str, binding: &DAE::Exp, body: &DAE::Exp) -> Result<WTy> {
     let sty = exp_sigty(binding)?;
     let is_array = matches!(sty, SigTy::Array { .. });
-    if ctx.sim().is_ok() || (sty.is_heap() && !is_array) {
+    if (ctx.sim().is_ok() && is_array) || (sty.is_heap() && !is_array) {
         let expanded = openmodelica_frontend_base::Expression::expandLets(metamodelica::Ref::new(exp.clone()))?;
         return compile_exp(ctx, &expanded);
     }

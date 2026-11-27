@@ -1,0 +1,58 @@
+// name: SharedDerivatives
+// keywords: index reduction differentiation let
+// status: correct
+//
+// Repeated time derivatives of an inlined function share their
+// subexpressions, so the generated code stays small (#3252).
+//
+
+loadString("
+model SmoothSatDerivatives
+  function smoothSat
+    input Real x;
+    input Real xmin;
+    input Real xmax;
+    input Real dxmin;
+    input Real dxmax = dxmin;
+    output Real y;
+  algorithm
+    y := if x < xmin + dxmin then xmin + dxmin - dxmin*(xmin + dxmin - x)/(dxmin^4 + (xmin + dxmin - x)^4)^0.25
+      else if x > xmax - dxmax then xmax - dxmax + dxmax*(x - xmax + dxmax)/(dxmax^4 + (x - xmax + dxmax)^4)^0.25
+      else x;
+    annotation(smoothOrder = 4);
+  end smoothSat;
+
+  Real y = smoothSat(time, 1, 2, 0.1, 0.3);
+  Real y1, y2, y3, y4, y5;
+equation
+  y1 = der(y);
+  y2 = der(y1);
+  y3 = der(y2);
+  y4 = der(y3);
+  y5 = der(y4);
+end SmoothSatDerivatives;
+"); getErrorString();
+
+simulate(SmoothSatDerivatives, stopTime = 3, numberOfIntervals = 3000, tolerance = 1e-8); getErrorString();
+val(y2, {0.5, 1.05, 1.5, 1.8});
+val(y5, {0.5, 1.05, 1.5, 1.8});
+// with copied subexpressions the main C file is 4.4 MB; wasm-jit writes no C file
+(found, size, mtime) := stat("SmoothSatDerivatives.c");
+not found or size < 400000;
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SmoothSatDerivatives_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 3000, tolerance = 1e-8, method = 'auto', fileNamePrefix = 'SmoothSatDerivatives', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0010698153113731298, 5.453055341236853, 0.0, -0.6004752478318252}
+// {1.655713921409565, 615874.4855985153, 0.0, -427.56122938315656}
+//
+// true
+// endResult

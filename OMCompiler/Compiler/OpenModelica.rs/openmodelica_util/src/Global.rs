@@ -55,6 +55,8 @@ pub const gcProfilingIndex: i32 = 21;
 
 pub const inferredClock_index: i32 = 31;
 
+pub const backendDAE_letIndex: i32 = 32;
+
 pub fn initialize() -> () {
     // ── Roots declared in openmodelica_util::Globals ───────────────────────
     crate::Globals::instOnlyForcedFunctions.with(|__root| *__root.borrow_mut() = None);
