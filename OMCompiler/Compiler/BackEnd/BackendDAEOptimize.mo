@@ -4447,7 +4447,7 @@ algorithm
               eqns := BackendEquation.add(eqn1, eqns);
             elseif isArrayLiteral(e1) and Types.dimensionsKnown(Expression.typeof(e1)) then
               dims := Expression.dimensionsSizes(Expression.arrayDimension(Expression.typeof(e1)));
-              (e, idx, vars, eqns) := replaceArrayLiteralWithTmpVar(e1, dims, tmpVarPrefix, source, attr, idx, vars, eqns);
+              (e, idx, vars, eqns) := replaceArrayLiteralWithTmpVar(e1, dims, tmpVarPrefix, source, attr, BackendDAE.AVOID(), idx, vars, eqns);
               update := update or not referenceEq(e, e1);
               //BackendDump.printVariables(vars);
             else
@@ -4533,7 +4533,7 @@ protected function replaceArrayLiteral
   input output BackendDAE.EquationArray eqns;
 algorithm
   if isArrayLiteral(exp) and not isVariableArrayLiteral(exp) then
-    (outExp, idx, vars, eqns) := replaceArrayLiteralWithTmpVar(exp, dims, tmpVarPrefix, source, attr, idx, vars, eqns);
+    (outExp, idx, vars, eqns) := replaceArrayLiteralWithTmpVar(exp, dims, tmpVarPrefix, source, attr, BackendDAE.NEVER(), idx, vars, eqns);
   end if;
 end replaceArrayLiteral;
 
@@ -4545,6 +4545,7 @@ protected function replaceArrayLiteralWithTmpVar
   input String tmpVarPrefix;
   input DAE.ElementSource source;
   input BackendDAE.EquationAttributes attr;
+  input BackendDAE.TearingSelect tearingSelect;
   output DAE.Exp outExp = exp;
   input output Integer idx;
   input output BackendDAE.Variables vars;
@@ -4554,6 +4555,7 @@ protected
   DAE.Exp arrayExp;
   DAE.Type ty;
   Boolean split;
+  BackendDAE.Var var;
 algorithm
   ty := DAEUtil.expTypeElementType(Expression.typeof(exp));
   if not Types.isSimpleType(ty) then
@@ -4565,7 +4567,8 @@ algorithm
   (elementEqns, split) := InlineArrayEquations.getScalarArrayEqns({BackendDAE.ARRAY_EQUATION(dims, arrayExp, exp, source, attr, NONE())});
   if split then
     for cr in ComponentReference.expandCref(Expression.expCref(arrayExp), true) loop
-      vars := BackendVariable.addVar(BackendVariable.createCSEArrayVar(cr, ty, ComponentReferenceBasics.crefDims(cr)), vars);
+      var := BackendVariable.createCSEArrayVar(cr, ty, ComponentReferenceBasics.crefDims(cr));
+      vars := BackendVariable.addVar(BackendVariable.setVarTS(var, SOME(tearingSelect)), vars);
     end for;
     eqns := BackendEquation.addList(elementEqns, eqns);
     idx := idx + 1;
