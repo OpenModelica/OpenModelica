@@ -39,6 +39,7 @@ DimConvert.mos \
 ConstantSubscriptOutOfRange.mos \
 DynamicSubscriptAliasArray.mos \
 ElementWiseSizeCheck.mos \
+FillLet.mos \
 FunctionArraySlices.mos \
 gc.mos \
 gc2980.mos \

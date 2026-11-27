@@ -904,6 +904,7 @@ protected
     list<Expression> args;
     list<NamedArg> named_args;
     Expression fill_arg;
+    InstNode node;
     InstContext.Type arg_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -919,8 +920,18 @@ protected
 
     // Type the first argument, which is the fill value.
     (fill_arg, ty, variability, purity) := Typing.typeExp(fill_arg, arg_context, info);
-    (callExp, ty, variability, purity) :=
-      typeFillCall2(fn_ref, ty, fill_arg, variability, purity, args, arg_context, info);
+
+    // Expanding fill copies the fill value, so in a function it is bound with
+    // a let expression to be evaluated one time.
+    if InstContext.inFunction(context) and not (Expression.isLiteral(fill_arg) or Expression.isCref(fill_arg)) then
+      node := InstNode.newIterator("$let" + String(System.tmpTickIndex(Global.iteratorIndex)), ty, info);
+      (callExp, ty, variability, purity) := typeFillCall2(fn_ref, ty,
+        Expression.fromCref(ComponentRef.makeIterator(node, ty)), variability, purity, args, arg_context, info);
+      callExp := Expression.LET(node, fill_arg, callExp);
+    else
+      (callExp, ty, variability, purity) :=
+        typeFillCall2(fn_ref, ty, fill_arg, variability, purity, args, arg_context, info);
+    end if;
   end typeFillCall;
 
   function typeFillCall2

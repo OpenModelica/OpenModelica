@@ -1,0 +1,83 @@
+// name:     FillLet
+// keywords: fill function let
+// status:   correct
+//
+// fill in a function evaluates its value one time, also when the result is
+// expanded into an array or used in an operation.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+package FillLet
+  function g
+    input Real x[:];
+    output Real y;
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"g\", \"FillLet_g.txt\"));
+    y := sum(x);
+  end g;
+
+  function f1
+    input Real x[3];
+    output Real y[4];
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"f\", \"FillLet_f.txt\"));
+    y := fill(g(x), 4) + {1, 2, 3, 4};
+  end f1;
+
+  function f2
+    input Real x[3];
+    output Real y;
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"f\", \"FillLet_f.txt\"));
+    y := sum(fill(g(x), 3));
+  end f2;
+
+  function f3
+    input Real x[3];
+    output Real y;
+  protected
+    Real t[2, 3] = fill(g(x), 2, 3);
+  algorithm
+    pure(Modelica.Utilities.Streams.print(\"f\", \"FillLet_f.txt\"));
+    y := sum(t);
+  end f3;
+
+  model M
+    Real y1[4] = f1({time, 2, 3});
+    Real y2 = f2({time, 2, 3});
+    Real y3 = f3({time, 2, 3});
+  end M;
+end FillLet;
+"); getErrorString();
+
+writeFile("FillLet_f.txt", "");
+writeFile("FillLet_g.txt", "");
+simulate(FillLet.M, stopTime = 1, numberOfIntervals = 10); getErrorString();
+val(y1[4], 1.0);
+val(y2, 1.0);
+val(y3, 1.0);
+sum(1 for l in strtok(readFile("FillLet_g.txt"), "\n")) == sum(1 for l in strtok(readFile("FillLet_f.txt"), "\n"));
+sum(1 for l in strtok(readFile("FillLet_f.txt"), "\n")) > 0;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// record SimulationResult
+//     resultFile = "FillLet.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'FillLet.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 10.0
+// 18.0
+// 36.0
+// true
+// true
+// endResult
