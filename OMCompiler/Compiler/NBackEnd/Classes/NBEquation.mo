@@ -2543,14 +2543,11 @@ public
       input Pointer<Equation> eqn_ptr;
       output Option<Expression> residual;
     algorithm
-      residual := matchcontinue eqn_ptr
-        local
-          Expression exp;
-        case _ algorithm
-          exp := getResidualExp(Pointer.access(eqn_ptr), throwOnFail = false);
-        then SOME(exp);
-        else NONE();
-      end matchcontinue;
+      try
+        residual := SOME(getResidualExp(Pointer.access(eqn_ptr), throwOnFail = false));
+      else
+        residual := NONE();
+      end try;
     end tryGetResidualExp;
 
     function getType
