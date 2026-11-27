@@ -1721,16 +1721,11 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
   /* build the simulation parameters */
   simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
   simulationParameters.append(", stopTime=").append(mpStopTimeTextBox->text());
-  QString numberOfIntervals;
   if (mpNumberofIntervalsRadioButton->isChecked()) {
-    numberOfIntervals = QString::number(mpNumberofIntervalsSpinBox->value());
+    simulationParameters.append(", numberOfIntervals=").append(QString::number(mpNumberofIntervalsSpinBox->value()));
   } else {
-    qreal startTime = mpStartTimeTextBox->text().toDouble();
-    qreal stopTime = mpStopTimeTextBox->text().toDouble();
-    qreal interval = mpIntervalTextBox->text().toDouble();
-    numberOfIntervals = QString::number((stopTime - startTime) / interval);
+    simulationParameters.append(", stepSize=").append(QString::number(mpIntervalTextBox->text().toDouble(), 'g', QLocale::FloatingPointShortest));
   }
-  simulationParameters.append(", numberOfIntervals=").append(numberOfIntervals);
   simulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
   if (!mpToleranceTextBox->text().isEmpty()) {
     simulationParameters.append(", tolerance=").append(mpToleranceTextBox->text());
