@@ -213,7 +213,7 @@ public
     "Add compiler warning if container image is not known.
      Run this function before downloading any container images.
      Image has to be 'ghcr.io/openmodelica/crossbuild' with a known tag and
-     digest to be trusted."
+     digest to be trusted. Fails if the known tag has an unknown digest."
     input ContainerImage image;
     output Boolean isOpenModelicaImage = false "True if image is 'ghcr.io/openmodelica/crossbuild'";
     output Boolean hasKnownDigest = false "True if image is 'ghcr.io/openmodelica/crossbuild' and digest 256 SHA is known in this version of OMC.";
@@ -273,11 +273,12 @@ public
         String digest;
       // ghcr.io/openmodelica/crossbuild:v1.28.0, linux/amd64 image, see https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild
       case (SOME("sha256:0bfe251cd4f31f6452fd50e067b195fad8946e1afc06c2a4f385f9a42d7f67cd"), true) then true;
+      // The known tag was moved in the registry, so don't run the image.
       case (SOME(digest), true)
       algorithm
-        Error.addCompilerWarning("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
+        Error.addCompilerError("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
         Error.addCompilerNotification("Check https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/ for available cross-build images managed by OpenModelica.");
-        then false;
+        then fail();
       case (NONE(), true)
       algorithm
         Error.addCompilerError("Container image \"" + toString(image) + "\" has no digest. That shouldn't be possible.");

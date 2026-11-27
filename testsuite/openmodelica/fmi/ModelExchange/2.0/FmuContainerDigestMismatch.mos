@@ -1,0 +1,51 @@
+// name:     FmuContainerDigestMismatch
+// keywords: FMI 2.0 export cross compilation docker
+// status:   correct
+// teardown_command: rm -rf FmuContainerDigestMismatch.fmutmp FmuContainerDigestMismatch.fmu FmuContainerDigestMismatch.log FmuContainerDigestMismatch_info.json FmuContainerDigestMismatch_bin
+//
+// The OpenModelica crossbuild tag points to an unknown digest in the
+// registry. The image is neither pulled nor run. A fake docker in PATH
+// replaces the registry.
+
+mkdir("FmuContainerDigestMismatch_bin"); getErrorString();
+writeFile("FmuContainerDigestMismatch_bin/docker", "#!/bin/sh
+echo \"$*\" >> \"" + cd() + "/FmuContainerDigestMismatch.log\"
+if [ \"$1 $2\" = \"manifest inspect\" ]; then
+  echo '{\"Ref\": \"'$3'\", \"Descriptor\": {\"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"platform\": {\"architecture\": \"amd64\", \"os\": \"linux\"}}}'
+  exit 0
+fi
+exit 1
+"); getErrorString();
+system("chmod +x FmuContainerDigestMismatch_bin/docker"); getErrorString();
+setEnvironmentVar("PATH", cd() + "/FmuContainerDigestMismatch_bin:" + getEnvironmentVar("PATH")); getErrorString();
+
+loadString("
+model FmuContainerDigestMismatch
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end FmuContainerDigestMismatch;
+"); getErrorString();
+buildModelFMU(FmuContainerDigestMismatch, version = "2.0", fmuType = "me", platforms = {"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0"}); getErrorString();
+readFile("FmuContainerDigestMismatch.log");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// true
+// ""
+// true
+// ""
+// ""
+// "Notification: Building FMU for platform 'x86_64-linux-gnu' (1/1).
+// Notification: Using docker image 'ghcr.io/openmodelica/crossbuild:v1.28.0' for cross compilation.
+// Error: Container image \"ghcr.io/openmodelica/crossbuild:v1.28.0\" has unknown digest \"sha256:0000000000000000000000000000000000000000000000000000000000000000\".
+// Notification: Check https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/ for available cross-build images managed by OpenModelica.
+// "
+// "manifest inspect ghcr.io/openmodelica/crossbuild:v1.28.0 -v
+// "
+// endResult

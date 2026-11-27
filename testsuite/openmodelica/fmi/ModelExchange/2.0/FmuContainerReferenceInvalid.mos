@@ -1,7 +1,7 @@
 // name:     FmuContainerReferenceInvalid
 // keywords: FMI 2.0 export cross compilation docker
 // status:   correct
-// teardown_command: rm -rf FmuContainerReferenceInvalid.fmutmp FmuContainerReferenceInvalid.fmu FmuContainerReferenceInvalid.log /tmp/FmuContainerReferenceInvalid
+// teardown_command: rm -rf FmuContainerReferenceInvalid.fmutmp FmuContainerReferenceInvalid.fmu FmuContainerReferenceInvalid.log FmuContainerReferenceInvalid_info.json /tmp/FmuContainerReferenceInvalid
 //
 // A container image reference with shell metacharacters is rejected before
 // any command is run.
