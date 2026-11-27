@@ -134,7 +134,7 @@ public slots:
   void sliderSetTimeSlotFunction(int value);
   void jumpToTimeSlotFunction();
   void setSpeedSlotFunction();
-  void setPerspective(int value);
+  void setPerspective(int index);
   void rotateCameraLeft();
   void rotateCameraRight();
   void initInteractiveControlPanel();

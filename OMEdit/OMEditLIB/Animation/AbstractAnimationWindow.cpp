@@ -146,10 +146,10 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
       if (reload) {
         mpViewerWidget->setCameraState(cameraState);
       } else if (isCSV(mFileName)) {
-        mpPerspectiveDropDownBox->setCurrentIndex(0);
+        mpPerspectiveDropDownBox->setCurrentIndex(mpPerspectiveDropDownBox->findData(Quick3DViewerWidget::Isometric));
         cameraPositionIsometric();
       } else {
-        mpPerspectiveDropDownBox->setCurrentIndex(1);
+        mpPerspectiveDropDownBox->setCurrentIndex(mpPerspectiveDropDownBox->findData(Quick3DViewerWidget::Side));
         cameraPositionSide();
       }
       if (isFMU(mFileName)) {
@@ -220,10 +220,10 @@ void AbstractAnimationWindow::createActions()
   connect(mpSpeedComboBox->lineEdit(), &QLineEdit::textChanged, this, &AbstractAnimationWindow::setSpeedSlotFunction);
   // perspective drop down
   mpPerspectiveDropDownBox = new QComboBox;
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("Isometric"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"),QString("Side"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("Front"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.svg"),QString("Top"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("Isometric"), Quick3DViewerWidget::Isometric);
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"), QString("Side"), Quick3DViewerWidget::Side);
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"), QString("Front"), Quick3DViewerWidget::Front);
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.svg"), QString("Top"), Quick3DViewerWidget::Top);
   connect(mpPerspectiveDropDownBox, QOverload<int>::of(&QComboBox::activated), this, &AbstractAnimationWindow::setPerspective);
   // rotate camera left action
   mpRotateCameraLeftAction = new QAction(QIcon(":/Resources/icons/rotateCameraLeft.svg"), tr("Rotate Left"), this);
@@ -650,22 +650,23 @@ void AbstractAnimationWindow::setSpeedSlotFunction()
 
 /*!
  * \brief AbstractAnimationWindow::setPerspective
- * gets the identifier for the chosen perspective and calls the functions
+ * Sets the camera to the view of the chosen perspective item.
+ * \param index
  */
-void AbstractAnimationWindow::setPerspective(int value)
+void AbstractAnimationWindow::setPerspective(int index)
 {
-  switch(value) {
-    case 0:
+  switch (mpPerspectiveDropDownBox->itemData(index).toInt()) {
+    case Quick3DViewerWidget::Isometric:
       cameraPositionIsometric();
       break;
-    case 1:
+    case Quick3DViewerWidget::Side:
       cameraPositionSide();
       break;
-    case 2:
-      cameraPositionTop();
-      break;
-    case 3:
+    case Quick3DViewerWidget::Front:
       cameraPositionFront();
+      break;
+    case Quick3DViewerWidget::Top:
+      cameraPositionTop();
       break;
   }
 }
