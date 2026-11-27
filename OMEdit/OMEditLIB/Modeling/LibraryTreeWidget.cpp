@@ -4335,7 +4335,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
        * Same as parseFile above, call loadFile with printErrors = false to skip printing errors in the MessagesWidget
        */
       if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding, true, true, false, false, false)) {
-        if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+        if (isConflictWithLoadedLibraries(classes)) {
           if (secondAttempt) {
             // clear loadModelCallback classes
             mAutoLoadedLibrariesList.clear();
@@ -5443,6 +5443,30 @@ void LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTree
 }
 
 /*!
+ * \brief LibraryWidget::isConflictWithLoadedLibraries
+ * Checks if there was a version warning and a newly loaded class uses one of the already loaded classes.
+ * A version warning between classes loaded in the same operation is not resolved by unloading all classes, see #18423.
+ * \param classes - the classes loaded before the operation.
+ * \return
+ */
+bool LibraryWidget::isConflictWithLoadedLibraries(const QStringList &classes)
+{
+  if (!MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+    return false;
+  }
+  foreach (const QString &loadedClass, MainWindow::instance()->getOMCProxy()->getClassNames()) {
+    if (!classes.contains(loadedClass)) {
+      foreach (const QList<QString> &usedLibrary, MainWindow::instance()->getOMCProxy()->getUses(loadedClass)) {
+        if (!usedLibrary.isEmpty() && classes.contains(usedLibrary.at(0))) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/*!
  * \brief LibraryWidget::resolveConflictWithLoadedLibraries
  * Check if the library loaded is compatiable with the already loaded libraries.
  * \param library
@@ -6016,7 +6040,7 @@ void LibraryWidget::loadSystemLibrary(const QString &library, QString version, b
     setLoadingLibraries(true);
     QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
     if (MainWindow::instance()->getOMCProxy()->loadModel(library, version, true, "", true)) {
-      if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+      if (isConflictWithLoadedLibraries(classes)) {
         if (secondAttempt) {
           // clear loadModelCallback classes
           mAutoLoadedLibrariesList.clear();
