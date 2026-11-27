@@ -5071,6 +5071,7 @@ public
     protected
       list<Pointer<Equation>> eqns;
     algorithm
+      // TODO make this more efficient by not building an intermediate list
       eqns := list(eqn for eqn guard(not func(eqn)) in toList(equations));
       equations := fromList(eqns);
     end removeCheck;
@@ -5494,6 +5495,7 @@ public
       eqData := match eqData
         case EqData.EQ_DATA_SIM() algorithm
           // we do not want to traverse removed equations, otherwise we could break them
+          // FIXME but we do traverse removed, just traverse eqData.equations once?
           (_, changed) := EquationPointers.mapExp(eqData.simulation, func, funcCrefOpt, changed = changed);
           (_, changed) := EquationPointers.mapExp(eqData.continuous, func, funcCrefOpt, changed = changed);
           (_, changed) := EquationPointers.mapExp(eqData.clocked, func, funcCrefOpt, changed = changed);
