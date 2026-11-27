@@ -2074,8 +2074,13 @@ pub(super) fn build_sim_model(
         meta: chunk_meta,
     } = pool;
     bodies.extend(chunk_fns);
+    let spatial_history = if layout.has_spatial_distribution {
+        Some(rt_index("rt_spatial_history")?)
+    } else {
+        None
+    };
     for s in &splits {
-        bodies[s.slot] = s.thunk(chunk_base);
+        bodies[s.slot] = s.thunk(chunk_base, spatial_history);
     }
     let parmod_tasks: Option<Vec<u32>> = parmod_fns.map(|_| {
         splits[ode_split]

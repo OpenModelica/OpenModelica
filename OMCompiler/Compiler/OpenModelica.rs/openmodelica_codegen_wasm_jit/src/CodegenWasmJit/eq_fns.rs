@@ -137,7 +137,7 @@ pub(super) struct SplitFn {
 }
 
 impl SplitFn {
-    pub(super) fn thunk(&self, chunk_base: u32) -> we::Function {
+    pub(super) fn thunk(&self, chunk_base: u32, spatial_history: Option<u32>) -> we::Function {
         use we::Instruction as I;
         let mut f = we::Function::new([]);
         let mut call = |f: &mut we::Function, idx: u32| {
@@ -145,6 +145,13 @@ impl SplitFn {
                 f.instruction(&I::LocalGet(p));
             }
             f.instruction(&I::Call(idx));
+            if let Some(history) = spatial_history {
+                f.instruction(&I::I32Const(sim_driver::SpatialHistory::Needed as i32));
+                f.instruction(&I::Call(history));
+                f.instruction(&I::If(we::BlockType::Empty));
+                f.instruction(&I::Return);
+                f.instruction(&I::End);
+            }
         };
         for c in &self.pre_calls {
             call(&mut f, *c);

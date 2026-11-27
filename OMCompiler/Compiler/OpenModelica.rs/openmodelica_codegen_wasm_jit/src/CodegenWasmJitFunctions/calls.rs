@@ -23,6 +23,7 @@ pub(crate) fn emit_prof(ctx: &mut FnCtx, clock: Option<u32>, hook: &str) -> Resu
 /// `initialPoints`/`initialValues` are only used during initialization
 /// (`functionInitSpatialDistribution`), as in C.
 pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<metamodelica::Ref<DAE::Exp>>) -> Result<()> {
+    use openmodelica_sim_meta::driver::SpatialHistory;
     use we::Instruction as I;
     let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != 7 {
@@ -47,6 +48,14 @@ pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<metamode
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Load(sim_mem(rel_fresh_off, 2)?));
     ctx.emit(I::Call(rt_index("rt_spatial_value")?));
+    // Do not evaluate later equations with missing transport history.
+    ctx.emit(I::I32Const(SpatialHistory::Needed as i32));
+    ctx.emit(I::Call(rt_index("rt_spatial_history")?));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
+    release_heap_locals(ctx)?;
+    push_outputs(ctx)?;
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
     ctx.emit(I::I32Const(*index));
     ctx.emit(I::Call(rt_index("rt_spatial_out1")?));
     Ok(())

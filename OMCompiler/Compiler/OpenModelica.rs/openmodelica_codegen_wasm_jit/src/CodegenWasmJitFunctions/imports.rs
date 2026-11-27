@@ -477,6 +477,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
         &[WTy::F64],
     ),
     ("rt_spatial_out1", &[WTy::I32], &[WTy::F64]),
+    ("rt_spatial_history", &[WTy::I32], &[WTy::I32]),
     ("rt_spatial_zc", &[WTy::I32, WTy::F64, WTy::I32, WTy::F64], &[WTy::F64]),
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
