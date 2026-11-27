@@ -69,24 +69,7 @@
 #endif
 #endif
 
-// MSVC needs the class explicitly exported so its Qt staticMetaObject (a data
-// symbol) is visible across the OMPlotLib DLL boundary; WINDOWS_EXPORT_ALL_SYMBOLS
-// only covers functions. MinGW exports everything itself, but the users of the
-// DLL need dllimport there too: without it &PlotWindow::closingDown is the address
-// of an import thunk and a function pointer connect() finds no such signal.
-#if defined(_WIN32)
-#  ifdef OMPLOTLIB_LIBRARY
-#    ifdef _MSC_VER
-#      define OMPLOT_EXPORT __declspec(dllexport)
-#    else
-#      define OMPLOT_EXPORT
-#    endif
-#  else
-#    define OMPLOT_EXPORT __declspec(dllimport)
-#  endif
-#else
-#  define OMPLOT_EXPORT
-#endif
+#include "OMPlotExport.h"
 
 namespace OMPlot
 {
