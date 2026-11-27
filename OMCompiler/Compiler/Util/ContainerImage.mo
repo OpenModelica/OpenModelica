@@ -47,6 +47,7 @@ protected
   import StringUtil;
   import System;
   import Util;
+  import Vector;
 
   constant String containerTool = "docker" "Simplify future switch to other container virtualization software, e.g. podman";
 
@@ -128,6 +129,7 @@ public
     String manifestFile;
     JSON manifest;
     JSON descriptor;
+    list<JSON> descriptors;
     JSON digest;
     String digest_sha256_str;
   algorithm
@@ -155,14 +157,25 @@ public
       case JSON.LIST_OBJECT() then JSON.getOrDefault(manifest, "Descriptor", JSON.NULL());
       case JSON.ARRAY()
         algorithm
-          /* A manifest list has one entry per platform, each with the digest of
-           * that platform instead of the digest of the manifest list itself.
+          /* An image index has one entry per platform, each with the digest of
+           * that platform's image. Build attestations are entries with
+           * platform unknown/unknown.
            */
-          Error.addCompilerError("Container image '" + imageName + "' is a multi-platform image, which isn't supported for cross compilation.");
-          Error.addCompilerNotification("Use a reference to a single platform image, e.g. one of the images listed by `" +
-                                        ContainerImage.containerTool + " manifest inspect " + imageName + "`.");
-          System.removeFile(manifestFile);
-        then fail();
+          descriptors := {};
+          for entry in Vector.toList(manifest.values) loop
+            descriptor := JSON.getOrDefault(entry, "Descriptor", JSON.NULL());
+            if not isAttestation(descriptor) then
+              descriptors := descriptor :: descriptors;
+            end if;
+          end for;
+          if listLength(descriptors) <> 1 then
+            Error.addCompilerError("Container image '" + imageName + "' is a multi-platform image, which isn't supported for cross compilation.");
+            Error.addCompilerNotification("Use a reference to a single platform image, e.g. one of the images listed by `" +
+                                          ContainerImage.containerTool + " manifest inspect " + imageName + "`.");
+            System.removeFile(manifestFile);
+            fail();
+          end if;
+        then listHead(descriptors);
       else
         algorithm
           Error.addCompilerError("Failed to retrieve manifest descriptor of container image '" + imageName + "'.");
@@ -258,8 +271,8 @@ public
     hasKnownDigest := match (image.digest, isKnownTag)
       local
         String digest;
-      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1293204639?tag=v1.28.0
-      case (SOME("sha256:7f0038259e8de276384dc1a0d7297f947e8f3dc4457c08d5dced32f2e49599d8"), true) then true;
+      // ghcr.io/openmodelica/crossbuild:v1.28.0, linux/amd64 image, see https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild
+      case (SOME("sha256:0bfe251cd4f31f6452fd50e067b195fad8946e1afc06c2a4f385f9a42d7f67cd"), true) then true;
       case (SOME(digest), true)
       algorithm
         Error.addCompilerWarning("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
@@ -429,6 +442,19 @@ public
   end nameToString;
 
 protected
+  function isAttestation
+    "True if the manifest descriptor is a build attestation and not an image."
+    input JSON descriptor;
+    output Boolean isAttestation;
+  protected
+    JSON platform = JSON.getOrDefault(descriptor, "platform", JSON.NULL());
+  algorithm
+    isAttestation := match (JSON.getOrDefault(platform, "os", JSON.NULL()), JSON.getOrDefault(platform, "architecture", JSON.NULL()))
+      case (JSON.STRING("unknown"), JSON.STRING("unknown")) then true;
+      else false;
+    end match;
+  end isAttestation;
+
   // Helper functions for parsing
   function parseContainerHostPort
     "Parse container host and port string:
