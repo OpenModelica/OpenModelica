@@ -4464,6 +4464,13 @@ package Expression
     output DAE.Exp outExp;
   end expandLets;
 
+  function substituteLet
+    input String name;
+    input DAE.Exp binding;
+    input DAE.Exp body;
+    output DAE.Exp outBody;
+  end substituteLet;
+
   function isAtomic
     input DAE.Exp inExp;
     output Boolean outBoolean;

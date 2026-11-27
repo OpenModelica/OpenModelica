@@ -153,6 +153,8 @@ constant Integer strongComponent_index = 24;
 constant Integer classExtends_index = 25;
 // inferred clock index
 constant Integer inferredClock_index = 31;
+// let names made by the backend
+constant Integer backendDAE_letIndex = 32;
 
 // ----------------------
 

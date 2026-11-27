@@ -79,8 +79,11 @@ protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Dump;
 protected import Flags;
+protected import Global;
 protected import List;
+protected import StringUtil;
 protected import System; // stringReal
+protected import UnorderedMap;
 protected import Types;
 protected import Util;
 
@@ -2310,6 +2313,306 @@ algorithm
       then applyFieldPath(applyExpSubscripts(DAE.RSUB(exp, -1, id, ty), subs), rest);
   end match;
 end applyFieldPath;
+
+public function isLetName
+  "True if the name is bound by a let expression."
+  input String name;
+  output Boolean isLet = StringUtil.startsWith(name, "$let");
+end isLetName;
+
+public function letDerivativeName
+  "The name that a time derivative binds for the derivative of a let name."
+  input String name;
+  output String derName = name + "$DER";
+end letDerivativeName;
+
+public function hasLetCref
+  "True if the expression refers to a name bound by a let expression."
+  input DAE.Exp exp;
+  output Boolean found;
+algorithm
+  (_, found) := traverseExpTopDown(exp, hasLetCrefWork, false);
+end hasLetCref;
+
+protected function hasLetCrefWork
+  input output DAE.Exp exp;
+  output Boolean cont;
+  input output Boolean found;
+algorithm
+  found := found or (match exp
+    local
+      String id;
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)) then isLetName(id);
+    else false;
+  end match);
+  cont := not found;
+end hasLetCrefWork;
+
+public function substituteLet
+  "Replaces the references to the name in the body with the binding."
+  input String name;
+  input DAE.Exp binding;
+  input output DAE.Exp body;
+algorithm
+  (body, _) := traverseExpBottomUp(body, function replaceLetName(name = name, binding = binding), 0);
+end substituteLet;
+
+public function letBindSubExps
+  "Binds the operands of products, quotients, powers and pure calls with let
+   expressions, as their derivatives use them again. Operands in a branch of
+   an if-expression are bound in their branch. Relations, and calls other than
+   pure math functions and pure user functions, are not looked into."
+  input output DAE.Exp exp;
+protected
+  list<tuple<String, DAE.Exp>> bindings;
+algorithm
+  (exp, bindings) := letBindSubExp(exp, {});
+  for b in bindings loop
+    exp := DAE.LET(Util.tuple21(b), Util.tuple22(b), exp);
+  end for;
+end letBindSubExps;
+
+protected function letBindSubExp
+  input DAE.Exp exp;
+  output DAE.Exp outExp;
+  input output list<tuple<String, DAE.Exp>> bindings;
+algorithm
+  outExp := match exp
+    local
+      DAE.Exp e1, e2;
+      DAE.Operator op;
+      list<DAE.Exp> args;
+
+    case DAE.BINARY(operator = op) guard Types.isScalarReal(typeofOp(op))
+      algorithm
+        (e1, bindings) := letBindSubExp(exp.exp1, bindings);
+        (e2, bindings) := letBindSubExp(exp.exp2, bindings);
+        if isNonlinearOperator(op) then
+          (e1, bindings) := letBindOperand(e1, bindings);
+          (e2, bindings) := letBindOperand(e2, bindings);
+        end if;
+      then DAE.BINARY(e1, op, e2);
+
+    case DAE.UNARY(operator = op as DAE.UMINUS()) guard Types.isScalarReal(typeofOp(op))
+      algorithm
+        (e1, bindings) := letBindSubExp(exp.exp, bindings);
+      then DAE.UNARY(op, e1);
+
+    case DAE.CALL() guard isLetBindableCall(exp)
+      algorithm
+        (args, bindings) := List.mapFold(exp.expLst, letBindSubExp, bindings);
+        (args, bindings) := List.mapFold(args, letBindOperand, bindings);
+      then DAE.CALL(exp.path, args, exp.attr);
+
+    case DAE.IFEXP() guard Types.isScalarReal(typeof(exp))
+      then DAE.IFEXP(exp.expCond, letBindSubExps(exp.expThen), letBindSubExps(exp.expElse));
+
+    case DAE.LET()
+      algorithm
+        (e1, bindings) := letBindSubExp(exp.binding, bindings);
+        bindings := (exp.name, e1) :: bindings;
+        (e1, bindings) := letBindSubExp(exp.body, bindings);
+      then e1;
+
+    else exp;
+  end match;
+end letBindSubExp;
+
+protected function letBindOperand
+  input DAE.Exp exp;
+  output DAE.Exp outExp;
+  input output list<tuple<String, DAE.Exp>> bindings;
+protected
+  String name;
+  DAE.Type ty;
+algorithm
+  if isLetBindable(exp) then
+    name := "$let_" + intString(System.tmpTickIndex(Global.backendDAE_letIndex));
+    ty := typeof(exp);
+    outExp := DAE.CREF(DAE.CREF_IDENT(name, ty, {}), ty);
+    bindings := (name, exp) :: bindings;
+  else
+    outExp := exp;
+  end if;
+end letBindOperand;
+
+protected function isLetBindable
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.BINARY() then Types.isScalarReal(typeofOp(exp.operator));
+    case DAE.UNARY(operator = DAE.UMINUS()) then Types.isScalarReal(typeofOp(exp.operator));
+    case DAE.CALL() then isLetBindableCall(exp);
+    case DAE.IFEXP() then Types.isScalarReal(typeof(exp));
+    else false;
+  end match;
+end isLetBindable;
+
+protected function isLetBindableCall
+  "Pure calls with a scalar Real result that do not generate events."
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    local
+      String name;
+    case DAE.CALL(attr = DAE.CALL_ATTR(isImpure = false, isFunctionPointerCall = false, builtin = false))
+      then Types.isScalarReal(exp.attr.ty);
+    case DAE.CALL(path = Absyn.IDENT(name), attr = DAE.CALL_ATTR(builtin = true))
+      then Types.isScalarReal(exp.attr.ty) and listMember(name,
+        {"sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt"});
+    else false;
+  end match;
+end isLetBindableCall;
+
+protected function isNonlinearOperator
+  input DAE.Operator op;
+  output Boolean b;
+algorithm
+  b := match op
+    case DAE.MUL() then true;
+    case DAE.DIV() then true;
+    case DAE.POW() then true;
+    else false;
+  end match;
+end isNonlinearOperator;
+
+public function simplifyLets
+  "Puts the binding of a let expression back into its body when the body uses
+   the name at most one time, or when the binding is a literal or a component
+   reference."
+  input output DAE.Exp exp;
+protected
+  UnorderedMap<String, Integer> counts = UnorderedMap.new<Integer>(stringHashDjb2, stringEqual);
+  list<tuple<String, String>> aliases;
+  String name, target;
+algorithm
+  (_, (counts, aliases)) := traverseExpTopDown(exp, countLetNames, (counts, {}));
+  // a reference to an alias becomes a reference to its target; inner aliases first
+  for a in listReverse(aliases) loop
+    (name, target) := a;
+    UnorderedMap.add(target, UnorderedMap.getOrDefault(target, counts, 0) +
+      UnorderedMap.getOrDefault(name, counts, 0) - 1, counts);
+  end for;
+  (exp, _) := traverseExpTopDown(exp, function simplifyLet(counts = counts), UnorderedMap.new<DAE.Exp>(stringHashDjb2, stringEqual));
+end simplifyLets;
+
+protected function countLetNames
+  "Counts the references to let names that are used: the binding of a let
+   expression is counted only if its body uses the name. Collects the let
+   expressions whose binding is another let name, possibly negated."
+  input output DAE.Exp exp;
+  output Boolean cont = true;
+  input output tuple<UnorderedMap<String, Integer>, list<tuple<String, String>>> arg;
+protected
+  UnorderedMap<String, Integer> counts;
+  list<tuple<String, String>> aliases;
+algorithm
+  () := match exp
+    local
+      String id;
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)) guard isLetName(id)
+      algorithm
+        (counts, _) := arg;
+        UnorderedMap.add(id, UnorderedMap.getOrDefault(id, counts, 0) + 1, counts);
+      then ();
+    case DAE.CREF(componentRef = DAE.CREF_QUAL(ident = id)) guard isLetName(id)
+      algorithm
+        (counts, _) := arg;
+        UnorderedMap.add(id, UnorderedMap.getOrDefault(id, counts, 0) + 1, counts);
+      then ();
+    case DAE.LET()
+      algorithm
+        (_, arg) := traverseExpTopDown(exp.body, countLetNames, arg);
+        (counts, aliases) := arg;
+        if UnorderedMap.getOrDefault(exp.name, counts, 0) > 0 then
+          id := letAliasTarget(exp.binding);
+          if not stringEmpty(id) then
+            arg := (counts, (exp.name, id) :: aliases);
+          end if;
+          (_, arg) := traverseExpTopDown(exp.binding, countLetNames, arg);
+        end if;
+        cont := false;
+      then ();
+    else ();
+  end match;
+end countLetNames;
+
+protected function letAliasTarget
+  "The let name that a binding is, possibly negated, or the empty string."
+  input DAE.Exp binding;
+  output String name;
+algorithm
+  name := match binding
+    local
+      String id;
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id, subscriptLst = {})) guard isLetName(id) then id;
+    case DAE.UNARY(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id, subscriptLst = {}))) guard isLetName(id) then id;
+    else "";
+  end match;
+end letAliasTarget;
+
+protected function simplifyLet
+  "Removes a let expression whose name is used at most one time or whose
+   binding is simple, and replaces the references to the name. Loops, as the
+   traversal does not visit the expression that replaces a node."
+  input output DAE.Exp exp;
+  output Boolean cont = true;
+  input output UnorderedMap<String, DAE.Exp> inlined;
+  input UnorderedMap<String, Integer> counts;
+protected
+  Boolean changed = true;
+  Integer n;
+  String id;
+  DAE.Exp e;
+algorithm
+  while changed loop
+    (exp, changed) := match exp
+      case DAE.LET()
+        algorithm
+          n := UnorderedMap.getOrDefault(exp.name, counts, 0);
+          if n > 1 and not isSimpleLetBinding(exp.binding) then
+            e := exp;
+          else
+            if n > 0 then
+              UnorderedMap.add(exp.name, exp.binding, inlined);
+            end if;
+            e := exp.body;
+          end if;
+        then (e, not referenceEq(e, exp));
+
+      case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)) guard UnorderedMap.contains(id, inlined)
+        algorithm
+          (e, _) := replaceLetName(exp, 0, id, UnorderedMap.getOrFail(id, inlined));
+        then (e, true);
+
+      case DAE.CREF(componentRef = DAE.CREF_QUAL(ident = id)) guard UnorderedMap.contains(id, inlined)
+        algorithm
+          (e, _) := replaceLetName(exp, 0, id, UnorderedMap.getOrFail(id, inlined));
+        then (e, true);
+
+      else (exp, false);
+    end match;
+  end while;
+end simplifyLet;
+
+protected function isSimpleLetBinding
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.CREF() then true;
+    case DAE.UNARY(exp = DAE.RCONST()) then true;
+    case DAE.UNARY(exp = DAE.CREF()) then true;
+    case DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF()}) then true;
+    case DAE.CALL(path = Absyn.IDENT("pre"), expLst = {DAE.CREF()}) then true;
+    else false;
+  end match;
+end isSimpleLetBinding;
 
 public function typeof "Retrieves the Type of the Expression"
   input DAE.Exp inExp;

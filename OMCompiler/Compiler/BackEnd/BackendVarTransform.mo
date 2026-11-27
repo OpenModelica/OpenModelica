@@ -1003,6 +1003,14 @@ algorithm
         (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
       then
         (if c1 then DAE.UNBOX(e1_1,tp) else inExp, c1);
+    case (DAE.LET(binding = e1, body = e2),cond)
+        guard replaceExpCond(cond, inExp)
+      algorithm
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
+        c := c1 or c2;
+      then
+        (if c then DAE.LET(inExp.name, e1_1, e2_1) else inExp, c);
     else
       then (inExp,false);
   end match;

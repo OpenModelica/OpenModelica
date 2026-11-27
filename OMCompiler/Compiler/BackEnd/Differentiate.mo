@@ -158,7 +158,7 @@ algorithm
     diffData := BackendDAE.emptyInputData;
     diffData.dependenentVars := SOME(inVariables);
     diffData.knownVars := SOME(knvars);
-    (dexp, funcs) := differentiateExp(inExp, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs, defaultMaxIter);
+    (dexp, funcs) := differentiateExpShared(inExp, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs, defaultMaxIter);
     (outExp, _) := ExpressionSimplify.simplify(dexp);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
@@ -315,10 +315,10 @@ algorithm
     // equations
     case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)
       algorithm
-        (e1_1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter);
+        (e1_1, funcs) := differentiateExpShared(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter);
         (e1_1, _) := ExpressionSimplify.simplify(e1_1);
 
-        (e2_1, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter);
+        (e2_1, funcs) := differentiateExpShared(e2, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter);
         (e2_1, _) := ExpressionSimplify.simplify(e2_1);
 
         op1 := DAE.OP_DIFFERENTIATE(inDiffwrtCref, e1, e1_1);
@@ -336,7 +336,7 @@ algorithm
         (e1_1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter);
         (e1_1, _) := ExpressionSimplify.simplify(e1_1);
 
-        (e2_1, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter);
+        (e2_1, funcs) := differentiateExpShared(e2, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter);
         (e2_1, _) := ExpressionSimplify.simplify(e2_1);
 
         op1 := DAE.OP_DIFFERENTIATE(inDiffwrtCref, e1, e1_1);
@@ -350,7 +350,7 @@ algorithm
     case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=eqAttr)
       algorithm
 
-        (e1_1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter);
+        (e1_1, funcs) := differentiateExpShared(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter);
         (e1_1, _) := ExpressionSimplify.simplify(e1_1);
 
         op1 := DAE.OP_DIFFERENTIATE(inDiffwrtCref, e1, e1_1);
@@ -640,6 +640,11 @@ algorithm
     case DAE.ICONST() then (DAE.ICONST(0), inFunctionTree);
     case DAE.RCONST() then (DAE.RCONST(0.0), inFunctionTree);
 
+    // a let expression is closed, so the name is bound by an enclosing let
+    case DAE.CREF(componentRef=DAE.CREF_IDENT(ident=s1, subscriptLst={}), ty=tp)
+      guard isTimeDifferentiation(inDiffType) and Expression.isLetName(s1)
+      then (DAE.CREF(DAE.CREF_IDENT(Expression.letDerivativeName(s1), tp, {}), tp), inFunctionTree);
+
     case DAE.CREF(componentRef=cref, ty=tp) algorithm
       if ComponentReference.isStartCref(cref) then
         // differentiate start value
@@ -756,6 +761,9 @@ algorithm
         end if;
       then (res, functionTree);
 
+    case DAE.LET() guard isTimeDifferentiation(inDiffType)
+      then differentiateLet(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+
     case DAE.LET()
       then differentiateExp(Expression.expandLets(inExp), inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
 
@@ -815,6 +823,66 @@ algorithm
   end match;
   if debug then print("Differentiate-Exp-result: " + ExpressionBasics.printExpStr(outDiffedExp) + "\n"); end if;
 end differentiateExp;
+
+protected function differentiateLet
+  "d(let v = e in b) = let v = e in let v$DER = de in db, where db uses v$DER
+   for the derivative of v. A body that already binds v$DER is kept as it is."
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inDiffwrtCref;
+  input BackendDAE.DifferentiateInputData inInputData;
+  input BackendDAE.DifferentiationType inDiffType;
+  input AvlTreePathFunction.Tree inFunctionTree;
+  input Integer maxIter;
+  output DAE.Exp outExp;
+  output AvlTreePathFunction.Tree outFunctionTree;
+protected
+  String name, der_name;
+  DAE.Exp binding, body, der_binding, der_body;
+algorithm
+  DAE.LET(name = name, binding = binding, body = body) := inExp;
+  der_name := Expression.letDerivativeName(name);
+  (der_body, outFunctionTree) := differentiateExp(body, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+
+  outExp := match body
+    case DAE.LET() guard body.name == der_name then DAE.LET(name, binding, der_body);
+    else
+      algorithm
+        (der_binding, outFunctionTree) := differentiateExp(binding, inDiffwrtCref, inInputData, inDiffType, outFunctionTree, maxIter);
+        (der_binding, _) := ExpressionSimplify.simplify(der_binding);
+      then DAE.LET(name, binding, DAE.LET(der_name, der_binding, der_body));
+  end match;
+end differentiateLet;
+
+protected function isTimeDifferentiation
+  input BackendDAE.DifferentiationType diffType;
+  output Boolean b;
+algorithm
+  b := match diffType
+    case BackendDAE.DIFFERENTIATION_TIME() then true;
+    else false;
+  end match;
+end isTimeDifferentiation;
+
+protected function differentiateExpShared
+  "Differentiates an expression with respect to time. The subexpressions are
+   bound with let expressions first, so that the derivative refers to them and
+   does not copy them. The bindings that are not shared are put back."
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inDiffwrtCref;
+  input BackendDAE.DifferentiateInputData inInputData;
+  input BackendDAE.DifferentiationType inDiffType;
+  input AvlTreePathFunction.Tree inFunctionTree;
+  input Integer maxIter;
+  output DAE.Exp outExp;
+  output AvlTreePathFunction.Tree outFunctionTree;
+algorithm
+  if isTimeDifferentiation(inDiffType) then
+    (outExp, outFunctionTree) := differentiateExp(Expression.letBindSubExps(inExp), inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+    (outExp, _) := ExpressionSimplify.simplify(Expression.simplifyLets(outExp));
+  else
+    (outExp, outFunctionTree) := differentiateExp(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+  end if;
+end differentiateExpShared;
 
 protected function differentiateStatements
   input list<DAE.Statement> inStmts;
@@ -2506,7 +2574,7 @@ algorithm
       algorithm
         failure(BackendDAE.DIFF_FULL_JACOBIAN() := inDiffType);
         (e,_,true) := Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
-        (e, functions) := differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+        (e, functions) := differentiateExpShared(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
         (e, functions);
 

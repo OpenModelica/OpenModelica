@@ -174,6 +174,7 @@ algorithm
 
     orderedEqs := syst.orderedEqs;
     orderedVars := syst.orderedVars;
+    (orderedEqs, _) := BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, expandCallLets, functionTree);
 
     // Phase 1: Analysis
     (HT, exarray, cseIndex, index, _) := BackendEquation.traverseEquationArray(orderedEqs, wrapFunctionCalls_analysis, (HT, exarray, cseIndex, index, functionTree));
@@ -886,6 +887,10 @@ algorithm
     guard isSkipCase(inExp, functionTree)
     then false;
 
+    // a call that uses a let name cannot leave the let expression
+    case DAE.CALL() guard Expression.hasLetCref(inExp) then true;
+    case DAE.TSUB(exp = DAE.CALL()) guard Expression.hasLetCref(inExp) then true;
+
     case tsub as DAE.TSUB(exp=call as DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(types=types))), ix=ix, ty=ty) algorithm
       if not BaseHashTable.hasKey(call, HT) then
         index := index + 1;
@@ -937,6 +942,49 @@ algorithm
 
   outTuple := (HT, exarray, cseIndex, index, functionTree);
 end wrapFunctionCalls_analysis3;
+
+protected function expandCallLets
+  "Puts back the lets that bind a call that wrapFunctionCalls shares itself."
+  input output BackendDAE.Equation eq;
+  input output AvlTreePathFunction.Tree functionTree;
+algorithm
+  (eq, functionTree) := BackendEquation.traverseExpsOfEquation(eq, expandCallLetsExp, functionTree);
+end expandCallLets;
+
+protected function expandCallLetsExp
+  input output DAE.Exp exp;
+  input output AvlTreePathFunction.Tree functionTree;
+algorithm
+  (exp, functionTree) := Expression.traverseExpTopDown(exp, expandCallLet, functionTree);
+end expandCallLetsExp;
+
+protected function expandCallLet
+  input DAE.Exp inExp;
+  input AvlTreePathFunction.Tree functionTree;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont;
+  output AvlTreePathFunction.Tree outFunctionTree = functionTree;
+protected
+  Boolean expand = true;
+algorithm
+  while expand loop
+    (outExp, expand) := match outExp
+      local
+        String name;
+        DAE.Exp binding, body;
+      case DAE.LET(name = name, binding = binding as DAE.CALL(), body = body)
+        guard not (isSkipCase(binding, functionTree) or Expression.hasLetCref(binding))
+        then (Expression.substituteLet(name, binding, body), true);
+      else (outExp, false);
+    end match;
+  end while;
+
+  // the same subexpressions as wrapFunctionCalls_analysis3
+  cont := match outExp
+    case DAE.IFEXP() then false;
+    else not isSkipCase(outExp, functionTree);
+  end match;
+end expandCallLet;
 
 protected function getTheRightPattern
   input DAE.Exp inExp1;

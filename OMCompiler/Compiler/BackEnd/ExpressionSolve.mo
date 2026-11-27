@@ -309,6 +309,8 @@ algorithm
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
     case _ then solveWork(inExp1, inExp2, inExp3, functions, NONE(), 0, false, false);
+    case _ guard Expression.hasLetCref(inExp1) or Expression.hasLetCref(inExp2)
+      then solveWork(Expression.expandLets(inExp1), Expression.expandLets(inExp2), inExp3, functions, NONE(), 0, false, false);
     else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionBasics.printExpStr(inExp3) + "\"", sourceInfo());
@@ -345,6 +347,8 @@ algorithm
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
     case _ then solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0, doInline, isContinuousIntegration);
+    case _ guard Expression.hasLetCref(inExp1) or Expression.hasLetCref(inExp2)
+      then solveWork(Expression.expandLets(inExp1), Expression.expandLets(inExp2), inExp3, functions, uniqueEqIndex, 0, doInline, isContinuousIntegration);
     else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionBasics.printExpStr(inExp3) + "\"", sourceInfo());

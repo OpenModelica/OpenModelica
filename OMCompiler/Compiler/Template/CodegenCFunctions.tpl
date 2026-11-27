@@ -8251,7 +8251,19 @@ template daeExpLet(Exp exp, Context context, Text &preExp,
         let &preExp += '<%rcReleaseBefore(ty, var)%><%var%> = <%b%>;<%rcArrayRetain(ty, var)%><%\n%>'
         daeExp(letBody, context, &preExp, &varDecls, &varFrees, &auxFunction)
       else daeExp(expandLets(exp), context, &preExp, &varDecls, &varFrees, &auxFunction)
-    else daeExp(expandLets(exp), context, &preExp, &varDecls, &varFrees, &auxFunction)
+    else
+      match typeof(letBinding)
+      case T_REAL(__)
+      case T_INTEGER(__)
+      case T_BOOL(__) then
+        // a fresh name, as one let can be emitted more than once in a function
+        let name = '<%letName%>$<%System.tmpTick()%>'
+        let var = contextIteratorName(name, context)
+        let &varDecls += '<%ty%> <%var%>;<%\n%>'
+        let b = daeExp(letBinding, context, &preExp, &varDecls, &varFrees, &auxFunction)
+        let &preExp += '<%var%> = <%b%>;<%\n%>'
+        daeExp(substituteLet(letName, makeCrefExp(makeUntypedCrefIdent(name), typeof(letBinding)), letBody), context, &preExp, &varDecls, &varFrees, &auxFunction)
+      else daeExp(expandLets(exp), context, &preExp, &varDecls, &varFrees, &auxFunction)
 end daeExpLet;
 
 template daeExpRsub(Exp inExp, Context context, Text &preExp,
