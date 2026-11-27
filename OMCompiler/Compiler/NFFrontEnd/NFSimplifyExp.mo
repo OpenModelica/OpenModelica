@@ -657,43 +657,37 @@ algorithm
   Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters) := call;
   iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in iters);
 
-  outExp := matchcontinue iters
-    case {(iter, e)}
-      algorithm
-        Type.ARRAY(dimensions = {dim}) := Expression.typeOf(e);
-        dim_size := Dimension.size(dim);
+  try
+    {(iter, e)} := iters;
+    Type.ARRAY(dimensions = {dim}) := Expression.typeOf(e);
+    dim_size := Dimension.size(dim);
 
-        if dim_size == 0 then
-          // Result is Array[0], return empty array expression.
-          outExp := Expression.makeEmptyArray(ty);
-        elseif dim_size == 1 then
-          // Result is Array[1], return array with the single element.
-          e := ExpandExp.expand(e);
-          e := Expression.arrayScalarElement(e);
-          exp := Expression.replaceIterator(exp, iter, e);
-          exp := Expression.makeArray(ty, listArray({exp}));
-          outExp := simplify(exp);
-        elseif Expression.isLiteral(e) and isIteratorSubscriptedArray(exp, iter) then
-          // If the iterator is only used to subscript array expressions like
-          // {{1, 2, 3}[i] for i in 1:3}, then we might as well expand it.
-          (outExp, expanded) := ExpandExp.expandArrayConstructor(exp, ty, iters);
+    if dim_size == 0 then
+      // Result is Array[0], return empty array expression.
+      outExp := Expression.makeEmptyArray(ty);
+    elseif dim_size == 1 then
+      // Result is Array[1], return array with the single element.
+      e := ExpandExp.expand(e);
+      e := Expression.arrayScalarElement(e);
+      exp := Expression.replaceIterator(exp, iter, e);
+      exp := Expression.makeArray(ty, listArray({exp}));
+      outExp := simplify(exp);
+    elseif Expression.isLiteral(e) and isIteratorSubscriptedArray(exp, iter) then
+      // If the iterator is only used to subscript array expressions like
+      // {{1, 2, 3}[i] for i in 1:3}, then we might as well expand it.
+      (outExp, expanded) := ExpandExp.expandArrayConstructor(exp, ty, iters);
 
-          if expanded then
-            outExp := simplify(outExp);
-          end if;
-        else
-          fail();
-        end if;
-      then
-        outExp;
-
+      if expanded then
+        outExp := simplify(outExp);
+      end if;
     else
-      algorithm
-        exp := simplify(exp);
-        ty := Type.simplify(ty);
-      then
-        Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters));
-  end matchcontinue;
+      fail();
+    end if;
+  else
+    exp := simplify(exp);
+    ty := Type.simplify(ty);
+    outExp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters));
+  end try;
 end simplifyArrayConstructor;
 
 function isIteratorSubscriptedArray

@@ -5376,10 +5376,11 @@ public
     input Expression arrayExp;
     output Boolean allEqual;
   algorithm
-    allEqual := matchcontinue arrayExp
-      case ARRAY() then arrayAllEqual2(arrayExp, arrayFirstScalar(arrayExp));
-      else true;
-    end matchcontinue;
+    try
+      allEqual := arrayAllEqual2(arrayExp, arrayFirstScalar(arrayExp));
+    else
+      allEqual := false;
+    end try;
   end arrayAllEqual;
 
   function arrayAllEqual2

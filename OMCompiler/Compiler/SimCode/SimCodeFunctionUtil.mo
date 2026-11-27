@@ -972,7 +972,7 @@ algorithm
       algorithm
         // skip over known external C functions @adrpo: we should skip ONLY IF THE NAME OF THE FUNCTION IS THE SAME AS THE NAME OF THE EXTERNAL FUNCTION!
         fname := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
-        b := listMember(name, SCodeUtil.knownExternalCFunctions) and stringEq(fname, name);
+        b := stringEq(fname, name) and SCodeUtil.isKnownExternalCFunction(name);
         if not b then
           (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap, extStructs);
           accfns := fn :: accfns;

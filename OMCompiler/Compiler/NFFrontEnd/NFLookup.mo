@@ -444,31 +444,30 @@ protected
   InstNode node;
   Boolean is_iterator;
 algorithm
-  (foundCref, foundScope, state) := matchcontinue cref
-    case Absyn.ComponentRef.CREF_IDENT()
-      algorithm
-        (node, foundScope) := lookupLocalSimpleCref(cref.name, scope);
-        state := LookupState.nodeState(node);
-      then
-        (ComponentRef.fromAbsyn(node, cref.subscripts), foundScope, state);
+  try
+    (foundCref, foundScope, state) := match cref
+      case Absyn.ComponentRef.CREF_IDENT()
+        algorithm
+          (node, foundScope) := lookupLocalSimpleCref(cref.name, scope);
+          state := LookupState.nodeState(node);
+        then
+          (ComponentRef.fromAbsyn(node, cref.subscripts), foundScope, state);
 
-    case Absyn.ComponentRef.CREF_QUAL()
-      algorithm
-        (node, foundScope, is_iterator) := lookupLocalSimpleCref(cref.name, scope);
-        state := LookupState.nodeState(node);
-        foundCref := ComponentRef.fromAbsyn(node, cref.subscripts, isIterator = is_iterator);
-        (foundCref, foundScope, state) :=
-          lookupCrefInNode(cref.componentRef, node, is_iterator, foundCref, foundScope, state, context);
-      then
-        (foundCref, foundScope, state);
-
-    else
-      algorithm
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
-          {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
-      then
-        fail();
-  end matchcontinue;
+      case Absyn.ComponentRef.CREF_QUAL()
+        algorithm
+          (node, foundScope, is_iterator) := lookupLocalSimpleCref(cref.name, scope);
+          state := LookupState.nodeState(node);
+          foundCref := ComponentRef.fromAbsyn(node, cref.subscripts, isIterator = is_iterator);
+          (foundCref, foundScope, state) :=
+            lookupCrefInNode(cref.componentRef, node, is_iterator, foundCref, foundScope, state, context);
+        then
+          (foundCref, foundScope, state);
+    end match;
+  else
+    Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+      {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
+    fail();
+  end try;
 end lookupLocalCref;
 
 function lookupInner

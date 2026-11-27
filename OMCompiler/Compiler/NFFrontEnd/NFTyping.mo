@@ -520,28 +520,20 @@ function makeRecordType
   input NFInstNode.ScopeRef constructor;
   output ComplexType recordTy;
 protected
-  CachedData cache;
+  list<Function> funcs;
   Function fn;
   array<Record.Field> fields;
   UnorderedMap<String, Integer> indexMap;
 algorithm
-  cache := InstNode.getFuncCache(InstNode.borrow(constructor));
-
-  recordTy := matchcontinue cache
-    case CachedData.FUNCTION()
-      algorithm
-        fn := List.find(cache.funcs, Function.isDefaultRecordConstructor);
-        (fields, indexMap) := Record.collectRecordFields(InstNode.fromHandle(fn.node));
-      then
-        ComplexType.RECORD(constructor, fields, indexMap);
-
-    else
-      algorithm
-        Error.terminate(getInstanceName() +
-          " got record type without constructor", sourceInfo());
-      then
-        fail();
-  end matchcontinue;
+  try
+    CachedData.FUNCTION(funcs = funcs) := InstNode.getFuncCache(InstNode.borrow(constructor));
+    fn := List.find(funcs, Function.isDefaultRecordConstructor);
+    (fields, indexMap) := Record.collectRecordFields(InstNode.fromHandle(fn.node));
+    recordTy := ComplexType.RECORD(constructor, fields, indexMap);
+  else
+    Error.terminate(getInstanceName() +
+      " got record type without constructor", sourceInfo());
+  end try;
 end makeRecordType;
 
 function typeComponent

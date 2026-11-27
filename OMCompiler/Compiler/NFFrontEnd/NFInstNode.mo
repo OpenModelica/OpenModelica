@@ -1365,16 +1365,15 @@ uniontype InstNode
     input InstNode node;
     output SourceInfo info;
   algorithm
-    info := matchcontinue node
+    info := match node
       local
         InstNodeType ty;
       case CLASS_NODE(nodeType = ty as InstNodeType.BASE_CLASS())
         then SCodeUtil.elementInfo(ty.definition);
       case CLASS_NODE() then SCodeUtil.elementInfo(node.definition);
       case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
-      case COMPONENT_NODE() then info(fromCell(node.parent));
       else Absyn.dummyInfo;
-    end matchcontinue;
+    end match;
   end info;
 
   function getType

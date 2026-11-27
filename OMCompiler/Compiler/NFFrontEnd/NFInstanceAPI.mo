@@ -2081,29 +2081,6 @@ algorithm
   end match;
 end dumpJSONSCodeMod_impl;
 
-function dumpJSONRedeclareType
-  input SCode.Element element;
-  input InstNode scope;
-  input output JSON json;
-protected
-  Absyn.Path path;
-  InstContext.Type context;
-  InstNode cls;
-algorithm
-  () := matchcontinue element
-    case SCode.Element.COMPONENT()
-      algorithm
-        path := AbsynUtil.typeSpecPath(element.typeSpec);
-        context := InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP);
-        cls := Lookup.lookupName(path, scope, context, checkAccessViolations = false);
-        json := JSON.addPair("$type", dumpJSONNodePath(cls), json);
-      then
-        ();
-
-    else ();
-  end matchcontinue;
-end dumpJSONRedeclareType;
-
 function dumpJSONSCodeElement
   input SCode.Element element;
   input InstNode scope;

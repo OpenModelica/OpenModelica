@@ -812,24 +812,19 @@ protected function ord
   input PotentialRoot inEl2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue(inEl1, inEl2)
+  outBoolean := match (inEl1, inEl2)
     local
       Real r1, r2;
       ComponentRef c1, c2;
       String s1, s2;
 
     case((c1,r1), (c2,r2)) // if equal order by cref
-      algorithm
-        true := realEq(r1, r2);
-        s1 := ComponentRef.toString(c1);
-        s2 := ComponentRef.toString(c2);
-        1 := stringCompare(s1, s2);
-      then
-        true;
+      guard realEq(r1, r2)
+      then ComponentRef.compare(c1, c2) == 1;
 
     case((_,r1), (_,r2))
       then r1 > r2;
-  end matchcontinue;
+  end match;
 end ord;
 
 protected function addPotentialRootsToTable
@@ -838,27 +833,20 @@ protected function addPotentialRootsToTable
   input PotentialRoots potentialRoots;
   input DefiniteRoots roots;
   input ComponentRef firstRoot;
-  output DefiniteRoots outRoots;
+  output DefiniteRoots outRoots = roots;
+protected
+  ComponentRef potential_root, canon1, canon2;
 algorithm
-  outRoots := matchcontinue potentialRoots
-    local
-      ComponentRef potentialRoot, canon1, canon2;
-      DefiniteRoots finalRoots;
-      PotentialRoots tail;
+  canon2 := canonical(table, firstRoot);
 
-    case {} then roots;
-    case (potentialRoot,_)::tail
-      algorithm
-        canon1 := canonical(table, potentialRoot);
-        canon2 := canonical(table, firstRoot);
-        true := connectCanonicalComponents(table, canon1, canon2);
-        finalRoots := addPotentialRootsToTable(table, tail, potentialRoot::roots, firstRoot);
-      then finalRoots;
-    case _::tail
-      algorithm
-        finalRoots := addPotentialRootsToTable(table, tail, roots, firstRoot);
-      then finalRoots;
-  end matchcontinue;
+  for p in potentialRoots loop
+    (potential_root, _) := p;
+    canon1 := canonical(table, potential_root);
+
+    if connectCanonicalComponents(table, canon1, canon2) then
+      outRoots := potential_root :: outRoots;
+    end if;
+  end for;
 end addPotentialRootsToTable;
 
 protected function addConnections
@@ -1000,7 +988,7 @@ protected function makeTuple
   input list<list<String>> inLstLst;
   output list<tuple<String,String>> outLst;
 algorithm
-  outLst := matchcontinue inLstLst
+  outLst := match inLstLst
     local
       String c1,c2;
       list<list<String>> rest;
@@ -1036,7 +1024,7 @@ algorithm
         lst := makeTuple(rest);
       then
         lst;
-  end matchcontinue;
+  end match;
 end makeTuple;
 
 protected function printPotentialRootTuple
@@ -1328,19 +1316,17 @@ protected function getRooted
   input ComponentRef cref2;
   input CrefIndexTable rooted;
   output Boolean result;
+protected
+  Integer i1, i2;
 algorithm
-  result := matchcontinue rooted
-    local
-      Integer i1,i2;
-    case _
-      algorithm
-        i1 := UnorderedMap.getOrFail(cref1,rooted);
-        i2 := UnorderedMap.getOrFail(cref2,rooted);
-      then
-        intLt(i1,i2);
+  try
+    i1 := UnorderedMap.getOrFail(cref1, rooted);
+    i2 := UnorderedMap.getOrFail(cref2, rooted);
+    result := i1 <= i2;
+  else
     // in fail case return true
-    else true;
-  end matchcontinue;
+    result := true;
+  end try;
 end getRooted;
 
 protected function getEdge
@@ -1640,152 +1626,135 @@ protected function generateGraphViz
   input DefiniteRoots finalRoots;
   input FlatEdges broken;
   output String brokenConnectsViaGraphViz;
+protected
+  String fileName, i, nrDR, nrPR, nrUR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr;
+  Real tStart, tEnd, t;
+  IOStream.IOStream graphVizStream;
+  list<String> infoNode;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue broken
-    local
-      String fileName, i, nrDR, nrPR, nrUR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
-      Real tStart, tEnd, t;
-      IOStream.IOStream graphVizStream;
-      list<String> infoNode;
+  // don't do anything if we don't have -d=cgraphGraphVizFile or -d=cgraphGraphVizShow
+  if not (Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE) or Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW)) then
+    brokenConnectsViaGraphViz := "";
+    return;
+  end if;
 
-    // don't do anything if we don't have -d=cgraphGraphVizFile or -d=cgraphGraphVizShow
-    case _
-      algorithm
-        false := boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
-      then
-        "";
+  tStart := clock();
+  i := "\t";
+  fileName := stringAppend(modelNameQualified, ".gv");
+  // create a stream
+  graphVizStream := IOStream.create(fileName, IOStream.LIST());
+  nrDR := intString(listLength(definiteRoots));
+  nrPR := intString(listLength(potentialRoots));
+  nrUR := intString(listLength(uniqueRoots));
+  nrBR := intString(listLength(branches));
+  nrCO := intString(listLength(connections));
+  nrFR := intString(listLength(finalRoots));
+  nrBC := intString(listLength(broken));
 
-    case _
-      algorithm
-        tStart := clock();
-        i := "\t";
-        fileName := stringAppend(modelNameQualified, ".gv");
-        // create a stream
-        graphVizStream := IOStream.create(fileName, IOStream.LIST());
-        nrDR := intString(listLength(definiteRoots));
-        nrPR := intString(listLength(potentialRoots));
-        nrUR := intString(listLength(uniqueRoots));
-        nrBR := intString(listLength(branches));
-        nrCO := intString(listLength(connections));
-        nrFR := intString(listLength(finalRoots));
-        nrBC := intString(listLength(broken));
+  infoNode :=
+  {
+    "// Generated by OpenModelica.\n",
+    "// Overconstrained connection graph for model:\n//    ", modelNameQualified, "\n",
+    "//\n",
+    "// Summary:\n",
+    "//   Roots:              ", nrDR, "\n",
+    "//   Potential Roots:    ", nrPR, "\n",
+    "//   Unique Roots:       ", nrUR, "\n",
+    "//   Branches:           ", nrBR, "\n",
+    "//   Connections:        ", nrCO, "\n",
+    "//   Final Roots:        ", nrFR, "\n",
+    "//   Broken Connections: ", nrBC, "\n"
+  };
+  infoNodeStr := stringAppendList(infoNode);
+  // replace \n with \\l (left align), replace \t with " "
+  infoNodeStr := System.stringReplace(infoNodeStr, "\n", "\\l"); infoNodeStr := System.stringReplace(infoNodeStr, "\t", " ");
+  // replace / with ""
+  infoNodeStr := System.stringReplace(infoNodeStr, "/", "");
 
-        infoNode :=
-        {
-          "// Generated by OpenModelica.\n",
-          "// Overconstrained connection graph for model:\n//    ", modelNameQualified, "\n",
-          "//\n",
-          "// Summary:\n",
-          "//   Roots:              ", nrDR, "\n",
-          "//   Potential Roots:    ", nrPR, "\n",
-          "//   Unique Roots:       ", nrUR, "\n",
-          "//   Branches:           ", nrBR, "\n",
-          "//   Connections:        ", nrCO, "\n",
-          "//   Final Roots:        ", nrFR, "\n",
-          "//   Broken Connections: ", nrBC, "\n"
-        };
-        infoNodeStr := stringAppendList(infoNode);
-        // replace \n with \\l (left align), replace \t with " "
-        infoNodeStr := System.stringReplace(infoNodeStr, "\n", "\\l"); infoNodeStr := System.stringReplace(infoNodeStr, "\t", " ");
-        // replace / with ""
-        infoNodeStr := System.stringReplace(infoNodeStr, "/", "");
+  // output header
+  graphVizStream := IOStream.appendList(graphVizStream,infoNode);
+  // output command to be used
+  // output graphviz header
+  graphVizStream := IOStream.appendList(graphVizStream,{"\n\n"});
+  graphVizStream := IOStream.appendList(graphVizStream, {"graph \"", modelNameQualified, "\"\n{\n\n"});
 
-        // output header
-        graphVizStream := IOStream.appendList(graphVizStream,infoNode);
-        // output command to be used
-        // output graphviz header
-        graphVizStream := IOStream.appendList(graphVizStream,{"\n\n"});
-        graphVizStream := IOStream.appendList(graphVizStream, {"graph \"", modelNameQualified, "\"\n{\n\n"});
+  // output global settings
+  graphVizStream := IOStream.appendList(graphVizStream, {i, "overlap=false;\n"});
+  graphVizStream := IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});
 
-        // output global settings
-        graphVizStream := IOStream.appendList(graphVizStream, {i, "overlap=false;\n"});
-        graphVizStream := IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});
+  // output settings for nodes
+  graphVizStream := IOStream.appendList(graphVizStream, {i, "node [",
+     "fillcolor = \"lightsteelblue1\", ",
+     "shape = box, ",
+     "style = \"bold, filled\", ",
+     "rank = \"max\"","]\n\n"});
+  // output settings for edges
+  graphVizStream := IOStream.appendList(graphVizStream, {i, "edge [",
+     "color = \"black\", ",
+     "style = bold",
+     "]\n\n"});
 
-        // output settings for nodes
-        graphVizStream := IOStream.appendList(graphVizStream, {i, "node [",
-           "fillcolor = \"lightsteelblue1\", ",
-           "shape = box, ",
-           "style = \"bold, filled\", ",
-           "rank = \"max\"","]\n\n"});
-        // output settings for edges
-        graphVizStream := IOStream.appendList(graphVizStream, {i, "edge [",
-           "color = \"black\", ",
-           "style = bold",
-           "]\n\n"});
+  // output summary node
+  graphVizStream := IOStream.appendList(graphVizStream, {i, "graph [fontsize=20, fontname = \"Courier Bold\" label= \"\\n\\n", infoNodeStr, "\", size=\"6,6\"];\n", i});
 
-        // output summary node
-        graphVizStream := IOStream.appendList(graphVizStream, {i, "graph [fontsize=20, fontname = \"Courier Bold\" label= \"\\n\\n", infoNodeStr, "\", size=\"6,6\"];\n", i});
+  // output definite roots
+  graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});
+  graphVizStream := IOStream.appendList(graphVizStream, List.map1(definiteRoots, graphVizDefiniteRoot, finalRoots));
+  // output potential roots
+  graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});
+  graphVizStream := IOStream.appendList(graphVizStream, List.map1(potentialRoots, graphVizPotentialRoot, finalRoots));
 
-        // output definite roots
-        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});
-        graphVizStream := IOStream.appendList(graphVizStream, List.map1(definiteRoots, graphVizDefiniteRoot, finalRoots));
-        // output potential roots
-        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});
-        graphVizStream := IOStream.appendList(graphVizStream, List.map1(potentialRoots, graphVizPotentialRoot, finalRoots));
+  // output branches
+  graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Branches (Connections.branch)", "\n", i});
+  graphVizStream := IOStream.appendList(graphVizStream, List.map(branches, graphVizEdge));
 
-        // output branches
-        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Branches (Connections.branch)", "\n", i});
-        graphVizStream := IOStream.appendList(graphVizStream, List.map(branches, graphVizEdge));
+  // output connections
+  graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Connections (connect)", "\n", i});
+  graphVizStream := IOStream.appendList(graphVizStream, List.map1(connections, graphVizFlatEdge, broken));
 
-        // output connections
-        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Connections (connect)", "\n", i});
-        graphVizStream := IOStream.appendList(graphVizStream, List.map1(connections, graphVizFlatEdge, broken));
-
-        // output graphviz footer
-        graphVizStream := IOStream.appendList(graphVizStream, {"\n}\n"});
-        tEnd := clock();
-        t := tEnd - tStart;
-        timeStr := realString(t);
-        graphVizStream := IOStream.appendList(graphVizStream, {"\n\n\n// graph generation took: ", timeStr, " seconds\n"});
-        System.writeFile(fileName, IOStream.string(graphVizStream));
-        print("GraphViz with connection graph for model: " + modelNameQualified + " was writen to file: " + fileName + "\n");
-        brokenConnects := showGraphViz(fileName, modelNameQualified);
-      then
-        brokenConnects;
-
-  end matchcontinue;
+  // output graphviz footer
+  graphVizStream := IOStream.appendList(graphVizStream, {"\n}\n"});
+  tEnd := clock();
+  t := tEnd - tStart;
+  timeStr := realString(t);
+  graphVizStream := IOStream.appendList(graphVizStream, {"\n\n\n// graph generation took: ", timeStr, " seconds\n"});
+  System.writeFile(fileName, IOStream.string(graphVizStream));
+  print("GraphViz with connection graph for model: " + modelNameQualified + " was writen to file: " + fileName + "\n");
+  brokenConnectsViaGraphViz := showGraphViz(fileName, modelNameQualified);
 end generateGraphViz;
 
 protected function showGraphViz
   input String fileNameGraphViz;
   input String modelNameQualified;
   output String brokenConnectsViaGraphViz;
+protected
+  String leftyCMD, fileNameTraceRemovedConnections, omhome;
+  Integer leftyExitStatus;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue modelNameQualified
-    local
-      String leftyCMD, fileNameTraceRemovedConnections, omhome, brokenConnects;
-      Integer leftyExitStatus;
+  // do not start graphviz if we don't have -d=cgraphGraphVizShow
+  if not Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW) then
+    brokenConnectsViaGraphViz := "";
+    return;
+  end if;
 
-    // do not start graphviz if we don't have -d=cgraphGraphVizShow
-    case _
-      algorithm
-        false := Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW);
-      then
-        "";
+  fileNameTraceRemovedConnections := modelNameQualified + "_removed_connections.txt";
+  print("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable\n");
+  print("Make sure you quit GraphViz *lefty* via Right Click->quit to be sure the process will be exited.\n");
+  print("If you quit the GraphViz *lefty* window via X, please kill the process in task manager to continue.\n");
+  omhome := Settings.getInstallationDirectoryPath();
+  omhome := System.stringReplace(omhome, "\"", "");
+  // omhome = System.stringReplace(omhome, "\\", "/");
 
-    else
-      algorithm
-        fileNameTraceRemovedConnections := modelNameQualified + "_removed_connections.txt";
-        print("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable\n");
-        print("Make sure you quit GraphViz *lefty* via Right Click->quit to be sure the process will be exited.\n");
-        print("If you quit the GraphViz *lefty* window via X, please kill the process in task manager to continue.\n");
-        omhome := Settings.getInstallationDirectoryPath();
-        omhome := System.stringReplace(omhome, "\"", "");
-        // omhome = System.stringReplace(omhome, "\\", "/");
-
-        // create a lefty command and execute it
-        leftyCMD := "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
-            fileNameGraphViz + "','file',null,null);txtview('off');";
-        print("Running command: " + "lefty -e " + leftyCMD + " > " + fileNameTraceRemovedConnections + "\n");
-        // execute lefty
-        leftyExitStatus := System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
-        // show the exit status
-        print("GraphViz *lefty* exited with status:" + intString(leftyExitStatus) + "\n");
-        brokenConnects := System.readFile(fileNameTraceRemovedConnections);
-        print("GraphViz OpenModelica assistant returned the following broken connects: " + brokenConnects + "\n");
-      then
-        brokenConnects;
-  end matchcontinue;
+  // create a lefty command and execute it
+  leftyCMD := "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
+      fileNameGraphViz + "','file',null,null);txtview('off');";
+  print("Running command: " + "lefty -e " + leftyCMD + " > " + fileNameTraceRemovedConnections + "\n");
+  // execute lefty
+  leftyExitStatus := System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
+  // show the exit status
+  print("GraphViz *lefty* exited with status:" + intString(leftyExitStatus) + "\n");
+  brokenConnectsViaGraphViz := System.readFile(fileNameTraceRemovedConnections);
+  print("GraphViz OpenModelica assistant returned the following broken connects: " + brokenConnectsViaGraphViz + "\n");
 end showGraphViz;
 
 function removeBrokenConnects

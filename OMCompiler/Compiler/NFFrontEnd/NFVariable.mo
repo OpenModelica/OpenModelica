@@ -469,18 +469,21 @@ public
 
       if not SCodeUtil.isEmptyMod(mod) then
         if evaluate then
-          () := matchcontinue mod
+          () := match mod
             case SCode.Mod.MOD(binding = SOME(aexp))
               algorithm
-                exp := Inst.instExp(aexp, scope, NFInstContext.ANNOTATION, mod.info);
-                exp := Typing.typeExp(exp, NFInstContext.ANNOTATION, mod.info);
-                exp := Ceval.evalExp(exp);
-                mod.binding := SOME(Expression.toAbsyn(exp));
+                try
+                  exp := Inst.instExp(aexp, scope, NFInstContext.ANNOTATION, mod.info);
+                  exp := Typing.typeExp(exp, NFInstContext.ANNOTATION, mod.info);
+                  exp := Ceval.evalExp(exp);
+                  mod.binding := SOME(Expression.toAbsyn(exp));
+                else
+                end try;
               then
                 ();
 
             else ();
-          end matchcontinue;
+          end match;
         end if;
 
         anno := SCode.ANNOTATION(modification = SCode.MOD(

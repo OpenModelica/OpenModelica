@@ -301,6 +301,29 @@ algorithm
   end match;
 end getOpt;
 
+function getOrDefault
+  input Tree tree;
+  input Key key;
+  input Value defaultValue;
+  output Value value;
+protected
+  Key k;
+algorithm
+  k := match tree
+    case NODE() then tree.key;
+    case LEAF() then tree.key;
+    else key;
+  end match;
+
+  value := match (keyCompare(key, k), tree)
+    case ( 0, LEAF()) then tree.value;
+    case ( 0, NODE()) then tree.value;
+    case ( 1, NODE()) then getOrDefault(tree.right, key, defaultValue);
+    case (-1, NODE()) then getOrDefault(tree.left, key, defaultValue);
+    else defaultValue;
+  end match;
+end getOrDefault;
+
 function fromList
   "Creates a new tree from a list of key-value pairs."
   input list<tuple<Key,Value>> inValues;

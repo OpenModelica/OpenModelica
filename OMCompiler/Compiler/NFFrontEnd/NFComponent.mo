@@ -90,6 +90,7 @@ public
   record ENUM_LITERAL
     Expression literal;
     SCode.Comment comment;
+    SourceInfo info;
   end ENUM_LITERAL;
 
   record TYPE_ATTRIBUTE
@@ -116,9 +117,10 @@ public
     input String literalName;
     input SCode.Comment comment;
     input Integer literalIndex;
+    input SourceInfo info;
     output Component component;
   algorithm
-    component := ENUM_LITERAL(Expression.ENUM_LITERAL(enumType, literalName, literalIndex), comment);
+    component := ENUM_LITERAL(Expression.ENUM_LITERAL(enumType, literalName, literalIndex), comment, info);
   end newEnum;
 
   function newIterator
@@ -147,8 +149,6 @@ public
   end isDefinition;
 
   function info
-    "This function shouldn't be used! Use InstNode.info instead, so that e.g.
-     enumeration literals can be handled correctly."
     input Component component;
     output SourceInfo info;
   algorithm
@@ -157,7 +157,8 @@ public
       case COMPONENT() then component.info;
       case ITERATOR() then component.info;
       case TYPE_ATTRIBUTE() then Modifier.info(component.modifier);
-      // Fail for enumeration literals, InstNode.info handles that case instead.
+      case ENUM_LITERAL() then component.info;
+      else Absyn.dummyInfo;
     end match;
   end info;
 

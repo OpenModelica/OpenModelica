@@ -1669,7 +1669,7 @@ function evalLogicBinaryAnd
   input EvalTarget target;
   output Expression exp;
 algorithm
-  exp := matchcontinue exp1
+  exp := match exp1
     local
       array<Expression> arr;
 
@@ -1689,7 +1689,7 @@ algorithm
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
-  end matchcontinue;
+  end match;
 end evalLogicBinaryAnd;
 
 function evalLogicBinaryOr

@@ -6894,7 +6894,7 @@ algorithm
         isImpure := AbsynUtil.isImpure(purity);
         inVars := List.select(vl,Types.isInputVar);
         outVars := List.select(vl,Types.isOutputVar);
-        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
+        SOME(name) := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
         inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL(),noReturn));
@@ -6904,7 +6904,7 @@ algorithm
       algorithm
         inVars := List.select(vl,Types.isInputVar);
         outVars := List.select(vl,Types.isOutputVar);
-        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
+        SOME(name) := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
         inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");

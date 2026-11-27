@@ -49,7 +49,7 @@ import BaseAvlTree;
 import BaseModelica;
 import Binding = NFBinding;
 import NFInstNode.InstNode;
-  import NFInstNode;
+import NFInstNode;
 import SCode;
 import Inst = NFInst;
 import Subscript = NFSubscript;
@@ -328,10 +328,10 @@ public
     input Modifier modifier;
     output Modifier subMod;
   algorithm
-    subMod := matchcontinue modifier
-      case MODIFIER() then ModTable.get(modifier.subModifiers, modName);
+    subMod := match modifier
+      case MODIFIER() then ModTable.getOrDefault(modifier.subModifiers, modName, EMPTY_MOD);
       else EMPTY_MOD;
-    end matchcontinue;
+    end match;
   end lookupModifier;
 
   function name

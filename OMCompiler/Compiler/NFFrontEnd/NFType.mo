@@ -1634,6 +1634,7 @@ public
   end simplify;
 
   function sizeOf
+    "Returns the size of a type. Can fail if the size is unknown."
     input Type ty;
     input Boolean resize = false;
     output Integer sz;

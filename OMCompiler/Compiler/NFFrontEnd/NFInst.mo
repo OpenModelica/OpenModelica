@@ -714,7 +714,7 @@ algorithm
       algorithm
         ty := makeEnumerationType(cdef.enumLst, scope);
       then
-        Class.fromEnumeration(cdef.enumLst, ty, prefs, scope);
+        Class.fromEnumeration(cdef.enumLst, ty, prefs, scope, SCodeUtil.elementInfo(definition));
 
     else Class.PARTIAL_CLASS(NFClassTree.EMPTY, Modifier.NOMOD(), Modifier.NOMOD(), prefs);
   end match;
@@ -2720,38 +2720,25 @@ function instTypeSpec
   output Attributes outAttributes;
 protected
   list<InstNode> prefixes;
+  Absyn.Path path;
 algorithm
-  node := matchcontinue typeSpec
-    case Absyn.TPATH()
-      algorithm
-        (node, prefixes) := Lookup.lookupClassName(typeSpec.path, scope, context, info);
+  try
+    (node, prefixes) := Lookup.lookupClassName(AbsynUtil.typeSpecPath(typeSpec), scope, context, info);
 
-        // An instantiated class is reused, so the depth limit cannot catch a
-        // loop through it. Other classes may occur again if the tree is finite.
-        if instLevel >= 100 or isInstantiatedClass(node) then
-          checkRecursiveDefinition(node, parent, limitReached = instLevel >= 100);
-        end if;
+    // An instantiated class is reused, so the depth limit cannot catch a
+    // loop through it. Other classes may occur again if the tree is finite.
+    if instLevel >= 100 or isInstantiatedClass(node) then
+      checkRecursiveDefinition(node, parent, limitReached = instLevel >= 100);
+    end if;
 
-        node := expand(node, context);
-        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel,
-          classConfidence(node, scope, instLevel, prefixes), parent, context);
-      then
-        node;
-
-    case Absyn.TPATH()
-      guard InstContext.inInstanceAPI(context)
-      algorithm
-        outAttributes := attributes;
-      then
-        InstNode.EMPTY_NODE();
-
-    case Absyn.TCOMPLEX()
-      algorithm
-        print("NFInst.instTypeSpec: TCOMPLEX not implemented.\n");
-      then
-        fail();
-
-  end matchcontinue;
+    node := expand(node, context);
+    (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel,
+      classConfidence(node, scope, instLevel, prefixes), parent, context);
+  else
+    true := InstContext.inInstanceAPI(context);
+    outAttributes := attributes;
+    node := InstNode.EMPTY_NODE();
+  end try;
 end instTypeSpec;
 
 function checkRecursiveDefinition
@@ -2856,34 +2843,36 @@ algorithm
 end updateParameterBinding;
 
 function instDimension
-  input output Dimension dimension;
+  input Dimension dimension;
   input InstContext.Type context;
   input InstSettings settings;
   input SourceInfo info;
+  output Dimension outDimension;
+protected
+  Absyn.Subscript dim;
+  Expression exp;
 algorithm
-  dimension := match dimension
-    local
-      Absyn.Subscript dim;
-      Expression exp;
-
+  outDimension := match dimension
     case Dimension.RAW_DIM(dim = dim)
       then
-        matchcontinue dim
+        match dim
           case Absyn.NOSUB() then Dimension.UNKNOWN();
           case Absyn.SUBSCRIPT()
             algorithm
-              exp := instExp(dim.subscript, InstNode.fromCell(dimension.scope), context, info);
+              try
+                exp := instExp(dim.subscript, InstNode.fromCell(dimension.scope), context, info);
+              else
+                true := InstContext.inRelaxed(context);
+                outDimension := Dimension.UNKNOWN();
+                return;
+              end try;
+
               if settings.resizableArrays then
                 exp := Expression.map(exp, instResizable);
               end if;
             then
               Dimension.UNTYPED(exp, false);
-
-          case _
-            guard InstContext.inRelaxed(context)
-            then Dimension.UNKNOWN();
-
-        end matchcontinue;
+        end match;
 
     else dimension;
   end match;
