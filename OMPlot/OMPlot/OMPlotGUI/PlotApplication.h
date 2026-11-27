@@ -41,9 +41,11 @@
 #include <QStringList>
 #include <QDebug>
 
+#include "OMPlotExport.h"
+
 namespace OMPlot
 {
-class PlotApplication : public QApplication
+class OMPLOT_EXPORT PlotApplication : public QApplication
 {
     Q_OBJECT
 public:
