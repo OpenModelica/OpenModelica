@@ -662,10 +662,10 @@ void AbstractAnimationWindow::setPerspective(int value)
       cameraPositionSide();
       break;
     case 2:
-      cameraPositionTop();
+      cameraPositionFront();
       break;
     case 3:
-      cameraPositionFront();
+      cameraPositionTop();
       break;
   }
 }
