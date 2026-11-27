@@ -6270,12 +6270,20 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
 
 ModelWidget::~ModelWidget()
 {
-  // the scenes are deleted after this destructor and can emit selectionChanged() while they remove their items
+  /* The children are deleted after this destructor and can emit signals connected to this object,
+   * e.g., the scenes emit selectionChanged() while they remove their items and QUndoStack emits indexChanged() when it is cleared.
+   */
   if (mpIconGraphicsScene) {
     mpIconGraphicsScene->disconnect(this);
   }
   if (mpDiagramGraphicsScene) {
     mpDiagramGraphicsScene->disconnect(this);
+  }
+  if (mpUndoStack) {
+    mpUndoStack->disconnect(this);
+  }
+  if (mpEditor) {
+    mpEditor->getPlainTextEdit()->document()->disconnect(this);
   }
   if (mpModelInstance) {
     delete mpModelInstance;
