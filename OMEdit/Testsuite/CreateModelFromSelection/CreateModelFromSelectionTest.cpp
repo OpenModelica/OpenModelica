@@ -49,6 +49,7 @@
 
 static const char* packageName = "CreateModelFromSelectionTest";
 static const char* className = "CreateModelFromSelectionTest.M";
+static const char* topLevelClassName = "CreateModelFromSelectionTopLevel";
 
 OMEDITTEST_MAIN(CreateModelFromSelectionTest)
 
@@ -140,13 +141,29 @@ void CreateModelFromSelectionTest::componentNameSameAsModelName()
   QVERIFY(pGraphicsView->getElementObject("gain"));
 }
 
+void CreateModelFromSelectionTest::topLevelModelUses()
+{
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  GraphicsView *pGraphicsView = openDiagram();
+  QVERIFY(pGraphicsView);
+  selectElements(pGraphicsView, QStringList() << "gain");
+  QVERIFY(pGraphicsView->createModelFromSelection(topLevelClassName, "", "", "", false));
+  QVERIFY(pOMCProxy->existClass(topLevelClassName));
+  const QList<QList<QString> > uses = pOMCProxy->getUses(topLevelClassName);
+  QCOMPARE(uses.size(), 1);
+  QCOMPARE(uses.at(0).at(0), QString("Modelica"));
+  QCOMPARE(uses.at(0).at(1), QString("4.1.0"));
+}
+
 void CreateModelFromSelectionTest::cleanupTestCase()
 {
-  // Unload the changed package without asking to save it.
+  // Unload the changed classes without asking to save them.
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(packageName);
-  if (pLibraryTreeItem) {
-    pLibraryTreeModel->unloadClass(pLibraryTreeItem, false);
+  foreach (const QString &name, QStringList() << packageName << topLevelClassName) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(name);
+    if (pLibraryTreeItem) {
+      pLibraryTreeModel->unloadClass(pLibraryTreeItem, false);
+    }
   }
   MainWindow::instance()->close();
 }

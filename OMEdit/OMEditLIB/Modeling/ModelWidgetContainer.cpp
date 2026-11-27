@@ -4740,9 +4740,22 @@ bool GraphicsView::createModelFromSelection(const QString &name, const QString &
   if (!portConnections.isEmpty()) {
     portItems << "equation" << portConnections;
   }
+  // A new top level class uses the same libraries as the top level class of the model it is created from.
+  QString usesAnnotation;
+  if (pParentLibraryTreeItem->isRootItem()) {
+    QStringList uses;
+    foreach (const QList<QString> &library, pOMCProxy->getUses(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()))) {
+      if (library.size() > 1) {
+        uses.append(QString("%1(version=\"%2\")").arg(library.at(0), library.at(1)));
+      }
+    }
+    if (!uses.isEmpty()) {
+      usesAnnotation = ", uses(" % uses.join(", ") % ")";
+    }
+  }
   portItems << QString("annotation (Icon(graphics={Rectangle(extent={{-100, 100}, {100, -100}}, lineColor={0, 0, 127}, fillColor={255, 255, 255}, "
                        "fillPattern=FillPattern.Solid), Text(extent={{-150, 150}, {150, 110}}, textString=\"%name\", textColor={0, 0, 255})}), "
-                       "Diagram(coordinateSystem(extent={%1, %2})));").arg(pointString(extent.topLeft()), pointString(extent.bottomRight()));
+                       "Diagram(coordinateSystem(extent={%1, %2}))%3);").arg(pointString(extent.topLeft()), pointString(extent.bottomRight()), usesAnnotation);
   pOMCProxy->loadClassContentString(portItems.join("\n"), newClassName);
   // Add the new model to the Libraries Browser.
   LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, pParentLibraryTreeItem, false, false, true);

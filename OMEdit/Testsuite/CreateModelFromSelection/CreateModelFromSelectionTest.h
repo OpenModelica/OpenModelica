@@ -65,6 +65,11 @@ private slots:
    * Checks that a component can not get the name of the new model.
    */
   void componentNameSameAsModelName();
+  /*!
+   * \brief topLevelModelUses
+   * Checks that a new top level model gets the uses annotation of the top level class of the model it is created from.
+   */
+  void topLevelModelUses();
   void cleanupTestCase();
 };
 
