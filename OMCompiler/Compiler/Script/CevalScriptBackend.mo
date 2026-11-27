@@ -3961,7 +3961,7 @@ algorithm
         dockerImage := ContainerImage.getDigestSha(dockerImage);
         Error.addCompilerNotification("Using docker image '" + ContainerImage.toString(dockerImage) + "' for cross compilation.");
         (_, isTrustedImage) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
-        dockerRunArgs := stringDelimitList(dockerArguments, " ") + " " + ContainerImage.toString(dockerImage);
+        dockerRunArgs := stringDelimitList(dockerArguments, " ") + " " + ContainerImage.toString(dockerImage, useDigest = isTrustedImage);
 
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
@@ -3973,18 +3973,10 @@ algorithm
           System.removeFile(dockerLogFile);
         end if;
 
-        // Only download trusted images automatically, and only if the signature
-        // can be verified. Images that are already on this machine are used as is.
+        // Only download trusted images automatically. They are pulled and run
+        // by their known digest, so a changed tag in the registry has no effect.
         if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage, fmutmp) then
-          if ContainerImage.isCosignAvailable(fmutmp) then
-            // Verify the image in the registry first, it's only downloaded if the signature is valid.
-            ContainerImage.assertSignature(dockerImage, fmutmp);
-            ContainerImage.pull(dockerImage, fmutmp);
-          else
-            Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
-            Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
-            fail();
-          end if;
+          ContainerImage.pull(dockerImage, fmutmp);
         end if;
 
         // Create a docker volume for the FMU since we can't forward volumes

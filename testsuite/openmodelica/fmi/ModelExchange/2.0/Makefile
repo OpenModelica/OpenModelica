@@ -4,6 +4,7 @@ TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
 FmuDefaultExperiment.mos \
+FmuContainerReferenceInvalid.mos \
 FmuFileNamePrefixDash.mos \
 Fmi2ImportIndependent.mos \
 Fmi2NoVariables.mos \
