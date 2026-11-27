@@ -439,6 +439,10 @@ private:
 #endif
   QAction *mpShowOMCDiffWidgetAction;
   QAction *mpOpenTemporaryDirectoryAction;
+  QAction *mpCRMLVerificationConfigurationAction;
+#if defined(__EMSCRIPTEN__)
+  QAction *mpCRMLBindingsExampleAction;
+#endif
   QAction *mpOpenWorkingDirectoryAction;
   QAction *mpOpenTerminalAction;
   QAction *mpOptionsAction;
@@ -604,6 +608,10 @@ public slots:
   QImage exportModelAsImage(QString fileName, bool drawExtents = false, ViewSelection diagramSelection = ViewSelection::SelectedInGUI, ModelWidget *pModelWidget = nullptr, QSize size = QSize());
   void exportToClipboard();
   void openTemporaryDirectory();
+  void showCRMLVerificationConfigurationEditor(const QString &crmlFile = QString());
+#if defined(__EMSCRIPTEN__)
+  void openCRMLBindingsExample();
+#endif
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();

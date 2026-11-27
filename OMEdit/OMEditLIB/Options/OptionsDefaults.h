@@ -61,7 +61,12 @@ namespace OptionsDefaults
     bool createBackupFile = true;
     bool displayNFAPIErrorsWarnings = false;
     bool enableInstanceApiNoJson = false;
+#if defined(__EMSCRIPTEN__)
+    // the web version translates CRML in the page, it needs no setup
+    bool enableCRMLSupport = true;
+#else
     bool enableCRMLSupport = false;
+#endif
     int colorSchemeIndex = 0; // GeneralSettingsPage::SystemColorScheme
     int libraryIconSize = 24;
     int libraryIconMaximumTextLength = 3;

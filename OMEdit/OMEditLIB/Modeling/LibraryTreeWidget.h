@@ -360,6 +360,7 @@ private:
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
   QAction *mpTranslateCRMLAction;
+  QAction *mpCRMLVerificationConfigurationAction;
   QAction *mpTranslateAsCRMLAction;
   QAction *mpRunScriptAction;
 #if !defined(WITHOUT_ANIMATION)
@@ -421,6 +422,7 @@ public slots:
   void simulateWithAnimation();
   void simulationSetup();
   void translateCRML();
+  void newCRMLVerificationConfiguration();
   void translateAsCRML();
   void runScript();
   void findUsageOfClass();

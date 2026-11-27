@@ -199,3 +199,7 @@ add_omedit_test(VariableValue "${OMEDIT_TEST_VARIABLEVALUE_SOURCES}")
 set(OMEDIT_TEST_WORKINGDIRECTORY_SOURCES WorkingDirectory/WorkingDirectoryTest.cpp
                                          WorkingDirectory/WorkingDirectoryTest.h)
 add_omedit_test(WorkingDirectory "${OMEDIT_TEST_WORKINGDIRECTORY_SOURCES}")
+
+set(OMEDIT_TEST_CRMLBINDINGS_SOURCES CRMLBindings/CRMLBindingsTest.cpp
+                                     CRMLBindings/CRMLBindingsTest.h)
+add_omedit_test(CRMLBindings "${OMEDIT_TEST_CRMLBINDINGS_SOURCES}")
