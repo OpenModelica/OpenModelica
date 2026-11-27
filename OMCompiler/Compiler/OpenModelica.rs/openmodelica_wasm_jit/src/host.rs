@@ -1144,12 +1144,7 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         Function::new_typed_with_env(
             store,
             &mem_env,
-            |env: wasmer::FunctionEnvMut<HostEnv>,
-             name: u32,
-             name_len: u32,
-             data: u32,
-             data_len: u32,
-             create: u32| {
+            |env: wasmer::FunctionEnvMut<HostEnv>, name: u32, name_len: u32, data: u32, data_len: u32, create: u32| {
                 let Some(memory) = env.data().mem.clone() else { return };
                 let mut nbuf = vec![0u8; name_len as usize];
                 let mut dbuf = vec![0u8; data_len as usize];
