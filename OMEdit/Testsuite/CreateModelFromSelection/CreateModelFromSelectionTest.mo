@@ -19,4 +19,6 @@ package CreateModelFromSelectionTest
     connect(integrator.y, add.u2) annotation(
       Line(points = {{51, 0}, {60, 0}, {60, -6}, {68, -6}}, color = {0, 0, 127}));
   end M;
+  annotation(
+    uses(Modelica(version = "4.1.0")));
 end CreateModelFromSelectionTest;
