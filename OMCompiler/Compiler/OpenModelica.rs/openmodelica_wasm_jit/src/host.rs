@@ -718,7 +718,7 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
     wt(linker.func_wrap(
         "env",
         "rt_host_append_file",
-        |caller: wasmtime::Caller<'_, HostState>, name: u32, name_len: u32, data: u32, data_len: u32| {
+        |caller: wasmtime::Caller<'_, HostState>, name: u32, name_len: u32, data: u32, data_len: u32, create: u32| {
             let Some(memory) = caller.data().memory else { return };
             let bytes = memory.data(&caller);
             let (Some(name), Some(data)) = (
@@ -727,7 +727,7 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
             ) else {
                 return;
             };
-            let _ = openmodelica_wasi::fs::append(String::from_utf8_lossy(name).as_ref(), data);
+            ebdd_from_module(String::from_utf8_lossy(name).as_ref(), data, create != 0);
         },
     ))?;
     // The in-wasm session's result file (`session.rs`'s `HostOut`).
@@ -1144,13 +1144,18 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         Function::new_typed_with_env(
             store,
             &mem_env,
-            |env: wasmer::FunctionEnvMut<HostEnv>, name: u32, name_len: u32, data: u32, data_len: u32| {
+            |env: wasmer::FunctionEnvMut<HostEnv>,
+             name: u32,
+             name_len: u32,
+             data: u32,
+             data_len: u32,
+             create: u32| {
                 let Some(memory) = env.data().mem.clone() else { return };
                 let mut nbuf = vec![0u8; name_len as usize];
                 let mut dbuf = vec![0u8; data_len as usize];
                 let view = memory.view(&env);
                 if view.read(name as u64, &mut nbuf).is_ok() && view.read(data as u64, &mut dbuf).is_ok() {
-                    let _ = openmodelica_wasi::fs::append(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf);
+                    ebdd_from_module(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf, create != 0);
                 }
             },
         ),
@@ -1538,5 +1543,29 @@ pub mod result_file {
                 let _ = w.flush();
             }
         });
+    }
+}
+
+/// The `LOG_EBDD` sink of the host-side driver: `<prefix>_dbg.json` beside the
+/// result, as C's executable writes it.
+pub(crate) fn ebdd_sink(name: &str, chunk: &str, create: bool) {
+    let _ = if create {
+        openmodelica_wasi::fs::write(name, chunk.as_bytes())
+    } else {
+        openmodelica_wasi::fs::append(name, chunk.as_bytes())
+    };
+}
+
+/// `LOG_EBDD` records formatted inside the module (`rt_host_append_file`). With
+/// the host-side driver the file is the host recorder's, which already named it
+/// and writes its header, so the module's lines join it and the module's own
+/// header is dropped; with the in-wasm driver the module's recorder owns the file.
+fn ebdd_from_module(name: &str, data: &[u8], create: bool) {
+    if openmodelica_sim_meta::ebdd::begun() {
+        if !create {
+            openmodelica_sim_meta::ebdd::forward(String::from_utf8_lossy(data).as_ref());
+        }
+    } else {
+        ebdd_sink(name, String::from_utf8_lossy(data).as_ref(), create);
     }
 }

@@ -30,7 +30,7 @@ pub extern "C" fn rt_set_file_prefix(ptr: u32, len: u32) {
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
     fn rt_host_write_file(name: u32, name_len: u32, data: u32, data_len: u32);
-    fn rt_host_append_file(name: u32, name_len: u32, data: u32, data_len: u32);
+    fn rt_host_append_file(name: u32, name_len: u32, data: u32, data_len: u32, create: u32);
 }
 
 /// Write `data` to `name`, relative to the working directory as C's executable does.
@@ -60,15 +60,13 @@ pub(crate) fn write_file(_name: &str, _data: &str) {}
 /// The `LOG_EBDD` sink: create `name` with `data`, or append `data` to it.
 #[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
 pub(crate) fn append_file(name: &str, data: &str, create: bool) {
-    if create {
-        return write_file(name, data);
-    }
     unsafe {
         rt_host_append_file(
             name.as_ptr() as u32,
             name.len() as u32,
             data.as_ptr() as u32,
             data.len() as u32,
+            create as u32,
         )
     };
 }

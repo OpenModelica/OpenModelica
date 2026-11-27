@@ -59,6 +59,20 @@ pub fn begin(prefix: &str, model: &str) {
     });
 }
 
+/// Forget the run's file, so [`begun`] is false until the next [`begin`].
+pub fn reset() {
+    locked(|s| {
+        s.file.clear();
+        s.model.clear();
+        s.opened = false;
+    });
+}
+
+/// Whether a run's file was started here ([`begin`]) and not [`reset`] since.
+pub fn begun() -> bool {
+    locked(|s| !s.file.is_empty())
+}
+
 pub fn active() -> bool {
     omclog::active(omclog::EBDD)
 }
@@ -88,12 +102,19 @@ fn locked<R>(f: impl FnOnce(&mut State) -> R) -> R {
 }
 
 fn emit(mut line: String) {
+    line.push('\n');
+    forward(&line);
+}
+
+/// Append records another recorder formatted (whole lines) to this run's file.
+/// The host of a wasm module uses it where the driver, and so the file, is the
+/// host's and the solves' records come from inside the module.
+pub fn forward(line: &str) {
     let p = SINK.load(Ordering::Relaxed);
     if p == 0 {
         return;
     }
     let sink: Sink = unsafe { core::mem::transmute(p) };
-    line.push('\n');
     locked(|s| {
         if s.file.is_empty() {
             s.file = String::from("model_dbg.json");
@@ -105,7 +126,7 @@ fn emit(mut line: String) {
             head.push_str("\"}\n");
             sink(&s.file, &head, true);
         }
-        sink(&s.file, &line, false);
+        sink(&s.file, line, false);
     });
 }
 
