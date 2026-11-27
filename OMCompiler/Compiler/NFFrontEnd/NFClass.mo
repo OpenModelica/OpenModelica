@@ -194,11 +194,12 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     input Type enumType;
     input Prefixes prefixes;
     input InstNode enumClass;
+    input SourceInfo info;
     output Class cls;
   protected
     ClassTree tree;
   algorithm
-    tree := ClassTree.fromEnumeration(literals, enumType, enumClass);
+    tree := ClassTree.fromEnumeration(literals, enumType, enumClass, info);
     cls := PARTIAL_BUILTIN(enumType, tree, Modifier.NOMOD(), prefixes, Restriction.ENUMERATION());
   end fromEnumeration;
 

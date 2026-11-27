@@ -1237,10 +1237,11 @@ public
   end sizeOfList;
 
   function sizeOf
+    "Returns the size of an equation. Can fail if the size is unknown."
     input Equation eq;
     output Integer size;
   algorithm
-    size := matchcontinue eq
+    size := match eq
       case EQUALITY() then Type.sizeOf(eq.ty);
       case CONNECT() then Type.sizeOf(Expression.typeOf(eq.lhs));
       case FOR()
@@ -1252,7 +1253,7 @@ public
       case IF() then Branch.sizeOf(listHead(eq.branches));
       case WHEN() then Branch.sizeOf(listHead(eq.branches));
       else 0;
-    end matchcontinue;
+    end match;
   end sizeOf;
 
   function sizeOfListSymbolic

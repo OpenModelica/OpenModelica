@@ -1218,9 +1218,15 @@ public
     output Boolean hasArrays = false;
   algorithm
     for eq in flatModel.equations loop
-      if Equation.contains(eq, Equation.isConnect) and Equation.sizeOf(eq) >= minSize then
-        hasArrays := true;
-        return;
+      if Equation.contains(eq, Equation.isConnect) then
+        try
+          hasArrays := Equation.sizeOf(eq) >= minSize;
+
+          if hasArrays then
+            return;
+          end if;
+        else
+        end try;
       end if;
     end for;
   end hasArrayConnections;

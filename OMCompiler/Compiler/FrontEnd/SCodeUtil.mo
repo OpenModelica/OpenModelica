@@ -2313,40 +2313,70 @@ algorithm
   end match;
 end getElementClass;
 
-public constant list<String> knownExternalCFunctions = {"sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","exp","log","log10","sqrt"};
+public function isKnownExternalCFunction
+  input String name;
+  output Boolean known;
+algorithm
+  known := match name
+    case "sin"   then true;
+    case "cos"   then true;
+    case "tan"   then true;
+    case "asin"  then true;
+    case "acos"  then true;
+    case "atan"  then true;
+    case "atan2" then true;
+    case "sinh"  then true;
+    case "cosh"  then true;
+    case "tanh"  then true;
+    case "exp"   then true;
+    case "log"   then true;
+    case "log10" then true;
+    case "sqrt"  then true;
+    else false;
+  end match;
+end isKnownExternalCFunction;
 
 public function isBuiltinFunction
   input SCode.Element cl;
   input list<String> inVars;
   input list<String> outVars;
-  output String name;
+  output Option<String> outName;
+
+  function is_cref_named
+    input Absyn.Exp arg;
+    input String name;
+    output Boolean res;
+  protected
+    String ident;
+  algorithm
+    res := match arg
+      case Absyn.Exp.CREF(componentRef = Absyn.ComponentRef.CREF_IDENT(name = ident, subscripts = {}))
+        then name == ident;
+      else false;
+    end match;
+  end is_cref_named;
 algorithm
-  name := match (cl, outVars)
+  outName := match (cl, outVars)
     local
-      String outVar1,outVar2;
-      list<String> argsStr;
+      String outVar1,outVar2,name;
       list<Absyn.Exp> args;
     case (SCode.CLASS(name=name,restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))), _)
-      then name;
+      then SOME(name);
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))), _)
-      then name;
+      then SOME(name);
     case (SCode.CLASS(name=name,restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))), _)
-      then name;
+      then SOME(name);
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))), _)
-      then name;
+      then SOME(name);
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))), {outVar1})
-      algorithm
-        true := listMember(name,knownExternalCFunctions);
-        true := outVar2 == outVar1;
-        argsStr := List.mapMap(args, AbsynUtil.expCref, AbsynUtil.crefIdent);
-        true := valueEq(argsStr, inVars);
-      then name;
-    case (SCode.CLASS(name=name,
-      restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),
-      classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))), _)
-      algorithm
-        true := listMember(name,knownExternalCFunctions);
-      then name;
+      guard outVar2 == outVar1 and isKnownExternalCFunction(name) and List.isEqualOnTrue(args, inVars, is_cref_named)
+      then SOME(name);
+    case (SCode.CLASS(name=name, restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),
+        classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))), _)
+      guard isKnownExternalCFunction(name)
+      then SOME(name);
+
+    else NONE();
   end match;
 end isBuiltinFunction;
 

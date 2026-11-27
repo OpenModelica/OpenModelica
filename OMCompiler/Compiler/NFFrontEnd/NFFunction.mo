@@ -1223,27 +1223,23 @@ uniontype Function
     for s in slots loop
       SLOT(default = default, arg = arg) := s;
 
-      args := matchcontinue arg
+      if isSome(arg) then
         // Use the argument from the call if one was given.
-        case SOME(a) then a :: args;
-
+        args := Util.getOption(arg) :: args;
+      else
         // Otherwise, try to fill the slot with its default argument.
-        case _
-          algorithm
-            a := fillDefaultSlot(s, slots, context, info);
+        try
+          a := fillDefaultSlot(s, slots, context, info);
 
-            if rebase then
-              a := rebaseDefaultArg(a, callPrefix, info);
-            end if;
-          then
-            a :: args;
+          if rebase then
+            a := rebaseDefaultArg(a, callPrefix, info);
+          end if;
 
+          args := a :: args;
         else
-          algorithm
-            matching := false;
-          then
-            args;
-      end matchcontinue;
+          matching := false;
+        end try;
+      end if;
     end for;
 
     args := listReverse(args);
@@ -2750,75 +2746,98 @@ protected
     cmt := mergeFunctionAnnotations(comments);
     purity := InstBasics.getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), cmt, newFrontend = true);
 
-    attr := matchcontinue fres
+    attr := match fres
       local
-        Boolean has_unbox_args;
+        Boolean builtin;
         String name;
+        Option<String> opt_name;
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
-        Boolean generateEvents;
+        Boolean generate_events;
+        DAE.FunctionBuiltin fn_builtin;
 
-      // External builtin function.
+      // External function
       case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION()
         algorithm
-          in_params := list(InstNode.name(i) for i in inputs);
-          out_params := list(InstNode.name(o) for o in outputs);
-          name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
+          (fn_builtin, builtin) := makeExternalFunctionBuiltin(def, inputs, outputs, cmt);
           inline_ty := InstBasics.commentIsInlineFunc(cmt);
-          generateEvents := InstBasics.commentGenerateEvents(cmt);
-          has_unbox_args := hasUnboxArgsAnnotation(cmt);
-        then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
-            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
+          generate_events := InstBasics.commentGenerateEvents(cmt);
 
-      // Parallel function: there are some builtin functions. Their results depend
-      // on the executing thread, and the parser drops the impure prefix of
-      // parallel and kernel functions.
+          if not builtin then
+            // External functions are impure by default since Modelica 3.3.
+            if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
+              purity := DAE.Purity.IMPURE;
+            end if;
+
+            if not builtin and SCodeUtil.hasNamedExternalCall("ModelicaError", SCodeUtil.getClassDef(def)) then
+              purity := DAE.Purity.PURE;
+            end if;
+          end if;
+        then
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generate_events, purity, is_partial,
+            fn_builtin, DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
+
+      // Parallel function
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
-          in_params := list(InstNode.name(i) for i in inputs);
-          out_params := list(InstNode.name(o) for o in outputs);
-          name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
+          // There are some builtin functions. Their results depend on the executing thread,
+          // and the parser drops the impure prefix of parallel and kernel functions.
+          (fn_builtin, builtin) := makeExternalFunctionBuiltin(def, inputs, outputs, cmt);
           inline_ty := InstBasics.commentIsInlineFunc(cmt);
-          generateEvents := InstBasics.commentGenerateEvents(cmt);
-          has_unbox_args := hasUnboxArgsAnnotation(cmt);
-        then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, DAE.Purity.IMPURE, is_partial,
-            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION(), DAE.NoReturn.RETURNS);
+          generate_events := InstBasics.commentGenerateEvents(cmt);
 
-      // Parallel function: non-builtin.
-      case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
-        algorithm
-          inline_ty := InstBasics.commentIsInlineFunc(cmt);
-          generateEvents := InstBasics.commentGenerateEvents(cmt);
+          if builtin then
+            purity := DAE.Purity.IMPURE;
+          end if;
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
-            getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION(), DAE.NoReturn.RETURNS);
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generate_events, purity, is_partial,
+            fn_builtin, DAE.FP_PARALLEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
         then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), false, DAE.Purity.IMPURE, is_partial,
           DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
-      // Normal function.
+      // Normal function
       else
         algorithm
           inline_ty := InstBasics.commentIsInlineFunc(cmt);
-          generateEvents := InstBasics.commentGenerateEvents(cmt);
+          generate_events := InstBasics.commentGenerateEvents(cmt);
 
-          // Since Modelica 3.3, normal functions are pure by default and external functions are impure.
+          // Normal functions are pure by default since Modelica 3.3.
           if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
-            purity := if SCodeUtil.isExternalFunctionRestriction(fres) then DAE.Purity.IMPURE else DAE.Purity.PURE;
-          end if;
-
-          if SCodeUtil.hasNamedExternalCall("ModelicaError", SCodeUtil.getClassDef(def)) then
             purity := DAE.Purity.PURE;
           end if;
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generate_events, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
 
-    end matchcontinue;
+    end match;
   end makeAttributes;
+
+  function makeExternalFunctionBuiltin
+    input SCode.Element definition;
+    input list<InstNode> inputs;
+    input list<InstNode> outputs;
+    input SCode.Comment cmt;
+    output DAE.FunctionBuiltin fnBuiltin;
+    output Boolean builtin;
+  protected
+    list<String> in_params, out_params;
+    Option<String> name;
+    Boolean has_unbox_args;
+  algorithm
+    in_params := list(InstNode.name(i) for i in inputs);
+    out_params := list(InstNode.name(o) for o in outputs);
+    name := SCodeUtil.isBuiltinFunction(definition, in_params, out_params);
+
+    if isSome(name) then
+      fnBuiltin := DAE.FUNCTION_BUILTIN(name, hasUnboxArgsAnnotation(cmt));
+      builtin := true;
+    else
+      fnBuiltin := getBuiltinPtr(cmt);
+      builtin := false;
+    end if;
+  end makeExternalFunctionBuiltin;
 
   function checkParamTypes
     "Checks that all the function parameters have types which are allowed in a

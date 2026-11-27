@@ -177,29 +177,28 @@ algorithm
   Sections.EXTERNAL(name = name, args = ext_args, outputRef = output_ref, language = lang, ann = ann) :=
     Class.getSections(InstNode.getClass(InstNode.fromHandle(fn.node)));
 
-  result := matchcontinue lang
-    case "builtin"
-      // Functions defined as 'external "builtin"', delegate to Ceval.
-      then Ceval.evalBuiltinCall(fn, args, NFCeval.noTarget);
+  try
+    result := match lang
+      case "builtin"
+        // Functions defined as 'external "builtin"', delegate to Ceval.
+        then Ceval.evalBuiltinCall(fn, args, NFCeval.noTarget);
 
-    case "FORTRAN 77"
-      // This had better be a Lapack function.
-      then evaluateExternal2(name, fn, args, ext_args);
+      case "FORTRAN 77"
+        // This had better be a Lapack function.
+        then evaluateExternal2(name, fn, args, ext_args);
 
-    case _
-      guard not InstContext.inInstanceAPI(target.context)
-      // For anything else, try to call the function via FFI.
-      then callExternalFunction(name, fn, args, ext_args, output_ref, ann, InstContext.inScripting(target.context));
-
-    else
-      algorithm
-        if EvalTarget.hasInfo(target) then
-          Error.addSourceMessage(Error.FAILED_TO_EVALUATE_FUNCTION,
-            {AbsynUtil.pathString(fn.path)}, EvalTarget.getInfo(target));
-        end if;
-      then
-        fail();
-  end matchcontinue;
+      case _
+        guard not InstContext.inInstanceAPI(target.context)
+        // For anything else, try to call the function via FFI.
+        then callExternalFunction(name, fn, args, ext_args, output_ref, ann, InstContext.inScripting(target.context));
+    end match;
+  else
+    if EvalTarget.hasInfo(target) then
+      Error.addSourceMessage(Error.FAILED_TO_EVALUATE_FUNCTION,
+        {AbsynUtil.pathString(fn.path)}, EvalTarget.getInfo(target));
+    end if;
+    fail();
+  end try;
 end evaluateExternal;
 
 function evaluateRecordConstructor

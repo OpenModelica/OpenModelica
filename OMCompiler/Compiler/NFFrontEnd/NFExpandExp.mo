@@ -355,16 +355,18 @@ public
     output Expression outExp;
     output Boolean expanded;
   algorithm
-    (outExp, expanded) := matchcontinue call
-      case Call.TYPED_CALL()
-        guard Function.isBuiltin(call.fn) and not Function.isImpure(call.fn)
-        then expandBuiltinCall(call.fn, call.arguments, call, resize);
+    try
+      (outExp, expanded) := match call
+        case Call.TYPED_CALL()
+          guard Function.isBuiltin(call.fn) and not Function.isImpure(call.fn)
+          then expandBuiltinCall(call.fn, call.arguments, call, resize);
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
-        then expandArrayConstructor(call.exp, call.ty, call.iters);
-
-      else expandGeneric(exp, resize);
-    end matchcontinue;
+        case Call.TYPED_ARRAY_CONSTRUCTOR()
+          then expandArrayConstructor(call.exp, call.ty, call.iters);
+      end match;
+    else
+      (outExp, expanded) := expandGeneric(exp, resize);
+    end try;
   end expandCall;
 
   function expandBuiltinCall
