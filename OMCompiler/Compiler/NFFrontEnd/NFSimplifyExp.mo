@@ -187,6 +187,7 @@ protected
   Call call;
   list<Expression> args;
   Boolean builtin, is_pure, scalarize;
+  list<tuple<InstNode, Expression>> lets = {};
 algorithm
   Expression.CALL(call = call) := callExp;
 
@@ -206,6 +207,11 @@ algorithm
         if builtin then
           scalarize := Flags.isSet(Flags.NF_SCALARIZE);
 
+          if is_pure then
+            (args, lets) := List.mapFold(args, liftLets, {});
+            call.arguments := args;
+          end if;
+
           if is_pure and List.all(args, Expression.isLiteral) and (scalarize or Type.isScalar(call.ty)) then
             try
               callExp := Ceval.evalCall(call, NFCeval.noTarget);
@@ -215,6 +221,8 @@ algorithm
           else
             callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call, expand = scalarize);
           end if;
+
+          callExp := wrapLets(callExp, lets);
         elseif Flags.isSet(Flags.NF_EVAL_CONST_ARG_FUNCS) and is_pure and List.all(args, Expression.isLiteral) then
           callExp := simplifyCall2(call);
         else
@@ -804,9 +812,55 @@ algorithm
     exp := simplify(Expression.replaceIterator(body, node, binding));
   else
     body := simplify(body);
-    exp := if Expression.containsIterator(body, node) then Expression.LET(node, binding, body) else body;
+
+    exp := match body
+      local
+        Call call;
+        ComponentRef cref;
+
+      // a fill that is not expanded evaluates its value one time
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = Expression.CREF(cref = cref) :: _))
+        guard Call.isNamed(call, "fill") and InstNode.refEqual(ComponentRef.node(cref), node)
+        then Expression.replaceIterator(body, node, binding);
+
+      case _ guard Expression.containsIterator(body, node) then Expression.LET(node, binding, body);
+      else body;
+    end match;
   end if;
 end simplifyLet;
+
+function liftLets
+  "Removes the let expressions around an operand. op(let v = e in b) is
+   let v = e in op(b), as an operand is always evaluated and v is unique,
+   and the operation can then expand b without copies of e."
+  input output Expression exp;
+  input output list<tuple<InstNode, Expression>> lets "The innermost first.";
+protected
+  Boolean is_let = true;
+algorithm
+  while is_let loop
+    (exp, lets, is_let) := match exp
+      case Expression.LET() then (exp.body, (exp.node, exp.binding) :: lets, true);
+      else (exp, lets, false);
+    end match;
+  end while;
+end liftLets;
+
+function wrapLets
+  input output Expression exp;
+  input list<tuple<InstNode, Expression>> lets "The innermost first.";
+protected
+  InstNode node;
+  Expression binding;
+algorithm
+  for l in lets loop
+    (node, binding) := l;
+
+    if Expression.containsIterator(exp, node) then
+      exp := Expression.LET(node, binding, exp);
+    end if;
+  end for;
+end wrapLets;
 
 function simplifySize
   input output Expression sizeExp;
@@ -1181,16 +1235,19 @@ function simplifyBinary
 protected
   Expression e1, e2, se1, se2;
   Operator op;
+  list<tuple<InstNode, Expression>> lets;
 algorithm
   Expression.BINARY(e1, op, e2) := binaryExp;
-  se1 := simplify(e1);
-  se2 := simplify(e2);
+  (se1, lets) := liftLets(simplify(e1), {});
+  (se2, lets) := liftLets(simplify(e2), lets);
 
   binaryExp := simplifyBinaryOp(se1, op, se2);
 
   if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) and not Expression.hasArrayCall(binaryExp) then
     binaryExp := ExpandExp.expand(binaryExp);
   end if;
+
+  binaryExp := wrapLets(binaryExp, lets);
 end simplifyBinary;
 
 function simplifyBinaryOp
@@ -1411,13 +1468,14 @@ function simplifyUnary
 protected
   Expression e, se;
   Operator op;
+  list<tuple<InstNode, Expression>> lets = {};
 algorithm
   unaryExp := match unaryExp
     case Expression.UNARY(_, Expression.UNARY(_, e))
     then simplify(e);
 
     case Expression.UNARY(op, e) algorithm
-      se := simplify(e);
+      (se, lets) := liftLets(simplify(e), lets);
     then simplifyUnaryOp(se, op);
 
     else algorithm
@@ -1428,6 +1486,8 @@ algorithm
   if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) and not Expression.hasArrayCall(unaryExp) then
     unaryExp := ExpandExp.expand(unaryExp);
   end if;
+
+  unaryExp := wrapLets(unaryExp, lets);
 end simplifyUnary;
 
 function simplifyUnaryOp
