@@ -7,6 +7,7 @@
 // registry. The image is neither pulled nor run. A fake docker in PATH
 // replaces the registry.
 
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 mkdir("FmuContainerDigestMismatch_bin"); getErrorString();
 writeFile("FmuContainerDigestMismatch_bin/docker", "#!/bin/sh
 echo \"$*\" >> \"" + cd() + "/FmuContainerDigestMismatch.log\"
@@ -30,6 +31,8 @@ buildModelFMU(FmuContainerDigestMismatch, version = "2.0", fmuType = "me", platf
 readFile("FmuContainerDigestMismatch.log");
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

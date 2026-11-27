@@ -6,6 +6,7 @@
 // A container image reference with shell metacharacters is rejected before
 // any command is run.
 
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 loadString("
 model FmuContainerReferenceInvalid
   Real x(start = 1, fixed = true);
@@ -17,6 +18,8 @@ buildModelFMU(FmuContainerReferenceInvalid, version = "2.0", fmuType = "me", pla
 regularFileExists("/tmp/FmuContainerReferenceInvalid");
 
 // Result:
+// true
+// ""
 // true
 // ""
 // ""
