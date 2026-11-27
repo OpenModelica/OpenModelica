@@ -321,30 +321,30 @@ namespace IAEX
 
 
 
-    connect( text_, SIGNAL( textChanged() ),
-      this, SLOT( contentChanged() ));
+    MyTextBrowser *pTextBrowser = static_cast<MyTextBrowser*>(text_);
+    connect( text_, &QTextBrowser::textChanged,
+      this, &TextCell::contentChanged );
 
-    connect( text_, SIGNAL( openLink(const QUrl *) ),
-      this, SLOT( openLinkInternal(const QUrl *) ));
+    connect( pTextBrowser, &MyTextBrowser::openLink,
+      this, QOverload<const QUrl *>::of(&TextCell::openLinkInternal) );
 
-    connect( text_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEvent() ));
-    connect( text_, SIGNAL( wheelMove(QWheelEvent*) ),
-      this, SLOT( wheelEvent(QWheelEvent*) ));
+    connect( pTextBrowser, &MyTextBrowser::clickOnCell,
+      this, &TextCell::clickEvent );
+    connect( pTextBrowser, &MyTextBrowser::wheelMove,
+      this, &TextCell::wheelEvent );
     // 2006-01-17 AF, new...
-    connect( text_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-      this, SLOT( charFormatChanged(const QTextCharFormat &) ));
-    connect( text_, SIGNAL( textChanged() ),
-      this, SLOT( textChangedInternal() ));
+    connect( text_, &QTextBrowser::currentCharFormatChanged,
+      this, &TextCell::charFormatChanged );
+    connect( text_, &QTextBrowser::textChanged,
+      this, &TextCell::textChangedInternal );
     // 2006-02-10 AF, new...
-    connect( text_, SIGNAL( highlighted(const QUrl &) ),
-      this, SLOT( hoverOverLink(const QUrl &) ));
+    connect( text_, QOverload<const QUrl &>::of(&QTextBrowser::highlighted),
+      this, &TextCell::hoverOverLink );
     // 2006-04-27 AF,
-    connect( text_, SIGNAL( forwardAction(int) ),
-      this, SIGNAL( forwardAction(int) ));
+    connect( pTextBrowser, &MyTextBrowser::forwardAction,
+      this, &TextCell::forwardAction );
 
 
-//    connect(text_, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLinkIternal(const QUrl&)));
     contentChanged();
   }
 
@@ -366,8 +366,8 @@ namespace IAEX
     chaptercounter_->setFixedWidth(70);
     chaptercounter_->setReadOnly( true );
 
-    connect( chaptercounter_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEvent() ));
+    connect( static_cast<MyTextBrowser*>(chaptercounter_), &MyTextBrowser::clickOnCell,
+      this, &TextCell::clickEvent );
 
     addChapterCounter( chaptercounter_ );
   }

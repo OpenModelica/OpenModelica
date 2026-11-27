@@ -111,7 +111,7 @@ CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget(CRMLTranslatorOptions crm
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpCancelButton = new QPushButton(tr("Cancel"));
   mpCancelButton->setEnabled(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelTranslation()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &CRMLTranslatorOutputWidget::cancelTranslation);
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   // Generated Files tab widget
@@ -165,11 +165,11 @@ void CRMLTranslatorOutputWidget::translateModel()
 #if QT_CONFIG(process)
   mpTranslationProcess = new QProcess;
   mpTranslationProcess->setWorkingDirectory(mCRMLTranslatorOptions.getWorkingDirectory());
-  connect(mpTranslationProcess, SIGNAL(started()), SLOT(translationProcessStarted()));
-  connect(mpTranslationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readTranslationStandardOutput()));
-  connect(mpTranslationProcess, SIGNAL(readyReadStandardError()), SLOT(readTranslationStandardError()));
-  connect(mpTranslationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(translationProcessError(QProcess::ProcessError)));
-  connect(mpTranslationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(translationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpTranslationProcess, &QProcess::started, this, &CRMLTranslatorOutputWidget::translationProcessStarted);
+  connect(mpTranslationProcess, &QProcess::readyReadStandardOutput, this, &CRMLTranslatorOutputWidget::readTranslationStandardOutput);
+  connect(mpTranslationProcess, &QProcess::readyReadStandardError, this, &CRMLTranslatorOutputWidget::readTranslationStandardError);
+  connect(mpTranslationProcess, &QProcess::errorOccurred, this, &CRMLTranslatorOutputWidget::translationProcessError);
+  connect(mpTranslationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &CRMLTranslatorOutputWidget::translationProcessFinished);
   QStringList args = {"-jar",
                       mCRMLTranslatorOptions.getCompilerJar(),
                       mCRMLTranslatorOptions.getCompilerCommandLineOptions()};

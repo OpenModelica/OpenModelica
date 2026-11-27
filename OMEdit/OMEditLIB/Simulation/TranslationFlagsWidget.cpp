@@ -87,7 +87,7 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpTranslationFlagsHelpButton = new QToolButton;
   mpTranslationFlagsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpTranslationFlagsHelpButton->setToolTip(tr("Translation flags help"));
-  connect(mpTranslationFlagsHelpButton, SIGNAL(clicked()), SLOT(showTranslationFlagsHelp()));
+  connect(mpTranslationFlagsHelpButton, &QToolButton::clicked, this, &TranslationFlagsWidget::showTranslationFlagsHelp);
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);

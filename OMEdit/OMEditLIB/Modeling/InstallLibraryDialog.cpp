@@ -72,16 +72,16 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   // support levels
   mpFullSupportCheckBox = new QCheckBox(tr("Full"));
   mpFullSupportCheckBox->setChecked(true);
-  connect(mpFullSupportCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
+  connect(mpFullSupportCheckBox, &QCheckBox::toggled, this, &InstallLibraryDialog::filterChanged);
   mpSupportCheckBox = new QCheckBox(tr("Partial"));
   mpSupportCheckBox->setChecked(true);
-  connect(mpSupportCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
+  connect(mpSupportCheckBox, &QCheckBox::toggled, this, &InstallLibraryDialog::filterChanged);
   mpExperimentalCheckBox = new QCheckBox(tr("Experimental"));
-  connect(mpExperimentalCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
+  connect(mpExperimentalCheckBox, &QCheckBox::toggled, this, &InstallLibraryDialog::filterChanged);
   mpObsoleteCheckBox = new QCheckBox(tr("Obsolete"));
-  connect(mpObsoleteCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
+  connect(mpObsoleteCheckBox, &QCheckBox::toggled, this, &InstallLibraryDialog::filterChanged);
   mpNoSupportCheckBox = new QCheckBox(tr("None"));
-  connect(mpNoSupportCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
+  connect(mpNoSupportCheckBox, &QCheckBox::toggled, this, &InstallLibraryDialog::filterChanged);
   QGroupBox *pSupportLevelsGroupBox = new QGroupBox(tr("Level of support by OpenModelica"));
   QGridLayout *pSupportLevelsGridLayout = new QGridLayout;
   pSupportLevelsGridLayout->addWidget(mpFullSupportCheckBox, 0, 0);
@@ -92,7 +92,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   pSupportLevelsGroupBox->setLayout(pSupportLevelsGridLayout);
   // name combobox
   mpNameComboBox = new QComboBox;
-  connect(mpNameComboBox, SIGNAL(currentIndexChanged(int)), SLOT(libraryIndexChanged(int)));
+  connect(mpNameComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &InstallLibraryDialog::libraryIndexChanged);
   // source label
   mpSourceLabel = new Label;
   mpSourceLabel->setOpenExternalLinks(true);
@@ -124,10 +124,10 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(installLibrary()));
+  connect(mpOkButton, &QPushButton::clicked, this, &InstallLibraryDialog::installLibrary);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -287,10 +287,10 @@ UpgradeInstalledLibrariesDialog::UpgradeInstalledLibrariesDialog(QDialog *parent
   // buttons
   mpUpgradeButton = new QPushButton(tr("Upgrade"));
   mpUpgradeButton->setAutoDefault(true);
-  connect(mpUpgradeButton, SIGNAL(clicked()), SLOT(upgradeInstalledLibraries()));
+  connect(mpUpgradeButton, &QPushButton::clicked, this, &UpgradeInstalledLibrariesDialog::upgradeInstalledLibraries);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpUpgradeButton, QDialogButtonBox::ActionRole);
@@ -492,7 +492,7 @@ InstallLibraryFromPathDialog::InstallLibraryFromPathDialog(const QString &path, 
     const QString topFile = package.second ? package.first : (package.first.isEmpty() ? "package.mo" : package.first + "/package.mo");
     addPackage(package.first, package.second, readTopFile(mZipFile, topFile));
   }
-  connect(mpPackagesListWidget, SIGNAL(itemChanged(QListWidgetItem*)), SLOT(updateInstallButton()));
+  connect(mpPackagesListWidget, &QListWidget::itemChanged, this, &InstallLibraryFromPathDialog::updateInstallButton);
   Label *pReadOnlyLabel = new Label(tr("An installed library is read-only. To change a library, open it with %1 instead.")
                                     .arg(Helper::openModelicaFiles));
   pReadOnlyLabel->setWordWrap(true);
@@ -500,10 +500,10 @@ InstallLibraryFromPathDialog::InstallLibraryFromPathDialog(const QString &path, 
   mpProgressLabel->hide();
   mpInstallButton = new QPushButton(tr("Install"));
   mpInstallButton->setAutoDefault(true);
-  connect(mpInstallButton, SIGNAL(clicked()), SLOT(installPackages()));
+  connect(mpInstallButton, &QPushButton::clicked, this, &InstallLibraryFromPathDialog::installPackages);
   QPushButton *pCancelButton = new QPushButton(Helper::cancel);
   pCancelButton->setAutoDefault(false);
-  connect(pCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(pCancelButton, &QPushButton::clicked, this, &QDialog::reject);
   QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
   pButtonBox->addButton(mpInstallButton, QDialogButtonBox::ActionRole);
   pButtonBox->addButton(pCancelButton, QDialogButtonBox::ActionRole);

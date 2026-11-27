@@ -453,7 +453,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(QString owner, int por
     pPlotWindow->setPlotType(PlotWindow::PLOTINTERACTIVE);
     pPlotWindow->setInteractiveOwner(owner);
     pPlotWindow->setInteractivePort(port);
-    connect(pPlotWindow, SIGNAL(closingDown()), SLOT(removeInteractivePlotWindow()));
+    connect(pPlotWindow, &PlotWindow::closingDown, this, &PlotWindowContainer::removeInteractivePlotWindow);
     pPlotWindow->setWindowTitle(tr("Interactive Plot: %1").arg(owner));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
@@ -934,7 +934,7 @@ void PlotWindowContainer::addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiS
 {
   QAction *pRenamePlotWindowAction = new QAction(tr("Rename"), pMdiSubWindow);
   pRenamePlotWindowAction->setStatusTip(tr("Renames the plot tab"));
-  connect(pRenamePlotWindowAction, SIGNAL(triggered()), SLOT(renamePlotWindow()));
+  connect(pRenamePlotWindowAction, &QAction::triggered, this, &PlotWindowContainer::renamePlotWindow);
   QMenu *pMenu = pMdiSubWindow->systemMenu();
   pMenu->addAction(pRenamePlotWindowAction);
 }

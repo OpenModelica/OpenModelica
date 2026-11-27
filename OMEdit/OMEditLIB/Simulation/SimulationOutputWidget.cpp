@@ -95,23 +95,23 @@ SimulationOutputTree::SimulationOutputTree(SimulationOutputWidget *pSimulationOu
   setSelectionMode(QAbstractItemView::ExtendedSelection);
   setContextMenuPolicy(Qt::CustomContextMenu);
   setFont(QFont(Helper::monospacedFontInfo.family()));
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  connect(header(), SIGNAL(sectionResized(int,int,int)), SLOT(callLayoutChanged(int,int,int)));
+  connect(this, &SimulationOutputTree::customContextMenuRequested, this, &SimulationOutputTree::showContextMenu);
+  connect(header(), &QHeaderView::sectionResized, this, &SimulationOutputTree::callLayoutChanged);
   // create actions
   mpSelectAllAction = new QAction(tr("Select All"), this);
   mpSelectAllAction->setShortcut(QKeySequence("Ctrl+a"));
   mpSelectAllAction->setStatusTip(tr("Selects all the Messages"));
-  connect(mpSelectAllAction, SIGNAL(triggered()), SLOT(selectAllMessages()));
+  connect(mpSelectAllAction, &QAction::triggered, this, &SimulationOutputTree::selectAllMessages);
   mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
   mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
   mpCopyAction->setStatusTip(tr("Copy the Message"));
-  connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyMessages()));
+  connect(mpCopyAction, &QAction::triggered, this, &SimulationOutputTree::copyMessages);
   mpExpandAllAction = new QAction(Helper::expandAll, this);
   mpExpandAllAction->setStatusTip(tr("Copy the Message"));
-  connect(mpExpandAllAction, SIGNAL(triggered()), SLOT(expandAll()));
+  connect(mpExpandAllAction, &QAction::triggered, this, &SimulationOutputTree::expandAll);
   mpCollapseAllAction = new QAction(Helper::collapseAll, this);
   mpCollapseAllAction->setStatusTip(tr("Copy the Message"));
-  connect(mpCollapseAllAction, SIGNAL(triggered()), SLOT(collapseAll()));
+  connect(mpCollapseAllAction, &QAction::triggered, this, &SimulationOutputTree::collapseAll);
 }
 
 /*!
@@ -248,14 +248,14 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpCancelButton = new QPushButton(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelCompilationOrSimulation()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &SimulationOutputWidget::cancelCompilationOrSimulation);
   mpOpenTransformationalDebuggerButton = new QToolButton;
   mpOpenTransformationalDebuggerButton->setIcon(QIcon(":/Resources/icons/equational-debugger.svg"));
   mpOpenTransformationalDebuggerButton->setToolTip(tr("Open Transformational Debugger"));
-  connect(mpOpenTransformationalDebuggerButton, SIGNAL(clicked()), SLOT(openTransformationalDebugger()));
+  connect(mpOpenTransformationalDebuggerButton, &QToolButton::clicked, this, &SimulationOutputWidget::openTransformationalDebugger);
   mpOpenOutputFileButton = new QPushButton(tr("Open Output File"));
   mpOpenOutputFileButton->setEnabled(false);
-  connect(mpOpenOutputFileButton, SIGNAL(clicked()), SLOT(openSimulationLogFile()));
+  connect(mpOpenOutputFileButton, &QPushButton::clicked, this, &SimulationOutputWidget::openSimulationLogFile);
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   // Generated Files tab widget
@@ -286,7 +286,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
     mpSimulationOutputTextBrowser->setFont(QFont(Helper::monospacedFontInfo.family()));
     mpSimulationOutputTextBrowser->setOpenLinks(false);
     mpSimulationOutputTextBrowser->setOpenExternalLinks(false);
-    connect(mpSimulationOutputTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openTransformationBrowser(QUrl)));
+    connect(mpSimulationOutputTextBrowser, &QTextBrowser::anchorClicked, this, &SimulationOutputWidget::openTransformationBrowser);
     // simulation output tree
     mpSimulationOutputTree = 0;
     mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBrowser, Helper::output);
@@ -406,7 +406,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpTcpServer = new QTcpServer;
   mSocketState = SocketState::NotConnected;
   mpTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
-  connect(mpTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
+  connect(mpTcpServer, &QTcpServer::newConnection, this, &SimulationOutputWidget::createSimulationProgressSocket);
 #endif
   mpCompilationProcess = 0;
   setCompilationProcessKilled(false);
@@ -672,11 +672,11 @@ void SimulationOutputWidget::compileModel()
 {
   mpCompilationProcess = new QProcess;
   mpCompilationProcess->setWorkingDirectory(mSimulationOptions.getWorkingDirectory());
-  connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
-  connect(mpCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
-  connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpCompilationProcess, &QProcess::started, this, &SimulationOutputWidget::compilationProcessStarted);
+  connect(mpCompilationProcess, &QProcess::readyReadStandardOutput, this, &SimulationOutputWidget::readCompilationStandardOutput);
+  connect(mpCompilationProcess, &QProcess::readyReadStandardError, this, &SimulationOutputWidget::readCompilationStandardError);
+  connect(mpCompilationProcess, &QProcess::errorOccurred, this, &SimulationOutputWidget::compilationProcessError);
+  connect(mpCompilationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &SimulationOutputWidget::compilationProcessFinished);
   QString numProcs, linkType("dynamic");
   if (mSimulationOptions.getNumberOfProcessors() == 0) {
     numProcs = QString::number(mSimulationOptions.getNumberOfProcessors());
@@ -722,11 +722,11 @@ void SimulationOutputWidget::runPostCompilation()
   if (postCompilationCommand.size()) {
     mpPostCompilationProcess = new QProcess;
     mpPostCompilationProcess->setWorkingDirectory(mSimulationOptions.getWorkingDirectory());
-    connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
-    connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
-    connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
-    connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
-    connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
+    connect(mpPostCompilationProcess, &QProcess::started, this, &SimulationOutputWidget::postCompilationProcessStarted);
+    connect(mpPostCompilationProcess, &QProcess::readyReadStandardOutput, this, &SimulationOutputWidget::readPostCompilationStandardOutput);
+    connect(mpPostCompilationProcess, &QProcess::readyReadStandardError, this, &SimulationOutputWidget::readPostCompilationStandardError);
+    connect(mpPostCompilationProcess, &QProcess::errorOccurred, this, &SimulationOutputWidget::postCompilationProcessError);
+    connect(mpPostCompilationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &SimulationOutputWidget::postCompilationProcessFinished);
     writeCompilationOutput(QString("%1\n").arg(postCompilationCommand), Style::messagesCommandColor());
     QStringList args(QProcess::splitCommand(postCompilationCommand));
     const QString program(args.takeFirst());
@@ -905,11 +905,11 @@ void SimulationOutputWidget::runSimulationExecutable()
    */
 //  mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-  connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
-  connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
-  connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
-  connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
-  connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpSimulationProcess, &QProcess::started, this, &SimulationOutputWidget::simulationProcessStarted);
+  connect(mpSimulationProcess, &QProcess::readyReadStandardOutput, this, &SimulationOutputWidget::readSimulationStandardOutput);
+  connect(mpSimulationProcess, &QProcess::readyReadStandardError, this, &SimulationOutputWidget::readSimulationStandardError);
+  connect(mpSimulationProcess, &QProcess::errorOccurred, this, &SimulationOutputWidget::simulationProcessError);
+  connect(mpSimulationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &SimulationOutputWidget::simulationProcessFinished);
   QStringList args(QString("-port=").append(QString::number(mpTcpServer->serverPort())));
   args << "-logFormat=xmltcp" << mSimulationOptions.getSimulationFlags();
   // start the executable
@@ -1173,10 +1173,10 @@ void SimulationOutputWidget::createSimulationProgressSocket()
     if (pTcpServer && pTcpServer->hasPendingConnections()) {
       QTcpSocket *pTcpSocket = pTcpServer->nextPendingConnection();
       mSocketState = SocketState::Connected;
-      connect(pTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
-      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(socketDisconnected()));
-      connect(pTcpSocket, SIGNAL(disconnected()), pTcpSocket, SLOT(deleteLater()));
-      disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
+      connect(pTcpSocket, &QTcpSocket::readyRead, this, &SimulationOutputWidget::readSimulationProgress);
+      connect(pTcpSocket, &QTcpSocket::disconnected, this, &SimulationOutputWidget::socketDisconnected);
+      connect(pTcpSocket, &QTcpSocket::disconnected, pTcpSocket, &QTcpSocket::deleteLater);
+      disconnect(pTcpServer, &QTcpServer::newConnection, this, &SimulationOutputWidget::createSimulationProgressSocket);
     }
   }
 #endif

@@ -78,10 +78,10 @@ NotificationsDialog::NotificationsDialog(NotificationType notificationType, Noti
   // Notificaiton buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(saveNotification()));
+  connect(mpOkButton, &QPushButton::clicked, this, &NotificationsDialog::saveNotification);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(rejectNotification()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &NotificationsDialog::rejectNotification);
   mpSaveWithErrorsButton = new QPushButton();
   mpSaveWithErrorsButton->setAutoDefault(false);
   connect(mpSaveWithErrorsButton, &QPushButton::clicked, this, &NotificationsDialog::saveWithErrors);

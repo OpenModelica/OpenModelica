@@ -69,18 +69,18 @@ SearchWidget::SearchWidget(QWidget *pParent)
   mpSearchStringComboBox = new QComboBox;
   mpSearchStringComboBox->setEditable(true);
   mpSearchStringComboBox->setFixedWidth(400);
-  connect(mpSearchStringComboBox->lineEdit(), SIGNAL(returnPressed()), SLOT(searchInFiles()));
+  connect(mpSearchStringComboBox->lineEdit(), &QLineEdit::returnPressed, this, &SearchWidget::searchInFiles);
   // search file combobox
   mpSearchFilePatternComboBox = new QComboBox;
   mpSearchFilePatternComboBox->setEditable(true);
   mpSearchFilePatternComboBox->addItem("*");
-  connect(mpSearchFilePatternComboBox->lineEdit(), SIGNAL(returnPressed()), SLOT(searchInFiles()));
+  connect(mpSearchFilePatternComboBox->lineEdit(), &QLineEdit::returnPressed, this, &SearchWidget::searchInFiles);
   // search button
   mpSearchButton = new QPushButton("Search");
-  connect(mpSearchButton, SIGNAL(clicked()), SLOT(searchInFiles()));
+  connect(mpSearchButton, &QPushButton::clicked, this, &SearchWidget::searchInFiles);
   // stack widget
   mpSearchStackedWidget = new QStackedWidget;
-  connect(mpSearchStackedWidget, SIGNAL(currentChanged(int)), SLOT(enableDisableExpandCollapseAction(int)));
+  connect(mpSearchStackedWidget, &QStackedWidget::currentChanged, this, &SearchWidget::enableDisableExpandCollapseAction);
   // tool bar
   QToolBar *pSearchBrowserToolBar = new QToolBar;
   int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
@@ -89,22 +89,22 @@ SearchWidget::SearchWidget(QWidget *pParent)
   mpClearAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear All"), this);
   mpClearAction->setStatusTip(tr("Clears all the results"));
   mpClearAction->setDisabled(false);
-  connect(mpClearAction, SIGNAL(triggered()), SLOT(clearAll()));
+  connect(mpClearAction, &QAction::triggered, this, &SearchWidget::clearAll);
   // expand action
   mpExpandAction = new QAction(QIcon(":/Resources/icons/down.svg"), Helper::expandAll, this);
   mpExpandAction->setDisabled(true);
-  connect(mpExpandAction, SIGNAL(triggered()), SLOT(expandAll()));
+  connect(mpExpandAction, &QAction::triggered, this, &SearchWidget::expandAll);
   // Collapse action
   mpCollapseAction = new QAction(QIcon(":/Resources/icons/up.svg"), Helper::collapseAll, this);
   mpCollapseAction->setDisabled(true);
-  connect(mpCollapseAction, SIGNAL(triggered()), SLOT(collapseAll()));
+  connect(mpCollapseAction, &QAction::triggered, this, &SearchWidget::collapseAll);
   // search history widget
   QWidget *pSearchHistoryWidget = new QWidget;
   Label *pSearchHistoryLabel = new Label(tr("History:"));
   mpSearchHistoryComboBox = new QComboBox;
   mpSearchHistoryComboBox->setFixedWidth(300);
   mpSearchHistoryComboBox->addItem("New Search");
-  connect(mpSearchHistoryComboBox,SIGNAL(activated(int)), SLOT(switchSearchPage(int)));
+  connect(mpSearchHistoryComboBox, QOverload<int>::of(&QComboBox::activated), this, &SearchWidget::switchSearchPage);
 
   QGridLayout *pSearchHistoryLayout = new QGridLayout;
   pSearchHistoryLayout->setContentsMargins(0, 0, 0, 0);
@@ -194,15 +194,15 @@ void SearchWidget::searchInFiles()
   mpSearchResultWidget = new SearchResultWidget;
   mSearchResultWidgetobjects.append(mpSearchResultWidget);
   mpSearch = new Search(this);
-  connect(mpSearch, SIGNAL(setTreeWidgetItems(SearchFileDetails)), mpSearchResultWidget, SLOT(updateTreeWidgetItems(SearchFileDetails)));
-  connect(mpSearch, SIGNAL(setProgressBarRange(int)), mpSearchResultWidget, SLOT(updateProgressBarRange(int)));
-  connect(mpSearch, SIGNAL(setProgressBarValue(int,int)), mpSearchResultWidget, SLOT(updateProgressBarValue(int,int)));
-  connect(mpSearch, SIGNAL(setFoundFilesLabel(int)), mpSearchResultWidget, SLOT(updateFoundFilesLabel(int)));
-  connect(mpSearch, SIGNAL(setProgressBarCancelValue(int,int)), mpSearchResultWidget, SLOT(updateProgressBarCancelValue(int,int)));
-  connect(mpSearch, SIGNAL(setProgressBarFinishedValue(int)), mpSearchResultWidget, SLOT(updateProgressBarFinishedValue(int)));
-  connect(mpSearchResultWidget, SIGNAL(setCancelSearchResult()), mpSearch, SLOT(updateCancelSearch()));
+  connect(mpSearch, &Search::setTreeWidgetItems, mpSearchResultWidget, &SearchResultWidget::updateTreeWidgetItems);
+  connect(mpSearch, &Search::setProgressBarRange, mpSearchResultWidget, &SearchResultWidget::updateProgressBarRange);
+  connect(mpSearch, &Search::setProgressBarValue, mpSearchResultWidget, &SearchResultWidget::updateProgressBarValue);
+  connect(mpSearch, &Search::setFoundFilesLabel, mpSearchResultWidget, &SearchResultWidget::updateFoundFilesLabel);
+  connect(mpSearch, &Search::setProgressBarCancelValue, mpSearchResultWidget, &SearchResultWidget::updateProgressBarCancelValue);
+  connect(mpSearch, &Search::setProgressBarFinishedValue, mpSearchResultWidget, &SearchResultWidget::updateProgressBarFinishedValue);
+  connect(mpSearchResultWidget, &SearchResultWidget::setCancelSearchResult, mpSearch, &Search::updateCancelSearch);
   /*emit the signals to stop any ongoing search operation when mainwindow is closed*/
-  connect(this, SIGNAL(setCancelSearch()), mpSearch, SLOT(updateCancelSearch()));
+  connect(this, &SearchWidget::setCancelSearch, mpSearch, &Search::updateCancelSearch);
 
   mpSearchStackedWidget->addWidget(mpSearchResultWidget);
   mpSearchStackedWidget->setCurrentWidget(mpSearchResultWidget);
@@ -296,7 +296,7 @@ SearchResultWidget::SearchResultWidget(QWidget *pParent)
   mpProgressLabelFoundFiles = new Label;
   mpProgressLabelFoundFiles->setTextFormat(Qt::RichText);
   mpCancelButton = new QPushButton(Helper::cancel);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelSearch()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &SearchResultWidget::cancelSearch);
 
   // Progress Bar
   mpProgressBar = new QProgressBar;
@@ -306,7 +306,7 @@ SearchResultWidget::SearchResultWidget(QWidget *pParent)
   mpSearchTreeWidget = new QTreeWidget();
   mpSearchTreeWidget->setColumnCount(1);
   mpSearchTreeWidget->header()->close();
-  connect(mpSearchTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)),this, SLOT(findAndOpenTreeWidgetItems(QTreeWidgetItem*,int)));
+  connect(mpSearchTreeWidget, &QTreeWidget::itemClicked, this, &SearchResultWidget::findAndOpenTreeWidgetItems);
 
   QWidget *pSearchResultPageWidget = new QWidget;
   QGridLayout *pSearchResultsLayout = new QGridLayout;

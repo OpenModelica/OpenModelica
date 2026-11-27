@@ -945,7 +945,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pReloadToolButton->setToolTip(Helper::reload);
   pReloadToolButton->setAutoRaise(true);
   pReloadToolButton->setIcon(QIcon(":/Resources/icons/refresh.svg"));
-  connect(pReloadToolButton, SIGNAL(clicked()), SLOT(loadTransformations()));
+  connect(pReloadToolButton, &QToolButton::clicked, this, QOverload<>::of(&TransformationsWidget::loadTransformations));
   /* info xml file path label */
   Label *pInfoXMLFilePathLabel = new Label(mInfoJSONFullFileName, this);
   pInfoXMLFilePathLabel->setElideMode(Qt::ElideMiddle);
@@ -961,10 +961,10 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), &LineEdit::returnPressed, this, &TransformationsWidget::findVariables);
+  connect(mpTreeSearchFilters->getFilterTextBox(), &LineEdit::textEdited, this, &TransformationsWidget::findVariables);
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), &QCheckBox::toggled, this, &TransformationsWidget::findVariables);
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TransformationsWidget::findVariables);
   /* variables tree view */
   mpTVariablesTreeView = new TVariablesTreeView(this);
   mpTVariablesTreeModel = new TVariablesTreeModel(mpTVariablesTreeView);
@@ -973,9 +973,9 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpTVariableTreeProxyModel->setSourceModel(mpTVariablesTreeModel);
   mpTVariablesTreeView->setModel(mpTVariableTreeProxyModel);
   mpTVariablesTreeView->setColumnWidth(2, 40);  /* line number column */
-  connect(mpTVariablesTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableData(QModelIndex)));
-  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpTVariablesTreeView, SLOT(expandAll()));
-  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpTVariablesTreeView, SLOT(collapseAll()));
+  connect(mpTVariablesTreeView, &TVariablesTreeView::doubleClicked, this, QOverload<const QModelIndex &>::of(&TransformationsWidget::fetchVariableData));
+  connect(mpTreeSearchFilters->getExpandAllButton(), &QToolButton::clicked, mpTVariablesTreeView, &TVariablesTreeView::expandAll);
+  connect(mpTreeSearchFilters->getCollapseAllButton(), &QToolButton::clicked, mpTVariablesTreeView, &TVariablesTreeView::collapseAll);
   QGridLayout *pVariablesGridLayout = new QGridLayout;
   pVariablesGridLayout->setSpacing(1);
   pVariablesGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -993,7 +993,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpDefinedInEquationProxyModel->setSourceModel(mpDefinedInEquationTreeModel);
   mpDefinedInEquationTreeView = new EquationTreeView(this);
   mpDefinedInEquationTreeView->setModel(mpDefinedInEquationProxyModel);
-  connect(mpDefinedInEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
+  connect(mpDefinedInEquationTreeView, &EquationTreeView::doubleClicked, this, QOverload<const QModelIndex &>::of(&TransformationsWidget::fetchEquationData));
   QGridLayout *pDefinedInGridLayout = new QGridLayout;
   pDefinedInGridLayout->setSpacing(1);
   pDefinedInGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -1010,7 +1010,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpUsedInEquationProxyModel->setSourceModel(mpUsedInEquationTreeModel);
   mpUsedInEquationTreeView = new EquationTreeView(this);
   mpUsedInEquationTreeView->setModel(mpUsedInEquationProxyModel);
-  connect(mpUsedInEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
+  connect(mpUsedInEquationTreeView, &EquationTreeView::doubleClicked, this, QOverload<const QModelIndex &>::of(&TransformationsWidget::fetchEquationData));
   QGridLayout *pUsedInGridLayout = new QGridLayout;
   pUsedInGridLayout->setSpacing(1);
   pUsedInGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -1039,10 +1039,10 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pEquationBrowserLabel->setObjectName("LabelWithBorder");
   mpEquationSearchFilters = new TreeSearchFilters(this);
   mpEquationSearchFilters->getFilterTextBox()->setPlaceholderText(tr("Filter Equations"));
-  connect(mpEquationSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findEquations()));
-  connect(mpEquationSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(findEquations()));
-  connect(mpEquationSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findEquations()));
-  connect(mpEquationSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findEquations()));
+  connect(mpEquationSearchFilters->getFilterTextBox(), &LineEdit::returnPressed, this, &TransformationsWidget::findEquations);
+  connect(mpEquationSearchFilters->getFilterTextBox(), &LineEdit::textEdited, this, &TransformationsWidget::findEquations);
+  connect(mpEquationSearchFilters->getCaseSensitiveCheckBox(), &QCheckBox::toggled, this, &TransformationsWidget::findEquations);
+  connect(mpEquationSearchFilters->getSyntaxComboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TransformationsWidget::findEquations);
   /* Equations tree view */
   mpEquationTreeModel = new EquationTreeModel(mEquations, this);
   mpEquationProxyModel = new EquationTreeProxyModel(this);
@@ -1050,9 +1050,9 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpEquationProxyModel->setSourceModel(mpEquationTreeModel);
   mpEquationTreeView = new EquationTreeView(this);
   mpEquationTreeView->setModel(mpEquationProxyModel);
-  connect(mpEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
-  connect(mpEquationSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpEquationTreeView, SLOT(expandAll()));
-  connect(mpEquationSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpEquationTreeView, SLOT(collapseAll()));
+  connect(mpEquationTreeView, &EquationTreeView::doubleClicked, this, QOverload<const QModelIndex &>::of(&TransformationsWidget::fetchEquationData));
+  connect(mpEquationSearchFilters->getExpandAllButton(), &QToolButton::clicked, mpEquationTreeView, &EquationTreeView::expandAll);
+  connect(mpEquationSearchFilters->getCollapseAllButton(), &QToolButton::clicked, mpEquationTreeView, &EquationTreeView::collapseAll);
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -1074,7 +1074,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   QStringList headerLabels;
   headerLabels << tr("Variable");
   mpDefinesVariableTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpDefinesVariableTreeWidget, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableDataFromEquationVariable(QModelIndex)));
+  connect(mpDefinesVariableTreeWidget, &QTreeWidget::doubleClicked, this, &TransformationsWidget::fetchVariableDataFromEquationVariable);
   QGridLayout *pDefinesGridLayout = new QGridLayout;
   pDefinesGridLayout->setSpacing(1);
   pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -1093,7 +1093,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpDependsVariableTreeWidget->setSortingEnabled(true);
   mpDependsVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpDependsVariableTreeWidget->setHeaderLabel(tr("Variable"));
-  connect(mpDependsVariableTreeWidget, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableDataFromEquationVariable(QModelIndex)));
+  connect(mpDependsVariableTreeWidget, &QTreeWidget::doubleClicked, this, &TransformationsWidget::fetchVariableDataFromEquationVariable);
   QGridLayout *pDependsGridLayout = new QGridLayout;
   pDependsGridLayout->setSpacing(1);
   pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -1108,7 +1108,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpEquationDiffFilterComboBox->addItem(tr("Diff"), HtmlDiff::Both);
   mpEquationDiffFilterComboBox->addItem(tr("After"), HtmlDiff::Insertion);
   mpEquationDiffFilterComboBox->addItem(tr("Before"), HtmlDiff::Deletion);
-  connect(mpEquationDiffFilterComboBox, SIGNAL(currentIndexChanged(int)), SLOT(filterEquationOperations(int)));
+  connect(mpEquationDiffFilterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TransformationsWidget::filterEquationOperations);
   QHBoxLayout *pEquationTransformationFilterLayout = new QHBoxLayout;
   pEquationTransformationFilterLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pEquationTransformationFilterLayout->addWidget(new Label(tr("Transformation:")));
@@ -1139,7 +1139,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   ModelicaHighlighter *pModelicaTextHighlighter;
   pModelicaTextHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(),
                                                      mpTransformationsEditor->getPlainTextEdit());
-  connect(OptionsDialog::instance(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(OptionsDialog::instance(), &OptionsDialog::modelicaEditorSettingsChanged, pModelicaTextHighlighter, &ModelicaHighlighter::settingsChanged);
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
   pTSourceEditorVerticalLayout->setContentsMargins(0, 0, 0, 0);

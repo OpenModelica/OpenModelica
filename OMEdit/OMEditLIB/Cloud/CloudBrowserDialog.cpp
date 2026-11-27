@@ -70,7 +70,7 @@ CloudBrowserDialog::CloudBrowserDialog(Mode mode, QWidget *pParent)
                                                       pAccount->displayName()),
                                pAccount->key());
   }
-  connect(mpAccountComboBox, SIGNAL(currentIndexChanged(int)), SLOT(accountChanged()));
+  connect(mpAccountComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &CloudBrowserDialog::accountChanged);
 
   mpTreeWidget = new QTreeWidget;
   mpTreeWidget->setHeaderLabels(QStringList() << tr("Folder"));
@@ -78,9 +78,9 @@ CloudBrowserDialog::CloudBrowserDialog(Mode mode, QWidget *pParent)
   // A new folder is made on demand from here, rather than every save being forced
   // to invent one.
   mpTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(mpTreeWidget, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  connect(mpTreeWidget, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(itemExpanded(QTreeWidgetItem*)));
-  connect(mpTreeWidget, SIGNAL(itemSelectionChanged()), SLOT(selectionChanged()));
+  connect(mpTreeWidget, &QTreeWidget::customContextMenuRequested, this, &CloudBrowserDialog::showContextMenu);
+  connect(mpTreeWidget, &QTreeWidget::itemExpanded, this, &CloudBrowserDialog::itemExpanded);
+  connect(mpTreeWidget, &QTreeWidget::itemSelectionChanged, this, &CloudBrowserDialog::selectionChanged);
 
   mpStatusLabel = new QLabel;
   mpStatusLabel->setWordWrap(true);
@@ -88,9 +88,9 @@ CloudBrowserDialog::CloudBrowserDialog(Mode mode, QWidget *pParent)
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpOkButton = new QPushButton(mode == OpenFolder ? tr("Open") : Helper::save);
   mpOkButton->setEnabled(false);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(accept()));
+  connect(mpOkButton, &QPushButton::clicked, this, &CloudBrowserDialog::accept);
   QPushButton *pCancelButton = new QPushButton(Helper::cancel);
-  connect(pCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(pCancelButton, &QPushButton::clicked, this, &CloudBrowserDialog::reject);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(pCancelButton, QDialogButtonBox::ActionRole);
 
@@ -239,7 +239,7 @@ void CloudBrowserDialog::showContextMenu(const QPoint &position)
   }
   QMenu menu(this);
   QAction *pNewFolderAction = menu.addAction(tr("New Folder..."));
-  connect(pNewFolderAction, SIGNAL(triggered()), SLOT(createFolder()));
+  connect(pNewFolderAction, &QAction::triggered, this, &CloudBrowserDialog::createFolder);
   menu.exec(mpTreeWidget->viewport()->mapToGlobal(position));
 }
 

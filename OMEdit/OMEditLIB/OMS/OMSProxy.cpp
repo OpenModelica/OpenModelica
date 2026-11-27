@@ -198,7 +198,7 @@ OMSProxy::OMSProxy()
 #endif
   mTotalOMSCallsTime = 0.0;
   qRegisterMetaType<MessageItem>("MessageItem");
-  connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));
+  connect(this, &OMSProxy::logGUIMessage, MessagesWidget::instance(), &MessagesWidget::addGUIMessage);
   mpGuiRequestSocket = new GuiRequestSocket();
 #ifndef __EMSCRIPTEN__
   // No subprocess support on wasm; mServerReady stays false, so sendZmqCommand()

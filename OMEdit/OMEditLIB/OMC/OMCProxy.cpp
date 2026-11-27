@@ -1011,9 +1011,9 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerTextBox->setUseTimer(false);
   mpOMCLoggerTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
-  connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
+  connect(mpExpressionTextBox, &CustomExpressionBox::returnPressed, this, &OMCProxy::sendCustomExpression);
   mpOMCLoggerSendButton = new QPushButton(Helper::send);
-  connect(mpOMCLoggerSendButton, SIGNAL(clicked()), SLOT(sendCustomExpression()));
+  connect(mpOMCLoggerSendButton, &QPushButton::clicked, this, &OMCProxy::sendCustomExpression);
   // Set the OMC Logger widget Layout
   QHBoxLayout *pHorizontalLayout = new QHBoxLayout;
   pHorizontalLayout->setContentsMargins(0, 0, 0, 0);
@@ -1206,9 +1206,9 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
 #endif
-  connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
-  connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,double)), this, SLOT(logResponse(QString,QString,double)));
-  connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
+  connect(mpOMCInterface, &OMCInterface::logCommand, this, QOverload<QString>::of(&OMCProxy::logCommand));
+  connect(mpOMCInterface, &OMCInterface::logResponse, this, [this](QString command, QString response, double elapsed) { logResponse(command, response, elapsed); });
+  connect(mpOMCInterface, &OMCInterface::throwException, this, &OMCProxy::showException);
   mHasInitialized = true;
   setOMEditDebugFlag();
   // get OpenModelica version

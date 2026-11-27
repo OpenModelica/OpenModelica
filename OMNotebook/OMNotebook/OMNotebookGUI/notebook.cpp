@@ -219,21 +219,22 @@ NotebookWindow::NotebookWindow(std::unique_ptr<Document> subject,
   statusBar()->showMessage(tr("Ready"));
   resize(800, 600);
 
-  connect( subject_->getCursor(), SIGNAL( changedPosition() ),
-           this, SLOT( updateMenus() ));
-  connect( subject_.get(), SIGNAL( contentChanged() ),
-           this, SLOT( updateWindowTitle() ));
-  connect( subject_.get(), SIGNAL( hoverOverFile(QString) ),
-           this, SLOT( setStatusMessage(QString) ));
+  CellDocument *cellDocument = qobject_cast<CellDocument *>(subject_.get());
+  connect( subject_->getCursor(), &CellCursor::changedPosition,
+           this, &NotebookWindow::updateMenus);
+  connect( cellDocument, &CellDocument::contentChanged,
+           this, &NotebookWindow::updateWindowTitle);
+  connect( cellDocument, &CellDocument::hoverOverFile,
+           this, &NotebookWindow::setStatusMessage);
   // 2006-04-27 AF
-  connect( subject_.get(), SIGNAL( forwardAction(int) ),
-           this, SLOT( forwardedAction(int) ));
+  connect( cellDocument, &CellDocument::forwardAction,
+           this, &NotebookWindow::forwardedAction);
 
-  connect( subject_.get(), SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
+  connect( subject_.get(), &Document::updatePos, this, &NotebookWindow::setPosition);
 
-  connect( subject_.get(), SIGNAL(newState(QString)), this, SLOT(setState(QString)));
+  connect( subject_.get(), &Document::newState, this, &NotebookWindow::setState);
 
-  connect( subject_.get(), SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
+  connect( subject_.get(), &Document::setStatusMenu, this, &NotebookWindow::setStatusMenu);
 
   updateWindowTitle();//
   updateChapterCounters();
@@ -337,7 +338,7 @@ void NotebookWindow::createFileMenu()
   auto newAction = new QAction( tr("&New"), this );
   newAction->setShortcut( QKeySequence("Ctrl+N") );
   newAction->setStatusTip( tr("Create a new document") );
-  connect(newAction, SIGNAL(triggered()), this, SLOT(newFile()));
+  connect(newAction, &QAction::triggered, this, &NotebookWindow::newFile);
   newAction->setIcon(QIcon(":/Resources/toolbarIcons/filenew.png"));
 
   toolBar->addAction(newAction);
@@ -348,7 +349,7 @@ void NotebookWindow::createFileMenu()
   auto openFileAction = new QAction( tr("&Open"), this );
   openFileAction->setShortcut( QKeySequence("Ctrl+O") );
   openFileAction->setStatusTip( tr("Open a file") );
-  connect(openFileAction, SIGNAL(triggered()), this, SLOT(openFile()));
+  connect(openFileAction, &QAction::triggered, this, [this]() { openFile(); });
   openFileAction->setIcon(QIcon(":/Resources/toolbarIcons/fileopen.png"));
 
   QToolButton *b = new QToolButton(this);
@@ -362,13 +363,13 @@ void NotebookWindow::createFileMenu()
   auto saveAsAction = new QAction( tr("Save &As..."), this );
   saveAsAction->setShortcut( QKeySequence("Ctrl+Shift+S") );
   saveAsAction->setStatusTip( tr("Save the document as a new file") );
-  connect(saveAsAction, SIGNAL(triggered()), this, SLOT(saveas()));
+  connect(saveAsAction, &QAction::triggered, this, &NotebookWindow::saveas);
 
   // SAVE
   auto saveAction = new QAction( tr("&Save"), this );
   saveAction->setShortcut( QKeySequence("Ctrl+S") );
   saveAction->setStatusTip( tr("Save the document") );
-  connect(saveAction, SIGNAL(triggered()), this, SLOT(save()));
+  connect(saveAction, &QAction::triggered, this, &NotebookWindow::save);
   saveAction->setIcon(QIcon(":/Resources/toolbarIcons/filesave.png"));
   toolBar->addAction(saveAction);
 
@@ -378,13 +379,13 @@ void NotebookWindow::createFileMenu()
   auto closeFileAction = new QAction( tr("&Close"), this );
   closeFileAction->setShortcut( QKeySequence("Ctrl+W") );
   closeFileAction->setStatusTip( tr("Close the window") );
-  connect(closeFileAction, SIGNAL(triggered()), this, SLOT(closeFile()));
+  connect(closeFileAction, &QAction::triggered, this, &NotebookWindow::closeFile);
 
   // PRINT
   auto printAction = new QAction( tr("&Print"), this );
   printAction->setShortcut( QKeySequence("Ctrl+P") );
   printAction->setStatusTip( tr("Print the document") );
-  connect(printAction, SIGNAL(triggered()), this, SLOT(print()));
+  connect(printAction, &QAction::triggered, this, &NotebookWindow::print);
   printAction->setIcon(QIcon(":/Resources/toolbarIcons/fileprint.png"));
   toolBar->addAction(printAction);
 
@@ -399,7 +400,7 @@ void NotebookWindow::createFileMenu()
   quitWindowAction->setMenuRole(QAction::QuitRole);
   quitWindowAction->setIcon(QIcon(":/Resources/toolbarIcons/exit.png"));
 
-  connect(quitWindowAction, SIGNAL(triggered()), this, SLOT(quitOMNotebook()));
+  connect(quitWindowAction, &QAction::triggered, this, &NotebookWindow::quitOMNotebook);
 
   // CREATE MENU
   auto fileMenu = menuBar()->addMenu( tr("&File") );
@@ -434,8 +435,8 @@ void NotebookWindow::createFileMenu()
   // Added 2005-12-01
   auto importOldFile = new QAction( tr("&Old OMNotebook file"), this );
   importOldFile->setStatusTip( tr("Import an old OMNotebook file") );
-  connect( importOldFile, SIGNAL( triggered() ),
-           this, SLOT( openOldFile() ));
+  connect( importOldFile, &QAction::triggered,
+           this, &NotebookWindow::openOldFile);
 
   importMenu->addAction( importOldFile );
 
@@ -444,8 +445,8 @@ void NotebookWindow::createFileMenu()
   // Added 2005-11-21
   auto exportPureText = new QAction( tr("&Pure text"), this );
   exportPureText->setStatusTip( tr("Export the document content to pure text") );
-  connect( exportPureText, SIGNAL( triggered() ),
-           this, SLOT( pureText() ));
+  connect( exportPureText, &QAction::triggered,
+           this, &NotebookWindow::pureText);
 
   exportMenu->addAction( exportPureText );
 
@@ -453,7 +454,7 @@ void NotebookWindow::createFileMenu()
   auto pdfAction = new QAction( tr("P&DF"), this );
   pdfAction->setShortcut( QKeySequence("Alt+P") );
   pdfAction->setStatusTip( tr("Export the document to PDF") );
-  connect(pdfAction, SIGNAL(triggered()), this, SLOT(pdf()));
+  connect(pdfAction, &QAction::triggered, this, &NotebookWindow::pdf);
   exportMenu->addAction(pdfAction);
 }
 
@@ -472,8 +473,8 @@ void NotebookWindow::createEditMenu()
   undoAction = new QAction( tr("&Undo"), this);
   undoAction->setShortcut( QKeySequence("Ctrl+Z") );
   undoAction->setStatusTip( tr("Undo last action") );
-  connect( undoAction, SIGNAL( triggered() ),
-           this, SLOT( undoEdit() ));
+  connect( undoAction, &QAction::triggered,
+           this, &NotebookWindow::undoEdit);
 
   undoAction->setEnabled(false);
   undoAction->setIcon(QIcon(":/Resources/toolbarIcons/undo.png"));
@@ -482,8 +483,8 @@ void NotebookWindow::createEditMenu()
   redoAction = new QAction( tr("&Redo"), this);
   redoAction->setShortcut( QKeySequence("Ctrl+Y") );
   redoAction->setStatusTip( tr("Redo last action") );
-  connect( redoAction, SIGNAL( triggered() ),
-           this, SLOT( redoEdit() ));
+  connect( redoAction, &QAction::triggered,
+           this, &NotebookWindow::redoEdit);
 
   redoAction->setEnabled(false);
   redoAction->setIcon(QIcon(":/Resources/toolbarIcons/redo.png"));
@@ -498,8 +499,8 @@ void NotebookWindow::createEditMenu()
   // CUT
   cutAction = new QAction( tr("Cu&t"), this);
   cutAction->setStatusTip( tr("Cut selected text") );
-  connect( cutAction, SIGNAL( triggered() ),
-           this, SLOT( cutEdit() ));
+  connect( cutAction, &QAction::triggered,
+           this, &NotebookWindow::cutEdit);
 
   cutAction->setEnabled(false);
   cutAction->setIcon(QIcon(":/Resources/toolbarIcons/editcut.png"));
@@ -507,8 +508,8 @@ void NotebookWindow::createEditMenu()
   // COPY
   copyAction = new QAction( tr("&Copy"), this);
   copyAction->setStatusTip( tr("Copy selected text") );
-  connect( copyAction, SIGNAL( triggered() ),
-           this, SLOT( copyEdit() ));
+  connect( copyAction, &QAction::triggered,
+           this, &NotebookWindow::copyEdit);
 
   copyAction->setEnabled(false);
   copyAction->setIcon(QIcon(":/Resources/toolbarIcons/editcopy.png"));
@@ -516,8 +517,8 @@ void NotebookWindow::createEditMenu()
   // PASTE
   pasteAction = new QAction( tr("&Paste"), this);
   pasteAction->setStatusTip( tr("Paste text from clipboard") );
-  connect( pasteAction, SIGNAL( triggered() ),
-           this, SLOT( pasteEdit() ));
+  connect( pasteAction, &QAction::triggered,
+           this, &NotebookWindow::pasteEdit);
 
   pasteAction->setIcon(QIcon(":/Resources/toolbarIcons/editpaste.png"));
 
@@ -536,8 +537,8 @@ void NotebookWindow::createEditMenu()
   auto findAction = new QAction( tr("&Find"), this);
   findAction->setShortcut( QKeySequence("Ctrl+F") );
   findAction->setStatusTip( tr("Search through the document") );
-  connect( findAction, SIGNAL( triggered() ),
-           this, SLOT( findEdit() ));
+  connect( findAction, &QAction::triggered,
+           this, &NotebookWindow::findEdit);
 
   findAction->setIcon(QIcon(":/Resources/toolbarIcons/find.png"));
   toolBar->addAction(findAction);
@@ -547,15 +548,15 @@ void NotebookWindow::createEditMenu()
   auto replaceAction = new QAction( tr("Re&place"), this);
   replaceAction->setShortcut( QKeySequence("Ctrl+H") );
   replaceAction->setStatusTip( tr("Search through the document and replace") );
-  connect( replaceAction, SIGNAL( triggered() ),
-           this, SLOT( replaceEdit() ));
+  connect( replaceAction, &QAction::triggered,
+           this, &NotebookWindow::replaceEdit);
 
 
   showExprAction = new QAction( tr("&View Raw Text"), this);
   showExprAction->setStatusTip( tr("View the raw text in the cell") );
   showExprAction->setCheckable(true);
   showExprAction->setChecked(false);
-  connect(showExprAction, SIGNAL(toggled(bool)), subject_.get(), SLOT(showHTML(bool)));
+  connect(showExprAction, &QAction::toggled, qobject_cast<CellDocument *>(subject_.get()), &CellDocument::showHTML);
 
 
 #if USE_OMSKETCH
@@ -563,8 +564,8 @@ void NotebookWindow::createEditMenu()
   auto editSketchImage = new QAction( tr("&EditSketchImage"), this );
   editSketchImage->setShortcut( QKeySequence("Ctrl+E") );
   editSketchImage->setStatusTip( tr("Sketch Image Edit") );
-  connect( editSketchImage, SIGNAL( triggered() ),
-           this, SLOT( sketchImageEdit() ));
+  connect( editSketchImage, &QAction::triggered,
+           this, &NotebookWindow::sketchImageEdit);
   editSketchImage->setIcon(QIcon(":/Resources/toolbarIcons/editimage.png"));
   toolBar->addAction(editSketchImage);
   toolBar->addSeparator();
@@ -604,67 +605,67 @@ void NotebookWindow::createCellMenu()
   auto addCellAction = new QAction( tr("&Add Cell (previous cell style)"), this);
   addCellAction->setShortcut( QKeySequence("Alt+Enter") );
   addCellAction->setStatusTip( tr("Add a new textcell with the previuos cells style") );
-  connect(addCellAction, SIGNAL(triggered()), this, SLOT(createNewCell()));
+  connect(addCellAction, &QAction::triggered, this, &NotebookWindow::createNewCell);
 
   auto inputAction = new QAction( tr("Add &Input Cell"), this);
   inputAction->setShortcut( QKeySequence("Ctrl+Shift+I") );
   inputAction->setStatusTip( tr("Add an input cell") );
-  connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
+  connect(inputAction, &QAction::triggered, this, &NotebookWindow::inputCellsAction);
 
   auto latexAction = new QAction( tr("Add &LaTeX Cell"), this);
   latexAction->setShortcut( QKeySequence("Ctrl+Shift+E") );
   latexAction->setStatusTip( tr("Add Latex cell") );
-  connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction()));
+  connect(latexAction, &QAction::triggered, this, &NotebookWindow::latexCellsAction);
 
   auto textAction = new QAction( tr("Add &Text Cell"), this);
   textAction->setShortcut( QKeySequence("Ctrl+Shift+T") );
   textAction->setStatusTip( tr("Add a text cell") );
-  connect(textAction, SIGNAL(triggered()), this, SLOT(textCellsAction()));
+  connect(textAction, &QAction::triggered, this, &NotebookWindow::textCellsAction);
 
   groupAction = new QAction( tr("&Group Cell"), this);
   groupAction->setShortcut( QKeySequence("Ctrl+Shift+G") );
   groupAction->setStatusTip( tr("Add a group cell") );
-  connect(groupAction, SIGNAL(triggered()), this, SLOT(groupCellsAction()));
+  connect(groupAction, &QAction::triggered, this, &NotebookWindow::groupCellsAction);
 
   ungroupCellAction = new QAction( tr("&Ungroup groupcell"), this);
   ungroupCellAction->setShortcut( QKeySequence("Ctrl+Shift+U") );
   ungroupCellAction->setStatusTip( tr("Ungroup the selected groupcell in the tree view") );
-  connect(ungroupCellAction, SIGNAL(triggered()), this, SLOT(ungroupCell()));
+  connect(ungroupCellAction, &QAction::triggered, this, &NotebookWindow::ungroupCell);
 
   splitCellAction = new QAction( tr("&Split cell"), this);
   splitCellAction->setShortcut( QKeySequence("Ctrl+Shift+P") );
   splitCellAction->setStatusTip( tr("Split selected cell") );
-  connect(splitCellAction, SIGNAL(triggered()), this, SLOT(splitCell()));
+  connect(splitCellAction, &QAction::triggered, this, &NotebookWindow::splitCell);
 
   deleteCellAction = new QAction( tr("&Delete Cell"), this);
   deleteCellAction->setShortcut( QKeySequence("Ctrl+Shift+D") );
   deleteCellAction->setStatusTip( tr("Delete selected cell") );
-  connect(deleteCellAction, SIGNAL(triggered()), this, SLOT(deleteCurrentCellAsk()));
+  connect(deleteCellAction, &QAction::triggered, this, &NotebookWindow::deleteCurrentCellAsk);
 
   auto nextCellAction = new QAction( tr("&Next Cell"), this);
   nextCellAction->setStatusTip( tr("Move to next cell") );
   nextCellAction->setShortcut( QKeySequence("Alt+Down") );
-  connect(nextCellAction, SIGNAL(triggered()), this, SLOT(moveCursorDown()));
+  connect(nextCellAction, &QAction::triggered, this, &NotebookWindow::moveCursorDown);
 
   auto previousCellAction = new QAction( tr("P&revious Cell"), this);
   previousCellAction->setShortcut( QKeySequence("Alt+Up") );
   previousCellAction->setStatusTip( tr("Move to previous cell") );
-  connect(previousCellAction, SIGNAL(triggered()), this, SLOT(moveCursorUp()));
+  connect(previousCellAction, &QAction::triggered, this, &NotebookWindow::moveCursorUp);
 
   auto evalCellAction = new QAction(tr("&Evaluate Cell"), this);
   evalCellAction->setShortcut( QKeySequence("Shift+Enter") );
   evalCellAction->setStatusTip(tr("Evaluate the selected cell"));
-  connect(evalCellAction, SIGNAL(triggered()), this, SLOT(eval()));
+  connect(evalCellAction, &QAction::triggered, this, &NotebookWindow::eval);
 
   auto evalAllCellsAction = new QAction(tr("Evaluate all Input&cells"), this);
   evalAllCellsAction->setStatusTip(tr("Evaluate all Input cells in the document"));
   evalAllCellsAction->setShortcut( QKeySequence("Ctrl+R") );
-  connect(evalAllCellsAction, SIGNAL(triggered()), this, SLOT(evalall()));
+  connect(evalAllCellsAction, &QAction::triggered, this, &NotebookWindow::evalall);
 
   auto evalAllLatexCellsAction = new QAction(tr("Evaluate all Late&xcells"), this);
   evalAllLatexCellsAction->setStatusTip(tr("Evaluate all Latex cells in the document"));
   evalAllLatexCellsAction->setShortcut( QKeySequence("Ctrl+Shift+R") );
-  connect(evalAllLatexCellsAction, SIGNAL(triggered()), this, SLOT(evalallLatex()));
+  connect(evalAllLatexCellsAction, &QAction::triggered, this, &NotebookWindow::evalallLatex);
 
   // 2006-04-27 AF, remove cut,copy,paste cell from menu
   auto cellMenu = menuBar()->addMenu( tr("&Cell") );
@@ -689,8 +690,8 @@ void NotebookWindow::createCellMenu()
   cellMenu->addAction( evalAllCellsAction );
   cellMenu->addAction( evalAllLatexCellsAction );
 
-  QObject::connect(cellMenu, SIGNAL(aboutToShow()),
-                   this, SLOT(updateCellMenu()));
+  QObject::connect(cellMenu, &QMenu::aboutToShow,
+                   this, &NotebookWindow::updateCellMenu);
 }
 
 /*!
@@ -727,7 +728,7 @@ void NotebookWindow::createFormatMenu()
     }
   }
 
-  connect( styleMenu, SIGNAL(triggered(QAction*)), this, SLOT(changeStyle(QAction*)));
+  connect( styleMenu, &QMenu::triggered, this, QOverload<QAction *>::of(&NotebookWindow::changeStyle));
 
 
   // FONT
@@ -748,10 +749,10 @@ void NotebookWindow::createFormatMenu()
     fonts_.insert( fonts[index], tmp );
   }
 
-  connect( fontMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFont(QAction*) ));
-  connect( fontMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontMenu() ));
+  connect( fontMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeFont);
+  connect( fontMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateFontMenu);
 
   // -----------------------------------------------------
   // END: FONT
@@ -786,10 +787,10 @@ void NotebookWindow::createFormatMenu()
   faceUnderline->setStatusTip( tr("Set font face to Underline") );
 
 
-  connect( faceMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontFaceMenu() ));
-  connect( faceMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontFace(QAction*) ));
+  connect( faceMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateFontFaceMenu);
+  connect( faceMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeFontFace);
 
   faceMenu->addAction( facePlain );
   faceMenu->addAction( faceBold );
@@ -881,10 +882,10 @@ void NotebookWindow::createFormatMenu()
   sizeOther->setStatusTip( tr("Select font size") );
 
 
-  connect( sizeMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontSizeMenu() ));
-  connect( sizeMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontSize(QAction*) ));
+  connect( sizeMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateFontSizeMenu);
+  connect( sizeMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeFontSize);
 
 
   sizeMenu->addAction( sizeSmaller );
@@ -979,10 +980,10 @@ void NotebookWindow::createFormatMenu()
   stretchs_.insert( QFont::UltraExpanded, stretchUltraExpanded );
   stretchsgroup->addAction( stretchUltraExpanded );
 
-  connect( stretchMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontStretchMenu() ));
-  connect( stretchMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontStretch(QAction*) ));
+  connect( stretchMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateFontStretchMenu);
+  connect( stretchMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeFontStretch);
 
 
   stretchMenu->addAction( stretchUltraCondensed );
@@ -1091,10 +1092,10 @@ void NotebookWindow::createFormatMenu()
   colorOther->setStatusTip( tr("Select font color") );
 
 
-  connect( colorMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontColorMenu() ));
-  connect( colorMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontColor(QAction*) ));
+  connect( colorMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateFontColorMenu);
+  connect( colorMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeFontColor);
 
 
   colorMenu->addAction( colorBlack );
@@ -1122,7 +1123,7 @@ void NotebookWindow::createFormatMenu()
   chooseFont = new QAction( tr("C&hoose Font..."), this);
   chooseFont->setCheckable( false );
   chooseFont->setStatusTip( tr("Select font") );
-  connect(chooseFont, SIGNAL(triggered()), this, SLOT(selectFont()));
+  connect(chooseFont, &QAction::triggered, this, &NotebookWindow::selectFont);
   formatMenu->addAction( chooseFont );
 
 
@@ -1178,14 +1179,14 @@ void NotebookWindow::createFormatMenu()
   verticals_.insert( QTextCharFormat::AlignSuperScript, verticalSuper );
   verticalAlignmentsgroup->addAction( verticalSuper );
 
-  connect( alignmentMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateTextAlignmentMenu() ));
-  connect( alignmentMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeTextAlignment(QAction*) ));
-  connect( verticalAlignmentMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateVerticalAlignmentMenu() ));
-  connect( verticalAlignmentMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeVerticalAlignment(QAction*) ));
+  connect( alignmentMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateTextAlignmentMenu);
+  connect( alignmentMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeTextAlignment);
+  connect( verticalAlignmentMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateVerticalAlignmentMenu);
+  connect( verticalAlignmentMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeVerticalAlignment);
 
 
   alignmentMenu->addAction( alignmentLeft );
@@ -1220,10 +1221,10 @@ void NotebookWindow::createFormatMenu()
   }
 
 
-  connect( borderMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateBorderMenu() ));
-  connect( borderMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeBorder(QAction*) ));
+  connect( borderMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateBorderMenu);
+  connect( borderMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeBorder);
 
 
   borderMenu->addSeparator();
@@ -1255,10 +1256,10 @@ void NotebookWindow::createFormatMenu()
   }
 
 
-  connect( marginMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateMarginMenu() ));
-  connect( marginMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeMargin(QAction*) ));
+  connect( marginMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateMarginMenu);
+  connect( marginMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeMargin);
 
 
   marginMenu->addSeparator();
@@ -1290,10 +1291,10 @@ void NotebookWindow::createFormatMenu()
   }
 
 
-  connect( paddingMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updatePaddingMenu() ));
-  connect( paddingMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changePadding(QAction*) ));
+  connect( paddingMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updatePaddingMenu);
+  connect( paddingMenu, &QMenu::triggered,
+           this, &NotebookWindow::changePadding);
 
 
   paddingMenu->addSeparator();
@@ -1306,10 +1307,10 @@ void NotebookWindow::createFormatMenu()
   // END: Padding
 
 
-  connect(formatMenu, SIGNAL(aboutToShow()),
-          this, SLOT(updateStyleMenu()));
-  connect( formatMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateMenus() ));
+  connect(formatMenu, &QMenu::aboutToShow,
+          this, &NotebookWindow::updateStyleMenu);
+  connect( formatMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateMenus);
 
   formatMenu->addSeparator();
   formatMenu->addAction(toolBar->toggleViewAction());
@@ -1327,8 +1328,8 @@ void NotebookWindow::createInsertMenu()
   insertImageAction = new QAction( tr("&Image"), this );
   insertImageAction->setShortcut( QKeySequence("Ctrl+Shift+M") );
   insertImageAction->setStatusTip( tr("Insert a image into the cell") );
-  connect( insertImageAction, SIGNAL( triggered() ),
-           this, SLOT( insertImage() ));
+  connect( insertImageAction, &QAction::triggered,
+           this, &NotebookWindow::insertImage);
   insertImageAction->setIcon(QIcon(":/Resources/toolbarIcons/image.png"));
   toolBar->addAction(insertImageAction);
 
@@ -1336,8 +1337,8 @@ void NotebookWindow::createInsertMenu()
   insertLinkAction = new QAction( tr("&Link"), this );
   insertLinkAction->setShortcut( QKeySequence("Ctrl+Shift+L") );
   insertLinkAction->setStatusTip( tr("Insert a link to the selected text") );
-  connect( insertLinkAction, SIGNAL( triggered() ),
-           this, SLOT( insertLink() ));
+  connect( insertLinkAction, &QAction::triggered,
+           this, &NotebookWindow::insertLink);
   insertLinkAction->setIcon(QIcon(":/Resources/toolbarIcons/text_under.png"));
   toolBar->addAction(insertLinkAction);
 
@@ -1345,8 +1346,8 @@ void NotebookWindow::createInsertMenu()
   insertWebLinkAction = new QAction( tr("&Web link..."), this );
   insertWebLinkAction->setShortcut( QKeySequence("Ctrl+Shift+K") );
   insertWebLinkAction->setStatusTip( tr("Insert or change a link to a web page (http/https)") );
-  connect( insertWebLinkAction, SIGNAL( triggered() ),
-           this, SLOT( insertWebLink() ));
+  connect( insertWebLinkAction, &QAction::triggered,
+           this, &NotebookWindow::insertWebLink);
 
   toolBar->addSeparator();
 
@@ -1354,8 +1355,8 @@ void NotebookWindow::createInsertMenu()
   //Sketch
   auto insertSketch = new QAction( tr("&Sketch"), this );
   insertSketch->setStatusTip( tr("Sketch App") );
-  connect( insertSketch, SIGNAL( triggered() ),
-           this, SLOT( Sketch() ));
+  connect( insertSketch, &QAction::triggered,
+           this, &NotebookWindow::Sketch);
   insertSketch->setIcon(QIcon(":/Resources/toolbarIcons/sketch.png"));
   toolBar->addAction(insertSketch);
   toolBar->addSeparator();
@@ -1365,7 +1366,7 @@ void NotebookWindow::createInsertMenu()
   auto indentAction = new QAction(tr("Indent"), this);
   indentAction->setStatusTip(tr("Indent the code in the selected cell"));
   indentAction->setIcon(QIcon(":/Resources/toolbarIcons/text_right.png"));
-  connect(indentAction, SIGNAL(triggered()), this, SLOT(indent()));
+  connect(indentAction, &QAction::triggered, this, &NotebookWindow::indent);
 
 
   QToolButton * b = new QToolButton;
@@ -1382,7 +1383,7 @@ void NotebookWindow::createInsertMenu()
   autoIndentAction->setChecked(s.value("AutoIndent", true).toBool());
   setAutoIndent(autoIndentAction->isChecked());
 
-  connect(autoIndentAction, SIGNAL(toggled(bool)), this, SLOT(setAutoIndent(bool)));
+  connect(autoIndentAction, &QAction::toggled, this, &NotebookWindow::setAutoIndent);
 
 
   indentMenu->addAction(autoIndentAction);
@@ -1395,32 +1396,32 @@ void NotebookWindow::createInsertMenu()
   auto evalAction = new QAction(tr("Evaluate"), this);
   evalAction->setStatusTip(tr("Evaluate the selected cell"));
   evalAction->setIcon(QIcon(":/Resources/toolbarIcons/apply.png"));
-  connect(evalAction, SIGNAL(triggered()), this, SLOT(eval()));
+  connect(evalAction, &QAction::triggered, this, &NotebookWindow::eval);
   toolBar->addAction(evalAction);
 
   auto evalallAction = new QAction(tr("Evaluate all cells"), this);
   evalallAction->setStatusTip(tr("Evaluate all cells in the document"));
   evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/evalall.png"));
 //  evalallAction->setShortcut( QKeySequence("Ctrl+R") );
-  connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
+  connect(evalallAction, &QAction::triggered, this, &NotebookWindow::evalall);
   toolBar->addAction(evalallAction);
 
   auto shiftcellsupAction = new QAction(tr("Move cells up"), this);
   shiftcellsupAction->setStatusTip(tr("Move cells up, by clicking on the cell"));
   shiftcellsupAction->setIcon(QIcon(":/Resources/toolbarIcons/up.png"));
-  connect(shiftcellsupAction, SIGNAL(triggered()), this, SLOT(shiftcellsUp()));
+  connect(shiftcellsupAction, &QAction::triggered, this, &NotebookWindow::shiftcellsUp);
   toolBar->addAction(shiftcellsupAction);
 
   auto shiftcellsdownAction = new QAction(tr("Move cells down"), this);
   shiftcellsdownAction->setStatusTip(tr("Move cells down, by clicking on the cell"));
   shiftcellsdownAction->setIcon(QIcon(":/Resources/toolbarIcons/down.png"));
-  connect(shiftcellsdownAction, SIGNAL(triggered()), this, SLOT(shiftcellsDown()));
+  connect(shiftcellsdownAction, &QAction::triggered, this, &NotebookWindow::shiftcellsDown);
   toolBar->addAction(shiftcellsdownAction);
 
   auto shiftselectedcellsAction = new QAction(tr("Move selected cells"), this);
   shiftselectedcellsAction->setStatusTip(tr("Put the cursor to a position where you want the cells to be moved, and then select the cells you would like to move that position"));
   shiftselectedcellsAction->setIcon(QIcon(":/Resources/toolbarIcons/updown.png"));
-  connect(shiftselectedcellsAction, SIGNAL(triggered()), this, SLOT(shiftselectedcells()));
+  connect(shiftselectedcellsAction, &QAction::triggered, this, &NotebookWindow::shiftselectedcells);
   toolBar->addAction(shiftselectedcellsAction);
 
   // MENU
@@ -1429,8 +1430,8 @@ void NotebookWindow::createInsertMenu()
   insertMenu->addAction( insertLinkAction );
   insertMenu->addAction( insertWebLinkAction );
 
-  connect( insertMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateMenus() ));
+  connect( insertMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateMenus);
 }
 
 /*!
@@ -1446,18 +1447,18 @@ void NotebookWindow::createViewMenu()
   // Ctrl++ and Ctrl+- are already used by Format->Size (font size of the selection)
   zoomInAction = new QAction( tr("Zoom &In"), this );
   zoomInAction->setStatusTip( tr("Enlarge the displayed text of the cells (the notebook is not changed)") );
-  connect( zoomInAction, SIGNAL( triggered() ), this, SLOT( zoomTextIn() ));
+  connect( zoomInAction, &QAction::triggered, this, &NotebookWindow::zoomTextIn);
   viewMenu->addAction( zoomInAction );
 
   zoomOutAction = new QAction( tr("Zoom &Out"), this );
   zoomOutAction->setStatusTip( tr("Reduce the displayed text of the cells (the notebook is not changed)") );
-  connect( zoomOutAction, SIGNAL( triggered() ), this, SLOT( zoomTextOut() ));
+  connect( zoomOutAction, &QAction::triggered, this, &NotebookWindow::zoomTextOut);
   viewMenu->addAction( zoomOutAction );
 
   zoomResetAction = new QAction( tr("&Reset Zoom"), this );
   zoomResetAction->setShortcut( QKeySequence("Ctrl+0") );
   zoomResetAction->setStatusTip( tr("Display the text of the cells in its original size") );
-  connect( zoomResetAction, SIGNAL( triggered() ), this, SLOT( zoomTextReset() ));
+  connect( zoomResetAction, &QAction::triggered, this, &NotebookWindow::zoomTextReset);
   viewMenu->addAction( zoomResetAction );
 
   // the zoom is done by a paint device with scaled resolution
@@ -1912,10 +1913,10 @@ void NotebookWindow::createWindowMenu()
 {
   windowMenu = menuBar()->addMenu( tr("&Window") );
 
-  connect( windowMenu, SIGNAL( triggered(QAction *) ),
-           this, SLOT( changeWindow(QAction *) ));
-  connect( windowMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateWindowMenu() ));
+  connect( windowMenu, &QMenu::triggered,
+           this, &NotebookWindow::changeWindow);
+  connect( windowMenu, &QMenu::aboutToShow,
+           this, &NotebookWindow::updateWindowMenu);
 }
 
 /*!
@@ -1931,21 +1932,21 @@ void NotebookWindow::createAboutMenu()
   auto aboutAction = new QAction( tr("&About OMNotebook"), this );
   aboutAction->setStatusTip( tr("Display OMNotebook's About dialog") );
   aboutAction->setMenuRole(QAction::AboutRole);
-  connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutQTNotebook()));
+  connect(aboutAction, &QAction::triggered, this, &NotebookWindow::aboutQTNotebook);
 
   // 2006-02-03 AF, Added a help action
   auto helpAction = new QAction( tr("&Help Text"), this );
   helpAction->setShortcut( QKeySequence("F1") );
   helpAction->setStatusTip( tr("Open help document") );
-  connect( helpAction, SIGNAL( triggered() ),
-           this, SLOT( helpText() ));
+  connect( helpAction, &QAction::triggered,
+           this, &NotebookWindow::helpText);
 
   // 2006-02-21 AF, Added a about qt action
   auto aboutQtAction = new QAction( tr("About &Qt"), this );
   aboutQtAction->setStatusTip( tr("Display information about Qt") );
   aboutQtAction->setMenuRole(QAction::AboutQtRole);
-  connect( aboutQtAction, SIGNAL( triggered() ),
-           this, SLOT( aboutQT() ));
+  connect( aboutQtAction, &QAction::triggered,
+           this, &NotebookWindow::aboutQT);
 
 #ifdef __EMSCRIPTEN__
   // Web build: the example notebooks are staged into MEMFS at startup (see
@@ -2021,8 +2022,8 @@ void NotebookWindow::evalCells()
   savingTimer_ = new QTimer();
   savingTimer_->start(30000);
 
-  connect(savingTimer_, SIGNAL(timeout()),
-   this, SLOT(save()));
+  connect(savingTimer_, &QTimer::timeout,
+   this, &NotebookWindow::save);
  }
   */
 
@@ -2793,8 +2794,8 @@ void NotebookWindow::newFile()
 
   subject_ = new CellDocument(this);
 
-  connect(subject_, SIGNAL(cursorChanged()),
-  this, SLOT(setSelectedStyle()));
+  connect(subject_, &CellDocument::cursorChanged,
+  this, &NotebookWindow::setSelectedStyle);
 
   setCentralWidget(subject_);
 
@@ -2828,17 +2829,18 @@ void NotebookWindow::newFile()
     subject_->attach(this);
 
     // the connections of the constructor were to the old document
-    connect( subject_->getCursor(), SIGNAL( changedPosition() ),
-             this, SLOT( updateMenus() ));
-    connect( subject_.get(), SIGNAL( contentChanged() ),
-             this, SLOT( updateWindowTitle() ));
-    connect( subject_.get(), SIGNAL( hoverOverFile(QString) ),
-             this, SLOT( setStatusMessage(QString) ));
-    connect( subject_.get(), SIGNAL( forwardAction(int) ),
-             this, SLOT( forwardedAction(int) ));
-    connect( subject_.get(), SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
-    connect( subject_.get(), SIGNAL(newState(QString)), this, SLOT(setState(QString)));
-    connect( subject_.get(), SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
+    CellDocument *cellDocument = qobject_cast<CellDocument *>(subject_.get());
+    connect( subject_->getCursor(), &CellCursor::changedPosition,
+             this, &NotebookWindow::updateMenus);
+    connect( cellDocument, &CellDocument::contentChanged,
+             this, &NotebookWindow::updateWindowTitle);
+    connect( cellDocument, &CellDocument::hoverOverFile,
+             this, &NotebookWindow::setStatusMessage);
+    connect( cellDocument, &CellDocument::forwardAction,
+             this, &NotebookWindow::forwardedAction);
+    connect( subject_.get(), &Document::updatePos, this, &NotebookWindow::setPosition);
+    connect( subject_.get(), &Document::newState, this, &NotebookWindow::setState);
+    connect( subject_.get(), &Document::setStatusMenu, this, &NotebookWindow::setStatusMenu);
 
     update();
     updateWindowTitle();
@@ -3070,7 +3072,7 @@ public:
     pAboutTextLabel->setToolTip("");
     // close button
     QPushButton *pCloseButton = new QPushButton(tr("Close"));
-    connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
+    connect(pCloseButton, &QPushButton::clicked, this, &AboutDialog::reject);
     // logo label
     QLabel *pLogoLabel = new QLabel;
     QPixmap pixmap(":/Resources/OMNotebook_icon.svg");

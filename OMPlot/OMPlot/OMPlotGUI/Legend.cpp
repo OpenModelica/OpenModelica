@@ -58,17 +58,17 @@ Legend::Legend(Plot *pParent)
 
   mpToggleSignAction = new QAction(tr("Toggle Sign"), this);
   mpToggleSignAction->setCheckable(true);
-  connect(mpToggleSignAction, SIGNAL(triggered(bool)), SLOT(toggleSign(bool)));
+  connect(mpToggleSignAction, &QAction::triggered, this, &Legend::toggleSign);
 
   mpToggleAxisAction = new QAction(tr("Right Y-Axis"), this);
   mpToggleAxisAction->setCheckable(true);
-  connect(mpToggleAxisAction, SIGNAL(triggered(bool)), SLOT(switchAxis(bool)));
+  connect(mpToggleAxisAction, &QAction::triggered, this, &Legend::switchAxis);
 
   mpSetupAction = new QAction(tr("Setup"), this);
-  connect(mpSetupAction, SIGNAL(triggered()), SLOT(showSetupDialog()));
+  connect(mpSetupAction, &QAction::triggered, this, &Legend::showSetupDialog);
 
   setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(legendMenu(QPoint)));
+  connect(this, &Legend::customContextMenuRequested, this, &Legend::legendMenu);
   /* Ticket #3984
    * In order to show tooltip for each legend item we need to install event filter for contentsWidget()
    * contentsWidget() contains a list of legend item

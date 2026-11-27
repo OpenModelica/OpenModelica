@@ -143,26 +143,26 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpLibrariesPage = new LibrariesPage(this);
   mpTextEditorPage = new TextEditorPage(this);
   mpModelicaEditorPage = new ModelicaEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpModelicaEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpModelicaEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontFamilyComboBox(), &QFontComboBox::currentFontChanged, mpModelicaEditorPage, &ModelicaEditorPage::updatePreview);
+  connect(mpTextEditorPage->getFontSizeSpinBox(), QOverload<double>::of(&QDoubleSpinBox::valueChanged), mpModelicaEditorPage, &ModelicaEditorPage::updatePreview);
   mpMOSEditorPage = new MOSEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpMOSEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpMOSEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontFamilyComboBox(), &QFontComboBox::currentFontChanged, mpMOSEditorPage, &MOSEditorPage::updatePreview);
+  connect(mpTextEditorPage->getFontSizeSpinBox(), QOverload<double>::of(&QDoubleSpinBox::valueChanged), mpMOSEditorPage, &MOSEditorPage::updatePreview);
   mpMetaModelicaEditorPage = new MetaModelicaEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpMetaModelicaEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpMetaModelicaEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontFamilyComboBox(), &QFontComboBox::currentFontChanged, mpMetaModelicaEditorPage, &MetaModelicaEditorPage::updatePreview);
+  connect(mpTextEditorPage->getFontSizeSpinBox(), QOverload<double>::of(&QDoubleSpinBox::valueChanged), mpMetaModelicaEditorPage, &MetaModelicaEditorPage::updatePreview);
   mpOMSimulatorEditorPage = new OMSimulatorEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontFamilyComboBox(), &QFontComboBox::currentFontChanged, mpOMSimulatorEditorPage, &OMSimulatorEditorPage::updatePreview);
+  connect(mpTextEditorPage->getFontSizeSpinBox(), QOverload<double>::of(&QDoubleSpinBox::valueChanged), mpOMSimulatorEditorPage, &OMSimulatorEditorPage::updatePreview);
   mpCRMLEditorPage = new CRMLEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCRMLEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCRMLEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontFamilyComboBox(), &QFontComboBox::currentFontChanged, mpCRMLEditorPage, &CRMLEditorPage::updatePreview);
+  connect(mpTextEditorPage->getFontSizeSpinBox(), QOverload<double>::of(&QDoubleSpinBox::valueChanged), mpCRMLEditorPage, &CRMLEditorPage::updatePreview);
   mpCEditorPage = new CEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontFamilyComboBox(), &QFontComboBox::currentFontChanged, mpCEditorPage, &CEditorPage::updatePreview);
+  connect(mpTextEditorPage->getFontSizeSpinBox(), QOverload<double>::of(&QDoubleSpinBox::valueChanged), mpCEditorPage, &CEditorPage::updatePreview);
   mpHTMLEditorPage = new HTMLEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpHTMLEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpHTMLEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontFamilyComboBox(), &QFontComboBox::currentFontChanged, mpHTMLEditorPage, &HTMLEditorPage::updatePreview);
+  connect(mpTextEditorPage->getFontSizeSpinBox(), QOverload<double>::of(&QDoubleSpinBox::valueChanged), mpHTMLEditorPage, &HTMLEditorPage::updatePreview);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
   mpMessagesPage = new MessagesPage(this);
@@ -3207,7 +3207,7 @@ void OptionsDialog::setUpDialog()
   mpOptionsList->setMovement(QListView::Static);
   mpOptionsList->setIconSize(QSize(24, 24));
   mpOptionsList->setCurrentRow(0, QItemSelectionModel::Select);
-  connect(mpOptionsList, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));
+  connect(mpOptionsList, &QListWidget::currentItemChanged, this, &OptionsDialog::changePage);
   // add items to options list
   addListItems();
   // get maximum width for options list
@@ -3224,13 +3224,13 @@ void OptionsDialog::setUpDialog()
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(saveSettings()));
+  connect(mpOkButton, &QPushButton::clicked, this, &OptionsDialog::saveSettings);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &OptionsDialog::reject);
   mpResetButton = new QPushButton(Helper::reset);
   mpResetButton->setAutoDefault(false);
-  connect(mpResetButton, SIGNAL(clicked()), SLOT(reset()));
+  connect(mpResetButton, &QPushButton::clicked, this, &OptionsDialog::reset);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpResetButton, QDialogButtonBox::ActionRole);
@@ -3526,7 +3526,7 @@ CodeColorsWidget::CodeColorsWidget(QWidget *pParent)
   mpItemColorLabel = new Label(tr("Item Color:"));
   mpItemColorPickButton = new QPushButton(Helper::pickColor);
   mpItemColorPickButton->setAutoDefault(false);
-  connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
+  connect(mpItemColorPickButton, &QPushButton::clicked, this, &CodeColorsWidget::pickColor);
   // Items list
   mpItemsLabel = new Label(tr("Items:"));
   mpItemsListWidget = new QListWidget;
@@ -3606,7 +3606,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpWorkingDirectoryTextBox->setPlaceholderText(OptionsDefaults::GeneralSettings::workingDirectory);
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpWorkingDirectoryBrowseButton->setAutoDefault(false);
-  connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
+  connect(mpWorkingDirectoryBrowseButton, &QPushButton::clicked, this, &GeneralSettingsPage::selectWorkingDirectory);
   mpWorkingDirectoryWarningLabel = new Label;
   mpWorkingDirectoryWarningLabel->setTextFormat(Qt::PlainText);
   mpWorkingDirectoryWarningLabel->setWordWrap(true);
@@ -3617,7 +3617,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   warningPalette.setColor(QPalette::WindowText, Style::warningTextColor());
   mpWorkingDirectoryWarningLabel->setPalette(warningPalette);
   mpWorkingDirectoryWarningLabel->hide();
-  connect(mpWorkingDirectoryTextBox, SIGNAL(textChanged(QString)), SLOT(updateWorkingDirectoryWarning()));
+  connect(mpWorkingDirectoryTextBox, &QLineEdit::textChanged, this, &GeneralSettingsPage::updateWorkingDirectoryWarning);
   // toolbar icon size
   mpToolbarIconSizeLabel = new Label(tr("Toolbar Icon Size: *"));
   mpToolbarIconSizeSpinBox = new SpinBox;
@@ -3632,7 +3632,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpTerminalCommandTextBox->setText(OptionsDefaults::GeneralSettings::terminalCommand);
   mpTerminalCommandBrowseButton = new QPushButton(Helper::browse);
   mpTerminalCommandBrowseButton->setAutoDefault(false);
-  connect(mpTerminalCommandBrowseButton, SIGNAL(clicked()), SLOT(selectTerminalCommand()));
+  connect(mpTerminalCommandBrowseButton, &QPushButton::clicked, this, &GeneralSettingsPage::selectTerminalCommand);
   // terminal command args
   mpTerminalCommandArgumentsLabel = new Label(tr("Terminal Command Arguments:"));
   mpTerminalCommandArgumentsTextBox = new QLineEdit;
@@ -3747,7 +3747,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpAutoSaveIntervalSpinBox->setSingleStep(30);
   mpAutoSaveIntervalSpinBox->setValue(OptionsDefaults::GeneralSettings::autoSaveInterval);
   mpAutoSaveSecondsLabel = new Label;
-  connect(mpAutoSaveIntervalSpinBox, SIGNAL(valueChanged(int)), SLOT(autoSaveIntervalValueChanged(int)));
+  connect(mpAutoSaveIntervalSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &GeneralSettingsPage::autoSaveIntervalValueChanged);
   // calculate the auto save interval seconds.
   autoSaveIntervalValueChanged(mpAutoSaveIntervalSpinBox->value());
   // Auto Save layout
@@ -3938,7 +3938,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   mpModelicaPathTextBox->setToolTip(Helper::modelicaPathTip);
   mpModelicaPathBrowseButton = new QPushButton(Helper::browse);
   mpModelicaPathBrowseButton->setAutoDefault(false);
-  connect(mpModelicaPathBrowseButton, SIGNAL(clicked()), SLOT(selectModelicaPath()));
+  connect(mpModelicaPathBrowseButton, &QPushButton::clicked, this, &LibrariesPage::selectModelicaPath);
   // general groupbox layout
   QGridLayout *pGeneralGroupBoxGridLayout = new QGridLayout;
   pGeneralGroupBoxGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3963,17 +3963,17 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   QStringList systemLabels;
   systemLabels << tr("Name") << Helper::version;
   mpSystemLibrariesTree->setHeaderLabels(systemLabels);
-  connect(mpSystemLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditSystemLibrary()));
+  connect(mpSystemLibrariesTree, &QTreeWidget::itemDoubleClicked, this, &LibrariesPage::openEditSystemLibrary);
   // system libraries buttons
   mpAddSystemLibraryButton = new QPushButton(Helper::add);
   mpAddSystemLibraryButton->setAutoDefault(false);
-  connect(mpAddSystemLibraryButton, SIGNAL(clicked()), SLOT(openAddSystemLibrary()));
+  connect(mpAddSystemLibraryButton, &QPushButton::clicked, this, &LibrariesPage::openAddSystemLibrary);
   mpEditSystemLibraryButton = new QPushButton(Helper::edit);
   mpEditSystemLibraryButton->setAutoDefault(false);
-  connect(mpEditSystemLibraryButton, SIGNAL(clicked()), SLOT(openEditSystemLibrary()));
+  connect(mpEditSystemLibraryButton, &QPushButton::clicked, this, &LibrariesPage::openEditSystemLibrary);
   mpRemoveSystemLibraryButton = new QPushButton(Helper::remove);
   mpRemoveSystemLibraryButton->setAutoDefault(false);
-  connect(mpRemoveSystemLibraryButton, SIGNAL(clicked()), SLOT(removeSystemLibrary()));
+  connect(mpRemoveSystemLibraryButton, &QPushButton::clicked, this, &LibrariesPage::removeSystemLibrary);
   // system libraries button box
   mpSystemLibrariesButtonBox = new QDialogButtonBox(Qt::Vertical);
   mpSystemLibrariesButtonBox->addButton(mpAddSystemLibraryButton, QDialogButtonBox::ActionRole);
@@ -3998,17 +3998,17 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   QStringList userLabels;
   userLabels << tr("Path") << tr("Encoding");
   mpUserLibrariesTree->setHeaderLabels(userLabels);
-  connect(mpUserLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditUserLibrary()));
+  connect(mpUserLibrariesTree, &QTreeWidget::itemDoubleClicked, this, &LibrariesPage::openEditUserLibrary);
   // user libraries buttons
   mpAddUserLibraryButton = new QPushButton(Helper::add);
   mpAddUserLibraryButton->setAutoDefault(false);
-  connect(mpAddUserLibraryButton, SIGNAL(clicked()), SLOT(openAddUserLibrary()));
+  connect(mpAddUserLibraryButton, &QPushButton::clicked, this, &LibrariesPage::openAddUserLibrary);
   mpEditUserLibraryButton = new QPushButton(Helper::edit);
   mpEditUserLibraryButton->setAutoDefault(false);
-  connect(mpEditUserLibraryButton, SIGNAL(clicked()), SLOT(openEditUserLibrary()));
+  connect(mpEditUserLibraryButton, &QPushButton::clicked, this, &LibrariesPage::openEditUserLibrary);
   mpRemoveUserLibraryButton = new QPushButton(Helper::remove);
   mpRemoveUserLibraryButton->setAutoDefault(false);
-  connect(mpRemoveUserLibraryButton, SIGNAL(clicked()), SLOT(removeUserLibrary()));
+  connect(mpRemoveUserLibraryButton, &QPushButton::clicked, this, &LibrariesPage::removeUserLibrary);
   // user libraries button box
   mpUserLibrariesButtonBox = new QDialogButtonBox(Qt::Vertical);
   mpUserLibrariesButtonBox->addButton(mpAddUserLibraryButton, QDialogButtonBox::ActionRole);
@@ -4127,20 +4127,20 @@ AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage, bo
   setMinimumWidth(300);
   mpNameLabel = new Label(Helper::name);
   mpNameComboBox = new QComboBox;
-  connect(mpNameComboBox, SIGNAL(currentIndexChanged(int)), SLOT(getLibraryVersions(int)));
+  connect(mpNameComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AddSystemLibraryDialog::getLibraryVersions);
   mpValueLabel = new Label(Helper::version + ":");
   mpVersionsComboBox = new QComboBox;
   mpVersionsComboBox->setEditable(true);
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystemLibrary()));
+  connect(mpOkButton, &QPushButton::clicked, this, &AddSystemLibraryDialog::addSystemLibrary);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &AddSystemLibraryDialog::reject);
   // install library button
   mpInstallLibraryButton = new QPushButton(Helper::installLibrary);
   mpInstallLibraryButton->setAutoDefault(false);
-  connect(mpInstallLibraryButton, SIGNAL(clicked()), SLOT(openInstallLibraryDialog()));
+  connect(mpInstallLibraryButton, &QPushButton::clicked, this, &AddSystemLibraryDialog::openInstallLibraryDialog);
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -4282,16 +4282,16 @@ AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
   mpPathTextBox = new QLineEdit;
   mpPathBrowseButton = new QPushButton(Helper::browse);
   mpPathBrowseButton->setAutoDefault(false);
-  connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browseUserLibraryPath()));
+  connect(mpPathBrowseButton, &QPushButton::clicked, this, &AddUserLibraryDialog::browseUserLibraryPath);
   mpEncodingLabel = new Label(Helper::encoding);
   mpEncodingComboBox = new QComboBox;
   StringHandler::fillEncodingComboBox(mpEncodingComboBox);
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(addUserLibrary()));
+  connect(mpOkButton, &QPushButton::clicked, this, &AddUserLibraryDialog::addUserLibrary);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &AddUserLibraryDialog::reject);
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -4527,7 +4527,7 @@ ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
   mpPreserveTextIndentationCheckBox->setChecked(OptionsDefaults::ModelicaEditor::preserveTextIndentation);
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  connect(mpCodeColorsWidget, &CodeColorsWidget::colorUpdated, this, &ModelicaEditorPage::updatePreview);
   // Add items to list
   // number (purple)
   new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::numberRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
@@ -4555,10 +4555,10 @@ ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   ModelicaHighlighter *pModelicaTextHighlighter = new ModelicaHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  connect(this, &ModelicaEditorPage::updatePreview, pModelicaTextHighlighter, &ModelicaHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), &QGroupBox::toggled, pModelicaTextHighlighter, &ModelicaHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), &QCheckBox::toggled, pModelicaTextHighlighter, &ModelicaHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), &QCheckBox::toggled, this, &ModelicaEditorPage::setLineWrapping);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->addWidget(mpPreserveTextIndentationCheckBox);
@@ -4630,7 +4630,7 @@ MetaModelicaEditorPage::MetaModelicaEditorPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  connect(mpCodeColorsWidget, &CodeColorsWidget::colorUpdated, this, &MetaModelicaEditorPage::updatePreview);
   // Add items to list
   // number (purple)
   new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::numberRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
@@ -4658,12 +4658,12 @@ MetaModelicaEditorPage::MetaModelicaEditorPage(OptionsDialog *pOptionsDialog)
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   MetaModelicaHighlighter *pMetaModelicaHighlighter = new MetaModelicaHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pMetaModelicaHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pMetaModelicaHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  connect(this, &MetaModelicaEditorPage::updatePreview, pMetaModelicaHighlighter, &MetaModelicaHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), &QGroupBox::toggled,
+          pMetaModelicaHighlighter, &MetaModelicaHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), &QCheckBox::toggled,
+          pMetaModelicaHighlighter, &MetaModelicaHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), &QCheckBox::toggled, this, &MetaModelicaEditorPage::setLineWrapping);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->addWidget(mpCodeColorsWidget);
@@ -4734,7 +4734,7 @@ CRMLEditorPage::CRMLEditorPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  connect(mpCodeColorsWidget, &CodeColorsWidget::colorUpdated, this, &CRMLEditorPage::updatePreview);
   // Add items to list
   // number (purple)
   new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::numberRuleColor, OptionsDefaults::CRMLEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
@@ -4753,12 +4753,12 @@ CRMLEditorPage::CRMLEditorPage(OptionsDialog *pOptionsDialog)
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   CRMLHighlighter *pCRMLHighlighter = new CRMLHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pCRMLHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pCRMLHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pCRMLHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  connect(this, &CRMLEditorPage::updatePreview, pCRMLHighlighter, &CRMLHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), &QGroupBox::toggled,
+          pCRMLHighlighter, &CRMLHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), &QCheckBox::toggled,
+          pCRMLHighlighter, &CRMLHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), &QCheckBox::toggled, this, &CRMLEditorPage::setLineWrapping);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->addWidget(mpCodeColorsWidget);
@@ -4829,7 +4829,7 @@ MOSEditorPage::MOSEditorPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  connect(mpCodeColorsWidget, &CodeColorsWidget::colorUpdated, this, &MOSEditorPage::updatePreview);
   // Add items to list
   // number (purple)
   new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::numberRuleColor, OptionsDefaults::MOSEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
@@ -4851,12 +4851,12 @@ MOSEditorPage::MOSEditorPage(OptionsDialog *pOptionsDialog)
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   MOSHighlighter *pMOSHighlighter = new MOSHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pMOSHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pMOSHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pMOSHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  connect(this, &MOSEditorPage::updatePreview, pMOSHighlighter, &MOSHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), &QGroupBox::toggled,
+          pMOSHighlighter, &MOSHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), &QCheckBox::toggled,
+          pMOSHighlighter, &MOSHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), &QCheckBox::toggled, this, &MOSEditorPage::setLineWrapping);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->addWidget(mpCodeColorsWidget);
@@ -4927,7 +4927,7 @@ OMSimulatorEditorPage::OMSimulatorEditorPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  connect(mpCodeColorsWidget, &CodeColorsWidget::colorUpdated, this, &OMSimulatorEditorPage::updatePreview);
   // Add items to list
   // tag (blue)
   new ListWidgetItem("Tag", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::tagRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::tagRuleColor), mpCodeColorsWidget->getItemsListWidget());
@@ -4953,12 +4953,12 @@ OMSimulatorEditorPage::OMSimulatorEditorPage(OptionsDialog *pOptionsDialog)
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pOMSimulatorHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pOMSimulatorHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pOMSimulatorHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  connect(this, &OMSimulatorEditorPage::updatePreview, pOMSimulatorHighlighter, &OMSimulatorHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), &QGroupBox::toggled,
+          pOMSimulatorHighlighter, &OMSimulatorHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), &QCheckBox::toggled,
+          pOMSimulatorHighlighter, &OMSimulatorHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), &QCheckBox::toggled, this, &OMSimulatorEditorPage::setLineWrapping);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->addWidget(mpCodeColorsWidget);
@@ -5029,7 +5029,7 @@ CEditorPage::CEditorPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  connect(mpCodeColorsWidget, &CodeColorsWidget::colorUpdated, this, &CEditorPage::updatePreview);
   // Add items to list
   // number (purple)
   new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::CEditor::numberRuleColor, OptionsDefaults::CEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
@@ -5052,12 +5052,12 @@ CEditorPage::CEditorPage(OptionsDialog *pOptionsDialog)
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   CHighlighter *pCHighlighter = new CHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pCHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pCHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pCHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  connect(this, &CEditorPage::updatePreview, pCHighlighter, &CHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), &QGroupBox::toggled,
+          pCHighlighter, &CHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), &QCheckBox::toggled,
+          pCHighlighter, &CHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), &QCheckBox::toggled, this, &CEditorPage::setLineWrapping);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->addWidget(mpCodeColorsWidget);
@@ -5128,7 +5128,7 @@ HTMLEditorPage::HTMLEditorPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  connect(mpCodeColorsWidget, &CodeColorsWidget::colorUpdated, this, &HTMLEditorPage::updatePreview);
   // Add items to list
   // tag (blue)
   new ListWidgetItem("Tag", OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::tagRuleColor, OptionsDefaults::HTMLEditor::DarkMode::tagRuleColor), mpCodeColorsWidget->getItemsListWidget());
@@ -5150,12 +5150,12 @@ HTMLEditorPage::HTMLEditorPage(OptionsDialog *pOptionsDialog)
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pHTMLHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pHTMLHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pHTMLHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  connect(this, &HTMLEditorPage::updatePreview, pHTMLHighlighter, &HTMLHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), &QGroupBox::toggled,
+          pHTMLHighlighter, &HTMLHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), &QCheckBox::toggled,
+          pHTMLHighlighter, &HTMLHighlighter::settingsChanged);
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), &QCheckBox::toggled, this, &HTMLEditorPage::setLineWrapping);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->addWidget(mpCodeColorsWidget);
@@ -5390,7 +5390,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
 #endif
   mpTargetBuildComboBox->addItem("vxworks69", "vxworks69");
   mpTargetBuildComboBox->addItem("debugrt", "debugrt");
-  connect(mpTargetBuildComboBox, SIGNAL(currentIndexChanged(int)), SLOT(targetBuildChanged(int)));
+  connect(mpTargetBuildComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SimulationPage::targetBuildChanged);
   // C Compiler
   mpCompilerLabel = new Label(tr("C Compiler:"));
   mpCompilerComboBox = new ComboBox;
@@ -5461,7 +5461,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpDisplayLimitSpinBox->setSingleStep(100);
   mpDisplayLimitSpinBox->setValue(OptionsDefaults::Simulation::displayLimit);
   mpDisplayLimitMBLabel = new Label;
-  connect(mpDisplayLimitSpinBox, SIGNAL(valueChanged(int)), SLOT(displayLimitValueChanged(int)));
+  connect(mpDisplayLimitSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &SimulationPage::displayLimitValueChanged);
   // calculate the display limit in MBs.
   displayLimitValueChanged(mpDisplayLimitSpinBox->value());
   // set the layout of output view mode group
@@ -5605,21 +5605,21 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpNotificationColorLabel = new Label(tr("Notification Color:"));
   mpNotificationColorButton = new QPushButton(Helper::pickColor);
   mpNotificationColorButton->setAutoDefault(false);
-  connect(mpNotificationColorButton, SIGNAL(clicked()), SLOT(pickNotificationColor()));
+  connect(mpNotificationColorButton, &QPushButton::clicked, this, &MessagesPage::pickNotificationColor);
   setNotificationColor(OptionsDialog::themeColor(OptionsDefaults::Messages::notificationColor, OptionsDefaults::Messages::DarkMode::notificationColor));
   setNotificationPickColorButtonIcon();
   // Warning Color
   mpWarningColorLabel = new Label(tr("Warning Color:"));
   mpWarningColorButton = new QPushButton(Helper::pickColor);
   mpWarningColorButton->setAutoDefault(false);
-  connect(mpWarningColorButton, SIGNAL(clicked()), SLOT(pickWarningColor()));
+  connect(mpWarningColorButton, &QPushButton::clicked, this, &MessagesPage::pickWarningColor);
   setWarningColor(OptionsDialog::themeColor(OptionsDefaults::Messages::warningColor, OptionsDefaults::Messages::DarkMode::warningColor));
   setWarningPickColorButtonIcon();
   // Error Color
   mpErrorColorLabel = new Label(tr("Error Color:"));
   mpErrorColorButton = new QPushButton(Helper::pickColor);
   mpErrorColorButton->setAutoDefault(false);
-  connect(mpErrorColorButton, SIGNAL(clicked()), SLOT(pickErrorColor()));
+  connect(mpErrorColorButton, &QPushButton::clicked, this, &MessagesPage::pickErrorColor);
   setErrorColor(OptionsDialog::themeColor(OptionsDefaults::Messages::errorColor, OptionsDefaults::Messages::DarkMode::errorColor));
   setErrorPickColorButtonIcon();
   // set the layout of FontColors group
@@ -5819,7 +5819,7 @@ LineStylePage::LineStylePage(OptionsDialog *pOptionsDialog)
   mpLinePickColorButton = new QPushButton(Helper::pickColor);
   mpLinePickColorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpLinePickColorButton->setAutoDefault(false);
-  connect(mpLinePickColorButton, SIGNAL(clicked()), SLOT(linePickColor()));
+  connect(mpLinePickColorButton, &QPushButton::clicked, this, &LineStylePage::linePickColor);
   setLineColor(OptionsDefaults::LineStyle::color);
   setLinePickColorButtonIcon();
   // Line Pattern
@@ -5993,7 +5993,7 @@ FillStylePage::FillStylePage(OptionsDialog *pOptionsDialog)
   mpFillPickColorButton = new QPushButton(Helper::pickColor);
   mpFillPickColorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpFillPickColorButton->setAutoDefault(false);
-  connect(mpFillPickColorButton, SIGNAL(clicked()), SLOT(fillPickColor()));
+  connect(mpFillPickColorButton, &QPushButton::clicked, this, &FillStylePage::fillPickColor);
   setFillColor(OptionsDefaults::FillStyle::color);
   setFillPickColorButtonIcon();
   // Fill Pattern
@@ -6282,24 +6282,24 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   mpFigaroDatabaseFileTextBox = new QLineEdit;
   mpBrowseFigaroDatabaseFileButton = new QPushButton(Helper::browse);
   mpBrowseFigaroDatabaseFileButton->setAutoDefault(false);
-  connect(mpBrowseFigaroDatabaseFileButton, SIGNAL(clicked()), SLOT(browseFigaroLibraryFile()));
+  connect(mpBrowseFigaroDatabaseFileButton, &QPushButton::clicked, this, &FigaroPage::browseFigaroLibraryFile);
   // Figaro options file
   mpFigaroOptionsFileLabel = new Label(tr("Tree generation options:"));
   mpFigaroOptionsFileTextBox = new QLineEdit;
   mpBrowseFigaroOptionsFileButton = new QPushButton(Helper::browse);
   mpBrowseFigaroOptionsFileButton->setAutoDefault(false);
-  connect(mpBrowseFigaroOptionsFileButton, SIGNAL(clicked()), SLOT(browseFigaroOptionsFile()));
+  connect(mpBrowseFigaroOptionsFileButton, &QPushButton::clicked, this, &FigaroPage::browseFigaroOptionsFile);
   // figaro process
   mpFigaroProcessLabel = new Label(tr("Figaro Processor:"));
   OptionsDefaults::Figaro::process = QString(Helper::OpenModelicaHome).append("/share/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe");
   mpFigaroProcessTextBox = new QLineEdit(OptionsDefaults::Figaro::process);
   mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
   mpBrowseFigaroProcessButton->setAutoDefault(false);
-  connect(mpBrowseFigaroProcessButton, SIGNAL(clicked()), SLOT(browseFigaroProcessFile()));
+  connect(mpBrowseFigaroProcessButton, &QPushButton::clicked, this, &FigaroPage::browseFigaroProcessFile);
   mpResetFigaroProcessButton = new QPushButton(Helper::reset);
   mpResetFigaroProcessButton->setToolTip(tr("Resets to default Figaro Processor path"));
   mpResetFigaroProcessButton->setAutoDefault(false);
-  connect(mpResetFigaroProcessButton, SIGNAL(clicked()), SLOT(resetFigaroProcessPath()));
+  connect(mpResetFigaroProcessButton, &QPushButton::clicked, this, &FigaroPage::resetFigaroProcessPath);
   // set the layout
   QGridLayout *pFigaroLayout = new QGridLayout;
   pFigaroLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -6362,7 +6362,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpGDBPathTextBox->setPlaceholderText(Utilities::getGDBPath());
   mpGDBPathBrowseButton = new QPushButton(Helper::browse);
   mpGDBPathBrowseButton->setAutoDefault(false);
-  connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));
+  connect(mpGDBPathBrowseButton, &QPushButton::clicked, this, &DebuggerPage::browseGDBPath);
   /* GDB Command Timeout */
   mpGDBCommandTimeoutLabel = new Label(tr("GDB Command Timeout:"));
   mpGDBCommandTimeoutSpinBox = new SpinBox;
@@ -6511,7 +6511,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpMoveFMUTextBox->setPlaceholderText(tr("<directory name or full file name with placeholders>"));
   mpBrowseFMUDirectoryButton = new QPushButton(Helper::browse);
   mpBrowseFMUDirectoryButton->setAutoDefault(false);
-  connect(mpBrowseFMUDirectoryButton, SIGNAL(clicked()), SLOT(selectFMUDirectory()));
+  connect(mpBrowseFMUDirectoryButton, &QPushButton::clicked, this, &FMIPage::selectFMUDirectory);
   // placeholder count may change, don't invalidate translation
   mpMoveFMUTextBox->setToolTip(tr("Placeholders:\n") +
                                FMIPage::FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER + tr(" i.e.,") + " Modelica.Electrical.Analog.Examples.ChuaCircuit\n" +
@@ -6603,7 +6603,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
   mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText(OptionsDefaults::FMI::modelDescriptionFilter));
   Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
-  connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(int)), SLOT(enableIncludeSourcesCheckBox(int)));
+  connect(mpModelDescriptionFiltersComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &FMIPage::enableIncludeSourcesCheckBox);
   // include resources checkbox
   mpIncludeResourcesCheckBox = new QCheckBox(tr("Include Modelica based resources via loadResource"));
   // include source code checkbox
@@ -6804,7 +6804,7 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   mpOMUQPythonTextBox = new QLineEdit(OptionsDefaults::OMSimulator::omuqPython);
   mpOMUQPythonBrowseButton = new QPushButton(Helper::browse);
   mpOMUQPythonBrowseButton->setAutoDefault(false);
-  connect(mpOMUQPythonBrowseButton, SIGNAL(clicked()), SLOT(browseOMUQPython()));
+  connect(mpOMUQPythonBrowseButton, &QPushButton::clicked, this, &OMSimulatorPage::browseOMUQPython);
   QGridLayout *pOMUQGroupBoxLayout = new QGridLayout;
   pOMUQGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pOMUQGroupBoxLayout->addWidget(pOMUQInfoLabel, 0, 0, 1, 3);
@@ -6857,13 +6857,13 @@ SensitivityOptimizationPage::SensitivityOptimizationPage(OptionsDialog *pOptions
   mpOMSensBackendPathTextBox = new QLineEdit;
   mpOMSensBackendBrowseButton = new QPushButton(Helper::browse);
   mpOMSensBackendBrowseButton->setAutoDefault(false);
-  connect(mpOMSensBackendBrowseButton, SIGNAL(clicked()), SLOT(browseOMSensBackendPath()));
+  connect(mpOMSensBackendBrowseButton, &QPushButton::clicked, this, &SensitivityOptimizationPage::browseOMSensBackendPath);
   // python executable
   mpPythonLabel = new Label(tr("Python:"));
   mpPythonTextBox = new QLineEdit(OptionsDefaults::SensitivityOptimization::python);
   mpPythonBrowseButton = new QPushButton(Helper::browse);
   mpPythonBrowseButton->setAutoDefault(false);
-  connect(mpPythonBrowseButton, SIGNAL(clicked()), SLOT(browsePythonExecutable()));
+  connect(mpPythonBrowseButton, &QPushButton::clicked, this, &SensitivityOptimizationPage::browsePythonExecutable);
   // set the layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -6922,20 +6922,20 @@ DiscardLocalTranslationFlagsDialog::DiscardLocalTranslationFlagsDialog(QWidget *
   mpClassesWithLocalTranslationFlagsListWidget = new QListWidget;
   mpClassesWithLocalTranslationFlagsListWidget->setObjectName("ClassesWithLocalTranslationFlagsListWidget");
   mpClassesWithLocalTranslationFlagsListWidget->setItemDelegate(new ItemDelegate(mpClassesWithLocalTranslationFlagsListWidget));
-  connect(mpClassesWithLocalTranslationFlagsListWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), SLOT(showLocalTranslationFlags(QListWidgetItem*)));
+  connect(mpClassesWithLocalTranslationFlagsListWidget, &QListWidget::itemDoubleClicked, this, &DiscardLocalTranslationFlagsDialog::showLocalTranslationFlags);
   listLocalTranslationFlagsClasses(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem());
   QCheckBox *pSelectUnSelectAll = new QCheckBox(tr("Select/Unselect All"));
   pSelectUnSelectAll->setChecked(true);
-  connect(pSelectUnSelectAll, SIGNAL(toggled(bool)), SLOT(selectUnSelectAll(bool)));
+  connect(pSelectUnSelectAll, &QCheckBox::toggled, this, &DiscardLocalTranslationFlagsDialog::selectUnSelectAll);
   // Create the buttons
   // create the Yes button
   mpYesButton = new QPushButton(tr("Yes"));
   mpYesButton->setAutoDefault(true);
-  connect(mpYesButton, SIGNAL(clicked()), SLOT(discardLocalTranslationFlags()));
+  connect(mpYesButton, &QPushButton::clicked, this, &DiscardLocalTranslationFlagsDialog::discardLocalTranslationFlags);
   // create the No button
   mpNoButton = new QPushButton(tr("No"));
   mpNoButton->setAutoDefault(false);
-  connect(mpNoButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpNoButton, &QPushButton::clicked, this, &DiscardLocalTranslationFlagsDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpYesButton, QDialogButtonBox::ActionRole);
@@ -7018,7 +7018,7 @@ void DiscardLocalTranslationFlagsDialog::showLocalTranslationFlags(QListWidgetIt
     TranslationFlagsWidget *pTranslationFlagsWidget = new TranslationFlagsWidget;
     pTranslationFlagsWidget->applySimulationOptions(pLibraryTreeItem->mSimulationOptions);
     QPushButton *pOkButton = new QPushButton(Helper::ok);
-    connect(pOkButton, SIGNAL(clicked()), pLocalTranslationFlagsDialog, SLOT(accept()));
+    connect(pOkButton, &QPushButton::clicked, pLocalTranslationFlagsDialog, &QDialog::accept);
     QVBoxLayout *pMainLayout = new QVBoxLayout;
     pMainLayout->addWidget(pTranslationFlagsWidget);
     pMainLayout->addWidget(pOkButton, 0, Qt::AlignRight);
@@ -7058,7 +7058,7 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   mpCompilerJarTextBox = new QLineEdit(OptionsDefaults::CRML::compilerJar);
   mpBrowseCompilerJarButton = new QPushButton(Helper::browse);
   mpBrowseCompilerJarButton->setAutoDefault(false);
-  connect(mpBrowseCompilerJarButton, SIGNAL(clicked()), SLOT(browseCompilerJar()));
+  connect(mpBrowseCompilerJarButton, &QPushButton::clicked, this, &CRMLPage::browseCompilerJar);
   // CRML CommandLine arguments
   mpCompilerCommandLineOptionsLabel = new Label(tr("Compiler Arguments:"));
   mpCompilerCommandLineOptionsTextBox = new QLineEdit;
@@ -7067,11 +7067,11 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   mpCompilerProcessTextBox = new QLineEdit(OptionsDefaults::CRML::process);
   mpBrowseCompilerProcessButton = new QPushButton(Helper::browse);
   mpBrowseCompilerProcessButton->setAutoDefault(false);
-  connect(mpBrowseCompilerProcessButton, SIGNAL(clicked()), SLOT(browseCompilerProcessFile()));
+  connect(mpBrowseCompilerProcessButton, &QPushButton::clicked, this, &CRMLPage::browseCompilerProcessFile);
   mpResetCompilerProcessButton = new QPushButton(Helper::reset);
   mpResetCompilerProcessButton->setToolTip(tr("Resets to the default Java executable"));
   mpResetCompilerProcessButton->setAutoDefault(false);
-  connect(mpResetCompilerProcessButton, SIGNAL(clicked()), SLOT(resetCompilerProcessPath()));
+  connect(mpResetCompilerProcessButton, &QPushButton::clicked, this, &CRMLPage::resetCompilerProcessPath);
   mpModelicaLibraries = new DirectoryOrFileSelector(false, tr("Modelica Library Paths:"), pOptionsDialog);
   // set the layout
   QGridLayout *pCRMLLayout = new QGridLayout;
@@ -7149,10 +7149,10 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
                                            "installed with OMEdit.\n\n%1").arg(placeholder));
   mpBrowseServerExecutableButton = new QPushButton(Helper::browse);
   mpBrowseServerExecutableButton->setAutoDefault(false);
-  connect(mpBrowseServerExecutableButton, SIGNAL(clicked()), SLOT(browseServerExecutable()));
+  connect(mpBrowseServerExecutableButton, &QPushButton::clicked, this, &LanguageServerPage::browseServerExecutable);
   mpAutoDetectButton = new QPushButton(tr("Auto Detect"));
   mpAutoDetectButton->setAutoDefault(false);
-  connect(mpAutoDetectButton, SIGNAL(clicked()), SLOT(autoDetectServerExecutable()));
+  connect(mpAutoDetectButton, &QPushButton::clicked, this, &LanguageServerPage::autoDetectServerExecutable);
   // Restarting reloads the libraries from scratch. The library list is kept in
   // step automatically, so this is for the cases that leaves out: a server that
   // gave up after repeated crashes, or libraries changed on disk behind OMEdit.
@@ -7164,7 +7164,7 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   // saved until the dialog is accepted, and restarting from it would start a
   // server the settings still say is disabled, which nothing would then stop.
   mpRestartServerButton->setEnabled(false);
-  connect(mpRestartServerButton, SIGNAL(clicked()), SLOT(restartServer()));
+  connect(mpRestartServerButton, &QPushButton::clicked, this, &LanguageServerPage::restartServer);
   // Offers the standalone server for platforms where OMEdit does not bundle one.
   //
   // The version is a choice rather than always the newest release: the language
@@ -7184,7 +7184,7 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
                                         "from the selected GitHub release."));
   mpDownloadServerButton->setEnabled(!platformServerAsset().isEmpty());
   mpDownloadVersionComboBox->setEnabled(!platformServerAsset().isEmpty());
-  connect(mpDownloadServerButton, SIGNAL(clicked()), SLOT(downloadServerExecutable()));
+  connect(mpDownloadServerButton, &QPushButton::clicked, this, &LanguageServerPage::downloadServerExecutable);
   // The server is told about the libraries OMC has loaded; there is no separate
   // list to maintain here.
   // Layout inside group box
@@ -7324,8 +7324,8 @@ bool LanguageServerPage::fetchAssetDigests(const QString &tag, QHash<QString, QS
 
   pProgressDialog->setLabelText(tr("Checking the release contents..."));
   QEventLoop eventLoop;
-  connect(pReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
-  connect(pProgressDialog, SIGNAL(canceled()), pReply, SLOT(abort()));
+  connect(pReply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
+  connect(pProgressDialog, &QProgressDialog::canceled, pReply, &QNetworkReply::abort);
   eventLoop.exec();
 
   if (pReply->error() != QNetworkReply::NoError) {
@@ -7383,8 +7383,8 @@ bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString 
   QNetworkReply *pReply = networkAccessManager.get(request);
 
   QEventLoop eventLoop;
-  connect(pReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
-  connect(pProgressDialog, SIGNAL(canceled()), pReply, SLOT(abort()));
+  connect(pReply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
+  connect(pProgressDialog, &QProgressDialog::canceled, pReply, &QNetworkReply::abort);
   connect(pReply, &QNetworkReply::downloadProgress, pProgressDialog, [pProgressDialog, asset](qint64 received, qint64 total) {
     pProgressDialog->setLabelText(tr("Downloading %1 (%2 MB)...").arg(asset).arg(received / 1024 / 1024));
     if (total > 0) {
@@ -7620,11 +7620,11 @@ CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
   mpAccountsListWidget = new QListWidget;
   mpAccountsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
   mpAddGoogleDriveButton = new QPushButton(tr("Add Google Drive Account"));
-  connect(mpAddGoogleDriveButton, SIGNAL(clicked()), SLOT(addGoogleDriveAccount()));
+  connect(mpAddGoogleDriveButton, &QPushButton::clicked, this, &CloudStoragePage::addGoogleDriveAccount);
   mpAddOneDriveButton = new QPushButton(tr("Add OneDrive Account"));
-  connect(mpAddOneDriveButton, SIGNAL(clicked()), SLOT(addOneDriveAccount()));
+  connect(mpAddOneDriveButton, &QPushButton::clicked, this, &CloudStoragePage::addOneDriveAccount);
   mpSignOutButton = new QPushButton(tr("Sign Out"));
-  connect(mpSignOutButton, SIGNAL(clicked()), SLOT(signOutAccount()));
+  connect(mpSignOutButton, &QPushButton::clicked, this, &CloudStoragePage::signOutAccount);
   mpStatusLabel = new Label;
   mpStatusLabel->setElideMode(Qt::ElideMiddle);
   mpStatusLabel->setWordWrap(true);
@@ -7703,9 +7703,9 @@ CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
   pMountsNoteLabel->setWordWrap(true);
   mpMountsListWidget = new QListWidget;
   mpMountsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-  connect(mpMountsListWidget, SIGNAL(itemChanged(QListWidgetItem*)), SLOT(mountAutoPushChanged(QListWidgetItem*)));
+  connect(mpMountsListWidget, &QListWidget::itemChanged, this, &CloudStoragePage::mountAutoPushChanged);
   mpForgetMountButton = new QPushButton(tr("Forget Folder"));
-  connect(mpForgetMountButton, SIGNAL(clicked()), SLOT(forgetMount()));
+  connect(mpForgetMountButton, &QPushButton::clicked, this, &CloudStoragePage::forgetMount);
 
   QGridLayout *pMountsLayout = new QGridLayout;
   pMountsLayout->addWidget(pMountsNoteLabel, 0, 0, 1, 2);
@@ -7722,9 +7722,9 @@ CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
   pMainLayout->addStretch();
   setLayout(pMainLayout);
 
-  connect(CloudAccountManager::instance(), SIGNAL(accountAdded(QString)), SLOT(onAccountAdded(QString)));
+  connect(CloudAccountManager::instance(), &CloudAccountManager::accountAdded, this, &CloudStoragePage::onAccountAdded);
   connect(CloudAccountManager::instance(), &CloudAccountManager::addAccountPhase, mpStatusLabel, &Label::setText);
-  connect(CloudAccountManager::instance(), SIGNAL(addAccountFailed(CloudError)), SLOT(onAddAccountFailed(CloudError)));
+  connect(CloudAccountManager::instance(), &CloudAccountManager::addAccountFailed, this, &CloudStoragePage::onAddAccountFailed);
 }
 
 void CloudStoragePage::showEvent(QShowEvent *pEvent)

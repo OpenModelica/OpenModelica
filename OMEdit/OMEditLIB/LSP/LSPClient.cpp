@@ -79,9 +79,9 @@ LSPClient::LSPClient(QObject *pParent)
   // channel accumulates in QProcess for the life of the process, so hand it to
   // OMEdit's own stderr instead of growing a buffer that is never drained.
   mpProcess->setProcessChannelMode(QProcess::ForwardedErrorChannel);
-  connect(mpProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadyRead()));
-  connect(mpProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), this, SLOT(onProcessError(QProcess::ProcessError)));
-  connect(mpProcess, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(onProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpProcess, &QProcess::readyReadStandardOutput, this, &LSPClient::onReadyRead);
+  connect(mpProcess, &QProcess::errorOccurred, this, &LSPClient::onProcessError);
+  connect(mpProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &LSPClient::onProcessFinished);
 #endif
 }
 

@@ -513,8 +513,8 @@ namespace IAEX{
     newCell->move( QPoint(0,0) );
     newCell->show();
 
-    connect(newCell, SIGNAL(heightChanged()),
-      this, SLOT(adjustHeight()), Qt::UniqueConnection);
+    connect(newCell, &Cell::heightChanged,
+      this, &CellGroup::adjustHeight, Qt::UniqueConnection);
 
     removeCellWidgets();
     addCellWidgets();
@@ -563,8 +563,8 @@ namespace IAEX{
         current->move( QPoint(0,0) );
         current->show();
 
-        connect(current, SIGNAL(heightChanged()),
-          this, SLOT(adjustHeight()), Qt::UniqueConnection);
+        connect(current, &Cell::heightChanged,
+          this, &CellGroup::adjustHeight, Qt::UniqueConnection);
       }
 
       layout_->addWidget(current,i,0);

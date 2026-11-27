@@ -2011,7 +2011,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpStartExpandableConnectorTreeView->expandAll();
     mpStartExpandableConnectorTreeView->setSortingEnabled(true);
     mpStartExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
-    connect(mpStartExpandableConnectorTreeView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), SLOT(startConnectorChanged(QModelIndex,QModelIndex)));
+    connect(mpStartExpandableConnectorTreeView->selectionModel(), &QItemSelectionModel::currentChanged, this, &CreateConnectionDialog::startConnectorChanged);
   }
   // End expandable connector treeview
   mpEndElement = mpConnectionLineAnnotation->getEndElement();
@@ -2029,7 +2029,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpEndExpandableConnectorTreeView->expandAll();
     mpEndExpandableConnectorTreeView->setSortingEnabled(true);
     mpEndExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
-    connect(mpEndExpandableConnectorTreeView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), SLOT(endConnectorChanged(QModelIndex,QModelIndex)));
+    connect(mpEndExpandableConnectorTreeView->selectionModel(), &QItemSelectionModel::currentChanged, this, &CreateConnectionDialog::endConnectorChanged);
   }
   // Indexes Description text
   mpIndexesDescriptionLabel = new Label(tr("Specify the indexes below to connect to the parts of the connectors."));
@@ -2066,10 +2066,10 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(createConnection()));
+  connect(mpOkButton, &QPushButton::clicked, this, &CreateConnectionDialog::createConnection);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &CreateConnectionDialog::reject);
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -2529,10 +2529,10 @@ CreateOrEditTransitionDialog::CreateOrEditTransitionDialog(GraphicsView *pGraphi
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpGraphicsView->getModelWidget()->isElementMode()) {
     mpOkButton->setDisabled(true);
   }
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(createOrEditTransition()));
+  connect(mpOkButton, &QPushButton::clicked, this, &CreateOrEditTransitionDialog::createOrEditTransition);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &CreateOrEditTransitionDialog::reject);
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

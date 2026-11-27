@@ -143,8 +143,8 @@ namespace IAEX
     setWorkspace(factory_->createCell("cellgroup"));
 
     // 2005-11-28 AF
-    connect( this, SIGNAL( cursorChanged() ),
-      this, SLOT( updateScrollArea() ));
+    connect( this, &CellDocument::cursorChanged,
+      this, &CellDocument::updateScrollArea);
 
     // 2005-12-01 AF, Added try-catch
     if(!filename_.isNull())
@@ -270,8 +270,8 @@ namespace IAEX
 
 
     //Make the cursor visible at all time.
-    //QObject::connect(current_, SIGNAL(positionChanged(int, int, int, int)),
-    //  vp_, SLOT(ensureVisible(int, int, int, int)));
+    //QObject::connect(current_, &CellCursor::positionChanged,
+    //  vp_, &QScrollArea::ensureVisible);
 
     workspace_->addChild( current_ );
 
@@ -1400,10 +1400,10 @@ namespace IAEX
   {
     observers_.push_back(d);
     NotebookWindow *w = dynamic_cast<NotebookWindow*>(d);
-    connect(this, SIGNAL(copyAvailable(bool)), w->copyAction, SLOT(setEnabled(bool)));
-    connect(this, SIGNAL(copyAvailable(bool)), w->cutAction, SLOT(setEnabled(bool)));
-    connect(this, SIGNAL(undoAvailable(bool)), w->undoAction, SLOT(setEnabled(bool)));
-    connect(this, SIGNAL(redoAvailable(bool)), w->redoAction, SLOT(setEnabled(bool)));
+    connect(this, &Document::copyAvailable, w->copyAction, &QAction::setEnabled);
+    connect(this, &Document::copyAvailable, w->cutAction, &QAction::setEnabled);
+    connect(this, &Document::undoAvailable, w->undoAction, &QAction::setEnabled);
+    connect(this, &Document::redoAvailable, w->redoAction, &QAction::setEnabled);
 
 
   }

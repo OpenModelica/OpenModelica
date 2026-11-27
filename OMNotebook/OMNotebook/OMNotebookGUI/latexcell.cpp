@@ -291,21 +291,21 @@ namespace IAEX {
     input_->setPalette(palette);
     // is this needed, don't know /AF
     input_->installEventFilter(this);
-    connect( input_, SIGNAL( textChanged() ), this, SLOT( contentChanged()));
-    connect( input_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
-    connect( input_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
-    connect( input_, SIGNAL( eval() ), this, SLOT( eval() ));
+    connect( input_, &MyTextEdit3::textChanged, this, &LatexCell::contentChanged);
+    connect( input_, &MyTextEdit3::clickOnCell, this, &LatexCell::clickEvent );
+    connect( input_, &MyTextEdit3::wheelMove, this, &LatexCell::wheelEvent );
+    connect( input_, &MyTextEdit3::eval, this, [this]() { eval(); });
 
-    connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
-    connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-       this, SLOT( charFormatChanged(const QTextCharFormat &) ));
-    connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
+    connect( input_, &MyTextEdit3::textChanged, this, &LatexCell::addToHighlighter );
+    connect( input_, &MyTextEdit3::currentCharFormatChanged,
+       this, &LatexCell::charFormatChanged );
+    connect( input_, &MyTextEdit3::forwardAction, this, &LatexCell::forwardAction );
 
-    connect( input_, SIGNAL(updatePos(int, int)), this, SIGNAL(updatePos(int, int)));
+    connect( input_, &MyTextEdit3::updatePos, this, &LatexCell::updatePos );
     contentChanged();
 
-    connect(input_, SIGNAL(setState(int)), this, SLOT(setState(int)));
-    connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
+    connect(input_, &MyTextEdit3::setState, this, &LatexCell::setState);
+    connect(input_, &MyTextEdit3::textChanged, input_, &MyTextEdit3::setModified);
   }
 
   /*!
@@ -324,13 +324,13 @@ namespace IAEX {
     output_->setAutoFormatting( QTextEdit::AutoNone );
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-    connect( output_, SIGNAL( textChanged() ), this, SLOT(contentChanged()));
-    connect( output_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
-    connect( output_, SIGNAL( clickOnCell() ), this, SLOT( clickEventOutput() ));
-    connect( output_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
-    connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
-    connect(output_, SIGNAL(textChanged()), output_, SLOT(setModified()));
-    connect(output_, SIGNAL( eval() ), this, SLOT( eval() ));
+    connect( output_, &MyTextEdit3::textChanged, this, &LatexCell::contentChanged);
+    connect( output_, &MyTextEdit3::textChanged, this, &LatexCell::addToHighlighter );
+    connect( output_, &MyTextEdit3::clickOnCell, this, &LatexCell::clickEventOutput );
+    connect( output_, &MyTextEdit3::wheelMove, this, &LatexCell::wheelEvent );
+    connect(output_, &MyTextEdit3::forwardAction, this, &LatexCell::forwardAction);
+    connect(output_, &MyTextEdit3::textChanged, output_, &MyTextEdit3::setModified);
+    connect(output_, &MyTextEdit3::eval, this, [this]() { eval(); });
 
     setOutputStyle();
 
@@ -391,7 +391,7 @@ namespace IAEX {
     chaptercounter_->setFixedWidth(50);
     chaptercounter_->setReadOnly( true );
 
-    connect( chaptercounter_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
+    connect( static_cast<MyTextEdit3*>(chaptercounter_), &MyTextEdit3::clickOnCell, this, &LatexCell::clickEvent );
 
     addChapterCounter( chaptercounter_ );
   }

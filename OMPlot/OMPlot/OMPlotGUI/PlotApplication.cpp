@@ -66,7 +66,7 @@ PlotApplication::PlotApplication(int &argc, char *argv[], const QString uniqueKe
         mSharedMemory.unlock();
         // start checking for messages of other instances.
         mpTimer = new QTimer(this);
-        connect(mpTimer, SIGNAL(timeout()), SLOT(checkForMessage()));
+        connect(mpTimer, &QTimer::timeout, this, &PlotApplication::checkForMessage);
         mpTimer->start(100);        // after every 0.1 second we check the shared memory
     }
 }

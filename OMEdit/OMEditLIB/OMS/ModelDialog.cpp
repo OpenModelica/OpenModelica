@@ -102,10 +102,10 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(createNewModel()));
+  connect(mpOkButton, &QPushButton::clicked, this, &CreateModelDialog::createNewModel);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &CreateModelDialog::reject);
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -195,10 +195,10 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystem()));
+  connect(mpOkButton, &QPushButton::clicked, this, &AddSystemDialog::addSystem);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &AddSystemDialog::reject);
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -282,20 +282,20 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
   mpPathTextBox = new QLineEdit(path);
   mpBrowsePathButton = new QPushButton(Helper::browse);
   mpBrowsePathButton->setAutoDefault(false);
-  connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseSubModelPath()));
+  connect(mpBrowsePathButton, &QPushButton::clicked, this, QOverload<>::of(&AddSubModelDialog::browseSubModelPath));
   // start script
   mpStartScriptLabel = new Label(Helper::startScript);
   mpStartScriptTextBox = new QLineEdit;
   mpBrowseStartScriptButton = new QPushButton(Helper::browse);
   mpBrowseStartScriptButton->setAutoDefault(false);
-  connect(mpBrowseStartScriptButton, SIGNAL(clicked()), SLOT(browseStartScript()));
+  connect(mpBrowseStartScriptButton, &QPushButton::clicked, this, &AddSubModelDialog::browseStartScript);
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(addSubModel()));
+  connect(mpOkButton, &QPushButton::clicked, this, &AddSubModelDialog::addSubModel);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &AddSubModelDialog::reject);
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -437,7 +437,7 @@ ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, QStrin
   mpPathTextBox = new QLineEdit();
   mpBrowsePathButton = new QPushButton(Helper::browse);
   mpBrowsePathButton->setAutoDefault(false);
-  connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseSubModelPath()));
+  connect(mpBrowsePathButton, &QPushButton::clicked, this, &ReplaceSubModelDialog::browseSubModelPath);
 
   // dryRun
   mpDryRunLabel = new Label("dryRun:");
@@ -450,10 +450,10 @@ ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, QStrin
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(replaceSubModel()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ReplaceSubModelDialog::replaceSubModel);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &ReplaceSubModelDialog::reject);
 
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
@@ -566,7 +566,7 @@ AddOrEditIconDialog::AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, Grap
   mpFileTextBox = new QLineEdit(mpShapeAnnotation ? mpShapeAnnotation->getFileName() : "");
   mpFileTextBox->setEnabled(false);
   mpBrowseFileButton = new QPushButton(Helper::browse);
-  connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(browseImageFile()));
+  connect(mpBrowseFileButton, &QPushButton::clicked, this, &AddOrEditIconDialog::browseImageFile);
   mpPreviewImageLabel = new Label;
   mpPreviewImageLabel->setAlignment(Qt::AlignCenter);
   if (mpShapeAnnotation) {
@@ -579,10 +579,10 @@ AddOrEditIconDialog::AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, Grap
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(addOrEditIcon()));
+  connect(mpOkButton, &QPushButton::clicked, this, &AddOrEditIconDialog::addOrEditIcon);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &AddOrEditIconDialog::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -675,10 +675,10 @@ AddConnectorDialog::AddConnectorDialog(GraphicsView *pGraphicsView)
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(addConnector()));
+  connect(mpOkButton, &QPushButton::clicked, this, &AddConnectorDialog::addConnector);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &AddConnectorDialog::reject);
   // add buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

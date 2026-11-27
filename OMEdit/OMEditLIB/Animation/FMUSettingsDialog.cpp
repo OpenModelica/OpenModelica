@@ -71,17 +71,17 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizationFMU* pVisual
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(saveSimSettings()));
+  connect(mpOkButton, &QPushButton::clicked, this, &FMUSettingsDialog::saveSimSettings);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &FMUSettingsDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   //connections
-  QObject::connect(mpButtonBox, SIGNAL(accepted()), this, SLOT(saveSimSettings()));
-  QObject::connect(mpButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+  QObject::connect(mpButtonBox, &QDialogButtonBox::accepted, this, &FMUSettingsDialog::saveSimSettings);
+  QObject::connect(mpButtonBox, &QDialogButtonBox::rejected, this, &FMUSettingsDialog::reject);
   //assemble
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);

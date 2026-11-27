@@ -68,19 +68,19 @@ ImportFMUModelDescriptionDialog::ImportFMUModelDescriptionDialog(QWidget *pParen
   mpFmuModelDescriptionTextBox = new QLineEdit;
   mpBrowseFileButton = new QPushButton(Helper::browse);
   mpBrowseFileButton->setAutoDefault(false);
-  connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(setSelectedFile()));
+  connect(mpBrowseFileButton, &QPushButton::clicked, this, &ImportFMUModelDescriptionDialog::setSelectedFile);
   // create Output Directory selection controls
   mpOutputDirectoryLabel = new Label(tr("Output Directory (Optional):"));
   mpOutputDirectoryTextBox = new QLineEdit;
   mpBrowseDirectoryButton = new QPushButton(Helper::browse);
   mpBrowseDirectoryButton->setAutoDefault(false);
-  connect(mpBrowseDirectoryButton, SIGNAL(clicked()), SLOT(setSelectedDirectory()));
+  connect(mpBrowseDirectoryButton, &QPushButton::clicked, this, &ImportFMUModelDescriptionDialog::setSelectedDirectory);
   // import FMU Model description note
   mpOutputDirectoryNoteLabel = new Label(tr("* If no Output Directory specified then the Modelica model will be generated in the current working directory."));
   // create OK button
   mpImportButton = new QPushButton(Helper::ok);
   mpImportButton->setAutoDefault(true);
-  connect(mpImportButton, SIGNAL(clicked()), SLOT(importFMUModelDescription()));
+  connect(mpImportButton, &QPushButton::clicked, this, &ImportFMUModelDescriptionDialog::importFMUModelDescription);
   // set grid layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);

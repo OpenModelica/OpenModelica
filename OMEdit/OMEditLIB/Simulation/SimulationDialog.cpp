@@ -174,13 +174,13 @@ void SimulationDialog::setUpForm()
   // Output Interval
   mpNumberofIntervalsRadioButton = new QRadioButton(tr("Number of Intervals:"));
   mpNumberofIntervalsRadioButton->setChecked(true);
-  connect(mpNumberofIntervalsRadioButton, SIGNAL(toggled(bool)), SLOT(numberOfIntervalsRadioToggled(bool)));
+  connect(mpNumberofIntervalsRadioButton, &QRadioButton::toggled, this, &SimulationDialog::numberOfIntervalsRadioToggled);
   mpNumberofIntervalsSpinBox = new SpinBox;
   mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpNumberofIntervalsSpinBox->setSingleStep(100);
   // Interval
   mpIntervalRadioButton = new QRadioButton(tr("Interval:"));
-  connect(mpIntervalRadioButton, SIGNAL(toggled(bool)), SLOT(intervalRadioToggled(bool)));
+  connect(mpIntervalRadioButton, &QRadioButton::toggled, this, &SimulationDialog::intervalRadioToggled);
   mpIntervalTextBox = new QLineEdit;
   mpIntervalTextBox->setEnabled(false);
   // set the layout for simulation interval groupbox
@@ -207,11 +207,11 @@ void SimulationDialog::setUpForm()
   mpMethodComboBox = new ComboBox;
   mpMethodComboBox->addItems(solverMethods);
   Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDesc);
-  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(enableDisableOptions(int)));
+  connect(mpMethodComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SimulationDialog::enableDisableOptions);
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpMehtodHelpButton->setToolTip(tr("Integration help"));
-  connect(mpMehtodHelpButton, SIGNAL(clicked()), SLOT(showIntegrationHelp()));
+  connect(mpMehtodHelpButton, &QToolButton::clicked, this, &SimulationDialog::showIntegrationHelp);
   // Tolerance
   mpToleranceLabel = new Label(tr("Tolerance:"));
   mpToleranceTextBox = new QLineEdit;
@@ -277,7 +277,7 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
   // build only
   mpBuildOnlyCheckBox = new QCheckBox(tr("Build Only"));
-  connect(mpBuildOnlyCheckBox, SIGNAL(toggled(bool)), SLOT(buildOnly(bool)));
+  connect(mpBuildOnlyCheckBox, &QCheckBox::toggled, this, &SimulationDialog::buildOnly);
   // Launch Transformational Debugger checkbox
   mpLaunchTransformationalDebuggerCheckBox = new QCheckBox(tr("Launch Transformational Debugger"));
   // Launch Algorithmic Debugger checkbox
@@ -322,7 +322,7 @@ void SimulationDialog::setUpForm()
   mpInteractiveSimulationPortLabel = new Label(tr("Simulation server port: "));
   mpInteractiveSimulationPortLabel->setToolTip(tr("Specifies the embedded server port."));
   mpInteractiveSimulationPortNumberTextBox = new QLineEdit;
-  connect(mpInteractiveSimulationGroupBox, SIGNAL(toggled(bool)), SLOT(interactiveSimulation(bool)));
+  connect(mpInteractiveSimulationGroupBox, &QGroupBox::toggled, this, &SimulationDialog::interactiveSimulation);
   // interactive simulation layout
   QGridLayout *pInteractiveSimulationLayout = new QGridLayout;
   pInteractiveSimulationLayout->setColumnStretch(1, 1);
@@ -360,7 +360,7 @@ void SimulationDialog::setUpForm()
   mpModelSetupFileLabel->setToolTip(tr("Specifies a new setup XML file to the generated simulation code."));
   mpModelSetupFileTextBox = new QLineEdit;
   mpModelSetupFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpModelSetupFileBrowseButton, SIGNAL(clicked()), SLOT(browseModelSetupFile()));
+  connect(mpModelSetupFileBrowseButton, &QPushButton::clicked, this, &SimulationDialog::browseModelSetupFile);
   mpModelSetupFileBrowseButton->setAutoDefault(false);
   // Initialization Methods
   mpInitializationMethodLabel = new Label(tr("Initialization Method (Optional):"));
@@ -378,7 +378,7 @@ void SimulationDialog::setUpForm()
   mpEquationSystemInitializationFileLabel->setToolTip(tr("Specifies an external file for the initialization of the model."));
   mpEquationSystemInitializationFileTextBox = new QLineEdit;
   mpEquationSystemInitializationFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpEquationSystemInitializationFileBrowseButton, SIGNAL(clicked()), SLOT(browseEquationSystemInitializationFile()));
+  connect(mpEquationSystemInitializationFileBrowseButton, &QPushButton::clicked, this, &SimulationDialog::browseEquationSystemInitializationFile);
   mpEquationSystemInitializationFileBrowseButton->setAutoDefault(false);
   // Equation System time
   mpEquationSystemInitializationTimeLabel = new Label(tr("Equation System Initialization Time (Optional):"));
@@ -445,7 +445,7 @@ void SimulationDialog::setUpForm()
   mpSimulationFlagsHelpButton = new QToolButton;
   mpSimulationFlagsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpSimulationFlagsHelpButton->setToolTip(tr("Simulation flags help"));
-  connect(mpSimulationFlagsHelpButton, SIGNAL(clicked()), SLOT(showSimulationFlagsHelp()));
+  connect(mpSimulationFlagsHelpButton, &QToolButton::clicked, this, &SimulationDialog::showSimulationFlagsHelp);
   // additional simulation flags layout
   QHBoxLayout *pAdditionalSimulationFlagsTabLayout = new QHBoxLayout;
   pAdditionalSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsTextBox);
@@ -494,14 +494,14 @@ void SimulationDialog::setUpForm()
                                    "If you want to change the output path then update the working directory in Options/Preferences."));
   mpResultFileNameLabel = new Label(tr("Result File (Optional):"));
   mpResultFileNameTextBox = new QLineEdit;
-  connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(int)), SLOT(resultFileNameChanged(int)));
+  connect(mpOutputFormatComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SimulationDialog::resultFileNameChanged);
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit(".*");
   mpVariableFilterHelpButton = new QToolButton;
   mpVariableFilterHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpVariableFilterHelpButton->setToolTip(tr("Variable Filter help"));
-  connect(mpVariableFilterHelpButton, SIGNAL(clicked()), SLOT(showVariableFilterHelp()));
+  connect(mpVariableFilterHelpButton, &QToolButton::clicked, this, &SimulationDialog::showVariableFilterHelp);
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables if not encrypted"));
   // ignore hide result
@@ -568,10 +568,10 @@ void SimulationDialog::setUpForm()
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(simulate()));
+  connect(mpOkButton, &QPushButton::clicked, this, &SimulationDialog::simulate);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &SimulationDialog::reject);
   // adds buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -1958,8 +1958,8 @@ bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QS
   pOpcUaWorker->moveToThread(pOpcUaClient->getSampleThread());
   pOpcUaClient->getSampleThread()->start();
 
-  connect(pOpcUaWorker, SIGNAL(sendAddMonitoredItem(int,QString)), pOpcUaWorker, SLOT(addMonitoredItem(int,QString)));
-  connect(pOpcUaWorker, SIGNAL(sendRemoveMonitoredItem(QString)), pOpcUaWorker, SLOT(removeMonitoredItem(QString)));
+  connect(pOpcUaWorker, &OpcUaWorker::sendAddMonitoredItem, pOpcUaWorker, &OpcUaWorker::addMonitoredItem);
+  connect(pOpcUaWorker, &OpcUaWorker::sendRemoveMonitoredItem, pOpcUaWorker, &OpcUaWorker::removeMonitoredItem);
   // insert the newly created OpcUaClient to the data structure
   mOpcUaClientsMap.insert(simulationOptions.getInteractiveSimulationPortNumber(), pOpcUaClient);
   // determine the model owner of the interactive plot window
@@ -1974,12 +1974,12 @@ bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QS
   } else {
     pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(owner, simulationOptions.getInteractiveSimulationPortNumber());
   }
-  connect(pOpcUaWorker, SIGNAL(sendUpdateCurves()), pInteractivePlotWindow, SLOT(updateCurves()));
+  connect(pOpcUaWorker, &OpcUaWorker::sendUpdateCurves, pInteractivePlotWindow, &OMPlot::PlotWindow::updateCurves);
   qRegisterMetaType<QPair<double,double>>();
-  connect(pOpcUaWorker, SIGNAL(sendUpdateYAxis(QPair<double,double>)), pInteractivePlotWindow, SLOT(updateYAxis(QPair<double, double>)));
-  connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(startInteractiveSimulation()));
-  connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(pauseInteractiveSimulation()));
-  connect(pInteractivePlotWindow->getSimulationSpeedBox(), SIGNAL(editTextChanged(QString)), pOpcUaWorker, SLOT(setSpeed(QString)));
+  connect(pOpcUaWorker, &OpcUaWorker::sendUpdateYAxis, pInteractivePlotWindow, &OMPlot::PlotWindow::updateYAxis);
+  connect(pInteractivePlotWindow->getStartSimulationButton(), &QToolButton::clicked, pOpcUaWorker, &OpcUaWorker::startInteractiveSimulation);
+  connect(pInteractivePlotWindow->getPauseSimulationButton(), &QToolButton::clicked, pOpcUaWorker, &OpcUaWorker::pauseInteractiveSimulation);
+  connect(pInteractivePlotWindow->getSimulationSpeedBox(), &QComboBox::editTextChanged, pOpcUaWorker, &OpcUaWorker::setSpeed);
   pOpcUaClient->setTargetPlotWindow(pInteractivePlotWindow);
   // fetch variables
   QStringList list = pOpcUaClient->fetchVariableNamesFromServer();
@@ -2565,18 +2565,18 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   mpDataReconciliationAlgorithmComboBox = new ComboBox;
   mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation"), QString("dataReconciliation"));
   mpDataReconciliationAlgorithmComboBox->addItem(tr("Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
-  connect(mpDataReconciliationAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(switchAlgorithmPage(int)));
+  connect(mpDataReconciliationAlgorithmComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DataReconciliationDialog::switchAlgorithmPage);
 
   // data Reconciliation algorithm items
   mpDataReconciliationMeasurementInputFileLabel = new Label(tr("Measurement Input File:"));
   mpDataReconciliationMeasurementInputFileTextBox = new QLineEdit;
   mpDataReconciliationMeasurementInputFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpDataReconciliationMeasurementInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationMeasurementInputFile()));
+  connect(mpDataReconciliationMeasurementInputFileBrowseButton, &QPushButton::clicked, this, &DataReconciliationDialog::browseDataReconciliationMeasurementInputFile);
   mpDataReconciliationMeasurementInputFileBrowseButton->setAutoDefault(false);
   mpDataReconciliationCorrelationMatrixInputFileLabel = new Label(tr("Correlation Matrix Input File:"));
   mpDataReconciliationCorrelationMatrixInputFileTextBox = new QLineEdit;
   mpDataReconciliationCorrelationMatrixInputFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationCorrelationMatrixInputFile()));
+  connect(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, &QPushButton::clicked, this, &DataReconciliationDialog::browseDataReconciliationCorrelationMatrixInputFile);
   mpDataReconciliationCorrelationMatrixInputFileBrowseButton->setAutoDefault(false);
   mpDataReconciliationEpsilonLabel = new Label(tr("Epsilon:"));
   mpDataReconciliationEpsilonTextBox = new QLineEdit("1.e-10");
@@ -2588,12 +2588,12 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   mpBoundaryConditionMeasurementInputFileLabel = new Label(tr("Reconciled Measurement File:"));
   mpBoundaryConditionMeasurementInputFileTextBox = new QLineEdit;
   mpBoundaryConditionMeasurementInputFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpBoundaryConditionMeasurementInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseBoundaryConditionMeasurementInputFile()));
+  connect(mpBoundaryConditionMeasurementInputFileBrowseButton, &QPushButton::clicked, this, &DataReconciliationDialog::browseBoundaryConditionMeasurementInputFile);
   mpBoundaryConditionMeasurementInputFileBrowseButton->setAutoDefault(false);
   mpBoundaryConditionCorrelationMatrixInputFileLabel = new Label(tr("Reconciled Correlation Matrix File:"));
   mpBoundaryConditionCorrelationMatrixInputFileTextBox = new QLineEdit;
   mpBoundaryConditionCorrelationMatrixInputFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpBoundaryConditionCorrelationMatrixInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseBoundaryConditionCorrelationMatrixInputFile()));
+  connect(mpBoundaryConditionCorrelationMatrixInputFileBrowseButton, &QPushButton::clicked, this, &DataReconciliationDialog::browseBoundaryConditionCorrelationMatrixInputFile);
   mpBoundaryConditionCorrelationMatrixInputFileBrowseButton->setAutoDefault(false);
 
   // save settings
@@ -2602,10 +2602,10 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   // Create the buttons
   mpCalculateButton = new QPushButton(tr("Calculate"));
   mpCalculateButton->setAutoDefault(true);
-  connect(mpCalculateButton, SIGNAL(clicked()), SLOT(calculateDataReconciliation()));
+  connect(mpCalculateButton, &QPushButton::clicked, this, &DataReconciliationDialog::calculateDataReconciliation);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &DataReconciliationDialog::reject);
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpCalculateButton, QDialogButtonBox::ActionRole);

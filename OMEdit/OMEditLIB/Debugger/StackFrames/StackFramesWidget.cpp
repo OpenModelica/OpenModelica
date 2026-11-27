@@ -178,9 +178,9 @@ StackFramesTreeWidget::StackFramesTreeWidget(StackFramesWidget *pStackFramesWidg
   setExpandsOnDoubleClick(false);
   setContextMenuPolicy(Qt::CustomContextMenu);
   createActions();
-  connect(GDBAdapter::instance(), SIGNAL(stackListFrames(GDBMIValue*)), SLOT(createStackFrames(GDBMIValue*)));
-  connect(this, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), mpStackFramesWidget, SLOT(stackCurrentItemChanged(QTreeWidgetItem*)));
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
+  connect(GDBAdapter::instance(), &GDBAdapter::stackListFrames, this, &StackFramesTreeWidget::createStackFrames);
+  connect(this, &StackFramesTreeWidget::currentItemChanged, mpStackFramesWidget, &StackFramesWidget::stackCurrentItemChanged);
+  connect(this, &StackFramesTreeWidget::customContextMenuRequested, this, &StackFramesTreeWidget::showContextMenu);
 }
 
 StackFramesWidget* StackFramesTreeWidget::getStackFramesWidget()
@@ -232,7 +232,7 @@ void StackFramesTreeWidget::createActions()
 {
   mpCreateFullBacktraceAction = new QAction(tr("Create Full Backtrace"), this);
   mpCreateFullBacktraceAction->setStatusTip(tr("Creates a full backtrace of the program"));
-  connect(mpCreateFullBacktraceAction, SIGNAL(triggered()), SLOT(createFullBacktrace()));
+  connect(mpCreateFullBacktraceAction, &QAction::triggered, this, &StackFramesTreeWidget::createFullBacktrace);
 }
 
 /*!
@@ -325,7 +325,7 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpResumeToolButton->setIcon(QIcon(":/Resources/icons/resume.svg"));
   mpResumeToolButton->setToolTip(Helper::resume);
   mpResumeToolButton->setAutoRaise(true);
-  connect(mpResumeToolButton, SIGNAL(clicked()), SLOT(resumeButtonClicked()));
+  connect(mpResumeToolButton, &QToolButton::clicked, this, &StackFramesWidget::resumeButtonClicked);
   /* continue tool button */
   mpInterruptToolButton = new QToolButton;
   mpInterruptToolButton->setEnabled(false);
@@ -333,7 +333,7 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpInterruptToolButton->setIcon(QIcon(":/Resources/icons/interrupt.svg"));
   mpInterruptToolButton->setToolTip(Helper::interrupt);
   mpInterruptToolButton->setAutoRaise(true);
-  connect(mpInterruptToolButton, SIGNAL(clicked()), SLOT(interruptButtonClicked()));
+  connect(mpInterruptToolButton, &QToolButton::clicked, this, &StackFramesWidget::interruptButtonClicked);
   /* continue tool button */
   mpExitToolButton = new QToolButton;
   mpExitToolButton->setEnabled(false);
@@ -341,7 +341,7 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpExitToolButton->setIcon(QIcon(":/Resources/icons/exit.svg"));
   mpExitToolButton->setToolTip(Helper::exit);
   mpExitToolButton->setAutoRaise(true);
-  connect(mpExitToolButton, SIGNAL(clicked()), SLOT(exitButtonClicked()));
+  connect(mpExitToolButton, &QToolButton::clicked, this, &StackFramesWidget::exitButtonClicked);
   /* Control buttons frame */
   QFrame *pControlButtonsFrame = new QFrame;
   QHBoxLayout *pControlButtonsHorizontalLayout = new QHBoxLayout;
@@ -358,7 +358,7 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpStepIntoToolButton->setIcon(QIcon(":/Resources/icons/step-into.svg"));
   mpStepIntoToolButton->setToolTip(Helper::stepInto);
   mpStepIntoToolButton->setAutoRaise(true);
-  connect(mpStepIntoToolButton, SIGNAL(clicked()), SLOT(stepIntoButtonClicked()));
+  connect(mpStepIntoToolButton, &QToolButton::clicked, this, &StackFramesWidget::stepIntoButtonClicked);
   /* step-over tool button */
   mpStepOverToolButton = new QToolButton;
   mpStepOverToolButton->setEnabled(false);
@@ -366,7 +366,7 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpStepOverToolButton->setIcon(QIcon(":/Resources/icons/step-over.svg"));
   mpStepOverToolButton->setToolTip(Helper::stepOver);
   mpStepOverToolButton->setAutoRaise(true);
-  connect(mpStepOverToolButton, SIGNAL(clicked()), SLOT(stepOverButtonClicked()));
+  connect(mpStepOverToolButton, &QToolButton::clicked, this, &StackFramesWidget::stepOverButtonClicked);
   /* step-return tool button */
   mpStepReturnToolButton = new QToolButton;
   mpStepReturnToolButton->setEnabled(false);
@@ -374,7 +374,7 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpStepReturnToolButton->setIcon(QIcon(":/Resources/icons/step-return.svg"));
   mpStepReturnToolButton->setToolTip(Helper::stepReturn);
   mpStepReturnToolButton->setAutoRaise(true);
-  connect(mpStepReturnToolButton, SIGNAL(clicked()), SLOT(stepReturnButtonClicked()));
+  connect(mpStepReturnToolButton, &QToolButton::clicked, this, &StackFramesWidget::stepReturnButtonClicked);
   /* Flow buttons frame */
   QFrame *pFlowButtonsFrame = new QFrame;
   QHBoxLayout *pFlowButtonsHorizontalLayout = new QHBoxLayout;
@@ -389,8 +389,8 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   /* Threads combo box */
   mpThreadsComboBox = new QComboBox;
   mpThreadsComboBox->setEnabled(false);
-  connect(mpThreadsComboBox, SIGNAL(currentIndexChanged(int)), SLOT(threadChanged(int)));
-  connect(GDBAdapter::instance(), SIGNAL(threadInfo(GDBMIValue*,QString)), SLOT(fillThreadComboBox(GDBMIValue*,QString)));
+  connect(mpThreadsComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &StackFramesWidget::threadChanged);
+  connect(GDBAdapter::instance(), &GDBAdapter::threadInfo, this, &StackFramesWidget::fillThreadComboBox);
   /* Thread frame */
   QFrame *pThreadFrame = new QFrame;
   QHBoxLayout *pThreadHorizontalLayout = new QHBoxLayout;
@@ -424,10 +424,10 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   pMainLayout->addWidget(mpStackFramesTreeWidget, 1, 0);
   setLayout(pMainLayout);
   /* Make connections to control the enable/disable of tool buttons */
-  connect(GDBAdapter::instance(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
-  connect(GDBAdapter::instance(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
-  connect(GDBAdapter::instance(), SIGNAL(inferiorSuspended()), SLOT(handleInferiorSuspended()));
-  connect(GDBAdapter::instance(), SIGNAL(inferiorResumed()), SLOT(handleInferiorResumed()));
+  connect(GDBAdapter::instance(), &GDBAdapter::GDBProcessStarted, this, &StackFramesWidget::handleGDBProcessStarted);
+  connect(GDBAdapter::instance(), &GDBAdapter::GDBProcessFinished, this, &StackFramesWidget::handleGDBProcessFinished);
+  connect(GDBAdapter::instance(), &GDBAdapter::inferiorSuspended, this, &StackFramesWidget::handleInferiorSuspended);
+  connect(GDBAdapter::instance(), &GDBAdapter::inferiorResumed, this, &StackFramesWidget::handleInferiorResumed);
 }
 
 void StackFramesWidget::setStatusMessage(QString statusMessage)

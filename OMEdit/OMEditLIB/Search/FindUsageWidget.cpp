@@ -550,12 +550,12 @@ FindUsageWidget::FindUsageWidget(QWidget *pParent)
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(tr("Filter Matches"));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(filterMatches()));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(filterMatches()));
-  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(filterMatches()));
-  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(filterMatches()));
-  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpClassTreeView, SLOT(expandAll()));
-  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpClassTreeView, SLOT(collapseAll()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), &LineEdit::returnPressed, this, &FindUsageWidget::filterMatches);
+  connect(mpTreeSearchFilters->getFilterTextBox(), &LineEdit::textEdited, this, &FindUsageWidget::filterMatches);
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), &QCheckBox::toggled, this, &FindUsageWidget::filterMatches);
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, &FindUsageWidget::filterMatches);
+  connect(mpTreeSearchFilters->getExpandAllButton(), &QToolButton::clicked, mpClassTreeView, &ClassTreeView::expandAll);
+  connect(mpTreeSearchFilters->getCollapseAllButton(), &QToolButton::clicked, mpClassTreeView, &ClassTreeView::collapseAll);
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);

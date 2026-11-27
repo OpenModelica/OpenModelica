@@ -291,10 +291,10 @@ int main(int argc, char *argv[])
   }
   // create the plot main window
   PlotMainWindow w;
-  QObject::connect(&app, SIGNAL(messageAvailable(QStringList)),
-                   w.getPlotWindowContainer(), SLOT(updateCurrentWindow(QStringList)));
-  QObject::connect(&app, SIGNAL(newApplicationLaunched(QStringList)),
-                   w.getPlotWindowContainer(), SLOT(addPlotWindow(QStringList)));
+  QObject::connect(&app, &PlotApplication::messageAvailable,
+                   w.getPlotWindowContainer(), &PlotWindowContainer::updateCurrentWindow);
+  QObject::connect(&app, &PlotApplication::newApplicationLaunched,
+                   w.getPlotWindowContainer(), &PlotWindowContainer::addPlotWindow);
   try {
     if (!app.isRunning())
       w.addPlotWindow(arguments);

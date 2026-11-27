@@ -497,8 +497,8 @@ namespace IAEX
     treeView_->setBackgroundColor(backgroundColor());
     treeView_->show();
 
-    connect(this, SIGNAL(selected(bool)),
-      treeView_, SLOT(setSelected(bool)));
+    connect(this, &Cell::selected,
+      treeView_, &TreeView::setSelected);
   }
 
   TreeView *Cell::treeView()

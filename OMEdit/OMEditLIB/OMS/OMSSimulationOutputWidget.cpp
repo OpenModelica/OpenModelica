@@ -205,7 +205,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mpProgressLabel->setTextFormat(Qt::RichText);
   mpCancelSimulationButton = new QPushButton(Helper::cancelSimulation);
   mpCancelSimulationButton->setEnabled(false);
-  connect(mpCancelSimulationButton, SIGNAL(clicked()), SLOT(cancelSimulation()));
+  connect(mpCancelSimulationButton, &QPushButton::clicked, this, &OMSSimulationOutputWidget::cancelSimulation);
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   mpProgressBar->setRange(0, 100);
@@ -221,13 +221,13 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   pMainLayout->addWidget(mpProgressBar, 0, 1);
   if (interactive) {
     QPushButton *pPauseButton = new QPushButton("Pause");
-    connect(pPauseButton, SIGNAL(clicked()), SLOT(pauseSimulation()));
+    connect(pPauseButton, &QPushButton::clicked, this, &OMSSimulationOutputWidget::pauseSimulation);
     pMainLayout->addWidget(pPauseButton, 0, 2);
     QPushButton *pContinueButton = new QPushButton("Continue");
-    connect(pContinueButton, SIGNAL(clicked()), SLOT(continueSimulation()));
+    connect(pContinueButton, &QPushButton::clicked, this, &OMSSimulationOutputWidget::continueSimulation);
     pMainLayout->addWidget(pContinueButton, 0, 3);
     QPushButton *pEndButton = new QPushButton("End");
-    connect(pEndButton, SIGNAL(clicked()), SLOT(endSimulation()));
+    connect(pEndButton, &QPushButton::clicked, this, &OMSSimulationOutputWidget::endSimulation);
     //pMainLayout->addWidget(pEndButton, 0, 4);
   }
   pMainLayout->addWidget(mpCancelSimulationButton, 0, 5);
@@ -269,21 +269,21 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   }
   if (!errorInitializingSockets) {
     mpSimulationSubscriberSocket->moveToThread(&mSimulationSubscribeThread);
-    connect(&mSimulationSubscribeThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readSimulationData()));
-    connect(mpSimulationSubscriberSocket, SIGNAL(simulationDataPublished(QByteArray)), this, SLOT(simulationDataPublished(QByteArray)));
+    connect(&mSimulationSubscribeThread, &QThread::started, mpSimulationSubscriberSocket, &SimulationSubscriberSocket::readSimulationData);
+    connect(mpSimulationSubscriberSocket, &SimulationSubscriberSocket::simulationDataPublished, this, &OMSSimulationOutputWidget::simulationDataPublished);
     if (mpSimulationRequestSocket) {
       mpSimulationRequestSocket->moveToThread(&mSimulationRequestThread);
-      connect(this, SIGNAL(sendRequest(QString,QString)), mpSimulationRequestSocket, SLOT(sendRequest(QString,QString)));
-      connect(mpSimulationRequestSocket, SIGNAL(simulationReply(QByteArray,QString,QString)), SLOT(simulationReply(QByteArray,QString,QString)));
+      connect(this, &OMSSimulationOutputWidget::sendRequest, mpSimulationRequestSocket, &SimulationRequestSocket::sendRequest);
+      connect(mpSimulationRequestSocket, &SimulationRequestSocket::simulationReply, this, &OMSSimulationOutputWidget::simulationReply);
     }
     // start the simulation process
     mpSimulationProcess = new QProcess;
     mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-    connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
-    connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
-    connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
-    connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
-    connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
+    connect(mpSimulationProcess, &QProcess::started, this, &OMSSimulationOutputWidget::simulationProcessStarted);
+    connect(mpSimulationProcess, &QProcess::readyReadStandardOutput, this, &OMSSimulationOutputWidget::readSimulationStandardOutput);
+    connect(mpSimulationProcess, &QProcess::readyReadStandardError, this, &OMSSimulationOutputWidget::readSimulationStandardError);
+    connect(mpSimulationProcess, &QProcess::errorOccurred, this, &OMSSimulationOutputWidget::simulationProcessError);
+    connect(mpSimulationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &OMSSimulationOutputWidget::simulationProcessFinished);
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorSimulationServer.py").arg(Helper::OpenModelicaHome));
     args << QString("--model=%1").arg(fileName);
     args << QString("--endpoint-pub=%1").arg(QString(mpSimulationSubscriberSocket->getEndPoint()));

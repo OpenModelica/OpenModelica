@@ -75,28 +75,28 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
   mpProgramLabel = new Label(tr("Program:"));
   mpProgramTextBox = new QLineEdit(mDebuggerConfiguration.program);
   mpProgramBrowseButton = new QPushButton(Helper::browse);
-  connect(mpProgramBrowseButton, SIGNAL(clicked()), SLOT(browseProgramFile()));
+  connect(mpProgramBrowseButton, &QPushButton::clicked, this, &DebuggerConfigurationPage::browseProgramFile);
   // Working Directory
   mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
   mpWorkingDirectoryTextBox = new QLineEdit(mDebuggerConfiguration.workingDirectory);
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
-  connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));
+  connect(mpWorkingDirectoryBrowseButton, &QPushButton::clicked, this, &DebuggerConfigurationPage::browseWorkingDirectory);
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
   mpGDBPathTextBox = new QLineEdit(mDebuggerConfiguration.GDBPath);
   mpGDBPathTextBox->setPlaceholderText(OptionsDialog::instance()->getDebuggerPage()->getGDBPath());
   mpGDBPathBrowseButton = new QPushButton(Helper::browse);
-  connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));
+  connect(mpGDBPathBrowseButton, &QPushButton::clicked, this, &DebuggerConfigurationPage::browseGDBPath);
   // Arguments
   mpArgumentsLabel = new Label(tr("Arguments:"));
   mpArgumentsTextBox = new QPlainTextEdit(mDebuggerConfiguration.arguments);
   // buttons
   mpApplyButton = new QPushButton(Helper::apply);
   mpApplyButton->setToolTip(tr("Saves the debug configuration"));
-  connect(mpApplyButton, SIGNAL(clicked()), SLOT(saveDebugConfiguration()));
+  connect(mpApplyButton, &QPushButton::clicked, this, &DebuggerConfigurationPage::saveDebugConfiguration);
   mpResetButton = new QPushButton(Helper::reset);
   mpResetButton->setToolTip(tr("Resets the debug configuration"));
-  connect(mpResetButton, SIGNAL(clicked()), SLOT(resetDebugConfiguration()));
+  connect(mpResetButton, &QPushButton::clicked, this, &DebuggerConfigurationPage::resetDebugConfiguration);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpApplyButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpResetButton, QDialogButtonBox::ActionRole);
@@ -264,12 +264,12 @@ DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(QWidget *pParent)
   mpNewToolButton->setIcon( QIcon(":/Resources/icons/new.svg"));
   mpNewToolButton->setToolTip(tr("New Configuration"));
   mpNewToolButton->setAutoRaise(true);
-  connect(mpNewToolButton, SIGNAL(clicked()), SLOT(newConfiguration()));
+  connect(mpNewToolButton, &QToolButton::clicked, this, &DebuggerConfigurationsDialog::newConfiguration);
   mpDeleteToolButton = new QToolButton;
   mpDeleteToolButton->setIcon( QIcon(":/Resources/icons/delete.svg"));
   mpDeleteToolButton->setToolTip(tr("Delete Configuration"));
   mpDeleteToolButton->setAutoRaise(true);
-  connect(mpDeleteToolButton, SIGNAL(clicked()), SLOT(removeConfiguration()));
+  connect(mpDeleteToolButton, &QToolButton::clicked, this, &DebuggerConfigurationsDialog::removeConfiguration);
   // create status bar
   mpStatusBar = new QStatusBar;
   mpStatusBar->setObjectName("ModelStatusBar");
@@ -281,8 +281,7 @@ DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(QWidget *pParent)
   mpConfigurationsListWidget = new QListWidget;
   mpConfigurationsListWidget->setItemDelegate(new ItemDelegate(mpConfigurationsListWidget));
   mpConfigurationsListWidget->setTextElideMode(Qt::ElideMiddle);
-  connect(mpConfigurationsListWidget, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)),
-          SLOT(changeConfigurationPage(QListWidgetItem*,QListWidgetItem*)));
+  connect(mpConfigurationsListWidget, &QListWidget::currentItemChanged, this, &DebuggerConfigurationsDialog::changeConfigurationPage);
   // configuration pages
   mpConfigurationPagesWidget = new QStackedWidget;
   /* Configuration settings Page Splitter */
@@ -299,12 +298,12 @@ DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(QWidget *pParent)
   // buttons
   mpSaveButton = new QPushButton(Helper::save);
   mpSaveButton->setToolTip(tr("Saves all the debug configurations"));
-  connect(mpSaveButton, SIGNAL(clicked()), this, SLOT(saveAllConfigurations()));
+  connect(mpSaveButton, &QPushButton::clicked, this, &DebuggerConfigurationsDialog::saveAllConfigurations);
   mpSaveAndDebugButton = new QPushButton(tr("Save && Debug"));
   mpSaveAndDebugButton->setToolTip(tr("Saves all the debug configurations and starts debugging the active debug configuration"));
-  connect(mpSaveAndDebugButton, SIGNAL(clicked()), this, SLOT(saveAllConfigurationsAndDebugConfiguration()));
+  connect(mpSaveAndDebugButton, &QPushButton::clicked, this, &DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration);
   mpCancelButton = new QPushButton(Helper::cancel);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &DebuggerConfigurationsDialog::reject);
   // adds debugger buttons to the button box
   mpConfigurationsButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpConfigurationsButtonBox->setVisible(false);

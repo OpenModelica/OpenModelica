@@ -446,7 +446,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
     mpStartSimulationToolButton->setIcon(QIcon(":/Resources/icons/play_animation.svg"));
     mpStartSimulationToolButton->setToolTip(tr("Start"));
     mpStartSimulationToolButton->setAutoRaise(true);
-    connect(mpStartSimulationToolButton, SIGNAL(clicked(bool)), SLOT(interactiveSimulationStarted()));
+    connect(mpStartSimulationToolButton, &QToolButton::clicked, this, &PlotWindow::interactiveSimulationStarted);
     // pause tool button
     mpPauseSimulationToolButton = new QToolButton;
     mpPauseSimulationToolButton->setEnabled(false);
@@ -454,7 +454,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
     mpPauseSimulationToolButton->setIcon(QIcon(":/Resources/icons/pause.svg"));
     mpPauseSimulationToolButton->setToolTip(tr("Pause"));
     mpPauseSimulationToolButton->setAutoRaise(true);
-    connect(mpPauseSimulationToolButton, SIGNAL(clicked(bool)), SLOT(interactiveSimulationPaused()));
+    connect(mpPauseSimulationToolButton, &QToolButton::clicked, this, &PlotWindow::interactiveSimulationPaused);
     // speed label and combo box
     mpSimulationSpeedLabel = new QLabel(tr("Speed:"));
     QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
@@ -483,7 +483,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpAutoScaleButton->setStatusTip(autoScale);
   mpAutoScaleButton->setIcon(QIcon(":/Resources/icons/auto_scale.svg"));
   mpAutoScaleButton->setCheckable(true);
-  connect(mpAutoScaleButton, SIGNAL(toggled(bool)), SLOT(setAutoScale(bool)));
+  connect(mpAutoScaleButton, &QToolButton::toggled, this, &PlotWindow::setAutoScale);
   toolBar->addWidget(mpAutoScaleButton);
   toolBar->addSeparator();
   //Fit in View
@@ -493,7 +493,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   fitInViewButton->setToolTip(fitInView);
   fitInViewButton->setStatusTip(fitInView);
   fitInViewButton->setIcon(QIcon(":/Resources/icons/fit-to-diagram.svg"));
-  connect(fitInViewButton, SIGNAL(clicked()), SLOT(fitInView()));
+  connect(fitInViewButton, &QToolButton::clicked, this, &PlotWindow::fitInView);
   toolBar->addWidget(fitInViewButton);
   toolBar->addSeparator();
   //GRID
@@ -509,7 +509,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
                                 "Detailed: major and minor grid lines on both axes.\n"
                                 "None: hide the grid.\n"
                                 "X-only: vertical grid lines only."));
-  connect(mpGridComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setGrid(int)));
+  connect(mpGridComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, QOverload<int>::of(&PlotWindow::setGrid));
   toolBar->addWidget(mpGridComboBox);
   toolBar->addSeparator();
   //LOG x LOG y
@@ -521,7 +521,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpLogXButton->setAutoRaise(true);
   mpLogXButton->setToolTip(tr("Logarithmic X axis"));
   mpLogXButton->setStatusTip(mpLogXButton->toolTip());
-  connect(mpLogXButton, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
+  connect(mpLogXButton, &QToolButton::toggled, this, &PlotWindow::setLogX);
   toolBar->addWidget(mpLogXButton);
   toolBar->addSeparator();
   mpLogYButton = new QToolButton(toolBar);
@@ -532,7 +532,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpLogYButton->setAutoRaise(true);
   mpLogYButton->setToolTip(tr("Logarithmic Y axes"));
   mpLogYButton->setStatusTip(mpLogYButton->toolTip());
-  connect(mpLogYButton, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
+  connect(mpLogYButton, &QToolButton::toggled, this, &PlotWindow::setLogY);
   toolBar->addWidget(mpLogYButton);
   toolBar->addSeparator();
   mpAlignZeroButton = new QToolButton(toolBar);
@@ -543,7 +543,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpAlignZeroButton->setAutoRaise(true);
   mpAlignZeroButton->setToolTip(tr("Align zero on the left and right Y axes"));
   mpAlignZeroButton->setStatusTip(mpAlignZeroButton->toolTip());
-  connect(mpAlignZeroButton, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
+  connect(mpAlignZeroButton, &QToolButton::toggled, this, &PlotWindow::setAlignZero);
   toolBar->addWidget(mpAlignZeroButton);
   mpStackCurvesButton = new QToolButton(toolBar);
   mpStackCurvesButton->setText(tr("Stack"));
@@ -553,7 +553,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpStackCurvesButton->setAutoRaise(true);
   mpStackCurvesButton->setToolTip(tr("Draw each curve in a band of its own, one below the other"));
   mpStackCurvesButton->setStatusTip(mpStackCurvesButton->toolTip());
-  connect(mpStackCurvesButton, SIGNAL(toggled(bool)), SLOT(setStackCurves(bool)));
+  connect(mpStackCurvesButton, &QToolButton::toggled, this, &PlotWindow::setStackCurves);
   mpStackCurvesAction = toolBar->addWidget(mpStackCurvesButton);
   toolBar->addSeparator();
   // setup
@@ -563,7 +563,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpSetupButton->setToolTip(setup);
   mpSetupButton->setStatusTip(setup);
   mpSetupButton->setIcon(QIcon(":/Resources/icons/options.svg"));
-  connect(mpSetupButton, SIGNAL(clicked()), SLOT(showSetupDialog()));
+  connect(mpSetupButton, &QToolButton::clicked, this, QOverload<>::of(&PlotWindow::showSetupDialog));
   toolBar->addWidget(mpSetupButton);
   toolBar->addSeparator();
   //EXPORT
@@ -573,7 +573,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   btnExport->setToolTip(save);
   btnExport->setStatusTip(save);
   btnExport->setIcon(QIcon(":/Resources/icons/save.svg"));
-  connect(btnExport, SIGNAL(clicked()), SLOT(exportDocument()));
+  connect(btnExport, &QToolButton::clicked, this, &PlotWindow::exportDocument);
   toolBar->addWidget(btnExport);
   toolBar->addSeparator();
   //PRINT
@@ -583,7 +583,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   btnPrint->setToolTip(print);
   btnPrint->setStatusTip(print);
   btnPrint->setIcon(QIcon(":/Resources/icons/print.svg"));
-  connect(btnPrint, SIGNAL(clicked()), SLOT(printPlot()));
+  connect(btnPrint, &QToolButton::clicked, this, &PlotWindow::printPlot);
   toolBar->addWidget(btnPrint);
   // finally add the tool bar to the mainwindow
   addToolBar(toolBar);
@@ -1960,7 +1960,7 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   mpLegendTextBox = new QLineEdit(mpPlotCurve->getCustomTitle().isEmpty() ? mpPlotCurve->title().text() : mpPlotCurve->getCustomTitle());
   mpResetLabelButton = new QPushButton(tr("Reset"));
   mpResetLabelButton->setAutoDefault(false);
-  connect(mpResetLabelButton, SIGNAL(clicked()), SLOT(resetLabel()));
+  connect(mpResetLabelButton, &QPushButton::clicked, this, &VariablePageWidget::resetLabel);
   mpFileLabel = new QLabel(tr("File"));
   mpFileTextBox = new QLabel(mpPlotCurve->getFileName());
   // appearance layout
@@ -1977,7 +1977,7 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   mpPickColorButton = new QPushButton(tr("Pick Color"));
   mpPickColorButton->setAutoDefault(false);
   //mpPickColorButton->setAutoDefault(false);
-  connect(mpPickColorButton, SIGNAL(clicked()), SLOT(pickColor()));
+  connect(mpPickColorButton, &QPushButton::clicked, this, &VariablePageWidget::pickColor);
   mCurveColor = mpPlotCurve->pen().color();
   setCurvePickColorButtonIcon();
   mpAutomaticColorCheckBox = new QCheckBox(tr("Automatic Color"));
@@ -2083,7 +2083,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
     pListItem->setText(pPlotCurve->getYVariable());
     pListItem->setData(Qt::UserRole, pPlotCurve->getNameStructure());
   }
-  connect(mpVariablesListWidget, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(variableSelected(QListWidgetItem*,QListWidgetItem*)));
+  connect(mpVariablesListWidget, &QListWidget::currentItemChanged, this, &SetupDialog::variableSelected);
   // Variables Tab Layout
   QGridLayout *pVariablesTabGridLayout = new QGridLayout;
   pVariablesTabGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -2204,7 +2204,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpRangeTab = new QWidget;
   mpAutoScaleCheckbox = new QCheckBox(tr("Auto Scale"));
   mpAutoScaleCheckbox->setChecked(mpPlotWindow->getAutoScaleButton()->isChecked());
-  connect(mpAutoScaleCheckbox, SIGNAL(toggled(bool)), SLOT(autoScaleChecked(bool)));
+  connect(mpAutoScaleCheckbox, &QCheckBox::toggled, this, &SetupDialog::autoScaleChecked);
   // x-axis
   mpXAxisGroupBox = new QGroupBox(tr("X-Axis"));
   mpXMinimumLabel = new QLabel(tr("Minimum"));
@@ -2274,13 +2274,13 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   // Create the buttons
   mpOkButton = new QPushButton(tr("OK"));
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(saveSetup()));
+  connect(mpOkButton, &QPushButton::clicked, this, &SetupDialog::saveSetup);
   mpApplyButton = new QPushButton(tr("Apply"));
   mpApplyButton->setAutoDefault(false);
-  connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applySetup()));
+  connect(mpApplyButton, &QPushButton::clicked, this, &SetupDialog::applySetup);
   mpCancelButton = new QPushButton(tr("Cancel"));
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &SetupDialog::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpApplyButton, QDialogButtonBox::ActionRole);

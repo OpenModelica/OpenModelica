@@ -109,9 +109,9 @@ namespace IAEX {
   {
     lineNumberArea = new LineNumberArea(this);
 
-    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
-    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
-    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+    connect(this, &MyTextEdit2a::blockCountChanged, this, &MyTextEdit2a::updateLineNumberAreaWidth);
+    connect(this, &MyTextEdit2a::updateRequest, this, &MyTextEdit2a::updateLineNumberArea);
+    connect(this, &MyTextEdit2a::cursorPositionChanged, this, [this]() { highlightCurrentLine(); });
 
     updateLineNumberAreaWidth(0);
     highlightCurrentLine();
@@ -718,8 +718,8 @@ namespace IAEX {
     createOutputCell();
     createPlotWindow();
 
-    connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
-    connect(this, SIGNAL(plotVariables(QStringList)), this, SLOT(plotVariablesSlot(QStringList)));
+    connect(output_, &QTextBrowser::anchorClicked, input_, &MyTextEdit2a::goToPos);
+    connect(this, &GraphCell::plotVariables, this, &GraphCell::plotVariablesSlot);
   }
 
   GraphCell::~GraphCell()
@@ -782,24 +782,24 @@ namespace IAEX {
     // is this needed, don't know /AF
     input_->installEventFilter(this);
 
-    connect( input_, SIGNAL( textChanged() ), this, SLOT( contentChanged() ));
-    connect( input_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
-    connect( input_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
+    connect( input_, &MyTextEdit2a::textChanged, this, &GraphCell::contentChanged );
+    connect( input_, &MyTextEdit2a::clickOnCell, this, &GraphCell::clickEvent );
+    connect( input_, &MyTextEdit2a::wheelMove, this, &GraphCell::wheelEvent );
     // 2005-12-15 AF, new connections
-    connect( input_, SIGNAL( eval() ), this, SLOT( eval() ));
-    connect( input_, SIGNAL( command() ), this, SLOT( command() ));
-    connect( input_, SIGNAL( nextCommand() ), this, SLOT( nextCommand() ));
-    connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
+    connect( input_, &MyTextEdit2a::eval, this, &GraphCell::eval );
+    connect( input_, &MyTextEdit2a::command, this, &GraphCell::command );
+    connect( input_, &MyTextEdit2a::nextCommand, this, &GraphCell::nextCommand );
+    connect( input_, &MyTextEdit2a::nextField, this, &GraphCell::nextField );
     //2005-12-29 AF
-    connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
+    connect( input_, &MyTextEdit2a::textChanged, this, &GraphCell::addToHighlighter );
     // 2006-04-27 AF,
-    connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
+    connect( input_, &MyTextEdit2a::forwardAction, this, &GraphCell::forwardAction );
 
-    connect( input_, SIGNAL(updatePos(int, int)), this, SIGNAL(updatePos(int, int)));
+    connect( input_, &MyTextEdit2a::updatePos, this, &GraphCell::updatePos );
     contentChanged();
 
     connect(input_, &MyTextEdit2a::setState, this, &IAEX::GraphCell::setState);
-    connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
+    connect(input_, &MyTextEdit2a::textChanged, input_, &MyTextEdit2a::setModified);
   }
 
   /*!
@@ -824,11 +824,12 @@ namespace IAEX {
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 
-    connect( output_, SIGNAL( textChanged() ), this, SLOT(contentChanged()));
-    connect( output_, SIGNAL( clickOnCell() ), this, SLOT( clickEventOutput() ));
-    connect( output_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
+    MyTextEdit2 *pOutputTextEdit = static_cast<MyTextEdit2*>(output_);
+    connect( output_, &QTextBrowser::textChanged, this, &GraphCell::contentChanged);
+    connect( pOutputTextEdit, &MyTextEdit2::clickOnCell, this, &GraphCell::clickEventOutput );
+    connect( pOutputTextEdit, &MyTextEdit2::wheelMove, this, &GraphCell::wheelEvent );
 
-    connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
+    connect(pOutputTextEdit, &MyTextEdit2::forwardAction, this, &GraphCell::forwardAction);
 
     setOutputStyle();
 
@@ -898,7 +899,7 @@ namespace IAEX {
     chaptercounter_->setFixedWidth(50);
     chaptercounter_->setReadOnly( true );
 
-    connect( chaptercounter_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
+    connect( static_cast<MyTextEdit2*>(chaptercounter_), &MyTextEdit2::clickOnCell, this, &GraphCell::clickEvent );
 
     addChapterCounter( chaptercounter_ );
   }
@@ -1673,7 +1674,7 @@ namespace IAEX {
          * for now just call it without threads.
          */
 //        EvalThread* et = new EvalThread(getDelegate(), expr);
-//        connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+//        connect(et, &EvalThread::finished, this, &GraphCell::delegateFinished);
 //        et->start();
         getDelegate()->evalExpression(expr);
         delegateFinished(getDelegate());

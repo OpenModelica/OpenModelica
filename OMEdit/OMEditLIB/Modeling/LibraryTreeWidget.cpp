@@ -2820,8 +2820,8 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool
       pLibraryTreeItem->getModelWidget()->setIconGraphicsView(0);
     }
     pLibraryTreeItem->getModelWidget()->clearDependsOnModels();
-    QObject::disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)),
-                        pLibraryTreeItem->getModelWidget(), SLOT(updateModelIfDependsOn(QString,bool)));
+    QObject::disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), &LibraryTreeModel::modelStateChanged,
+                        pLibraryTreeItem->getModelWidget(), &ModelWidget::updateModelIfDependsOn);
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }
@@ -2870,9 +2870,9 @@ LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
   setUniformRowHeights(true);
   setHeaderHidden(true);
   createActions();
-  connect(this, SIGNAL(expanded(QModelIndex)), SLOT(libraryTreeItemExpanded(QModelIndex)));
-  connect(this, SIGNAL(doubleClicked(QModelIndex)), SLOT(libraryTreeItemDoubleClicked(QModelIndex)));
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+  connect(this, &QTreeView::expanded, this, QOverload<const QModelIndex &>::of(&LibraryTreeView::libraryTreeItemExpanded));
+  connect(this, &QTreeView::doubleClicked, this, &LibraryTreeView::libraryTreeItemDoubleClicked);
+  connect(this, &QTreeView::customContextMenuRequested, this, &LibraryTreeView::showContextMenu);
 }
 
 /*!
@@ -2884,52 +2884,52 @@ void LibraryTreeView::createActions()
   // open class action
   mpOpenClassAction = new QAction(QIcon(":/Resources/icons/modeling.png"), Helper::openClass, this);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
-  connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
+  connect(mpOpenClassAction, &QAction::triggered, this, &LibraryTreeView::openClass);
   // information Action
   mpInformationAction = new QAction(Helper::information, this);
   mpInformationAction->setStatusTip(tr("Opens the class information dialog"));
-  connect(mpInformationAction, SIGNAL(triggered()), SLOT(openInformationDialog()));
+  connect(mpInformationAction, &QAction::triggered, this, &LibraryTreeView::openInformationDialog);
   // new Modelica Class Action
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClassLibraryBrowser, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
-  connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  connect(mpNewModelicaClassAction, &QAction::triggered, this, &LibraryTreeView::createNewModelicaClass);
   // save Action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setStatusTip(Helper::saveTip);
-  connect(mpSaveAction, SIGNAL(triggered()), SLOT(saveClass()));
+  connect(mpSaveAction, &QAction::triggered, this, &LibraryTreeView::saveClass);
   // save as file action
   mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.svg"), Helper::saveAs, this);
   mpSaveAsAction->setStatusTip(Helper::saveAsTip);
-  connect(mpSaveAsAction, SIGNAL(triggered()), SLOT(saveAsClass()));
+  connect(mpSaveAsAction, &QAction::triggered, this, &LibraryTreeView::saveAsClass);
   // Save Total action
   mpSaveTotalAction = new QAction(Helper::saveTotal, this);
   mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
-  connect(mpSaveTotalAction, SIGNAL(triggered()), SLOT(saveTotalClass()));
+  connect(mpSaveTotalAction, &QAction::triggered, this, &LibraryTreeView::saveTotalClass);
   // Copy path action
   mpCopyPathAction = new QAction(tr("Copy Path"), this);
   mpCopyPathAction->setShortcut(QKeySequence("Ctrl+C"));
   mpCopyPathAction->setStatusTip(tr("Copy the class path"));
-  connect(mpCopyPathAction, SIGNAL(triggered()), SLOT(copyClassPath()));
+  connect(mpCopyPathAction, &QAction::triggered, this, &LibraryTreeView::copyClassPath);
   // Move class up action
   mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), Helper::moveUp, this);
   mpMoveUpAction->setShortcut(QKeySequence("Ctrl+Up"));
   mpMoveUpAction->setStatusTip(tr("Moves the class one level up"));
-  connect(mpMoveUpAction, SIGNAL(triggered()), SLOT(moveClassUp()));
+  connect(mpMoveUpAction, &QAction::triggered, this, &LibraryTreeView::moveClassUp);
   // Move class down action
   mpMoveDownAction = new QAction(QIcon(":/Resources/icons/down.svg"), Helper::moveDown, this);
   mpMoveDownAction->setShortcut(QKeySequence("Ctrl+Down"));
   mpMoveDownAction->setStatusTip(tr("Moves the class one level down"));
-  connect(mpMoveDownAction, SIGNAL(triggered()), SLOT(moveClassDown()));
+  connect(mpMoveDownAction, &QAction::triggered, this, &LibraryTreeView::moveClassDown);
   // Move class top action
   mpMoveTopAction = new QAction(QIcon(":/Resources/icons/top.svg"), tr("Move to Top"), this);
   mpMoveTopAction->setShortcut(QKeySequence("Ctrl+PgUp"));
   mpMoveTopAction->setStatusTip(tr("Moves the class to top"));
-  connect(mpMoveTopAction, SIGNAL(triggered()), SLOT(moveClassTop()));
+  connect(mpMoveTopAction, &QAction::triggered, this, &LibraryTreeView::moveClassTop);
   // Move class bottom action
   mpMoveBottomAction = new QAction(QIcon(":/Resources/icons/bottom.svg"), tr("Move to Bottom"), this);
   mpMoveBottomAction->setShortcut(QKeySequence("Ctrl+PgDown"));
   mpMoveBottomAction->setStatusTip(tr("Moves the class to bottom"));
-  connect(mpMoveBottomAction, SIGNAL(triggered()), SLOT(moveClassBottom()));
+  connect(mpMoveBottomAction, &QAction::triggered, this, &LibraryTreeView::moveClassBottom);
   // Order Menu
   mpOrderMenu = new QMenu(tr("Order"), this);
   mpOrderMenu->setIcon(QIcon(":/Resources/icons/order.svg"));
@@ -2942,28 +2942,28 @@ void LibraryTreeView::createActions()
   // instantiate Model Action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), Helper::instantiateModel, this);
   mpInstantiateModelAction->setStatusTip(Helper::instantiateModelTip);
-  connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
+  connect(mpInstantiateModelAction, &QAction::triggered, this, &LibraryTreeView::instantiateModel);
   // check Model Action
   mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.svg"), Helper::checkModel, this);
   mpCheckModelAction->setStatusTip(Helper::checkModelTip);
-  connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+  connect(mpCheckModelAction, &QAction::triggered, this, &LibraryTreeView::checkModel);
   // check all Models Action
   mpCheckAllModelsAction = new QAction(QIcon(":/Resources/icons/check-all.svg"), Helper::checkAllModels, this);
   mpCheckAllModelsAction->setStatusTip(Helper::checkAllModelsTip);
-  connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
+  connect(mpCheckAllModelsAction, &QAction::triggered, this, &LibraryTreeView::checkAllModels);
   // simulate Action
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
-  connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
+  connect(mpSimulateAction, &QAction::triggered, this, &LibraryTreeView::simulate);
   if (MainWindow::instance()->isCRMLEnabled()) {
     // translate CRML Action
     mpTranslateCRMLAction = new QAction(QIcon(":/Resources/icons/translate.svg"), Helper::translateCRML, this);
     mpTranslateCRMLAction->setStatusTip(Helper::translateCRMLTip);
-    connect(mpTranslateCRMLAction, SIGNAL(triggered()), SLOT(translateCRML()));
+    connect(mpTranslateCRMLAction, &QAction::triggered, this, &LibraryTreeView::translateCRML);
     // translateAs CRML Action
     mpTranslateAsCRMLAction = new QAction(QIcon(":/Resources/icons/translateAs.svg"), Helper::translateAsCRML, this);
     mpTranslateAsCRMLAction->setStatusTip(Helper::translateAsCRMLTip);
-    connect(mpTranslateAsCRMLAction, SIGNAL(triggered()), SLOT(translateAsCRML()));
+    connect(mpTranslateAsCRMLAction, &QAction::triggered, this, &LibraryTreeView::translateAsCRML);
     // CRML Diagram Action
     mpCRMLDiagramAction = new QAction(Helper::crmlDiagram, this);
     mpCRMLDiagramAction->setStatusTip(Helper::crmlDiagramTip);
@@ -2972,126 +2972,126 @@ void LibraryTreeView::createActions()
   // run Script Action
   mpRunScriptAction = new QAction(QIcon(":/Resources/icons/runScript.svg"), Helper::runScript, this);
   mpRunScriptAction->setStatusTip(Helper::runScriptTip);
-  connect(mpRunScriptAction, SIGNAL(triggered()), SLOT(runScript()));
+  connect(mpRunScriptAction, &QAction::triggered, this, &LibraryTreeView::runScript);
   // call function Action
   mpCallFunctionAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::callFunction, this);
   mpCallFunctionAction->setStatusTip(Helper::callFunctionTip);
-  connect(mpCallFunctionAction, SIGNAL(triggered()), SLOT(callFunction()));
+  connect(mpCallFunctionAction, &QAction::triggered, this, &LibraryTreeView::callFunction);
   // simulate with transformational debugger Action
   mpSimulateWithTransformationalDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-equation.svg"), Helper::simulateWithTransformationalDebugger, this);
   mpSimulateWithTransformationalDebuggerAction->setStatusTip(Helper::simulateWithTransformationalDebuggerTip);
-  connect(mpSimulateWithTransformationalDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithTransformationalDebugger()));
+  connect(mpSimulateWithTransformationalDebuggerAction, &QAction::triggered, this, &LibraryTreeView::simulateWithTransformationalDebugger);
   // simulate with algorithmic debugger Action
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
-  connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithAlgorithmicDebugger()));
+  connect(mpSimulateWithAlgorithmicDebuggerAction, &QAction::triggered, this, &LibraryTreeView::simulateWithAlgorithmicDebugger);
 #if !defined(WITHOUT_ANIMATION)
   // simulate with animation Action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
-  connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateWithAnimation()));
+  connect(mpSimulateWithAnimationAction, &QAction::triggered, this, &LibraryTreeView::simulateWithAnimation);
 #endif
   // simulation setup Action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
-  connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(simulationSetup()));
+  connect(mpSimulationSetupAction, &QAction::triggered, this, &LibraryTreeView::simulationSetup);
   // find usage Action
   mpFindUsageAction = new QAction(Helper::findUsage, this);
   mpFindUsageAction->setStatusTip(Helper::findUsageTip);
-  connect(mpFindUsageAction, SIGNAL(triggered()), SLOT(findUsageOfClass()));
+  connect(mpFindUsageAction, &QAction::triggered, this, &LibraryTreeView::findUsageOfClass);
   // class diagram action
   mpClassDiagramAction = new QAction(Helper::classDiagram, this);
   mpClassDiagramAction->setStatusTip(Helper::classDiagramTip);
-  connect(mpClassDiagramAction, SIGNAL(triggered()), SLOT(showClassDiagram()));
+  connect(mpClassDiagramAction, &QAction::triggered, this, &LibraryTreeView::showClassDiagram);
   // Duplicate action
   /* Ticket #3265
    * Changed the name from Copy to Duplicate.
    */
   mpDuplicateClassAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
   mpDuplicateClassAction->setStatusTip(Helper::duplicateTip);
-  connect(mpDuplicateClassAction, SIGNAL(triggered()), SLOT(duplicateClass()));
+  connect(mpDuplicateClassAction, &QAction::triggered, this, &LibraryTreeView::duplicateClass);
   // unload Action
   mpUnloadClassAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadClassAction->setShortcut(QKeySequence::Delete);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
-  connect(mpUnloadClassAction, SIGNAL(triggered()), SLOT(unloadClass()));
+  connect(mpUnloadClassAction, &QAction::triggered, this, &LibraryTreeView::unloadClass);
   // reload Action
   mpReloadClassAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::reloadClass, this);
   mpReloadClassAction->setStatusTip(Helper::reloadClassTip);
-  connect(mpReloadClassAction, SIGNAL(triggered()), SLOT(reloadClass()));
+  connect(mpReloadClassAction, &QAction::triggered, this, &LibraryTreeView::reloadClass);
   // unload Text file Action
   mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadTextFileAction->setShortcut(QKeySequence::Delete);
   mpUnloadTextFileAction->setStatusTip(Helper::unloadTextFileTip);
-  connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
+  connect(mpUnloadTextFileAction, &QAction::triggered, this, &LibraryTreeView::unloadTextFile);
   // new file Action
   mpNewFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
   mpNewFileAction->setStatusTip(tr("Creates a new file"));
-  connect(mpNewFileAction, SIGNAL(triggered()), SLOT(createNewFile()));
+  connect(mpNewFileAction, &QAction::triggered, this, &LibraryTreeView::createNewFile);
   // new file empty Action
   mpNewFileEmptyAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
   mpNewFileEmptyAction->setStatusTip(tr("Creates a new file"));
-  connect(mpNewFileEmptyAction, SIGNAL(triggered()), SLOT(createNewFileEmpty()));
+  connect(mpNewFileEmptyAction, &QAction::triggered, this, &LibraryTreeView::createNewFileEmpty);
   // new file Action
   mpNewFolderAction = new QAction(tr("New Folder"), this);
   mpNewFolderAction->setStatusTip(tr("Creates a new folder"));
-  connect(mpNewFolderAction, SIGNAL(triggered()), SLOT(createNewFolder()));
+  connect(mpNewFolderAction, &QAction::triggered, this, &LibraryTreeView::createNewFolder);
   // new file empty Action
   mpNewFolderEmptyAction = new QAction(tr("New Folder"), this);
   mpNewFolderEmptyAction->setStatusTip(tr("Creates a new folder"));
-  connect(mpNewFolderEmptyAction, SIGNAL(triggered()), SLOT(createNewFolderEmpty()));
+  connect(mpNewFolderEmptyAction, &QAction::triggered, this, &LibraryTreeView::createNewFolderEmpty);
   // rename Action
   mpRenameAction = new QAction(Helper::rename, this);
   mpRenameAction->setStatusTip(Helper::renameTip);
-  connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameLibraryTreeItem()));
+  connect(mpRenameAction, &QAction::triggered, this, &LibraryTreeView::renameLibraryTreeItem);
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
-  connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
+  connect(mpDeleteAction, &QAction::triggered, this, &LibraryTreeView::deleteTextFile);
   // convert class to use newer uses libraries
   mpConvertClassUsesLibrariesAction = new QAction(tr("Convert to newer versions of used libraries"), this);
   mpConvertClassUsesLibrariesAction->setStatusTip(tr("Updates the class to use the newer versions of the uses annotation libraries"));
-  connect(mpConvertClassUsesLibrariesAction, SIGNAL(triggered()), SLOT(convertClassUsesLibraries()));
+  connect(mpConvertClassUsesLibrariesAction, &QAction::triggered, this, &LibraryTreeView::convertClassUsesLibraries);
   // Export FMU Action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
-  connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
+  connect(mpExportFMUAction, &QAction::triggered, this, &LibraryTreeView::exportModelFMU);
   mpExportFMUWithSetupAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMUWithSetup, this);
   mpExportFMUWithSetupAction->setStatusTip(Helper::exportFMUWithSetupTip);
   connect(mpExportFMUWithSetupAction, &QAction::triggered, this, &LibraryTreeView::exportModelFMUWithSetup);
   // Export encrypted package Action
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
   mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
-  connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
+  connect(mpExportEncryptedPackageAction, &QAction::triggered, this, &LibraryTreeView::exportEncryptedPackage);
   // Export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
   mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
-  connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
+  connect(mpExportReadonlyPackageAction, &QAction::triggered, this, &LibraryTreeView::exportReadonlyPackage);
   // Export XML Action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
-  connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
+  connect(mpExportXMLAction, &QAction::triggered, this, &LibraryTreeView::exportModelXML);
   // Export Figaro Action
   mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("Figaro"), this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
-  connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
+  connect(mpExportFigaroAction, &QAction::triggered, this, &LibraryTreeView::exportModelFigaro);
   // Update Bindings Action
   mpUpdateBindingsAction = new QAction(tr("Update Bindings"), this);
   mpUpdateBindingsAction->setStatusTip(tr("Updates the bindings"));
-  connect(mpUpdateBindingsAction, SIGNAL(triggered()), SLOT(updateBindings()));
+  connect(mpUpdateBindingsAction, &QAction::triggered, this, &LibraryTreeView::updateBindings);
   // Generate Verification Scenarios Action
   mpGenerateVerificationScenariosAction = new QAction(tr("Generate Verification Scenarios"), this);
   mpGenerateVerificationScenariosAction->setStatusTip(tr("Generates the verification scenarios"));
-  connect(mpGenerateVerificationScenariosAction, SIGNAL(triggered()), SLOT(generateVerificationScenarios()));
+  connect(mpGenerateVerificationScenariosAction, &QAction::triggered, this, &LibraryTreeView::generateVerificationScenarios);
   // OMSimulator rename Action
   mpOMSRenameAction = new QAction(Helper::rename, this);
   mpOMSRenameAction->setStatusTip(Helper::OMSRenameTip);
-  connect(mpOMSRenameAction, SIGNAL(triggered()), SLOT(OMSRename()));
+  connect(mpOMSRenameAction, &QAction::triggered, this, &LibraryTreeView::OMSRename);
   // unload OMSimulator model Action
   mpUnloadOMSModelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadOMSModelAction->setShortcut(QKeySequence::Delete);
   mpUnloadOMSModelAction->setStatusTip(Helper::unloadOMSModelTip);
-  connect(mpUnloadOMSModelAction, SIGNAL(triggered()), SLOT(unloadOMSModel()));
+  connect(mpUnloadOMSModelAction, &QAction::triggered, this, &LibraryTreeView::unloadOMSModel);
 #if !defined(__EMSCRIPTEN__)
   // calibrate OMSimulator model action
   mpOMSCalibrateAction = new QAction(tr("Calibrate..."), this);
@@ -4164,17 +4164,17 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
 {
   setLoadingLibraries(false);
   mAutoLoadedLibrariesTimer.setSingleShot(true);
-  connect(&mAutoLoadedLibrariesTimer, SIGNAL(timeout()), SLOT(handleAutoLoadedLibrary()));
+  connect(&mAutoLoadedLibrariesTimer, &QTimer::timeout, this, &LibraryWidget::handleAutoLoadedLibrary);
   mAutoLoadedLibrariesList.clear();
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterClasses);
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), &QLineEdit::returnPressed, this, &LibraryWidget::searchClasses);
+  connect(mpTreeSearchFilters->getFilterTextBox(), &QLineEdit::textEdited, this, &LibraryWidget::searchClasses);
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), &QCheckBox::toggled, this, &LibraryWidget::searchClasses);
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, &LibraryWidget::searchClasses);
   mpTreeSearchFilters->getScrollToActiveButton()->setVisible(!OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked());
-  connect(mpTreeSearchFilters->getScrollToActiveButton(), SIGNAL(clicked()), SLOT(scrollToActiveLibraryTreeItem()));
+  connect(mpTreeSearchFilters->getScrollToActiveButton(), &QToolButton::clicked, this, &LibraryWidget::scrollToActiveLibraryTreeItem);
   // create tree view
   mpLibraryTreeModel = new LibraryTreeModel(this);
   mpLibraryFileWatcher = new LibraryFileWatcher(this);
@@ -4185,8 +4185,8 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   mpLibraryTreeProxyModel->setSourceModel(mpLibraryTreeModel);
   mpLibraryTreeView = new LibraryTreeView(this);
   mpLibraryTreeView->setModel(mpLibraryTreeProxyModel);
-  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(expandAll()));
-  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
+  connect(mpTreeSearchFilters->getExpandAllButton(), &QToolButton::clicked, mpLibraryTreeView, &QTreeView::expandAll);
+  connect(mpTreeSearchFilters->getCollapseAllButton(), &QToolButton::clicked, mpLibraryTreeView, &QTreeView::collapseAll);
   // Defer the file change dialogs until the main window is active again.
   if (pParent) {
     pParent->installEventFilter(this);

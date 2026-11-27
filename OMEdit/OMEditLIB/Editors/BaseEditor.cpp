@@ -718,26 +718,26 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   mpCompleter->setWrapAround(false);
   mpCompleter->setWidget(this);
   mpCompleter->setCompletionMode(QCompleter::PopupCompletion);
-  connect(mpCompleter, SIGNAL(highlighted(QModelIndex)), this, SLOT(showCompletionItemToolTip(QModelIndex)));
-  connect(mpCompleter, SIGNAL(activated(QModelIndex)), this, SLOT(insertCompletionItem(QModelIndex)));
+  connect(mpCompleter, QOverload<const QModelIndex &>::of(&QCompleter::highlighted), this, &PlainTextEdit::showCompletionItemToolTip);
+  connect(mpCompleter, QOverload<const QModelIndex &>::of(&QCompleter::activated), this, &PlainTextEdit::insertCompletionItem);
   setReadOnlyStyleSheet();
   updateLineNumberAreaWidth(0);
   updateHighlights();
   updateCursorPosition();
   setLineWrapping();
-  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
-  connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateHighlights()));
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateCursorPosition()));
-  connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
+  connect(this, &PlainTextEdit::blockCountChanged, this, &PlainTextEdit::updateLineNumberAreaWidth);
+  connect(this, &PlainTextEdit::updateRequest, this, &PlainTextEdit::updateLineNumberArea);
+  connect(this, &PlainTextEdit::cursorPositionChanged, this, &PlainTextEdit::updateHighlights);
+  connect(this, &PlainTextEdit::cursorPositionChanged, this, &PlainTextEdit::updateCursorPosition);
+  connect(document(), &QTextDocument::contentsChange, mpBaseEditor, &BaseEditor::contentsHasChanged);
   OptionsDialog *pOptionsDialog = OptionsDialog::instance();
-  connect(pOptionsDialog, SIGNAL(textSettingsChanged()), this, SLOT(textSettingsChanged()));
+  connect(pOptionsDialog, &OptionsDialog::textSettingsChanged, this, &PlainTextEdit::textSettingsChanged);
   setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
+  connect(this, &PlainTextEdit::customContextMenuRequested, mpBaseEditor, &BaseEditor::showContextMenu);
   setUndoAvailable(false);
   setRedoAvailable(false);
-  connect(this, SIGNAL(undoAvailable(bool)), SLOT(setUndoAvailable(bool)));
-  connect(this, SIGNAL(redoAvailable(bool)), SLOT(setRedoAvailable(bool)));
+  connect(this, &PlainTextEdit::undoAvailable, this, &PlainTextEdit::setUndoAvailable);
+  connect(this, &PlainTextEdit::redoAvailable, this, &PlainTextEdit::setRedoAvailable);
   mDefaultCursor = viewport()->cursor();
 }
 
@@ -2299,53 +2299,53 @@ void BaseEditor::createActions()
   mpFindReplaceAction = new QAction(QString(Helper::findReplaceModelicaText), this);
   mpFindReplaceAction->setStatusTip(tr("Shows the Find/Replace window"));
   mpFindReplaceAction->setShortcut(QKeySequence("Ctrl+f"));
-  connect(mpFindReplaceAction, SIGNAL(triggered()), SLOT(showFindReplaceWidget()));
+  connect(mpFindReplaceAction, &QAction::triggered, this, &BaseEditor::showFindReplaceWidget);
   // clear find/replace texts action
   mpClearFindReplaceTextsAction = new QAction(tr("Clear Find/Replace Texts"), this);
   mpClearFindReplaceTextsAction->setStatusTip(tr("Clears the Find/Replace text items"));
-  connect(mpClearFindReplaceTextsAction, SIGNAL(triggered()), SLOT(clearFindReplaceTexts()));
+  connect(mpClearFindReplaceTextsAction, &QAction::triggered, this, &BaseEditor::clearFindReplaceTexts);
   // goto line action
   mpGotoLineNumberAction = new QAction(tr("Go to Line"), this);
   mpGotoLineNumberAction->setStatusTip(tr("Shows the Go to Line Number window"));
   mpGotoLineNumberAction->setShortcut(QKeySequence("Ctrl+l"));
-  connect(mpGotoLineNumberAction, SIGNAL(triggered()), SLOT(showGotoLineNumberDialog()));
+  connect(mpGotoLineNumberAction, &QAction::triggered, this, &BaseEditor::showGotoLineNumberDialog);
   // ShowTabsAndSpaces action
   mpShowTabsAndSpacesAction = new QAction(tr("Show Tabs and Spaces"), this);
   mpShowTabsAndSpacesAction->setStatusTip(tr("Shows the Tabs and Spaces"));
   mpShowTabsAndSpacesAction->setCheckable(true);
-  connect(mpShowTabsAndSpacesAction, SIGNAL(triggered(bool)), mpPlainTextEdit, SLOT(showTabsAndSpaces(bool)));
+  connect(mpShowTabsAndSpacesAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::showTabsAndSpaces);
   /* Toggle breakpoint action */
   mpToggleBreakpointAction = new QAction(tr("Toggle Breakpoint"), this);
-  connect(mpToggleBreakpointAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(toggleBreakpoint()));
+  connect(mpToggleBreakpointAction, &QAction::triggered, mpPlainTextEdit, QOverload<>::of(&PlainTextEdit::toggleBreakpoint));
   // we only define the zooming actions if ModelWidget is NULL otherwise we use the zooming actions from toolbar.
   if (!mpModelWidget) {
     // reset zoom action
     mpResetZoomAction = new QAction(ResourceCache::getIcon(":/Resources/icons/zoomReset.svg"), Helper::resetZoom, this);
     mpResetZoomAction->setStatusTip(Helper::resetZoom);
     mpResetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
-    connect(mpResetZoomAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(resetZoom()));
+    connect(mpResetZoomAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::resetZoom);
     mpPlainTextEdit->addAction(mpResetZoomAction);
     // zoom in action
     mpZoomInAction = new QAction(ResourceCache::getIcon(":/Resources/icons/zoomIn.svg"), Helper::zoomIn, this);
     mpZoomInAction->setStatusTip(Helper::zoomIn);
     mpZoomInAction->setShortcut(QKeySequence("Ctrl++"));
-    connect(mpZoomInAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomIn()));
+    connect(mpZoomInAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::zoomIn);
     mpPlainTextEdit->addAction(mpZoomInAction);
     // zoom out action
     mpZoomOutAction = new QAction(ResourceCache::getIcon(":/Resources/icons/zoomOut.svg"), Helper::zoomOut, this);
     mpZoomOutAction->setStatusTip(Helper::zoomOut);
     mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
-    connect(mpZoomOutAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomOut()));
+    connect(mpZoomOutAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::zoomOut);
     mpPlainTextEdit->addAction(mpZoomOutAction);
   }
   // open class action
   mpOpenClassAction = new QAction(Helper::openClass, this);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
-  connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
+  connect(mpOpenClassAction, &QAction::triggered, this, &BaseEditor::openClass);
   // toggle comment action
   mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
   mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
-  connect(mpToggleCommentSelectionAction, SIGNAL(triggered()), SLOT(toggleCommentSelection()));
+  connect(mpToggleCommentSelectionAction, &QAction::triggered, this, &BaseEditor::toggleCommentSelection);
   // folding actions
   bool enable = true;
   // if user disables the code folding then unfold all the text editors.
@@ -2356,11 +2356,11 @@ void BaseEditor::createActions()
   // fold all action
   mpFoldAllAction = new QAction(tr("Fold All"), this);
   mpFoldAllAction->setEnabled(enable);
-  connect(mpFoldAllAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(foldAll()));
+  connect(mpFoldAllAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::foldAll);
   // unfold all action
   mpUnFoldAllAction = new QAction(tr("Unfold All"), this);
   mpUnFoldAllAction->setEnabled(enable);
-  connect(mpUnFoldAllAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(unFoldAll()));
+  connect(mpUnFoldAllAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::unFoldAll);
 }
 
 static inline void setActionIcon(QAction *pAction, const QString &name)
@@ -2389,11 +2389,13 @@ QMenu* BaseEditor::createStandardContextMenu()
     pMenu->addAction(MainWindow::instance()->getUndoAction());
     pMenu->addAction(MainWindow::instance()->getRedoAction());
   } else {
-    QAction *pUndoAction = pMenu->addAction(tr("Undo"), mpPlainTextEdit, SLOT(undo()));
+    QAction *pUndoAction = pMenu->addAction(tr("Undo"));
+    connect(pUndoAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::undo);
     pUndoAction->setIcon(ResourceCache::getIcon(":/Resources/icons/undo.svg"));
     pUndoAction->setShortcut(QKeySequence::Undo);
     pUndoAction->setEnabled(mpPlainTextEdit->isUndoAvailable());
-    QAction *pRedoAction = pMenu->addAction(tr("Redo"), mpPlainTextEdit, SLOT(undo()));
+    QAction *pRedoAction = pMenu->addAction(tr("Redo"));
+    connect(pRedoAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::undo);
     pRedoAction->setIcon(ResourceCache::getIcon(":/Resources/icons/redo.svg"));
     pRedoAction->setShortcut(QKeySequence::Redo);
     pRedoAction->setEnabled(mpPlainTextEdit->isRedoAvailable());
@@ -2412,21 +2414,24 @@ QMenu* BaseEditor::createStandardContextMenu()
 #ifndef QT_NO_CLIPBOARD
     // cut
     if (mpPlainTextEdit->textInteractionFlags() & Qt::TextEditable) {
-      pCutAction = pMenu->addAction(tr("Cu&t"), mpPlainTextEdit, SLOT(cut()));
+      pCutAction = pMenu->addAction(tr("Cu&t"));
+      connect(pCutAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::cut);
       pCutAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
       pCutAction->setObjectName(QStringLiteral("edit-cut"));
       setActionIcon(pCutAction, QStringLiteral("edit-cut"));
       pCutAction->setShortcut(QKeySequence::Cut);
     }
     // copy
-    pCopyAction = pMenu->addAction(tr("&Copy"), mpPlainTextEdit, SLOT(copy()));
+    pCopyAction = pMenu->addAction(tr("&Copy"));
+    connect(pCopyAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::copy);
     pCopyAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
     pCopyAction->setObjectName(QStringLiteral("edit-copy"));
     setActionIcon(pCopyAction, QStringLiteral("edit-copy"));
     pCopyAction->setShortcut(QKeySequence::Copy);
     // paste
     if (mpPlainTextEdit->textInteractionFlags() & Qt::TextEditable) {
-      pPasteAction = pMenu->addAction(tr("&Paste"), mpPlainTextEdit, SLOT(paste()));
+      pPasteAction = pMenu->addAction(tr("&Paste"));
+      connect(pPasteAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::paste);
       pPasteAction->setEnabled(mpPlainTextEdit->canPaste());
       pPasteAction->setObjectName(QStringLiteral("edit-paste"));
       setActionIcon(pPasteAction, QStringLiteral("edit-paste"));
@@ -2435,7 +2440,8 @@ QMenu* BaseEditor::createStandardContextMenu()
 #endif // QT_NO_CLIPBOARD
     pMenu->addSeparator();
     // select all
-    pSelectAllAction = pMenu->addAction(tr("Select All"), mpPlainTextEdit, SLOT(selectAll()));
+    pSelectAllAction = pMenu->addAction(tr("Select All"));
+    connect(pSelectAllAction, &QAction::triggered, mpPlainTextEdit, &PlainTextEdit::selectAll);
     pSelectAllAction->setEnabled(!mpPlainTextEdit->document()->isEmpty());
     pSelectAllAction->setObjectName(QStringLiteral("select-all"));
     pSelectAllAction->setShortcut(QKeySequence::SelectAll);
@@ -2737,20 +2743,20 @@ FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
   mpFindLabel = new Label(tr("Find:"));
   mpFindComboBox = new QComboBox;
   mpFindComboBox->setEditable(true);
-  connect(mpFindComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(textToFindChanged()));
-  connect(mpFindComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(validateRegularExpression(QString)));
-  connect(mpFindComboBox->lineEdit(), SIGNAL(returnPressed()), SLOT(findNext()));
+  connect(mpFindComboBox, &QComboBox::editTextChanged, this, &FindReplaceWidget::textToFindChanged);
+  connect(mpFindComboBox, &QComboBox::editTextChanged, this, &FindReplaceWidget::validateRegularExpression);
+  connect(mpFindComboBox->lineEdit(), &QLineEdit::returnPressed, this, &FindReplaceWidget::findNext);
   /* Since the default QCompleter for QComboBox is case insenstive. */
   QCompleter *pFindComboBoxCompleter = mpFindComboBox->completer();
   pFindComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
   mpFindComboBox->setCompleter(pFindComboBoxCompleter);
   // previous, next & close buttons
   mpFindPreviousButton = new QPushButton(Helper::previous);
-  connect(mpFindPreviousButton, SIGNAL(clicked()), this, SLOT(findPrevious()));
+  connect(mpFindPreviousButton, &QPushButton::clicked, this, &FindReplaceWidget::findPrevious);
   mpFindNextButton = new QPushButton(Helper::next);
-  connect(mpFindNextButton, SIGNAL(clicked()), this, SLOT(findNext()));
+  connect(mpFindNextButton, &QPushButton::clicked, this, &FindReplaceWidget::findNext);
   mpCloseButton = new QPushButton(Helper::close);
-  connect(mpCloseButton, SIGNAL(clicked()), this, SLOT(close()));
+  connect(mpCloseButton, &QPushButton::clicked, this, &FindReplaceWidget::close);
   // buttons layout
   QHBoxLayout *pFindButtonsHorizontalLayout = new QHBoxLayout;
   pFindButtonsHorizontalLayout->addWidget(mpFindPreviousButton);
@@ -2759,16 +2765,16 @@ FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
   // Find replace and text box
   mpReplaceWithLabel = new Label(tr("Replace With:"));
   mpReplaceWithTextBox = new QLineEdit;
-  connect(mpReplaceWithTextBox, SIGNAL(returnPressed()), SLOT(replace()));
+  connect(mpReplaceWithTextBox, &QLineEdit::returnPressed, this, &FindReplaceWidget::replace);
   // Find Options
   mpCaseSensitiveCheckBox = new QCheckBox(tr("Case Sensitive"));
   mpWholeWordCheckBox = new QCheckBox(tr("Whole Words"));
   mpRegularExpressionCheckBox = new QCheckBox(tr("Regular Expressions"));
   // Replace & replace all buttons
   mpReplaceButton = new QPushButton(tr("Replace"));
-  connect(mpReplaceButton, SIGNAL(clicked()), this, SLOT(replace()));
+  connect(mpReplaceButton, &QPushButton::clicked, this, &FindReplaceWidget::replace);
   mpReplaceAllButton = new QPushButton(tr("Replace All"));
-  connect(mpReplaceAllButton, SIGNAL(clicked()), this, SLOT(replaceAll()));
+  connect(mpReplaceAllButton, &QPushButton::clicked, this, &FindReplaceWidget::replaceAll);
   // options layout
   QHBoxLayout *pOptionsHorizontalLayout = new QHBoxLayout;
   pOptionsHorizontalLayout->addWidget(mpCaseSensitiveCheckBox);
@@ -3043,7 +3049,7 @@ GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
   mpLineNumberLabel = new Label;
   mpLineNumberTextBox = new QLineEdit;
   mpOkButton = new QPushButton(Helper::ok);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(goToLineNumber()));
+  connect(mpOkButton, &QPushButton::clicked, this, &GotoLineDialog::goToLineNumber);
   // set layout
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->addWidget(mpLineNumberLabel, 0, 0);
@@ -3106,7 +3112,7 @@ InfoBar::InfoBar(QWidget *pParent)
   mpCloseButton->setAutoRaise(true);
   mpCloseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/delete.svg"));
   mpCloseButton->setToolTip(Helper::close);
-  connect(mpCloseButton, SIGNAL(clicked()), SLOT(hide()));
+  connect(mpCloseButton, &QToolButton::clicked, this, &InfoBar::hide);
   // set the layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(2, 2, 2, 2);

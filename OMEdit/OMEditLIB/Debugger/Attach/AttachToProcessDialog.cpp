@@ -87,21 +87,21 @@ AttachToProcessDialog::AttachToProcessDialog(QWidget *pParent)
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setEnabled(false);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(attachProcess()));
+  connect(mpOkButton, &QPushButton::clicked, this, &AttachToProcessDialog::attachProcess);
   mpRefreshButton = new QPushButton(Helper::refresh);
-  connect(mpRefreshButton, SIGNAL(clicked()), SLOT(updateProcessList()));
+  connect(mpRefreshButton, &QPushButton::clicked, this, &AttachToProcessDialog::updateProcessList);
   mpCancelButton = new QPushButton(Helper::cancel);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &AttachToProcessDialog::reject);
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpRefreshButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
 
-  connect(mpAttachToProcessIDTextBox, SIGNAL(textChanged(QString)), this, SLOT(processIDChanged(QString)));
-  connect(mpFilterProcessesTextBox, SIGNAL(textChanged(QString)), this, SLOT(setFilterString(QString)));
-  connect(mpProcessesTreeView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(processSelected(QModelIndex)));
-  connect(mpProcessesTreeView, SIGNAL(clicked(QModelIndex)), this, SLOT(processClicked(QModelIndex)));
+  connect(mpAttachToProcessIDTextBox, &QLineEdit::textChanged, this, &AttachToProcessDialog::processIDChanged);
+  connect(mpFilterProcessesTextBox, &QLineEdit::textChanged, this, &AttachToProcessDialog::setFilterString);
+  connect(mpProcessesTreeView, &QTreeView::doubleClicked, this, &AttachToProcessDialog::processSelected);
+  connect(mpProcessesTreeView, &QTreeView::clicked, this, &AttachToProcessDialog::processClicked);
   // set the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);

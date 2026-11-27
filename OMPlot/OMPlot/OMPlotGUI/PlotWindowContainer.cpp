@@ -84,7 +84,7 @@ void PlotWindowContainer::addPlotWindow(QStringList arguments)
   } else {
     pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
   }
-  connect(pPlotWindow, SIGNAL(closingDown()), SLOT(checkSubWindows()));
+  connect(pPlotWindow, &PlotWindow::closingDown, this, &PlotWindowContainer::checkSubWindows);
   QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
   pPlotWindow->resize(pPlotWindow->sizeHint());
   setActiveSubWindow(pSubWindow);

@@ -83,10 +83,10 @@ OMUQDialog::OMUQDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   // study and activity
   mpStudyLabel = new Label(tr("Study:"));
   mpStudyComboBox = new QComboBox;
-  connect(mpStudyComboBox, SIGNAL(currentIndexChanged(int)), SLOT(studyChanged(int)));
+  connect(mpStudyComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &OMUQDialog::studyChanged);
   mpActivityLabel = new Label(tr("Activity:"));
   mpActivityComboBox = new QComboBox;
-  connect(mpActivityComboBox, SIGNAL(currentIndexChanged(int)), SLOT(activityChanged(int)));
+  connect(mpActivityComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &OMUQDialog::activityChanged);
   mpActivityInformationLabel = new Label;
   mpActivityInformationLabel->setWordWrap(true);
   // domains
@@ -130,9 +130,9 @@ OMUQDialog::OMUQDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   mpBrowseResultsFileButton = new QPushButton(Helper::browse);
   mpBrowseResultsFileButton->setAutoDefault(false);
   mpBrowseResultsFileButton->setEnabled(false);
-  connect(mpBrowseResultsFileButton, SIGNAL(clicked()), SLOT(browseResultsFile()));
-  connect(mpRecordResultsCheckBox, SIGNAL(toggled(bool)), mpResultsFileTextBox, SLOT(setEnabled(bool)));
-  connect(mpRecordResultsCheckBox, SIGNAL(toggled(bool)), mpBrowseResultsFileButton, SLOT(setEnabled(bool)));
+  connect(mpBrowseResultsFileButton, &QPushButton::clicked, this, &OMUQDialog::browseResultsFile);
+  connect(mpRecordResultsCheckBox, &QCheckBox::toggled, mpResultsFileTextBox, &QLineEdit::setEnabled);
+  connect(mpRecordResultsCheckBox, &QCheckBox::toggled, mpBrowseResultsFileButton, &QPushButton::setEnabled);
   mpLiveViewLabel = new Label(tr("Live View:"));
   mpLiveViewComboBox = new QComboBox;
   mpLiveViewComboBox->addItem(tr("Off"), OMUQRunOptions::NoLiveView);
@@ -163,10 +163,10 @@ OMUQDialog::OMUQDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   // buttons
   mpRunButton = new QPushButton(tr("Run"));
   mpRunButton->setAutoDefault(true);
-  connect(mpRunButton, SIGNAL(clicked()), SLOT(runActivity()));
+  connect(mpRunButton, &QPushButton::clicked, this, &OMUQDialog::runActivity);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &OMUQDialog::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpRunButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);

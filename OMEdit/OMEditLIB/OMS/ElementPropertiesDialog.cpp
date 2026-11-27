@@ -344,10 +344,10 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateProperties()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ElementPropertiesDialog::updateProperties);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &ElementPropertiesDialog::reject);
   // Create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
