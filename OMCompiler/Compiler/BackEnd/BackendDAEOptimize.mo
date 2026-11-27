@@ -4335,7 +4335,7 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
-  Integer n, size, idx = 1, m, j;
+  Integer n, size, idx = 1, j;
   BackendDAE.Equation eqn = BackendDAE.DUMMY_EQUATION(), eqn1;
   DAE.Exp left, right, e1, e2, e, e3;
   list<DAE.Exp> left_lst, right_lst;
@@ -4343,9 +4343,9 @@ protected
   list<BackendDAE.Equation> eqnLst;
   DAE.ElementSource source "origin of equation";
   BackendDAE.EquationAttributes attr;
-  Boolean update, sc, split;
+  Boolean update, split;
   Absyn.Path path;
-  list<DAE.Exp> arrayLst, arrayLst2, expLst;
+  list<DAE.Exp> arrayLst, expLst;
   DAE.CallAttributes cattr;
   DAE.ComponentRef cr;
   BackendDAE.Var tmpvar;
@@ -4445,30 +4445,10 @@ algorithm
               eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
               //print(BackendDump.equationString(eqn1) + "--new--\n");
               eqns := BackendEquation.add(eqn1, eqns);
-            elseif Expression.isArray(e1) then
-              update := true;
-              DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
-              m := listLength(arrayLst);
-              cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
-              idx := idx + 1;
-              e := Expression.crefExp(cr);
-              tmpvar := BackendVariable.makeVar(cr);
-              tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
-              tmpvar.arryDim := {DAE.DIM_INTEGER(m)};
-              // e[1]
-              arrayLst2 := list( Expression.makeAsubAddIndex(e,k) for k in 1:m);
-              j := 1;
-              for e2 in arrayLst2 loop
-                e3 :: arrayLst := arrayLst;
-                eqn1 := BackendDAE.EQUATION(e2, e3, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-                //print(BackendDump.equationString(eqn1) + "--new--\n");
-                eqns := BackendEquation.add(eqn1, eqns);
-                cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
-                j := j + 1;
-                tmpvar.varName := cr;
-                vars := BackendVariable.addVar(tmpvar, vars);
-                //vars := BackendVariable.addVar(tmpvar, vars);
-              end for;
+            elseif isArrayLiteral(e1) and Types.dimensionsKnown(Expression.typeof(e1)) then
+              dims := Expression.dimensionsSizes(Expression.arrayDimension(Expression.typeof(e1)));
+              (e, idx, vars, eqns) := replaceArrayLiteralWithTmpVar(e1, dims, tmpVarPrefix, source, attr, idx, vars, eqns);
+              update := update or not referenceEq(e, e1);
               //BackendDump.printVariables(vars);
             else
               e := e1;
@@ -4551,17 +4531,32 @@ protected function replaceArrayLiteral
   input output Integer idx;
   input output BackendDAE.Variables vars;
   input output BackendDAE.EquationArray eqns;
+algorithm
+  if isArrayLiteral(exp) and not isVariableArrayLiteral(exp) then
+    (outExp, idx, vars, eqns) := replaceArrayLiteralWithTmpVar(exp, dims, tmpVarPrefix, source, attr, idx, vars, eqns);
+  end if;
+end replaceArrayLiteral;
+
+protected function replaceArrayLiteralWithTmpVar
+  "Replaces an array literal with a new array variable, and adds the equations
+   for the elements of the new variable."
+  input DAE.Exp exp;
+  input list<Integer> dims "the dimensions of the array";
+  input String tmpVarPrefix;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes attr;
+  output DAE.Exp outExp = exp;
+  input output Integer idx;
+  input output BackendDAE.Variables vars;
+  input output BackendDAE.EquationArray eqns;
 protected
   list<BackendDAE.Equation> elementEqns;
   DAE.Exp arrayExp;
   DAE.Type ty;
   Boolean split;
 algorithm
-  if not isArrayLiteral(exp) then
-    return;
-  end if;
   ty := DAEUtil.expTypeElementType(Expression.typeof(exp));
-  if not Types.isSimpleType(ty) or isVariableArrayLiteral(exp) then
+  if not Types.isSimpleType(ty) then
     return;
   end if;
   // The type of the literal can have unknown dimensions, e.g. from an inlined function.
@@ -4576,7 +4571,7 @@ algorithm
     idx := idx + 1;
     outExp := arrayExp;
   end if;
-end replaceArrayLiteral;
+end replaceArrayLiteralWithTmpVar;
 
 protected function isArrayLiteral
   input DAE.Exp exp;

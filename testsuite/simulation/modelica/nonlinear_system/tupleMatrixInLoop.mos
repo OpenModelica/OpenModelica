@@ -1,0 +1,53 @@
+// name: tupleMatrixInLoop
+// keywords: simplifyComplexFunction, tuple, external function
+// status: correct
+//
+// Alias elimination turns the matrix output A of the tuple equation into a
+// matrix literal with negated elements. The tuple equation is part of an
+// algebraic loop. See issue #16582.
+
+loadString("
+model TupleMatrixInLoop
+  function getFrame
+    input Real t;
+    output Real r[3];
+    output Real T[3,3];
+  external \"C\" getFrame_ext(t, r, T)
+    annotation(Include = \"
+      void getFrame_ext(double t, double* r, double* T)
+      {
+        int i;
+        for (i = 0; i < 3; ++i) r[i] = t + i;
+        for (i = 0; i < 9; ++i) T[i] = t + 10*i;
+      }\");
+  end getFrame;
+  Real r[3];
+  Real A[3,3];
+  Real B[3,3];
+equation
+  (r, A) = getFrame(time + 1e-3*B[3,2]);
+  B = {A[1], A[3], -A[2]};
+end TupleMatrixInLoop;
+"); getErrorString();
+simulate(TupleMatrixInLoop, stopTime = 1); getErrorString();
+val(B[1,1], 1);
+val(B[2,3], 1);
+val(B[3,2], 1);
+val(r[3], 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TupleMatrixInLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TupleMatrixInLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.9590409590409594
+// 80.95904095904096
+// -40.95904095904056
+// 2.9590409590409594
+// endResult
