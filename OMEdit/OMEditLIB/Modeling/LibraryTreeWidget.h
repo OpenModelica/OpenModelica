@@ -526,6 +526,7 @@ private:
   void saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  bool isConflictWithLoadedLibraries(const QStringList &classes);
   bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
   static void cancelLoadingLibraries(const QStringList classes);
   void reDrawModelsToUpdate();
