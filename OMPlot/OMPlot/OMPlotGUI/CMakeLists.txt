@@ -18,6 +18,7 @@ set(OMPLOTLIB_SOURCES Plot.cpp
                       resource_omplot.qrc)
 
 set(OMPLOTLIB_HEADERS OMPlot.h
+                      OMPlotExport.h
                       PlotZoomer.h
                       Legend.h
                       PlotPanner.h
