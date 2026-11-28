@@ -1,0 +1,64 @@
+// name: daeModeHomotopy
+// keywords: daeMode homotopy initialization flow reversal IDA
+// status: correct
+//
+// daeMode (IDA) simulation of a degenerate start operating point. Both flowsheets
+// start with the mover at zero speed and zero flow (m_flow_start = 0). The mover is
+// a prescribed-flow machine, so its pressure characteristic is solved inversely for
+// the normalised speed y_actual; that characteristic scales with y_actual^2, so its
+// derivative vanishes at zero speed. Homotopy regularises this during *initialization*
+// (as the specification requires) and is over once initialization finishes.
+//
+// Previously daeMode promoted that implicit loop to a global IDA algebraic variable,
+// which placed the singular characteristic directly in the global Jacobian that IDA
+// factorizes at t = 0, so the run failed with IDA_LSETUP_FAIL (-6). daeMode now keeps
+// such implicit single-variable loops as local (torn) nonlinear systems, exactly as
+// ODE mode does, so y_actual is solved inside the residual evaluation and never enters
+// IDA's global Jacobian. The models therefore initialize and simulate without any
+// non-zero m_flow_start workaround. Example2 additionally exercises a bidirectional
+// (allowFlowReversal = true) resistor. See #15882.
+
+setCommandLineOptions("--daeMode"); getErrorString();
+loadFile("Example1Total.mo"); getErrorString();
+simulate(Example1_total, stopTime=1.0, numberOfIntervals=20); getErrorString();
+abs(val(res.m_flow, 1.0) - 1.0/30.0) < 1e-3;
+
+loadFile("Example2Total.mo"); getErrorString();
+simulate(Example2_total, stopTime=1.0, numberOfIntervals=20); getErrorString();
+abs(val(res.m_flow, 1.0) - 1.0/30.0) < 1e-3;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Example1_total_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'Example1_total', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mov.vol.dynBal.medium.p = mov.vol.dynBal.p_start (sou.p = mov.vol.dynBal.p_start)
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mov.vol.dynBal.medium.p = mov.vol.dynBal.p_start (sou.p = mov.vol.dynBal.p_start)
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Example2_total_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'Example2_total', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// true
+// endResult
