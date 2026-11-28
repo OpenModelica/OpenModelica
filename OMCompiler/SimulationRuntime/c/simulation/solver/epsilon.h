@@ -70,4 +70,10 @@ static const double SPATIAL_EPS = DBL_EPSILON;
 
 static const double SPATIAL_ZERO_DELTA_X = 1e-12;
 
+/* False if h is below the resolution of t, so that t + h rounds to t. */
+static inline int stepMovesTime(double t, double h)
+{
+  return t + h > t;
+}
+
 #endif

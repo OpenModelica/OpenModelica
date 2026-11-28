@@ -23,6 +23,7 @@ pub(crate) fn emit_prof(ctx: &mut FnCtx, clock: Option<u32>, hook: &str) -> Resu
 /// `initialPoints`/`initialValues` are only used during initialization
 /// (`functionInitSpatialDistribution`), as in C.
 pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<metamodelica::Ref<DAE::Exp>>) -> Result<()> {
+    use openmodelica_sim_meta::driver::SpatialHistory;
     use we::Instruction as I;
     let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != 7 {
@@ -38,17 +39,23 @@ pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<metamode
     ctx.emit(I::I32Const(*index));
     ctx.emit(I::LocalGet(data)); // time (TIME_OFF = 0)
     ctx.emit(I::F64Load(mem_arg(0, 3)));
-    for a in &argv[1..4] {
-        let w = compile_exp(ctx, a)?; // in0, in1, x
-        coerce(ctx, w, WTy::F64);
-    }
+    let w = compile_exp(ctx, argv[3])?;
+    coerce(ctx, w, WTy::F64);
     let w = compile_exp(ctx, argv[4])?; // positiveVelocity
     coerce(ctx, w, WTy::I32);
     // C's `simulationInfo->discreteCall`: the relation mode is nonzero for an event
     // update and for the initial system, zero during continuous integration.
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Load(sim_mem(rel_fresh_off, 2)?));
-    ctx.emit(I::Call(rt_index("rt_spatial_eval")?));
+    ctx.emit(I::Call(rt_index("rt_spatial_value")?));
+    // Do not evaluate later equations with missing transport history.
+    ctx.emit(I::I32Const(SpatialHistory::Needed as i32));
+    ctx.emit(I::Call(rt_index("rt_spatial_history")?));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
+    release_heap_locals(ctx)?;
+    push_outputs(ctx)?;
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
     ctx.emit(I::I32Const(*index));
     ctx.emit(I::Call(rt_index("rt_spatial_out1")?));
     Ok(())

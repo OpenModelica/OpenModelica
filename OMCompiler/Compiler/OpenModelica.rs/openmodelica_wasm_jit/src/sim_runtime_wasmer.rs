@@ -1079,6 +1079,13 @@ pub fn build_engine(
         wts(set.call(&mut store, ptr, blob.len() as u32, sim_data))?;
     }
 
+    let spatial_history = if meta.layout.has_spatial_distribution {
+        Some(wts(rt_inst
+            .exports
+            .get_typed_function::<u32, u32>(&store, "rt_spatial_history"))?)
+    } else {
+        None
+    };
     let mut engine: Box<dyn sim_driver::SimEngine + 'static> = Box::new(WasmerEngine {
         store,
         memory,
@@ -1086,6 +1093,7 @@ pub fn build_engine(
         rt_inst,
         funcs: HashMap::new(),
         funcs2: HashMap::new(),
+        spatial_history,
     });
     sim_driver::write_size_table(&mut *engine, sim_data, meta).map_err(|e| e.to_string())?;
     Ok((engine, sim_data))
@@ -1099,6 +1107,7 @@ struct WasmerEngine {
     memory: wasmer::Memory,
     instance: wasmer::Instance,
     rt_inst: wasmer::Instance,
+    spatial_history: Option<wasmer::TypedFunction<u32, u32>>,
     funcs: HashMap<String, wasmer::TypedFunction<u32, ()>>,
     /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
     /// Resolved two-argument exports by name (`evaluateDAEResiduals` and the
@@ -1259,6 +1268,14 @@ impl sim_driver::SimEngine for WasmerEngine {
             Err(_) => 0,
         }
     }
+    fn spatial_history(&mut self, action: sim_driver::SpatialHistory) -> bool {
+        self.spatial_history
+            .as_ref()
+            .and_then(|f| f.call(&mut self.store, action as u32).ok())
+            .unwrap_or(0)
+            != 0
+    }
+
     fn error_stage_addr(&mut self) -> u32 {
         match self
             .rt_inst

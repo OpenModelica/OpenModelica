@@ -34,6 +34,7 @@
 #include "../simulation/solver/linearSystem.h"
 #include "../simulation/solver/mixedSystem.h"
 #include "../simulation/solver/delay.h"
+#include "../simulation/solver/spatialDistribution.h"
 #include "../simulation/solver/discrete_changes.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
@@ -765,6 +766,8 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   /* try */
   OMC_TRY_INTERNAL(simulationJumpBuffer)
 
+    if (storeSpatialDistributionStep(comp->fmuData, threadData)) goto event_update_failed;
+
 #if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, threadData, 1, 1))
     {
@@ -836,6 +839,8 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       eventInfo->terminateSimulation = fmiFalse;
     }
 
+    if (eventInfo->iterationConverged && storeSpatialDistributionStep(comp->fmuData, threadData)) goto event_update_failed;
+
     /* Store the pre-values and update the relations before overwriting the old
        simulation data, otherwise pre(v) lags one event behind and when-clauses such as
        'when sample(...) then n := pre(n) + 1' only fire every other sample. This matches
@@ -868,12 +873,14 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime);
 
     if (!OMC_ERROR_RAISED()) return fmiOK;
+event_update_failed:
     OMC_ERROR_CLEAR();
 
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
-  comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiEventUpdate: terminated by an assertion.");
+  comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiEventUpdate: %s.",
+      spatialDistributionNeedsHistory(comp->fmuData, FALSE) ? "spatialDistribution transport history exhausted" : "terminated by an assertion");
   return fmiError;
 }
 
@@ -891,10 +898,15 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
   /* try */
   OMC_TRY_INTERNAL(simulationJumpBuffer)
 
+    if (comp->fmuData->modelData->nSpatialDistributions > 0) {
+      spatialDistributionNeedsHistory(comp->fmuData, TRUE);
+      comp->fmuData->callback->functionODE(comp->fmuData, threadData);
+      if (OMC_ERROR_RAISED()) goto completed_step_failed;
+    }
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, comp->threadData);
+    if (comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData)) goto completed_step_failed;
     storePreValues(comp->fmuData);
     *callEventUpdate  = fmiFalse;
     /******** check state selection ********/
@@ -915,11 +927,13 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
     /* the model has just been re-evaluated for the completed step */
     comp->_need_update = 0;
     if (!OMC_ERROR_RAISED()) return fmiOK;
+completed_step_failed:
     OMC_ERROR_CLEAR();
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
-  comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiCompletedIntegratorStep: terminated by an assertion.");
+  comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiCompletedIntegratorStep: %s.",
+      spatialDistributionNeedsHistory(comp->fmuData, FALSE) ? "spatialDistribution transport history exhausted" : "terminated by an assertion");
   return fmiError;
 }
 

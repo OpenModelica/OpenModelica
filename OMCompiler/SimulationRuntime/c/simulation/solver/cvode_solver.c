@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "cvode_solver.h"
+#include "spatialDistribution.h"
 
 /* OMC headers */
 #include "../../util/context.h"
@@ -1032,6 +1033,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   int finished = FALSE;
   int rootFailed = FALSE;
   int workRetries = 0;
+  const modelica_boolean storeSolverSteps = spatialDistributionStoresSolverSteps(data, solverInfo->solverRootFinding);
   double tout = 0;
   long int i;
 
@@ -1096,7 +1098,11 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* The inputs of an FMU can change at the communication point */
   CVodeSetStopTime(cvodeData->cvode_mem, tout);
 #else
-  if (simulationInfo->nextSampleEvent < DBL_MAX)
+  if (data->modelData->nSpatialDistributions > 0)
+  {
+    CVodeSetStopTime(cvodeData->cvode_mem, tout);
+  }
+  else if (simulationInfo->nextSampleEvent < DBL_MAX)
   {
     CVodeSetStopTime(cvodeData->cvode_mem, fmax(simulationInfo->nextSampleEvent, tout));
   }
@@ -1131,14 +1137,14 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
                  tout,
                  cvodeData->y,
                  &(solverInfo->currentTime),
-                 CV_NORMAL);
+                 data->modelData->nSpatialDistributions > 0 ? CV_ONE_STEP : CV_NORMAL);
     memcpy(simulationData->realVars, N_VGetArrayPointer(cvodeData->y), cvodeData->N * sizeof(double));
 
     /* Error handling */
-    if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tout)
+    if (flag == CV_SUCCESS || flag == CV_TSTOP_RETURN)
     {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## step done to time = %.15g", solverInfo->currentTime);
-      finished = TRUE;
+      finished = solverInfo->currentTime >= tout;
     }
     else if (flag == CV_ROOT_RETURN)
     {
@@ -1167,10 +1173,16 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;
+
+    const modelica_boolean intermediateStep = flag == CV_SUCCESS && solverInfo->currentTime < tout;
+    if (spatialDistributionAfterSolverCall(data, threadData, storeSolverSteps, intermediateStep) != SPATIAL_DISTRIBUTION_STEP_OK) {
+      retVal = CV_RHSFUNC_FAIL;
+      break;
+    }
   } while (!finished && !OMC_ERROR_RAISED());
 
   /* Catch */
-  if (OMC_ERROR_RAISED() && !rootFailed) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !rootFailed && data->modelData->nSpatialDistributions == 0) { OMC_ERROR_CLEAR(); }
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;
 

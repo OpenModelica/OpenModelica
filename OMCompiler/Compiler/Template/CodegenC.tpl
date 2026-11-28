@@ -4438,6 +4438,7 @@ template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, S
         equationIndexes[1] = <%index%>;
         <%preExp%>
         storeSpatialDistribution(data, threadData, <%index%>, <%in0T%>, <%in1T%>, <%posT%>, <%dirT%>);
+        <%CodegenCFunctions.errorCheck(contextSimulationNonDiscrete)%>
         >>
       // When the spatialDistribution() operator sits inside an if-branch its
       // evaluation is guarded by an event; the store must use the same guard,
@@ -4464,11 +4465,12 @@ template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, S
   {
     int equationIndexes[2] = {1,-1};
     <%varDecls%>
+    <%if storePart then CodegenCFunctions.errorCheck(contextSimulationNonDiscrete)%>
     <%storePart%>
 
     _return: OMC_LABEL_UNUSED ;
     <%varFrees%>
-    return 0;
+    return <%if storePart then 'OMC_ERROR_RAISED() ? -1 : 0' else '0'%>;
   }
   >>
 end functionStoreSpatialDistribution;

@@ -287,7 +287,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
       } else {
         memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+        if (gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL) != 0) return -1;
       }
     } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
@@ -988,7 +988,8 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     if (!gbData->isExplicit) {
       sData->timeValue = gbData->time;
       memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+      step_info = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+      if (step_info) goto restore;
       gbData->tv[1] = gbData->tv[0];
       memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
       memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
@@ -1016,7 +1017,8 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       if (!gbData->isExplicit) {
         sData->timeValue = gbData->time + gbData->stepSize;
         memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+        step_info = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+        if (step_info) goto restore;
         gbData->tv[0] = gbData->time;
         memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
         memcpy(gbData->kv, fODE, nStates * sizeof(double));
@@ -1043,6 +1045,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     }
   }
 
+restore:
   // Restore time values and step size
   gbData->time = timeValue;
   gbData->stepSize = stepSize;

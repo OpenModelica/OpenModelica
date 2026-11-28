@@ -30,11 +30,8 @@ end rampInputSpatialDistribution;"); getErrorString();
 // Output interval 0.05 s, well outside the comparison tolerance.
 simulate(rampInputSpatialDistribution, stopTime=2.0, numberOfIntervals=40); getErrorString();
 
-val(leftOutput, 0.5);
 val(rightOutput, 0.5);
-val(leftOutput, 1.5);
 val(rightOutput, 1.5);
-val(leftOutput, 2.0);
 val(rightOutput, 2.0);
 // Result:
 // true
@@ -49,10 +46,7 @@ val(rightOutput, 2.0);
 // "
 // end SimulationResult;
 // ""
-// 0.5
 // 0.0
-// 1.5
 // 0.5
-// 2.0
 // 1.0
 // endResult

@@ -823,6 +823,10 @@ impl SimEngine for Engine {
     fn context_addr(&mut self) -> u32 {
         openmodelica_codegen_wasm_jit_runtime::rt_context_addr()
     }
+    fn spatial_history(&mut self, action: openmodelica_sim_meta::driver::SpatialHistory) -> bool {
+        openmodelica_codegen_wasm_jit_runtime::spatial::rt_spatial_history(action as u32) != 0
+    }
+
     fn error_stage_addr(&mut self) -> u32 {
         openmodelica_codegen_wasm_jit_runtime::rt_error_stage_addr()
     }
@@ -1413,6 +1417,11 @@ impl<E: FmiHost + 'static> MeState<E> {
         let cs_owns_clocks = self.cs.is_some();
         #[cfg(not(feature = "cs"))]
         let cs_owns_clocks = false;
+        if layout.has_spatial_distribution && !cs_owns_clocks {
+            self.write_i32(layout.rel_fresh_off, 0);
+            self.eval()?;
+            driver::commit_spatial(&mut self.engine, sim_data)?;
+        }
         let sample_due = self
             .samples
             .as_ref()
@@ -1504,6 +1513,10 @@ impl<E: FmiHost + 'static> MeState<E> {
                     next = Some(next.map_or(tc, |n: f64| n.min(tc)));
                 }
             }
+        }
+        if layout.has_spatial_distribution && !cs_owns_clocks {
+            self.eval()?;
+            driver::commit_spatial(&mut self.engine, sim_data)?;
         }
         Ok(Updated {
             up,

@@ -1140,7 +1140,7 @@ fn layout_for(
         ),
         _ => (0, 0, 0),
     };
-    Layout::new(
+    let mut layout = Layout::new(
         n_states,
         n_real_alg,
         md.nParametersReal as u32,
@@ -1181,7 +1181,9 @@ fn layout_for(
         md.nDelayExpressions > 0 || md.nSpatialDistributions > 0,
         true,
         compiled_dae_mode,
-    )
+    );
+    layout.has_spatial_distribution = md.nSpatialDistributions > 0;
+    layout
 }
 
 /// A region whose backing is not [`Backing::Direct`]; separate from the `direct`

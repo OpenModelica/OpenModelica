@@ -36,6 +36,17 @@ end pulseInputSpatialDistribution;"); getErrorString();
 simulate(pulseInputSpatialDistribution, stopTime=1.02, simflags="-lv=LOG_EVENTS"); getErrorString();
 
 
+echo(false);
+ok := true;
+for edge in {0.1,0.4,0.7,1.0} loop
+  ok := ok and abs(val(rightOutput,edge-1e-6,"pulseInputSpatialDistribution_res.mat")) < 1e-5 and abs(val(rightOutput,edge+1e-6,"pulseInputSpatialDistribution_res.mat")-1) < 1e-5;
+end for;
+for edge in {0.25,0.55,0.85} loop
+  ok := ok and abs(val(rightOutput,edge-1e-6,"pulseInputSpatialDistribution_res.mat")-1) < 1e-5 and abs(val(rightOutput,edge+1e-6,"pulseInputSpatialDistribution_res.mat")) < 1e-5;
+end for;
+echo(true);
+ok; getErrorString();
+
 // Result:
 // true
 // ""
@@ -85,5 +96,8 @@ simulate(pulseInputSpatialDistribution, stopTime=1.02, simflags="-lv=LOG_EVENTS"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
+// ""
+// true
+// true
 // ""
 // endResult
