@@ -9963,6 +9963,22 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
         <translation>Beroenden</translation>
     </message>
     <message>
+        <source>Runtime Values</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Variable / Solve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation type="unfinished">Värde</translation>
+    </message>
+    <message>
+        <source>Residual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Equation Operations</source>
         <translation>Ekvationsoperationer</translation>
     </message>
@@ -9985,6 +10001,74 @@ Kan ge stor extra belastning men inga värden går förlorade.</translation>
     <message>
         <source>Source Browser</source>
         <translation>Källkodsbläddrare</translation>
+    </message>
+    <message>
+        <source>No runtime data (simulate with -lv=LOG_EBDD).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>convergence diagnostics: %1 non-linear equation(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>variables the non-linear equations depend on non-linearly</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>null space: %1 linearly-dependent variable(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>variables involved in the (near-)singular part of the Jacobian</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>chattering: %1 state events in [%2, %3]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this equation is involved in chattering; zero-crossing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>t = %1   [homotopy step %2, lambda = %3]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>homotopy continuation step %1 (lambda = %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>t = %1   [Jacobian, iteration %2]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>d f_row / d x_col, columns: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>t = %1   [Newton iteration %2]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>t = %1   [%2, %3 iter]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Newton iteration %1 at time %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 system solved at time %2 (%3, %4 iterations)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>value = %1, residual = %2 (scaled %3), nominal = %4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>value = %1, nominal = %2</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Equations</source>

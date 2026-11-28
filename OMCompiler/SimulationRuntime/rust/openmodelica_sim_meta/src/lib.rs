@@ -38,7 +38,7 @@ pub mod linearize;
 // (and the paths the codegen already uses) still name them.
 pub use openmodelica_arrow_writer::VarTy;
 pub use openmodelica_arrow_writer::units::{BaseUnit, DisplayUnit, UnitDef};
-pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, spatial, sysstat};
+pub use openmodelica_solvers::{delay, ebdd, fixedstep, gbode, omclog, simflags, spatial, sysstat};
 /// `-reconcile*`, which needs a filesystem too.
 #[cfg(feature = "std")]
 pub mod datarecon;

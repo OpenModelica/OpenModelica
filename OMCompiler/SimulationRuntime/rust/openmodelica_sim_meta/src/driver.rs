@@ -2941,6 +2941,7 @@ fn init_model(
     rtclock::enter_init();
     if let Some(m) = model {
         event_dump_store::set(EventDump::new(m));
+        crate::ebdd::begin(&m.prefix, &m.model_name);
     }
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
@@ -4575,6 +4576,9 @@ pub(crate) struct EventDump {
     reals: Vec<(String, u32, u32)>,
     ints: Vec<(String, u32, u32)>,
     bools: Vec<(String, u32, u32)>,
+    /// Every Boolean and Integer variable as `(name, live)`, for `LOG_EBDD`.
+    all_bools: Vec<(String, u32)>,
+    all_ints: Vec<(String, u32)>,
     /// The live slots of `bools`, `ints` and `reals` as `(offset, bytes)` runs. The
     /// Booleans come first: a changed when condition then ends the comparison early.
     runs: Vec<(u32, u32)>,
@@ -4626,7 +4630,15 @@ impl EventDump {
                 }
             }
         }
+        let all = |v: &[(String, i32)], live: u32| -> Vec<(String, u32)> {
+            v.iter()
+                .enumerate()
+                .map(|(i, (n, _))| (n.clone(), live + i as u32 * 4))
+                .collect()
+        };
         EventDump {
+            all_bools: all(&model.soti.bools, l.bool_off),
+            all_ints: all(&model.soti.ints, l.int_off),
             rel_desc: model.rel_desc.clone(),
             zc_desc: model.zc_desc.clone(),
             reals,
@@ -4853,6 +4865,24 @@ fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Ve
     Ok(())
 }
 
+/// The discrete state after event iteration `iteration`, for `LOG_EBDD`.
+fn log_ebdd_event_iteration(e: &dyn SimEngine, sim_data: u32, iteration: usize) -> Result<()> {
+    let time = read_f64(e, sim_data + TIME_OFF)?;
+    event_dump_store::with(|d| {
+        let read = |v: &[(String, u32)]| -> Result<Vec<i32>> {
+            v.iter().map(|(_, live)| read_i32(e, sim_data + live)).collect()
+        };
+        let (bools, ints) = (read(&d.all_bools)?, read(&d.all_ints)?);
+        crate::ebdd::event_iteration(
+            time,
+            iteration,
+            d.all_bools.iter().zip(&bools).map(|((n, _), v)| (n.as_str(), *v != 0)),
+            d.all_ints.iter().zip(&ints).map(|((n, _), v)| (n.as_str(), *v)),
+        );
+        Ok(())
+    })
+}
+
 /// Copy `relations[]` into `relationsPre`. Freezing it before an event-iteration
 /// pass keeps held relations fixed while that pass's NLS solve runs.
 fn update_relations_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
@@ -5068,6 +5098,9 @@ fn iterate_discrete_from(
         log_reinits(e);
         if let Some(before) = &before {
             log_discrete_changes(e, sim_data, before)?;
+        }
+        if crate::ebdd::active() {
+            log_ebdd_event_iteration(e, sim_data, iter)?;
         }
         let now = discrete_snapshot(e, sim_data, layout)?;
         if now == prev {
@@ -9343,6 +9376,9 @@ impl SolverCore {
             .get(zc)
             .map(|v| v.iter().map(|&i| i as i32).collect())
             .unwrap_or_default();
+        if crate::ebdd::active() {
+            crate::ebdd::chattering(&used, t0, t1, events, desc);
+        }
         let (t0, t1, limit) = (format_g(t0, 12), format_g(t1, 12), format_g(limit, 12));
         let fraction = format_g(fraction, 6);
         omclog::info_used(

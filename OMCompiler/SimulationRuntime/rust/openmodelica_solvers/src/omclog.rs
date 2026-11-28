@@ -14,7 +14,7 @@ use alloc::vec::Vec;
 pub type Stream = u8;
 
 /// C's `OMC_LOG_STREAM_NAME`, in the order the `-lv` parser and the mask index by.
-pub const STREAM_NAME: [&str; 57] = [
+pub const STREAM_NAME: [&str; 58] = [
     "LOG_UNKNOWN",
     "LOG_STDOUT",
     "LOG_ASSERT",
@@ -72,6 +72,7 @@ pub const STREAM_NAME: [&str; 57] = [
     "LOG_SUCCESS",
     "LOG_SYNCHRONOUS",
     "LOG_ZEROCROSSINGS",
+    "LOG_EBDD",
 ];
 
 pub const N_STREAMS: usize = STREAM_NAME.len();
@@ -126,6 +127,8 @@ pub const STATS_V: Stream = 53;
 pub const SUCCESS: Stream = 54;
 pub const SYNCHRONOUS: Stream = 55;
 pub const ZEROCROSSINGS: Stream = 56;
+/// Equation-based declarative debugger export (`<model>_dbg.json`), see [`crate::ebdd`].
+pub const EBDD: Stream = 57;
 
 /// C's `OMC_LOG_TYPE_*` / `OMC_LOG_TYPE_DESC`.
 pub type LogType = u8;

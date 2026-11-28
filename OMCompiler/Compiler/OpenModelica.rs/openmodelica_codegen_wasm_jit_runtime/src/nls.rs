@@ -36,6 +36,7 @@ fn install_hooks() {
     nls::host::set_note_runtime_error_flag(crate::note_runtime_error_flag);
     nls::host::set_write_file(crate::files::write_file);
     nls::host::set_file_prefix(crate::files::prefix);
+    openmodelica_solvers::ebdd::set_sink(crate::files::append_file);
     // `-saveInitialGuess_system`, which KINSOL reaches: the state it writes is the
     // run's model and `SimData`, and only this runtime knows where those are.
     #[cfg(sundials)]

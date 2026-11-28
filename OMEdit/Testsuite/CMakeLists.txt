@@ -81,6 +81,9 @@ add_omedit_test(DynamicAnnotation "${OMEDIT_TEST_DYNAMICANNOTATION_SOURCES}")
 set(OMEDIT_TEST_ELEMENTMODEMODIFIERS_SOURCES ElementModeModifiers/ElementModeModifiersTest.cpp
                                              ElementModeModifiers/ElementModeModifiersTest.h)
 add_omedit_test(ElementModeModifiers "${OMEDIT_TEST_ELEMENTMODEMODIFIERS_SOURCES}")
+set(OMEDIT_TEST_EBDDRUNTIME_SOURCES EbddRuntime/EbddRuntimeTest.cpp
+                                    EbddRuntime/EbddRuntimeTest.h)
+add_omedit_test(EbddRuntime "${OMEDIT_TEST_EBDDRUNTIME_SOURCES}")
 
 set(OMEDIT_TEST_EXPRESSION_SOURCES Expression/ExpressionTest.cpp
                                    Expression/ExpressionTest.h)

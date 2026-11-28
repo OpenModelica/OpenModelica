@@ -78,6 +78,22 @@ File->Open Transformations File (model\_info.json).
 
   Transfomations Browser.
 
+Inspect Runtime Values
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In addition to the static transformation information, the debugger can show
+runtime information gathered while the model is simulating. Simulate the model
+with the logging stream ``LOG_EBDD`` enabled (set ``-lv=LOG_EBDD`` in the
+simulation flags, e.g. via Tools->Options->Simulation). The runtime then writes
+a file ``<model>_dbg.json`` next to ``<model>_info.json``.
+
+When the debugger is opened on a model that has such a file, selecting an
+equation that is solved by a nonlinear system shows, in the *Runtime Values*
+panel, every time the system was solved: the solve time, the solver status and
+the number of iterations, together with the solved value, residual and nominal
+of each iteration variable. This makes it possible to see the actual values the
+solution of an equation depended on during simulation.
+
 .. _algorithm-debugging :
 
 The Algorithmic Debugger

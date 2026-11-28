@@ -2,6 +2,14 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
+testEbddRuntimeInfo.mos \
+testEbddNewtonIterations.mos \
+testEbddJacobian.mos \
+testEbddHomotopy.mos \
+testEbddEventIterations.mos \
+testEbddChattering.mos \
+testEbddNullSpace.mos \
+testEbddConvergenceDiagnostics.mos \
 testxmlInfoAllEqnsCorrectOrder.mos \
 testxmlInitForChangeableparameter.mos \
 isChangeable1.mos \

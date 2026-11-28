@@ -169,6 +169,7 @@ openmodelica_solvers/src/clock.rs
 openmodelica_solvers/src/counters.rs
 openmodelica_solvers/src/dassl.rs
 openmodelica_solvers/src/delay.rs
+openmodelica_solvers/src/ebdd.rs
 openmodelica_solvers/src/events.rs
 openmodelica_solvers/src/fixedstep.rs
 openmodelica_solvers/src/fmath.rs

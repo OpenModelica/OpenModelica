@@ -67,6 +67,7 @@ pub mod clock;
 pub mod counters;
 pub mod dassl;
 pub mod delay;
+pub mod ebdd;
 pub mod events;
 pub mod fixedstep;
 pub mod fmath;

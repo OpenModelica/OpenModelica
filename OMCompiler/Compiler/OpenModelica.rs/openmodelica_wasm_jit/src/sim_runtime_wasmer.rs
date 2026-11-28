@@ -661,6 +661,8 @@ pub fn run(
         return run_inwasm(model, bench, result);
     }
     crate::result_sink::arm(result);
+    // The driver below records `LOG_EBDD` host-side.
+    openmodelica_sim_meta::ebdd::set_sink(crate::host::ebdd_sink);
     let (mut engine, sim_data) = build_engine(model, meta)?;
     // `OMC_WASM_SIM_DRIVER=host` forces the native Euler loop over the in-wasm one.
     let host_driven = std::env::var("OMC_WASM_SIM_DRIVER")
@@ -1345,6 +1347,8 @@ pub fn build_inwasm_session(
     result: Option<&crate::result_sink::ResultTarget>,
 ) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
+    // The module's recorder owns the `LOG_EBDD` file here (`host::ebdd_from_module`).
+    openmodelica_sim_meta::ebdd::reset();
     let Instantiated {
         mut store,
         rt_inst,

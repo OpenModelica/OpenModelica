@@ -987,6 +987,13 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
         }
         crate::throw(td, "a model error was raised where nothing could absorb it")
     });
+    let model = crate::model_data::cstr(unsafe { (*(*data).modelData).modelName });
+    openmodelica_solvers::ebdd::begin(prefix, &model);
+    openmodelica_solvers::ebdd::set_sink(ebdd_sink);
+    openmodelica_solvers::ebdd::set_section_lookup(|eq| {
+        let data = MODEL_DATA_PTR.load(core::sync::atomic::Ordering::Relaxed) as *mut DATA;
+        !data.is_null() && crate::info_json::is_initial_section(data, eq)
+    });
     // `-saveInitialGuess_system` writes a `.mat`, which only a standalone run has.
     #[cfg(feature = "standalone")]
     {
@@ -999,6 +1006,30 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
             .filter(|_| !GUESS_DONE.swap(true, core::sync::atomic::Ordering::Relaxed))
         });
         nls::host::set_initial_guess_writer(write_state);
+    }
+}
+
+/// `<prefix>_dbg.json`, kept open across the records of a run as C's `ebddFile` is.
+static EBDD_FILE: std::sync::Mutex<Option<std::fs::File>> = std::sync::Mutex::new(None);
+
+fn ebdd_sink(name: &str, chunk: &str, create: bool) {
+    use std::io::Write;
+    let mut file = EBDD_FILE.lock().unwrap_or_else(|e| e.into_inner());
+    if create {
+        *file = match std::fs::File::create(name) {
+            Ok(f) => Some(f),
+            Err(e) => {
+                omclog::warning!(
+                    omclog::STDOUT,
+                    false,
+                    "LOG_EBDD: could not open '{name}' for writing: {e}"
+                );
+                None
+            }
+        };
+    }
+    if let Some(f) = file.as_mut() {
+        let _ = f.write_all(chunk.as_bytes());
     }
 }
 

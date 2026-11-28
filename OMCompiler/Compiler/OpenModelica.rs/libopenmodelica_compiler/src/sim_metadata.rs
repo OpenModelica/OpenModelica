@@ -456,7 +456,7 @@ pub static NLS_DESC: CStrTable<7> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static OMC_LOG_STREAM_NAME: CStrTable<57> = CStrTable([
+pub static OMC_LOG_STREAM_NAME: CStrTable<58> = CStrTable([
     c"LOG_UNKNOWN".as_ptr(),
     c"LOG_STDOUT".as_ptr(),
     c"LOG_ASSERT".as_ptr(),
@@ -514,10 +514,11 @@ pub static OMC_LOG_STREAM_NAME: CStrTable<57> = CStrTable([
     c"LOG_SUCCESS".as_ptr(),
     c"LOG_SYNCHRONOUS".as_ptr(),
     c"LOG_ZEROCROSSINGS".as_ptr(),
+    c"LOG_EBDD".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]
-pub static OMC_LOG_STREAM_DESC: CStrTable<57> = CStrTable([
+pub static OMC_LOG_STREAM_DESC: CStrTable<58> = CStrTable([
     c"unknown".as_ptr(),
     c"this stream is always active, can be disabled with -lv=-LOG_STDOUT".as_ptr(),
     c"this stream is always active, can be disabled with -lv=-LOG_ASSERT".as_ptr(),
@@ -575,6 +576,7 @@ pub static OMC_LOG_STREAM_DESC: CStrTable<57> = CStrTable([
     c"this stream is always active, unless deactivated with -lv=-LOG_SUCCESS".as_ptr(),
     c"log clocks and sub-clocks for synchronous features".as_ptr(),
     c"additional information about the zerocrossings".as_ptr(),
+    c"export equation-based declarative debugger runtime info to <model>_dbg.json".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]

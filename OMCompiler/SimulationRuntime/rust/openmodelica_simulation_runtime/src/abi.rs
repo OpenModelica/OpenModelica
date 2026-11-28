@@ -1059,7 +1059,7 @@ pub const NLS_LS_MAX: c_int = 5;
 pub const NEWTON_MAX: c_int = 6;
 pub const JAC_MAX: c_int = 8;
 pub const IDA_LS_MAX: c_int = 6;
-pub const OMC_SIM_LOG_MAX: c_int = 57;
+pub const OMC_SIM_LOG_MAX: c_int = 58;
 
 /// `omc_alloc_interface_t` (gc/omc_gc.h): the allocator libOpenModelicaRuntimeC
 /// builds Strings with. Arrays that hold `modelica_string`s must come from its
