@@ -1725,7 +1725,9 @@ public
         Expression ret, arg;
         Call call;
         Option<Function> func_opt, der_func_opt;
-        Function func, der_func;
+        Function func, der_func, fit_func;
+        Option<Expression> der_arg_opt;
+        list<String> zero_inputs = {};
         list<Expression> arguments = {};
         list<tuple<Expression, InstNode>> arguments_inputs;
         InstNode inp;
@@ -1788,6 +1790,16 @@ public
             isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg))) or Type.isRecord(Type.arrayElementType(Expression.typeOf(arg)));
             isFunc    := InstNode.isFunction(inp);
             isSkipped := Util.applyOptionOrDefault(func.interfaceDiffInfo, function UnorderedSet.contains(key = inp), false);
+            // an input that an earlier derivative differentiated has the derivative input $fDER_x.
+            // That is its derivative if the call passes the derivative of arg to it, else it is zero.
+            der_arg_opt := if isSkipped and isReal then derivativeInputArgument(inp, arguments_inputs) else NONE();
+            if isSome(der_arg_opt) then
+              if isDerivativeOf(Util.getOption(der_arg_opt), arg, diffArguments) then
+                isSkipped := false;
+              else
+                zero_inputs := InstNode.name(inp) :: zero_inputs;
+              end if;
+            end if;
             if isSkipped or not (isFunc or (isCont and isReal)) then
               // add to map; if it is not Real also already set to true (always removed from interface)
               UnorderedMap.add(InstNode.name(inp), not (isFunc or isReal), interface_map);
@@ -1795,7 +1807,12 @@ public
           end for;
 
           // try to get a fitting function from derivatives -> if none is found, differentiate
-          der_func_opt := Function.getDerivative(func, interface_map);
+          fit_func := func;
+          if not listEmpty(zero_inputs) then
+            // a derivative that uses $fDER_x as the derivative of x does not fit a zero derivative of x
+            fit_func.derivatives := List.filterOnTrue(func.derivatives, function hasZeroDerivatives(names = zero_inputs));
+          end if;
+          der_func_opt := Function.getDerivative(fit_func, interface_map);
           if isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
             der_func := addDiffInfo(func, der_func, diffArguments);
@@ -2721,6 +2738,12 @@ public
   protected
     UnorderedSet<InstNode> diffInfo;
   algorithm
+    // a generated derivative is in the function tree with its derivatives
+    der_func := UnorderedMap.getOrDefault(der_func.path, diffArguments.funcMap, der_func);
+    if isSome(der_func.interfaceDiffInfo) then
+      return;
+    end if;
+
     // use the previous differentiation info and extend upon it
     diffInfo := match func.interfaceDiffInfo
       case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
@@ -2805,7 +2828,7 @@ public
             new_cls.elements := ClassTree.appendComponentsToFlatTree(locals, new_cls.elements);
 
             // differentiate slots
-            (slots, funcDiffArgs) := createSlotDerivatives(der_func.slots, interface_map, diff_map, funcDiffArgs);
+            (slots, funcDiffArgs) := createSlotDerivatives(der_func.slots, interface_map, der_func.interfaceDiffInfo, diff_map, funcDiffArgs);
             der_func.slots        := listAppend(der_func.slots, slots);
 
             // create "fake" function with correct interface to have the interface
@@ -2985,6 +3008,70 @@ public
       d_node := ComponentRef.node(diff_cref);
   end differentiateFunctionInterfaceNode;
 
+  function derivativeInputArgument
+    "Returns the argument of the derivative input $fDER_x of an input x that
+    an earlier derivative already differentiated."
+    input InstNode inp;
+    input list<tuple<Expression, InstNode>> arguments_inputs;
+    output Option<Expression> der_arg = NONE();
+  protected
+    String der_name = BackendUtil.makeFDerString(InstNode.name(inp));
+    Expression arg;
+    InstNode der_inp;
+  algorithm
+    for tpl in arguments_inputs loop
+      (arg, der_inp) := tpl;
+      if InstNode.name(der_inp) == der_name then
+        der_arg := SOME(arg);
+        return;
+      end if;
+    end for;
+  end derivativeInputArgument;
+
+  function isDerivativeOf
+    "Returns true if der_arg is the derivative of arg."
+    input Expression der_arg;
+    input Expression arg;
+    input DifferentiationArguments diffArguments;
+    output Boolean b;
+  protected
+    Expression diff_arg;
+  algorithm
+    b := match diffArguments.diffType
+      // the arguments of a call made by time differentiation are x and der(x)
+      case DifferentiationType.TIME then true;
+      case DifferentiationType.FUNCTION algorithm
+        (diff_arg, _) := differentiateExpression(arg, diffArguments);
+      then Expression.isEqual(SimplifyExp.simplify(diff_arg), SimplifyExp.simplify(der_arg));
+      else false;
+    end match;
+  end isDerivativeOf;
+
+  function hasZeroDerivatives
+    "Returns true if fnDer has a zero derivative condition for each name."
+    input FunctionDerivative fnDer;
+    input list<String> names;
+    output Boolean b = true;
+  protected
+    String name;
+    NFFunctionDerivative.Condition cond;
+    Boolean found;
+  algorithm
+    for n in names loop
+      found := false;
+      for condition in fnDer.conditions loop
+        (_, name, cond) := condition;
+        if name == n and cond == NFFunctionDerivative.Condition.ZERO_DERIVATIVE then
+          found := true;
+        end if;
+      end for;
+      if not found then
+        b := false;
+        return;
+      end if;
+    end for;
+  end hasZeroDerivatives;
+
   function createInterfaceDerivatives
     input list<InstNode> interface_nodes;
     input UnorderedMap<String, Boolean> interface_map;
@@ -3020,6 +3107,7 @@ public
     input list<Slot> slots;
     output list<Slot> new_slots = {};
     input UnorderedMap<String, Boolean> interface_map;
+    input Option<UnorderedSet<InstNode>> diffInfo "inputs that already have a derivative input";
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
     input output DifferentiationArguments diffArgs;
   protected
@@ -3027,7 +3115,8 @@ public
     Integer local_index = listLength(slots) + 1;
   algorithm
     for slot in slots loop
-      if not  UnorderedMap.contains(InstNode.name(slot.node), interface_map) then
+      if not (UnorderedMap.contains(InstNode.name(slot.node), interface_map)
+          or Util.applyOptionOrDefault(diffInfo, function UnorderedSet.contains(key = slot.node), false)) then
         (d_node, diffArgs) := differentiateFunctionInterfaceNode(slot.node, diff_map, diffArgs);
         slot.node := d_node;
         slot.index := local_index;
