@@ -2695,14 +2695,14 @@ public
         ret2 := Expression.negate(exp2);                                      // -div(arg1, arg2)
       then (Expression.REAL(1), ret2);
 
-      // d/darg1 atan2(arg1, arg2) -> -arg2/(arg1^2+arg2^2)
-      // d/darg2 atan2(arg1, arg2) ->  arg1/(arg1^2+arg2^2)
+      // d/darg1 atan2(arg1, arg2) ->  arg2/(arg1^2+arg2^2)
+      // d/darg2 atan2(arg1, arg2) -> -arg1/(arg1^2+arg2^2)
       case "atan2" algorithm
         exp1 := Expression.BINARY(arg1, powOp, Expression.REAL(2.0));         // arg1^2
         exp2 := Expression.BINARY(arg2, powOp, Expression.REAL(2.0));         // arg2^2
         exp1 := Expression.MULTARY({exp1, exp2}, {}, addOp);                  // arg1^2+arg2^2
-        ret1 := Expression.MULTARY({Expression.negate(arg2)}, {exp1}, mulOp); // -arg2/(arg1^2+arg2^2)
-        ret2 := Expression.MULTARY({arg1}, {exp1}, mulOp);                    //  arg1/(arg1^2+arg2^2)
+        ret1 := Expression.MULTARY({arg2}, {exp1}, mulOp);                    //  arg2/(arg1^2+arg2^2)
+        ret2 := Expression.MULTARY({Expression.negate(arg1)}, {exp1}, mulOp); // -arg1/(arg1^2+arg2^2)
       then (ret1, ret2);
 
       else algorithm

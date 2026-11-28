@@ -8,6 +8,7 @@ adjoint_jacobian4.mos \
 adjoint_jacobian5.mos \
 symbolicJacobianEvaluation.mos \
 allTheBuildins.mos \
+atan2Derivative.mos \
 diff_subs.mos \
 arrayDiff.mos \
 powerArrayJacobian.mos \
