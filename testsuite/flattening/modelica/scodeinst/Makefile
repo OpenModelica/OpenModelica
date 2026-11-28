@@ -166,6 +166,8 @@ CevalFuncArray4.mo \
 CevalFuncArray5.mo \
 CevalFuncArray6.mo \
 CevalFuncArray7.mo \
+CevalFuncArraySize1.mo \
+CevalFuncArraySize2.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \

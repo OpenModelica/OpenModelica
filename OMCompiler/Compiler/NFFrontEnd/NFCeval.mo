@@ -1004,6 +1004,10 @@ function evalBinaryOp_dispatch
   input EvalTarget target = noTarget;
   output Expression exp;
 algorithm
+  if Expression.isArray(exp1) and Expression.isArray(exp2) then
+    checkOperandSizes(exp1, op, exp2, target);
+  end if;
+
   exp := match op.op
     case Op.ADD then evalBinaryAdd(exp1, exp2);
     case Op.SUB then evalBinarySub(exp1, exp2);
@@ -1038,6 +1042,33 @@ algorithm
         fail();
   end match;
 end evalBinaryOp_dispatch;
+
+function checkOperandSizes
+  "Fails with an error if the array operands of an element-wise operation or a
+   scalar product have the same number of dimensions but different sizes."
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  input EvalTarget target;
+protected
+  NFOperator.SizeClassification size_class;
+  Type ty1, ty2;
+  list<Dimension> dims1, dims2;
+algorithm
+  (_, size_class) := Operator.classify(op);
+
+  if size_class == NFOperator.SizeClassification.SCALAR or
+     size_class == NFOperator.SizeClassification.ELEMENT_WISE then
+    ty1 := Expression.typeOf(exp1);
+    ty2 := Expression.typeOf(exp2);
+    dims1 := Type.arrayDims(ty1);
+    dims2 := Type.arrayDims(ty2);
+
+    if listLength(dims1) == listLength(dims2) and not List.isEqualOnTrue(dims1, dims2, Dimension.isEqual) then
+      TypeCheck.printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {ty1, ty2}, EvalTarget.getInfo(target));
+    end if;
+  end if;
+end checkOperandSizes;
 
 function evalBinaryAdd
   input Expression exp1;
