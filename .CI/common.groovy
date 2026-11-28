@@ -1211,15 +1211,16 @@ void macUniversalTree(String out) {
 }
 
 // build.openmodelica.org/omc/rust/latest/, under the artifact's own name
-// (tagName() is `latest` on master). `rust-builds` is the publisher config
-// rooted at omc/rust/.
+// (tagName() is `latest` on master and on pull requests), or pr-testing/ for a
+// pull request. `rust-builds` is the publisher config rooted at omc/rust/.
 void uploadRustNightly(String archive) {
-  if (env.BRANCH_NAME != 'master') {
-    echo "${env.BRANCH_NAME} is not master: not publishing ${archive}"
+  String dir = env.BRANCH_NAME == 'master' ? 'latest' : isPR() ? 'pr-testing' : null
+  if (!dir) {
+    echo "${env.BRANCH_NAME} is not master or a pull request: not publishing ${archive}"
     return
   }
   sshPublisher(publishers: [sshPublisherDesc(configName: 'rust-builds',
-    transfers: [sshTransfer(sourceFiles: archive, remoteDirectory: 'latest')])])
+    transfers: [sshTransfer(sourceFiles: archive, remoteDirectory: dir)])])
 }
 
 // One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
