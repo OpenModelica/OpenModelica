@@ -168,7 +168,7 @@ public
     This should be applied before partitioning. Otherwise all systems have to be checked for jacobians
     and hessians on which this also has to be applied. Can be applied on single jacobians and hessians
     while removing simple equations on them."
-    input EqData eqData;
+    input EquationPointers equations;
     input VarData varData; // bindings
     input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
     output list<Pointer<Equation>> changed = {} "the changed equations";
@@ -180,7 +180,7 @@ public
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    (_, changed) := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
+    (_, changed) := EquationPointers.mapExp(equations, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
 
     // apply on bindings (is this necessary?)
     () := match varData

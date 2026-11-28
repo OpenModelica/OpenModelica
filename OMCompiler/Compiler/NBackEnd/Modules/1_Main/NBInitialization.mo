@@ -71,9 +71,9 @@ protected
   import Jacobian = NBJacobian;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
-  import Replacements = NBReplacements;
   import BPartition = NBPartition;
   import NBPartition.Partition;
+  import Replacements = NBReplacements;
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
 
@@ -178,12 +178,12 @@ public
 
       // Modules
       modules := {
-        (function BackendDAE.simplify(init = true), "Simplify"),
+        (function BackendDAE.simplify(init = true),               "Simplify"),
         (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}, init = true), "Inline"),
-        (function Partitioning.main(kind = NBPartition.Kind.INI),  "Partitioning"),
-        (cleanup,                                                  "Cleanup"),
-        (function Causalize.main(kind = NBPartition.Kind.INI),     "Causalize"),
-        (function Tearing.main(kind = NBPartition.Kind.INI),       "Tearing")
+        (function Partitioning.main(kind = NBPartition.Kind.INI), "Partitioning"),
+        (cleanup,                                                 "Cleanup"),
+        (function Causalize.main(kind = NBPartition.Kind.INI),    "Causalize"),
+        (function Tearing.main(kind = NBPartition.Kind.INI),      "Tearing")
       };
       (bdae, clocks) := BackendDAE.applyModules(bdae, modules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_INITIALIZATION);
 
