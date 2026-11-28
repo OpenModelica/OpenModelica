@@ -12,6 +12,11 @@ install(FILES
 
 if(OM_ENABLE_DOCS)
   omc_add_subdirectory(UsersGuide)
+elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/UsersGuide/prebuilt)
+  # A source tarball carries the guide built.
+  install(DIRECTORY UsersGuide/prebuilt/
+          DESTINATION ${CMAKE_INSTALL_DOCDIR}/UsersGuide
+          COMPONENT doc)
 endif()
 
 ## Man pages ##########################################################################################

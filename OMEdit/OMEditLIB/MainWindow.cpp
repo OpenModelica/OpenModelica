@@ -4000,7 +4000,11 @@ void MainWindow::openUsersGuide()
  */
 void MainWindow::openUsersGuidePdf()
 {
-  QUrl usersGuidePath(QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide-latest.pdf").arg(Helper::OpenModelicaHome));
+  QString pdf = QString("%1/share/doc/OpenModelica/UsersGuide/OpenModelicaUsersGuide.pdf").arg(Helper::OpenModelicaHome);
+  if (!QFile::exists(pdf)) {
+    pdf = QString("%1/share/doc/omc/OpenModelicaUsersGuide-latest.pdf").arg(Helper::OpenModelicaHome);
+  }
+  QUrl usersGuidePath = QUrl::fromLocalFile(pdf);
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
                                                           Helper::scriptingKind, Helper::errorLevel));
