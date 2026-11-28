@@ -1,0 +1,47 @@
+// name: sumConstraints
+// keywords: NewBackend, index reduction
+// status: correct
+// The constraints -b = sum(a) and b = sum(c) can only be matched to elements of a and c.
+
+loadString("
+model sumConstraints
+  Real a[2], c[3], b, r[2], q[3];
+equation
+  der(a) = r;
+  der(c) = q;
+  -b = sum(a);
+  b = sum(c);
+  der(b) = -b + sin(time);
+  r[1] = 2*r[2];
+  q[1] = 2*q[2];
+  q[2] = 3*q[3];
+initial equation
+  b = 1;
+  a[1] = 1;
+  c[1] = 1;
+  c[2] = 2;
+end sumConstraints;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(sumConstraints); getErrorString();
+val(a[1], 1.0); val(a[2], 1.0); val(c[3], 1.0); val(b, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "sumConstraints_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'sumConstraints', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.1983939074399674
+// -1.9008030462800178
+// -2.029759086115994
+// 0.7024091388400504
+// endResult

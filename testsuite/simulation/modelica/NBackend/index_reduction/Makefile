@@ -16,6 +16,7 @@ partialStateOrder.mos\
 stateOrderPartner.mos\
 affineStateOrder.mos\
 partialStateOrderPartner.mos\
+sumConstraints.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
