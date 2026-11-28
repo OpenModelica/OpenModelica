@@ -468,6 +468,11 @@ public
     output list<Pointer<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
   end getResidualEqns;
 
+  function getInnerEquations
+    input Tearing tearing;
+    output array<StrongComponent> innerEquations = tearing.innerEquations;
+  end getInnerEquations;
+
   function setResidualEqns
     input output Tearing tearing;
     input list<Slice<EquationPointer>> residuals;

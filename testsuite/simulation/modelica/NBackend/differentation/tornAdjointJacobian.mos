@@ -1,0 +1,59 @@
+// name: tornAdjointJacobian
+// keywords: NewBackend, differentiation, jacobian, adjoint, tearing
+// status: correct
+// teardown_command: rm -f tornAdjointJacobian_*_jac.log tornAdjointJacobian_check.log
+
+loadString("
+model NBTornAdjointChain
+  Real x(start=1, fixed=true);
+  Real y(start=0) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real z(start=1) annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+  Real w(start=2) annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+  Real v(start=3) annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+equation
+  z = x + 2*y;
+  w = z*z + x;
+  v = w - z*x;
+  y + v + x*y = 3;
+  der(x) = y + 2*z + 3*w + v - 0.1*x;
+end NBTornAdjointChain;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional --tearingMethod=guruTearing"); getErrorString();
+buildModel(NBTornAdjointChain, stopTime=0.01); getErrorString();
+
+// LOG_JAC compares each DASSL Jacobian with an uncolored finite-difference Jacobian.
+echo(false);
+fwd := simulate(NBTornAdjointChain, stopTime=0.01, simflags="-s=dassl -jacobian=coloredSymbolical -lv=LOG_JAC", resimulateExecutable="NBTornAdjointChain");
+adj := simulate(NBTornAdjointChain, stopTime=0.01, simflags="-s=dassl -jacobian=coloredSymbolicalAdjoint -lv=LOG_JAC", resimulateExecutable="NBTornAdjointChain");
+fwdMessages := fwd.messages;
+adjMessages := adj.messages;
+fwdFile := fwd.resultFile;
+adjFile := adj.resultFile;
+writeFile("tornAdjointJacobian_fwd_jac.log", fwdMessages);
+writeFile("tornAdjointJacobian_adj_jac.log", adjMessages);
+writeFile("tornAdjointJacobian_check.log", "");
+echo(true);
+
+fwdFile <> "" and adjFile <> "";
+getErrorString();
+regexBool(fwdMessages, "Using Jacobian method: coloredSymbolical\\.");
+regexBool(adjMessages, "Using Jacobian method: coloredSymbolicalAdjoint\\.");
+system("awk '/J\\(row=/ { entries[FILENAME]++; if (tolower($0) ~ /= [-+]?(nan|inf)/) bad=1 } /Max absolute difference:/ { sub(/^.*difference: /, \"\"); split($0, a); n[FILENAME]++; if (a[1] !~ /^[0-9.]+([eE][-+]?[0-9]+)?$/ || a[1]+0 > 1e-4) bad=1 } END { for (i=1; i<ARGC; i++) if (!n[ARGV[i]] || !entries[ARGV[i]]) bad=1; print (bad ? \"false\" : \"true\") }' tornAdjointJacobian_fwd_jac.log tornAdjointJacobian_adj_jac.log", "tornAdjointJacobian_check.log");
+regexBool(readFile("tornAdjointJacobian_check.log"), "^true");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"NBTornAdjointChain", "NBTornAdjointChain_init.xml"}
+// ""
+// true
+// true
+// ""
+// true
+// true
+// 0
+// true
+// endResult

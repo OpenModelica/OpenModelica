@@ -1,0 +1,159 @@
+// name: adjoint_jacobian4_evaluation
+// keywords: NewBackend, differentiation, jacobian, adjoint
+// status: correct
+
+loadString("
+model AdjointJacobian4Evaluation
+  parameter Integer N = 3;
+  parameter Real v0 = 1;
+  Real v(start=v0, fixed=true), w, y, z, a, b, c;
+  Real x[N](each start=1, each fixed=true);
+equation
+  if v > 1.5 then
+    w = v^2;
+  else
+    w = 0.5;
+  end if;
+  y + 3*z + cos(time) = 0;
+  z + y/4 + v = 0;
+  der(v) = y - 0.1*v + w + c;
+  der(x[1]) = 1.0;
+  for i in 2:N loop
+    der(x[i]) = i*x[i-1];
+  end for;
+algorithm
+  a := v*2.0;
+  b := y + z;
+  c := x[N] + a;
+end AdjointJacobian4Evaluation;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
+buildModel(AdjointJacobian4Evaluation, stopTime=1e-5, numberOfIntervals=1, tolerance=1e-6); getErrorString();
+
+// Print the analytical Jacobian and its numerical comparison for both branches.
+simulate(AdjointJacobian4Evaluation, simflags="-s=dassl -jacobian=coloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=1", resimulateExecutable="AdjointJacobian4Evaluation");
+simulate(AdjointJacobian4Evaluation, simflags="-s=dassl -jacobian=coloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=2", resimulateExecutable="AdjointJacobian4Evaluation");
+simulate(AdjointJacobian4Evaluation, simflags="-s=dassl -jacobian=coloredSymbolicalAdjoint -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=1", resimulateExecutable="AdjointJacobian4Evaluation");
+simulate(AdjointJacobian4Evaluation, simflags="-s=dassl -jacobian=coloredSymbolicalAdjoint -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=2", resimulateExecutable="AdjointJacobian4Evaluation");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"AdjointJacobian4Evaluation", "AdjointJacobian4Evaluation_init.xml"}
+// ""
+// record SimulationResult
+//     resultFile = "AdjointJacobian4Evaluation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AdjointJacobian4Evaluation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=1'",
+//     messages = "LOG_JAC           | info    | Using Jacobian method: coloredSymbolical.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
+// |                 | |       | | J(row=0:'v', col=0:'v') = -99986.09999999999 [flat=0]
+// |                 | |       | | J(row=1:'x[1]', col=0:'v') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[2]', col=0:'v') = 0 [flat=2]
+// |                 | |       | | J(row=3:'x[3]', col=0:'v') = 0 [flat=3]
+// |                 | |       | | J(row=0:'v', col=1:'x[1]') = 0 [flat=4]
+// |                 | |       | | J(row=1:'x[1]', col=1:'x[1]') = -99999.99999999999 [flat=5]
+// |                 | |       | | J(row=2:'x[2]', col=1:'x[1]') = 2 [flat=6]
+// |                 | |       | | J(row=3:'x[3]', col=1:'x[1]') = 0 [flat=7]
+// |                 | |       | | J(row=0:'v', col=2:'x[2]') = 0 [flat=8]
+// |                 | |       | | J(row=1:'x[1]', col=2:'x[2]') = 0 [flat=9]
+// |                 | |       | | J(row=2:'x[2]', col=2:'x[2]') = -99999.99999999999 [flat=10]
+// |                 | |       | | J(row=3:'x[3]', col=2:'x[2]') = 3 [flat=11]
+// |                 | |       | | J(row=0:'v', col=3:'x[3]') = 1 [flat=12]
+// |                 | |       | | J(row=1:'x[1]', col=3:'x[3]') = 0 [flat=13]
+// |                 | |       | | J(row=2:'x[2]', col=3:'x[3]') = 0 [flat=14]
+// |                 | |       | | J(row=3:'x[3]', col=3:'x[3]') = -99999.99999999999 [flat=15]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 4.47021e-08 at (row=0:'v', col=3:'x[3]')
+// |                 | |       | | Max relative difference: 4.47021e-08 at (row=0:'v', col=3:'x[3]')
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// record SimulationResult
+//     resultFile = "AdjointJacobian4Evaluation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AdjointJacobian4Evaluation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolical -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=2'",
+//     messages = "LOG_JAC           | info    | Using Jacobian method: coloredSymbolical.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
+// |                 | |       | | J(row=0:'v', col=0:'v') = -99982.09942399999 [flat=0]
+// |                 | |       | | J(row=1:'x[1]', col=0:'v') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[2]', col=0:'v') = 0 [flat=2]
+// |                 | |       | | J(row=3:'x[3]', col=0:'v') = 0 [flat=3]
+// |                 | |       | | J(row=0:'v', col=1:'x[1]') = 0 [flat=4]
+// |                 | |       | | J(row=1:'x[1]', col=1:'x[1]') = -99999.99999999999 [flat=5]
+// |                 | |       | | J(row=2:'x[2]', col=1:'x[1]') = 2 [flat=6]
+// |                 | |       | | J(row=3:'x[3]', col=1:'x[1]') = 0 [flat=7]
+// |                 | |       | | J(row=0:'v', col=2:'x[2]') = 0 [flat=8]
+// |                 | |       | | J(row=1:'x[1]', col=2:'x[2]') = 0 [flat=9]
+// |                 | |       | | J(row=2:'x[2]', col=2:'x[2]') = -99999.99999999999 [flat=10]
+// |                 | |       | | J(row=3:'x[3]', col=2:'x[2]') = 3 [flat=11]
+// |                 | |       | | J(row=0:'v', col=3:'x[3]') = 1 [flat=12]
+// |                 | |       | | J(row=1:'x[1]', col=3:'x[3]') = 0 [flat=13]
+// |                 | |       | | J(row=2:'x[2]', col=3:'x[3]') = 0 [flat=14]
+// |                 | |       | | J(row=3:'x[3]', col=3:'x[3]') = -99999.99999999999 [flat=15]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 1.27053e-07 at (row=0:'v', col=0:'v')
+// |                 | |       | | Max relative difference: 4.47021e-08 at (row=0:'v', col=3:'x[3]')
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// record SimulationResult
+//     resultFile = "AdjointJacobian4Evaluation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AdjointJacobian4Evaluation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolicalAdjoint -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=1'",
+//     messages = "LOG_JAC           | info    | Using Jacobian method: coloredSymbolicalAdjoint.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
+// |                 | |       | | J(row=0:'v', col=0:'v') = -100002.1 [flat=0]
+// |                 | |       | | J(row=1:'x[1]', col=0:'v') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[2]', col=0:'v') = 0 [flat=2]
+// |                 | |       | | J(row=3:'x[3]', col=0:'v') = 0 [flat=3]
+// |                 | |       | | J(row=0:'v', col=1:'x[1]') = 0 [flat=4]
+// |                 | |       | | J(row=1:'x[1]', col=1:'x[1]') = -99999.99999999999 [flat=5]
+// |                 | |       | | J(row=2:'x[2]', col=1:'x[1]') = 2 [flat=6]
+// |                 | |       | | J(row=3:'x[3]', col=1:'x[1]') = 0 [flat=7]
+// |                 | |       | | J(row=0:'v', col=2:'x[2]') = 0 [flat=8]
+// |                 | |       | | J(row=1:'x[1]', col=2:'x[2]') = 0 [flat=9]
+// |                 | |       | | J(row=2:'x[2]', col=2:'x[2]') = -99999.99999999999 [flat=10]
+// |                 | |       | | J(row=3:'x[3]', col=2:'x[2]') = 3 [flat=11]
+// |                 | |       | | J(row=0:'v', col=3:'x[3]') = 1 [flat=12]
+// |                 | |       | | J(row=1:'x[1]', col=3:'x[3]') = 0 [flat=13]
+// |                 | |       | | J(row=2:'x[2]', col=3:'x[3]') = 0 [flat=14]
+// |                 | |       | | J(row=3:'x[3]', col=3:'x[3]') = -99999.99999999999 [flat=15]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 16 at (row=0:'v', col=0:'v')
+// |                 | |       | | Max relative difference: 0.000160022 at (row=0:'v', col=0:'v')
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// record SimulationResult
+//     resultFile = "AdjointJacobian4Evaluation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'AdjointJacobian4Evaluation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolicalAdjoint -initialStepSize=1e-5 -lv=LOG_JAC -override=v0=2'",
+//     messages = "LOG_JAC           | info    | Using Jacobian method: coloredSymbolicalAdjoint.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-05
+// |                 | |       | | J(row=0:'v', col=0:'v') = -99998.09942399999 [flat=0]
+// |                 | |       | | J(row=1:'x[1]', col=0:'v') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[2]', col=0:'v') = 0 [flat=2]
+// |                 | |       | | J(row=3:'x[3]', col=0:'v') = 0 [flat=3]
+// |                 | |       | | J(row=0:'v', col=1:'x[1]') = 0 [flat=4]
+// |                 | |       | | J(row=1:'x[1]', col=1:'x[1]') = -99999.99999999999 [flat=5]
+// |                 | |       | | J(row=2:'x[2]', col=1:'x[1]') = 2 [flat=6]
+// |                 | |       | | J(row=3:'x[3]', col=1:'x[1]') = 0 [flat=7]
+// |                 | |       | | J(row=0:'v', col=2:'x[2]') = 0 [flat=8]
+// |                 | |       | | J(row=1:'x[1]', col=2:'x[2]') = 0 [flat=9]
+// |                 | |       | | J(row=2:'x[2]', col=2:'x[2]') = -99999.99999999999 [flat=10]
+// |                 | |       | | J(row=3:'x[3]', col=2:'x[2]') = 3 [flat=11]
+// |                 | |       | | J(row=0:'v', col=3:'x[3]') = 1 [flat=12]
+// |                 | |       | | J(row=1:'x[1]', col=3:'x[3]') = 0 [flat=13]
+// |                 | |       | | J(row=2:'x[2]', col=3:'x[3]') = 0 [flat=14]
+// |                 | |       | | J(row=3:'x[3]', col=3:'x[3]') = -99999.99999999999 [flat=15]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 16 at (row=0:'v', col=0:'v')
+// |                 | |       | | Max relative difference: 0.000160029 at (row=0:'v', col=0:'v')
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult
