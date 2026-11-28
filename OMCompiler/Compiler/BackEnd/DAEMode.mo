@@ -119,6 +119,10 @@ algorithm
     dae := BackendDAEUtil.causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
     execStat("matching and sorting (n="+String(BackendDAEUtil.daeSize(dae))+")");
 
+    // index reduction is the last step that differentiates delay() calls into
+    // the simulation DAE, give them their indices now
+    dae := BackendDAEUtil.indexDifferentiatedDelays(dae);
+
     if Flags.isSet(Flags.GRAPHML) then
       BackendDump.dumpBipartiteGraphDAE(dae, fileNamePrefix);
     end if;
