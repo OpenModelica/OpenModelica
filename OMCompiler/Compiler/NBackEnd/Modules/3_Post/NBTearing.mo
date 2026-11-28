@@ -353,7 +353,7 @@ public
           row_residual := Equation.forArrayBodyRowResidual(e, i);
           elem_ty      := Type.arrayElementType(Expression.typeOf(row_residual));
         else
-          subs         := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, Equation.sizes(eqn_ptr)));
+          subs         := Slice.indexToSubscripts(i, Equation.sizes(eqn_ptr));
           row_residual := Expression.applySubscripts(subs, residual);
         end if;
         (row_var, row_cref) := BVariable.makeAuxVar(ComponentRef.toString(base_cref), i, elem_ty, false);
@@ -1038,7 +1038,7 @@ protected
           not List.any(Type.arrayDims(body.ty), Dimension.isResizable) algorithm
         sizes := list(Dimension.size(d) for d in Type.arrayDims(body.ty));
         if listEmpty(slice.indices) then
-          locations := list(Slice.indexToLocation(i, sizes) for i in 0:List.fold(sizes, intMul, 1)-1);
+          locations := list(listReverse(Slice.indexToLocation(i, sizes)) for i in 0:List.fold(sizes, intMul, 1)-1);
         else
           locations := bodyElementLocations(eqn, listLength(sizes), slice.indices);
           if listEmpty(locations) then

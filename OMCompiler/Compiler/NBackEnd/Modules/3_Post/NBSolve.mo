@@ -2342,7 +2342,8 @@ protected
 
     if solve_status < Status.IMPLICIT then
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
-      eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+      // an unsolved equation keeps its rows
+      eqn_slice := Slice.SLICE(Pointer.create(eqn), if solve_status == Status.EXPLICIT then {} else eqn_slice.indices);
     elseif solve_status == Status.IMPLICIT then
       // var_cref is a parent array containing cref as a slice; expand array sums to enable explicit solving
       eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = var_cref));

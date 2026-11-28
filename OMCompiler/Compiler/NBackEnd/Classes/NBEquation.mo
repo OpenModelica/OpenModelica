@@ -1419,7 +1419,7 @@ public
       list<Subscript> subs;
       Type ty;
     algorithm
-      subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(index, Equation.sizes(eqn_ptr)));
+      subs := Slice.indexToSubscripts(index, Equation.sizes(eqn_ptr));
       ty := Type.arrayElementType(Equation.getType(eqn));
       row := Equation.SCALAR_EQUATION(ty, rowElement(Util.getOption(Equation.getLHS(eqn)), subs),
         rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
