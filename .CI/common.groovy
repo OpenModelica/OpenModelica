@@ -1080,7 +1080,8 @@ void buildRustNightlyGUI(String name) {
 
 // Stage 4, Windows. Two distributions off the same install tree: the CLI one is
 // the omc stages' tree alone, the full one is that tree with the GUI stages'
-// files unstashed on top, so the CLI zip has to be made before they are.
+// files unstashed on top, so the CLI zip has to be made before they are. The
+// full one ships as a zip and as an installer (.CI/installer).
 void packageRustNightlyWindows(List omcStashes, List guiStashes) {
   standardSetup()
   for (s in omcStashes) {
@@ -1094,6 +1095,10 @@ void packageRustNightlyWindows(List omcStashes, List guiStashes) {
     unstash s
   }
   zipRustNightlyWindows("OpenModelica-${tagName()}-x86_64-windows.zip")
+  String exe = "OpenModelica-${tagName()}-x86_64-windows.exe"
+  sh ".CI/scripts/windows-installer.sh ${nightlyInstallDir('win64')} ${exe}"
+  sh ".CI/scripts/windows-installer-check.sh ${exe}"
+  uploadRustNightly(exe)
 }
 
 void zipRustNightlyWindows(String zip) {

@@ -23,8 +23,9 @@
 //                          stages needing a cross Qt kit, so each runs on its
 //                          target's build-deps:*-rust-qt-* image rather than
 //                          the plain -rust one.
-//   4. 'package'           the Windows zip, the Linux tar.gz, and `lipo` over
-//                          the two macOS trees into one universal distribution.
+//   4. 'package'           the Windows zip and installer, the Linux tar.gz, and
+//                          `lipo` over the two macOS trees into one universal
+//                          distribution.
 //                          The command-line tools ship on their own as
 //                          OpenModelica-CLI-* whether or not the GUI clients
 //                          were built. The linux64 tarballs are uploaded by
@@ -342,7 +343,7 @@ pipeline {
 
     stage('package') {
       parallel {
-        stage('windows zip') {
+        stage('windows') {
           agent {
             docker {
               alwaysPull true
