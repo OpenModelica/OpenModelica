@@ -584,6 +584,7 @@ public
           true;
 
       case SCode.NOMOD() then true;
+      case SCode.REDECL(eachPrefix = SCode.Each.NOT_EACH()) then true;
       else false;
     end match;
   end isMergeableMod;
@@ -680,6 +681,10 @@ public
           end if;
         then
           stringAppendList(strl);
+
+      // Redeclares are only merged if they're identical.
+      case SCode.Mod.REDECL()
+        then name + "(" + SCodeDump.finalStr(mod.finalPrefix) + SCodeDump.unparseElementStr(mod.element) + ")";
 
       else "";
     end match;
@@ -837,6 +842,12 @@ public
         then
           ();
 
+      case SCode.Mod.REDECL()
+        algorithm
+          mod.eachPrefix := SCode.Each.EACH();
+        then
+          ();
+
       else ();
     end match;
   end mergeMods2;
@@ -889,6 +900,8 @@ public
   function mergeScalarsElement
     input output SCode.Element element;
     input MergeNameMap nameMap;
+  protected
+    SCode.ClassDef cdef;
   algorithm
     () := match element
       case SCode.Element.EXTENDS()
@@ -900,6 +913,13 @@ public
       case SCode.Element.COMPONENT()
         algorithm
           element.modifications := mergeScalarsMod(element.modifications, nameMap);
+        then
+          ();
+
+      case SCode.Element.CLASS(classDef = cdef as SCode.ClassDef.DERIVED())
+        algorithm
+          cdef.modifications := mergeScalarsMod(cdef.modifications, nameMap);
+          element.classDef := cdef;
         then
           ();
 
@@ -943,6 +963,12 @@ public
         algorithm
           mod.binding := Util.applyOption(mod.binding, function mergeScalarsExps(nameMap = nameMap));
           mod.subModLst := list(mergeScalarsSubMod(m, nameMap) for m in mod.subModLst);
+        then
+          ();
+
+      case SCode.Mod.REDECL()
+        algorithm
+          mod.element := mergeScalarsElement(mod.element, nameMap);
         then
           ();
 
