@@ -1,0 +1,80 @@
+// name:     fmi_import_terminate
+// keywords: FMI 2.0 3.0 import terminateSimulation terminate
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml terminalsAndIcons resources ImportTerminate* output.log
+//
+// The FMU calls terminate() at time 0.5 and returns terminateSimulation = true.
+// The imported model must stop there too. Before, the import ignored the flag
+// and the simulation ran to the stop time 1.0.
+//
+
+loadString("
+model ImportTerminate
+  Real x(start = 0, fixed = true);
+  output Real y;
+equation
+  der(x) = 1;
+  y = x;
+  when time >= 0.5 then
+    terminate(\"ImportTerminate reached time 0.5\");
+  end when;
+end ImportTerminate;
+"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+
+buildModelFMU(ImportTerminate, version="2.0", fmuType="me", fileNamePrefix="ImportTerminate_2"); getErrorString();
+importFMU("ImportTerminate_2.fmu"); getErrorString();
+loadFile("ImportTerminate_2_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(ImportTerminate_2_me_FMU, stopTime=1.0); clearMessages();
+echo(true);
+res.resultFile;
+// the result ends at time 0.5
+val(y, 0.49);
+val(y, 0.6); getErrorString();
+
+buildModelFMU(ImportTerminate, version="3.0", fmuType="me", fileNamePrefix="ImportTerminate_3"); getErrorString();
+echo(false);
+importFMU("ImportTerminate_3.fmu"); clearMessages();
+echo(true);
+loadFile("ImportTerminate_3_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(ImportTerminate_3_me_FMU, stopTime=1.0); clearMessages();
+echo(true);
+res.resultFile;
+val(y, 0.49);
+val(y, 0.6); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "ImportTerminate_2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "ImportTerminate_2_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// "ImportTerminate_2_me_FMU_res.mat"
+// 0.49
+// NaN
+// "Error: y not defined at time 0.6 (startTime=0, stopTime=0.5000000000000001).
+// "
+// "ImportTerminate_3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// true
+// true
+// ""
+// true
+// "ImportTerminate_3_me_FMU_res.mat"
+// 0.49
+// NaN
+// "Error: y not defined at time 0.6 (startTime=0, stopTime=0.5000000000000001).
+// "
+// endResult

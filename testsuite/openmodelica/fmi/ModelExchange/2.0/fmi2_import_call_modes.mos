@@ -1,0 +1,64 @@
+// name:     fmi2_import_call_modes
+// keywords: FMI 2.0 import call sequence fmi2SetTime fmi2SetContinuousStates Event Mode #9918
+// status:   correct
+// teardown_command: rm -rf binaries sources resources modelDescription.xml CallModes2* output.log
+//
+// The FMU returns fmi2Error for a call that the FMI 2.0 calling sequence does
+// not allow, as the Reference FMUs and FMUs from other tools do (see
+// fmi2_import_call_modes.py). der(x) = -x, x(t0) = 1, and the FMU sets x back
+// to 1 at x = 0.5, that is at t0 + log(2). At each event the FMU needs two
+// calls of fmi2NewDiscreteStates. The start time t0 is 0, 0.5 and
+// -0.2: after the initialization the import must do the event iteration of the
+// FMU, also when the start time is not 0.
+//
+
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_import_call_modes.py \"" + getInstallationDirectoryPath() + "/include/omc/c/fmi\""); getErrorString();
+importFMU("CallModes2.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+loadFile("CallModes2_me_FMU.mo"); getErrorString();
+echo(false);
+res := simulate(CallModes2_me_FMU, startTime=0.0, stopTime=1.2); clearMessages();
+echo(true);
+res.resultFile;
+// y(t0 + 0.5) = exp(-0.5), y(t0 + 1.2) = exp(-(1.2 - log(2)))
+abs(val(y, 0.5) - 0.60653) < 1e-3;
+abs(val(y, 1.2) - 0.60239) < 1e-3;
+// no event at t0 + 0.3, one at t0 + log(2)
+val(nEvents, 0.6);
+val(nEvents, 0.8);
+echo(false);
+res := simulate(CallModes2_me_FMU, startTime=0.5, stopTime=1.7, fileNamePrefix="CallModes2_s1"); clearMessages();
+echo(true);
+res.resultFile;
+abs(val(y, 1.0) - 0.60653) < 1e-3;
+abs(val(y, 1.7) - 0.60239) < 1e-3;
+echo(false);
+res := simulate(CallModes2_me_FMU, startTime=-0.2, stopTime=1.0, fileNamePrefix="CallModes2_s2"); clearMessages();
+echo(true);
+res.resultFile;
+abs(val(y, 0.3) - 0.60653) < 1e-3;
+abs(val(y, 1.0) - 0.60239) < 1e-3;
+// Result:
+// 0
+// ""
+// "CallModes2_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// "CallModes2_me_FMU_res.mat"
+// true
+// true
+// 0.0
+// 1.0
+// true
+// "CallModes2_s1_res.mat"
+// true
+// true
+// true
+// "CallModes2_s2_res.mat"
+// true
+// true
+// endResult

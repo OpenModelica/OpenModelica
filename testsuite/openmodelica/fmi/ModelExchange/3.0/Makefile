@@ -12,6 +12,9 @@ fmi3_import_initial_event.mos \
 fmi3_import_exitinit_assert.mos \
 fmi3_import_boolean.mos \
 fmi3_import_discrete_inputs.mos \
+fmi_import_terminate.mos \
+fmi_import_discrete_input_change.mos \
+fmi_import_starttime.mos \
 fmi3_arrays_approx.mos \
 fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \

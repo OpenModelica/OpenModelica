@@ -3160,11 +3160,12 @@ fmiXStatus internalGetEventIndicators(fmiXComponent c, const char *func, fmiXRea
     /* eval needed equations*/
     /* A violated assert() is held, see updateIfNeeded. */
     holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
+    /* functionODE only: _need_update stays set, so that the next getter also
+       evaluates the algebraic variables, as after internalGetDerivatives. */
     if (comp->_need_update)
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       evalDAEModeContinuous(comp);
-      comp->_need_update = 0;
     }
     releaseAsserts(comp);
     comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
