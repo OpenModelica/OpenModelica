@@ -35,9 +35,15 @@ include(cmake/omc_check_exists.cmake)
 include(cmake/omc_git_revision.cmake)
 
 # Every configure-time download in the tree lands here. Point it outside the
-# build tree to survive a wipe, or in-source to bundle for an offline tarball.
-set(OM_DOWNLOADS_DIR "${CMAKE_BINARY_DIR}/downloads" CACHE PATH
+# build tree to survive a wipe. A source tarball carries them in downloads/.
+if(EXISTS "${CMAKE_SOURCE_DIR}/downloads")
+  set(_om_downloads_default "${CMAKE_SOURCE_DIR}/downloads")
+else()
+  set(_om_downloads_default "${CMAKE_BINARY_DIR}/downloads")
+endif()
+set(OM_DOWNLOADS_DIR "${_om_downloads_default}" CACHE PATH
     "Cache for everything the configure step downloads.")
+include(cmake/omc_cargo_vendor.cmake)
 
 ## Source hygiene targets (bom-error, utf8-error, tab-error, spellcheck, ...).
 include(cmake/omc_source_checks.cmake)

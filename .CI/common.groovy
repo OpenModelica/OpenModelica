@@ -1262,6 +1262,26 @@ void addNightlyUsersGuide(String tree) {
   sh "cp -a ${nightlyUsersGuideDir()}/. ${tree}/"
 }
 
+// Stage 4, the source tarball (.CI/scripts/source-tarball.sh): it builds without
+// network access. A configure of the native build with the GUI clients, into an
+// empty OM_DOWNLOADS_DIR, fetches what such a build downloads; nothing is built.
+void packageRustNightlySource() {
+  standardSetup()
+  String downloads = 'source-downloads'
+  sh """
+    rm -rf ${downloads}
+    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \
+      -DOM_OMC_ENABLE_RUST=ON -DOM_ENABLE_GUI_CLIENTS=ON \
+      -DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/gcc_64 -DOM_DOWNLOADS_DIR=\$PWD/${downloads}
+    rm -rf build_cmake
+  """
+  String doc = 'install/source-doc'
+  addNightlyUsersGuide(doc)
+  String tarball = "OpenModelica-${tagName()}-source.tar.xz"
+  sh ".CI/scripts/source-tarball.sh ${tarball} ${downloads} \$(test -d ${doc} && echo ${doc})"
+  uploadRustNightly(tarball)
+}
+
 // build.openmodelica.org/omc/rust/latest/, under the artifact's own name
 // (tagName() is `latest` on master and on pull requests), or pr-testing/ for a
 // pull request. `rust-builds` is the publisher config rooted at omc/rust/.

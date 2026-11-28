@@ -27,7 +27,8 @@
 //   4. 'package'           the Windows zip and installer, the Linux tar.gz, and
 //                          `lipo` over the two macOS trees into one universal
 //                          distribution. The full distributions carry the
-//                          User's Guide.
+//                          User's Guide. Beside them, a source tarball that
+//                          builds without network access.
 //                          The command-line tools ship on their own as
 //                          OpenModelica-CLI-* whether or not the GUI clients
 //                          were built. The linux64 tarballs are uploaded by
@@ -63,6 +64,7 @@ pipeline {
     booleanParam(name: 'BUILD_LINUX_AARCH64', defaultValue: true, description: 'Build the Linux AArch64 distribution (command-line tools only)')
     booleanParam(name: 'BUILD_GUI_CLIENTS', defaultValue: true, description: 'Build the Qt GUI clients (OMEdit, OMShell, OMNotebook, OMPlot)')
     booleanParam(name: 'BUILD_USERSGUIDE', defaultValue: true, description: "Build the User's Guide with the Linux x86-64 omc (needs BUILD_LINUX)")
+    booleanParam(name: 'BUILD_SOURCE_TARBALL', defaultValue: true, description: 'Make a source tarball with the vendored crates, the configure-time downloads and the User\'s Guide')
     // Read at queue time by the jobGroup option above. A nightly yields to
     // everything a person is waiting for.
     string(name: 'BUILD_PRIORITY', defaultValue: '5',
@@ -468,6 +470,28 @@ pipeline {
               // No GUI stashes: no Qt kit, so only the CLI distribution.
               common.packageRustNightlyLinux('linux-aarch64', ['nightly-omc-linux-aarch64'], [])
             }
+          }
+        }
+        stage('source tarball') {
+          agent {
+            docker {
+              alwaysPull true
+              // The pinned Rust toolchain with rust-src, the wasm toolchain and a
+              // complete host Qt kit: what a configure of the full native build needs.
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_SOURCE_TARBALL }
+          }
+          steps {
+            script { common.checkoutSCM() }
+            script { common.packageRustNightlySource() }
           }
         }
       }
