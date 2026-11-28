@@ -1,0 +1,43 @@
+// name:     fmi2_assert_warning_instances
+// keywords: FMI 2.0 export assert warning instances reset
+// status:   correct
+// teardown_command: rm -rf fmi2_assert_warning_instances*.fmu fmi2_assert_warning_instances*.fmutmp/ fmi2_assert_warning_instances*.log fmi2_assert_warning_instances*_out.txt
+//
+// An assert with AssertionLevel.warning warns once. Each instance of the FMU
+// must warn once, and an instance must warn again after fmi2Reset.
+
+loadString("
+model fmi2_assert_warning_instances
+  function f
+    input Real x;
+    output Real y;
+  algorithm
+    assert(x < 0.5, \"x is above 0.5\", AssertionLevel.warning);
+    y := x;
+  end f;
+  Real x(start = 0, fixed = true);
+  output Real y;
+equation
+  der(x) = 1;
+  y = f(x);
+end fmi2_assert_warning_instances;
+"); getErrorString();
+buildModelFMU(fmi2_assert_warning_instances, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_assert_warning_instances.py fmi2_assert_warning_instances.fmu fmi2_assert_warning_instances_out.txt > fmi2_assert_warning_instances.log 2>&1"); getErrorString();
+readFile("fmi2_assert_warning_instances_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi2_assert_warning_instances.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "a: warning received for a
+// b: warning received for b
+// a again: warning received for none
+// a after fmi2Reset: warning received for a
+// "
+// ""
+// endResult

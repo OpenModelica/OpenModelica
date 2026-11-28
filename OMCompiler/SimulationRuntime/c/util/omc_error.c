@@ -28,6 +28,7 @@
 #include "setjmp.h"
 #include <stdio.h>
 #include "omc_error.h"
+#include <stdlib.h>
 #include <string.h>
 #include "omc_init.h"
 #include "simulation_options.h"
@@ -313,6 +314,87 @@ void omc_assert_function(threadData_t* threadData, FILE_INFO info, const char *m
   fflush(NULL);
   threadData = omc_thread_data(threadData, NULL);
   OMC_ERROR_RAISE();
+}
+
+typedef struct {
+  int n;                /* number of bits */
+  unsigned char *bits;  /* bit i: the warning assert with index i warned */
+} omc_assert_warnings;
+
+static int omc_assert_warning_next_index = 0;
+
+/* The index of the warning assert that owns site, a static int of the generated
+   code. The first call gives it the next free index of the process, kept as
+   index + 1, so that 0 is "no index yet". If two threads give an index at the
+   same time, one index is not used. */
+static int omc_assert_warning_index(int *site)
+{
+#if defined(__GNUC__) || defined(__clang__)
+  int i = __atomic_load_n(site, __ATOMIC_RELAXED);
+  if (i == 0) {
+    int expected = 0;
+    i = __atomic_add_fetch(&omc_assert_warning_next_index, 1, __ATOMIC_RELAXED);
+    if (!__atomic_compare_exchange_n(site, &expected, i, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
+      i = expected;
+    }
+  }
+#else
+  int i = *site;
+  if (i == 0) {
+    i = *site = ++omc_assert_warning_next_index;
+  }
+#endif
+  return i - 1;
+}
+
+int omc_assert_warning_done(threadData_t *threadData, int *site)
+{
+  omc_assert_warnings *w = threadData ? (omc_assert_warnings*) threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] : NULL;
+  int i = omc_assert_warning_index(site);
+  return w && i < w->n && (w->bits[i / 8] >> (i % 8)) & 1;
+}
+
+void omc_assert_warning_set_done(threadData_t *threadData, int *site)
+{
+  omc_assert_warnings *w;
+  int i = omc_assert_warning_index(site);
+  if (!threadData) {
+    return;
+  }
+  w = (omc_assert_warnings*) threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS];
+  if (!w) {
+    w = (omc_assert_warnings*) calloc(1, sizeof(omc_assert_warnings));
+    if (!w) {
+      return;
+    }
+    threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] = w;
+  }
+  if (i >= w->n) {
+    int n = 8 * (i / 8 + 1);
+    unsigned char *bits;
+    if (n < 2 * w->n) {
+      n = 2 * w->n;
+    }
+    bits = (unsigned char*) realloc(w->bits, n / 8);
+    if (!bits) {
+      return;
+    }
+    memset(bits + w->n / 8, 0, (n - w->n) / 8);
+    w->bits = bits;
+    w->n = n;
+  }
+  w->bits[i / 8] |= (unsigned char) (1 << (i % 8));
+}
+
+void omc_assert_warnings_free(threadData_t *threadData)
+{
+  omc_assert_warnings *w = threadData ? (omc_assert_warnings*) threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] : NULL;
+  if (!w) {
+    return;
+  }
+  free(w->bits);
+  free(w);
+  threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] = NULL;
 }
 
 void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)

@@ -5022,8 +5022,9 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     }
     >>
   let warningTriggered = tempDeclZero("static int", &varDecls, &varFrees)
-  let TriggerIf = match level case ENUM_LITERAL(index=1) then 'if(!<%warningTriggered%>)<%\n%>' else ''
-  let TriggerVarSet = match level case ENUM_LITERAL(index=1) then '<%warningTriggered%> = 1;<%\n%>' else ''
+  // The static int keeps the index of the assert in the warned bit vector of each instance.
+  let TriggerIf = match level case ENUM_LITERAL(index=1) then 'if(!omc_assert_warning_done(threadData, &<%warningTriggered%>))<%\n%>' else ''
+  let TriggerVarSet = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning_set_done(threadData, &<%warningTriggered%>);<%\n%>' else ''
   <<
   <%TriggerIf%>
   {
