@@ -1,0 +1,57 @@
+// name: tupleMatrixInLoop
+// keywords: simplifyComplexFunction, tuple, external function
+// status: correct
+//
+// Alias elimination turns the 1-D, 2-D and 3-D outputs of the tuple equation
+// into array literals with negated elements. The tuple equation is part of
+// an algebraic loop. See issue #16582.
+
+loadString("
+model TupleMatrixInLoop
+  function f
+    input Real t;
+    output Real a[3];
+    output Real m[3,3];
+    output Real c[2,2,2];
+  external \"C\" f_ext(t, a, m, c)
+    annotation(Include = \"
+      void f_ext(double t, double* a, double* m, double* c)
+      {
+        int i;
+        for (i = 0; i < 3; ++i) a[i] = t + i;
+        for (i = 0; i < 9; ++i) m[i] = t + 10*i;
+        for (i = 0; i < 8; ++i) c[i] = t + 100*i;
+      }\");
+  end f;
+  Real a[3], m[3,3], c[2,2,2];
+  Real b[3], B[3,3], C[2,2,2];
+equation
+  (a, m, c) = f(time + 1e-3*b[2] + 1e-3*B[3,2] + 1e-6*C[2,1,2]);
+  b = {a[1], -a[3], a[2]};
+  B = {m[1], m[3], -m[2]};
+  C = {-c[2], c[1]};
+end TupleMatrixInLoop;
+"); getErrorString();
+simulate(TupleMatrixInLoop, stopTime = 1); getErrorString();
+val(b[2], 1);
+val(B[3,2], 1);
+val(C[2,1,2], 1);
+val(C[1,2,1], 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TupleMatrixInLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'TupleMatrixInLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.
+// "
+// -2.9561885790305182
+// -40.95618857903042
+// 100.95618857903078
+// -600.9561885790315
+// endResult

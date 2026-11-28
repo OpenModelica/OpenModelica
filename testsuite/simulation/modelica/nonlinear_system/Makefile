@@ -61,6 +61,7 @@ ScalingTest1.mos \
 inverseTest.mos \
 scalarKinsol.mos \
 timeInvariantLoops.mos \
+tupleMatrixInLoop.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
