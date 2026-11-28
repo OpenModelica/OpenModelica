@@ -1790,9 +1790,9 @@ public
             isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg))) or Type.isRecord(Type.arrayElementType(Expression.typeOf(arg)));
             isFunc    := InstNode.isFunction(inp);
             isSkipped := Util.applyOptionOrDefault(func.interfaceDiffInfo, function UnorderedSet.contains(key = inp), false);
-            // an input that an earlier derivative differentiated has the derivative input $fDER_x.
+            // an input that an earlier derivative differentiated has a derivative input.
             // That is its derivative if the call passes the derivative of arg to it, else it is zero.
-            der_arg_opt := if isSkipped and isReal then derivativeInputArgument(inp, arguments_inputs) else NONE();
+            der_arg_opt := if isSkipped and isReal then derivativeInputArgument(inp, arguments_inputs, Util.getOption(func.interfaceDiffInfo)) else NONE();
             if isSome(der_arg_opt) then
               if isDerivativeOf(Util.getOption(der_arg_opt), arg, diffArguments) then
                 isSkipped := false;
@@ -1815,7 +1815,7 @@ public
           der_func_opt := Function.getDerivative(fit_func, interface_map);
           if isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
-            der_func := addDiffInfo(func, der_func, diffArguments);
+            der_func := addDiffInfo(func, der_func, interface_map, diffArguments);
           elseif List.any(func.inputs, InstNode.isFunction) then
             // the body calls the function input, which has no derivative (e.g. solveOneNonlinearEquation)
             fail();
@@ -2734,6 +2734,7 @@ public
     Current approach only works if differentiated in the proper order."
     input Function func;
     input output Function der_func;
+    input UnorderedMap<String, Boolean> interface_map;
     input output DifferentiationArguments diffArguments;
   protected
     UnorderedSet<InstNode> diffInfo;
@@ -2750,17 +2751,11 @@ public
       else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
     end match;
 
-    // add all interface nodes of func (inputs, locals, outputs) since all have been
-    // differentiated to produce der_func; this prevents re-differentiation of func.outputs
-    // that became locals in der_func when creating higher-order derivatives
+    // the inputs of func that got a derivative input in der_func, see derivativeInputs
     for node in func.inputs loop
-      UnorderedSet.add(node, diffInfo);
-    end for;
-    for node in func.locals loop
-      UnorderedSet.add(node, diffInfo);
-    end for;
-    for o in func.outputs loop
-      UnorderedSet.add(InstNode.fromHandle(o), diffInfo);
+      if not UnorderedMap.getOrDefault(InstNode.name(node), interface_map, false) then
+        UnorderedSet.add(node, diffInfo);
+      end if;
     end for;
 
     der_func.interfaceDiffInfo  := SOME(diffInfo);
@@ -2810,7 +2805,8 @@ public
               else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
             end match;
 
-            createInterfaceDerivatives(der_func.inputs, interface_map, diff_map);
+            createInterfaceDerivatives(der_func.inputs, interface_map, diff_map,
+              SOME(derivativeInputs(der_func.inputs, der_func.inputs, diffInfo)));
             createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
             createInterfaceDerivatives(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map);
             funcDiffArgs.diff_map := SOME(diff_map);
@@ -3008,24 +3004,35 @@ public
       d_node := ComponentRef.node(diff_cref);
   end differentiateFunctionInterfaceNode;
 
+  function derivativeInputs<T>
+    "Maps the name of each input that an earlier derivative already
+    differentiated to the element of values at the position of its derivative
+    input. These inputs are in diffInfo. Their derivative inputs are the last
+    inputs, in the same order (MLS 3.7, section 12.7.1)."
+    input list<InstNode> inputs;
+    input list<T> values "one for each input";
+    input UnorderedSet<InstNode> diffInfo;
+    output UnorderedMap<String, T> map;
+  protected
+    list<InstNode> diff_inputs = list(i for i guard UnorderedSet.contains(i, diffInfo) in inputs);
+  algorithm
+    map := UnorderedMap.fromLists(list(InstNode.name(i) for i in diff_inputs),
+      List.lastN(values, listLength(diff_inputs)), stringHashDjb2, stringEqual);
+  end derivativeInputs;
+
   function derivativeInputArgument
-    "Returns the argument of the derivative input $fDER_x of an input x that
-    an earlier derivative already differentiated."
+    "Returns the argument of the derivative input of an input that an earlier
+    derivative already differentiated."
     input InstNode inp;
     input list<tuple<Expression, InstNode>> arguments_inputs;
-    output Option<Expression> der_arg = NONE();
+    input UnorderedSet<InstNode> diffInfo;
+    output Option<Expression> der_arg;
   protected
-    String der_name = BackendUtil.makeFDerString(InstNode.name(inp));
-    Expression arg;
-    InstNode der_inp;
+    list<Expression> args;
+    list<InstNode> inputs;
   algorithm
-    for tpl in arguments_inputs loop
-      (arg, der_inp) := tpl;
-      if InstNode.name(der_inp) == der_name then
-        der_arg := SOME(arg);
-        return;
-      end if;
-    end for;
+    (args, inputs) := List.unzip(arguments_inputs);
+    der_arg := UnorderedMap.get(InstNode.name(inp), derivativeInputs(inputs, args, diffInfo));
   end derivativeInputArgument;
 
   function isDerivativeOf
@@ -3076,8 +3083,11 @@ public
     input list<InstNode> interface_nodes;
     input UnorderedMap<String, Boolean> interface_map;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    input Option<UnorderedMap<String, InstNode>> derivative_inputs = NONE() "see derivativeInputs";
   protected
     ComponentRef cref;
+    Option<InstNode> der_node;
+    UnorderedMap<String, InstNode> der_map;
 
     function addCref
       input ComponentRef cref;
@@ -3094,11 +3104,30 @@ public
         addCref(child, diff_map);
       end for;
     end addCref;
+
+    function addDerivativeInputCref
+      input ComponentRef cref;
+      input ComponentRef diff_cref;
+      input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    algorithm
+      UnorderedMap.add(cref, diff_cref, diff_map);
+      for children in List.zip(ComponentRef.getRecordChildren(cref), ComponentRef.getRecordChildren(diff_cref)) loop
+        addDerivativeInputCref(Util.tuple21(children), Util.tuple22(children), diff_map);
+      end for;
+    end addDerivativeInputCref;
   algorithm
     for node in interface_nodes loop
       if not UnorderedMap.contains(InstNode.name(node), interface_map) then
         cref := ComponentRef.fromNode(node, InstNode.getType(node));
-        addCref(cref, diff_map);
+        der_node := match derivative_inputs
+          case SOME(der_map) then UnorderedMap.get(InstNode.name(node), der_map);
+          else NONE();
+        end match;
+        if isSome(der_node) then
+          addDerivativeInputCref(cref, ComponentRef.fromNode(Util.getOption(der_node), InstNode.getType(Util.getOption(der_node))), diff_map);
+        else
+          addCref(cref, diff_map);
+        end if;
       end if;
     end for;
   end createInterfaceDerivatives;
