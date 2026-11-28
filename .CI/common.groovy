@@ -1082,7 +1082,9 @@ void buildRustNightlyGUI(String name) {
 // Stage 4, Windows. Two distributions off the same install tree: the CLI one is
 // the omc stages' tree alone, the full one is that tree with the GUI stages'
 // files unstashed on top, so the CLI zip has to be made before they are. The
-// full one ships as a zip, an installer and an MSI (.CI/installer).
+// full one ships as a zip, an installer and an MSI (.CI/installer). The
+// installers are uploaded by signRustNightlyWindowsInstallers when they are
+// signed.
 void packageRustNightlyWindows(List omcStashes, List guiStashes) {
   standardSetup()
   for (s in omcStashes) {
@@ -1102,13 +1104,32 @@ void packageRustNightlyWindows(List omcStashes, List guiStashes) {
     sh ".CI/scripts/windows-installer.sh ${nightlyInstallDir('win64')} ${f}"
     sh ".CI/scripts/windows-installer-check.sh ${f}"
   }
-  for (f in installers) {
-    uploadRustNightly(f)
+  if (params.SIGN_WINDOWS) {
+    stash name: 'nightly-windows-installers', includes: (installers + ['.CI/scripts/windows-sign.ps1']).join(',')
+  } else {
+    for (f in installers) {
+      uploadRustNightly(f)
+    }
   }
 }
 
 List nightlyWindowsInstallers() {
   return ["OpenModelica-${tagName()}-x86_64-windows.exe", "OpenModelica-${tagName()}-x86_64-windows.msi"]
+}
+
+// Stage 6, on the release build machine, the only node with the eToken: sign the
+// installers as Jenkinsfile.BuildWindowsRelease of OpenModelicaSetup signs the
+// release installer (credential osmc-token-password), then upload them.
+void signRustNightlyWindowsInstallers() {
+  deleteDir()
+  unstash 'nightly-windows-installers'
+  List installers = nightlyWindowsInstallers()
+  withCredentials([string(credentialsId: 'osmc-token-password', variable: 'TOKEN_PW')]) {
+    powershell ".\\.CI\\scripts\\windows-sign.ps1 ${installers.join(' ')}"
+  }
+  for (f in installers) {
+    uploadRustNightly(f)
+  }
 }
 
 void zipRustNightlyWindows(String zip) {
