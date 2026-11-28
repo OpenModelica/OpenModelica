@@ -1,0 +1,63 @@
+// name:     fmi2TimeEventsCpp
+// keywords: FMI 2.0 export Cpp time event sample Clock
+// status:   correct
+// teardown_command: rm -rf fmi2TimeEventsCpp_Sample.fmu fmi2TimeEventsCpp_Sample.so fmi2TimeEventsCpp_Sample.log fmi2TimeEventsCpp_Sample.fmutmp/ fmi2TimeEventsCpp_Clock.fmu fmi2TimeEventsCpp_Clock.so fmi2TimeEventsCpp_Clock.log fmi2TimeEventsCpp_Clock.fmutmp/ fmi2TimeEventsCpp_py.log fmi2TimeEventsCpp_out.txt
+//
+// A Cpp Model Exchange FMU must handle the time events of sample() and of a
+// periodic Clock in fmi2NewDiscreteStates, once per event. This must work if
+// the importer reads values between fmi2SetTime and fmi2EnterEventMode (FMPy)
+// and if it does not (Euler loop in the .py file). See issue #5402.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi2TimeEventsCpp_Sample
+  Real x(start = 0, fixed = true);
+  discrete Integer ticks(start = 0, fixed = true);
+  output Real y;
+equation
+  der(x) = 1;
+  when sample(0.1, 0.2) then
+    ticks = pre(ticks) + 1;
+  end when;
+  y = ticks;
+end fmi2TimeEventsCpp_Sample;
+
+model fmi2TimeEventsCpp_Clock
+  Real x(start = 0, fixed = true);
+  Real xd(start = 0);
+  output Real y;
+equation
+  der(x) = 1;
+  when Clock(0.1) then
+    xd = previous(xd) + 1;
+  end when;
+  y = hold(xd);
+end fmi2TimeEventsCpp_Clock;
+"); getErrorString();
+
+buildModelFMU(fmi2TimeEventsCpp_Sample, version = "2.0", fmuType = "me"); getErrorString();
+buildModelFMU(fmi2TimeEventsCpp_Clock, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2TimeEventsCpp.py fmi2TimeEventsCpp_out.txt fmi2TimeEventsCpp_Sample.fmu fmi2TimeEventsCpp_Clock.fmu > fmi2TimeEventsCpp_py.log 2>&1"); getErrorString();
+readFile("fmi2TimeEventsCpp_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2TimeEventsCpp_Sample.fmu"
+// ""
+// "fmi2TimeEventsCpp_Clock.fmu"
+// ""
+// 0
+// ""
+// "fmi2TimeEventsCpp_Sample.fmu:
+//   fmpy  y(0) = 0, y(0.1) = 1, y(0.15) = 1, y(0.3) = 2, y(0.5) = 3, y(0.95) = 5
+//   euler y(0) = 0, y(0.1) = 1, y(0.15) = 1, y(0.3) = 2, y(0.5) = 3, y(0.95) = 5
+// fmi2TimeEventsCpp_Clock.fmu:
+//   fmpy  y(0) = 1, y(0.1) = 2, y(0.15) = 2, y(0.3) = 4, y(0.5) = 6, y(0.95) = 10
+//   euler y(0) = 1, y(0.1) = 2, y(0.15) = 2, y(0.3) = 4, y(0.5) = 6, y(0.95) = 10
+// "
+// ""
+// endResult
