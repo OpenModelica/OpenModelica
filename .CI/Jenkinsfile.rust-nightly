@@ -24,7 +24,12 @@
 //                          target's build-deps:*-rust-qt-* image rather than
 //                          the plain -rust one. Beside them, the User's Guide,
 //                          generated with stage 2's linux64 omc.
-//   4. 'package'           the Windows zip, installer and MSI, the Linux tar.gz,
+//   4. 'sign windows binaries'
+//                          on windows.openmodelica.org, which has the eToken:
+//                          the .exe and .dll files of the Windows distribution
+//                          and the Windows FMU loaders of every distribution.
+//                          The packaging stages put the signed files in.
+//   5. 'package'           the Windows zip, installer and MSI, the Linux tar.gz,
 //                          and `lipo` over the two macOS trees into one
 //                          universal distribution. The full distributions carry
 //                          the User's Guide. Beside them, a source tarball that
@@ -32,11 +37,11 @@
 //                          The command-line tools ship on their own as
 //                          OpenModelica-CLI-* whether or not the GUI clients
 //                          were built. The linux64 tarballs are uploaded by
-//                          stage 5 instead, and only if it passes.
-//   5. 'linux64 on ubuntu 26.04'
+//                          stage 6 instead, and only if it passes.
+//   6. 'linux64 on ubuntu 26.04'
 //                          the linux64 CLI tarball in a bare newer distribution:
 //                          a simulation and an FMU export must link and load.
-//   6. 'sign windows installers'
+//   7. 'sign windows installers'
 //                          on windows.openmodelica.org, which has the eToken:
 //                          the installer and the MSI are signed and uploaded.
 //
@@ -67,7 +72,7 @@ pipeline {
     booleanParam(name: 'BUILD_LINUX_AARCH64', defaultValue: true, description: 'Build the Linux AArch64 distribution (command-line tools only)')
     booleanParam(name: 'BUILD_GUI_CLIENTS', defaultValue: true, description: 'Build the Qt GUI clients (OMEdit, OMShell, OMNotebook, OMPlot)')
     booleanParam(name: 'BUILD_USERSGUIDE', defaultValue: true, description: "Build the User's Guide with the Linux x86-64 omc (needs BUILD_LINUX)")
-    booleanParam(name: 'SIGN_WINDOWS', defaultValue: true, description: 'Sign the Windows installers with the eToken on windows.openmodelica.org before they are uploaded')
+    booleanParam(name: 'SIGN_WINDOWS', defaultValue: true, description: 'Sign the Windows binaries, the FMU loaders and the installers with the eToken on windows.openmodelica.org')
     booleanParam(name: 'BUILD_SOURCE_TARBALL', defaultValue: true, description: 'Make a source tarball with the vendored crates, the configure-time downloads and the User\'s Guide')
     // Read at queue time by the jobGroup option above. A nightly yields to
     // everything a person is waiting for.
@@ -379,6 +384,24 @@ pipeline {
       }
     }
 
+    // Stage 4. Only the release build machine has the eToken. The release jobs
+    // take the same lock.
+    stage('sign windows binaries') {
+      agent {
+        label 'windows.openmodelica.org'
+      }
+      options {
+        lock(resource: 'windows-release-build')
+      }
+      when {
+        beforeAgent true
+        expression { params.SIGN_WINDOWS }
+      }
+      steps {
+        script { common.signRustNightlyWindowsBinaries() }
+      }
+    }
+
     stage('package') {
       parallel {
         stage('windows') {
@@ -501,7 +524,7 @@ pipeline {
       }
     }
 
-    // Stage 5. The linux64 CLI tarball in a bare image of a newer distribution:
+    // Stage 6. The linux64 CLI tarball in a bare image of a newer distribution:
     // a simulation and an FMU of a model that links HDF5 through
     // ModelicaStandardTables. Uploads both linux64 tarballs if that works.
     stage('linux64 on ubuntu 26.04') {
@@ -528,8 +551,7 @@ pipeline {
         script { common.checkRustNightlyLinux('linux64') }
       }
     }
-    // Stage 6. Only the release build machine has the eToken. The release jobs
-    // take the same lock.
+    // Stage 7, on the release build machine again.
     stage('sign windows installers') {
       agent {
         label 'windows.openmodelica.org'

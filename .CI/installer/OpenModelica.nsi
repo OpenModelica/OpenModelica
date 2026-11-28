@@ -10,6 +10,10 @@
 # Command line options, in addition to /S and /D=<directory>:
 #   /DEFAULT=0        do not make this installation the default one
 #   /REMOVENIGHTLIES  with /S: uninstall the other nightly builds
+#
+# The uninstaller does not depend on FILES, so it can be signed before the
+# installer is built: with UNINSTALLER_ONLY, OUTFILE only writes Uninstall.exe
+# next to itself, and UNINSTALLER=<that file> installs it instead of writing one.
 
 Unicode true
 SetCompressor /SOLID /FINAL lzma
@@ -26,6 +30,10 @@ SetCompressorDictSize 64
 !endif
 !ifndef OUTFILE
   !error "Define OUTFILE, the installer to write"
+!endif
+!ifdef UNINSTALLER
+  # MultiUser.nsh defines un. functions whether or not there is an uninstaller.
+  !pragma warning disable 6020
 !endif
 
 Name "OpenModelica ${OMVERSION}"
@@ -87,9 +95,11 @@ BrandingText "OpenModelica ${OMVERSION}"
 Var StartMenuGroup
 Var RemoveNightlies ; 1 if a silent install should remove the other nightly builds
 Var UninstLog
+!ifndef UNINSTALLER
 Var un.WasDefault   ; 1 if OPENMODELICAHOME pointed to the installation that is removed
 Var un.HadFileAssoc ; 1 if the .mo files were opened by the installation that is removed
 Var un.NewDefault   ; the installation that takes over as default, if any
+!endif
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_COMPONENTS
@@ -97,8 +107,10 @@ Var un.NewDefault   ; the installation that takes over as default, if any
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuGroup
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
-!insertmacro MUI_UNPAGE_CONFIRM
-!insertmacro MUI_UNPAGE_INSTFILES
+!ifndef UNINSTALLER
+  !insertmacro MUI_UNPAGE_CONFIRM
+  !insertmacro MUI_UNPAGE_INSTFILES
+!endif
 !insertmacro MUI_LANGUAGE English
 
 OutFile "${OUTFILE}"
@@ -205,12 +217,12 @@ LangString UninstLogMissing ${LANG_ENGLISH} "${UninstLog} not found!$\r$\nUninst
 !macroend
 
 !macro RegisterExtensions OMHOME
-  !ifdef OM_HAVE_OMEDIT
+  ${If} ${FileExists} "${OMHOME}\bin\OMEdit.exe"
     !insertmacro RegisterExtension "${OMHOME}\bin\OMEdit.exe" ".mo" "OpenModelica Connection Editor"
-  !endif
-  !ifdef OM_HAVE_OMNOTEBOOK
+  ${EndIf}
+  ${If} ${FileExists} "${OMHOME}\bin\OMNotebook.exe"
     !insertmacro RegisterExtension "${OMHOME}\bin\OMNotebook.exe" ".onb" "OpenModelica Notebook"
-  !endif
+  ${EndIf}
   !insertmacro UpdateFileAssociations
 !macroend
 
@@ -257,7 +269,12 @@ SectionEnd
 
 Section -post
   ${WriteRegStr} SHCTX "${REGKEY}" Path $INSTDIR
-  ${WriteUninstaller} $INSTDIR\Uninstall.exe
+  !ifdef UNINSTALLER
+    SetOutPath "\\?\$INSTDIR"
+    ${File} "${UNINSTALLER}" "Uninstall.exe"
+  !else
+    ${WriteUninstaller} $INSTDIR\Uninstall.exe
+  !endif
   !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
   # The shortcuts start in the directory SetOutPath sets.
   SetOutPath "\\?\$TEMP"
@@ -320,6 +337,7 @@ LangString DESC_SectionUsersGuide ${LANG_ENGLISH} "The OpenModelica User's Guide
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ## Uninstaller ##################################################################
+!ifndef UNINSTALLER
 Section "Uninstall"
   FileOpen $4 "$INSTDIR\InstallMode.txt" r
   FileSeek $4 0
@@ -445,6 +463,7 @@ Section "Uninstall"
   ${EndIf}
   SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 SectionEnd
+!endif
 
 ## Functions ####################################################################
 
@@ -525,6 +544,11 @@ SectionEnd
 !macroend
 
 Function .onInit
+  !ifdef UNINSTALLER_ONLY
+    WriteUninstaller "$EXEDIR\Uninstall.exe"
+    SetErrorLevel 0
+    Quit
+  !endif
   SetRegView 64
   ${GetParameters} $R8
   StrCpy $RemoveNightlies 0
@@ -570,7 +594,9 @@ Function LaunchOMEdit
 FunctionEnd
 !endif
 
+!ifndef UNINSTALLER
 Function un.onInit
   SetRegView 64
   !insertmacro MULTIUSER_UNINIT
 FunctionEnd
+!endif

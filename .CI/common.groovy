@@ -924,6 +924,7 @@ void buildRustNightlyShared() {
     du -sh ${d}/*
   """
   stash name: 'nightly-shared', includes: "${nightlySharedDir()}/**"
+  stashNightlyUnsigned('shared', "${d}/fmu-loaders", 'lib')
 }
 
 // Lay stage 1's hand-over back down: the stash into the workspace, and the
@@ -1050,6 +1051,10 @@ void buildRustNightlyOMC(String name) {
   """
   stash name: "nightly-cdylib-${name}", includes: 'nightly-cdylib/**'
   stash name: "nightly-omc-${name}", includes: "${nightlyInstallDir(name)}/**"
+  if (t.triple.contains('windows')) {
+    sh "mkdir -p ${nightlySignDir()} && .CI/scripts/windows-installer.sh --uninstaller ${nightlySignDir()}/Uninstall.exe"
+    stashNightlyUnsigned("omc-${name}", nightlyInstallDir(name))
+  }
 }
 
 // Stage 3: the Qt GUI clients for one target, linked against the cdylib the omc
@@ -1077,9 +1082,53 @@ void buildRustNightlyGUI(String name) {
     sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
   }
   stash name: "nightly-gui-${name}", includes: "${nightlyInstallDir(name)}/**"
+  if (t.triple.contains('windows')) {
+    stashNightlyUnsigned("gui-${name}", nightlyInstallDir(name))
+  }
 }
 
-// Stage 4, Windows. Two distributions off the same install tree: the CLI one is
+// Stage 4, on the release build machine like signRustNightlyWindowsInstallers:
+// sign the .exe and .dll files that the stages before stashed unsigned, those of
+// the Windows distribution and the Windows FMU loaders that all distributions
+// carry. The packaging stages put them in (applyNightlySignatures).
+void signRustNightlyWindowsBinaries() {
+  deleteDir()
+  List stashes = ['nightly-unsigned-shared']
+  if (params.BUILD_WINDOWS) {
+    stashes << 'nightly-unsigned-omc-win64'
+    if (params.BUILD_GUI_CLIENTS) {
+      stashes << 'nightly-unsigned-gui-win64'
+    }
+  }
+  for (s in stashes) {
+    unstash s
+  }
+  withCredentials([string(credentialsId: 'osmc-token-password', variable: 'TOKEN_PW')]) {
+    powershell ".\\.CI\\scripts\\windows-sign.ps1 ${nightlySignDir()}"
+  }
+  stash name: 'nightly-signed-windows', includes: "${nightlySignDir()}/**"
+}
+
+// The binaries to sign, laid out like an install tree, and the NSIS uninstaller.
+String nightlySignDir() { return 'nightly-sign' }
+
+void stashNightlyUnsigned(String name, String tree, String prefix = '') {
+  String out = prefix ? "${nightlySignDir()}/${prefix}" : nightlySignDir()
+  sh "python3 .CI/scripts/pe-signatures.py collect ${tree} ${out}"
+  stash name: "nightly-unsigned-${name}", includes: "${nightlySignDir()}/**,.CI/scripts/windows-sign.ps1"
+}
+
+// The signed binaries over the unsigned ones in the trees. `signed` is the
+// directory of nightlySignDir() that corresponds to the root of the trees.
+void applyNightlySignatures(List trees, String signed = nightlySignDir()) {
+  if (!params.SIGN_WINDOWS) {
+    return
+  }
+  unstash 'nightly-signed-windows'
+  sh "python3 .CI/scripts/pe-signatures.py apply ${signed} ${trees.join(' ')}"
+}
+
+// Stage 5, Windows. Two distributions off the same install tree: the CLI one is
 // the omc stages' tree alone, the full one is that tree with the GUI stages'
 // files unstashed on top, so the CLI zip has to be made before they are. The
 // full one ships as a zip, an installer and an MSI (.CI/installer). The
@@ -1090,6 +1139,7 @@ void packageRustNightlyWindows(List omcStashes, List guiStashes) {
   for (s in omcStashes) {
     unstash s
   }
+  applyNightlySignatures([nightlyInstallDir('win64')])
   zipRustNightlyWindows("OpenModelica-CLI-${tagName()}-x86_64-windows.zip")
   if (!guiStashes) {
     return
@@ -1097,12 +1147,15 @@ void packageRustNightlyWindows(List omcStashes, List guiStashes) {
   for (s in guiStashes) {
     unstash s
   }
+  applyNightlySignatures([nightlyInstallDir('win64')])
   addNightlyUsersGuide(nightlyInstallDir('win64'))
   zipRustNightlyWindows("OpenModelica-${tagName()}-x86_64-windows.zip")
   List installers = nightlyWindowsInstallers()
-  for (f in installers) {
-    sh ".CI/scripts/windows-installer.sh ${nightlyInstallDir('win64')} ${f}"
-    sh ".CI/scripts/windows-installer-check.sh ${f}"
+  withEnv(params.SIGN_WINDOWS ? ["UNINSTALLER=${nightlySignDir()}/Uninstall.exe"] : []) {
+    for (f in installers) {
+      sh ".CI/scripts/windows-installer.sh ${nightlyInstallDir('win64')} ${f}"
+      sh ".CI/scripts/windows-installer-check.sh ${f}"
+    }
   }
   if (params.SIGN_WINDOWS) {
     stash name: 'nightly-windows-installers', includes: (installers + ['.CI/scripts/windows-sign.ps1']).join(',')
@@ -1117,7 +1170,7 @@ List nightlyWindowsInstallers() {
   return ["OpenModelica-${tagName()}-x86_64-windows.exe", "OpenModelica-${tagName()}-x86_64-windows.msi"]
 }
 
-// Stage 6, on the release build machine, the only node with the eToken: sign the
+// Stage 7, on the release build machine, the only node with the eToken: sign the
 // installers as Jenkinsfile.BuildWindowsRelease of OpenModelicaSetup signs the
 // release installer (credential osmc-token-password), then upload them.
 void signRustNightlyWindowsInstallers() {
@@ -1138,7 +1191,7 @@ void zipRustNightlyWindows(String zip) {
   uploadRustNightly(zip)
 }
 
-// Stage 4, Linux: the same two-distribution split as Windows, for one target.
+// Stage 5, Linux: the same two-distribution split as Windows, for one target.
 // An empty guiStashes leaves the CLI distribution as the only one, which is what
 // linux-aarch64 ships.
 void packageRustNightlyLinux(String name, List omcStashes, List guiStashes) {
@@ -1147,6 +1200,7 @@ void packageRustNightlyLinux(String name, List omcStashes, List guiStashes) {
   for (s in omcStashes) {
     unstash s
   }
+  applyNightlySignatures([nightlyInstallDir(name)])
   // No Qt prefix: the CLI tree has no GUI clients, but it still needs its own
   // libraries bundled -- omc pulls in libgfortran and libcurl-gnutls, neither of
   // which a target is required to have.
@@ -1156,6 +1210,7 @@ void packageRustNightlyLinux(String name, List omcStashes, List guiStashes) {
     for (s in guiStashes) {
       unstash s
     }
+    applyNightlySignatures([nightlyInstallDir(name)])
     addNightlyUsersGuide(nightlyInstallDir(t.name))
     tgzs << "OpenModelica-${tagName()}-${t.arch}-linux.tar.gz"
     tarRustNightlyLinux(t, tgzs[1], qtLinuxPrefix())
@@ -1181,7 +1236,7 @@ void tarRustNightlyLinux(Map t, String tgz, String qtPrefix) {
   sh "ls -l ${tgz}"
 }
 
-// Stage 5: the CLI tarball on a bare distribution newer than the one it was
+// Stage 6: the CLI tarball on a bare distribution newer than the one it was
 // built on, with only the C toolchain a user is told to install. The build
 // agents have every -dev package, so a build-host path on a generated link line
 // only fails here. Runs as root for apt-get, so nothing is written into the
@@ -1203,7 +1258,7 @@ void checkRustNightlyLinux(String name) {
   }
 }
 
-// Stage 4, macOS: lipo the two per-architecture install trees into one universal
+// Stage 5, macOS: lipo the two per-architecture install trees into one universal
 // tree (.CI/scripts/mac-universal.sh). That tree ships as the CLI tar.gz; with
 // the GUI stages unstashed on top it is lipo'd again, folded into OMEdit.app and
 // shipped as a .dmg (the unix tree inside the bundle only runs from there).
@@ -1212,6 +1267,8 @@ void packageRustNightlyMacUniversal(List omcStashes, List guiStashes) {
   for (s in omcStashes) {
     unstash s
   }
+  List trees = [nightlyInstallDir('mac-x86_64'), nightlyInstallDir('mac-aarch64')]
+  applyNightlySignatures(trees)
   String cli = 'install/mac-universal-cli'
   macUniversalTree(cli)
   String tgz = "OpenModelica-CLI-${tagName()}-macos-universal.tar.gz"
@@ -1224,6 +1281,7 @@ void packageRustNightlyMacUniversal(List omcStashes, List guiStashes) {
   for (s in guiStashes) {
     unstash s
   }
+  applyNightlySignatures(trees)
   String out = 'install/mac-universal'
   macUniversalTree(out)
   addNightlyUsersGuide(out)
@@ -1291,7 +1349,7 @@ void addNightlyUsersGuide(String tree) {
   sh "cp -a ${nightlyUsersGuideDir()}/. ${tree}/"
 }
 
-// Stage 4, the source tarball (.CI/scripts/source-tarball.sh): it builds without
+// Stage 5, the source tarball (.CI/scripts/source-tarball.sh): it builds without
 // network access. A configure of the native build with the GUI clients, into an
 // empty OM_DOWNLOADS_DIR, fetches what such a build downloads; nothing is built.
 void packageRustNightlySource() {
