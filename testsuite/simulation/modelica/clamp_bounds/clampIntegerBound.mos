@@ -1,0 +1,48 @@
+// name: clampIntegerBound
+// status: correct
+// teardown_command: rm -f ClampIntegerBound* _ClampIntegerBound* output.log
+//
+// Integer support and tightest-wins merge of bound sources: the input r declares
+// min = 1, max = 5 and the body asserts r >= 2. The two lower bounds are merged
+// keeping the tighter one (2), so the clamped argument is min(max(r, 2), 5). The
+// argument drops to 1 during the run; the clamp pins it at 2 (not the declared 1),
+// which the result value confirms.
+
+setCommandLineOptions("--postOptModules+=inferBoundsFromAsserts"); getErrorString();
+
+loadString("
+function fint
+  input Integer r(min = 1, max = 5);
+  output Integer y;
+algorithm
+  assert(r >= 2, \"r below 2\");
+  y := r;
+  annotation(Inline = false);
+end fint;
+
+model ClampIntegerBound
+  Integer z, a;
+equation
+  z = fint(a);
+  a = integer(5.5 - time);
+end ClampIntegerBound;
+"); getErrorString();
+
+simulate(ClampIntegerBound, stopTime = 4.0); getErrorString();
+val(z, 4.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ClampIntegerBound_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ClampIntegerBound', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// endResult
