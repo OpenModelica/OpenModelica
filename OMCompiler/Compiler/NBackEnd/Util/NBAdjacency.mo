@@ -4625,6 +4625,12 @@ public
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
       then set;
 
+      // sum(x) is linear in x like the reduction sum(x[i] for i)
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {call_exp})) guard(Call.isNamed(call, "sum")) algorithm
+        set := collectDependencies(call_exp, depth, map, dep_map, sol_map, rep_set);
+        Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
+      then set;
+
       // delay(expr, delayTime, delayMax) with delayTime = delayMax only reads past values of expr
       case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {_, call_exp, delay_max}))
         guard(Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.isEqual(call_exp, delay_max)
