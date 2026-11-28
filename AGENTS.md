@@ -229,11 +229,14 @@ build the Rust port of `omc`:
   `FrontEnd/ModelicaBuiltin.mo` and `NFFrontEnd/NFModelicaBuiltin.mo` (keep
   them in sync) and implemented in `Script/CevalScriptBackend.mo`. OMEdit
   calls many of these functions; changing a signature can break it.
-- Add a regression test for a bug fix and for new behavior.
+- Add a regression test for a bug fix and for new behavior (or ideally adapt
+  an older test).
 - Keep the description of a new flag to one line, and do not put issue
   numbers in flag text.
 - Keep `SimulationRuntime/c/` and `SimulationRuntime/rust/` in step: a fix
   or feature in one runtime usually belongs in the other as well.
+- Review your changes, especially looking for duplicated code (avoid code
+  duplication).
 
 ### Comments
 
