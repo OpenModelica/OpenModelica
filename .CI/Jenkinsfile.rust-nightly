@@ -22,10 +22,12 @@
 //                          compiler runs a second time. These are the only
 //                          stages needing a cross Qt kit, so each runs on its
 //                          target's build-deps:*-rust-qt-* image rather than
-//                          the plain -rust one.
+//                          the plain -rust one. Beside them, the User's Guide,
+//                          generated with stage 2's linux64 omc.
 //   4. 'package'           the Windows zip and installer, the Linux tar.gz, and
 //                          `lipo` over the two macOS trees into one universal
-//                          distribution.
+//                          distribution. The full distributions carry the
+//                          User's Guide.
 //                          The command-line tools ship on their own as
 //                          OpenModelica-CLI-* whether or not the GUI clients
 //                          were built. The linux64 tarballs are uploaded by
@@ -60,6 +62,7 @@ pipeline {
     booleanParam(name: 'BUILD_LINUX', defaultValue: true, description: 'Build the Linux x86-64 distribution')
     booleanParam(name: 'BUILD_LINUX_AARCH64', defaultValue: true, description: 'Build the Linux AArch64 distribution (command-line tools only)')
     booleanParam(name: 'BUILD_GUI_CLIENTS', defaultValue: true, description: 'Build the Qt GUI clients (OMEdit, OMShell, OMNotebook, OMPlot)')
+    booleanParam(name: 'BUILD_USERSGUIDE', defaultValue: true, description: "Build the User's Guide with the Linux x86-64 omc (needs BUILD_LINUX)")
     // Read at queue time by the jobGroup option above. A nightly yields to
     // everything a person is waiting for.
     string(name: 'BUILD_PRIORITY', defaultValue: '5',
@@ -336,6 +339,35 @@ pipeline {
           steps {
             script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('linux64') }
+          }
+        }
+        stage('users guide') {
+          agent {
+            docker {
+              alwaysPull true
+              // The image of the main pipeline's User's Guide stage: Sphinx,
+              // LaTeX, pandoc and inkscape.
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
+              label 'linux'
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX && params.BUILD_USERSGUIDE }
+          }
+          environment {
+            LIBRARIES = '/cache/omlibrary'
+            GITHUB_AUTH = credentials('OpenModelica-Hudson')
+          }
+          steps {
+            script { common.checkoutSCM() }
+            // The distributions are still packaged without it.
+            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+              script { common.buildRustNightlyUsersGuide() }
+            }
           }
         }
       }
