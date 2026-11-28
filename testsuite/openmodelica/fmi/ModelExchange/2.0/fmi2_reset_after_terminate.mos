@@ -1,0 +1,36 @@
+// name:     fmi2_reset_after_terminate
+// keywords: FMI 2.0 export reset terminate memory leak
+// status:   correct
+// teardown_command: rm -rf fmi2_reset_after_terminate*.fmu fmi2_reset_after_terminate*.fmutmp/ fmi2_reset_after_terminate*.log fmi2_reset_after_terminate*_out.txt
+//
+// fmi2Reset after fmi2Terminate must free the model data before it makes it
+// again, so many runs of one instance do not use more and more memory.
+
+loadString("
+model fmi2_reset_after_terminate
+  parameter Integer n = 10;
+  Real x[n](each start = 1, each fixed = true);
+  output Real y = sum(x);
+equation
+  for i in 1:n loop
+    der(x[i]) = -i*x[i];
+  end for;
+end fmi2_reset_after_terminate;
+"); getErrorString();
+buildModelFMU(fmi2_reset_after_terminate, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_reset_after_terminate.py fmi2_reset_after_terminate.fmu fmi2_reset_after_terminate_out.txt > fmi2_reset_after_terminate.log 2>&1"); getErrorString();
+readFile("fmi2_reset_after_terminate_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi2_reset_after_terminate.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "heap growth after 200 fmi2Terminate and fmi2Reset is below 1 MB: True
+// x[1] after the last reset: 1
+// "
+// ""
+// endResult
