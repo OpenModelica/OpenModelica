@@ -231,6 +231,13 @@ Section "OpenModelica" SectionCore
   !insertmacro OM_INSTALL_FILES
 SectionEnd
 
+!ifdef OM_HAVE_USERSGUIDE
+Section "User's Guide" SectionUsersGuide
+  SetOverwrite on
+  !insertmacro OM_INSTALL_USERSGUIDE_FILES
+SectionEnd
+!endif
+
 Section -Main
   ${AddItem} "$INSTDIR\InstallMode.txt"
   FileOpen $4 "$INSTDIR\InstallMode.txt" w
@@ -301,8 +308,14 @@ SectionEnd
 
 LangString DESC_SectionCore ${LANG_ENGLISH} "OpenModelica ${VERSION}."
 LangString DESC_SectionDefault ${LANG_ENGLISH} "Make this the default OpenModelica: set OPENMODELICAHOME to it and open the .mo and .onb files with it."
+!ifdef OM_HAVE_USERSGUIDE
+LangString DESC_SectionUsersGuide ${LANG_ENGLISH} "The OpenModelica User's Guide, in HTML and PDF."
+!endif
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SectionCore} $(DESC_SectionCore)
+  !ifdef OM_HAVE_USERSGUIDE
+    !insertmacro MUI_DESCRIPTION_TEXT ${SectionUsersGuide} $(DESC_SectionUsersGuide)
+  !endif
   !insertmacro MUI_DESCRIPTION_TEXT ${SectionDefault} $(DESC_SectionDefault)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
