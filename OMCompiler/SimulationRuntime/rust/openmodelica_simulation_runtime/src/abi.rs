@@ -740,6 +740,7 @@ pub struct SIMULATION_INFO {
     pub noThrowDivZero: modelica_boolean,
     pub noThrowAsserts: modelica_boolean,
     pub needToReThrow: modelica_boolean,
+    pub holdWarnings: modelica_boolean,
 
     pub solverSteps: f64,
 
