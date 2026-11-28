@@ -24,10 +24,10 @@
 //                          target's build-deps:*-rust-qt-* image rather than
 //                          the plain -rust one. Beside them, the User's Guide,
 //                          generated with stage 2's linux64 omc.
-//   4. 'package'           the Windows zip and installer, the Linux tar.gz, and
-//                          `lipo` over the two macOS trees into one universal
-//                          distribution. The full distributions carry the
-//                          User's Guide. Beside them, a source tarball that
+//   4. 'package'           the Windows zip, installer and MSI, the Linux tar.gz,
+//                          and `lipo` over the two macOS trees into one
+//                          universal distribution. The full distributions carry
+//                          the User's Guide. Beside them, a source tarball that
 //                          builds without network access.
 //                          The command-line tools ship on their own as
 //                          OpenModelica-CLI-* whether or not the GUI clients
